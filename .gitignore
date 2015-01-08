@@ -67,10 +67,11 @@ dlldata.c
 *.scc
 *.tlog
 *.res
-*.rc
+#*.rc
 *.exp
 *.lastbuildstate
-*.manifest
+#*.manifest
+
 
 # Chutzpah Test files
 _Chutzpah*
