@@ -1,0 +1,9 @@
+import "EventId.proto";
+
+option java_outer_classname="HashmapChangedEventResponseProtocol";
+package Alachisoft.NCache.Common.Protobuf;
+message HashmapChangedEventResponse 
+{
+	optional bytes table = 1;
+	optional EventId eventId = 2;
+}

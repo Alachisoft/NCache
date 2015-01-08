@@ -1,0 +1,8 @@
+
+option java_outer_classname="LockResponseProtocol";
+package Alachisoft.NCache.Common.Protobuf;
+message LockResponse {
+	optional bool locked = 1;
+	optional string lockId = 2;
+	optional int64 lockTime = 3;
+}

@@ -1,0 +1,10 @@
+﻿<?xml version="1.0" encoding="utf-8" ?>
+<hibernate-mapping xmlns="urn:nhibernate-mapping-2.2">
+	<class name="nhibernator.BLL.Product, nhibernator" table="Products">
+		<id name="ProductID" column="ProductID" type="Int32" unsaved-value="0"> 
+			<generator class="assigned" /> 
+		</id> 
+		<property name="ProductName"/> 
+		<property name="UnitPrice"/> 		
+	</class>	
+</hibernate-mapping>

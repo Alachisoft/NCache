@@ -1,0 +1,29 @@
+import "EventId.proto";
+
+option java_outer_classname="EventInfoProtocol";
+package Alachisoft.NCache.Common.Protobuf;
+
+message EventInfo 
+{
+	enum EventType 
+	{
+		ITEM_REMOVED_CALLBACK = 1;
+        ITEM_UPDATED_CALLBACK = 2;
+        ITEM_ADDED_EVENT = 3;
+        ITEM_REMOVED_EVENT = 4;
+        ITEM_UPDATED_EVENT = 5;
+        CACHE_CLEARED_EVENT = 6;
+        CQ_CALLBACK = 7;
+	}
+
+	optional sint32 callbackId = 1;
+	optional string key = 2;
+	optional int32 itemRemoveReason = 3;
+	optional int32 flag = 4;
+	repeated bytes value = 5;
+	optional EventId eventId = 6;
+	optional int32 changeType = 7;
+	optional string queryId = 8;
+	optional EventType eventType = 9;
+	
+}

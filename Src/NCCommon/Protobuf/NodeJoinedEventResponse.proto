@@ -1,0 +1,13 @@
+import "EventId.proto";
+
+option java_outer_classname="NodeJoinedEventResponseProtocol";
+package Alachisoft.NCache.Common.Protobuf;
+message NodeJoinedEventResponse 
+{
+	optional string clusterIp = 1;
+	optional string clusterPort = 2;
+	optional string serverIp = 3;
+	optional string serverPort = 4;
+	optional bool reconnect = 5;
+	optional EventId eventId = 6;
+}

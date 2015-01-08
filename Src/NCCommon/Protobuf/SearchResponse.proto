@@ -1,0 +1,7 @@
+import "QueryResultSet.proto";
+option java_outer_classname="SearchResponseProtocol";
+package Alachisoft.NCache.Common.Protobuf;
+message SearchResponse {
+	repeated string keys = 1;
+	optional QueryResultSet queryResultSet = 2;
+}

@@ -1,0 +1,9 @@
+
+option java_outer_classname="GetResponseProtocol";
+package Alachisoft.NCache.Common.Protobuf;
+message GetResponse {
+	optional int32 flag = 1;
+	optional string lockId = 2;
+	optional int64 lockTime = 3;
+	repeated bytes data = 4;
+}

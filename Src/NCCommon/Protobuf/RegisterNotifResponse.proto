@@ -1,0 +1,5 @@
+
+option java_outer_classname="RegisterNotifResponseProtocol";
+package Alachisoft.NCache.Common.Protobuf;
+message RegisterNotifResponse {
+}

@@ -1,0 +1,5 @@
+
+option java_outer_classname="UnlockResponseProtocol";
+package Alachisoft.NCache.Common.Protobuf;
+message UnlockResponse {
+}

@@ -1,0 +1,18 @@
+
+
+option java_outer_classname="GetCacheItemResponseProtocol";
+package Alachisoft.NCache.Common.Protobuf;
+message GetCacheItemResponse {
+	optional string lockId = 1;
+	optional int64 lockTicks = 2;
+	optional int32 priority = 3;
+	optional bool hasExpired = 4;
+	optional bool needsResync = 5;
+	optional int64 absExp = 6;
+	optional int64 sldExp = 7;
+	optional int32 flag = 8;
+	optional int64 creationTime = 9;
+	optional int64 lastModifiedTime = 10;
+	repeated bytes value = 11;
+
+}

@@ -1,0 +1,9 @@
+
+option java_outer_classname="FragmentedResponseProtocol";
+package Alachisoft.NCache.Common.Protobuf;
+message FragmentedResponse {
+	optional int64 messageId = 1;
+	optional int32 fragmentNo = 2;
+	optional int32 totalFragments = 3;
+	optional bytes message = 4; 
+}

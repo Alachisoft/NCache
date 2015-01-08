@@ -1,0 +1,85 @@
+Microsoft Visual Studio Solution File, Format Version 11.00
+# Visual Studio 2010
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "NCacheAdapter", "NCacheAdapters\NCacheAdapter.csproj", "{794DBF44-6A11-4952-B6DA-D481444BC0DB}"
+EndProject
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Alachisoft.ContentOptimization", "Alachisoft.ContentOptimization\Alachisoft.ContentOptimization.csproj", "{CABCE9AA-38DC-4FE7-9E5B-8ECAB9907F3C}"
+EndProject
+Global
+	GlobalSection(SolutionConfigurationPlatforms) = preSolution
+		Debug|Any CPU = Debug|Any CPU
+		DebugJvCache|Any CPU = DebugJvCache|Any CPU
+		DebugWSS3|Any CPU = DebugWSS3|Any CPU
+		Enterprise.2x|Any CPU = Enterprise.2x|Any CPU
+		Enterprise.3x|Any CPU = Enterprise.3x|Any CPU
+		Release.2x|Any CPU = Release.2x|Any CPU
+		Release|Any CPU = Release|Any CPU
+		ReleaseJvCache.2x|Any CPU = ReleaseJvCache.2x|Any CPU
+		ReleaseJvCache|Any CPU = ReleaseJvCache|Any CPU
+		ReleaseWSS3|Any CPU = ReleaseWSS3|Any CPU
+	EndGlobalSection
+	GlobalSection(ProjectConfigurationPlatforms) = postSolution
+		{794DBF44-6A11-4952-B6DA-D481444BC0DB}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{794DBF44-6A11-4952-B6DA-D481444BC0DB}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{794DBF44-6A11-4952-B6DA-D481444BC0DB}.DebugJvCache|Any CPU.ActiveCfg = DebugJvCache|Any CPU
+		{794DBF44-6A11-4952-B6DA-D481444BC0DB}.DebugJvCache|Any CPU.Build.0 = DebugJvCache|Any CPU
+		{794DBF44-6A11-4952-B6DA-D481444BC0DB}.DebugWSS3|Any CPU.ActiveCfg = Debug|Any CPU
+		{794DBF44-6A11-4952-B6DA-D481444BC0DB}.DebugWSS3|Any CPU.Build.0 = Debug|Any CPU
+		{794DBF44-6A11-4952-B6DA-D481444BC0DB}.Enterprise.2x|Any CPU.ActiveCfg = Enterprise.2x|Any CPU
+		{794DBF44-6A11-4952-B6DA-D481444BC0DB}.Enterprise.2x|Any CPU.Build.0 = Enterprise.2x|Any CPU
+		{794DBF44-6A11-4952-B6DA-D481444BC0DB}.Enterprise.3x|Any CPU.ActiveCfg = Enterprise.3x|Any CPU
+		{794DBF44-6A11-4952-B6DA-D481444BC0DB}.Enterprise.3x|Any CPU.Build.0 = Enterprise.3x|Any CPU
+		{794DBF44-6A11-4952-B6DA-D481444BC0DB}.Release.2x|Any CPU.ActiveCfg = Release.2x|Any CPU
+		{794DBF44-6A11-4952-B6DA-D481444BC0DB}.Release.2x|Any CPU.Build.0 = Release.2x|Any CPU
+		{794DBF44-6A11-4952-B6DA-D481444BC0DB}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{794DBF44-6A11-4952-B6DA-D481444BC0DB}.Release|Any CPU.Build.0 = Release|Any CPU
+		{794DBF44-6A11-4952-B6DA-D481444BC0DB}.ReleaseJvCache.2x|Any CPU.ActiveCfg = ReleaseJvCache.2x|Any CPU
+		{794DBF44-6A11-4952-B6DA-D481444BC0DB}.ReleaseJvCache.2x|Any CPU.Build.0 = ReleaseJvCache.2x|Any CPU
+		{794DBF44-6A11-4952-B6DA-D481444BC0DB}.ReleaseJvCache|Any CPU.ActiveCfg = ReleaseJvCache|Any CPU
+		{794DBF44-6A11-4952-B6DA-D481444BC0DB}.ReleaseJvCache|Any CPU.Build.0 = ReleaseJvCache|Any CPU
+		{794DBF44-6A11-4952-B6DA-D481444BC0DB}.ReleaseWSS3|Any CPU.ActiveCfg = Release|Any CPU
+		{794DBF44-6A11-4952-B6DA-D481444BC0DB}.ReleaseWSS3|Any CPU.Build.0 = Release|Any CPU
+		{6A7457C7-13A9-4DBC-9762-DBA473DC367F}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{6A7457C7-13A9-4DBC-9762-DBA473DC367F}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{6A7457C7-13A9-4DBC-9762-DBA473DC367F}.DebugJvCache|Any CPU.ActiveCfg = DebugWSS3|Any CPU
+		{6A7457C7-13A9-4DBC-9762-DBA473DC367F}.DebugJvCache|Any CPU.Build.0 = DebugWSS3|Any CPU
+		{6A7457C7-13A9-4DBC-9762-DBA473DC367F}.DebugWSS3|Any CPU.ActiveCfg = DebugWSS3|Any CPU
+		{6A7457C7-13A9-4DBC-9762-DBA473DC367F}.DebugWSS3|Any CPU.Build.0 = DebugWSS3|Any CPU
+		{6A7457C7-13A9-4DBC-9762-DBA473DC367F}.Enterprise.2x|Any CPU.ActiveCfg = Release.2x|Any CPU
+		{6A7457C7-13A9-4DBC-9762-DBA473DC367F}.Enterprise.2x|Any CPU.Build.0 = Release.2x|Any CPU
+		{6A7457C7-13A9-4DBC-9762-DBA473DC367F}.Enterprise.3x|Any CPU.ActiveCfg = Release.2x|Any CPU
+		{6A7457C7-13A9-4DBC-9762-DBA473DC367F}.Enterprise.3x|Any CPU.Build.0 = Release.2x|Any CPU
+		{6A7457C7-13A9-4DBC-9762-DBA473DC367F}.Release.2x|Any CPU.ActiveCfg = Release.2x|Any CPU
+		{6A7457C7-13A9-4DBC-9762-DBA473DC367F}.Release.2x|Any CPU.Build.0 = Release.2x|Any CPU
+		{6A7457C7-13A9-4DBC-9762-DBA473DC367F}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{6A7457C7-13A9-4DBC-9762-DBA473DC367F}.Release|Any CPU.Build.0 = Release|Any CPU
+		{6A7457C7-13A9-4DBC-9762-DBA473DC367F}.ReleaseJvCache.2x|Any CPU.ActiveCfg = Release.2x|Any CPU
+		{6A7457C7-13A9-4DBC-9762-DBA473DC367F}.ReleaseJvCache.2x|Any CPU.Build.0 = Release.2x|Any CPU
+		{6A7457C7-13A9-4DBC-9762-DBA473DC367F}.ReleaseJvCache|Any CPU.ActiveCfg = Release.2x|Any CPU
+		{6A7457C7-13A9-4DBC-9762-DBA473DC367F}.ReleaseJvCache|Any CPU.Build.0 = Release.2x|Any CPU
+		{6A7457C7-13A9-4DBC-9762-DBA473DC367F}.ReleaseWSS3|Any CPU.ActiveCfg = ReleaseWSS3|Any CPU
+		{6A7457C7-13A9-4DBC-9762-DBA473DC367F}.ReleaseWSS3|Any CPU.Build.0 = ReleaseWSS3|Any CPU
+		{CABCE9AA-38DC-4FE7-9E5B-8ECAB9907F3C}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{CABCE9AA-38DC-4FE7-9E5B-8ECAB9907F3C}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{CABCE9AA-38DC-4FE7-9E5B-8ECAB9907F3C}.DebugJvCache|Any CPU.ActiveCfg = DebugWSS3|Any CPU
+		{CABCE9AA-38DC-4FE7-9E5B-8ECAB9907F3C}.DebugJvCache|Any CPU.Build.0 = DebugWSS3|Any CPU
+		{CABCE9AA-38DC-4FE7-9E5B-8ECAB9907F3C}.DebugWSS3|Any CPU.ActiveCfg = DebugWSS3|Any CPU
+		{CABCE9AA-38DC-4FE7-9E5B-8ECAB9907F3C}.DebugWSS3|Any CPU.Build.0 = DebugWSS3|Any CPU
+		{CABCE9AA-38DC-4FE7-9E5B-8ECAB9907F3C}.Enterprise.2x|Any CPU.ActiveCfg = Release.2x|Any CPU
+		{CABCE9AA-38DC-4FE7-9E5B-8ECAB9907F3C}.Enterprise.2x|Any CPU.Build.0 = Release.2x|Any CPU
+		{CABCE9AA-38DC-4FE7-9E5B-8ECAB9907F3C}.Enterprise.3x|Any CPU.ActiveCfg = Release.2x|Any CPU
+		{CABCE9AA-38DC-4FE7-9E5B-8ECAB9907F3C}.Enterprise.3x|Any CPU.Build.0 = Release.2x|Any CPU
+		{CABCE9AA-38DC-4FE7-9E5B-8ECAB9907F3C}.Release.2x|Any CPU.ActiveCfg = Release.2x|Any CPU
+		{CABCE9AA-38DC-4FE7-9E5B-8ECAB9907F3C}.Release.2x|Any CPU.Build.0 = Release.2x|Any CPU
+		{CABCE9AA-38DC-4FE7-9E5B-8ECAB9907F3C}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{CABCE9AA-38DC-4FE7-9E5B-8ECAB9907F3C}.Release|Any CPU.Build.0 = Release|Any CPU
+		{CABCE9AA-38DC-4FE7-9E5B-8ECAB9907F3C}.ReleaseJvCache.2x|Any CPU.ActiveCfg = Release.2x|Any CPU
+		{CABCE9AA-38DC-4FE7-9E5B-8ECAB9907F3C}.ReleaseJvCache.2x|Any CPU.Build.0 = Release.2x|Any CPU
+		{CABCE9AA-38DC-4FE7-9E5B-8ECAB9907F3C}.ReleaseJvCache|Any CPU.ActiveCfg = Release.2x|Any CPU
+		{CABCE9AA-38DC-4FE7-9E5B-8ECAB9907F3C}.ReleaseJvCache|Any CPU.Build.0 = Release.2x|Any CPU
+		{CABCE9AA-38DC-4FE7-9E5B-8ECAB9907F3C}.ReleaseWSS3|Any CPU.ActiveCfg = ReleaseWSS3|Any CPU
+		{CABCE9AA-38DC-4FE7-9E5B-8ECAB9907F3C}.ReleaseWSS3|Any CPU.Build.0 = ReleaseWSS3|Any CPU
+	EndGlobalSection
+	GlobalSection(SolutionProperties) = preSolution
+		HideSolutionNode = FALSE
+	EndGlobalSection
+EndGlobal

@@ -1,0 +1,7 @@
+
+option java_outer_classname="KeyValuePairProtocol";
+package Alachisoft.NCache.Common.Protobuf;
+message KeyValuePair {
+	optional string key = 1;
+	optional string value = 2;
+}

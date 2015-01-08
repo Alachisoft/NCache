@@ -1,0 +1,34 @@
+<?xml version="1.0" encoding="UTF-8" standalone="yes"?>
+<configuration>
+  <cache-config config-id="0">
+    <cache-settings cache-name="myCache" alias="" inproc="False" last-modified="" auto-start="False">
+      <logging enable-logs="True" trace-errors="True" trace-notices="False" trace-warnings="False" trace-debug="False" log-path=""/>
+      <performance-counters enable-counters="True" snmp-port="0"/>
+      <cache-notifications item-remove="False" item-add="False" item-update="False" cache-clear="False"/>
+      <cleanup interval="15sec"/>
+      <storage type="heap" cache-size="250mb"/>
+      <eviction-policy enabled-evication="True" default-priority="normal" policy="lru" eviction-ratio="5%"/>
+      <cache-topology topology="local-cache">
+        <cluster-settings operation-timeout="60sec" stats-repl-interval="60sec" use-heart-beat="False">
+          <data-replication synchronous="False"/>
+          <cluster-connection-settings cluster-port="8701" port-range="1" connection-retries="2" connection-retry-interval="2secs" join_retry_count="24" join_retry_timeout="5"/>
+        </cluster-settings>
+        <cluster-settings operation-timeout="60sec" stats-repl-interval="600sec" use-heart-beat="False">
+          <data-replication synchronous="False"/>
+          <cluster-connection-settings cluster-port="8700" port-range="2" connection-retries="2" connection-retry-interval="2secs" join_retry_count="24" join_retry_timeout="5"/>
+        </cluster-settings>
+      </cache-topology>
+      <compression enable-compression="False" threshold="100kb"/>
+    </cache-settings>
+    <cache-deployment>
+      <servers>
+        <server-node ip="127.0.0.1" active-mirror-node="False"/>
+      </servers>
+    </cache-deployment>
+    <cache-deployment>
+      <servers>
+        <server-node ip="127.0.0.1" active-mirror-node="False"/>
+      </servers>
+    </cache-deployment>
+  </cache-config>
+</configuration>

@@ -1,0 +1,7 @@
+
+option java_outer_classname="ValueWithTypeProtocol";
+package Alachisoft.NCache.Common.Protobuf;
+message ValueWithType {
+   optional string value = 1;
+   optional string type = 2;
+}

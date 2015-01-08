@@ -1,0 +1,9 @@
+
+option java_outer_classname="ServerMappingProtocol";
+package Alachisoft.NCache.Common.Protobuf;
+message ServerMapping {
+optional string publicIp = 1;
+optional int32 publicPort = 2;
+optional string privateIp = 3;
+optional int32 privatePort = 4;
+}

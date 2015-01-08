@@ -1,0 +1,9 @@
+
+option java_outer_classname="IsLockedCommandProtocol";
+package Alachisoft.NCache.Common.Protobuf;
+message IsLockedCommand 
+{
+	optional string key = 1;
+	optional string lockId = 2;
+	optional int64 requestId = 3;
+}

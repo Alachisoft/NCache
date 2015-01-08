@@ -1,0 +1,8 @@
+import "Commands/ProductVersion.proto";
+option java_outer_classname="GetProductVersionResponseProtocol";
+package Alachisoft.NCache.Common.Protobuf;
+
+message GetProductVersionResponse {
+	required ProductVersion productVersion=1;
+	
+}

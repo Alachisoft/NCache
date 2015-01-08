@@ -1,0 +1,13 @@
+﻿<?xml version="1.0" encoding="utf-8" ?>
+<hibernate-mapping xmlns="urn:nhibernate-mapping-2.2">
+  <class name="nhibernator.BLL.OrderDetails, nhibernator" table="[Order Details]">
+    <cache usage="nonstrict-read-write"/>
+    <composite-id>
+      <key-property name="ProductId" column="ProductID" type="int">
+      </key-property>
+      <key-property name="OrderId" column="OrderID" type="int">
+      </key-property>
+    </composite-id>
+    <!--<many-to-one name="OCustomer" class="nhibernator.BLL.Customer,nhibernator" column="CustomerID"/>-->
+  </class>
+</hibernate-mapping>

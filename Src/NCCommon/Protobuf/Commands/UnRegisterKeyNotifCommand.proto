@@ -1,0 +1,10 @@
+
+option java_outer_classname="UnRegisterKeyNotifCommandProtocol";
+package Alachisoft.NCache.Common.Protobuf;
+message UnRegisterKeyNotifCommand 
+{
+	optional sint32 updateCallbackId = 1;
+	optional sint32 removeCallbackId = 2;
+	optional string key = 3;
+	optional int64 requestId = 4;
+}

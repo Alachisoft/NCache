@@ -1,0 +1,10 @@
+
+option java_outer_classname="UnlockCommandProtocol";
+package Alachisoft.NCache.Common.Protobuf;
+message UnlockCommand 
+{
+	optional string key = 1;
+	optional string lockId = 2;
+	optional bool preemptive = 3;
+	optional int64 requestId = 4;
+}

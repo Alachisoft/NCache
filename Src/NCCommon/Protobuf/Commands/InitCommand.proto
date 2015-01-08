@@ -1,0 +1,14 @@
+import "ProductVersion.proto";
+option java_outer_classname="InitCommandProtocol";
+package Alachisoft.NCache.Common.Protobuf;
+message InitCommand {
+	optional string cacheId = 1;
+	optional int64 requestId = 2;
+	optional string clientId = 3;
+	optional string userId = 4 [default="dummyUser"];
+	optional string pwd = 5 [default="dummypassword"];
+	optional int32 clientVersion = 6;
+	optional string clientIP = 7;
+	optional ProductVersion productVersion = 8;
+
+}

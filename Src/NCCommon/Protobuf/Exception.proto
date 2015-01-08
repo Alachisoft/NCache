@@ -1,0 +1,22 @@
+
+option java_outer_classname="ExceptionProtocol";
+package Alachisoft.NCache.Common.Protobuf;
+message Exception 
+{
+	enum Type 
+	{
+		OPERATIONFAILED = 0;
+        AGGREGATE = 1;
+        CONFIGURATION = 2;
+        GENERALFAILURE = 3;
+        NOTSUPPORTED = 4;
+        MAX_CLIENTS_REACHED = 5;
+		TYPE_INDEX_NOT_FOUND = 6;
+		ATTRIBUTE_INDEX_NOT_FOUND = 7;
+		STATE_TRANSFER_EXCEPTION = 8;
+	}
+	
+	optional Type type = 1;
+	optional string message = 2;
+	optional string exception = 3;
+}

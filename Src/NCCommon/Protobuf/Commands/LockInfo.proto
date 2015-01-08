@@ -1,0 +1,8 @@
+
+option java_outer_classname="LockInfoProtocol";
+package Alachisoft.NCache.Common.Protobuf;
+message LockInfo {
+	optional int32 lockAccessType = 1;
+	optional string lockId = 2;
+	optional int64 lockTimeout = 3;
+}

@@ -1,0 +1,6 @@
+
+option java_outer_classname="GetTypeInfoMapCommandProtocol";
+package Alachisoft.NCache.Common.Protobuf;
+message GetTypeInfoMapCommand {
+	optional int64 requestId = 1;
+}

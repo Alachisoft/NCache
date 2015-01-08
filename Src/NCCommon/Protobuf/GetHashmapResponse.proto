@@ -1,0 +1,11 @@
+import "KeyValuePair.proto";
+
+
+option java_outer_classname="GetHashmapResponseProtocol";
+package Alachisoft.NCache.Common.Protobuf;
+message GetHashmapResponse {
+	optional int64 viewId = 1;
+	repeated string members = 2;
+	repeated KeyValuePair keyValuePair = 3;
+	optional int32 bucketSize = 4;
+}

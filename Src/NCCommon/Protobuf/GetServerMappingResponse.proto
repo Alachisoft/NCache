@@ -1,0 +1,8 @@
+import "Commands/ServerMapping.proto";
+
+option java_outer_classname="GetServerMappingResponseProtocol";
+package Alachisoft.NCache.Common.Protobuf;
+
+message GetServerMappingResponse {
+	repeated ServerMapping serverMapping = 1;
+}

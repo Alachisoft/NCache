@@ -1,0 +1,8 @@
+
+option java_outer_classname="GetLoggingInfoResponseProtocol";
+package Alachisoft.NCache.Common.Protobuf;
+message GetLoggingInfoResponse 
+{
+	optional bool errorsEnabled = 1;
+	optional bool detailedErrorsEnabled = 2;
+}

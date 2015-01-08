@@ -1,0 +1,8 @@
+
+option java_outer_classname="BulkGetCommandProtocol";
+package Alachisoft.NCache.Common.Protobuf;
+message BulkGetCommand {
+	repeated string keys = 1;
+	optional int64 requestId = 2;
+	optional int32 flag = 3;
+}

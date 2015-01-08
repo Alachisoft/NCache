@@ -1,0 +1,10 @@
+
+import "ProductVersion.proto";
+option java_outer_classname="GetOptimalServerCommandProtocol";
+package Alachisoft.NCache.Common.Protobuf;
+message GetOptimalServerCommand {
+	optional int64 requestId = 1;
+	optional string cacheId = 2;
+	optional bool isDotnetClient = 3 [default=true];
+	optional ProductVersion  productVersion = 4;
+}

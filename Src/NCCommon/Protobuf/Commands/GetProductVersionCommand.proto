@@ -1,0 +1,9 @@
+option java_outer_classname="GetProductVersionCommandProtocol";
+package Alachisoft.NCache.Common.Protobuf;
+message GetProductVersionCommand
+{
+	optional int64 requestId = 1;
+	optional string userId = 2 [default="dummyUser"];
+	optional string pwd = 3 [default="dummypassword"];
+	
+}

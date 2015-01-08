@@ -1,0 +1,6 @@
+
+option java_outer_classname="CountCommandProtocol";
+package Alachisoft.NCache.Common.Protobuf;
+message CountCommand {
+	optional int64 requestId = 1;
+}

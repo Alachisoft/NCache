@@ -1,0 +1,10 @@
+import "ValueWithType.proto";
+
+
+option java_outer_classname="KeyValueProtocol";
+package Alachisoft.NCache.Common.Protobuf;
+
+message KeyValue {
+	optional string key = 1;
+	repeated ValueWithType value = 2;
+}

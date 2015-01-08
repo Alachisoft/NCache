@@ -1,0 +1,23 @@
+import "QueryInfo.proto";
+import "ObjectQueryInfo.proto";
+
+option java_package = "com.alachisoft.ncache.protobuf";
+option java_outer_classname="AddCommandProtocol";
+package Alachisoft.NCache.Common.Protobuf;
+message AddCommand {	
+	optional string key = 1;
+	optional int64 requestId = 2;
+	optional sint32 updateCallbackId = 3;
+	optional sint32 removeCallbackId = 4;
+	optional int32 priority = 5;
+	optional int64 absExpiration = 6;
+	optional int64 sldExpiration = 7;
+	optional QueryInfo queryInfo = 8;
+	optional int32 flag = 9;
+	repeated bytes data = 10;
+	optional ObjectQueryInfo objectQueryInfo = 11;		
+	repeated bytes objectQueryInfoEncrypted = 12;
+	optional sint32 updateDataFilter = 13 [default = -1];
+	optional sint32 removeDataFilter = 14 [default = -1];
+
+}

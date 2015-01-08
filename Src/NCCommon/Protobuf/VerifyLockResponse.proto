@@ -1,0 +1,9 @@
+
+option java_outer_classname="VerifyLockResponseProtocol";
+package Alachisoft.NCache.Common.Protobuf;
+message VerifyLockResponse 
+{
+	optional string lockId = 1;
+	optional int64 lockExpiration = 2;
+	optional bool success = 3;
+}

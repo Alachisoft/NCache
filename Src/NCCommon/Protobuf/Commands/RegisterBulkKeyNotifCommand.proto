@@ -1,0 +1,12 @@
+
+option java_outer_classname="RegisterBulkKeyNotifCommandProtocol";
+package Alachisoft.NCache.Common.Protobuf;
+message RegisterBulkKeyNotifCommand 
+{
+	optional sint32 removeCallbackId = 1;
+	optional sint32 updateCallbackId = 2;
+	repeated string keys = 3;
+	optional int64 requestId = 4;
+	optional bool notifyOnExpiration = 5 [default=true];
+	optional int32 datafilter = 6 [default = -1];
+}

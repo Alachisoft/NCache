@@ -1,0 +1,6 @@
+
+option java_outer_classname="GetTypeMapResponseProtocol";
+package Alachisoft.NCache.Common.Protobuf;
+message GetTypeMapResponse {
+	optional string map = 1;
+}

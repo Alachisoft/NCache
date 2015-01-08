@@ -1,0 +1,6 @@
+
+option java_outer_classname="GetThresholdSizeCommandProtocol";
+package Alachisoft.NCache.Common.Protobuf;
+message GetThresholdSizeCommand {
+	optional int64 requestId = 1;
+}

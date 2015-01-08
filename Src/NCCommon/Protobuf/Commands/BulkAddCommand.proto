@@ -1,0 +1,9 @@
+import "AddCommand.proto";
+
+
+option java_outer_classname="BulkAddCommandProtocol";
+package Alachisoft.NCache.Common.Protobuf;
+message BulkAddCommand {
+	optional int64 requestId = 1;
+	repeated AddCommand addCommand = 2;	
+}

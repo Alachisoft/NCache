@@ -1,0 +1,5 @@
+
+option java_outer_classname="RaiseCustomEventResponseProtocol";
+package Alachisoft.NCache.Common.Protobuf;
+message RaiseCustomEventResponse {
+}

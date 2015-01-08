@@ -1,0 +1,6 @@
+
+option java_outer_classname="ContainResponseProtocol";
+package Alachisoft.NCache.Common.Protobuf;
+message ContainResponse {
+	optional bool exists = 1;
+}

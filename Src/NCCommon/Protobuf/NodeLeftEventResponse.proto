@@ -1,0 +1,12 @@
+import "EventId.proto";
+
+option java_outer_classname="NodeLeftEventResponseProtocol";
+package Alachisoft.NCache.Common.Protobuf;
+message NodeLeftEventResponse 
+{
+	optional string clusterIp = 1;
+	optional string clusterPort = 2;
+	optional string serverIp = 3;
+	optional string serverPort = 4;
+	optional EventId eventId = 5;
+}

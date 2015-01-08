@@ -1,0 +1,414 @@
+<?xml version="1.0" encoding="utf-8"?>
+<root>
+  <!-- 
+    Microsoft ResX Schema 
+    
+    Version 2.0
+    
+    The primary goals of this format is to allow a simple XML format 
+    that is mostly human readable. The generation and parsing of the 
+    various data types are done through the TypeConverter classes 
+    associated with the data types.
+    
+    Example:
+    
+    ... ado.net/XML headers & schema ...
+    <resheader name="resmimetype">text/microsoft-resx</resheader>
+    <resheader name="version">2.0</resheader>
+    <resheader name="reader">System.Resources.ResXResourceReader, System.Windows.Forms, ...</resheader>
+    <resheader name="writer">System.Resources.ResXResourceWriter, System.Windows.Forms, ...</resheader>
+    <data name="Name1"><value>this is my long string</value><comment>this is a comment</comment></data>
+    <data name="Color1" type="System.Drawing.Color, System.Drawing">Blue</data>
+    <data name="Bitmap1" mimetype="application/x-microsoft.net.object.binary.base64">
+        <value>[base64 mime encoded serialized .NET Framework object]</value>
+    </data>
+    <data name="Icon1" type="System.Drawing.Icon, System.Drawing" mimetype="application/x-microsoft.net.object.bytearray.base64">
+        <value>[base64 mime encoded string representing a byte array form of the .NET Framework object]</value>
+        <comment>This is a comment</comment>
+    </data>
+                
+    There are any number of "resheader" rows that contain simple 
+    name/value pairs.
+    
+    Each data row contains a name, and value. The row also contains a 
+    type or mimetype. Type corresponds to a .NET class that support 
+    text/value conversion through the TypeConverter architecture. 
+    Classes that don't support this are serialized and stored with the 
+    mimetype set.
+    
+    The mimetype is used for serialized objects, and tells the 
+    ResXResourceReader how to depersist the object. This is currently not 
+    extensible. For a given mimetype the value must be set accordingly:
+    
+    Note - application/x-microsoft.net.object.binary.base64 is the format 
+    that the ResXResourceWriter will generate, however the reader can 
+    read any of the formats listed below.
+    
+    mimetype: application/x-microsoft.net.object.binary.base64
+    value   : The object must be serialized with 
+            : System.Runtime.Serialization.Formatters.Binary.BinaryFormatter
+            : and then encoded with base64 encoding.
+    
+    mimetype: application/x-microsoft.net.object.soap.base64
+    value   : The object must be serialized with 
+            : System.Runtime.Serialization.Formatters.Soap.SoapFormatter
+            : and then encoded with base64 encoding.
+
+    mimetype: application/x-microsoft.net.object.bytearray.base64
+    value   : The object must be serialized into a byte array 
+            : using a System.ComponentModel.TypeConverter
+            : and then encoded with base64 encoding.
+    -->
+  <xsd:schema id="root" xmlns="" xmlns:xsd="http://www.w3.org/2001/XMLSchema" xmlns:msdata="urn:schemas-microsoft-com:xml-msdata">
+    <xsd:import namespace="http://www.w3.org/XML/1998/namespace" />
+    <xsd:element name="root" msdata:IsDataSet="true">
+      <xsd:complexType>
+        <xsd:choice maxOccurs="unbounded">
+          <xsd:element name="metadata">
+            <xsd:complexType>
+              <xsd:sequence>
+                <xsd:element name="value" type="xsd:string" minOccurs="0" />
+              </xsd:sequence>
+              <xsd:attribute name="name" use="required" type="xsd:string" />
+              <xsd:attribute name="type" type="xsd:string" />
+              <xsd:attribute name="mimetype" type="xsd:string" />
+              <xsd:attribute ref="xml:space" />
+            </xsd:complexType>
+          </xsd:element>
+          <xsd:element name="assembly">
+            <xsd:complexType>
+              <xsd:attribute name="alias" type="xsd:string" />
+              <xsd:attribute name="name" type="xsd:string" />
+            </xsd:complexType>
+          </xsd:element>
+          <xsd:element name="data">
+            <xsd:complexType>
+              <xsd:sequence>
+                <xsd:element name="value" type="xsd:string" minOccurs="0" msdata:Ordinal="1" />
+                <xsd:element name="comment" type="xsd:string" minOccurs="0" msdata:Ordinal="2" />
+              </xsd:sequence>
+              <xsd:attribute name="name" type="xsd:string" use="required" msdata:Ordinal="1" />
+              <xsd:attribute name="type" type="xsd:string" msdata:Ordinal="3" />
+              <xsd:attribute name="mimetype" type="xsd:string" msdata:Ordinal="4" />
+              <xsd:attribute ref="xml:space" />
+            </xsd:complexType>
+          </xsd:element>
+          <xsd:element name="resheader">
+            <xsd:complexType>
+              <xsd:sequence>
+                <xsd:element name="value" type="xsd:string" minOccurs="0" msdata:Ordinal="1" />
+              </xsd:sequence>
+              <xsd:attribute name="name" type="xsd:string" use="required" />
+            </xsd:complexType>
+          </xsd:element>
+        </xsd:choice>
+      </xsd:complexType>
+    </xsd:element>
+  </xsd:schema>
+  <resheader name="resmimetype">
+    <value>text/microsoft-resx</value>
+  </resheader>
+  <resheader name="version">
+    <value>2.0</value>
+  </resheader>
+  <resheader name="reader">
+    <value>System.Resources.ResXResourceReader, System.Windows.Forms, Version=2.0.0.0, Culture=neutral, PublicKeyToken=b77a5c561934e089</value>
+  </resheader>
+  <resheader name="writer">
+    <value>System.Resources.ResXResourceWriter, System.Windows.Forms, Version=2.0.0.0, Culture=neutral, PublicKeyToken=b77a5c561934e089</value>
+  </resheader>
+  <data name="host" xml:space="preserve">
+    <value>host</value>
+  </data>
+  <data name="null host" xml:space="preserve">
+    <value>argument host cannot be null</value>
+  </data>
+  <data name="connect timeout" xml:space="preserve">
+    <value>Could not connect for $$timeout$$ milliseconds</value>
+  </data>
+  <data name="true close socket" xml:space="preserve">
+    <value>Closing socket for real: $$Socket$$, lifetime: $$Lifespan$$</value>
+  </data>
+  <data name="socket already closed" xml:space="preserve">
+    <value>Socket or its streams already null in trueClose call</value>
+  </data>
+  <data name="error closing input stream" xml:space="preserve">
+    <value>Error closing input stream for socket: $$ToString$$ for host: $$Host$$</value>
+  </data>
+  <data name="error closing output stream" xml:space="preserve">
+    <value>Error closing output stream for socket: $$ToString$$ for host: $$Host$$</value>
+  </data>
+  <data name="error closing socket" xml:space="preserve">
+    <value>error closing socket: $$ToString$$ for host: $$Host$$</value>
+  </data>
+  <data name="close socket" xml:space="preserve">
+    <value>Marking socket $$ToString$$ as closed and available to return to avail pool</value>
+  </data>
+  <data name="read closed socket" xml:space="preserve">
+    <value>Attempting to read from closed socket</value>
+  </data>
+  <data name="closing dead stream" xml:space="preserve">
+    <value>Stream appears to be dead, so closing it down</value>
+  </data>
+  <data name="write closed socket" xml:space="preserve">
+    <value>Attempting to write to closed socket</value>
+  </data>
+  <data name="connect thread connect" xml:space="preserve">
+    <value>Socket creation thread leaving for host: $$Host$$</value>
+  </data>
+  <data name="default instance" xml:space="preserve">
+    <value>default</value>
+  </data>
+  <data name="initializing initialized pool" xml:space="preserve">
+    <value>Trying to initialize an already initialized pool</value>
+  </data>
+  <data name="initializing pool" xml:space="preserve">
+    <value>Initializing pool with following settings: \n\tinitial connections: $$InitConnections$$\n\tminimum connections: $$MinConnections$$\n\tmaximum connections: $$MaxConnections$$\n</value>
+  </data>
+  <data name="initialize with no servers" xml:space="preserve">
+    <value>Trying to initialize with no servers</value>
+  </data>
+  <data name="create initial connections" xml:space="preserve">
+    <value>Creating initial connections $$InitConns$$ for host: $$Servers[i]$$</value>
+  </data>
+  <data name="failed to connect" xml:space="preserve">
+    <value>Failed to create connection to: $$Servers[i]$$ -- only $$j$$ created</value>
+  </data>
+  <data name="created and added socket" xml:space="preserve">
+    <value>Created and added socket: $$ToString$$ for host $$Servers[i]$$</value>
+  </data>
+  <data name="failed to get socket" xml:space="preserve">
+    <value>Failed to get SockIO obj for: $$Host$$ -- new socket is not connected</value>
+  </data>
+  <data name="failed to close socket on host" xml:space="preserve">
+    <value>Failed to close SockIO obj for server: $$Host$$</value>
+  </data>
+  <data name="ignoring dead host" xml:space="preserve">
+    <value>Ignoring dead host: $$Host$$ for $$Expire$$ms</value>
+  </data>
+  <data name="created socket" xml:space="preserve">
+    <value>Created socket $$ToString$$ for host: $$Host$$</value>
+  </data>
+  <data name="cache socket pick" xml:space="preserve">
+    <value>Cache socket pick $$Key$$ $$HashCode$$</value>
+  </data>
+  <data name="null key" xml:space="preserve">
+    <value>null or empty key given</value>
+  </data>
+  <data name="get socket from uninitialized pool" xml:space="preserve">
+    <value>Attempting to get SockIO from uninitialized pool!</value>
+  </data>
+  <data name="cache choose" xml:space="preserve">
+    <value>Cache choose $$Bucket$$ for $$Key$$</value>
+  </data>
+  <data name="move socket" xml:space="preserve">
+    <value>Moving socket for host $$Host$$ to busy pool ... socket: $$Socket$$</value>
+  </data>
+  <data name="socket not connected" xml:space="preserve">
+    <value>Socket in avail pool is not connected: $$Socket$$ for host: $$Host$$</value>
+  </data>
+  <data name="creating sockets" xml:space="preserve">
+    <value>Creating $$Create$$ new SockIO objects</value>
+  </data>
+  <data name="failed to true close" xml:space="preserve">
+    <value>Failed to TrueClose socket: $$ToString$$ for host: $$Host$$</value>
+  </data>
+  <data name="start socket pool shutdown" xml:space="preserve">
+    <value>SockIOPool shutting down...</value>
+  </data>
+  <data name="end socket pool shutdown" xml:space="preserve">
+    <value>SockIOPool finished shutting down.</value>
+  </data>
+  <data name="main thread running" xml:space="preserve">
+    <value>Main thread already running</value>
+  </data>
+  <data name="start self maintenance" xml:space="preserve">
+    <value>Starting self maintenance....</value>
+  </data>
+  <data name="size of available pool" xml:space="preserve">
+    <value>Size of avail pool for host $$Host$$ = $$Sockets$$</value>
+  </data>
+  <data name="need to create new sockets" xml:space="preserve">
+    <value>Need to create $$Need$$ new sockets for pool for host: $$Host$$</value>
+  </data>
+  <data name="need to remove spare sockets" xml:space="preserve">
+    <value>Need to remove $$NeedToClose$$ spare sockets for pool for host: $$Host$$</value>
+  </data>
+  <data name="removing stale entry" xml:space="preserve">
+    <value>Removing stale entry from pool as it is past its idle timeout and pool is over max spare</value>
+  </data>
+  <data name="size of busy pool" xml:space="preserve">
+    <value>Size of busy pool for host $$Host$$ = $$Sockets$$</value>
+  </data>
+  <data name="removing hung connection" xml:space="preserve">
+    <value>Removing potentially hung connection from busy pool ... socket in pool for $$Time$$ms</value>
+  </data>
+  <data name="end self maintenance" xml:space="preserve">
+    <value>Ending self maintenance.</value>
+  </data>
+  <data name="maintenance thread choked" xml:space="preserve">
+    <value>Maintenance thread choked.</value>
+  </data>
+  <data name="null key delete" xml:space="preserve">
+    <value>null value for key passed to delete()</value>
+  </data>
+  <data name="delete success" xml:space="preserve">
+    <value>Deletion of key: $$Key$$ from cache was a success</value>
+  </data>
+  <data name="delete key not found" xml:space="preserve">
+    <value>Deletion of key: $$Key$$ from cache failed as the key was not found</value>
+  </data>
+  <data name="delete key error" xml:space="preserve">
+    <value>Error deleting key: $$Key$$.  Server response: $$Line$$</value>
+  </data>
+  <data name="delete IOException" xml:space="preserve">
+    <value>exception thrown while writing bytes to server on delete</value>
+  </data>
+  <data name="failed to close some socket" xml:space="preserve">
+    <value>Failed to close socket : $$Socket$$</value>
+  </data>
+  <data name="set key null" xml:space="preserve">
+    <value>Key is null or cmd is null/empty for set()</value>
+  </data>
+  <data name="set store data as string" xml:space="preserve">
+    <value>Storing data as a string for key: $$Key$$ for class: $$Class$$</value>
+  </data>
+  <data name="set invalid encoding" xml:space="preserve">
+    <value>Invalid encoding type used: $$Encoding$$</value>
+  </data>
+  <data name="set store with native handler" xml:space="preserve">
+    <value>Storing with native handler...</value>
+  </data>
+  <data name="set failed to native handle object" xml:space="preserve">
+    <value>Failed to native handle obj</value>
+  </data>
+  <data name="set serializing" xml:space="preserve">
+    <value>Serializing for key: $$Key$$ for class: $$Class$$</value>
+  </data>
+  <data name="set failed to serialize" xml:space="preserve">
+    <value>Failed to serialize obj: $$Object$$</value>
+  </data>
+  <data name="set trying to compress data" xml:space="preserve">
+    <value>Trying to compress data</value>
+  </data>
+  <data name="set size prior" xml:space="preserve">
+    <value>Size prior to compression: $$Size$$</value>
+  </data>
+  <data name="set compression success" xml:space="preserve">
+    <value>Compression succeeded, size after: $$Size$$</value>
+  </data>
+  <data name="set compression failure" xml:space="preserve">
+    <value>IOException while compressing stream.  Storing data uncompressed.</value>
+  </data>
+  <data name="set memcached command result" xml:space="preserve">
+    <value>memcached cmd (result code): $$Cmd$$ ($$Line$$)</value>
+  </data>
+  <data name="set not stored" xml:space="preserve">
+    <value>Data not stored in cache for key: $$Key$$</value>
+  </data>
+  <data name="set error" xml:space="preserve">
+    <value>Error storing data in cache for key: $$Key$$ -- length: $$Size$$. Server response: $$Line$$</value>
+  </data>
+  <data name="set IOException" xml:space="preserve">
+    <value>exception thrown while writing bytes to server on set()</value>
+  </data>
+  <data name="getcounter null key" xml:space="preserve">
+    <value>null key for getCounter()</value>
+  </data>
+  <data name="getcounter counter not found" xml:space="preserve">
+    <value>Counter not found at key: $$Key$$</value>
+  </data>
+  <data name="incr-decr command" xml:space="preserve">
+    <value>memcached incr/decr command: $$Cmd$$</value>
+  </data>
+  <data name="incr-decr key not found" xml:space="preserve">
+    <value>Key not found to incr/decr for key: $$Key$$</value>
+  </data>
+  <data name="incr-decr key error" xml:space="preserve">
+    <value>Error incr/decr key: $$Key$$</value>
+  </data>
+  <data name="incr-decr IOException" xml:space="preserve">
+    <value>Exception thrown while writing bytes to server on incr/decr</value>
+  </data>
+  <data name="get memcached command" xml:space="preserve">
+    <value>Memcached get command: $$Cmd$$</value>
+  </data>
+  <data name="get memcached result" xml:space="preserve">
+    <value>memcached: got back $$Results$$ results</value>
+  </data>
+  <data name="get IOException" xml:space="preserve">
+    <value>Exception thrown while trying to get object from cache for key: $$Key$$</value>
+  </data>
+  <data name="getmultiple memcached command" xml:space="preserve">
+    <value>memcached GetMultiple cmd:  $$Cmd$$</value>
+  </data>
+  <data name="getmultiple IOException" xml:space="preserve">
+    <value>Exception thrown while getting from cache on GetMultiple</value>
+  </data>
+  <data name="getmultiple results" xml:space="preserve">
+    <value>memcached: got back $$Results$$ results</value>
+  </data>
+  <data name="getmultiple socket count" xml:space="preserve">
+    <value>GetMultiple get socket count : $$Sockets$$</value>
+  </data>
+  <data name="loaditems line" xml:space="preserve">
+    <value>Load items line: $$Line$$</value>
+  </data>
+  <data name="loaditems header" xml:space="preserve">
+    <value>\tkey: $$Key$$; flags: $$Flags$$; length: $$Length$$</value>
+  </data>
+  <data name="loaditems uncompression IOException" xml:space="preserve">
+    <value>IOException thrown while trying to uncompress input stream for key: $$Key$$</value>
+  </data>
+  <data name="loaditems retrieve as string" xml:space="preserve">
+    <value>Retrieving object and stuffing into a string.</value>
+  </data>
+  <data name="loaditems deserialize error" xml:space="preserve">
+    <value>Exception thrown while trying to deserialize for key: $$Key$$</value>
+  </data>
+  <data name="loaditems deserializing" xml:space="preserve">
+    <value>Deserializing $$Class$$</value>
+  </data>
+  <data name="loaditems SerializationException" xml:space="preserve">
+    <value>SerializationException thrown while trying to deserialize for key: $$Key$$</value>
+  </data>
+  <data name="loaditems finished" xml:space="preserve">
+    <value>Finished reading from cache server</value>
+  </data>
+  <data name="unable to get socket pool" xml:space="preserve">
+    <value>Unable to get SockIOPool instance</value>
+  </data>
+  <data name="flushall no servers" xml:space="preserve">
+    <value>No servers to flush</value>
+  </data>
+  <data name="unable to connect" xml:space="preserve">
+    <value>Unable to get connection to: $$Server$$</value>
+  </data>
+  <data name="flushall IOException" xml:space="preserve">
+    <value>Exception thrown while flushing servers</value>
+  </data>
+  <data name="stats no servers" xml:space="preserve">
+    <value>No servers to check stats</value>
+  </data>
+  <data name="stats line" xml:space="preserve">
+    <value>Line: $$Line$$</value>
+  </data>
+  <data name="stats success" xml:space="preserve">
+    <value>\tkey: $$Key$$; value: $$Value$$</value>
+  </data>
+  <data name="stats finished" xml:space="preserve">
+    <value>Finished reading from cache server</value>
+  </data>
+  <data name="stats IOException" xml:space="preserve">
+    <value>Exception thrown while getting stats from server</value>
+  </data>
+  <data name="parameter cannot be null" xml:space="preserve">
+    <value>parameter cannot be null</value>
+  </data>
+  <data name="set success" xml:space="preserve">
+    <value>Data stored successfully with key: $$Key$$</value>
+  </data>
+  <data name="failed to close socket" xml:space="preserve">
+    <value>Error occurred while trying to close socket.</value>
+  </data>
+</root>

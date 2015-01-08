@@ -1,0 +1,8 @@
+import "KeyValuePackageResponse.proto";
+
+
+option java_outer_classname="BulkRemoveResponseProtocol";
+package Alachisoft.NCache.Common.Protobuf;
+message BulkRemoveResponse {
+	optional KeyValuePackageResponse keyValuePackage = 1;
+}

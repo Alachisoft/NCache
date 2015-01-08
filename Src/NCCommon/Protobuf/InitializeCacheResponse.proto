@@ -1,0 +1,5 @@
+option java_outer_classname="InitializeCacheResponseProtocol";
+package Alachisoft.NCache.Common.Protobuf;
+message InitializeCacheResponse {
+	optional string cacheType = 1;
+}

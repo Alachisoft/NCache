@@ -1,0 +1,14 @@
+import "EventId.proto";
+
+option java_outer_classname="ItemRemoveCallbackResponseProtocol";
+package Alachisoft.NCache.Common.Protobuf;
+message ItemRemoveCallbackResponse 
+{
+	optional string key = 1;
+	optional int32 itemRemoveReason = 2;
+	optional int32 flag = 3;
+	repeated bytes value = 4;
+	optional sint32 callbackId = 5;
+	optional EventId eventId = 6;
+	optional sint32 dataFilter = 7;
+}

@@ -1,0 +1,7 @@
+
+option java_outer_classname="GetOptimalServerResponseProtocol";
+package Alachisoft.NCache.Common.Protobuf;
+message GetOptimalServerResponse {
+	optional string server = 1;
+	optional int32 port = 2;
+}

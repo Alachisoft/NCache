@@ -1,0 +1,8 @@
+option java_outer_classname="EnumerationPointerProtocol";
+package Alachisoft.NCache.Common.Protobuf;
+
+message EnumerationPointer {
+	optional sint32 chunkId = 1;
+	optional string id = 2;
+	optional bool isDisposed = 3; 
+}

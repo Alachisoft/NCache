@@ -1,0 +1,9 @@
+
+option java_outer_classname="LockCommandProtocol";
+package Alachisoft.NCache.Common.Protobuf;
+message LockCommand 
+{
+	optional string key = 1;
+	optional int64 lockTimeout = 2;
+	optional int64 requestId = 3;
+}

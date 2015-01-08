@@ -1,0 +1,10 @@
+import "Exception.proto";
+
+
+option java_outer_classname="KeyExceptionPackageResponseProtocol";
+package Alachisoft.NCache.Common.Protobuf;
+message KeyExceptionPackageResponse 
+{
+	repeated string keys = 1;
+	repeated Exception exceptions = 2;	
+}

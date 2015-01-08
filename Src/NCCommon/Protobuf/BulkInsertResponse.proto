@@ -1,0 +1,9 @@
+import "KeyExceptionPackageResponse.proto";
+
+
+option java_outer_classname="BulkInsertResponseProtocol";
+package Alachisoft.NCache.Common.Protobuf;
+message BulkInsertResponse 
+{
+	optional KeyExceptionPackageResponse keyExceptionPackage = 1;
+}

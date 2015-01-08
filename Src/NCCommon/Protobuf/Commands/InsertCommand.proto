@@ -1,0 +1,23 @@
+import "QueryInfo.proto";
+import "ObjectQueryInfo.proto";
+
+option java_outer_classname="InsertCommandProtocol";
+package Alachisoft.NCache.Common.Protobuf;
+message InsertCommand {
+	optional string key = 1;
+	optional int64 requestId = 2;
+	optional sint32 updateCallbackId = 3;
+	optional sint32 removeCallbackId = 4;
+	optional int32 priority = 5;
+	optional int64 absExpiration = 6;
+	optional int64 sldExpiration = 7;
+	optional int32 flag = 8;
+	optional string lockId = 9;
+	optional int32 lockAccessType = 10; 
+	optional QueryInfo queryInfo = 11;
+	repeated bytes data = 12;
+	optional ObjectQueryInfo objectQueryInfo = 13;		
+	repeated bytes objectQueryInfoEncrypted = 14; 
+	optional sint32 updateDataFilter = 15 [default = -1];
+	optional sint32 removeDataFilter = 16 [default = -1];
+}

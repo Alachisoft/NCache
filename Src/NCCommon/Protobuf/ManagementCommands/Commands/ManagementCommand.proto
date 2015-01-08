@@ -1,0 +1,19 @@
+option java_outer_classname="NCManagementCommandProtocol";
+package Alachisoft.NCache.Common.Protobuf;
+
+message ManagementCommand 
+{	
+	optional int64 requestId = 1;
+	optional int32 commandVersion = 2 [default=0];
+	optional string methodName = 3;
+	optional int32 overload = 4;
+	optional bytes arguments = 5;
+	optional string objectName = 6;	
+	optional SourceType source = 7;
+	
+	enum SourceType 
+	{
+		TOOL = 1;
+		MANAGER = 2;
+	}	
+}

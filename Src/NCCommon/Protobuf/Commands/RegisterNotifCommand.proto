@@ -1,0 +1,10 @@
+
+option java_outer_classname="RegisterNotifCommandProtocol";
+package Alachisoft.NCache.Common.Protobuf;
+message RegisterNotifCommand {
+	optional int64 requestId = 1;
+	optional int32 notifMask = 2;
+	optional int32 eventType = 3;
+	optional sint32 datafilter = 4;
+	optional int32 sequence = 5 [default = -1];
+}

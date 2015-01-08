@@ -1,0 +1,22 @@
+﻿<?xml version="1.0" encoding="utf-8" ?>
+<hibernate-mapping xmlns="urn:nhibernate-mapping-2.2">
+	<class name="nhibernator.BLL.Order, nhibernator" table="Orders">
+    <cache usage="nonstrict-read-write" region ="default "/>
+		<id name="OrderID" type="Int32" unsaved-value="0"> 
+			<generator class="assigned" /> 
+		</id> 
+		<property name="CustomerID" length="20"/> 
+		<property name="OrderDate" type="DateTime"/> 
+		<property name="ShippedDate" type="DateTime"/>
+		<property name="ShipName"/>
+		<property name="ShipAddress"/>
+		<property name="ShipCity"/>
+		<property name="ShipRegion"/>
+		<property name="ShipPostalCode"/>
+		<set name="Products" table="[Order Details]">
+			<key column="OrderID"/>
+			<many-to-many class="nhibernator.BLL.Product, nhibernator" column="ProductID"/>
+		</set>
+		<!--<many-to-one name="OCustomer" class="nhibernator.BLL.Customer,nhibernator" column="CustomerID"/>-->
+	</class>
+</hibernate-mapping>

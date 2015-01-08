@@ -1,0 +1,13 @@
+import "EventCacheItem.proto";
+
+option java_outer_classname="EventIdProtocol";
+package Alachisoft.NCache.Common.Protobuf;
+message EventId 
+{
+	optional string eventUniqueId = 1;
+	optional int64 operationCounter = 2;
+	optional int32 eventCounter = 3;
+	optional EventCacheItem item = 4;
+	optional EventCacheItem oldItem = 5;
+	optional sint32 removeReason = 6;
+}

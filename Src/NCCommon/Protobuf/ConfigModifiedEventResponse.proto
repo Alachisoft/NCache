@@ -1,0 +1,7 @@
+
+option java_outer_classname="ConfigModifiedEventResponseProtocol";
+package Alachisoft.NCache.Common.Protobuf;
+message ConfigModifiedEventResponse 
+{
+	optional string hotConfig = 1;
+}

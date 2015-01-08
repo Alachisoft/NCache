@@ -1,0 +1,11 @@
+import "LockInfo.proto";
+
+
+option java_outer_classname="GetCacheItemCommandProtocol";
+package Alachisoft.NCache.Common.Protobuf;
+message GetCacheItemCommand {
+	optional string key = 1;
+	optional int64 requestId = 2;
+	optional LockInfo lockInfo = 3;
+	optional int32 flag = 4;
+}

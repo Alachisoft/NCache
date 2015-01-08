@@ -1,0 +1,5 @@
+option java_outer_classname="DeleteResponseProtocol";
+package Alachisoft.NCache.Common.Protobuf;
+message DeleteResponse {
+	
+}

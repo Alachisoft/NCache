@@ -1,0 +1,8 @@
+
+option java_outer_classname="LoggingInfoModifiedEventResponseProtocol";
+package Alachisoft.NCache.Common.Protobuf;
+message LoggingInfoModifiedEventResponse 
+{
+	optional bool enableErrorsLog = 1;
+	optional bool enableDetailedErrorsLog = 2;
+}

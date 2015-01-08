@@ -1,0 +1,12 @@
+
+option java_outer_classname="RegisterKeyNotifCommandProtocol";
+package Alachisoft.NCache.Common.Protobuf;
+
+message RegisterKeyNotifCommand {
+	optional string key = 1;
+	optional int64 requestId = 2;
+	optional sint32 updateCallbackId = 3;
+	optional sint32 removeCallbackId = 4;
+	optional bool notifyOnExpiration = 5 [default=true];
+	optional int32 datafilter = 6 [default = -1];
+}

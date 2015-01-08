@@ -1,0 +1,7 @@
+
+option java_outer_classname="RemoveResponseProtocol";
+package Alachisoft.NCache.Common.Protobuf;
+message RemoveResponse {
+	optional int32 flag = 1;
+	repeated bytes value = 2;
+}

@@ -1,0 +1,20 @@
+import "ItemRemoveCallbackResponse.proto";
+import "ItemUpdatedCallbackResponse.proto";
+import "CacheStoppedEventResponse.proto";
+
+
+option java_outer_classname="BulkEventResponseProtocol";
+package Alachisoft.NCache.Common.Protobuf;
+message BulkEventItemResponse {
+enum EventType 
+	{
+		ITEM_REMOVED_CALLBACK = 1;
+		ITEM_UPDATED_CALLBACK = 2;
+		CACHE_STOPPED_EVENT =3;
+	}
+
+	optional EventType eventType = 1;
+	optional ItemRemoveCallbackResponse itemRemoveCallback = 2;
+	optional ItemUpdatedCallbackResponse ItemUpdatedCallback = 3;
+	optional CacheStoppedEventResponse cacheStoppedEvent = 4;
+}

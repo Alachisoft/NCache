@@ -1,0 +1,8 @@
+import "BulkEventItemResponse.proto";
+
+option java_package = "com.alachisoft.ncache.protobuf";
+option java_outer_classname="BulkEventProtocol";
+package Alachisoft.NCache.Common.Protobuf;
+message BulkEventResponse {	
+	repeated BulkEventItemResponse eventList = 1;		
+}

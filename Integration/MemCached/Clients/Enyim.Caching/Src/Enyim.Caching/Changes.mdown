@@ -1,0 +1,35 @@
+﻿# Enyim Memcached Version History
+
+## 2.11
+
+ * Fixed the CAS handling of Append and Prepend
+ * Multigets now honor the receive timeout
+
+## Version 2.10
+
+ * Fixed [Issue #65](https://github.com/enyim/EnyimMemcached/issues#issue/65) - Getting multiple keys twice in a row fails.
+
+## Version 2.9
+
+ * Fixed [Issue #48](https://github.com/enyim/EnyimMemcached/issues#issue/37) - Allow the socket pool use maxPoolSize number of sockets instead of (max - min).
+ * Fixed the ObjectDisposedException coming from the DefaultNodeLocator.
+ * Multi-get now uses [IOCP](http://msdn.microsoft.com/en-us/library/aa365198\(v=vs.85\).aspx) instead of threads from the ThreadPool. Performance should be the comparable or better (depending on the amount of items and size).
+ * New DataContractSerializer to enable caching of EntityFramework or LINQ to SQl entitites. See also [Issue #54](https://github.com/enyim/EnyimMemcached/issues/54).
+ * Items should always be hashed to the same node when using the KetamaNodeLocator. ([5fb9bfefb5bf1d9b5849](https://github.com/enyim/EnyimMemcached/commit/5fb9bfefb5bf1d9b584933d9517afaa6dc8de273))
+ * CasResult now contains the status code of Set/Add/Replace operations. ([b8cb1639d600dbca6950](https://github.com/enyim/EnyimMemcached/commit/b8cb1639d600dbca695051ce7cf59132614f0cd7))
+ * Expirations specified in TimeSpans are not limited to 30 days.
+
+## Version 2.8
+
+ * Performance monitoring support. The included DefaultPerformanceMonitor will use Windows performance counters. See [the wiki](http://github.com/enyim/EnyimMemcached/wiki/Configure-the-Performance-Monitor) about configuring this feature.
+ * Fixed a race condition in the InterlockedQueue. See [Bug #36](https://github.com/enyim/EnyimMemcached/issues#issue/36). Thanks to [danp60](https://github.com/danp60).
+ * Now it's possible to change the timeout for acquiring a socket from a full pool. This can help reduce the impact of a dead node on yor application. See the [memached/socketPool](https://github.com/enyim/EnyimMemcached/wiki/MemcachedClient-Configuration) element on the wiki.
+ * Fixed [Issue #37](https://github.com/enyim/EnyimMemcached/issues#issue/37) - NLogFactory class name incorrect.
+ * Added some workarounds for undisposed clients blocking IIS application pool recycles causing 100% CPU spikes.
+
+## Version 2.7
+
+ * Removed log4net from the project and made the log provider configurable. See http://github.com/enyim/EnyimMemcached/wiki/Configure-Logging
+ * Fixed the config section to default to the Binary protocol. (The MemcachedClientConfiguration was already doing this for some time.)
+ * The client no longer checks if objects are larger than 1MB, but lets the server sort it out.
+	
