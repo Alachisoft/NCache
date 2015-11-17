@@ -32,7 +32,7 @@ namespace Alachisoft.NCache.Caching.AutoExpiration
         private const int IdleExpirationSize = 2 * Common.MemoryUtil.NetIntSize;
 
 		/// <summary> the idle time to live value </summary>
-		private int		_idleTimeToLive;
+		private UInt16		_idleTimeToLive;
 
 		/// <summary> last timestamp when the expiration was checked </summary>
 		private int		_lastTimeStamp;
@@ -50,7 +50,7 @@ namespace Alachisoft.NCache.Caching.AutoExpiration
 		public IdleExpiration(TimeSpan idleTTL)
 		{			
             this.SetBit(IS_VARIANT);
-			_idleTimeToLive = (int)idleTTL.TotalSeconds;
+			_idleTimeToLive = (UInt16)idleTTL.TotalSeconds;
             _lastTimeStamp = AppUtil.DiffSeconds(DateTime.Now);
             _hintType = ExpirationHintType.IdleExpiration;
 		}
@@ -60,7 +60,7 @@ namespace Alachisoft.NCache.Caching.AutoExpiration
         {
             get
             {
-                return new TimeSpan(0, 0, _idleTimeToLive);
+                return new TimeSpan(0, 0, (int)_idleTimeToLive);
             }
         }
 
@@ -105,7 +105,7 @@ namespace Alachisoft.NCache.Caching.AutoExpiration
 		public void Deserialize(CompactReader reader)
 		{
             base.Deserialize(reader);
-			_idleTimeToLive = reader.ReadInt32();
+			_idleTimeToLive = reader.ReadUInt16();
 			_lastTimeStamp = reader.ReadInt32();
 		}
 

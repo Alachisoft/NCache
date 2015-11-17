@@ -140,6 +140,10 @@ namespace Alachisoft.NCache.Caching.Topologies.Local
             }
         }
 
+        internal CacheEntry GetInternal(object key)
+        {
+            return base.GetInternal(key, false, null);
+        }
 
         /// <summary>
         ///         /// returns the keylist fullfilling the specified criteria.
@@ -200,15 +204,15 @@ namespace Alachisoft.NCache.Caching.Topologies.Local
         /// <param name="key">key of the entry.</param>
         /// <param name="cacheEntry">the cache entry.</param>
         /// <returns>returns the result of operation.</returns>
-        internal override CacheAddResult AddInternal(object key, CacheEntry cacheEntry, bool isUserOperation)
+        internal override CacheAddResult AddInternal(object key, CacheEntry cacheEntry, bool isUserOperation, OperationContext operationContext)
         {
-            CacheAddResult result = base.AddInternal(key, cacheEntry, isUserOperation);
+            CacheAddResult result = base.AddInternal(key, cacheEntry, isUserOperation, operationContext);
             if (result == CacheAddResult.Success || result == CacheAddResult.SuccessNearEviction)
             {
                 //muds:
                 if (_queryIndexManager != null && cacheEntry.QueryInfo != null)
                 {
-                    _queryIndexManager.AddToIndex(key, cacheEntry);
+                    _queryIndexManager.AddToIndex(key, cacheEntry, operationContext);
                 }
 
                 if (_context.PerfStatsColl != null && _queryIndexManager!=null)
@@ -227,20 +231,20 @@ namespace Alachisoft.NCache.Caching.Topologies.Local
         /// <param name="key">key of the entry.</param>
         /// <param name="cacheEntry">the cache entry.</param>
         /// <returns>returns the result of operation.</returns>
-        internal override CacheInsResult InsertInternal(object key, CacheEntry cacheEntry, bool isUserOperation, CacheEntry oldEntry, OperationContext operationContext)
+        internal override CacheInsResult InsertInternal(object key, CacheEntry cacheEntry, bool isUserOperation, CacheEntry oldEntry, OperationContext operationContext, bool updateIndex)
         {
 
-            CacheInsResult result = base.InsertInternal(key, cacheEntry, isUserOperation, oldEntry, operationContext);
+            CacheInsResult result = base.InsertInternal(key, cacheEntry, isUserOperation, oldEntry, operationContext, updateIndex);
             if (result == CacheInsResult.Success || result == CacheInsResult.SuccessNearEvicition)
             {
 
                 //muds:
                 if (_queryIndexManager != null && cacheEntry.QueryInfo != null)
                 {
-                    _queryIndexManager.AddToIndex(key, cacheEntry);
+                    _queryIndexManager.AddToIndex(key, cacheEntry, operationContext);
                 }
             }
-            else if (result == CacheInsResult.SuccessOverwrite || result == CacheInsResult.SuccessOverwriteNearEviction)
+            else if ((result == CacheInsResult.SuccessOverwrite || result == CacheInsResult.SuccessOverwriteNearEviction) && updateIndex)
             {
 
                 //muds:
@@ -248,11 +252,11 @@ namespace Alachisoft.NCache.Caching.Topologies.Local
                 {
                     if (oldEntry != null && oldEntry.ObjectType != null)
                     {
-                        _queryIndexManager.RemoveFromIndex(key, oldEntry.ObjectType);
+                        _queryIndexManager.RemoveFromIndex(key, oldEntry);
                     }
 
                     if (cacheEntry.QueryInfo != null)
-                        _queryIndexManager.AddToIndex(key, cacheEntry);
+                        _queryIndexManager.AddToIndex(key, cacheEntry, operationContext);
                 }
             }
 
@@ -284,7 +288,7 @@ namespace Alachisoft.NCache.Caching.Topologies.Local
                 //muds:
                 if (_queryIndexManager != null && e.ObjectType != null)
                 {
-                    _queryIndexManager.RemoveFromIndex(key, e.ObjectType);
+                    _queryIndexManager.RemoveFromIndex(key, e);
                 }
             }
 

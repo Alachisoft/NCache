@@ -770,38 +770,13 @@ namespace Alachisoft.NCache.Caching.Topologies.Clustered
                     transferInfo = opResponse.SerializablePayload as StateTxfrInfo;
                     if (transferInfo != null)
                     {
-                        if (opResponse.UserPayload != null && opResponse.UserPayload.Length > 0)
+                        if (transferInfo.data != null)
                         {
-                            Hashtable payloadTable = GetAllPayLoads(opResponse.UserPayload, transferInfo.PayLoadCompilationInfo);
-
-                            if (payloadTable != null && transferInfo.data != null)
-                            {
-                                string[] keys = new string[transferInfo.data.Keys.Count];
-                                transferInfo.data.Keys.CopyTo(keys, 0);
-                                Hashtable data = transferInfo.data;
-                                foreach (string key in keys)
-                                {
-                                    PayloadInfo payloadInfo = data[key] as PayloadInfo;
-                                    if (payloadInfo != null)
-                                    {
-                                        Array userPayload = payloadTable[payloadInfo.PayloadIndex] as Array;
-                                        CacheEntry e = payloadInfo.Entry;
-                                        if (e.Value == null)
-                                            e.Value = userPayload;
-                                        else if (e.Value is CallbackEntry)
-                                        {
-                                            CallbackEntry cbEntry = e.Value as CallbackEntry;
-                                            if (cbEntry.Value == null)
-                                                e.Value = userPayload;
-                                        }
-                                        data[key] = e;
-                                    }
-                                }
-                            }
+                            string[] keys = new string[transferInfo.data.Keys.Count];
+                            transferInfo.data.Keys.CopyTo(keys, 0);                            
                         }
                     }
-
-                }
+                }                
 
                 return transferInfo;
             }
@@ -813,8 +788,6 @@ namespace Alachisoft.NCache.Caching.Topologies.Clustered
         protected static Hashtable GetAllPayLoads(Array userPayLoad, ArrayList compilationInfo)
         {
             Hashtable result = new Hashtable();
-            int arrayIndex = 0;
-            int readIndex = 0;
 
             VirtualArray payLoadArray = new VirtualArray(userPayLoad);
             Alachisoft.NCache.Common.DataStructures.VirtualIndex virtualIndex = new Alachisoft.NCache.Common.DataStructures.VirtualIndex();

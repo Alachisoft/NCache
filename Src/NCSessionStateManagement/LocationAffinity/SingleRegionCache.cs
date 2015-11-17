@@ -54,6 +54,14 @@ namespace Alachisoft.NCache.Web.SessionStateManagement
 
         }
 
+        /// <summary>
+        /// Returns cache id.
+        /// </summary>
+        public string GetCacheId
+        {
+            get { return _cache.ToString(); }
+        }
+
         public void Dispose()
         {
             if (_cache == null)

@@ -423,7 +423,7 @@ namespace Alachisoft.NGroups.Blocks
                     }
                     catch (Exception e)
                     {
-                        NCacheLog.Error("ConnectionTable.makeConnection",   "an error occured while establishing secondary connection. Exception:" + e.ToString());
+                        NCacheLog.Error("ConnectionTable.makeConnection",   "an error occurred while establishing secondary connection. Exception:" + e.ToString());
                     }
 
                 }
@@ -1483,7 +1483,7 @@ namespace Alachisoft.NGroups.Blocks
                 }
                 catch (Exception e)
                 {
-                    NCacheLog.Error("ConnectionTable.Reconnect",   "An error occured while reconnecting with " + node + " Error :" + e.ToString());
+                    NCacheLog.Error("ConnectionTable.Reconnect",   "An error occurred while reconnecting with " + node + " Error :" + e.ToString());
                     notifyConnectionClosed(node);
                 }
             }
@@ -2594,7 +2594,7 @@ namespace Alachisoft.NGroups.Blocks
                         
                         buf = receiveBuffer;
                         if (len > receiveBuffer.Length)
-                            receiveBuffer = buf = new byte[len];
+                            buf = new byte[len];
 
                         
                         HPTimeStats socketReceiveTimeStats = null;

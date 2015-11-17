@@ -18,6 +18,7 @@ using System.Data;
 using Alachisoft.NCache.Common;
 using Alachisoft.NCache.Common.Monitoring;
 using Alachisoft.NCache.Common.Logger;
+using Alachisoft.NCache.Common.DataStructures.Clustered;
 
 namespace Alachisoft.NCache.Storage
 {
@@ -27,14 +28,14 @@ namespace Alachisoft.NCache.Storage
     class ClrHeapStorageProvider : StorageProviderBase
     {
         /// <summary> Storage Map </summary>
-        protected Hashtable _itemDict;    
+        protected HashVector _itemDict;    
 
         /// <summary>
         /// Default constructor.
         /// </summary>
         public ClrHeapStorageProvider()
         {
-            _itemDict = Hashtable.Synchronized(new Hashtable(DEFAULT_CAPACITY, 0.7f));
+            _itemDict = new HashVector(DEFAULT_CAPACITY, 0.7f);
         }
 
         /// <summary>
@@ -45,7 +46,7 @@ namespace Alachisoft.NCache.Storage
         public ClrHeapStorageProvider(long maxDataSize)
             : base(maxDataSize)
         {
-            _itemDict = new Hashtable(DEFAULT_CAPACITY, 0.7f);
+            _itemDict = new HashVector(DEFAULT_CAPACITY, 0.7f);
         }
 
         /// <summary>
@@ -55,7 +56,7 @@ namespace Alachisoft.NCache.Storage
         public ClrHeapStorageProvider(IDictionary properties, bool evictionEnabled, ILogger NCacheLog)
             : base(properties, evictionEnabled, NCacheLog)
         {
-            _itemDict = new Hashtable(DEFAULT_CAPACITY, 0.7f);
+            _itemDict = new HashVector(DEFAULT_CAPACITY, 0.7f);
         }
 
         #region	/                 --- IDisposable ---           /

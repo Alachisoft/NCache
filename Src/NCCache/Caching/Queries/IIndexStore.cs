@@ -27,5 +27,8 @@ namespace Alachisoft.NCache.Caching.Queries
         IDictionaryEnumerator GetEnumerator();
         int Count { get; }
         ArrayList GetData(object key, ComparisonType comparisonType);
+        System.String StoreDataType { get; }
+        string Name { get; }
+
     }
 }

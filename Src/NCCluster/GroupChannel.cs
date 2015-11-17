@@ -578,7 +578,7 @@ namespace Alachisoft.NGroups
 		/// </summary>
 		/// <param name="timeout">the number of milliseconds to wait if the receive queue is empty. 0 means wait forever
 		/// </param>
-		/// <exception cref=""> TimeoutException if a timeout occured prior to a new message was received
+		/// <exception cref=""> TimeoutException if a timeout occurred prior to a new message was received
 		/// </exception>
 		/// <exception cref=""> ChannelNotConnectedException
 		/// </exception>

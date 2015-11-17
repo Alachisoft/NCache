@@ -144,7 +144,21 @@
     </Reference>
   </ItemGroup>
   <ItemGroup>
-    <Compile Include="AssemblyBrowser\ClassTypeFilter.cs" />
+    <Compile Include="DataStructures\Clustered\BinaryCompatibility.cs" />
+    <Compile Include="DataStructures\Clustered\ClusteredArray.cs" />
+    <Compile Include="DataStructures\Clustered\ClusteredArrayList.cs" />
+    <Compile Include="DataStructures\Clustered\ClusteredList.cs" />
+    <Compile Include="DataStructures\Clustered\ClusteredMemoryStream.cs" />
+    <Compile Include="DataStructures\Clustered\ClusteredQueue.cs" />
+    <Compile Include="DataStructures\Clustered\ConditionalWeakTable.cs" />
+    <Compile Include="DataStructures\Clustered\EqualityComparers.cs" />
+    <Compile Include="DataStructures\Clustered\ExceptionResource.cs" />
+    <Compile Include="DataStructures\Clustered\HashHelpers.cs" />
+    <Compile Include="DataStructures\Clustered\HashVector.cs" />
+    <Compile Include="DataStructures\Clustered\ResourceHelper.cs" />
+    <Compile Include="DataStructures\Clustered\__Error.cs" />
+    <Compile Include="DataStructures\INodeReference.cs" />
+    <Compile Include="DataStructures\ITreeNode.cs" />
     <Compile Include="Protobuf\AddAttributeResponse.cs">
       <DependentUpon>AddAttributeResponse.proto</DependentUpon>
       <SubType>Code</SubType>
@@ -995,7 +1009,7 @@
     <Compile Include="DataStructures\IOptimizedQueueOperation.cs" />
     <Compile Include="DataStructures\IPriorityQueue.cs" />
     <Compile Include="DataStructures\IQueueDistributionStrategy.cs" />
-    <Compile Include="DataStructures\ManualDistType.cs" />
+    <Compile Include="Enum\ManualDistType.cs" />
     <Compile Include="DataStructures\NewHashmap.cs" />
     <Compile Include="DataStructures\ReplicatedStateTransferStatus.cs">
       <SubType>Code</SubType>
@@ -1141,7 +1155,6 @@
     <Compile Include="Util\ProcessorAffinity.cs" />
     <Compile Include="Util\Protector.cs" />
     <Compile Include="Util\ReflectionUtil.cs" />
-    <Compile Include="Util\SecurityUtil.cs" />
     <Compile Include="Util\StringPool.cs" />
     <Compile Include="Util\WildcardEnabledRegex.cs" />
     <Compile Include="Util\RegHelper.cs" />
@@ -1635,8 +1648,6 @@
       <Generator>ProtoBufTool</Generator>
       <LastGenOutput>VerifyLockResponse.cs</LastGenOutput>
     </None>
-    <None Include="Protobuf\{2B69F1C9-E1AB-48D9-8F8C-892D13DD5B32}" />
-    <None Include="Protobuf\{FC7FA165-4B49-4EBD-A64A-51E19D18EA3E}" />
   </ItemGroup>
   <ItemGroup>
     <BootstrapperPackage Include="Microsoft.Net.Client.3.5">

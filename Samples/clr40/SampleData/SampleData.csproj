@@ -23,12 +23,7 @@
     <WarningLevel>4</WarningLevel>
   </PropertyGroup>
   <PropertyGroup Condition=" '$(Configuration)|$(Platform)' == 'Release|AnyCPU' ">
-    <DebugType>pdbonly</DebugType>
-    <Optimize>true</Optimize>
-    <OutputPath>bin\Release\</OutputPath>
-    <DefineConstants>TRACE</DefineConstants>
-    <ErrorReport>prompt</ErrorReport>
-    <WarningLevel>4</WarningLevel>
+   <OutputPath>bin\Release\</OutputPath>
   </PropertyGroup>
   <ItemGroup>
     <Reference Include="System" />
@@ -53,4 +48,12 @@
   <Target Name="AfterBuild">
   </Target>
   -->
+
+
+  <PropertyGroup Condition="'$(Configuration)|$(Platform)' == 'Release|AnyCPU' OR '$(Configuration)|$(Platform)' == 'Debug|AnyCPU'">
+    <PreBuildEvent>
+    </PreBuildEvent>
+    <PostBuildEvent>xcopy /Y "$(TargetPath)" "$(SolutionDir)bin\"</PostBuildEvent>
+  </PropertyGroup>
+  
 </Project>

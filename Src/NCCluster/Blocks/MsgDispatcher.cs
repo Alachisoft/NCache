@@ -173,7 +173,7 @@ namespace Alachisoft.NGroups.Blocks
                     }
                     catch (Exception e)
                     {
-                         NCacheLog.CriticalInfo("MsgDispatcher.passUP", "An error occured while getting new hashmap. Error: " + e.ToString());
+                         NCacheLog.CriticalInfo("MsgDispatcher.passUP", "An error occurred while getting new hashmap. Error: " + e.ToString());
                     }
                     Event evnt = new Event();
                     evnt.Type = Event.HASHMAP_RESP;

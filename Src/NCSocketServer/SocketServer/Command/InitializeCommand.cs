@@ -78,7 +78,7 @@ namespace Alachisoft.NCache.SocketServer.Command
                 }
                 catch (Exception e)
                 {
-                    if (SocketServer.Logger.IsErrorLogsEnabled) SocketServer.Logger.NCacheLog.Error("InitializeCommand.Execute", " an error occured while forcefully disposing a client. " + e.ToString());
+                    if (SocketServer.Logger.IsErrorLogsEnabled) SocketServer.Logger.NCacheLog.Error("InitializeCommand.Execute", " an error occurred while forcefully disposing a client. " + e.ToString());
                 }
 
                 clientManager.EventQueue = new EventsQueue(ClientManager.EventBulkCount);

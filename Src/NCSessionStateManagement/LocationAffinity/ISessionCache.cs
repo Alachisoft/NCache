@@ -25,8 +25,11 @@ namespace Alachisoft.NCache.Web.SessionStateManagement
         /// prefix of the primary cache for local webserver.
         /// </summary>
         string PrimaryPrefix { get;}
-        
 
+        /// <summary>
+        /// Gets The Cache Id
+        /// </summary>
+        string GetCacheId { get; }
 
         #region Overloads with locking support
 		[CLSCompliant(false)]

@@ -400,7 +400,7 @@ namespace Alachisoft.NCache.Web.RemoteClient.Config
             catch (System.IO.IOException) { throw; }
             catch (Exception e)
             {
-                throw new Runtime.Exceptions.ConfigurationException("An error occured while reading client.ncconf. " + e.Message);
+                throw new Runtime.Exceptions.ConfigurationException("An error occurred while reading client.ncconf. " + e.Message);
 
             }
 

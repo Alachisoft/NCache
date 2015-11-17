@@ -254,7 +254,7 @@ namespace Alachisoft.NCache.SocketServer.Statistics
             }
             catch (Exception e)
             {
-                AppUtil.LogEvent("NCache", "An error occured while initializing counters for NCache Server. " + e.ToString(), EventLogEntryType.Error, EventCategories.Error, EventID.GeneralError);
+                AppUtil.LogEvent("NCache", "An error occurred while initializing counters for NCache Server. " + e.ToString(), EventLogEntryType.Error, EventCategories.Error, EventID.GeneralError);
             }
 
 		}

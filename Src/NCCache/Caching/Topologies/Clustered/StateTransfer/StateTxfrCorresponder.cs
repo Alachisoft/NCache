@@ -18,6 +18,8 @@ using Alachisoft.NCache.Common.Net;
 using Alachisoft.NCache.Caching.Topologies.Local;
 using Alachisoft.NCache.Common.Util;
 using Runtime = Alachisoft.NCache.Runtime;
+using Alachisoft.NCache.Common.DataStructures.Clustered;
+using System.IO;
 
 namespace Alachisoft.NCache.Caching.Topologies.Clustered
 {
@@ -36,27 +38,27 @@ namespace Alachisoft.NCache.Caching.Topologies.Clustered
         /// Above this threshold value, data will be
         /// transfered in chunks. 
         /// </summary>
-        protected long _threshold = 50 * 1024;//200 * 1000;
+        protected long _threshold = 20 * 1024;//200 * 1000;
+        protected int _currentBucket = -1;
+        protected int _keyCount;
+        private int _lastTxfrId = 0;
 
         internal ClusterCacheBase _parent;
+        private DistributionManager _distMgr;
 
-        protected int _currentBucket = -1;
-
-        protected ArrayList _keyList;
-
-        protected Hashtable _keyUpdateLogTbl = new Hashtable();
-
-        protected int _keyCount;
-
-        protected bool _sendLogData = false;
+        protected bool _sendLogData;
+        private bool _isBalanceDataLoad;
         
-		 int _lastTxfrId = 0;
-		 private DistributionManager _distMgr;
-		 private Address _clientNode;
-		 private ArrayList _logableBuckets = new ArrayList();
-         private byte _transferType;
+        protected Hashtable _keyUpdateLogTbl = new Hashtable();
+        private HashVector _result = new HashVector();
 
-        private bool _isBalanceDataLoad = false;
+        protected ClusteredArrayList _keyList;
+        private ArrayList _logableBuckets = new ArrayList();
+        private Stream stream = null;
+        
+        private Address _clientNode;
+        private byte _transferType;
+
 
         /// <summary>
         /// Gets or sets a value indicating whether this StateTransfer Corresponder is in Data balancing mode or not.
@@ -73,11 +75,13 @@ namespace Alachisoft.NCache.Caching.Topologies.Clustered
 			 _distMgr = distMgr;
 			 _clientNode = requestingNode;
              _transferType = transferType;
+             stream = new MemoryStream((int)_threshold);
 		 }
 
 
 		 public StateTxfrInfo TransferBucket(ArrayList bucketIds, bool sparsedBuckets, int expectedTxfrId)
-		 {    
+		 {
+             stream.Seek(0, SeekOrigin.Begin);
 			 if (bucketIds != null)
 			 {
 				 for (int i = bucketIds.Count - 1; i >= 0; i--)
@@ -93,7 +97,8 @@ namespace Alachisoft.NCache.Caching.Topologies.Clustered
 
 			 if (sparsedBuckets)
 			 {
-				 return GetData(bucketIds);
+                 return new StateTxfrInfo(true);
+                 //return GetData(bucketIds);
 			 }
 			 else
 			 {
@@ -113,14 +118,11 @@ namespace Alachisoft.NCache.Caching.Topologies.Clustered
 
 						 _lastTxfrId = expectedTxfrId;
 						 //request for a new bucket.
-						 //get its key list from parent.
+
 						 _currentBucket = (int)bucketIds[0];
                          bool enableLogs = _transferType == StateTransferType.MOVE_DATA ? true : false;
-                         ArrayList keyList = _parent.InternalCache.GetKeyList(_currentBucket, enableLogs);
+                         _parent.InternalCache.GetKeyList(_currentBucket, enableLogs, out _keyList);
 						 _logableBuckets.Add(_currentBucket);
-
-						 if (keyList != null)
-							 _keyList = keyList.Clone() as ArrayList;
 
 						 //muds:
 						 //reset the _lastLogTblCount
@@ -144,7 +146,7 @@ namespace Alachisoft.NCache.Caching.Topologies.Clustered
 				 }
 				 else
 				 {
-					 return new StateTxfrInfo(new Hashtable(),null,null, true);
+                     return new StateTxfrInfo(new HashVector(), false, 0, null);
 				 }
 
 				
@@ -154,98 +156,99 @@ namespace Alachisoft.NCache.Caching.Topologies.Clustered
 			 }
 		 }
 
-         protected StateTxfrInfo GetData(ArrayList bucketIds)
-		 {
-			 try
-			 {
-				 object[] keys = null;
-				 Hashtable data = null;
-				 Hashtable result = new Hashtable();
-                 ArrayList payLoad = new ArrayList();
-                 ArrayList payLoadCompilationInfo = new ArrayList();
+         //protected StateTxfrInfo GetData(ArrayList bucketIds)
+         //{
+         //    try
+         //    {
+         //        object[] keys = null;
+         //        Hashtable data = null;
+         //        Hashtable result = new Hashtable();
+         //        ArrayList payLoad = new ArrayList();
+         //        ArrayList payLoadCompilationInfo = new ArrayList();
 
-				 if (!_sendLogData)
-				 {
-					 IEnumerator ie = bucketIds.GetEnumerator();
-					 while (ie.MoveNext())
-					 {
-						 int bucketId = (int)ie.Current;
-                         if (_parent.Context.NCacheLog.IsInfoEnabled) _parent.Context.NCacheLog.Info("StateTxfrCorresponder.GetData(1)", "transfering data for bucket : " + bucketId);
-                         bool enableLogs = _transferType == StateTransferType.MOVE_DATA ? true : false;
-                         ArrayList keyList = _parent.InternalCache.GetKeyList(bucketId, enableLogs);
-						 _logableBuckets.Add(bucketId);
+         //        if (!_sendLogData)
+         //        {
+         //            IEnumerator ie = bucketIds.GetEnumerator();
+         //            while (ie.MoveNext())
+         //            {
+         //                int bucketId = (int)ie.Current;
+         //                if (_parent.Context.NCacheLog.IsInfoEnabled) _parent.Context.NCacheLog.Info("StateTxfrCorresponder.GetData(1)", "transfering data for bucket : " + bucketId);
+         //                bool enableLogs = _transferType == StateTransferType.MOVE_DATA ? true : false;
+         //                _parent.InternalCache.GetKeyList(bucketId, enableLogs, _keyList);
+         //                _logableBuckets.Add(bucketId);
 
-						 data = null;
-						 if (keyList != null)
-						 {
-                             if (_parent.Context.NCacheLog.IsInfoEnabled) _parent.Context.NCacheLog.Info("StateTxfrCorresponder.GetData(1)", "bucket : " + bucketId + " [" + keyList.Count + " ]");
+         //                data = null;
+         //                if (keyList != null)
+         //                {
+         //                    if (_parent.Context.NCacheLog.IsInfoEnabled) _parent.Context.NCacheLog.Info("StateTxfrCorresponder.GetData(1)", "bucket : " + bucketId + " [" + keyList.Count + " ]");
 
-							 keys = keyList.ToArray();
+         //                    keys = keyList.ToArray();
 
-                             OperationContext operationContext = new OperationContext(OperationContextFieldName.OperationType, OperationContextOperationType.CacheOperation);
-                             operationContext.Add(OperationContextFieldName.GenerateQueryInfo, true);
-							 data = _parent.InternalCache.Get(keys,operationContext);
-						 }
+         //                    OperationContext operationContext = new OperationContext(OperationContextFieldName.OperationType, OperationContextOperationType.CacheOperation);
+         //                    operationContext.Add(OperationContextFieldName.GenerateQueryInfo, true);
+         //                    data = _parent.InternalCache.Get(keys,operationContext);
+         //                }
                         
-						 if (data != null && data.Count > 0)
-						 {
-							 if (result.Count == 0)
-							 {
-								 result = data.Clone() as Hashtable;
-							 }
-							 else
-							 {
-								 IDictionaryEnumerator ide = data.GetEnumerator();
-								 while (ide.MoveNext())
-								 {
-                                     CacheEntry entry = ide.Value as CacheEntry;
-                                     UserBinaryObject ubObject = null;
-                                     if (entry.Value is CallbackEntry)
-                                     {
-                                         ubObject = ((CallbackEntry)entry.Value).Value as UserBinaryObject;
-                                     }
-                                     else
-                                         ubObject = entry.Value as UserBinaryObject;
+         //                if (data != null && data.Count > 0)
+         //                {
+         //                    if (result.Count == 0)
+         //                    {
+         //                        result = data.Clone() as Hashtable;
+         //                    }
+         //                    else
+         //                    {
+         //                        IDictionaryEnumerator ide = data.GetEnumerator();
+         //                        while (ide.MoveNext())
+         //                        {
+         //                            CacheEntry entry = ide.Value as CacheEntry;
+         //                            UserBinaryObject ubObject = null;
+         //                            if (entry.Value is CallbackEntry)
+         //                            {
+         //                                ubObject = ((CallbackEntry)entry.Value).Value as UserBinaryObject;
+         //                            }
+         //                            else
+         //                                ubObject = entry.Value as UserBinaryObject;
 
-                                     payLoad.AddRange(ubObject.Data);
-                                     long size = entry.DataSize;
-                                     int index = payLoadCompilationInfo.Add(size);
-                                     PayloadInfo payLoadInfo = new PayloadInfo(entry.CloneWithoutValue(), index);
-                                     result[ide.Key] = payLoadInfo;
-								 }
+         //                            payLoad.AddRange(ubObject.Data);
+         //                            long size = entry.DataSize;
+         //                            int index = payLoadCompilationInfo.Add(size);
+         //                            PayloadInfo payLoadInfo = new PayloadInfo(entry.CloneWithoutValue(), index);
+         //                            result[ide.Key] = payLoadInfo;
+         //                        }
 
-							 }
-						 }
-					 }
-					 _sendLogData = true;
-                     if (_parent.Context.NCacheLog.IsInfoEnabled)
-                         _parent.Context.NCacheLog.Info("State Transfer Corresponder", "BalanceDataLoad = " + _isBalanceDataLoad.ToString());
-                     if (_isBalanceDataLoad)
-                     {
-                         _parent.Context.PerfStatsColl.IncrementDataBalPerSecStatsBy(result.Count);
-                     }
-                     else
-                     {
-                         _parent.Context.PerfStatsColl.IncrementStateTxfrPerSecStatsBy(result.Count);
-                     }
+         //                    }
+         //                }
+         //            }
+         //            _sendLogData = true;
+         //            if (_parent.Context.NCacheLog.IsInfoEnabled)
+         //                _parent.Context.NCacheLog.Info("State Transfer Corresponder", "BalanceDataLoad = " + _isBalanceDataLoad.ToString());
+         //            if (_isBalanceDataLoad)
+         //            {
+         //                _parent.Context.PerfStatsColl.IncrementDataBalPerSecStatsBy(result.Count);
+         //            }
+         //            else
+         //            {
+         //                _parent.Context.PerfStatsColl.IncrementStateTxfrPerSecStatsBy(result.Count);
+         //            }
 
-					 return new StateTxfrInfo(result,payLoad,payLoadCompilationInfo, false);
-				 }
-				 else
-					 return GetLoggedData(bucketIds);
-			 }
-			 catch (Exception ex)
-			 {
-                 _parent.Context.NCacheLog.Error("StateTxfrCorresponder.GetData(1)", ex.ToString());
-				 return null;
-			 }
-		 }
+         //            return new StateTxfrInfo(result,payLoad,payLoadCompilationInfo, false);
+         //        }
+         //        else
+         //            return GetLoggedData(bucketIds);
+         //    }
+         //    catch (Exception ex)
+         //    {
+         //        _parent.Context.NCacheLog.Error("StateTxfrCorresponder.GetData(1)", ex.ToString());
+         //        return null;
+         //    }
+         //}
 
 		 protected StateTxfrInfo GetData(int bucketId)
 		 {
-			 Hashtable result = new Hashtable();
-             ArrayList payLoad = new ArrayList();
-             ArrayList payLoadCompilationInfo = new ArrayList();
+             if (_result.Count > 0)
+             {
+                 _result.Clear();
+             }
 
 			 long sizeToSend = 0;
 
@@ -272,20 +275,7 @@ namespace Alachisoft.NCache.Caching.Topologies.Clustered
                          long size = (entry.InMemorySize + Common.MemoryUtil.GetStringSize(key));//.DataSize;                         
                          if (sizeToSend > _threshold) break;
 
-                         UserBinaryObject ubObject = null;
-                         if (entry.Value is CallbackEntry)
-                         {
-                             ubObject = ((CallbackEntry)entry.Value).Value as UserBinaryObject;
-                         }
-                         else
-                             ubObject = entry.Value as UserBinaryObject;
-
-                         payLoad.AddRange(ubObject.Data);
-                         long entrySize = entry.DataSize;
-                         int index = payLoadCompilationInfo.Add(entrySize);
-                         PayloadInfo payLoadInfo = new PayloadInfo(entry.CloneWithoutValue(), index);
-
-                         result[key] = payLoadInfo;
+                         _result[key] = entry;
 						 sizeToSend += size;
 					 }
 				 }
@@ -295,11 +285,11 @@ namespace Alachisoft.NCache.Caching.Topologies.Clustered
                      _parent.Context.NCacheLog.Info("StateTxfrCorresponder.GetData(2)", "BalanceDataLoad = " + _isBalanceDataLoad.ToString()); 
 
                  if (_isBalanceDataLoad)
-                     _parent.Context.PerfStatsColl.IncrementDataBalPerSecStatsBy(result.Count);
+                     _parent.Context.PerfStatsColl.IncrementDataBalPerSecStatsBy(_result.Count);
                  else
-                     _parent.Context.PerfStatsColl.IncrementStateTxfrPerSecStatsBy(result.Count);
+                     _parent.Context.PerfStatsColl.IncrementStateTxfrPerSecStatsBy(_result.Count);
 
-				 return new StateTxfrInfo(result,payLoad,payLoadCompilationInfo, false,sizeToSend);
+				 return new StateTxfrInfo(_result,false,sizeToSend, this.stream);
 			 }
              else if (_transferType == StateTransferType.MOVE_DATA)
              {
@@ -314,7 +304,7 @@ namespace Alachisoft.NCache.Caching.Topologies.Clustered
              {
                  //As transfer mode is not MOVE_DATA, therefore no logs are maintained
                  //and hence are not transferred.
-                 return new StateTxfrInfo(null,null,null, true);
+                 return new StateTxfrInfo(null, true, 0, null);
              }
 		 }
 
@@ -325,10 +315,6 @@ namespace Alachisoft.NCache.Caching.Topologies.Clustered
 			 ArrayList removedKeys = null;
 			 Hashtable logTbl = null;
 			 StateTxfrInfo info = null;
-			 Hashtable result = new Hashtable();
-             ArrayList payLoad = new ArrayList();
-             ArrayList payLoadCompilationInfo = new ArrayList();
-
 
 			 bool isLoggingStopped = false;
 
@@ -351,20 +337,7 @@ namespace Alachisoft.NCache.Caching.Topologies.Clustered
                              OperationContext operationContext = new OperationContext(OperationContextFieldName.OperationType, OperationContextOperationType.CacheOperation);
                              operationContext.Add(OperationContextFieldName.GenerateQueryInfo, true);
                              CacheEntry entry = _parent.InternalCache.Get(key, false, operationContext);
-                             UserBinaryObject ubObject = null;
-                             if (entry.Value is CallbackEntry)
-                             {
-                                 ubObject = ((CallbackEntry)entry.Value).Value as UserBinaryObject;
-                             }
-                             else
-                                 ubObject = entry.Value as UserBinaryObject;
-
-                             payLoad.AddRange(ubObject.Data);
-                             long size = entry.DataSize;
-                             int index = payLoadCompilationInfo.Add(size);
-                             PayloadInfo payLoadInfo = new PayloadInfo(entry.CloneWithoutValue(), index);
-
-							 result[key] = payLoadInfo;
+                             _result[key] = entry;
 						 }
 					 }
 					 if (removedKeys != null && removedKeys.Count > 0)
@@ -372,14 +345,14 @@ namespace Alachisoft.NCache.Caching.Topologies.Clustered
 						 for (int i = 0; i < removedKeys.Count; i++)
 						 {
 							 string key = removedKeys[i] as string;
-							 result[key] = null;
+							 _result[key] = null;
 						 }
 					 }
 
-					 if (!isLoggingStopped)
-						 info = new StateTxfrInfo(result,payLoad,payLoadCompilationInfo, false);
-					 else
-                         info = new StateTxfrInfo(result, payLoad, payLoadCompilationInfo, true);
+                     if (!isLoggingStopped)
+                         info = new StateTxfrInfo(_result, false, 0, this.stream);
+                     else
+                         info = new StateTxfrInfo(_result, true, 0, this.stream);
 
 
                      _parent.Context.NCacheLog.Debug("StateTxfrCorresponder.GetLoggedData()", info == null ? "returning null state-txfr-info" : "returning " + info.data.Count.ToString() + " items in state-txfr-info");
@@ -400,7 +373,7 @@ namespace Alachisoft.NCache.Caching.Topologies.Clustered
 		
 			 //no operation has been logged during state transfer.
 			 //so announce completion of state transfer for this bucket.
-             return new StateTxfrInfo(result, payLoad, payLoadCompilationInfo, true);
+             return new StateTxfrInfo(_result, true, 0, this.stream);
 		 }
 
 		 #region IDisposable Members
@@ -414,6 +387,7 @@ namespace Alachisoft.NCache.Caching.Topologies.Clustered
              if (_parent.Context.NCacheLog.IsInfoEnabled) _parent.Context.NCacheLog.Info("StateTxfrCorresponder.Dispose", _clientNode.ToString() + " corresponder disposed");
 			 if(_keyList != null) _keyList.Clear();
 			 if(_keyUpdateLogTbl != null) _keyUpdateLogTbl.Clear();
+             if (_result != null) _result.Clear();
 
              if (_transferType == StateTransferType.MOVE_DATA)
              {
@@ -430,18 +404,6 @@ namespace Alachisoft.NCache.Caching.Topologies.Clustered
 
 		 #endregion
 	 }
-
-    #endregion
-
-    #region /                 --- BucketTxfrInfo ---           /
-
-    #endregion
-
-    #region /                 --- BucketTxfrInfo ---           /
-
-    #endregion
-
-    #region /                 --- StateTxfrInfo ---           /
 
     #endregion
 }

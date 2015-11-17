@@ -44,7 +44,6 @@ namespace Alachisoft.NCache.Common.Util
             public const string ReloadSrvcConfig = "ReloadSrvcConfig";
             public const string GetSocketServerPort = "GetSocketServerPort";
             public const string GetUpdatedCacheConfiguration = "GetUpdatedCacheConfiguration";
-            public const string GetPartitionedReplicaCaches = "GetPartitionedReplicaCaches";
             public const string GetConfiguredPartitionedReplicaCaches = "GetConfiguredPartitionedReplicaCaches";
             public const string RegisterCache = "RegisterCache";
             public const string GetNodeInfo = "GetNodeInfo";
@@ -90,14 +89,9 @@ namespace Alachisoft.NCache.Common.Util
             public const string GetNewConfiguration = "GetNewConfiguration";
             public const string GetNewUpdatedCacheConfiguration = "GetNewUpdatedCacheConfiguration";
             public const string GetProductVersion = "GetProductVersion";
-            public const string GetTayzGridServer = "GetTayzGridServer";
-           
-
             public const string GetServerMappingForConfig = "GetServerMappingForConfig";
             public const string UpdateServerMappingConfig = "UpdateServerMappingConfig";
-
             public const string GetServerMappingForClient = "GetServerMappingForClient";
-
             public const string GetUniqueServers = "GetUniqueServers";
             public const string GarbageCollect = "GarbageCollect";
             #endregion

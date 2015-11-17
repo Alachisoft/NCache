@@ -34,10 +34,14 @@
     <IsWebBootstrapper>false</IsWebBootstrapper>
     <UseApplicationTrust>false</UseApplicationTrust>
     <BootstrapperEnabled>true</BootstrapperEnabled>
-    <SccProjectName>SAK</SccProjectName>
-    <SccLocalPath>SAK</SccLocalPath>
-    <SccAuxPath>SAK</SccAuxPath>
-    <SccProvider>SAK</SccProvider>
+    <SccProjectName>
+    </SccProjectName>
+    <SccLocalPath>
+    </SccLocalPath>
+    <SccAuxPath>
+    </SccAuxPath>
+    <SccProvider>
+    </SccProvider>
   </PropertyGroup>
   <PropertyGroup Condition=" '$(Configuration)|$(Platform)' == 'Debug|AnyCPU' ">
     <DebugSymbols>true</DebugSymbols>
@@ -52,23 +56,32 @@
   <PropertyGroup Condition=" '$(Configuration)|$(Platform)' == 'Release|AnyCPU' ">
     <DebugType>pdbonly</DebugType>
     <Optimize>true</Optimize>
+    <OutputPath>bin\Release\</OutputPath>
+    <DefineConstants>TRACE</DefineConstants>
+    <ErrorReport>prompt</ErrorReport>
+    <WarningLevel>4</WarningLevel>
+    <TargetFrameworkVersion>v4.0</TargetFrameworkVersion>
+    <CodeAnalysisRuleSet>AllRules.ruleset</CodeAnalysisRuleSet>
+  </PropertyGroup>
+  <PropertyGroup Condition=" '$(Configuration)|$(Platform)' == 'Release2x|AnyCPU' ">
+    <DebugType>pdbonly</DebugType>
+    <Optimize>true</Optimize>
     <OutputPath>bin\2.0\Release\</OutputPath>
     <DefineConstants>TRACE</DefineConstants>
     <ErrorReport>prompt</ErrorReport>
     <WarningLevel>4</WarningLevel>
     <CodeAnalysisRuleSet>AllRules.ruleset</CodeAnalysisRuleSet>
+    <TargetFrameworkVersion>v3.5</TargetFrameworkVersion>
   </PropertyGroup>
   <ItemGroup>
     <Reference Include="Alachisoft.NCache.Integrations.Memcached.Provider">
-      <HintPath>..\..\..\..\build\Memcached\4x\Alachisoft.NCache.Integrations.Memcached.Provider.dll</HintPath>
+      <HintPath>..\..\..\ProxyServer\src\Alachisoft.NCache.Integrations.Memcached.Provider\bin\Release20\Alachisoft.NCache.Integrations.Memcached.Provider.dll</HintPath>
     </Reference>
-    <Reference Include="Commons, Version=0.4.2.8580, Culture=neutral, PublicKeyToken=44382d1b57473eda">
-      <SpecificVersion>False</SpecificVersion>
-      <HintPath>..\bin\Commons.dll</HintPath>
+    <Reference Include="Commons">
+      <HintPath>..\..\..\..\..\Resources\memcacheclient\Commons.dll</HintPath>
     </Reference>
-    <Reference Include="ICSharpCode.SharpZipLib, Version=0.84.0.0, Culture=neutral, PublicKeyToken=1b03e6acf1164f73">
-      <SpecificVersion>False</SpecificVersion>
-      <HintPath>..\bin\ICSharpCode.SharpZipLib.dll</HintPath>
+    <Reference Include="ICSharpCode.SharpZipLib">
+      <HintPath>..\..\..\..\..\Resources\memcacheclient\ICSharpCode.SharpZipLib.dll</HintPath>
     </Reference>
     <Reference Include="log4net">
       <HintPath>..\..\..\..\..\Resources\log4net\log4net.dll</HintPath>

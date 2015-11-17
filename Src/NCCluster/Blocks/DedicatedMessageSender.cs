@@ -121,9 +121,9 @@ namespace Alachisoft.NGroups.Blocks
 
                                     if (totalMsgSize + 8 > sendBuffer.Length)
                                     {
-                                        sendBuffer = new byte[totalMsgSize + 8];
-                                        Buffer.BlockCopy(tmpBuffer, 0, sendBuffer, 0, totalMsgSize - bMsg.Size);
-                                        tmpBuffer = sendBuffer;
+                                        byte[] bigbuffer = new byte[totalMsgSize + 8];
+                                        Buffer.BlockCopy(tmpBuffer, 0, bigbuffer, 0, totalMsgSize - bMsg.Size);
+                                        tmpBuffer = bigbuffer;
                                     }
 
                                     Buffer.BlockCopy(bMsg.Buffer, 0, tmpBuffer, offset, bMsg.Buffer.Length);
@@ -202,7 +202,7 @@ namespace Alachisoft.NGroups.Blocks
                                     }
                                     catch (Exception ex)
                                     {
-                                        NCacheLog.Error("DmSender.Run",   "an error occured while requing the messages. " + ex.ToString());
+                                        NCacheLog.Error("DmSender.Run",   "an error occurred while requing the messages. " + ex.ToString());
                                     }
                                 }
                             }

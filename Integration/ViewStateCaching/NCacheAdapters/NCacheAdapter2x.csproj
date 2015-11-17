@@ -13,7 +13,8 @@
     <TargetFrameworkVersion>v4.0</TargetFrameworkVersion>
     <FileAlignment>512</FileAlignment>
     <SignAssembly>true</SignAssembly>
-    <AssemblyOriginatorKeyFile>ncache.snk</AssemblyOriginatorKeyFile>
+    <AssemblyOriginatorKeyFile>
+    </AssemblyOriginatorKeyFile>
     <SccProjectName>
     </SccProjectName>
     <SccLocalPath>
@@ -44,6 +45,12 @@
     <BootstrapperEnabled>true</BootstrapperEnabled>
     <TargetFrameworkProfile />
   </PropertyGroup>
+  <PropertyGroup>
+    <SignAssembly>true</SignAssembly>
+  </PropertyGroup>
+  <PropertyGroup>
+    <AssemblyOriginatorKeyFile>..\..\..\Resources\ncache.snk</AssemblyOriginatorKeyFile>
+  </PropertyGroup>
   <PropertyGroup Condition=" '$(Configuration)|$(Platform)' == 'Debug|AnyCPU' ">
     <DebugSymbols>true</DebugSymbols>
     <DebugType>full</DebugType>
@@ -73,15 +80,6 @@
     <CodeAnalysisFailOnMissingRules>false</CodeAnalysisFailOnMissingRules>
   </PropertyGroup>
   <ItemGroup>
-    <!--<Reference Include="Alachisoft.Common">
-      <HintPath>D:\tasks\TayzGrid\lib\Alachisoft.Common.dll</HintPath>
-    </Reference>
-    <Reference Include="Alachisoft.ContentOptimization">
-      <HintPath>C:\Program Files\NCache\integration\ContentOptimization\Alachisoft.ContentOptimization.dll</HintPath>
-    </Reference>-->
-    <Reference Include="Alachisoft.ContentOptimization">
-      <HintPath>..\..\Alachisoft.ContentOptimization\bin\Release.2x\Alachisoft.ContentOptimization.dll</HintPath>
-    </Reference>
     <Reference Include="Alachisoft.NCache.Cache">
       <HintPath>..\..\..\Src\build\Server\2x\Alachisoft.NCache.Cache.dll</HintPath>
     </Reference>
@@ -134,7 +132,10 @@
     </BootstrapperPackage>
   </ItemGroup>
   <ItemGroup>
-    <None Include="ncache.snk" />
+    <ProjectReference Include="..\Alachisoft.ContentOptimization\Alachisoft.ContentOptimization2x.csproj">
+      <Project>{CABCE9AA-38DC-4FE7-9E5B-8ECAB9907F3C}</Project>
+      <Name>Alachisoft.ContentOptimization2x</Name>
+    </ProjectReference>
   </ItemGroup>
   <Import Project="$(MSBuildToolsPath)\Microsoft.CSharp.targets" />
   <!-- To modify your build process, add your task inside one of the targets below and uncomment it. 

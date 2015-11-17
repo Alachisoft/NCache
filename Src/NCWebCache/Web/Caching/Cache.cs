@@ -597,6 +597,7 @@ namespace Alachisoft.NCache.Web.Caching
                             {
                                 Object attribValue = fieldAttrib.GetValue(value);
                                 //Donot lower strings here because we need to return the string in original form in case of MIN and MAX
+                               // if (attribValue!=null)
                                 attribValues.Add(attribValue);
                             }
                             else
@@ -1273,7 +1274,7 @@ namespace Alachisoft.NCache.Web.Caching
                         {
                             if (cbInfo.Client == _cacheImpl.ClientID)
                             {
-                                item.SetCacheDataNotification((CacheDataNotificationCallback)_callbackIDsMap.GetResource(cbInfo.Callback), EventType.ItemRemoved, cbInfo.DataFilter);
+                                item.SetCacheDataNotification((CacheDataNotificationCallback)_callbackIDsMap.GetResource(cbInfo.Callback), EventType.ItemRemoved);
                                break;
                             }
                         }
@@ -1285,7 +1286,7 @@ namespace Alachisoft.NCache.Web.Caching
                             if (cbInfo.Client == _cacheImpl.ClientID)
                             {
 
-                                item.SetCacheDataNotification((CacheDataNotificationCallback)_callbackIDsMap.GetResource(cbInfo.Callback), EventType.ItemUpdated, cbInfo.DataFilter);
+                                item.SetCacheDataNotification((CacheDataNotificationCallback)_callbackIDsMap.GetResource(cbInfo.Callback), EventType.ItemUpdated);
                                 break;
                             }
                         }
@@ -1845,13 +1846,14 @@ namespace Alachisoft.NCache.Web.Caching
         /// 
         /// </code>
         /// </example>
-        public virtual void RegisterCacheNotification(string key, CacheDataNotificationCallback selectiveCacheDataNotificationCallback, EventType eventType, EventDataFilter datafilter)
+        public virtual void RegisterCacheNotification(string key, CacheDataNotificationCallback selectiveCacheDataNotificationCallback, EventType eventType)
         {
             if (key == null || key.Length == 0)
                 throw new ArgumentNullException("key");
 
             if (selectiveCacheDataNotificationCallback == null)
                 throw new ArgumentException("selectiveCacheDataNotificationCallback");
+            EventDataFilter datafilter = EventDataFilter.None;
 
             RegisterCacheNotificationInternal(key, selectiveCacheDataNotificationCallback, eventType, datafilter, true);
         }

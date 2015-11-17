@@ -14,6 +14,7 @@
 using System;
 using System.Text;
 using System.Collections;
+using Alachisoft.NCache.Common.DataStructures.Clustered;
 
 namespace Alachisoft.NCache.Common.DataStructures
 {
@@ -63,7 +64,7 @@ namespace Alachisoft.NCache.Common.DataStructures
                 {
                     while (e.MoveNext())
                     {
-                        Hashtable tbl = e.Value as Hashtable;
+                        HashVector tbl = e.Value as HashVector;
                         
                         _rightList.AddRange(tbl.Keys);
                     }

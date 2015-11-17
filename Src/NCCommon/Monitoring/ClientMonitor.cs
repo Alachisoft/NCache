@@ -52,7 +52,8 @@ namespace Alachisoft.NCache.Common.Monitoring
 
             lock (_currentActivities.SyncRoot)
             {
-                _currentActivities.Add(tId, acitvity);
+                if (!_currentActivities.ContainsKey(tId))
+                    _currentActivities.Add(tId, acitvity);
             }
         }
         public void StopActivity()

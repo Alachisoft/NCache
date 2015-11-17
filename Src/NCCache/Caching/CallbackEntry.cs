@@ -29,7 +29,7 @@ namespace Alachisoft.NCache.Caching
     /// CallbackEntry represents an item with callback.
     /// </summary>
     [Serializable]
-    public class CallbackEntry : ICompactSerializable, ICloneable
+    public class CallbackEntry : ICompactSerializable, ICloneable, ISizable
     {
         private object _value;
         private BitSet _flag;
@@ -241,6 +241,57 @@ namespace Alachisoft.NCache.Caching
             return cloned;
         }
 
+        #endregion
+
+        #region ISizable Members
+        public int Size
+        {
+            get
+            {
+                return CallbackEntrySize;
+            }
+        }
+
+        public int InMemorySize
+        {
+            get
+            {
+                return Common.MemoryUtil.GetInMemoryInstanceSize(this.Size);
+            }
+        }
+
+        private int CallbackEntrySize
+        {
+            get
+            {
+                int temp = 0;
+                temp += Common.MemoryUtil.NetReferenceSize; // for _value
+                temp += Common.MemoryUtil.NetReferenceSize; // for _onAsyncOperationCompleteCallback
+                temp += Common.MemoryUtil.NetReferenceSize; // for _onWriteBehindOperationCompletedCallback
+                temp += Common.MemoryUtil.NetReferenceSize; // for _itemRemovedLisetner
+                temp += Common.MemoryUtil.NetReferenceSize; // for _itemUpdatedLisetner
+
+                temp += BitSet.Size; // for _flag
+
+                if (_itemRemovedListener != null)
+                {
+                    temp += _itemRemovedListener.Count * Common.MemoryUtil.NetListOverHead;
+                    foreach (CallbackInfo cbInfo in _itemRemovedListener)
+                    {
+                        temp += cbInfo.Size;
+                    }
+                }
+                if (_itemUpdateListener != null)
+                {
+                    temp += _itemRemovedListener.Count * Common.MemoryUtil.NetListOverHead;
+                    foreach (CallbackInfo cbInfo in _itemUpdateListener)
+                    {
+                        temp += cbInfo.Size;
+                    }
+                }
+                return temp;
+            }
+        }
         #endregion
     }
 }

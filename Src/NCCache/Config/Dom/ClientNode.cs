@@ -26,7 +26,7 @@ namespace Alachisoft.NCache.Config.Dom
     public class ClientNode : ICloneable,ICompactSerializable
     {
         string name;
-        private ClientNodeStatus status =ClientNodeStatus.ClientCacheUnavailable ;
+        private ClientNodeStatus status =ClientNodeStatus.ClientCacheUnavailable;
         RtContextValue clientRuntimeContext= RtContextValue.NCACHE;
         
 

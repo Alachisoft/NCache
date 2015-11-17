@@ -11,6 +11,7 @@
     <RootNamespace>ConsoleService</RootNamespace>
     <AssemblyName>ConsoleService</AssemblyName>
     <TargetFrameworkVersion>v4.0</TargetFrameworkVersion>
+    <AssemblyOriginatorKeyFile>..\..\..\..\..\..\Resources\ncache.snk</AssemblyOriginatorKeyFile>
     <FileAlignment>512</FileAlignment>
     <TargetFrameworkProfile />
     <SccProjectName>
@@ -69,7 +70,7 @@
     <CodeAnalysisIgnoreBuiltInRules>false</CodeAnalysisIgnoreBuiltInRules>
   </PropertyGroup>
   <ItemGroup>
-    <Reference Include="Alachisoft.NCache.Common, Version=4.3.0.0, Culture=neutral, PublicKeyToken=cff5926ed6a53769, processorArchitecture=MSIL">
+    <Reference Include="Alachisoft.NCache.Common, ">
       <SpecificVersion>False</SpecificVersion>
       <HintPath>..\..\..\..\..\Src\build\Server\4x\Alachisoft.NCache.Common.dll</HintPath>
     </Reference>

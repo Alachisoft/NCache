@@ -70,6 +70,37 @@ namespace Alachisoft.NCache.Web.SessionState
             get { return _operationRetry; }
         }
 
+        public static string ApplicationId
+        {
+            get { return s_applicationId; }
+        }
+
+        public static string SessionCacheId
+        {
+            get
+            {
+                if (_cache != null)
+                {
+                    return _cache.GetCacheId;
+                }
+                else
+                { return null; }
+            }
+        }
+
+        public static string SessionCacheName
+        {
+            get
+            {
+                if (_cache != null)
+                {
+                    return _cache.GetCacheId;
+                }
+                else
+                { return null; }
+            }
+        }
+
         /// <summary>
         /// Initializes the provider. Takes, as input, the name of the provider and a
         /// NameValueCollection of configuration settings. This method is used to set 

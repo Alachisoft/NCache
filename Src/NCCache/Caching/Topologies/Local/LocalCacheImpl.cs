@@ -449,7 +449,7 @@ namespace Alachisoft.NCache.Caching.Topologies.Local
         /// <param name="removalReason">reason for the removal.</param>
         /// <param name="notify">boolean specifying to raise the event.</param>
         /// <returns>removed keys list</returns>
-        public override Hashtable Remove(object[] keys, ItemRemoveReason ir, bool notify, OperationContext operationContext)
+        public override Hashtable Remove(IList keys, ItemRemoveReason ir, bool notify, OperationContext operationContext)
         {
             Hashtable retVal = Internal.Remove(keys, ir, notify, operationContext);
             return retVal;

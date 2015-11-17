@@ -200,10 +200,6 @@ namespace Alachisoft.NCache.Caching.Topologies.Clustered
         /// <summary>controls the priority of the events </summary>
         protected Priority _eventPriority = Priority.Normal;
 
-        private Stream _inStream = new MemoryStream(8000);
-
-        private Stream _outStream = new MemoryStream(8000);
-
         private ClusterOperationSynchronizer _asynHandler;
 
         private Hashtable _membersRenders = Hashtable.Synchronized(new Hashtable());
@@ -835,6 +831,7 @@ namespace Alachisoft.NCache.Caching.Topologies.Clustered
             {
                 if (ServerMonitor.MonitorActivity) ServerMonitor.LogClientActivity("ClustService.SendMsg", "dest_addr :" + dest);
 
+                object result;
                 byte[] serializedMsg = SerializeMessage(msg);
                 Message m = new Message(dest, null, serializedMsg);
                 if (msg is Function)
@@ -842,9 +839,14 @@ namespace Alachisoft.NCache.Caching.Topologies.Clustered
                     m.Payload = ((Function)msg).UserPayload;
                     m.responseExpected = ((Function)msg).ResponseExpected;
                 }
-                object result = _msgDisp.sendMessage(m, mode, timeout);
+                result = _msgDisp.sendMessage(m, mode, timeout);
                 if (result is OperationResponse)
                 {
+                    if (((OperationResponse)result).SerilizationStream != null)
+                    {
+                        CompactBinaryFormatter.Serialize(((OperationResponse)result).SerilizationStream, ((OperationResponse)result).SerializablePayload, _context.SerializationContext, false);
+                    }
+                    else
                     ((OperationResponse)result).SerializablePayload = CompactBinaryFormatter.FromByteBuffer((byte[])((OperationResponse)result).SerializablePayload, _context.SerializationContext);
                 }
                 else if (result is byte[])

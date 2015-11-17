@@ -22,6 +22,8 @@ namespace Alachisoft.NCache.Common
     public class BitSet : ICloneable, IDisposable, Runtime.Serialization.ICompactSerializable
     {
         private byte _bitset;
+        public const int Size = 24;
+
 
         public BitSet() { }
         public BitSet(byte bitset) { this._bitset = bitset; }

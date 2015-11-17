@@ -64,22 +64,7 @@
     <WarningLevel>4</WarningLevel>
     <CodeAnalysisRuleSet>AllRules.ruleset</CodeAnalysisRuleSet>
   </PropertyGroup>
-  <PropertyGroup Condition="'$(Configuration)|$(Platform)' == 'Release.4x|AnyCPU'">
-    <OutputPath>bin\Release.4x\</OutputPath>
-    <DefineConstants>TRACE</DefineConstants>
-    <Optimize>true</Optimize>
-    <TargetFrameworkVersion>v4.0</TargetFrameworkVersion>
-    <DebugType>pdbonly</DebugType>
-    <PlatformTarget>AnyCPU</PlatformTarget>
-    <CodeAnalysisLogFile>bin\Release\Alachisoft.NCache.Linq.dll.CodeAnalysisLog.xml</CodeAnalysisLogFile>
-    <CodeAnalysisUseTypeNameInSuppression>true</CodeAnalysisUseTypeNameInSuppression>
-    <CodeAnalysisModuleSuppressionsFile>GlobalSuppressions.cs</CodeAnalysisModuleSuppressionsFile>
-    <ErrorReport>prompt</ErrorReport>
-    <CodeAnalysisRuleSet>AllRules.ruleset</CodeAnalysisRuleSet>
-    <CodeAnalysisRuleSetDirectories>;C:\Program Files (x86)\Microsoft Visual Studio 10.0\Team Tools\Static Analysis Tools\\Rule Sets</CodeAnalysisRuleSetDirectories>
-    <CodeAnalysisIgnoreBuiltInRuleSets>false</CodeAnalysisIgnoreBuiltInRuleSets>
-    <CodeAnalysisRuleDirectories>;C:\Program Files (x86)\Microsoft Visual Studio 10.0\Team Tools\Static Analysis Tools\FxCop\\Rules</CodeAnalysisRuleDirectories>
-  </PropertyGroup>
+
   <PropertyGroup Condition="'$(Configuration)|$(Platform)' == 'Release.2x|AnyCPU'">
     <OutputPath>bin\Release.2x\</OutputPath>
     <DefineConstants>TRACE</DefineConstants>
@@ -97,17 +82,32 @@
     <CodeAnalysisRuleSetDirectories>;C:\Program Files (x86)\Microsoft Visual Studio 10.0\Team Tools\Static Analysis Tools\\Rule Sets</CodeAnalysisRuleSetDirectories>
     <CodeAnalysisRuleDirectories>;C:\Program Files (x86)\Microsoft Visual Studio 10.0\Team Tools\Static Analysis Tools\FxCop\\Rules</CodeAnalysisRuleDirectories>
   </PropertyGroup>
-  <ItemGroup Condition="'$(Configuration)|$(Platform)' == 'Release|AnyCPU'">
-    <Reference Include="Alachisoft.NCache.Web">
+  <PropertyGroup>
+    <SignAssembly>true</SignAssembly>
+  </PropertyGroup>
+  <PropertyGroup>
+    <AssemblyOriginatorKeyFile>..\..\..\Resources\ncache.snk</AssemblyOriginatorKeyFile>
+  </PropertyGroup>
+  <PropertyGroup>
+    <DelaySign>false</DelaySign>
+  </PropertyGroup>
+
+  <ItemGroup Condition="'$(Configuration)|$(Platform)' == 'Release.2x|AnyCPU'">
+    <Reference Include="Alachisoft.NCache.Web, Version=4.4.0.0, Culture=neutral, PublicKeyToken=1448e8d1123e9096, processorArchitecture=MSIL">
       <SpecificVersion>False</SpecificVersion>
-      <HintPath>..\..\..\Src\build\Server\4x\Alachisoft.NCache.Web.dll</HintPath>
+      <HintPath>..\..\..\Src\build\Server\2x\Alachisoft.NCache.Web.dll</HintPath>
     </Reference>
+    
   </ItemGroup>
-  <ItemGroup>
+  
+  <ItemGroup Condition="'$(Configuration)|$(Platform)' == 'Release|AnyCPU'">
     <Reference Include="Alachisoft.NCache.Web, Version=4.4.0.0, Culture=neutral, PublicKeyToken=1448e8d1123e9096, processorArchitecture=MSIL">
       <SpecificVersion>False</SpecificVersion>
       <HintPath>..\..\..\Src\build\Server\4x\Alachisoft.NCache.Web.dll</HintPath>
     </Reference>
+  </ItemGroup>
+
+  <ItemGroup>
     <Reference Include="System" />
     <Reference Include="System.Core">
       <RequiredTargetFramework>3.5</RequiredTargetFramework>
@@ -121,6 +121,8 @@
     <Reference Include="System.Data" />
     <Reference Include="System.Xml" />
   </ItemGroup>
+  
+  
   <ItemGroup>
     <Compile Include="Evaluator.cs" />
     <Compile Include="ExpressionVisitor.cs" />

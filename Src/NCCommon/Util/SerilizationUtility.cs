@@ -17,6 +17,7 @@ using System.Text;
 using System.Collections;
 
 using Runtime = Alachisoft.NCache.Runtime;
+using Alachisoft.NCache.Common.DataStructures.Clustered;
 
 namespace Alachisoft.NCache.Common.Util
 {
@@ -136,5 +137,45 @@ namespace Alachisoft.NCache.Common.Util
              else
                  return null;
         }
+
+        public static void SerializeClusteredList<T>(ClusteredList<T> list, Runtime.Serialization.IO.CompactWriter writer)
+        {
+            if (list == null)
+            {
+                writer.Write(false);
+                return;
+            }
+            else
+            {
+                writer.Write(true);
+                writer.Write(list.Count);
+                for (int i = 0; i < list.Count; i++)
+                {
+                    writer.WriteObject(list[i]);
+
+                }
+            }
+        }
+
+
+        public static ClusteredList<T> DeserializeClusteredList<T>(Runtime.Serialization.IO.CompactReader reader)
+        {
+            bool flag = reader.ReadBoolean();
+
+            if (flag)
+            {
+                int length = reader.ReadInt32();
+                ClusteredList<T> list = new ClusteredList<T>();
+
+                for (int i = 0; i < length; i++)
+                    list.Add((T)reader.ReadObject());
+
+                return list;
+            }
+            else
+                return null;
+        }
+
+
     }
 }

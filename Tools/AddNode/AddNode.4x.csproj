@@ -81,16 +81,16 @@
     <ErrorReport>prompt</ErrorReport>
   </PropertyGroup>
   <ItemGroup>
-    <Reference Include="Alachisoft.NCache.Cache">
+    <Reference Include="Alachisoft.NCache.Cache , Version=4.4.0.0, Culture=neutral, PublicKeyToken=1448e8d1123e9096, processorArchitecture=MSIL">
       <HintPath>..\..\Src\build\Server\4x\Alachisoft.NCache.Cache.dll</HintPath>
     </Reference>
-    <Reference Include="Alachisoft.NCache.Common">
+    <Reference Include="Alachisoft.NCache.Common, Version=4.4.0.0, Culture=neutral, PublicKeyToken=1448e8d1123e9096, processorArchitecture=MSIL">
       <HintPath>..\..\Src\build\Server\4x\Alachisoft.NCache.Common.dll</HintPath>
     </Reference>
-    <Reference Include="Alachisoft.NCache.Management">
+    <Reference Include="Alachisoft.NCache.Management, Version=4.4.0.0, Culture=neutral, PublicKeyToken=1448e8d1123e9096, processorArchitecture=MSIL">
       <HintPath>..\..\Src\build\Server\4x\Alachisoft.NCache.Management.dll</HintPath>
     </Reference>
-    <Reference Include="Alachisoft.NCache.Runtime">
+    <Reference Include="Alachisoft.NCache.Runtime, Version=4.4.0.0, Culture=neutral, PublicKeyToken=1448e8d1123e9096, processorArchitecture=MSIL">
       <HintPath>..\..\Src\build\Server\4x\Alachisoft.NCache.Runtime.dll</HintPath>
     </Reference>
     <Reference Include="System">

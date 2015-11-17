@@ -16,12 +16,13 @@ using System.Collections.Generic;
 //using System.Linq;
 using System.Text;
 using System.Collections;
+using Alachisoft.NCache.Common.DataStructures.Clustered;
 
 namespace Alachisoft.NCache.SocketServer
 {
     class EventsQueue : IQueue
     {
-        private Queue _queue = new Queue();
+        private ClusteredQueue<object> _queue = new ClusteredQueue<object>();
         private int _eventBulkCount;
 
         public EventsQueue(int eventBulkCount)

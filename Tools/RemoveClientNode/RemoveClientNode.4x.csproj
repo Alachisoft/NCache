@@ -9,11 +9,13 @@
     <OutputType>Exe</OutputType>
     <AppDesignerFolder>Properties</AppDesignerFolder>
     <RootNamespace>RemoveClientNode</RootNamespace>
+    <AssemblyOriginatorKeyFile>..\..\Resources\ncache.snk</AssemblyOriginatorKeyFile>
     <AssemblyName>removeclientnode</AssemblyName>
     <StartupObject>
     </StartupObject>
     <SignAssembly>true</SignAssembly>
-    <AssemblyOriginatorKeyFile>ncache.snk</AssemblyOriginatorKeyFile>
+    <AssemblyOriginatorKeyFile>
+    </AssemblyOriginatorKeyFile>
     <SccProjectName>
     </SccProjectName>
     <SccLocalPath>
@@ -113,9 +115,6 @@
       <Project>{200CB06E-BC59-469C-9339-81A0C16D79CF}</Project>
       <Name>ToolServerOperations.4x</Name>
     </ProjectReference>
-  </ItemGroup>
-  <ItemGroup>
-    <None Include="ncache.snk" />
   </ItemGroup>
   <Import Project="$(MSBuildBinPath)\Microsoft.CSharp.targets" />
   <PropertyGroup>

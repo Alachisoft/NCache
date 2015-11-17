@@ -39,48 +39,48 @@ namespace Alachisoft.NCache.Runtime
 	/// <constraint>This member is not available in SessionState edition.</constraint> 
 	/// </requirements>
 	[Serializable]
-	public enum CacheItemPriority
+	public enum CacheItemPriority: byte
 	{
         /// <summary>
 		/// Cache items with this priority level are the most likely to be deleted 
 		/// from the cache as the server frees system memory.
 		/// </summary>
-		Low = -2,
+		Low,
 
 		/// <summary>
 		/// Cache items with this priority level are more likely to be deleted from 
 		/// the cache as the server frees system memory than items assigned a Normal priority.
 		/// </summary>
-		BelowNormal = -1,
+		BelowNormal,
 
 		/// <summary>
 		/// Cache items with this priority level are likely to be deleted from the 
 		/// cache as the server frees system memory only after those items with Low 
 		/// or BelowNormal priority. This is the default.
 		/// </summary>
-		Normal = 0,
+		Normal,
 
 		/// <summary>
 		/// Cache items with this priority level are less likely to be deleted as 
 		/// the server frees system memory than those assigned a Normal priority.
 		/// </summary>
-		AboveNormal = 1,
+		AboveNormal,
 
 		/// <summary>
 		/// Cache items with this priority level are the least likely to be deleted 
 		/// from the cache as the server frees system memory.
 		/// </summary>
-		High = 2,
+		High,
 
 		/// <summary>
 		/// The cache items with this priority level will not be deleted from the 
 		/// cache as the server frees system memory.
 		/// </summary>
-		NotRemovable = 3,
+		NotRemovable,
 
         /// <summary>
         /// The default value for a cached item's priority is <see cref="Normal"/>.
         /// </summary>
-        Default = 4
+        Default
 	}
 }

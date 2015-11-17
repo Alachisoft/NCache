@@ -3,16 +3,17 @@
   <PropertyGroup>
     <Configuration Condition=" '$(Configuration)' == '' ">Debug</Configuration>
     <Platform Condition=" '$(Platform)' == '' ">AnyCPU</Platform>
-    <ProductVersion>8.0.30703</ProductVersion>
+    <ProductVersion>9.0.30729</ProductVersion>
     <SchemaVersion>2.0</SchemaVersion>
     <ProjectGuid>{88D5E2C9-DD4C-46AF-8487-940C4826D04D}</ProjectGuid>
     <OutputType>Library</OutputType>
     <AppDesignerFolder>Properties</AppDesignerFolder>
-    <RootNamespace>Alachisoft.NCache.Integrations.NHibernate.Cache</RootNamespace>
-    <AssemblyName>Alachisoft.NCache.Integrations.NHibernate.Cache</AssemblyName>
     <TargetFrameworkVersion>v4.0</TargetFrameworkVersion>
     <FileAlignment>512</FileAlignment>
-    <TargetFrameworkProfile />
+    <StartupObject>
+    </StartupObject>
+    <RootNamespace>Alachisoft.NCache.Integrations.NHibernate.Cache</RootNamespace>
+    <AssemblyName>Alachisoft.NCache.Integrations.NHibernate.Cache</AssemblyName>
     <SccProjectName>
     </SccProjectName>
     <SccLocalPath>
@@ -21,67 +22,143 @@
     </SccAuxPath>
     <SccProvider>
     </SccProvider>
+    <FileUpgradeFlags>
+    </FileUpgradeFlags>
+    <UpgradeBackupLocation>
+    </UpgradeBackupLocation>
+    <OldToolsVersion>3.5</OldToolsVersion>
+    <PublishUrl>publish\</PublishUrl>
+    <Install>true</Install>
+    <InstallFrom>Disk</InstallFrom>
+    <UpdateEnabled>false</UpdateEnabled>
+    <UpdateMode>Foreground</UpdateMode>
+    <UpdateInterval>7</UpdateInterval>
+    <UpdateIntervalUnits>Days</UpdateIntervalUnits>
+    <UpdatePeriodically>false</UpdatePeriodically>
+    <UpdateRequired>false</UpdateRequired>
+    <MapFileExtensions>true</MapFileExtensions>
+    <ApplicationRevision>0</ApplicationRevision>
+    <ApplicationVersion>1.0.0.%2a</ApplicationVersion>
+    <IsWebBootstrapper>false</IsWebBootstrapper>
+    <UseApplicationTrust>false</UseApplicationTrust>
+    <BootstrapperEnabled>true</BootstrapperEnabled>
+    <TargetFrameworkProfile />
   </PropertyGroup>
   <PropertyGroup Condition=" '$(Configuration)|$(Platform)' == 'Debug|AnyCPU' ">
     <DebugSymbols>true</DebugSymbols>
     <DebugType>full</DebugType>
     <Optimize>false</Optimize>
     <OutputPath>bin\Debug\</OutputPath>
-    <DefineConstants>TRACE;DEBUG;PROFESSIONAL</DefineConstants>
+    <DefineConstants>DEBUG;TRACE</DefineConstants>
     <ErrorReport>prompt</ErrorReport>
     <WarningLevel>4</WarningLevel>
-    <PlatformTarget>AnyCPU</PlatformTarget>
+    <CodeAnalysisRuleSet>AllRules.ruleset</CodeAnalysisRuleSet>
   </PropertyGroup>
   <PropertyGroup Condition=" '$(Configuration)|$(Platform)' == 'Release|AnyCPU' ">
-    <DebugType>pdbonly</DebugType>
-    <Optimize>true</Optimize>
     <OutputPath>bin\Release\</OutputPath>
     <DefineConstants>TRACE</DefineConstants>
     <ErrorReport>prompt</ErrorReport>
     <WarningLevel>4</WarningLevel>
+    <CodeAnalysisRuleSet>AllRules.ruleset</CodeAnalysisRuleSet>
     <TargetFrameworkVersion>v4.0</TargetFrameworkVersion>
   </PropertyGroup>
   <PropertyGroup Condition="'$(Configuration)|$(Platform)' == 'Release2x|AnyCPU'">
     <OutputPath>bin\Release2x\</OutputPath>
     <DefineConstants>TRACE</DefineConstants>
     <TargetFrameworkVersion>v3.5</TargetFrameworkVersion>
-    <Optimize>true</Optimize>
-    <DebugType>pdbonly</DebugType>
     <PlatformTarget>AnyCPU</PlatformTarget>
+    <CodeAnalysisUseTypeNameInSuppression>true</CodeAnalysisUseTypeNameInSuppression>
+    <CodeAnalysisModuleSuppressionsFile>GlobalSuppressions.cs</CodeAnalysisModuleSuppressionsFile>
+    <ErrorReport>prompt</ErrorReport>
+    <CodeAnalysisRuleSet>AllRules.ruleset</CodeAnalysisRuleSet>
+    <CodeAnalysisRuleSetDirectories>;C:\Program Files (x86)\Microsoft Visual Studio 10.0\Team Tools\Static Analysis Tools\\Rule Sets</CodeAnalysisRuleSetDirectories>
+    <CodeAnalysisRuleDirectories>;C:\Program Files (x86)\Microsoft Visual Studio 10.0\Team Tools\Static Analysis Tools\FxCop\\Rules</CodeAnalysisRuleDirectories>
   </PropertyGroup>
+  <ItemGroup Condition=" '$(Configuration)|$(Platform)' == 'Release|AnyCPU' ">
+    <Reference Include="Alachisoft.NCache.Cache, Version=4.4.0.0, Culture=neutral, PublicKeyToken=1448e8d1123e9096, processorArchitecture=MSIL">
+      <SpecificVersion>False</SpecificVersion>
+      <HintPath>..\..\..\Src\build\Server\4x\Alachisoft.NCache.Cache.dll</HintPath>
+      <Private>True</Private>
+    </Reference>
+    <Reference Include="Alachisoft.NCache.Common, Version=4.4.0.0, Culture=neutral, PublicKeyToken=1448e8d1123e9096, processorArchitecture=MSIL">
+      <SpecificVersion>False</SpecificVersion>
+      <HintPath>..\..\..\Src\build\Server\4x\Alachisoft.NCache.Common.dll</HintPath>
+      <Private>True</Private>
+    </Reference>
+    <Reference Include="Alachisoft.NCache.Management, Version=4.4.0.0, Culture=neutral, PublicKeyToken=1448e8d1123e9096, processorArchitecture=MSIL">
+      <SpecificVersion>False</SpecificVersion>
+      <HintPath>..\..\..\Src\build\Server\4x\Alachisoft.NCache.Management.dll</HintPath>
+      <Private>True</Private>
+    </Reference>
+    <Reference Include="Alachisoft.NCache.Runtime, Version=4.4.0.0, Culture=neutral, PublicKeyToken=1448e8d1123e9096, processorArchitecture=MSIL">
+      <HintPath>..\..\..\Src\build\Server\4x\Alachisoft.NCache.Runtime.dll</HintPath>
+      <Private>True</Private>
+    </Reference>
+    <Reference Include="Alachisoft.NCache.Web, Version=4.4.0.0, Culture=neutral, PublicKeyToken=1448e8d1123e9096, processorArchitecture=MSIL">
+      <SpecificVersion>False</SpecificVersion>
+      <HintPath>..\..\..\Src\build\Server\4x\Alachisoft.NCache.Web.dll</HintPath>
+      <Private>True</Private>
+    </Reference>
+  </ItemGroup>
   <ItemGroup>
+    <Reference Include="System">
+      <Private>False</Private>
+    </Reference>
+    <Reference Include="System.configuration">
+      <Private>False</Private>
+    </Reference>
+    <Reference Include="System.Core">
+      <RequiredTargetFramework>3.5</RequiredTargetFramework>
+      <Private>False</Private>
+    </Reference>
+    <Reference Include="System.Xml.Linq">
+      <RequiredTargetFramework>3.5</RequiredTargetFramework>
+      <Private>False</Private>
+    </Reference>
+    <Reference Include="System.Data.DataSetExtensions">
+      <RequiredTargetFramework>3.5</RequiredTargetFramework>
+      <Private>False</Private>
+    </Reference>
+    <Reference Include="System.Data">
+      <Private>False</Private>
+    </Reference>
+    <Reference Include="System.Xml">
+      <Private>False</Private>
+    </Reference>
+    <Reference Include="Iesi.Collections">
+      <HintPath>..\..\..\Resources\nhibernate\Iesi.Collections.dll</HintPath>
+      <Private>False</Private>
+    </Reference>
+    <Reference Include="NHibernate">
+      <HintPath>..\..\..\Resources\nhibernate\NHibernate.dll</HintPath>
+      <Private>False</Private>
+    </Reference>
+  </ItemGroup>
+  <ItemGroup Condition="'$(Configuration)|$(Platform)' == 'Release2x|AnyCPU'">
     <Reference Include="Alachisoft.NCache.Cache, Version=4.4.0.0, Culture=neutral, PublicKeyToken=1448e8d1123e9096, processorArchitecture=MSIL">
       <SpecificVersion>False</SpecificVersion>
       <HintPath>..\..\..\Src\build\Server\2x\Alachisoft.NCache.Cache.dll</HintPath>
+      <Private>True</Private>
     </Reference>
     <Reference Include="Alachisoft.NCache.Common, Version=4.4.0.0, Culture=neutral, PublicKeyToken=1448e8d1123e9096, processorArchitecture=MSIL">
       <SpecificVersion>False</SpecificVersion>
       <HintPath>..\..\..\Src\build\Server\2x\Alachisoft.NCache.Common.dll</HintPath>
+      <Private>True</Private>
     </Reference>
     <Reference Include="Alachisoft.NCache.Management, Version=4.4.0.0, Culture=neutral, PublicKeyToken=1448e8d1123e9096, processorArchitecture=MSIL">
       <SpecificVersion>False</SpecificVersion>
       <HintPath>..\..\..\Src\build\Server\2x\Alachisoft.NCache.Management.dll</HintPath>
+      <Private>True</Private>
     </Reference>
-    <Reference Include="Alachisoft.NCache.Runtime">
+    <Reference Include="Alachisoft.NCache.Runtime, Version=4.4.0.0, Culture=neutral, PublicKeyToken=1448e8d1123e9096, processorArchitecture=MSIL">
       <HintPath>..\..\..\Src\build\Server\2x\Alachisoft.NCache.Runtime.dll</HintPath>
+      <Private>True</Private>
     </Reference>
     <Reference Include="Alachisoft.NCache.Web, Version=4.4.0.0, Culture=neutral, PublicKeyToken=1448e8d1123e9096, processorArchitecture=MSIL">
       <SpecificVersion>False</SpecificVersion>
       <HintPath>..\..\..\Src\build\Server\2x\Alachisoft.NCache.Web.dll</HintPath>
+      <Private>True</Private>
     </Reference>
-    <Reference Include="Iesi.Collections">
-      <HintPath>bin\Iesi.Collections.dll</HintPath>
-    </Reference>
-    <Reference Include="NHibernate">
-      <HintPath>bin\NHibernate.dll</HintPath>
-    </Reference>
-    <Reference Include="System" />
-    <Reference Include="System.configuration" />
-    <Reference Include="System.Core" />
-    <Reference Include="System.Xml.Linq" />
-    <Reference Include="System.Data.DataSetExtensions" />
-    <Reference Include="System.Data" />
-    <Reference Include="System.Xml" />
   </ItemGroup>
   <ItemGroup>
     <Compile Include="CacheHandler.cs" />
@@ -98,6 +175,21 @@
     <Content Include="NCacheNHibernate.xml">
       <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
     </Content>
+    <BootstrapperPackage Include="Microsoft.Net.Client.3.5">
+      <Visible>False</Visible>
+      <ProductName>.NET Framework 3.5 SP1 Client Profile</ProductName>
+      <Install>false</Install>
+    </BootstrapperPackage>
+    <BootstrapperPackage Include="Microsoft.Net.Framework.3.5.SP1">
+      <Visible>False</Visible>
+      <ProductName>.NET Framework 3.5 SP1</ProductName>
+      <Install>true</Install>
+    </BootstrapperPackage>
+    <BootstrapperPackage Include="Microsoft.Windows.Installer.3.1">
+      <Visible>False</Visible>
+      <ProductName>Windows Installer 3.1</ProductName>
+      <Install>true</Install>
+    </BootstrapperPackage>
   </ItemGroup>
   <Import Project="$(MSBuildToolsPath)\Microsoft.CSharp.targets" />
   <!-- To modify your build process, add your task inside one of the targets below and uncomment it. 

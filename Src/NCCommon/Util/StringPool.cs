@@ -21,34 +21,88 @@ namespace Alachisoft.NCache.Common.Util
 
     public class StringPool
     {
-        private static Hashtable _pool = new Hashtable();
-        private static object _sync_lock = new object();
+        private static Hashtable _stringPool = new Hashtable();
+
+        private static Dictionary<String, ushort> _providerIDsPool = new Dictionary<String, ushort>();
+        private static Dictionary<ushort, String> _providerNamesPool = new Dictionary<ushort, String>();
+
+
+        private static ushort _providerID = 0;
+
+        private static object _stringLock = new object();
+        private static object _providerLock = new object();
 
         /// <summary>
-        /// Gets a larg buffer from the pool.
+        /// Gets a string from the pool.
         /// </summary>
         /// <returns></returns>
         public static String PoolString(String str)
         {
-            lock (_sync_lock)
+            if (String.IsNullOrEmpty(str)) return null;
+            lock (_stringLock)
             {
-                if (!_pool.Contains(str))
+                if (!_stringPool.Contains(str))
                 {
-                    _pool[str] = str;
+                    _stringPool[str] = str;
                 }
 
-                return _pool[str] as string;
+                return _stringPool[str] as string;
             }
         }
 
         /// <summary>
-        /// Releases all the buffers.
+        /// Gets provider from the pool.
+        /// </summary>
+        /// <returns></returns>
+        public static void PoolProviderName(String providerName)
+        {
+            lock (_providerLock)
+            {
+                if (!_providerIDsPool.ContainsKey(providerName))
+                {
+                    _providerNamesPool[++_providerID] = providerName;
+                    _providerIDsPool[providerName] = _providerID;
+                }
+            }
+        }
+
+        /// <summary>
+        /// Gets provider from the pool.
+        /// </summary>
+        /// <returns></returns>
+        public static ushort GetProviderID(String providerName)
+        {
+            if (!String.IsNullOrEmpty(providerName) && _providerIDsPool.ContainsKey(providerName))
+            {
+                return _providerIDsPool[providerName];
+            }
+
+            return 0;
+        }
+
+
+        /// <summary>
+        /// Gets provider from the pool.
+        /// </summary>
+        /// <returns></returns>
+        public static String GetProviderName(ushort providerID)
+        {
+            if (_providerNamesPool.ContainsKey(providerID))
+            {
+                return _providerNamesPool[providerID];
+            }
+
+            return String.Empty;
+        }
+
+        /// <summary>
+        /// Releases all the strings.
         /// </summary>
         public static void Clear()
         {
-            lock (_sync_lock)
+            lock (_stringLock)
             {
-                _pool.Clear();
+                _stringPool.Clear();
             }
         }
     }

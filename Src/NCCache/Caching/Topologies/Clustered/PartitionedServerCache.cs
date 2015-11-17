@@ -880,8 +880,9 @@ namespace Alachisoft.NCache.Caching.Topologies.Clustered
                 corresponder.TransferBucket(bucketIds, sparsedBuckets, expectedTxfrId);
             OperationResponse rsp = new OperationResponse();
             rsp.SerializablePayload = transferInfo;
-            if (transferInfo.PayLoad != null)
-                rsp.UserPayload = transferInfo.PayLoad.ToArray();
+            rsp.SerilizationStream = transferInfo.SerlizationStream;
+            //if (transferInfo.PayLoad != null)
+            //    rsp.UserPayload = transferInfo.PayLoad;
             return rsp;
         }
 
@@ -3117,7 +3118,7 @@ namespace Alachisoft.NCache.Caching.Topologies.Clustered
         /// <see cref="OnItemsRemoved"/> handler.
         /// </para>
         /// </remarks>
-        public override Hashtable Remove(object[] keys, ItemRemoveReason ir, bool notify, OperationContext operationContext)
+        public override Hashtable Remove(IList keys, ItemRemoveReason ir, bool notify, OperationContext operationContext)
         {
             if (ServerMonitor.MonitorActivity) ServerMonitor.LogClientActivity("PoRCache.Remove", "");
             /// Wait until the object enters any running status
@@ -3128,7 +3129,7 @@ namespace Alachisoft.NCache.Caching.Topologies.Clustered
 
             Hashtable result = new Hashtable();
 
-            if (keys != null && keys.Length > 0)
+            if (keys != null && keys.Count > 0)
             {
                 if (_internalCache == null) throw new InvalidOperationException();
                 
@@ -3146,7 +3147,7 @@ namespace Alachisoft.NCache.Caching.Topologies.Clustered
             return result;
         }
 
-        private Hashtable ClusteredRemove(object[] keys, ItemRemoveReason ir, CallbackEntry cbEntry, bool notify, OperationContext operationContext)
+        private Hashtable ClusteredRemove(IList keys, ItemRemoveReason ir, CallbackEntry cbEntry, bool notify, OperationContext operationContext)
         {
             if (ServerMonitor.MonitorActivity) ServerMonitor.LogClientActivity("PoRCache.RemoveBlk", "");
 
@@ -3254,7 +3255,7 @@ namespace Alachisoft.NCache.Caching.Topologies.Clustered
             return result;
         }
 
-        private Hashtable OptimizedRemove(object[] keys, ItemRemoveReason ir, CallbackEntry cbEntry, bool notify, OperationContext operationContext)
+        private Hashtable OptimizedRemove(IList keys, ItemRemoveReason ir, CallbackEntry cbEntry, bool notify, OperationContext operationContext)
         {
             if (ServerMonitor.MonitorActivity) ServerMonitor.LogClientActivity("PoRCache.RemoveBlk", "");
 
@@ -3269,7 +3270,7 @@ namespace Alachisoft.NCache.Caching.Topologies.Clustered
             }
             catch (Exception ex)
             {
-                for (int i = 0; i < keys.Length; i++)
+                for (int i = 0; i < keys.Count; i++)
                 {
                     result[keys[i]] = new OperationFailedException(ex.Message, ex);
                 }
@@ -3337,7 +3338,7 @@ namespace Alachisoft.NCache.Caching.Topologies.Clustered
         /// <param name="notify"></param>
         /// <param name="operationContext"></param>
         /// <returns>list of removed keys.</returns>
-        private Hashtable Local_Remove(object[] keys, ItemRemoveReason ir, Address src, CallbackEntry cbEntry, bool notify, OperationContext operationContext)
+        private Hashtable Local_Remove(IList keys, ItemRemoveReason ir, Address src, CallbackEntry cbEntry, bool notify, OperationContext operationContext)
         {
             Hashtable removedKeys = null;
 

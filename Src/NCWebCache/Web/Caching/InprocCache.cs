@@ -27,6 +27,7 @@ using Alachisoft.NCache.Runtime;
 
 using Alachisoft.NCache.Caching.Queries;
 using Alachisoft.NCache.Runtime.Events;
+using System.Collections.Generic;
 
 namespace Alachisoft.NCache.Web.Caching
 {
@@ -1213,6 +1214,17 @@ namespace Alachisoft.NCache.Web.Caching
             }
 
             return nextChunk;
+        }
+        public override List<EnumerationDataChunk> GetNextChunk(List<EnumerationPointer> pointers)
+        {
+            EnumerationPointer pointer = null;
+            List<EnumerationDataChunk> chunks = new List<EnumerationDataChunk>();
+            if (pointers.Count > 0)
+            {
+                pointer = pointers[0];
+                chunks.Add(_nCache.GetNextChunk(pointer, new OperationContext()));
+            }
+            return chunks;
         }
 
         #endregion

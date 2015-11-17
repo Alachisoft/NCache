@@ -235,7 +235,7 @@ namespace Alachisoft.NCache.Caching.Topologies.Clustered
                             }
                             catch (Exception ex)
                             {
-                                if (_context.NCacheLog.IsErrorEnabled) _context.NCacheLog.Error( "AsyncReplicator.RUN", "Error occured while retrying operation. " + ex.ToString());
+                                if (_context.NCacheLog.IsErrorEnabled) _context.NCacheLog.Error( "AsyncReplicator.RUN", "Error occurred while retrying operation. " + ex.ToString());
                             }
                         }
                         else

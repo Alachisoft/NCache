@@ -145,6 +145,7 @@
     <Compile Include="SocketServer\ClientManager.cs" />
     <Compile Include="SocketServer\Command\GetOptimalServerCommand.cs" />
     <Compile Include="SocketServer\Command\GetRunningServersCommand.cs" />
+    <Compile Include="SocketServer\Command\GetServerMappingCommand.cs" />
     <Compile Include="SocketServer\Event Tasks\NodeJoinedEvent.cs" />
     <Compile Include="SocketServer\Event Tasks\NodeLeftEvent.cs" />
     <Compile Include="SocketServer\ICommandExecuter.cs" />
@@ -216,10 +217,8 @@
     <Compile Include="SocketServer\SendContext.cs" />
     <Compile Include="SocketServer\SocketServer.cs" />
     <Compile Include="SocketServer\Statistics\PerfStatsCollector.cs" />
-    <Compile Include="SocketServer\Util\Encoding.cs" />
     <Compile Include="SocketServer\Util\EventHelper.cs" />
     <Compile Include="SocketServer\Util\HelperFxn.cs" />
-    <Compile Include="SocketServer\Util\InitEncoding.cs" />
     <Compile Include="SocketServer\Util\KeyPackageBuilder.cs" />
   </ItemGroup>
   <ItemGroup>

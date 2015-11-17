@@ -11,17 +11,23 @@
 // WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
 // See the License for the specific language governing permissions and
 // limitations under the License.
+
+
 using System.Collections;
+using Alachisoft.NCache.Common.DataStructures.Clustered;
+using System.IO;
+
 
 namespace Alachisoft.NCache.Caching.Topologies.Clustered
 {
     public class StateTxfrInfo : Runtime.Serialization.ICompactSerializable
     {
-        public Hashtable data;
+        public HashVector data;
         public bool transferCompleted;
-        private ArrayList _payLoad;
-        private ArrayList _payLoadCompilationInformation;
+        //private ArrayList _payLoad;
+        //private ArrayList _payLoadCompilationInformation;
         private long sendDataSize;
+        private Stream stream;
 
         public StateTxfrInfo(bool transferCompleted)
         {
@@ -29,18 +35,23 @@ namespace Alachisoft.NCache.Caching.Topologies.Clustered
             data = null;
         }
 
-        public StateTxfrInfo(Hashtable data,ArrayList payLoad,ArrayList payLoadCompInfo, bool transferCompleted)
+        public StateTxfrInfo(HashVector data, bool transferCompleted, long dataSize, Stream st)
         {
             this.data = data;
             this.transferCompleted = transferCompleted;
-            _payLoad = payLoad;
-            _payLoadCompilationInformation = payLoadCompInfo;
+            this.sendDataSize = dataSize;
+            this.stream = st;
         }
 
-        public StateTxfrInfo(Hashtable data, ArrayList payLoad, ArrayList payLoadCompInfo, bool transferCompleted, long dataSize)
-            : this(data, payLoad, payLoadCompInfo, transferCompleted)
-        {           
-            this.sendDataSize = dataSize;
+        //public StateTxfrInfo(Hashtable data, ArrayList payLoad, ArrayList payLoadCompInfo, bool transferCompleted, long dataSize)
+        //    : this(data, payLoad, payLoadCompInfo, transferCompleted)
+        //{           
+        //    this.sendDataSize = dataSize;
+        //}
+
+        public Stream SerlizationStream
+        {
+            get { return this.stream; }
         }
 
         public long DataSize
@@ -48,23 +59,23 @@ namespace Alachisoft.NCache.Caching.Topologies.Clustered
             get { return sendDataSize; }
         }
 
-        public ArrayList PayLoad
-        {
-            get { return _payLoad; }
-        }
+        //public ArrayList PayLoad
+        //{
+        //    get { return _payLoad; }
+        //}
 
-        public ArrayList PayLoadCompilationInfo
-        {
-            get { return _payLoadCompilationInformation; }
-        }
+        //public ArrayList PayLoadCompilationInfo
+        //{
+        //    get { return _payLoadCompilationInformation; }
+        //}
 
         #region ICompactSerializable Members
 
         void Runtime.Serialization.ICompactSerializable.Deserialize(Runtime.Serialization.IO.CompactReader reader)
         {
-            data = (Hashtable)reader.ReadObject();
+            data = (HashVector)reader.ReadObject();
             transferCompleted = reader.ReadBoolean();
-            _payLoadCompilationInformation = reader.ReadObject() as ArrayList;
+            //_payLoadCompilationInformation = reader.ReadObject() as ArrayList;
             this.sendDataSize = reader.ReadInt64();
         }
 
@@ -72,7 +83,7 @@ namespace Alachisoft.NCache.Caching.Topologies.Clustered
         {
             writer.WriteObject(data);
             writer.Write(transferCompleted);
-            writer.WriteObject(_payLoadCompilationInformation);
+            //writer.WriteObject(_payLoadCompilationInformation);
             writer.Write(this.sendDataSize);
         }
 

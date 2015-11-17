@@ -24,6 +24,7 @@ using System.Net;
 using Alachisoft.NCache.Common;
 using Alachisoft.NCache.Common.Util;
 using Alachisoft.NCache.Common.Logger;
+using Alachisoft.NCache.Common.DataStructures.Clustered;
 
 namespace Alachisoft.NCache.Caching.Topologies.Clustered
 {
@@ -684,7 +685,7 @@ namespace Alachisoft.NCache.Caching.Topologies.Clustered
 
                 if (localNode.Statistics != null && localNode.Statistics.LocalBuckets != null)
                 {
-                    Hashtable bucketStats = localNode.Statistics.LocalBuckets.Clone() as Hashtable;
+                    IDictionary bucketStats = localNode.Statistics.LocalBuckets.Clone() as IDictionary;
                     if (bucketStats != null)
                     {
                         IDictionaryEnumerator ide = bucketStats.GetEnumerator();

@@ -449,9 +449,16 @@ namespace Alachisoft.NCache.Integrations.Memcached.ProxyServer.Parsing
             }
         }
 
-        private void CreateInvalidCommand(string error = null)
+        private void CreateInvalidCommand(string error)
         {
             _command = new InvalidCommand(error);
+            this.State = ParserState.ReadyToDispatch;
+            return;
+        }
+
+        private void CreateInvalidCommand()
+        {
+            _command = new InvalidCommand(null);
             this.State = ParserState.ReadyToDispatch;
             return;
         }

@@ -13,7 +13,8 @@
     <StartupObject>
     </StartupObject>
     <SignAssembly>true</SignAssembly>
-    <AssemblyOriginatorKeyFile>ncache.snk</AssemblyOriginatorKeyFile>
+    <AssemblyOriginatorKeyFile>
+    </AssemblyOriginatorKeyFile>
     <SccProjectName>
     </SccProjectName>
     <SccLocalPath>
@@ -27,6 +28,7 @@
     <FileUpgradeFlags>
     </FileUpgradeFlags>
     <OldToolsVersion>2.0</OldToolsVersion>
+    <AssemblyOriginatorKeyFile>..\..\Resources\ncache.snk</AssemblyOriginatorKeyFile>
     <UpgradeBackupLocation />
     <PublishUrl>publish\</PublishUrl>
     <Install>true</Install>
@@ -116,9 +118,6 @@
       <Project>{200CB06E-BC59-469C-9339-81A0C16D79CF}</Project>
       <Name>ToolServerOperations.4x</Name>
     </ProjectReference>
-  </ItemGroup>
-  <ItemGroup>
-    <None Include="ncache.snk" />
   </ItemGroup>
   <Import Project="$(MSBuildBinPath)\Microsoft.CSharp.targets" />
   <PropertyGroup>

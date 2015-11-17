@@ -257,7 +257,7 @@ namespace Alachisoft.NCache.Caching.Topologies.Local
                     throw new OperationFailedException("Unable to initialize expiration hint");
                 }
                 
-                _context.ExpiryMgr.UpdateIndex(key, entry.ExpirationHint);
+                _context.ExpiryMgr.UpdateIndex(key, entry);
             }
 
             if (_context.PerfStatsColl != null)
@@ -487,7 +487,7 @@ namespace Alachisoft.NCache.Caching.Topologies.Local
             CacheAddResult result = CacheAddResult.Failure;
            if (_stateTransferKeyList != null && _stateTransferKeyList.ContainsKey(key) && notify)
                     return CacheAddResult.KeyExists;
-                result = AddInternal(key, cacheEntry, isUserOperation);
+                result = AddInternal(key, cacheEntry, isUserOperation, operationContext);
 
                 // Not enough space, evict and try again.
                 if (result == CacheAddResult.NeedsEviction || result == CacheAddResult.SuccessNearEviction)
@@ -601,12 +601,13 @@ namespace Alachisoft.NCache.Caching.Topologies.Local
                 }
                 ExpirationHint peExh = pe == null ? null : pe.ExpirationHint;
 
-                if (pe != null && pe.Value is CallbackEntry)
-                {
-                    cbEtnry = pe.Value as CallbackEntry;
-                    cacheEntry = CacheHelper.MergeEntries(pe, cacheEntry);
-                }
-                result.Result = InsertInternal(key, cacheEntry, isUserOperation, pe, operationContext);
+				if (pe != null && pe.Value is CallbackEntry)
+				{
+					cbEtnry = pe.Value as CallbackEntry;
+					cacheEntry = CacheHelper.MergeEntries(pe, cacheEntry);
+				}
+				result.Result = InsertInternal(key, cacheEntry, isUserOperation, pe, operationContext, true);
+
 
                 if ((result.Result == CacheInsResult.Success || result.Result == CacheInsResult.SuccessNearEvicition) && _stateTransferKeyList != null &&
                     _stateTransferKeyList.ContainsKey(key))
@@ -1009,6 +1010,8 @@ namespace Alachisoft.NCache.Caching.Topologies.Local
                 currentQueryReduction = GetPreparedReduction(query);
                 if (currentQueryReduction.Tokens[0].ToString().ToLower() != "select")
                     throw new Parser.ParserException("Only select query is supported");
+             
+               
 
                 return SearchInternal(currentQueryReduction.Tag as Predicate, values);
             }
@@ -1284,7 +1287,7 @@ namespace Alachisoft.NCache.Caching.Topologies.Local
         /// <param name="removalReason">reason for the removal.</param>
         /// <param name="notify">boolean specifying to raise the event.</param>
         /// <returns>list of removed keys</returns>
-        public sealed override Hashtable Remove(object[] keys, ItemRemoveReason removalReason, bool notify, OperationContext operationContext)
+        public sealed override Hashtable Remove(IList keys, ItemRemoveReason removalReason, bool notify, OperationContext operationContext)
         {
             return Remove(keys, removalReason, notify, true, operationContext);
         }
@@ -1298,13 +1301,13 @@ namespace Alachisoft.NCache.Caching.Topologies.Local
         /// <param name="removalReason">reason for the removal.</param>
         /// <param name="notify">boolean specifying to raise the event.</param>
         /// <returns>list of removed keys</returns>
-        public override Hashtable Remove(object[] keys, ItemRemoveReason removalReason, bool notify, bool isUserOperation, OperationContext operationContext)
+        public override Hashtable Remove(IList keys, ItemRemoveReason removalReason, bool notify, bool isUserOperation, OperationContext operationContext)
         {
             Hashtable table = new Hashtable();
             EventContext eventContext = null;
             EventId eventId = null;
             OperationID opId = operationContext.OperatoinID;
-            for (int i = 0; i < keys.Length; i++)
+            for (int i = 0; i < keys.Count; i++)
             {
                 try
                 {
@@ -1383,7 +1386,7 @@ namespace Alachisoft.NCache.Caching.Topologies.Local
         /// <param name="key">key of the entry.</param>
         /// <param name="cacheEntry">the cache entry.</param>
         /// <returns>returns the result of operation.</returns>
-        internal virtual CacheAddResult AddInternal(object key, CacheEntry cacheEntry, bool isUserOperation)
+        internal virtual CacheAddResult AddInternal(object key, CacheEntry cacheEntry, bool isUserOperation, OperationContext operationContext)
         {
             return CacheAddResult.Failure;
         }
@@ -1400,7 +1403,7 @@ namespace Alachisoft.NCache.Caching.Topologies.Local
         /// <param name="key">key of the entry.</param>
         /// <param name="cacheEntry">the cache entry.</param>
         /// <returns>returns the result of operation.</returns>
-        internal virtual CacheInsResult InsertInternal(object key, CacheEntry cacheEntry, bool isUserOperation, CacheEntry oldEntry, OperationContext operationContext)
+        internal virtual CacheInsResult InsertInternal(object key, CacheEntry cacheEntry, bool isUserOperation, CacheEntry oldEntry, OperationContext operationContext, bool updateIndex)
         {
             return CacheInsResult.Failure;
         }

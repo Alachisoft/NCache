@@ -29,7 +29,7 @@
     <SignAssembly>true</SignAssembly>
   </PropertyGroup>
   <PropertyGroup>
-    <AssemblyOriginatorKeyFile>ncache.snk</AssemblyOriginatorKeyFile>
+    <AssemblyOriginatorKeyFile>..\..\..\..\..\..\Resources\ncache.snk</AssemblyOriginatorKeyFile>
   </PropertyGroup>
   <PropertyGroup Condition="'$(Configuration)|$(Platform)' == 'Debug|AnyCPU'">
     <DebugSymbols>true</DebugSymbols>
@@ -80,10 +80,7 @@
     <CodeAnalysisRuleDirectories>;C:\Program Files (x86)\Microsoft Visual Studio 10.0\Team Tools\Static Analysis Tools\FxCop\\Rules</CodeAnalysisRuleDirectories>
     <CodeAnalysisIgnoreBuiltInRules>true</CodeAnalysisIgnoreBuiltInRules>
   </PropertyGroup>
-  <ItemGroup Condition="'$(Configuration)|$(Platform)' == 'Release|AnyCPU'">
-    <Reference Include="System.Core" />
-  </ItemGroup>
-  <ItemGroup Condition="'$(Configuration)|$(Platform)' == 'Release20|AnyCPU'">
+  <ItemGroup>
     <Reference Include="System" />
     <Reference Include="System.configuration" />
     <Reference Include="System.Core" />
@@ -146,30 +143,29 @@
       <Name>Alachisoft.NCache.Integrations.Memcached.Provider</Name>
     </ProjectReference>
   </ItemGroup>
-  <ItemGroup>
-    <None Include="ncache.snk" />
+  <ItemGroup Condition="'$(Configuration)|$(Platform)' == 'Release|AnyCPU'">
+    <Reference Include="Alachisoft.NCache.Runtime">
+      <HintPath>..\..\..\..\..\Src\build\Server\4x\Alachisoft.NCache.Runtime.dll</HintPath>
+    </Reference>
+    <Reference Include="Alachisoft.NCache.Common">
+      <SpecificVersion>False</SpecificVersion>
+      <HintPath>..\..\..\..\..\Src\build\Server\4x\Alachisoft.NCache.Common.dll</HintPath>
+    </Reference>
   </ItemGroup>
   <ItemGroup Condition="'$(Configuration)|$(Platform)' == 'Release20|AnyCPU'">
     <Reference Include="Alachisoft.NCache.Runtime">
       <HintPath>..\..\..\..\..\Src\build\Server\2x\Alachisoft.NCache.Runtime.dll</HintPath>
     </Reference>
-  </ItemGroup>
-  <ItemGroup>
-    <Reference Include="Alachisoft.NCache.Common, Version=4.4.0.0, Culture=neutral, PublicKeyToken=cff5926ed6a53769, processorArchitecture=MSIL">
+    <Reference Include="Alachisoft.NCache.Common">
       <SpecificVersion>False</SpecificVersion>
       <HintPath>..\..\..\..\..\Src\build\Server\2x\Alachisoft.NCache.Common.dll</HintPath>
     </Reference>
-    <Reference Include="Alachisoft.NCache.Runtime, Version=4.4.0.0, Culture=neutral, PublicKeyToken=1448e8d1123e9096, processorArchitecture=MSIL">
-      <SpecificVersion>False</SpecificVersion>
-      <HintPath>..\..\..\..\..\Src\build\Server\2x\Alachisoft.NCache.Runtime.dll</HintPath>
-    </Reference>
+  </ItemGroup>
+  <ItemGroup>
     <Reference Include="System" />
     <Reference Include="System.configuration" />
     <Reference Include="System.Data" />
     <Reference Include="System.Net" />
-  </ItemGroup>
-  <ItemGroup>
-    <None Include="ncache.snk" />
   </ItemGroup>
   <ItemGroup>
     <ProjectReference Include="..\Alachisoft.NCache.Integrations.Memcached.Provider\Alachisoft.NCache.Integrations.Memcached.Provider.csproj">

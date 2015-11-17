@@ -23,10 +23,15 @@ namespace Alachisoft.NCache.Integrations.Memcached.ProxyServer.Commands
     class VerbosityCommand : AbstractCommand
     {
         private int _level = 0;
-        public VerbosityCommand(int level=0)
+        public VerbosityCommand(int level)
             : base(Opcode.Verbosity)
         {
             _level = level;
+        }
+        public VerbosityCommand()
+            : base(Opcode.Verbosity)
+        {
+            _level = 0;
         }
 
         public override void Execute(IMemcachedProvider cacheProvider)

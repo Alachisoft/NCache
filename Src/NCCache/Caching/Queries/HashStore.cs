@@ -170,5 +170,16 @@ namespace Alachisoft.NCache.Caching.Queries
         {
             get { throw new NotImplementedException("HashStore.IndexInMemorySize"); }
         }
+
+        public string StoreDataType
+        {
+            get { throw new NotImplementedException(); }
+        }
+
+
+        public string Name
+        {
+            get { throw new NotImplementedException(); }
+        }
     }
 }

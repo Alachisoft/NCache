@@ -34,7 +34,7 @@ namespace Alachisoft.NCache.SocketServer.Command
             public string ClientLastViewId;
         }
 
-        private static char Delimitor = '|'; //Asif Imam
+        private static char Delimitor = '|'; 
         //PROTOBUF
         public override void ExecuteCommand(ClientManager clientManager, Alachisoft.NCache.Common.Protobuf.Command command)
         {

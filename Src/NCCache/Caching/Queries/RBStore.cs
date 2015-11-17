@@ -17,26 +17,36 @@ using Alachisoft.NCache.Common.DataStructures;
 
 namespace Alachisoft.NCache.Caching.Queries
 {
-    public class RBStore : IIndexStore
+    public class RBStore<T> : IIndexStore where T:IComparable
     {
-        private RedBlack _rbTree;
+        private RedBlack<T> _rbTree;
         private String _storeDataType = String.Empty;
+
+        private string storeName;
+
+        public string Name
+        {
+            get { return storeName; }
+        }
+
+
         public String StoreDataType
         {
             get { return _storeDataType; }
         }
 
-        public RBStore(string cacheName, string storeDataType)
+        public RBStore(string cacheName, string storeDataType,string name)
         {
             this._storeDataType = storeDataType;
-            _rbTree = new RedBlack(cacheName, Common.MemoryUtil.GetAttributeTypeSize(storeDataType));
+            storeName = name;
+            _rbTree = new RedBlack<T>(cacheName, Common.MemoryUtil.GetAttributeTypeSize(storeDataType));
         }
 
         public object Add(object key, object value)
         {
             object node = new object();
             if (_rbTree != null)
-                node = _rbTree.Add(key as IComparable, value);
+                node = _rbTree.Add((T)key, value);
             return node;
         }
 
@@ -64,7 +74,7 @@ namespace Alachisoft.NCache.Caching.Queries
 
         public ArrayList GetData(object key, ComparisonType comparisonType)
         {
-            RedBlack.COMPARE compare = RedBlack.COMPARE.EQ;
+            RedBlack<T>.COMPARE compare = RedBlack<T>.COMPARE.EQ;
             ArrayList result = new ArrayList();
 
             if (_rbTree != null)
@@ -72,39 +82,48 @@ namespace Alachisoft.NCache.Caching.Queries
                 switch (comparisonType)
                 {
                     case ComparisonType.EQUALS:
-                        compare = RedBlack.COMPARE.EQ;
+                        compare = RedBlack<T>.COMPARE.EQ;
                         break;
 
                     case ComparisonType.NOT_EQUALS:
-                        compare = RedBlack.COMPARE.NE;
+                        compare = RedBlack<T>.COMPARE.NE;
                         break;
 
                     case ComparisonType.LESS_THAN:
-                        compare = RedBlack.COMPARE.LT;
+                        compare = RedBlack<T>.COMPARE.LT;
                         break;
 
                     case ComparisonType.GREATER_THAN:
-                        compare = RedBlack.COMPARE.GT;
+                        compare = RedBlack<T>.COMPARE.GT;
                         break;
 
                     case ComparisonType.LESS_THAN_EQUALS:
-                        compare = RedBlack.COMPARE.LTEQ;
+                        compare = RedBlack<T>.COMPARE.LTEQ;
                         break;
 
                     case ComparisonType.GREATER_THAN_EQUALS:
-                        compare = RedBlack.COMPARE.GTEQ;
+                        compare = RedBlack<T>.COMPARE.GTEQ;
                         break;
 
                     case ComparisonType.LIKE:
-                        compare = RedBlack.COMPARE.REGEX;
+                        compare = RedBlack<T>.COMPARE.REGEX;
                         break;
 
                     case ComparisonType.NOT_LIKE:
-                        compare = RedBlack.COMPARE.IREGEX;
+                        compare = RedBlack<T>.COMPARE.IREGEX;
                         break;
                 }
-
-                result = _rbTree.GetData(key as IComparable, compare) as ArrayList;
+                try
+                {
+                    if (key is T)
+                        result = _rbTree.GetData((T)key, compare) as ArrayList;
+                    else
+                        throw new Exception("Object must be of type " + _storeDataType);
+                }
+                catch
+                {
+                    throw;
+                }
             }
 
             return result;

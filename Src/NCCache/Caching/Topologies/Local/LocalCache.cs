@@ -406,7 +406,7 @@ namespace Alachisoft.NCache.Caching.Topologies.Local
         /// <param name="key">key of the entry.</param>
         /// <param name="cacheEntry">the cache entry.</param>
         /// <returns>returns the result of operation.</returns>
-        internal override CacheAddResult AddInternal(object key, CacheEntry cacheEntry, bool isUserOperation)
+        internal override CacheAddResult AddInternal(object key, CacheEntry cacheEntry, bool isUserOperation, OperationContext operationContext)
         {
             if (ServerMonitor.MonitorActivity) ServerMonitor.LogClientActivity("LocalCache.Add_1", "");
             if (_cacheStore == null)
@@ -469,7 +469,7 @@ namespace Alachisoft.NCache.Caching.Topologies.Local
         /// <param name="key">key of the entry.</param>
         /// <param name="cacheEntry">the cache entry.</param>
         /// <returns>returns the result of operation.</returns>
-        internal override CacheInsResult InsertInternal(object key, CacheEntry cacheEntry, bool isUserOperation, CacheEntry oldEntry, OperationContext operationContext)
+        internal override CacheInsResult InsertInternal(object key, CacheEntry cacheEntry, bool isUserOperation, CacheEntry oldEntry, OperationContext operationContext, bool updateIndex)
         {
             if (ServerMonitor.MonitorActivity) ServerMonitor.LogClientActivity("LocalCache.Insert", "");
 

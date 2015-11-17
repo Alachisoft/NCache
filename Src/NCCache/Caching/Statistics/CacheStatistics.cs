@@ -18,6 +18,7 @@ using Alachisoft.NCache.Runtime.Serialization.IO;
 using Alachisoft.NCache.Runtime.Serialization;
 using System.Collections;
 using System.Globalization;
+using Alachisoft.NCache.Common.DataStructures.Clustered;
 
 namespace Alachisoft.NCache.Caching.Statistics
 {
@@ -62,7 +63,7 @@ namespace Alachisoft.NCache.Caching.Statistics
 		private string			_perfInst = String.Empty;
 
         /// <summary> A map of local buckets maintained at each node. </summary>
-        private System.Collections.Hashtable _localBuckets;
+        private HashVector _localBuckets;
 
         //muds:
         //maximum of 4 unique clients can connect to the cache in Express Edition.        
@@ -106,7 +107,7 @@ namespace Alachisoft.NCache.Caching.Statistics
                 this._maxSize = stat._maxSize;
 				this._hitCount = stat._hitCount;
 				this._missCount = stat._missCount;
-                this._localBuckets = stat._localBuckets != null ? stat._localBuckets.Clone() as System.Collections.Hashtable : null;
+                this._localBuckets = stat._localBuckets != null ? stat._localBuckets.Clone() as HashVector : null;
 			}
 		}
 
@@ -205,7 +206,7 @@ namespace Alachisoft.NCache.Caching.Statistics
 			set { _missCount = value; }
 		}
 
-        public System.Collections.Hashtable LocalBuckets
+        public HashVector LocalBuckets
         {
             get { return _localBuckets; }
             set { _localBuckets = value; }
@@ -317,7 +318,7 @@ namespace Alachisoft.NCache.Caching.Statistics
             _clientsList = reader.ReadObject() as Hashtable;
 
             //muds:
-            _localBuckets = new Hashtable();
+            _localBuckets = new HashVector();
             int count = reader.ReadInt32();
             for (int i = 0; i < count; i++)
             {

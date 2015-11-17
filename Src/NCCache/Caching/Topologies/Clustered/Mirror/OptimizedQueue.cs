@@ -15,14 +15,17 @@ using System;
 using System.Collections;
 using System.Collections.Generic;
 using Alachisoft.NCache.Common.DataStructures;
+using Alachisoft.NCache.Common.DataStructures.Clustered;
 
 namespace Alachisoft.NCache.Caching.Topologies.Clustered
 {
     internal class OptimizedQueue
     {
-        private Hashtable _queue = new Hashtable(1000);
-        private Dictionary<string, int> _keyToIndexMap = new Dictionary<string, int>(1000);
-        private Dictionary<int, string> _indexToKeyMap = new Dictionary<int, string>(1000);
+        private HashVector _queue = new HashVector(1000);
+        private HashVector _keyToIndexMap = new HashVector(1000);
+        private HashVector _indexToKeyMap = new HashVector(1000);
+        //private Dictionary<string, int> _keyToIndexMap = new Dictionary<string, int>(1000);
+        //private Dictionary<int, string> _indexToKeyMap = new Dictionary<int, string>(1000);
 
         private int _tail = -1;
         private int _head = -1;
@@ -58,10 +61,10 @@ namespace Alachisoft.NCache.Caching.Topologies.Clustered
                 lock (_sync_mutex)
                 {
 
-                    if (_keyToIndexMap.ContainsKey((string)cacheKey))    //Optimized Queue, so checking in the map if the current cache key is already mapped to some index of Queue or not
+                    if (_keyToIndexMap.ContainsKey(cacheKey))   //Optimized Queue, so checking in the map if the current cache key is already mapped to some index of Queue or not
                     {
                         //just update the old operation without chaning it's order in the queue.
-                        int index1 = _keyToIndexMap[(string)cacheKey];
+                        int index1 = (int)_keyToIndexMap[cacheKey];
                         IOptimizedQueueOperation oldOperation = _queue[index1] as IOptimizedQueueOperation;
                         _queue[index1] = operation;
                         isNewItem = false;
@@ -79,8 +82,8 @@ namespace Alachisoft.NCache.Caching.Topologies.Clustered
                     int index = ++_tail;
                     _size += operation.Size;
                     _queue.Add(index, operation);   //Add new opeartion at the tail of the queue
-                    _keyToIndexMap[(string)cacheKey] = index;        // update (cache key, queue index) map
-                    _indexToKeyMap[index] = (string)cacheKey;
+                    _keyToIndexMap[cacheKey] = index;        // update (cache key, queue index) map
+                    _indexToKeyMap[index] = cacheKey;
                     if (isNewItem) _count++;
                 }
             }
@@ -139,7 +142,7 @@ namespace Alachisoft.NCache.Caching.Topologies.Clustered
 
         protected bool AllowRemoval(object cacheKey)
         {
-            lock (_sync_mutex) { return !_keyToIndexMap.ContainsKey((string)cacheKey); }
+            lock (_sync_mutex) { return !_keyToIndexMap.ContainsKey(cacheKey); }
         }
 
 

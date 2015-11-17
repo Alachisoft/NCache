@@ -19,15 +19,19 @@ namespace Alachisoft.NCache.Caching.Queries
     public class IndexStoreInformation : ISizableIndex
     {
         private IIndexStore _store;
-        private RedBlackNodeReference _rbnodes;
+        private INodeReference _rbnodes;
         private string _storeName;
+
+        //Usman: Since an object takes 24 bits, it also saves 8 bits of members in these 24 bits. This makes the total size: object size + members size - 8  = 24 + (8*3) -8 = 40
+        private const int RefSize = 40; 
+
 
         public IndexStoreInformation()
         {
-            _rbnodes = new RedBlackNodeReference();
+            _rbnodes = new RedBlackNodeReference<int>();
         }
 
-        public IndexStoreInformation(string storeName,IIndexStore store, RedBlackNodeReference node)
+        public IndexStoreInformation(string storeName, IIndexStore store, INodeReference node)
         {
             _rbnodes = node;
             _store = store;
@@ -47,7 +51,7 @@ namespace Alachisoft.NCache.Caching.Queries
             set { _store = value; }
         }
 
-        public RedBlackNodeReference IndexPosition
+        public INodeReference IndexPosition
         {
             get { return _rbnodes; }
             set { _rbnodes = value; }
@@ -57,10 +61,7 @@ namespace Alachisoft.NCache.Caching.Queries
         {
             get
             {
-                long temp = 0;
-                temp += (3 * Common.MemoryUtil.NetReferenceSize); //for _store _rbnodes _storeName refs                           
-
-                return temp;
+                return RefSize;
             }
         }
 

@@ -26,7 +26,7 @@
     <SignAssembly>true</SignAssembly>
   </PropertyGroup>
   <PropertyGroup>
-    <AssemblyOriginatorKeyFile>ncache.snk</AssemblyOriginatorKeyFile>
+    <AssemblyOriginatorKeyFile>..\..\..\..\..\..\Resources\ncache.snk</AssemblyOriginatorKeyFile>
   </PropertyGroup>
   <PropertyGroup Condition="'$(Configuration)|$(Platform)' == 'Debug|AnyCPU'">
     <DebugSymbols>true</DebugSymbols>
@@ -100,16 +100,26 @@
   </ItemGroup>
   <ItemGroup>
     <None Include="app.config" />
-    <None Include="ncache.snk" />
   </ItemGroup>
-  <ItemGroup>
-    <Reference Include="Alachisoft.NCache.Common, Version=4.4.0.0, Culture=neutral, PublicKeyToken=cff5926ed6a53769, processorArchitecture=MSIL">
+  <ItemGroup Condition="'$(Configuration)|$(Platform)' == 'Release20|AnyCPU'">
+    <Reference Include="Alachisoft.NCache.Runtime, Version=4.4.0.0, Culture=neutral, PublicKeyToken=1448e8d1123e9096, processorArchitecture=MSIL">
+      <HintPath>..\..\..\..\..\Src\build\Server\2x\Alachisoft.NCache.Runtime.dll</HintPath>
+    </Reference>
+    <Reference Include="Alachisoft.NCache.Common, Version=4.4.0.0, Culture=neutral, PublicKeyToken=1448e8d1123e9096, processorArchitecture=MSIL">
       <SpecificVersion>False</SpecificVersion>
       <HintPath>..\..\..\..\..\Src\build\Server\2x\Alachisoft.NCache.Common.dll</HintPath>
     </Reference>
-    <Reference Include="Alachisoft.NCache.Runtime">
-      <HintPath>..\..\..\..\..\Src\build\Server\2x\Alachisoft.NCache.Runtime.dll</HintPath>
+  </ItemGroup>
+  <ItemGroup Condition="'$(Configuration)|$(Platform)' == 'Release|AnyCPU'">
+    <Reference Include="Alachisoft.NCache.Common, Version=4.4.0.0, Culture=neutral, PublicKeyToken=1448e8d1123e9096, processorArchitecture=MSIL">
+      <SpecificVersion>False</SpecificVersion>
+      <HintPath>..\..\..\..\..\Src\build\Server\4x\Alachisoft.NCache.Common.dll</HintPath>
     </Reference>
+    <Reference Include="Alachisoft.NCache.Runtime, Version=4.4.0.0, Culture=neutral, PublicKeyToken=1448e8d1123e9096, processorArchitecture=MSIL">
+      <HintPath>..\..\..\..\..\Src\build\Server\4x\Alachisoft.NCache.Runtime.dll</HintPath>
+    </Reference>
+  </ItemGroup>
+  <ItemGroup>
     <Reference Include="System" />
     <Reference Include="System.ComponentModel.DataAnnotations" />
     <Reference Include="System.Data" />

@@ -58,6 +58,96 @@ namespace Alachisoft.NCache.Common
             }
         }
 
+        public static RegistryKey NewUserKey(string keyPath)
+        {
+            return Registry.CurrentUser.CreateSubKey(keyPath);
+        }
+
+        static public int GetRegValuesFromCurrentUser(string keypath, Hashtable ht, short prodId)
+        {
+            RegistryKey root;
+#if !JAVA
+            if (AppUtil.IsRunningAsWow64)
+            {
+                GetRegValuesInternalWow64(keypath, ht, prodId);
+                return ht.Count;
+            }
+#endif
+            try
+            {
+                root = Registry.CurrentUser.OpenSubKey(keypath);
+                if (root != null)
+                {
+                    string[] keys = root.GetValueNames();
+                    for (int i = 0; i < keys.Length; i++)
+                        ht[keys[i]] = GetRegValue(keypath, keys[i], prodId);
+                }
+            }
+            catch (Exception)
+            {
+            }
+            return ht.Count;
+            //#endif
+        }
+
+        static public int GetBooleanRegValuesFromCurrentUser(string keypath, Hashtable ht, short prodId)
+        {
+            RegistryKey root;
+            try
+            {
+                root = Registry.CurrentUser.OpenSubKey(keypath);
+                if (root != null)
+                {
+                    string[] keys = root.GetValueNames();
+                    for (int i = 0; i < keys.Length; i++)
+						ht[keys[i]] = Convert.ToBoolean(GetRegValueFromCurrentUser(keypath, keys[i], prodId));
+
+                }
+            }
+            catch (Exception)
+            {
+            }
+            return ht.Count;
+            //#endif
+        }
+
+
+        static public bool IsCurrentUserRegKeyExist(string keypath)
+        {
+            try
+            {
+                RegistryKey root = Registry.CurrentUser.OpenSubKey(keypath, true);
+                if (root != null)
+                {
+                    return true;
+                }
+                else
+                {
+                    return false;
+                }
+            }
+            catch (Exception)
+            {
+                return false;
+            }
+        }
+
+        static public void SetRegValuesInCurrentUser(string keypath, Hashtable val, short prodId)
+        {
+            try
+            {
+                IDictionaryEnumerator ie = val.GetEnumerator();
+                while (ie.MoveNext())
+                {
+                    SetRegValueInCurrentUser(keypath, Convert.ToString(ie.Key), ie.Value, prodId);
+                }
+            }
+            catch (Exception)
+            {
+            }
+        }
+
+
         /// <summary>
         /// Save a registry value.
         /// </summary>

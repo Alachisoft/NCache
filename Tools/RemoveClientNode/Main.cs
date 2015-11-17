@@ -170,7 +170,7 @@ namespace Alachisoft.NCache.Tools.RemoveClientNode
                 }
                 else 
                 {
-                    Console.Error.WriteLine("Error: Client nodes cannot be added to local caches");
+                    Console.Error.WriteLine("Error: Client nodes cannot be removed from local caches");
                     return;
                 }
 

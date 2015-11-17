@@ -38,7 +38,9 @@ namespace Alachisoft.NCache.Caching.Queries.Filters
             {
                 foreach (string key in queryContext.Tree.LeftList)
                 {
-                    object attribValue = queryContext.Index.GetAttributeValue(key, AttributeName);
+                    CacheEntry cacheentry = queryContext.Cache.GetEntryInternal(key, false);
+                    object attribValue = queryContext.Index.GetAttributeValue(key, AttributeName, cacheentry.IndexInfo);
+
                     if (attribValue != null)
                     {
                         Type type = attribValue.GetType();

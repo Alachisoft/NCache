@@ -171,6 +171,7 @@ namespace Alachisoft.NCache.Tools.AddNode
                 object param = new AddNodeParam();
                 CommandLineArgumentParser.CommandLineParser(ref param, args);
                 cParam = (AddNodeParam)param;
+                cParam.CacheId = cParam.CacheId.ToLower();
                 if (cParam.IsUsage)
                 {
                     AssemblyUsage.PrintLogo(cParam.IsLogo);
@@ -212,7 +213,7 @@ namespace Alachisoft.NCache.Tools.AddNode
                             if (clusterIp != null && clusterIp != string.Empty)
                                 cParam.ExistingServer = clusterIp;
                         }
-                        CacheStatusOnServerContainer isClustered = m.IsClusteredCache(cParam.CacheId);
+                        CacheStatusOnServerContainer isClustered = m.IsClusteredCache(cParam.CacheId.ToLower());
                         CacheStatusOnServer result = isClustered.cacheStatus;                       
                         
                         if(result == CacheStatusOnServer.Unregistered)

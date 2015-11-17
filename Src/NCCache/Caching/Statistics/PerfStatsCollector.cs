@@ -669,7 +669,7 @@ namespace Alachisoft.NCache.Caching.Statistics
             {
                 lock (_pcQueryIndexSize)
                 {
-                    _pcQueryIndexSize.RawValue = value;
+                    _pcQueryIndexSize.RawValue = value < 0 ? 0 : value;
 
                 }
             }

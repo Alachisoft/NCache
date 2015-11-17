@@ -93,6 +93,9 @@ namespace Alachisoft.NCache.Caching.AutoExpiration
 		public bool IsVariant { get { return IsBitSet(IS_VARIANT); } }
 			/// <summary> Returns true if the hint can be routed to other nodes, otherwise returns false.</summary>
 		public bool IsDisposed { get { return IsBitSet(DISPOSED); } }
+        /// <summary> Returns true if the hint is indexable in expiration manager, otherwise returns false.</summary>
+        virtual public bool IsIndexable { get { return true; } }
+
 
         virtual public string CacheKey { set { _cacheKey = value; } get { return _cacheKey; } }
 

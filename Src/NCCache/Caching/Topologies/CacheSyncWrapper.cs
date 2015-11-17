@@ -24,6 +24,7 @@ using Alachisoft.NCache.Common;
 using Alachisoft.NCache.Common.DataStructures;
 using Alachisoft.NCache.Common.Monitoring;
 using Alachisoft.NCache.Common.Util;
+using Alachisoft.NCache.Common.DataStructures.Clustered;
 
 namespace Alachisoft.NCache.Caching.Topologies
 {
@@ -251,12 +252,12 @@ namespace Alachisoft.NCache.Caching.Topologies
 
         #region /                   --- Hashed cache related ---        /
 
-        public override ArrayList GetKeyList(int bucketId, bool startLogging)
+        public override void GetKeyList(int bucketId, bool startLogging, out ClusteredArrayList keyList)
         {
             Sync.AcquireReaderLock(Timeout.Infinite);
             try
             {
-                return _cache.GetKeyList(bucketId, startLogging);
+                _cache.GetKeyList(bucketId, startLogging, out keyList);
             }
             finally
             {
@@ -381,7 +382,7 @@ namespace Alachisoft.NCache.Caching.Topologies
             }
         }
 
-        public override Hashtable LocalBuckets
+        public override HashVector LocalBuckets
         {
             get
             {
@@ -1207,7 +1208,7 @@ namespace Alachisoft.NCache.Caching.Topologies
         /// <param name="operationContext"></param>
         /// <param name="removalReason">reason for the removal.</param>
         /// <returns>removed keys list</returns>
-        public override Hashtable Remove(object[] keys, ItemRemoveReason ir, bool notify, OperationContext operationContext)
+        public override Hashtable Remove(IList keys, ItemRemoveReason ir, bool notify, OperationContext operationContext)
         {
             if (ServerMonitor.MonitorActivity) ServerMonitor.LogClientActivity("CacheSyncWrp.RemoveBlk", "enter");
 
@@ -1229,7 +1230,7 @@ namespace Alachisoft.NCache.Caching.Topologies
                     {
                         successfulKeys = new object[result.Count];
                         int j = 0;
-                        for (int i = 0; i < keys.Length; i++)
+                        for (int i = 0; i < keys.Count; i++)
                         {
                             if (result.Contains(keys[i]))
                             {
@@ -1262,7 +1263,7 @@ namespace Alachisoft.NCache.Caching.Topologies
             return result;
         }
 
-        public override Hashtable Remove(object[] keys, ItemRemoveReason ir, bool notify, bool isUserOperation, OperationContext operationContext)
+        public override Hashtable Remove(IList keys, ItemRemoveReason ir, bool notify, bool isUserOperation, OperationContext operationContext)
         {
             Hashtable result = null;
             if (ServerMonitor.MonitorActivity) ServerMonitor.LogClientActivity("CacheSyncWrp.Remove_4", "enter");

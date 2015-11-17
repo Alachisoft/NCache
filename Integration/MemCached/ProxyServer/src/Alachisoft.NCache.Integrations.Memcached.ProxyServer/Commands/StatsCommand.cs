@@ -32,7 +32,13 @@ namespace Alachisoft.NCache.Integrations.Memcached.ProxyServer.Commands
             set { _stats = value; }
         }
 
-        public StatsCommand(string argument=null)
+        public StatsCommand()
+            : base(Opcode.Stat)
+        {
+            _argument = null;
+        }
+
+        public StatsCommand(string argument)
             : base(Opcode.Stat)
         {
             _argument = argument;

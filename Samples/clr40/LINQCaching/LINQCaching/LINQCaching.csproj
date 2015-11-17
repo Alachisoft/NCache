@@ -53,19 +53,16 @@
     <CodeAnalysisRuleSet>AllRules.ruleset</CodeAnalysisRuleSet>
   </PropertyGroup>
   <ItemGroup>
-    <Reference Include="Alachisoft.NCache.Web, Version=4.4.0.0, Culture=neutral, PublicKeyToken=1448e8d1123e9096, processorArchitecture=MSIL">
+     <Reference Include="Alachisoft.NCache.Web, Version=4.4.0.0, Culture=neutral, PublicKeyToken=1448e8d1123e9096, processorArchitecture=MSIL">
       <SpecificVersion>False</SpecificVersion>
       <HintPath>..\..\..\..\Src\build\Server\4x\Alachisoft.NCache.Web.dll</HintPath>
     </Reference>
     <Reference Include="NCLinqProvider">
-      <HintPath>..\..\..\..\Integration\LinqToNCache\LinqToNCache\bin\Debug\NCLinqProvider.dll</HintPath>
+      <HintPath>..\..\..\..\Integration\build\LinqToNCache\4x\Alachisoft.NCache.Linq.dll</HintPath>
     </Reference>
-    <Reference Include="Oracle.DataAccess, Version=2.112.2.0, Culture=neutral, PublicKeyToken=89b483f429c47342, processorArchitecture=AMD64">
-      <SpecificVersion>False</SpecificVersion>
-      <HintPath>..\..\..\..\..\..\..\Program Files\NCache\bin\assembly\4.0\Oracle.DataAccess.dll</HintPath>
-    </Reference>
+ 
     <Reference Include="SampleData">
-      <HintPath>..\..\SampleData\bin\Debug\SampleData.dll</HintPath>
+      <HintPath>..\..\SampleData\bin\SampleData.dll</HintPath>
     </Reference>
     <Reference Include="System" />
     <Reference Include="System.Core">

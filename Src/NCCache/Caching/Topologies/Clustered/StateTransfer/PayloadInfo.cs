@@ -13,41 +13,41 @@
 // limitations under the License.
 namespace Alachisoft.NCache.Caching.Topologies.Clustered
 {
-    public class PayloadInfo : Runtime.Serialization.ICompactSerializable
-    {
-        CacheEntry _entry;
-        int _payLoadIndex;
+    //public class PayloadInfo : Runtime.Serialization.ICompactSerializable
+    //{
+    //    CacheEntry _entry;
+    //    int _payLoadIndex;
 
-        public PayloadInfo(CacheEntry entry, int index)
-        {
-            _entry = entry;
-            _payLoadIndex = index;
-        }
+    //    public PayloadInfo(CacheEntry entry, int index)
+    //    {
+    //        _entry = entry;
+    //        _payLoadIndex = index;
+    //    }
 
-        public CacheEntry Entry
-        {
-            get { return _entry; }
-        }
+    //    public CacheEntry Entry
+    //    {
+    //        get { return _entry; }
+    //    }
 
-        public int PayloadIndex
-        {
-            get { return _payLoadIndex; }
-        }
+    //    public int PayloadIndex
+    //    {
+    //        get { return _payLoadIndex; }
+    //    }
 
-        #region ICompactSerializable Members
+    //    #region ICompactSerializable Members
 
-        public void Deserialize(Runtime.Serialization.IO.CompactReader reader)
-        {
-            _entry = reader.ReadObject() as CacheEntry;
-            _payLoadIndex = reader.ReadInt32();
-        }
+    //    public void Deserialize(Runtime.Serialization.IO.CompactReader reader)
+    //    {
+    //        _entry = reader.ReadObject() as CacheEntry;
+    //        _payLoadIndex = reader.ReadInt32();
+    //    }
 
-        public void Serialize(Runtime.Serialization.IO.CompactWriter writer)
-        {
-            writer.WriteObject(_entry);
-            writer.Write(_payLoadIndex);
-        }
+    //    public void Serialize(Runtime.Serialization.IO.CompactWriter writer)
+    //    {
+    //        writer.WriteObject(_entry);
+    //        writer.Write(_payLoadIndex);
+    //    }
 
-        #endregion
-    }
+    //    #endregion
+    //}
 }

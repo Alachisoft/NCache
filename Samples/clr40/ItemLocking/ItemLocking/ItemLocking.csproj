@@ -36,7 +36,7 @@
   </PropertyGroup>
   <ItemGroup>
     <Reference Include="Alachisoft.NCache.Runtime, Version=4.4.0.0, Culture=neutral, PublicKeyToken=1448e8d1123e9096, processorArchitecture=MSIL">
-      <HintPath>C:\Program Files\NCache\bin\assembly\4.0\Alachisoft.NCache.Runtime.dll</HintPath>
+      <HintPath>..\..\..\..\Src\build\Server\4x\Alachisoft.NCache.Runtime.dll</HintPath>
     </Reference>
     <Reference Include="Alachisoft.NCache.Web, Version=4.4.0.0, Culture=neutral, PublicKeyToken=1448e8d1123e9096, processorArchitecture=MSIL">
       <SpecificVersion>False</SpecificVersion>
@@ -44,7 +44,7 @@
     </Reference>
     <Reference Include="SampleData, Version=1.0.0.0, Culture=neutral, processorArchitecture=MSIL">
       <SpecificVersion>False</SpecificVersion>
-      <HintPath>..\..\SampleData\bin\Debug\SampleData.dll</HintPath>
+      <HintPath>..\..\SampleData\bin\SampleData.dll</HintPath>
     </Reference>
     <Reference Include="System" />
     <Reference Include="System.Core" />

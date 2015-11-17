@@ -370,7 +370,7 @@
   </ItemGroup>
   <ProjectExtensions>
     <VisualStudio>
-      <UserProperties tArchitectGeneration="Disabled" tArchitectProject="False" tArchitectTAProfile="False" />
+      <UserProperties tArchitectTAProfile="False" tArchitectProject="False" tArchitectGeneration="Disabled" />
     </VisualStudio>
   </ProjectExtensions>
   <Import Project="$(MSBuildBinPath)\Microsoft.CSharp.targets" />

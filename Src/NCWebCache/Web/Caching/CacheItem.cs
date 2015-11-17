@@ -174,8 +174,9 @@ namespace Alachisoft.NCache.Web.Caching
         /// <param name="eventType"><see cref="EventType"/> the callback is registered against</param>
         /// <param name="datafilter"><see cref="EventDataFilter"/> for every <see cref="EventType"/> registered against</param>
 
-        public void SetCacheDataNotification(CacheDataNotificationCallback callback, EventType eventType, EventDataFilter datafilter)
+        public void SetCacheDataNotification(CacheDataNotificationCallback callback, EventType eventType)
         {
+            EventDataFilter datafilter = EventDataFilter.None;
             if (callback == null) return;
 
             if ((eventType & EventType.ItemRemoved) != 0)

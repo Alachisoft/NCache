@@ -10,7 +10,7 @@
     <AppDesignerFolder>Properties</AppDesignerFolder>
     <RootNamespace>BeITMemcached</RootNamespace>
     <AssemblyName>BeITMemcached</AssemblyName>
-    <TargetFrameworkVersion>v3.5</TargetFrameworkVersion>
+    <TargetFrameworkVersion>v4.0</TargetFrameworkVersion>
     <FileAlignment>512</FileAlignment>
     <TargetFrameworkProfile />
   </PropertyGroup>
@@ -24,6 +24,7 @@
     <WarningLevel>4</WarningLevel>
   </PropertyGroup>
   <PropertyGroup Condition=" '$(Configuration)|$(Platform)' == 'Release|AnyCPU' ">
+    <TargetFrameworkVersion>v4.0</TargetFrameworkVersion>
     <DebugType>pdbonly</DebugType>
     <Optimize>true</Optimize>
     <OutputPath>bin\Release\</OutputPath>
@@ -31,10 +32,27 @@
     <ErrorReport>prompt</ErrorReport>
     <WarningLevel>4</WarningLevel>
   </PropertyGroup>
+  <PropertyGroup Condition="'$(Configuration)|$(Platform)' == 'Release2x|AnyCPU'">
+    <OutputPath>bin\2.0\Release\</OutputPath>
+    <DefineConstants>TRACE</DefineConstants>
+    <Optimize>true</Optimize>
+    <DebugType>pdbonly</DebugType>
+    <PlatformTarget>AnyCPU</PlatformTarget>
+    <TargetFrameworkVersion>v3.5</TargetFrameworkVersion>
+    <CodeAnalysisLogFile>bin\Release\BeITMemcached.dll.CodeAnalysisLog.xml</CodeAnalysisLogFile>
+    <CodeAnalysisUseTypeNameInSuppression>true</CodeAnalysisUseTypeNameInSuppression>
+    <CodeAnalysisModuleSuppressionsFile>GlobalSuppressions.cs</CodeAnalysisModuleSuppressionsFile>
+    <ErrorReport>prompt</ErrorReport>
+    <CodeAnalysisRuleSet>MinimumRecommendedRules.ruleset</CodeAnalysisRuleSet>
+    <CodeAnalysisRuleSetDirectories>;C:\Program Files (x86)\Microsoft Visual Studio 10.0\Team Tools\Static Analysis Tools\\Rule Sets</CodeAnalysisRuleSetDirectories>
+    <CodeAnalysisRuleDirectories>;C:\Program Files (x86)\Microsoft Visual Studio 10.0\Team Tools\Static Analysis Tools\FxCop\\Rules</CodeAnalysisRuleDirectories>
+  </PropertyGroup>
   <ItemGroup>
-    <Reference Include="Alachisoft.NCache.Integrations.Memcached.Provider, Version=1.0.0.0, Culture=neutral, PublicKeyToken=1448e8d1123e9096, processorArchitecture=MSIL">
-      <SpecificVersion>False</SpecificVersion>
-      <HintPath>..\..\..\..\..\build\Memcached\2x\Alachisoft.NCache.Integrations.Memcached.Provider.dll</HintPath>
+    <Reference Include="Alachisoft.NCache.Integrations.Memcached.Provider" Condition="'$(Configuration)|$(Platform)' == 'Release|AnyCPU'">
+      <HintPath>..\..\..\..\ProxyServer\src\Alachisoft.NCache.Integrations.Memcached.Provider\bin\Release\Alachisoft.NCache.Integrations.Memcached.Provider.dll</HintPath>
+    </Reference>
+    <Reference Include="Alachisoft.NCache.Integrations.Memcached.Provider" Condition="'$(Configuration)|$(Platform)' == 'Release2x|AnyCPU'">
+      <HintPath>..\..\..\..\ProxyServer\src\Alachisoft.NCache.Integrations.Memcached.Provider\bin\Release20\Alachisoft.NCache.Integrations.Memcached.Provider.dll</HintPath>
     </Reference>
     <Reference Include="System" />
     <Reference Include="System.configuration" />

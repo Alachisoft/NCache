@@ -9,6 +9,7 @@
     <OutputType>Exe</OutputType>
     <AppDesignerFolder>Properties</AppDesignerFolder>
     <RootNamespace>Alachisoft.NCache.Tools.GetCacheConfiguration</RootNamespace>
+    <AssemblyOriginatorKeyFile>..\..\Resources\ncache.snk</AssemblyOriginatorKeyFile>
     <AssemblyName>getcacheconfiguration</AssemblyName>
     <TargetFrameworkVersion>v4.0</TargetFrameworkVersion>
     <TargetFrameworkProfile>
@@ -78,7 +79,8 @@
     <SignAssembly>true</SignAssembly>
   </PropertyGroup>
   <PropertyGroup>
-    <AssemblyOriginatorKeyFile>ncache.snk</AssemblyOriginatorKeyFile>
+    <AssemblyOriginatorKeyFile>
+    </AssemblyOriginatorKeyFile>
   </PropertyGroup>
   <PropertyGroup>
     <ApplicationIcon>App.ico</ApplicationIcon>
@@ -128,7 +130,6 @@
   </ItemGroup>
   <ItemGroup>
     <None Include="app.config" />
-    <None Include="ncache.snk" />
   </ItemGroup>
   <ItemGroup>
     <Content Include="App.ico" />

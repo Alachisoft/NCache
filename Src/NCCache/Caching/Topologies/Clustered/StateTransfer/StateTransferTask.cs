@@ -24,6 +24,7 @@ using Alachisoft.NCache.Common.Util;
 using System.Threading;
 using Alachisoft.NCache.Caching.Exceptions;
 using Runtime = Alachisoft.NCache.Runtime;
+using Alachisoft.NCache.Common.DataStructures.Clustered;
 
 namespace Alachisoft.NCache.Caching.Topologies.Clustered
 {
@@ -77,7 +78,7 @@ namespace Alachisoft.NCache.Caching.Topologies.Clustered
         /// State Transfer Size is used to control the rate of data transfer during State Tranfer i.e per second tranfer rate in MB
         /// </summary>
         private static long MB = 1024 * 1024;
-        protected long stateTxfrDataSizePerSecond = MB;
+        protected long stateTxfrDataSizePerSecond = 5 * MB;
         TimeSpan _interval = new TimeSpan(0, 0, 1);
 
         private ThrottlingManager _throttlingManager;
@@ -367,7 +368,6 @@ namespace Alachisoft.NCache.Caching.Topologies.Clustered
         {
             ArrayList ownershipChanged = null;
             ArrayList lockAcquired = null;
-            ArrayList alreayLocked = null;
 
             //muds:
             //ask coordinator node to lock this/these bucket(s) during the state transfer.
@@ -519,7 +519,7 @@ namespace Alachisoft.NCache.Caching.Topologies.Clustered
                     {
                         successfullyTxfrd = true;
                         transferEnd = info.transferCompleted;
-                        Hashtable tbl = info.data;
+                        HashVector tbl = info.data;
                         CacheEntry entry = null;
 
                         expectedTxfrId++;
@@ -683,7 +683,7 @@ namespace Alachisoft.NCache.Caching.Topologies.Clustered
                 }
                 catch (Exception e)
                 {
-                    _parent.Context.NCacheLog.Error(Name + ".SafeTransterBucket", " An error occured during state Txfr " + e.ToString());
+                    _parent.Context.NCacheLog.Error(Name + ".SafeTransterBucket", " An error occurred during state Txfr " + e.ToString());
                     break;
                 }
             }

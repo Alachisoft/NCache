@@ -2006,26 +2006,22 @@ namespace Alachisoft.NCache.Management
                     ///we have to convert it to string props
                     string props = GetProps(config);
 
-                    cacheInfo = new CacheInfo();
-                    cacheInfo.Cache = new LeasedCache(props);
-                    cacheInfo.CacheProps = config;
 
                     // all but the listed cache types are loaded in s_caches table.
-                    if (!(cacheInfo.Cache.Statistics.ClassName == "replicated-client"
-                        || cacheInfo.Cache.Statistics.ClassName == "partitioned-replicas-client"
-                        || cacheInfo.Cache.Statistics.ClassName == "partitioned-client"))
-                    {
-                        string cacheId = config.Name.ToLower();
 
-                        if (!s_caches.Contains(cacheId))
-                        {
-                            s_caches.Add(cacheId, cacheInfo);
-                        }
-                        else
-                        {
-                            cacheInfo = s_caches[cacheId] as CacheInfo;
-                            cacheInfo.CacheProps = config;
-                        }
+                    string cacheId = config.Name.ToLower();
+
+                    if (!s_caches.Contains(cacheId))
+                    {
+                        cacheInfo = new CacheInfo();
+                        cacheInfo.Cache = new LeasedCache(props);
+                        cacheInfo.CacheProps = config;
+                        s_caches.Add(cacheId, cacheInfo);
+                    }
+                    else
+                    {
+                        cacheInfo = s_caches[cacheId] as CacheInfo;
+                        cacheInfo.CacheProps = config;
                     }
                 }
             }
@@ -2491,7 +2487,7 @@ namespace Alachisoft.NCache.Management
             }
             catch (Exception e)
             {
-                AppUtil.LogEvent("An error occured while starting activity monitoring " + e.ToString(), EventLogEntryType.Error);
+                AppUtil.LogEvent("An error occurred while starting activity monitoring " + e.ToString(), EventLogEntryType.Error);
                 throw;
             }
 
@@ -2510,7 +2506,7 @@ namespace Alachisoft.NCache.Management
             }
             catch (Exception e)
             {
-                AppUtil.LogEvent("An error occured while stopping activity monitoring " + e.ToString(), EventLogEntryType.Error);
+                AppUtil.LogEvent("An error occurred while stopping activity monitoring " + e.ToString(), EventLogEntryType.Error);
                 throw;
             }
         }
@@ -2544,7 +2540,7 @@ namespace Alachisoft.NCache.Management
             }
             catch (Exception e)
             {
-                AppUtil.LogEvent("An error occured while logging client activity " + e.ToString(), EventLogEntryType.Error);
+                AppUtil.LogEvent("An error occurred while logging client activity " + e.ToString(), EventLogEntryType.Error);
                 throw;
             }
             finally

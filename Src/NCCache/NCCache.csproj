@@ -255,6 +255,7 @@
     <Compile Include="Caching\Queries\IQueryIndex.cs" />
     <Compile Include="Caching\Queries\NCQLParser.cs" />
     <Compile Include="Caching\Queries\NCQLParserRule.cs" />
+    <Compile Include="Caching\Queries\QueryItemContainer.cs" />
     <Compile Include="Caching\Queries\QueryResultSet.cs" />
     <Compile Include="Caching\Queries\QueryContext.cs" />
     <Compile Include="Caching\Queries\QueryIndexManager.cs" />
@@ -394,10 +395,10 @@
     <Compile Include="Caching\Util\ClusterHelper.cs">
       <SubType>Code</SubType>
     </Compile>
-    <Compile Include="Caching\Util\ConvHelper.cs" />
     <Compile Include="Caching\Util\CacheEnumerator.cs">
       <SubType>Code</SubType>
     </Compile>
+    <Compile Include="Caching\Util\ExpirationHelper.cs" />
     <Compile Include="Caching\Util\HotConfig.cs" />
     <Compile Include="Caching\Util\LazyKeysetEnumerator.cs" />
     <Compile Include="Caching\Util\ParserHelper.cs" />
@@ -455,7 +456,6 @@
     <Compile Include="Exceptions\ClusterExceptions.cs">
       <SubType>Code</SubType>
     </Compile>
-    <Compile Include="Exceptions\LicensingException.cs" />
     <Compile Include="Exceptions\StateTransferException.cs">
       <SubType>Code</SubType>
     </Compile>
@@ -464,7 +464,6 @@
     <Compile Include="Util\MiscUtil.cs">
       <SubType>Code</SubType>
     </Compile>
-    <Compile Include="Util\MSHyperVThread.cs" />
     <Compile Include="Util\SerializationUtil.cs" />
     <EmbeddedResource Include="Caching\Statistics\PerfInstaller.resx">
       <DependentUpon>PerfInstaller.cs</DependentUpon>

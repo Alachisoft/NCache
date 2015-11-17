@@ -67,7 +67,7 @@ namespace Alachisoft.NCache.Web.Caching.APILogging
                 {
                     try
                     {
-                        APILogItem logItem = new APILogItem(null, "An error occured while logging" + e.ToString());
+                        APILogItem logItem = new APILogItem(null, "An error occurred while logging" + e.ToString());
                         LogInternal(logItem);
                     }
                     catch (Exception) { }

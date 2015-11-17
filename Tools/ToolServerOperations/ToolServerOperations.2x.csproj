@@ -21,7 +21,8 @@
     <StartupObject>
     </StartupObject>
     <SignAssembly>true</SignAssembly>
-    <AssemblyOriginatorKeyFile>ncache.snk</AssemblyOriginatorKeyFile>
+    <AssemblyOriginatorKeyFile>
+    </AssemblyOriginatorKeyFile>
     <TargetFrameworkVersion>v3.5</TargetFrameworkVersion>
     <TargetFrameworkProfile />
     <PublishUrl>publish\</PublishUrl>
@@ -39,6 +40,12 @@
     <IsWebBootstrapper>false</IsWebBootstrapper>
     <UseApplicationTrust>false</UseApplicationTrust>
     <BootstrapperEnabled>true</BootstrapperEnabled>
+  </PropertyGroup>
+  <PropertyGroup>
+    <SignAssembly>true</SignAssembly>
+  </PropertyGroup>
+  <PropertyGroup>
+    <AssemblyOriginatorKeyFile>..\..\Resources\ncache.snk</AssemblyOriginatorKeyFile>
   </PropertyGroup>
   <PropertyGroup Condition=" '$(Configuration)|$(Platform)' == 'Debug|AnyCPU' ">
     <DebugSymbols>true</DebugSymbols>
@@ -84,9 +91,6 @@
     <Compile Include="ConfigurationValidator.cs" />
     <Compile Include="Properties\AssemblyInfo.cs" />
     <Compile Include="ToolOperations.cs" />
-  </ItemGroup>
-  <ItemGroup>
-    <None Include="ncache.snk" />
   </ItemGroup>
   <ItemGroup>
     <BootstrapperPackage Include=".NETFramework,Version=v4.0">

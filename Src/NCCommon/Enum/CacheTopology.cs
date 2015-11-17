@@ -16,8 +16,7 @@ namespace Alachisoft.NCache.Common.Enum
     public enum CacheTopology
     {
         Local,
-        Partitioned,
-        PartitionedOfReplica,
-        Replicated
+        Replicated,
+        Partitioned
     }
 }

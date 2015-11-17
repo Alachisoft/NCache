@@ -29,10 +29,16 @@ namespace Alachisoft.NCache.Integrations.Memcached.ProxyServer.Commands
             set { _delay = value; }
         }
 
-        public FlushCommand(Opcode type, int delay=0)
+        public FlushCommand(Opcode type, int delay)
             : base(type)
         {
             _delay = delay;
+        }
+
+        public FlushCommand(Opcode type)
+            : base(type)
+        {
+            _delay = 0;
         }
 
         public override void Execute(IMemcachedProvider cacheProvider)

@@ -17,7 +17,7 @@ namespace Alachisoft.NCache.Common.DataStructures
 {
     public class VirtualIndex :IComparable
     {
-        const int maxSize = 79 * 1024;
+        int maxSize = 79 * 1024;
         int x, y;
 
         public VirtualIndex() { }
@@ -26,6 +26,13 @@ namespace Alachisoft.NCache.Common.DataStructures
         {
             IncrementBy(index);
         }
+
+        public VirtualIndex(int maxSize, int index)
+        {
+            this.maxSize = maxSize;
+            IncrementBy(index);
+        }
+
         public void Increment()
         {
             x++;

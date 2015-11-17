@@ -55,10 +55,9 @@ namespace Alachisoft.NCache.Serialization.Surrogates
             {
                 if (array[i] != null)
                 {
-                    writer.Write((short)1);
-                    int length = (int)array[i].Length;
-                    writer.Write(length);
+                    writer.Write((short)1);                   
                     byte[] stream = UTF8Encoding.UTF8.GetBytes(array[i] as string);
+                    writer.Write(stream.Length);
                     writer.Write(stream); 
                 }
                 else

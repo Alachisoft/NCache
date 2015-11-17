@@ -45,7 +45,7 @@
     <SignAssembly>true</SignAssembly>
   </PropertyGroup>
   <PropertyGroup>
-    <AssemblyOriginatorKeyFile>ncache.snk</AssemblyOriginatorKeyFile>
+    <AssemblyOriginatorKeyFile>..\..\..\..\..\..\Resources\ncache.snk</AssemblyOriginatorKeyFile>
   </PropertyGroup>
   <PropertyGroup Condition="'$(Configuration)|$(Platform)' == 'Release20|AnyCPU'">
     <OutputPath>bin\Release20\</OutputPath>
@@ -83,35 +83,37 @@
     <Compile Include="Result.cs" />
     <Compile Include="OperationResult.cs" />
   </ItemGroup>
-  <ItemGroup>
-    <None Include="ncache.snk" />
+  <ItemGroup Condition=" '$(Configuration)|$(Platform)' == 'Release|AnyCPU' ">
+    <Reference Include="Alachisoft.NCache.Common">
+      <SpecificVersion>False</SpecificVersion>
+      <HintPath>..\..\..\..\..\Src\build\Server\4x\Alachisoft.NCache.Common.dll</HintPath>
+    </Reference>
+    <Reference Include="Alachisoft.NCache.Runtime">
+      <SpecificVersion>False</SpecificVersion>
+      <HintPath>..\..\..\..\..\Src\build\Server\4x\Alachisoft.NCache.Runtime.dll</HintPath>
+    </Reference>
+    <Reference Include="Alachisoft.NCache.Web">
+      <SpecificVersion>False</SpecificVersion>
+      <HintPath>..\..\..\..\..\Src\build\Server\4x\Alachisoft.NCache.Web.dll</HintPath>
+    </Reference>
   </ItemGroup>
-  <ItemGroup>
-    <Reference Include="Alachisoft.NCache.Common" Condition="'$(Configuration)|$(Platform)' == 'Release20|AnyCPU'">
+
+  <ItemGroup Condition="'$(Configuration)|$(Platform)' == 'Release20|AnyCPU'">
+    <Reference Include="Alachisoft.NCache.Common">
       <SpecificVersion>False</SpecificVersion>
       <HintPath>..\..\..\..\..\Src\build\Server\2x\Alachisoft.NCache.Common.dll</HintPath>
     </Reference>
-    <Reference Include="Alachisoft.NCache.Common, Version=4.4.0.0, Culture=neutral, PublicKeyToken=1448e8d1123e9096, processorArchitecture=MSIL">
-      <SpecificVersion>False</SpecificVersion>
-      <HintPath>..\..\..\..\..\Src\build\Server\2x\Alachisoft.NCache.Common.dll</HintPath>
-    </Reference>
-    <Reference Include="Alachisoft.NCache.Runtime" Condition="'$(Configuration)|$(Platform)' == 'Release20|AnyCPU'">
+    <Reference Include="Alachisoft.NCache.Runtime">
       <SpecificVersion>False</SpecificVersion>
       <HintPath>..\..\..\..\..\Src\build\Server\2x\Alachisoft.NCache.Runtime.dll</HintPath>
     </Reference>
-    <Reference Include="Alachisoft.NCache.Runtime, Version=4.4.0.0, Culture=neutral, PublicKeyToken=1448e8d1123e9096, processorArchitecture=MSIL">
-      <SpecificVersion>False</SpecificVersion>
-      <HintPath>..\..\..\..\..\Src\build\Server\2x\Alachisoft.NCache.Runtime.dll</HintPath>
-    </Reference>
-    <Reference Include="Alachisoft.NCache.Web" Condition="'$(Configuration)|$(Platform)' == 'Release20|AnyCPU'">
-      <SpecificVersion>False</SpecificVersion>
-      <HintPath>..\..\..\..\..\Src\build\Server\2x\Alachisoft.NCache.Web.dll</HintPath>
-    </Reference>
-    <Reference Include="Alachisoft.NCache.Web, Version=4.4.0.0, Culture=neutral, PublicKeyToken=1448e8d1123e9096, processorArchitecture=MSIL">
+    <Reference Include="Alachisoft.NCache.Web">
       <SpecificVersion>False</SpecificVersion>
       <HintPath>..\..\..\..\..\Src\build\Server\2x\Alachisoft.NCache.Web.dll</HintPath>
     </Reference>
   </ItemGroup>
+
+
   <Import Project="$(MSBuildToolsPath)\Microsoft.CSharp.targets" />
   <PropertyGroup Condition=" '$(Configuration)|$(Platform)' == 'Release|AnyCPU'">
     <PostBuildEvent>xcopy /Y "$(TargetPath)" "$(SolutionDir)\..\..\..\build\Memcached\4x\"</PostBuildEvent>

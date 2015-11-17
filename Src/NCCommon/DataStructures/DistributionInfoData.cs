@@ -12,6 +12,7 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 using Alachisoft.NCache.Common.Net;
+using Alachisoft.NCache.Common.Enum;
 
 namespace Alachisoft.NCache.Common.DataStructures
 {

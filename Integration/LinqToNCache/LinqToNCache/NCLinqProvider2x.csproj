@@ -52,6 +52,17 @@
     <WarningLevel>4</WarningLevel>
     <CodeAnalysisRuleSet>AllRules.ruleset</CodeAnalysisRuleSet>
   </PropertyGroup>
+  <PropertyGroup Condition=" '$(Configuration)|$(Platform)' == 'Release|AnyCPU' ">
+    <DebugSymbols>true</DebugSymbols>
+    <TargetFrameworkVersion>v3.5</TargetFrameworkVersion>
+    <DebugType>full</DebugType>
+    <Optimize>false</Optimize>
+    <OutputPath>bin\Debug\</OutputPath>
+    <DefineConstants>DEBUG;TRACE</DefineConstants>
+    <ErrorReport>prompt</ErrorReport>
+    <WarningLevel>4</WarningLevel>
+    <CodeAnalysisRuleSet>AllRules.ruleset</CodeAnalysisRuleSet>
+  </PropertyGroup>
   <PropertyGroup Condition="'$(Configuration)|$(Platform)' == 'Release.2x|AnyCPU'">
     <OutputPath>bin\Release.2x\</OutputPath>
     <DefineConstants>TRACE</DefineConstants>
@@ -69,12 +80,33 @@
     <CodeAnalysisRuleSetDirectories>;C:\Program Files (x86)\Microsoft Visual Studio 10.0\Team Tools\Static Analysis Tools\\Rule Sets</CodeAnalysisRuleSetDirectories>
     <CodeAnalysisRuleDirectories>;C:\Program Files (x86)\Microsoft Visual Studio 10.0\Team Tools\Static Analysis Tools\FxCop\\Rules</CodeAnalysisRuleDirectories>
   </PropertyGroup>
-  <ItemGroup>
-    <Reference Include="Alachisoft.NCache.Web, Version=4.4.0.0, Culture=neutral, PublicKeyToken=cff5926ed6a53769, processorArchitecture=MSIL">
+
+  <ItemGroup Condition="'$(Configuration)|$(Platform)' == 'Release.2x|AnyCPU'">
+    <Reference Include="Alachisoft.NCache.Web, Version=4.4.0.0, Culture=neutral, PublicKeyToken=1448e8d1123e9096, processorArchitecture=MSIL">
       <SpecificVersion>False</SpecificVersion>
       <HintPath>..\..\..\Src\build\Server\2x\Alachisoft.NCache.Web.dll</HintPath>
     </Reference>
+
+  </ItemGroup>
+
+  <ItemGroup Condition="'$(Configuration)|$(Platform)' == 'Release|AnyCPU'">
+    <Reference Include="Alachisoft.NCache.Web, Version=4.4.0.0, Culture=neutral, PublicKeyToken=1448e8d1123e9096, processorArchitecture=MSIL">
+      <SpecificVersion>False</SpecificVersion>
+      <HintPath>..\..\..\Src\build\Server\4x\Alachisoft.NCache.Web.dll</HintPath>
+    </Reference>
+  </ItemGroup>
+
+  <ItemGroup>
     <Reference Include="System" />
+    <Reference Include="System.Core">
+      <RequiredTargetFramework>3.5</RequiredTargetFramework>
+    </Reference>
+    <Reference Include="System.Xml.Linq">
+      <RequiredTargetFramework>3.5</RequiredTargetFramework>
+    </Reference>
+    <Reference Include="System.Data.DataSetExtensions">
+      <RequiredTargetFramework>3.5</RequiredTargetFramework>
+    </Reference>
     <Reference Include="System.Data" />
     <Reference Include="System.Xml" />
   </ItemGroup>
@@ -114,11 +146,6 @@
   </Target>
   -->
   <PropertyGroup Condition="'$(Configuration)|$(Platform)' == 'Release|AnyCPU' OR '$(Configuration)|$(Platform)' == 'Debug|AnyCPU'">
-    <PreBuildEvent>
-    </PreBuildEvent>
-    <PostBuildEvent>xcopy /Y "$(TargetPath)" "$(SolutionDir)..\build\ContentOptimization\2x\"</PostBuildEvent>
-  </PropertyGroup>
-  <PropertyGroup>
     <PostBuildEvent>xcopy /Y "$(TargetPath)" "$(SolutionDir)..\build\LinqToNCache\2x\"</PostBuildEvent>
   </PropertyGroup>
 </Project>

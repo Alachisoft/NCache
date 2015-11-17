@@ -855,7 +855,7 @@ namespace Alachisoft.NCache.Web.Communication
                     {
                         if (_logger.IsErrorLogsEnabled)
                             _logger.NCacheLog.Error("Broker.RaiseBulkEvent",
-                                "An error occured while raising bulk event of type : " + eventItem.eventType +
+                                "An error occurred while raising bulk event of type : " + eventItem.eventType +
                                 ". Error :" + ex.ToString());
                     }
                 }
@@ -887,7 +887,7 @@ namespace Alachisoft.NCache.Web.Communication
                 {
                     if (_logger.IsErrorLogsEnabled)
                         _logger.NCacheLog.Error("Broker.UpdateHashmapAsync",
-                            "An error occured while installing updated hashmap. Error :" + e.ToString());
+                            "An error occurred while installing updated hashmap. Error :" + e.ToString());
                 }
                 catch (Exception)
                 {

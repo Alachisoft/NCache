@@ -11,6 +11,7 @@
     <RootNamespace>VerifyLicense</RootNamespace>
     <AssemblyName>VerifyLicense</AssemblyName>
     <TargetFrameworkVersion>v4.0</TargetFrameworkVersion>
+    <AssemblyOriginatorKeyFile>..\..\Resources\ncache.snk</AssemblyOriginatorKeyFile>
     <TargetFrameworkProfile>
     </TargetFrameworkProfile>
     <FileAlignment>512</FileAlignment>
@@ -79,7 +80,8 @@
     <SignAssembly>true</SignAssembly>
   </PropertyGroup>
   <PropertyGroup>
-    <AssemblyOriginatorKeyFile>ncache.snk</AssemblyOriginatorKeyFile>
+    <AssemblyOriginatorKeyFile>
+    </AssemblyOriginatorKeyFile>
   </PropertyGroup>
   <ItemGroup>
     <Reference Include="Alachisoft.NCache.Cache, Version=4.4.0.0, Culture=neutral, PublicKeyToken=1448e8d1123e9096, processorArchitecture=MSIL">
@@ -119,7 +121,6 @@
   </ItemGroup>
   <ItemGroup>
     <None Include="app.config" />
-    <None Include="ncache.snk" />
   </ItemGroup>
   <ItemGroup>
     <Content Include="App.ico" />

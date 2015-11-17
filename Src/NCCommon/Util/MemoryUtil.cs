@@ -214,6 +214,64 @@ namespace Alachisoft.NCache.Common
             return AttributeTypeSize.Variable;
         }
 
+        public static Type GetDataType(string typeName)
+        {
+            switch (typeName)
+            {
+                case Net_string: return typeof(string);
+                case Net_System_String: return typeof(System.String);
+                case Java_Lang_String: return typeof(string);
+                case Net_bool: return typeof(bool);
+                case Net_byte: return typeof(byte);
+                case Net_System_Byte: return typeof(Byte);
+                case Net_sbyte: return typeof(sbyte);
+                case Net_System_SByte: return typeof(SByte);
+                case Net_System_Boolean: return typeof(Boolean);
+
+                case Java_Lang_Boolean: return typeof(Boolean);
+                case Java_Lang_Byte: return typeof(Byte);
+
+                case Net_char: return typeof(char);
+                case Net_short: return typeof(short);
+                case Net_ushort: return typeof(ushort);
+                case Net_System_Int16: return typeof(Int16);
+                case Net_System_UInt16: return typeof(UInt16);
+                case Net_System_Char: return typeof(Char);
+
+                case Java_Lang_Character: return typeof(Char);
+                case Java_Lang_Float: return typeof(float);
+                case Java_Lang_Short: return typeof(short);
+
+                case Net_float: return typeof(float);
+                case Net_int: return typeof(int);
+                case Net_System_Int32: return typeof(Int32);
+                case Net_uint: return typeof(uint);
+                case Net_System_UInt32: return typeof(UInt32);
+                case Net_System_Single: return typeof(Single);
+
+                case Java_Lang_Integer: return typeof(int);
+
+                case Net_double: return typeof(double);
+                case Net_System_Double: return typeof(Double);
+                case Net_long: return typeof(long);
+                case Net_System_Int64: return typeof(Int64);
+                case Net_ulong: return typeof(ulong);
+                case Net_System_DateTime: return typeof(DateTime);
+                case Net_SystemUInt64: return typeof(UInt64);
+
+                case Java_Lang_Double: return typeof(Double);
+                case Java_Lang_Long: return typeof(long);
+                case Java_Util_Date: return typeof(DateTime);
+
+                case Net_decimal: return typeof(decimal);
+                case Net_System_Decimal: return typeof(Decimal);
+                case Java_Match_BigDecimal: return typeof(Decimal);
+                default: return null;
+
+            }
+        }
+
+
         public static int GetInMemoryInstanceSize(int actualDataBytes)
         {
             int temp = MemoryUtil.NetClassOverHead;

@@ -31,14 +31,12 @@ namespace Alachisoft.NCache.SocketServer
         {
         }
 
-        public object Deserialize(byte[] buffer, long commandSize)
+        public object Deserialize(Stream stream)
         {
             Alachisoft.NCache.Common.Protobuf.ManagementCommand command = null;
-            using (MemoryStream stream = new MemoryStream(buffer, 0, (int)commandSize))
-            {
-                command = ProtoBuf.Serializer.Deserialize<Alachisoft.NCache.Common.Protobuf.ManagementCommand>(stream);
-                stream.Close();
-            }
+            command = ProtoBuf.Serializer.Deserialize<Alachisoft.NCache.Common.Protobuf.ManagementCommand>(stream);
+            stream.Close();
+
             return command;
         }
 

@@ -217,7 +217,7 @@ namespace Alachisoft.NCache.Config
 			}
 			catch(Exception e)
 			{
-				throw new ConfigurationException("Error occured while reading configuration", e);
+				throw new ConfigurationException("Error occurred while reading configuration", e);
 			}
 			throw new ConfigurationException(@"Specified config section '" + configSection + @"' not found in file '" + fileName + @"'. If it is a cache, it must be registered properly on this machine.");
 		}
@@ -275,7 +275,7 @@ namespace Alachisoft.NCache.Config
             }
             catch (Exception e)
             {
-                throw new ConfigurationException("Error occured while reading configuration", e);
+                throw new ConfigurationException("Error occurred while reading configuration", e);
             }
             throw new ConfigurationException(@"Specified config section '" + configSection + @"' not found in file '" + fileName + @"'. If it is a cache, it must be registered properly on this machine.");
         }
@@ -312,7 +312,7 @@ namespace Alachisoft.NCache.Config
             }
             catch (Exception e)
             {
-                throw new ConfigurationException("Error occured while reading configuration", e);
+                throw new ConfigurationException("Error occurred while reading configuration", e);
             }
         }
 
@@ -345,7 +345,7 @@ namespace Alachisoft.NCache.Config
             }
             catch (Exception e)
             {
-                throw new ConfigurationException("Error occured while reading configuration", e);
+                throw new ConfigurationException("Error occurred while reading configuration", e);
             }
             throw new ConfigurationException(@"Specified config section '" + this._configSection + @"' not found in file '" + this._configFileName + @"'. If it is a cache, it must be registered properly on this machine.");        
         }
@@ -371,7 +371,7 @@ namespace Alachisoft.NCache.Config
             }
             catch (Exception e)
             {
-                throw new ConfigurationException("Error occured while reading configuration", e);
+                throw new ConfigurationException("Error occurred while reading configuration", e);
             }
             throw new ConfigurationException(@"Specified config section '" + configSection + @"' not found in file '" + fileName + @"'. If it is a cache, it must be registered properly on this machine.");
         }
@@ -418,7 +418,7 @@ namespace Alachisoft.NCache.Config
             }
             catch (Exception e)
             {
-                throw new ConfigurationException("Error occured while reading configuration", e);
+                throw new ConfigurationException("Error occurred while reading configuration", e);
             }
             throw new ConfigurationException(@"Specified config section '" + configSection + @"' not found in file '" + fileName + @"'. If it is a cache, it must be registered properly on this machine.");
         }
@@ -440,7 +440,7 @@ namespace Alachisoft.NCache.Config
 			}
 			catch(Exception e)
 			{
-				throw new ConfigurationException("Error occured while reading configuration", e);
+				throw new ConfigurationException("Error occurred while reading configuration", e);
 			}
 		}
 
@@ -479,7 +479,7 @@ namespace Alachisoft.NCache.Config
             }
             catch (Exception e)
             {
-                throw new ConfigurationException("Error occured while reading configuration", e);
+                throw new ConfigurationException("Error occurred while reading configuration", e);
             }
         }
 	}

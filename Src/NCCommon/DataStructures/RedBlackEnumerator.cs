@@ -30,12 +30,12 @@ namespace Alachisoft.NCache.Common.DataStructures
 		private bool ascending;
 		
 		// key
-		private IComparable ordKey;
+		private object ordKey;
 
 		// the data or value associated with the key
 		private object objValue;
 
-        private RedBlackNode _sentinelNode;      
+        private ITreeNode _sentinelNode;      
 
 
         #region /  --- IDictionary Enumerator --- /
@@ -89,7 +89,7 @@ namespace Alachisoft.NCache.Common.DataStructures
 		///<summary>
 		/// Determine order, walk the tree and push the nodes onto the stack
 		///</summary>
-		public RedBlackEnumerator(RedBlackNode tnode, bool ascending, RedBlackNode sentinelNode) 
+		public RedBlackEnumerator(ITreeNode tnode, bool ascending, ITreeNode sentinelNode) 
         {
 
             stack = new Stack();
@@ -138,24 +138,24 @@ namespace Alachisoft.NCache.Common.DataStructures
 			// get top of stack but don't remove it as the next nodes in sequence
 			// may be pushed onto the top
 			// the stack will be popped after all the nodes have been returned
-			RedBlackNode node = (RedBlackNode) stack.Peek();	//next node in sequence
+			ITreeNode node = (ITreeNode) stack.Peek();	//next node in sequence
 			
             if(ascending)
             {
                 if(node.Right == _sentinelNode)
                 {	
                     // yes, top node is lowest node in subtree - pop node off stack 
-                    RedBlackNode tn = (RedBlackNode) stack.Pop();
+                    ITreeNode tn = (ITreeNode) stack.Pop();
                     // peek at right node's parent 
                     // get rid of it if it has already been used
-                    while(HasMoreElements()&& ((RedBlackNode) stack.Peek()).Right == tn)
-                        tn = (RedBlackNode) stack.Pop();
+                    while(HasMoreElements()&& ((ITreeNode) stack.Peek()).Right == tn)
+                        tn = (ITreeNode) stack.Pop();
                 }
                 else
                 {
                     // find the next items in the sequence
                     // traverse to left; find lowest and push onto stack
-                    RedBlackNode tn = node.Right;
+                    ITreeNode tn = node.Right;
                     while(tn != _sentinelNode)
                     {
                         stack.Push(tn);
@@ -168,15 +168,15 @@ namespace Alachisoft.NCache.Common.DataStructures
                 if(node.Left == _sentinelNode)
                 {
                     // walk the tree
-                    RedBlackNode tn = (RedBlackNode) stack.Pop();
-                    while(HasMoreElements() && ((RedBlackNode)stack.Peek()).Left == tn)
-                        tn = (RedBlackNode) stack.Pop();
+                    ITreeNode tn = (ITreeNode) stack.Pop();
+                    while(HasMoreElements() && ((ITreeNode)stack.Peek()).Left == tn)
+                        tn = (ITreeNode) stack.Pop();
                 }
                 else
                 {
                     // determine next node in sequence
                     // traverse to left subtree and find greatest node - push onto stack
-                    RedBlackNode tn = node.Left;
+                    ITreeNode tn = node.Left;
                     while(tn != _sentinelNode)
                     {
                         stack.Push(tn);
@@ -187,7 +187,7 @@ namespace Alachisoft.NCache.Common.DataStructures
 			
 			// the following is for .NET compatibility (see MoveNext())
             ordKey = node.Key;
-            objValue = node.Data;
+            objValue = node.Value;
 			
 			return node.Key;
 		}

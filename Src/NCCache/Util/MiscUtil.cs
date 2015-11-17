@@ -38,14 +38,6 @@ namespace Alachisoft.NCache.Util
 	public class MiscUtil
     {
         /// <summary>
-        /// Returns 0 or 1, If VM based OS found returns 1 else 0
-        /// </summary>        
-        public static int IsHyperV()
-        {
-            MSHyperVThread mst = new MSHyperVThread();
-            return mst.IsHyperV();
-        }
-        /// <summary>
         /// Registers types with the Compact Serializatin Framework. Range of reserved
         /// typeHandle is (61 - 1000). 
         /// </summary>
@@ -83,14 +75,12 @@ namespace Alachisoft.NCache.Util
             CompactFormatterServices.RegisterCompactType(typeof(ReplicatedCacheBase.Identity), 78);
             CompactFormatterServices.RegisterCompactType(typeof(StateTxfrInfo), 116);
             CompactFormatterServices.RegisterCompactType(typeof(CompressedValueEntry), 133);
-            CompactFormatterServices.RegisterCompactType(typeof(PayloadInfo), 136);
 #endif
             CompactFormatterServices.RegisterCompactType(typeof(Alachisoft.NCache.Caching.Queries.QueryResultSet), 151);
             CompactFormatterServices.RegisterCompactType(typeof(Alachisoft.NCache.Caching.OperationContext), 153);
             CompactFormatterServices.RegisterCompactType(typeof(Alachisoft.NCache.Caching.OperationContext[]), 345);
             CompactFormatterServices.RegisterCompactType(typeof(Alachisoft.NCache.Caching.EventContext[]), 346);
             CompactFormatterServices.RegisterCompactType(typeof(Alachisoft.NCache.Caching.OperationID), 163);
-            //CompactFormatterServices.RegisterCompactType(typeof(Alachisoft.NCache.Caching.EventContext), 168);
             CompactFormatterServices.RegisterCompactType(typeof(Alachisoft.NCache.Caching.NCacheSessionItem), 129);
         }
         /// <summary>

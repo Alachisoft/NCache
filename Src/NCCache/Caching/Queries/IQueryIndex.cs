@@ -21,7 +21,7 @@ namespace Alachisoft.NCache.Caching.Queries
         
         void AddToIndex(object key, object value);
         void RemoveFromIndex(object key, object value);
-        void RemoveFromIndex(object key);
+        //void RemoveFromIndex(object key);
         void Clear();
         IDictionaryEnumerator GetEnumerator(string typeName);
         IndexInformation GetIndexInformation(object key);

@@ -108,7 +108,7 @@
       <HintPath>..\..\..\..\Src\build\Server\4x\Alachisoft.NCache.Web.dll</HintPath>
     </Reference>
     <Reference Include="SampleData">
-      <HintPath>..\..\SampleData\bin\Debug\SampleData.dll</HintPath>
+      <HintPath>..\..\SampleData\bin\SampleData.dll</HintPath>
     </Reference>
     <Reference Include="System">
       <Name>System</Name>

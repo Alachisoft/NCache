@@ -20,12 +20,6 @@ namespace Alachisoft.NCache.Common.Enum
     public class CacheTopologyType
     {
         private CacheTopologyType() { }
-
         public static readonly string ClusteredCache = "clustered-cache";
-        public static readonly string LocalCache = "local-cache";
-        public static readonly string Partioned = "partitioned";
-        public static readonly string PartitionedOfReplica = "partitioned-replica";
-        public static readonly string Replicated = "replicated";
-       
     }
 }

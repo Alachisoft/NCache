@@ -14,13 +14,14 @@
 using System;
 using System.Collections;
 using Alachisoft.NCache.Common.Logger;
+using Alachisoft.NCache.Common.DataStructures.Clustered;
 
 namespace Alachisoft.NCache.Caching.Topologies.Local
 {
     internal class OpLogManager : IDisposable
     {
 
-        Hashtable _loggers = new Hashtable();
+        HashVector _loggers = new HashVector();
         bool _logEnteries;
         bool _allowOPAfterBuckeTxfrd = true;
         private ILogger _ncacheLog;

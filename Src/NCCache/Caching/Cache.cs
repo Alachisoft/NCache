@@ -234,7 +234,7 @@ namespace Alachisoft.NCache.Caching
                         }
                         catch (Exception e)
                         {
-                            NCacheLog.Error("Cache.Dispose", "Error occured while invoking cache stopped event: " + e.ToString());
+                            NCacheLog.Error("Cache.Dispose", "Error occurred while invoking cache stopped event: " + e.ToString());
                             //Ignore and move on to fire next
                         }
                         finally
@@ -1485,8 +1485,8 @@ internal void Initialize(IDictionary properties, bool inProc)
                 priority = opt - 2;
             }
 
-            ExpirationHint eh = ConvHelper.MakeExpirationHint(cce.Expiration, isAbsolute);
- CacheEntry e = new CacheEntry(cce.Value, eh, new PriorityEvictionHint((CacheItemPriority)priority));       
+            ExpirationHint eh = ExpirationHelper.MakeExpirationHint(cce.Expiration, isAbsolute);
+            CacheEntry e = new CacheEntry(cce.Value, eh, new PriorityEvictionHint((CacheItemPriority)priority));       
             e.QueryInfo = cce.QueryInfo;
             e.Flag = cce.Flag;
 
@@ -1619,12 +1619,66 @@ internal void Initialize(IDictionary properties, bool inProc)
             }
         }
 
+
+        /// <summary>
+        /// Overload of Add operation for bulk additions. Uses EvictionHint and ExpirationHint arrays.
+        /// </summary>        
+        public IDictionary Add(string[] keys, CacheEntry[] enteries, OperationContext operationContext)
+        {
+            if (ServerMonitor.MonitorActivity) ServerMonitor.LogClientActivity("Cache.InsertBlk", "");
+
+            if (keys == null) throw new ArgumentNullException("keys");
+            if (enteries == null) throw new ArgumentNullException("entries");
+
+            try
+            {
+                Hashtable result = _context.CacheImpl.Add(keys, enteries, true, operationContext);
+                if (result != null)
+                {
+
+                    Hashtable tmp = (Hashtable)result.Clone();
+                    IDictionaryEnumerator ide = tmp.GetEnumerator();
+                    while (ide.MoveNext())
+                    {
+                        CacheAddResult addResult = CacheAddResult.Failure;
+                        if (ide.Value is CacheAddResult)
+                        {
+                            addResult = (CacheAddResult)ide.Value;
+                            switch (addResult)
+                            {
+                                case CacheAddResult.Failure:
+                                    break;
+                                case CacheAddResult.KeyExists:
+                                    result[ide.Key] = new OperationFailedException("The specified key already exists.");
+                                    break;
+                                case CacheAddResult.NeedsEviction:
+                                    result[ide.Key] = new OperationFailedException("The cache is full and not enough items could be evicted.");
+                                    break;
+                                case CacheAddResult.Success:
+                                    result.Remove(ide.Key);
+                                    break;
+                            }
+                        }
+                    }
+                }
+                return result;
+
+
+            }
+            catch (Exception)
+            {
+                //NCacheLog.Error(_context.CacheName, "Cache.Add():", inner.ToString());
+                throw;
+            }
+
+        }
+
         
 
         /// <summary>
         /// Internal Add operation. Does write-through as well.
         /// </summary>
-        private void Add(object key, CacheEntry e, OperationContext operationContext)
+        public void Add(object key, CacheEntry e, OperationContext operationContext)
         {
             object value = e.Value;
             try
@@ -1784,7 +1838,7 @@ internal void Initialize(IDictionary properties, bool inProc)
             }
 
         }
-        
+
         /// <summary>
         /// Internal Add operation for bulk additions. Does write-through as well.
         /// </summary>
@@ -2249,7 +2303,7 @@ Insert(cce.Key, e.Value, e.ExpirationHint, e.EvictionHint,e.QueryInfo, e.Flag, e
         /// <summary>
         /// Internal Insert operation. Does a write thru as well.
         /// </summary>
-        private Hashtable Insert(object[] keys, CacheEntry[] entries, OperationContext operationContext)
+        public Hashtable Insert(object[] keys, CacheEntry[] entries, OperationContext operationContext)
         {
             try
             {
@@ -2882,7 +2936,7 @@ Insert(cce.Key, e.Value, e.ExpirationHint, e.EvictionHint,e.QueryInfo, e.Flag, e
 
             return oldEntry;
         }
-        internal Hashtable CascadedRemove(object[] keys, ItemRemoveReason reason, bool notify, OperationContext operationContext)
+        internal Hashtable CascadedRemove(IList keys, ItemRemoveReason reason, bool notify, OperationContext operationContext)
         {
             Hashtable table = _context.CacheImpl.Remove(keys, reason, notify, operationContext);
             return table;

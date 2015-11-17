@@ -682,7 +682,7 @@ namespace Alachisoft.NGroups.Blocks
                 }
                 catch (Exception e)
                 {
-                    if(NCacheLog.IsErrorEnabled) NCacheLog.Error("RequestCorrelator.RequestCleaner", "An error occured while cleaning request_status. " + e.ToString());
+                    if(NCacheLog.IsErrorEnabled) NCacheLog.Error("RequestCorrelator.RequestCleaner", "An error occurred while cleaning request_status. " + e.ToString());
                 }
             }
         }
@@ -1236,7 +1236,15 @@ namespace Alachisoft.NGroups.Blocks
 			{
                 if (retval is OperationResponse)
                 {
-                    rsp_buf = (byte[]) ((OperationResponse)retval).SerializablePayload;
+                    if (((OperationResponse)retval).SerilizationStream != null)
+                    {
+                        rsp.SerlizationStream = ((OperationResponse)retval).SerilizationStream;
+                        //MemoryStream stream=((MemoryStream)((OperationResponse)retval).SerilizationStream);
+                        //rsp_buf = stream.ToArray();
+                        //stream.Seek(0, SeekOrigin.Begin);
+                    }
+                    else
+                        rsp_buf = (byte[])((OperationResponse)retval).SerializablePayload;
                     rsp.Payload = ((OperationResponse)retval).UserPayload;
                     rsp.responseExpected = true;
                 }

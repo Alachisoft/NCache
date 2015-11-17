@@ -37,6 +37,7 @@ using Alachisoft.NCache.Common.Net;
 using Alachisoft.NCache.Caching.Queries;
 using Alachisoft.NCache.Common.Logger;
 using System.Net;
+using Alachisoft.NCache.Common.DataStructures.Clustered;
 #if !CLIENT
 
 #endif
@@ -565,9 +566,9 @@ namespace Alachisoft.NCache.Caching.Topologies
             }
         }
 
-        public virtual ArrayList GetKeyList(int bucketId, bool startLogging)
+        public virtual void GetKeyList(int bucketId, bool startLogging, out ClusteredArrayList keyList)
         {
-            return null;
+            keyList = null;
         }
 
         public virtual Hashtable GetLogTable(ArrayList bucketIds, ref bool isLoggingStopped)
@@ -591,7 +592,7 @@ namespace Alachisoft.NCache.Caching.Topologies
         {
         }
 
-        public virtual Hashtable LocalBuckets
+        public virtual HashVector LocalBuckets
         {
             get { return null; }
             set { ;}
@@ -889,14 +890,19 @@ namespace Alachisoft.NCache.Caching.Topologies
         /// <param name="notify">boolean specifying to raise the event.</param>
         /// <param name="operationContext"></param>
         /// <returns>List of keys and values that are removed from cache</returns>
-        public virtual Hashtable Remove(object[] keys, ItemRemoveReason removalReason, bool notify, OperationContext operationContext)
+        public virtual Hashtable Remove(IList keys, ItemRemoveReason removalReason, bool notify, OperationContext operationContext)
         {
             return null;
         }
 
-        public virtual Hashtable Remove(object[] keys, ItemRemoveReason removalReason, bool notify, bool isUserOperation, OperationContext operationContext)
+        public virtual Hashtable Remove(IList keys, ItemRemoveReason removalReason, bool notify, bool isUserOperation, OperationContext operationContext)
         {
             return null;
+        }
+
+        public Hashtable Remove(object[] keys, ItemRemoveReason ir, bool notify, OperationContext operationContext)
+        {
+            return Remove((IList)keys, ir, notify, operationContext);
         }
 
         #endregion

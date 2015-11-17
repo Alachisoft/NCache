@@ -65,7 +65,7 @@ namespace Alachisoft.NCache.SocketServer.Command
                 if (!string.IsNullOrEmpty(cmdInfo.IntendedRecipient))
                     operationContext.Add(OperationContextFieldName.IntendedRecipient, cmdInfo.IntendedRecipient);
 
-                Hashtable insertResult = (Hashtable)nCache.Cache.Insert(cmdInfo.Keys, cmdInfo.Values, cmdInfo.CallbackEnteries, cmdInfo.ExpirationHint, cmdInfo.EvictionHint, cmdInfo.QueryInfo, cmdInfo.Flags, operationContext);
+                Hashtable insertResult = (Hashtable)nCache.Cache.Insert(cmdInfo.Keys, cmdInfo.Entries, operationContext);
                 Alachisoft.NCache.Common.Protobuf.Response response = new Alachisoft.NCache.Common.Protobuf.Response();
                 Alachisoft.NCache.Common.Protobuf.BulkInsertResponse bulkInsertResponse = new Alachisoft.NCache.Common.Protobuf.BulkInsertResponse();
 				response.requestId = Convert.ToInt64(cmdInfo.RequestId);

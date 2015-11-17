@@ -47,6 +47,8 @@ namespace Alachisoft.NCache.Web.Command
             {
                 keyValue = new KeyValue();
                 keyValue.key = ide.Key.ToString();
+                if (ide.Value == null)
+                    throw new ArgumentException("NCache query does not support null values");
 
                 if (ide.Value is ArrayList)
                 {

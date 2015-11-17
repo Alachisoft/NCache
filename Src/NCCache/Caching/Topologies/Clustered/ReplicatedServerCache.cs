@@ -2287,38 +2287,40 @@ namespace Alachisoft.NCache.Caching.Topologies.Clustered
                 }
 
                 existingItems = Local_Get(keys, operationContext);
-                if (existingItems != null && existingItems.Count > 0)
-                {
-                    IDictionaryEnumerator ide = existingItems.GetEnumerator();
-                    while (ide.MoveNext())
-                    {
-                        key = ide.Key;
-                        if (jointTable.Contains(key))
-                        {
-                            failedTable.Add(key, new OperationFailedException("Data group of the inserted item does not match the existing item's data group"));
-                            jointTable.Remove(key);
-                        }
-                    }
-                }
+
+                //{
+                //    IDictionaryEnumerator ide = existingItems.GetEnumerator();
+                //    while (ide.MoveNext())
+                //    {
+                //        key = ide.Key;
+                //        if (jointTable.Contains(key))
+                //        {
+                //            failedTable.Add(key, new OperationFailedException("Data group of the inserted item does not match the existing item's data group"));
+                //            jointTable.Remove(key);
+                //        }
+                //    }
+                //}
 
                 Hashtable localInsertResult = null;
-                if (jointTable.Count > 0)
-                {
-                    index = 0;
-                    validKeys = new object[jointTable.Count];
-                    validEnteries = new CacheEntry[jointTable.Count];
-                    added = new ArrayList();
-                    IDictionaryEnumerator ide = jointTable.GetEnumerator();
-                    while (ide.MoveNext())
+            //    if (existingItems != null && existingItems.Count > 0)
+                    if (jointTable.Count > 0)
                     {
-                        key = ide.Key;
-                        validKeys[index] = key;
-                        validEnteries[index] = (CacheEntry)ide.Value;
-                        added.Add(key);
-                        index += 1;
+                        index = 0;
+                        validKeys = new object[jointTable.Count];
+                        validEnteries = new CacheEntry[jointTable.Count];
+                        added = new ArrayList();
+                        IDictionaryEnumerator ide = jointTable.GetEnumerator();
+                        while (ide.MoveNext())
+                        {
+                            key = ide.Key;
+                            validKeys[index] = key;
+                            validEnteries[index] = (CacheEntry)ide.Value;
+                            added.Add(key);
+                            index += 1;
+                        }
+                        if (validKeys.Length > 0)
+                             localInsertResult = Local_Insert(validKeys, validEnteries, Cluster.LocalAddress,  notify, operationContext);
                     }
-                    localInsertResult = Local_Insert(validKeys, validEnteries, Cluster.LocalAddress,  notify, operationContext);
-                }
 
                 if (localInsertResult != null)
                 {
@@ -2346,7 +2348,7 @@ namespace Alachisoft.NCache.Caching.Topologies.Clustered
               
                 if (notify)
                 {
-                    IEnumerator ideInsterted = inserted.GetEnumerator();
+                    IEnumerator ideInsterted = added.GetEnumerator();
                     while (ideInsterted.MoveNext())
                     {
                         key = ideInsterted.Current;
@@ -2638,7 +2640,7 @@ namespace Alachisoft.NCache.Caching.Topologies.Clustered
         /// Expirations and Evictions are replicated and again the node initiating the replication
         /// triggers the cluster-wide notification.
         /// </remarks>
-        public override Hashtable Remove(object[] keys, ItemRemoveReason ir, bool notify, OperationContext operationContext)
+        public override Hashtable Remove(IList keys, ItemRemoveReason ir, bool notify, OperationContext operationContext)
         {
             if (ServerMonitor.MonitorActivity) ServerMonitor.LogClientActivity("RepCache.RemoveBlk", "");
             /// Wait until the object enters any running status
@@ -2707,7 +2709,7 @@ namespace Alachisoft.NCache.Caching.Topologies.Clustered
         /// <param name="ir"></param>
         /// <param name="notify"></param>
         /// <returns>keys and values that actualy removed from the cache</returns>
-        private Hashtable Local_Remove(object[] keys, ItemRemoveReason ir, Address src, CallbackEntry cbEntry, bool notify, OperationContext operationContext)
+        private Hashtable Local_Remove(IList keys, ItemRemoveReason ir, Address src, CallbackEntry cbEntry, bool notify, OperationContext operationContext)
         {
             Hashtable retVal = null;
             if (_internalCache != null)

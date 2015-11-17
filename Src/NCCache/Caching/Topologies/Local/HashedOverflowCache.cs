@@ -15,6 +15,7 @@ using System.Collections;
 using Alachisoft.NCache.Caching.Exceptions;
 using Alachisoft.NCache.Caching.Statistics;
 using Alachisoft.NCache.Common;
+using Alachisoft.NCache.Common.DataStructures.Clustered;
 
 namespace Alachisoft.NCache.Caching.Topologies.Local
 {
@@ -25,12 +26,8 @@ namespace Alachisoft.NCache.Caching.Topologies.Local
         /// <summary>
         /// A map that contains key lists against each bucket id.
         /// </summary>
-        private Hashtable _keyList;
+        private HashVector _keyList;
 
-        /// <summary>
-        /// A map of operation loggers against each bucketId
-        /// </summary>
-        private Hashtable _operationLoggers;
         private OpLogManager _logMgr;
         private int _stopLoggingThreshhold = 50;
 
@@ -48,21 +45,19 @@ namespace Alachisoft.NCache.Caching.Topologies.Local
             set { _bucketSize = value; }
         }
 
-        public override ArrayList GetKeyList(int bucketId, bool startLogging)
+        public override void GetKeyList(int bucketId, bool startLogging, out ClusteredArrayList keyList)
         {
             if (startLogging)
                 _logMgr.StartLogging(bucketId, LogMode.LogBeforeAfterActualOperation);
-
+            keyList = new ClusteredArrayList();
             if (_keyList != null)
             {
                 if (_keyList.Contains(bucketId))
                 {
-                    Hashtable keyTbl = _keyList[bucketId] as Hashtable;
-                    return new ArrayList(keyTbl.Keys);
+                    HashVector keyTbl = _keyList[bucketId] as HashVector;
+                    keyList.AddRange(keyTbl.Keys);
                 }
-                return null;
             }
-            return null;
         }
 
         public override Hashtable GetLogTable(ArrayList bucketIds, ref bool isLoggingStopped)
@@ -127,11 +122,12 @@ namespace Alachisoft.NCache.Caching.Topologies.Local
         {
             if (Context.NCacheLog.IsInfoEnabled) Context.NCacheLog.Info("HashedOverflowCache.RemoveBucketData", "removing bucket data:" + bucketId);
 
-            ArrayList keys = GetKeyList(bucketId, false);
+            ClusteredArrayList keys;
+            GetKeyList(bucketId, false, out keys);
 
             if (keys != null)
             {
-                keys = keys.Clone() as ArrayList;
+                keys = keys.Clone() as ClusteredArrayList;
                 IEnumerator ie = keys.GetEnumerator();
                 while (ie.MoveNext())
                 {
@@ -145,7 +141,7 @@ namespace Alachisoft.NCache.Caching.Topologies.Local
             while (ie.MoveNext())
             {
                 if (LocalBuckets == null)
-                    LocalBuckets = new Hashtable();
+                    LocalBuckets = new HashVector();
 
                 if (!LocalBuckets.Contains(ie.Current))
                 {
@@ -166,16 +162,16 @@ namespace Alachisoft.NCache.Caching.Topologies.Local
             }
 
             if (_keyList == null)
-                _keyList = new Hashtable();
+                _keyList = new HashVector();
 
             if (_keyList.Contains(bucketId))
             {
-                Hashtable keys = (Hashtable)_keyList[bucketId];
+                HashVector keys = (HashVector)_keyList[bucketId];
                 keys[key] = null;
             }
             else
             {
-                Hashtable keys = new Hashtable();
+                HashVector keys = new HashVector();
                 keys[key] = null;
                 _keyList[bucketId] = keys;
             }
@@ -192,7 +188,7 @@ namespace Alachisoft.NCache.Caching.Topologies.Local
             {
                 if (_keyList.Contains(bucketId))
                 {
-                    Hashtable keys = (Hashtable)_keyList[bucketId];
+                    HashVector keys = (HashVector)_keyList[bucketId];
                     keys.Remove(key);
 
                     if (keys.Count == 0)
@@ -216,7 +212,7 @@ namespace Alachisoft.NCache.Caching.Topologies.Local
                 bucketId *= -1;
             return bucketId;
         }
-        public override Hashtable LocalBuckets
+        public override HashVector LocalBuckets
         {
             get { return _stats.LocalBuckets; }
             set { _stats.LocalBuckets = value; }
@@ -276,7 +272,7 @@ namespace Alachisoft.NCache.Caching.Topologies.Local
             base.Dispose();
         }
 
-        internal override CacheAddResult AddInternal(object key, CacheEntry cacheEntry, bool isUserOperation)
+        internal override CacheAddResult AddInternal(object key, CacheEntry cacheEntry, bool isUserOperation, OperationContext operationContext)
         {
             int bucketId = GetBucketId(key as string);
 
@@ -289,7 +285,7 @@ namespace Alachisoft.NCache.Caching.Topologies.Local
                 return CacheAddResult.Success;
             }
 
-            CacheAddResult result = base.AddInternal(key, cacheEntry, isUserOperation);
+            CacheAddResult result = base.AddInternal(key, cacheEntry, isUserOperation, operationContext);
             if (result == CacheAddResult.Success || result == CacheAddResult.SuccessNearEviction)
             {
                 IncrementBucketStats(key as string, bucketId, cacheEntry.DataSize);
@@ -329,7 +325,7 @@ namespace Alachisoft.NCache.Caching.Topologies.Local
             }
         }
 
-        internal override CacheInsResult InsertInternal(object key, CacheEntry cacheEntry, bool isUserOperation, CacheEntry oldEntry, OperationContext operationContext)
+        internal override CacheInsResult InsertInternal(object key, CacheEntry cacheEntry, bool isUserOperation, CacheEntry oldEntry, OperationContext operationContext, bool updateIndex)
         {
             int bucketId = GetBucketId(key as string);
 
@@ -344,7 +340,7 @@ namespace Alachisoft.NCache.Caching.Topologies.Local
                 return oldEntry != null ? CacheInsResult.SuccessOverwrite : CacheInsResult.Success;
             }
 
-            CacheInsResult result = base.InsertInternal(key, cacheEntry, isUserOperation,oldEntry,operationContext);
+            CacheInsResult result = base.InsertInternal(key, cacheEntry, isUserOperation,oldEntry,operationContext, updateIndex);
 
             switch (result)
             {

@@ -18,18 +18,13 @@ namespace Alachisoft.NCache.Common.Enum
     /// 1. Unavailable means, client node is no more the part of this cluster. 
     /// i.e. Cluster entry removed from client config on this node
     /// 2. ClientCacheUnavailable means, client cache is not created on the client node.
-    /// 3. ClientCacheEnabled means, client cache is created and is started.
     /// 4. ClientCacheDisabled means, client cache is created but is stopped.
-    /// 5. ClientCacheNotRegistered is same as ClientCacheUnavailable.. but it is used to change the 
-    /// state of client cache instead of client node.
     /// </summary>
     public enum ClientNodeStatus
     {
         ClientCacheDisabled,
         ClientCacheUnavailable,
-        ClientCacheEnabled,
         Unavailable,
-        ClientCacheNotRegistered,
         UpdatingStatus
     }
 }

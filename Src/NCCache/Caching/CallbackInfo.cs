@@ -15,11 +15,12 @@ using System;
 using Alachisoft.NCache.Runtime.Events;
 using Alachisoft.NCache.Runtime.Serialization;
 using Alachisoft.NCache.Runtime.Serialization.IO;
+using Alachisoft.NCache.Common;
 
 namespace Alachisoft.NCache.Caching
 {
     [Serializable]
-    public class CallbackInfo : ICompactSerializable
+    public class CallbackInfo : ICompactSerializable, ISizable
     {
         protected string theClient;
         protected object theCallback;
@@ -114,6 +115,30 @@ namespace Alachisoft.NCache.Caching
             string dataFilter = _dataFilter.ToString();
             return cnt + ":" + cback + ":" + dataFilter;
         }
+
+        public int Size
+        {
+            get { return CallbackInfoSize; }
+        }
+
+        public int InMemorySize
+        {
+            get { return Common.MemoryUtil.GetInMemoryInstanceSize(this.Size); }
+        }
+
+        private int CallbackInfoSize
+        {
+            get
+            {
+                int temp = 0;
+                temp += Common.MemoryUtil.GetStringSize(theClient); // for theClient
+                temp += Common.MemoryUtil.NetReferenceSize; // for theCallback
+                temp += Common.MemoryUtil.NetByteSize; // for notifyOnItemExpiration
+                temp += Common.MemoryUtil.NetEnumSize;  //for _dataFilter
+                return temp;
+            }
+        }
+
         
         #region ICompactSerializable Members
 

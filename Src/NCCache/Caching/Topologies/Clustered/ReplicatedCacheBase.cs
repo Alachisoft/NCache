@@ -496,20 +496,20 @@ namespace Alachisoft.NCache.Caching.Topologies.Clustered
 
             Hashtable keyValTable = jointTable.Clone() as Hashtable;
 
-            if (jointTable.Count > 0)
-            {
-                index = 0;
-                validKeys = new object[jointTable.Count];
-                validEnteries = new CacheEntry[jointTable.Count];
+            //if (jointTable.Count > 0)
+            //{
+            //    index = 0;
+            //    validKeys = new object[jointTable.Count];
+            //    validEnteries = new CacheEntry[jointTable.Count];
 
-                IDictionaryEnumerator ide = jointTable.GetEnumerator();
-                while (ide.MoveNext())
-                {
-                    key = ide.Key;
-                    validKeys[index] = key;
-                    index += 1;
-                }
-            }
+            //    IDictionaryEnumerator ide = jointTable.GetEnumerator();
+            //    while (ide.MoveNext())
+            //    {
+            //        key = ide.Key;
+            //        validKeys[index] = key;
+            //        index += 1;
+            //    }
+            //}
 
             if (jointTable.Count > 0)
             {
@@ -525,16 +525,17 @@ namespace Alachisoft.NCache.Caching.Topologies.Clustered
                     added.Add(key);
                     index += 1;
                 }
-                for (int i = 0; i < validKeys.Length; i++)
-                {
-                    key = validKeys[i];
-                    if (jointTable.Contains(key))
-                        jointTable.Remove(key);
-                }
+                //for (int i = 0; i < validKeys.Length; i++)
+                //{
+                //    key = validKeys[i];
+                //    if (jointTable.Contains(key))
+                //        jointTable.Remove(key);
+                //}
                 try
                 {
                     insertResults = null;
-                    insertResults = Clustered_Insert(Cluster.Servers, validKeys, validEnteries,  operationContext);
+                    if (validKeys.Length>0)
+                      insertResults = Clustered_Insert(Cluster.Servers, validKeys, validEnteries,  operationContext);
                 }
                 catch (Exception e)
                 {
@@ -750,7 +751,7 @@ namespace Alachisoft.NCache.Caching.Topologies.Clustered
         /// <remarks>
         /// This method invokes <see cref="handleRemove"/> on every server node in the cluster.
         /// </remarks>
-        protected Hashtable Clustered_Remove(object[] keys, ItemRemoveReason ir, CallbackEntry cbEntry,  bool notify, OperationContext operationContext)
+        protected Hashtable Clustered_Remove(IList keys, ItemRemoveReason ir, CallbackEntry cbEntry,  bool notify, OperationContext operationContext)
         {
             Hashtable removedEntries = new Hashtable();
             try
@@ -808,7 +809,7 @@ namespace Alachisoft.NCache.Caching.Topologies.Clustered
         /// <remarks>
         /// This method invokes <see cref="handleRemoveRange"/> on every server node in the cluster.
         /// </remarks>
-        protected bool Clustered_Remove(object[] keys, ItemRemoveReason reason, OperationContext operationContext)
+        protected bool Clustered_Remove(IList keys, ItemRemoveReason reason, OperationContext operationContext)
         {
             try
             {
@@ -823,7 +824,7 @@ namespace Alachisoft.NCache.Caching.Topologies.Clustered
                         
                         if (!rsp1.wasReceived())
                         {
-                            Context.NCacheLog.Error("ReplicatedBase.Remove[]", "timeout_failure :" + rsp1.Sender + " Keys :" + keys.Length);
+                            Context.NCacheLog.Error("ReplicatedBase.Remove[]", "timeout_failure :" + rsp1.Sender + " Keys :" + keys.Count);
                             continue;
                         }
                     }

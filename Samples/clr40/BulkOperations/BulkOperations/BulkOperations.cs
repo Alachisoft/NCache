@@ -28,14 +28,14 @@ namespace BulkOperations
 				cache = NCache.InitializeCache("mypartitionedcache");
 				cache.Clear();
 
-				string[] keysToAdd = new string[] {"Product:Cheese", "Product:Butter", "Product:Cream", "Product:Youghart"};
+                string[] keysToAdd = new string[] { "Product:Cheese", "Product:Butter", "Product:Cream", "Product:Yogurt" };
 
 				Product[] products = new Product[4];
 
 				products[0] = new Product(1, "Dairy Milk Cheese", "ClassA", 1);
 				products[1] = new Product(2, "American Butter", "ClassA", 1);
 				products[2] = new Product(3, "Walmart Delicious Cream", "ClassA", 2);
-				products[3] = new Product(4, "Nestle Youghart", "ClassA", 2);
+                products[3] = new Product(4, "Nestle Yogurt", "ClassA", 2);
 
 				//Adding Bulk Items
 				//Bulk operation returns 

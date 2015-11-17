@@ -1240,12 +1240,12 @@ namespace Alachisoft.NCache.Web.Caching
             return result;
         }
 
-        public override void RegisterCacheNotification(string key, CacheDataNotificationCallback selectiveCacheDataNotificationCallback, Runtime.Events.EventType eventType, Runtime.Events.EventDataFilter datafilter)
+        public override void RegisterCacheNotification(string key, CacheDataNotificationCallback selectiveCacheDataNotificationCallback, Runtime.Events.EventType eventType)
         {
             string exceptionMessage = null;
             try
             {
-                _webCache.RegisterCacheNotification(key, selectiveCacheDataNotificationCallback, eventType, datafilter);
+                _webCache.RegisterCacheNotification(key, selectiveCacheDataNotificationCallback, eventType);
             }
             catch (Exception e)
             {

@@ -87,14 +87,14 @@ namespace Alachisoft.NCache.Tools.ListCaches
         static private ListCachesParam cParam = new ListCachesParam();
 
 
-        static private void PrintCacheInfo(CacheStatistics statistics, string partId, string cacheName, bool isRunning)
+        static private void PrintCacheInfo(CacheStatistics statistics, string cacheName, bool isRunning)
         {
 
             CacheStatistics s = statistics;
             string schemeName = s.ClassName.ToLower(CultureInfo.CurrentCulture);
             string running = isRunning ? "Running" : "Stopped";
 
-            Console.WriteLine("{0,-20} {1,-15} {2,-30} {3,-5}", cacheName, partId, schemeName, running);
+            Console.WriteLine("{0,-25} {1,-35} {2,-15}", cacheName, schemeName, running);
         }
         static private void PrintCacheInfo(Cache cache, string partId)
         {
@@ -112,13 +112,13 @@ namespace Alachisoft.NCache.Tools.ListCaches
             string schemeName = s.ClassName.ToLower(CultureInfo.CurrentCulture);
             bool running = isRunning;
 
-            Console.WriteLine("Cache-ID:       {0}", cacheName);
+            Console.WriteLine("Name:\t\t{0}", cacheName);
 
-            if (partId != null && partId != string.Empty)
-                Console.WriteLine("Partition-ID:   {0}", partId);
+            //if (partId != null && partId != string.Empty)
+            //    Console.WriteLine("Partition-ID:   {0}", partId);
 
-            Console.WriteLine("Scheme:         {0}", schemeName);
-            Console.WriteLine("Status:         {0}", isRunning ? "Running" : "Stopped");
+            Console.WriteLine("Scheme:\t\t{0}", schemeName);
+            Console.WriteLine("Status:\t\t{0}", isRunning ? "Running" : "Stopped");
             if (running)
             {
                 if (s is ClusterCacheStatistics)
@@ -320,8 +320,8 @@ namespace Alachisoft.NCache.Tools.ListCaches
                    {
                        if (!cParam.Detail)
                        {
-                           Console.WriteLine("{0,-20} {1,-15} {2,-30} {3,-5}", "Cache-ID", "Partition Id", "Scheme", "Status");
-                           Console.WriteLine("{0,-20} {1,-15} {2,-30} {3,-5}", "--------", "------------", "------", "------");
+                           Console.WriteLine("{0,-25} {1,-35} {2,-15}", "Cache-Name", "Scheme", "Status");
+                           Console.WriteLine("{0,-25} {1,-35} {2,-15}", "----------", "------", "------");
                        }
 
                        if (caches.Length > 0)
@@ -331,7 +331,7 @@ namespace Alachisoft.NCache.Tools.ListCaches
                                Alachisoft.NCache.Common.Monitoring.ConfiguredCacheInfo cacheInfo = caches[i];
                                if (!cParam.Detail)
                                {
-                                    PrintCacheInfo(m.GetCacheStatistics2(cacheInfo.CacheId), "N/A", cacheInfo.CacheId, cacheInfo.IsRunning);
+                                   PrintCacheInfo(m.GetCacheStatistics2(cacheInfo.CacheId), cacheInfo.CacheId, cacheInfo.IsRunning);
                                }
                                else
                                {

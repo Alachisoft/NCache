@@ -131,6 +131,8 @@ namespace Alachisoft.NGroups
         DateTime sendTime;
         DateTime arrivalTime;
 
+        private Stream stream = null;
+
 		/// <summary>Only used for Externalization (creating an initial object) </summary>
 		public  Message()
 		{
@@ -214,6 +216,23 @@ namespace Alachisoft.NGroups
             get { return handledAsynchronously; }
             set { handledAsynchronously = value; }
         }
+
+        /// <summary>
+        /// Gets or set the Stream for reuse
+        /// </summary>
+        public Stream SerlizationStream
+        {
+            get { return stream; }
+            set
+            {
+                if (value != null)
+                {
+                    stream = value;
+                    this.length = (int)stream.Length;
+                }
+            }
+        }
+
 
         public void MarkSent()
         {
@@ -815,7 +834,16 @@ namespace Alachisoft.NGroups
 			dest_addrs = (ArrayList)reader.ReadObject();
             src_addr = (Address)reader.ReadObject();
 			prio = (Priority) Enum.ToObject(typeof(Priority), reader.ReadInt16());
-            buf = (byte[])reader.ReadObject();
+             Boolean isStream = reader.ReadBoolean();
+             if (isStream)
+             {
+                 int len = reader.ReadInt32();
+                 buf = reader.ReadBytes(len);
+             }
+             else
+             {
+                 buf = (byte[])reader.ReadObject();
+             }
             headers = (Hashtable)reader.ReadObject();
             handledAsynchronously = reader.ReadBoolean();
             responseExpected = reader.ReadBoolean();
@@ -832,7 +860,17 @@ namespace Alachisoft.NGroups
 			writer.WriteObject(dest_addrs);
             writer.WriteObject(src_addr);
 			writer.Write(Convert.ToInt16(prio));
-            writer.WriteObject((object)buf);
+            if (stream != null)
+            {
+                writer.Write(true);
+                writer.Write(length);
+                writer.Write(((MemoryStream)stream).GetBuffer(), 0, length);
+            }
+            else
+            {
+                writer.Write(false);
+                writer.WriteObject((object)buf);
+            }
             writer.WriteObject(headers);
             writer.Write(handledAsynchronously);
             writer.Write(responseExpected);
@@ -943,10 +981,17 @@ namespace Alachisoft.NGroups
             writer.Write(sendTime.Ticks);
             writer.Write(responseExpected);
             writer.Write(_type);
-            
-			int length = buf.Length;
-			writer.Write(length);
-			writer.Write(buf);
+            if (stream != null)
+            {
+                writer.Write(length);
+                writer.Write(((MemoryStream)stream).GetBuffer(), 0, length);
+            }
+            else
+            {
+                int length = buf.Length;
+                writer.Write(length);
+                writer.Write(buf);
+            }
 			long curPos = writer.BaseStream.Position;
 			writer.BaseStream.Position = 8; //afte 4 bytes of total size and 4 bytes of message size ..here comes the flag.
 			writer.Write(bFlags.DataByte);

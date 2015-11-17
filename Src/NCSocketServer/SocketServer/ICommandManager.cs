@@ -14,12 +14,13 @@
 using System;
 using System.Collections.Generic;
 using System.Text;
+using System.IO;
 
 namespace Alachisoft.NCache.SocketServer
 {
     internal interface ICommandManager
     {
         void ProcessCommand(ClientManager clientManager, object command);
-        object Deserialize(byte[] buffer, long CommandSize);
+        object Deserialize(Stream stream);
     }
 }

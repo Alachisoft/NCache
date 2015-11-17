@@ -129,7 +129,7 @@
       <HintPath>..\..\..\..\Src\build\Server\4x\Alachisoft.NCache.Common.dll</HintPath>
     </Reference>
     <Reference Include="Alachisoft.NCache.Integrations.NHibernate.Cache">
-      <HintPath>..\..\..\..\integration\nhibernate\assembly\Alachisoft.NCache.Integrations.NHibernate.Cache.dll</HintPath>
+      <HintPath>..\..\..\..\Integration\NHibernate\src\bin\Release\Alachisoft.NCache.Integrations.NHibernate.Cache.dll</HintPath>
     </Reference>
     <Reference Include="Alachisoft.NCache.Runtime, Version=4.4.0.0, Culture=neutral, PublicKeyToken=1448e8d1123e9096, processorArchitecture=MSIL">
       <SpecificVersion>False</SpecificVersion>

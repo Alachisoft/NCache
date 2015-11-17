@@ -37,7 +37,8 @@ namespace Alachisoft.NCache.Caching.Queries.Filters
             Type type = null;
             foreach (string key in queryContext.Tree.LeftList)
             {
-                IComparable current = (IComparable)queryContext.Index.GetAttributeValue(key, AttributeName);
+                CacheEntry cacheentry = queryContext.Cache.GetEntryInternal(key, false);
+                IComparable current = (IComparable)queryContext.Index.GetAttributeValue(key, AttributeName, cacheentry.IndexInfo);
 
                 if (current != null)
                 {

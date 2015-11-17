@@ -29,8 +29,10 @@ using Alachisoft.NCache.Common.Util;
 using Alachisoft.NCache.SocketServer;
 using System.Collections.Generic;
 using Alachisoft.NCache.SocketServer.Statistics;
+using Alachisoft.NCache.Common.DataStructures.Clustered;
 #if !NET20
 using System.Threading.Tasks;
+using Alachisoft.NCache.Common.DataStructures.Clustered;
 #endif
 
 
@@ -348,7 +350,7 @@ namespace Alachisoft.NCache.SocketServer
             }
             catch (Exception e)
             {
-                if (SocketServer.Logger.IsErrorLogsEnabled) SocketServer.Logger.NCacheLog.Error("ConnectionManager.AcceptCallback", "An error occured on EndAccept. " + e.ToString());
+                if (SocketServer.Logger.IsErrorLogsEnabled) SocketServer.Logger.NCacheLog.Error("ConnectionManager.AcceptCallback", "An error occurred on EndAccept. " + e.ToString());
                 return;
             }
             finally
@@ -637,7 +639,6 @@ namespace Alachisoft.NCache.SocketServer
         {
             int commandSize = HelperFxn.ToInt32(clientManager.Buffer, 0, cmdSizeHolderBytesCount, "Command");
             tranSize = commandSize;
-            byte[] buffer = clientManager.GetPinnedBuffer((int)tranSize);
 
         }
 
@@ -1077,10 +1078,21 @@ namespace Alachisoft.NCache.SocketServer
 
             int commandSize = HelperFxn.ToInt32(clientManager.Buffer, 0, cmdSizeHolderBytesCount, "Command");
             tranSize = commandSize;
+            using (Stream str = new ClusteredMemoryStream())
+            {
+                //byte[] buffer = new byte[commandSize + dataSize];
+                while (commandSize >= 0)
+                {
+                    int apparentSize = commandSize < 81920 ? commandSize : 81920;
+                    byte[] buffer = clientManager.GetPinnedBuffer((int)apparentSize);
 
-            byte[] buffer = clientManager.GetPinnedBuffer((int)tranSize);
-            AssureRecieve(clientManager, ref buffer, (int)tranSize);
-            command = cmdManager.Deserialize(buffer, commandSize);
+                    AssureRecieve(clientManager, ref buffer, (int)apparentSize);
+                    str.Write(buffer, 0, apparentSize);
+                    commandSize -= 81920;
+                }
+                str.Position = 0;
+                command = cmdManager.Deserialize(str);
+            }
         }
 
         /// <summary>

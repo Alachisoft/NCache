@@ -573,7 +573,7 @@ namespace Alachisoft.NCache.SocketServer
             {
                 _disposed = true;
 
-                if (_enumerationPointers != null)
+                if (_enumerationPointers != null && !_cacheStopped)
                 {
                     foreach (string key in _enumerationPointers.Keys)
                     {

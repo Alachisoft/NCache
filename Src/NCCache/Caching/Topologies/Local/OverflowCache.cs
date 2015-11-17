@@ -400,7 +400,7 @@ namespace Alachisoft.NCache.Caching.Topologies.Local
 		/// <param name="key">key of the entry.</param>
 		/// <param name="cacheEntry">the cache entry.</param>
 		/// <returns>returns the result of operation.</returns>
-        internal override CacheAddResult AddInternal(object key, CacheEntry cacheEntry, bool isUserOperation)
+        internal override CacheAddResult AddInternal(object key, CacheEntry cacheEntry, bool isUserOperation, OperationContext operationContext)
 		{
 			if(_primary == null || _secondary == null)
 				throw new InvalidOperationException();
@@ -412,7 +412,7 @@ namespace Alachisoft.NCache.Caching.Topologies.Local
 			// If the call succeeds there might be some eviction, which is handled by
 			// the primary listener. Otherwise there is some error so we may try the second
 			// instance.
-			return _primary.AddInternal(key, cacheEntry, false);
+			return _primary.AddInternal(key, cacheEntry, false, operationContext);
 		}
 
         internal override bool AddInternal(object key, ExpirationHint eh, OperationContext operationContext)
@@ -442,7 +442,7 @@ namespace Alachisoft.NCache.Caching.Topologies.Local
 		/// <param name="key">key of the entry.</param>
 		/// <param name="cacheEntry">the cache entry.</param>
 		/// <returns>returns the result of operation.</returns>
-        internal override CacheInsResult InsertInternal(object key, CacheEntry cacheEntry, bool isUserOperation, CacheEntry oldEntry, OperationContext operationContext)
+        internal override CacheInsResult InsertInternal(object key, CacheEntry cacheEntry, bool isUserOperation, CacheEntry oldEntry, OperationContext operationContext, bool updateIndex)
 		{
 			if(_primary == null || _secondary == null)
 				throw new InvalidOperationException();
@@ -450,16 +450,16 @@ namespace Alachisoft.NCache.Caching.Topologies.Local
 			// If the primary has it then we are bound to update that item
 			if(_primary.ContainsInternal(key))
 			{
-				return _primary.InsertInternal(key, cacheEntry, false,oldEntry,operationContext);
+				return _primary.InsertInternal(key, cacheEntry, false,oldEntry,operationContext, updateIndex);
 			}
 
 			// If the secondary has it then we are bound to update that item
 			if(_secondary.Contains(key,operationContext))
 			{
-				return _secondary.InsertInternal(key, cacheEntry, false,oldEntry,operationContext);
+				return _secondary.InsertInternal(key, cacheEntry, false,oldEntry,operationContext, updateIndex);
 			}
 
-			CacheAddResult result = AddInternal(key, cacheEntry, false);
+            CacheAddResult result = AddInternal(key, cacheEntry, false, operationContext);
 			switch(result)
 			{
 				case CacheAddResult.Success: return CacheInsResult.Success;

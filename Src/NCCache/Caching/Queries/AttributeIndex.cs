@@ -24,14 +24,12 @@ namespace Alachisoft.NCache.Caching.Queries
         protected Hashtable _indexTable;
         protected string _cacheName;
         protected string _type;
-        protected Hashtable _keyIndexTable;
 
         //Cacluate Size of this Attribute Index accumulated size of all stores
         private long _attributeIndexSize;
 
         //Cacluate Size of indexTable and IndexInformation Associated with Keys
         private long _keyIndexInformationSize;
-        private long _keyIndexTableMaxCount;
 
         [NonSerialized]
         private TypeInfoMap _typeMap = null;
@@ -52,7 +50,6 @@ namespace Alachisoft.NCache.Caching.Queries
         {
             _indexTable = new Hashtable();
             _cacheName = cacheName;
-            _keyIndexTable = new Hashtable();
             _type = type;
 
             Initialize(attribList);
@@ -62,7 +59,6 @@ namespace Alachisoft.NCache.Caching.Queries
         {
             _indexTable = new Hashtable();
             _cacheName = cacheName;
-            _keyIndexTable = new Hashtable();
             _type = type;
             _typeMap = typeMap;
 
@@ -92,13 +88,12 @@ namespace Alachisoft.NCache.Caching.Queries
 
                 while (e.MoveNext())
                 {
-                    string attribName = e.Current.ToString();
-                    
+                    string attribName = e.Current.ToString();                    
                     String storeDataType = String.Empty;
                     if (this._typeMap != null)
                         storeDataType = _typeMap.GetAttributeType(this.TypeName, attribName);
-
-                    store = new RBStore(_cacheName, storeDataType);
+                    Type genericType = typeof(RBStore<>).MakeGenericType(Common.MemoryUtil.GetDataType(storeDataType));
+                    store = (IIndexStore)Activator.CreateInstance(genericType, new object[] { _cacheName, storeDataType, attribName});
                     _indexTable.Add(attribName, store);                   
                 }
             }
@@ -106,9 +101,11 @@ namespace Alachisoft.NCache.Caching.Queries
 
         public virtual void AddToIndex(object key, object value)
         {
-            Hashtable attributeValues = value as Hashtable;
+            QueryItemContainer container = (QueryItemContainer)value;
+            CacheEntry entry = container.Item;
+            Hashtable attributeValues = container.ItemArrtributes;
             IDictionaryEnumerator valuesDic = attributeValues.GetEnumerator();
-            RedBlackNodeReference keyNode = null;
+            INodeReference keyNode = null;
             while (valuesDic.MoveNext())
             {
                 string indexKey = (string)valuesDic.Key;
@@ -122,7 +119,7 @@ namespace Alachisoft.NCache.Caching.Queries
                     object val = valuesDic.Value;
 
                     if (val != null)
-                        keyNode = (RedBlackNodeReference)store.Add(val, key);
+                        keyNode = (INodeReference)store.Add(val, key);
 
                     _attributeIndexSize += store.IndexInMemorySize - prev;
                 }
@@ -131,9 +128,9 @@ namespace Alachisoft.NCache.Caching.Queries
 
                 IndexInformation info;
 
-                if (_keyIndexTable.Contains(key))
+                if (entry.IndexInfo != null)
                 {
-                    info = _keyIndexTable[key] as IndexInformation;
+                    info = entry.IndexInfo;
                 }
                 else
                 {
@@ -143,19 +140,18 @@ namespace Alachisoft.NCache.Caching.Queries
                 long prevSize = info.IndexInMemorySize;
 
                 info.Add(storeName, store, keyNode);
-                _keyIndexTable[key] = info;
 
                 this._keyIndexInformationSize += info.IndexInMemorySize - prevSize;
-                if (_keyIndexTable.Count > _keyIndexTableMaxCount)
-                    _keyIndexTableMaxCount = _keyIndexTable.Count;
+                entry.IndexInfo = info;
 
             }
         }
 
-        public virtual void RemoveFromIndex(object key)
+        public virtual void RemoveFromIndex(object key, object value)
         {
             bool isNodeRemoved = false;
-            IndexInformation indexInfo = (IndexInformation)_keyIndexTable[key];
+            CacheEntry entry = (CacheEntry)value;
+            IndexInformation indexInfo = entry.IndexInfo;
             if (indexInfo != null)
             {
                 foreach (IndexStoreInformation indexStoreInfo in indexInfo.IndexStoreInformations)
@@ -172,41 +168,10 @@ namespace Alachisoft.NCache.Caching.Queries
                 _keyIndexInformationSize -= indexInfo.IndexInMemorySize;
             }
 
-            _keyIndexTable.Remove(key);
+            entry.IndexInfo = null;
 
         }
-
-        public virtual void RemoveFromIndex(object key, object value)
-        {
-            Hashtable attributeValues = value as Hashtable;
-            IDictionaryEnumerator valuesDic = attributeValues.GetEnumerator();
-
-            while (valuesDic.MoveNext())
-            {
-                string indexKey = (string)valuesDic.Key;
-
-                if (_indexTable.Contains(indexKey))
-                {
-                    IIndexStore store = _indexTable[indexKey] as IIndexStore;
-                    object val = valuesDic.Value;
-
-                    long prev = store.IndexInMemorySize;
-
-                    if (val != null)
-                        store.Remove(val, key);
-                    else
-                        store.Remove("null", key);
-
-                    if (store.Count == 0)
-                    {
-                        String storeDataType = ((RBStore)store).StoreDataType;
-                        _indexTable[indexKey] = new RBStore(_cacheName, storeDataType);
-                    }
-                    _attributeIndexSize += store.IndexInMemorySize - prev;
-                }
-            }
-        }
-
+        
         public IIndexStore GetStore(string attrib)
         {
             bool disacleException = QueryIndexManager.DisableException;
@@ -238,8 +203,6 @@ namespace Alachisoft.NCache.Caching.Queries
                 store.Clear();
             }
 
-            _keyIndexTable = new Hashtable();
-
             _attributeIndexSize = 0;
 
         }
@@ -260,7 +223,7 @@ namespace Alachisoft.NCache.Caching.Queries
 
         public IndexInformation GetIndexInformation(object key)
         {
-            return (IndexInformation)_keyIndexTable[key];
+            return null;
         }
 
         public IDictionaryEnumerator GetEnumerator()
@@ -268,21 +231,21 @@ namespace Alachisoft.NCache.Caching.Queries
             return _indexTable.GetEnumerator();
         }
 
-        public object GetAttributeValue(string key, string attributeName)
+        public object GetAttributeValue(string key, string attributeName, IndexInformation indexInfo)
         {
             string storeName = attributeName;
             if (!_indexTable.Contains(storeName))
                 throw new Exception("Index is not defined for attribute '" + attributeName + "'");
 
-            IndexInformation indexInformation = GetIndexInformation(key);
+            IndexInformation indexInformation = indexInfo;
 
-            IComparable value = null;
+            object value = null;
             foreach (IndexStoreInformation indexStoreInfo in indexInformation.IndexStoreInformations)
             {
                 if (indexStoreInfo.StoreName == storeName)
                 {
                     if (indexStoreInfo.IndexPosition != null)
-                        value = indexStoreInfo.IndexPosition.RBReference.Key;
+                        value = indexStoreInfo.IndexPosition.GetKey();
                     else
                         return null;
                     break;
@@ -298,7 +261,6 @@ namespace Alachisoft.NCache.Caching.Queries
                 long temp = 0;
                 temp += _keyIndexInformationSize;
                 temp += _attributeIndexSize;
-                temp += (this._keyIndexTableMaxCount * Common.MemoryUtil.NetHashtableOverHead);
 
                 return temp;
             }

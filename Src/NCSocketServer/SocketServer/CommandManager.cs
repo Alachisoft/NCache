@@ -43,14 +43,11 @@ namespace Alachisoft.NCache.SocketServer
 
         }
 
-        public object Deserialize(byte[] buffer, long commandSize)
+        public object Deserialize(Stream buffer)
         {
             Alachisoft.NCache.Common.Protobuf.Command command = null;
-            using (MemoryStream stream = new MemoryStream(buffer, 0, (int)commandSize))
-            {
-                command = ProtoBuf.Serializer.Deserialize<Alachisoft.NCache.Common.Protobuf.Command>(stream);
-                stream.Close();
-            }
+            command = ProtoBuf.Serializer.Deserialize<Alachisoft.NCache.Common.Protobuf.Command>(buffer);
+            buffer.Close();
             return command;
         }
 
@@ -241,6 +238,10 @@ namespace Alachisoft.NCache.SocketServer
                 case Alachisoft.NCache.Common.Protobuf.Command.Type.ADD_ATTRIBUTE:
                     command.addAttributeCommand.requestId = command.requestID;
                     incommingCmd = new AddAttributeCommand();
+                    break;
+                case Alachisoft.NCache.Common.Protobuf.Command.Type.GET_SERVER_MAPPING:
+                    command.getServerMappingCommand.requestId = command.requestID;
+                    incommingCmd = new GetServerMappingCommand();
                     break;
 
             }
