@@ -30,8 +30,7 @@
 
 	ECHO REGISTRING PERFMON COUNTERS
 	ECHO ===============================
-	
-	echo "%~1\bin\assemblies\4.0\Alachisoft.NCache.Cache.dll"
+		
 	%iuPath%INSTALLUTIL.EXE /i "%~1\bin\assemblies\4.0\Alachisoft.NCache.Cache.dll"
 	%iuPath%INSTALLUTIL.EXE /i "%~1\bin\assemblies\4.0\Alachisoft.NCache.Web.dll"
 	ECHO.
