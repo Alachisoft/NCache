@@ -60,6 +60,10 @@
 // Note: requires additional types generated from: GetRunningServersResponse.proto
 // Note: requires additional types generated from: NodeJoinedEventResponse.proto
 // Note: requires additional types generated from: NodeLeftEventResponse.proto
+// Note: requires additional types generated from: GetCacheBindingResponse.proto
+// Note: requires additional types generated from: DisposeReaderResponse.proto
+// Note: requires additional types generated from: ExecuteReaderResponse.proto
+// Note: requires additional types generated from: GetReaderChunkResponse.proto
 namespace Alachisoft.NCache.Common.Protobuf
 {
   [global::System.Serializable, global::ProtoBuf.ProtoContract(Name=@"Response")]
@@ -580,6 +584,42 @@ namespace Alachisoft.NCache.Common.Protobuf
       get { return _nodeLeft; }
       set { _nodeLeft = value; }
     }
+
+    private Alachisoft.NCache.Common.Protobuf.GetCacheBindingResponse _getCacheBindingResponse = null;
+    [global::ProtoBuf.ProtoMember(58, IsRequired = false, Name=@"getCacheBindingResponse", DataFormat = global::ProtoBuf.DataFormat.Default)]
+    [global::System.ComponentModel.DefaultValue(null)]
+    public Alachisoft.NCache.Common.Protobuf.GetCacheBindingResponse getCacheBindingResponse
+    {
+      get { return _getCacheBindingResponse; }
+      set { _getCacheBindingResponse = value; }
+    }
+
+    private Alachisoft.NCache.Common.Protobuf.DisposeReaderResponse _disposeReaderResponse = null;
+    [global::ProtoBuf.ProtoMember(59, IsRequired = false, Name=@"disposeReaderResponse", DataFormat = global::ProtoBuf.DataFormat.Default)]
+    [global::System.ComponentModel.DefaultValue(null)]
+    public Alachisoft.NCache.Common.Protobuf.DisposeReaderResponse disposeReaderResponse
+    {
+      get { return _disposeReaderResponse; }
+      set { _disposeReaderResponse = value; }
+    }
+
+    private Alachisoft.NCache.Common.Protobuf.ExecuteReaderResponse _executeReaderResponse = null;
+    [global::ProtoBuf.ProtoMember(60, IsRequired = false, Name=@"executeReaderResponse", DataFormat = global::ProtoBuf.DataFormat.Default)]
+    [global::System.ComponentModel.DefaultValue(null)]
+    public Alachisoft.NCache.Common.Protobuf.ExecuteReaderResponse executeReaderResponse
+    {
+      get { return _executeReaderResponse; }
+      set { _executeReaderResponse = value; }
+    }
+
+    private Alachisoft.NCache.Common.Protobuf.GetReaderChunkResponse _getReaderChunkResponse = null;
+    [global::ProtoBuf.ProtoMember(61, IsRequired = false, Name=@"getReaderChunkResponse", DataFormat = global::ProtoBuf.DataFormat.Default)]
+    [global::System.ComponentModel.DefaultValue(null)]
+    public Alachisoft.NCache.Common.Protobuf.GetReaderChunkResponse getReaderChunkResponse
+    {
+      get { return _getReaderChunkResponse; }
+      set { _getReaderChunkResponse = value; }
+    }
     [global::ProtoBuf.ProtoContract(Name=@"Type")]
     public enum Type
     {
@@ -738,7 +778,19 @@ namespace Alachisoft.NCache.Common.Protobuf
       NODE_JOINED_EVENT = 51,
             
       [global::ProtoBuf.ProtoEnum(Name=@"NODE_LEFT_EVENT", Value=52)]
-      NODE_LEFT_EVENT = 52
+      NODE_LEFT_EVENT = 52,
+            
+      [global::ProtoBuf.ProtoEnum(Name=@"GET_CACHE_BINDING", Value=53)]
+      GET_CACHE_BINDING = 53,
+            
+      [global::ProtoBuf.ProtoEnum(Name=@"DISPOSE_READER", Value=54)]
+      DISPOSE_READER = 54,
+            
+      [global::ProtoBuf.ProtoEnum(Name=@"EXECUTE_READER", Value=55)]
+      EXECUTE_READER = 55,
+            
+      [global::ProtoBuf.ProtoEnum(Name=@"GET_READER_CHUNK", Value=56)]
+      GET_READER_CHUNK = 56
     }
   
     private global::ProtoBuf.IExtension extensionObject;

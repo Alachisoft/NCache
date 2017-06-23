@@ -1,4 +1,4 @@
-// Copyright (c) 2015 Alachisoft
+// Copyright (c) 2017 Alachisoft
 // 
 // Licensed under the Apache License, Version 2.0 (the "License");
 // you may not use this file except in compliance with the License.
@@ -11,6 +11,7 @@
 // WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
 // See the License for the specific language governing permissions and
 // limitations under the License.
+
 using System;
 using System.Collections.Generic;
 using System.Text;
@@ -28,6 +29,7 @@ using System.Diagnostics;
 using Alachisoft.NCache.Management.ServiceControl;
 using Alachisoft.NCache.Management.ClientConfiguration;
 using Alachisoft.NCache.Config;
+using Mapping = Alachisoft.NCache.Config.Mapping;
 
 namespace Alachisoft.NCache.Tools.AddClientNode
 {
@@ -47,6 +49,7 @@ namespace Alachisoft.NCache.Tools.AddClientNode
         private int _port = -1;
         private string _server = string.Empty;
         private string _clientNode = string.Empty;
+        private string _bindingAddress = string.Empty;
         private bool _updateServerConfig=true;
         private bool _acquireServerMapping=false;
 
@@ -80,6 +83,13 @@ namespace Alachisoft.NCache.Tools.AddClientNode
         {
             get { return _port; }
             set { _port = value; }
+        }
+
+      
+        public string ClientBindingIp 
+        {
+            get { return _bindingAddress; }
+            set { _bindingAddress = value; }
         }
 
         [ArgumentAttribute(@"/u", @"/update-server-config",true)]
@@ -282,7 +292,7 @@ namespace Alachisoft.NCache.Tools.AddClientNode
                     if (mapping != null)
                     {
                         _clientIPMapping = mapping.ClientIPMapping;
-                        foreach (Mapping mappingServer in mapping.ManagementIPMapping.MappingServers)
+                        foreach (Alachisoft.NCache.Config.Mapping mappingServer in mapping.ManagementIPMapping.MappingServers)
                         {
                             if (mappingServer != null)
                             {
@@ -332,7 +342,7 @@ namespace Alachisoft.NCache.Tools.AddClientNode
                 Console.Error.WriteLine("Error: {0}", ex.Message);
             }
         }
-
+		
 		private static bool ValidateNCacheService()
         {
             ICacheServer cacheServer;
@@ -359,7 +369,6 @@ namespace Alachisoft.NCache.Tools.AddClientNode
                 return false;
             }
         }
-		
 		
         private static void UpdateConfigs()
         {
@@ -412,6 +421,13 @@ namespace Alachisoft.NCache.Tools.AddClientNode
                     ClientConfiguration clientConfiguration = cacheServer.GetClientConfiguration(cParam.CacheId);
                     CacheConfiguration cacheConfig = new CacheConfiguration();
                     cacheConfig = clientConfiguration.CacheConfigurationsMap[cParam.CacheId.ToLower()];
+                    cacheConfig.CacheId = cParam.CacheId;
+                    if (cParam.ClientBindingIp != null && cParam.ClientBindingIp != string.Empty)
+                    {
+                        cacheConfig.BindIp = cParam.ClientBindingIp;
+                    }
+                    else
+                        cacheConfig.BindIp = cParam.ClientNode;
                     //if flag of get mapping is true
                     if (cParam.AcquireServerMapping && _clientIPMapping != null)
                     {

@@ -1,4 +1,4 @@
-// Copyright (c) 2015 Alachisoft
+// Copyright (c) 2017 Alachisoft
 // 
 // Licensed under the Apache License, Version 2.0 (the "License");
 // you may not use this file except in compliance with the License.
@@ -11,12 +11,14 @@
 // WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
 // See the License for the specific language governing permissions and
 // limitations under the License.
+
 using System;
 using System.Collections;
 using System.Text;
-using System.Collections;
 using System.Collections.Specialized;
 using Alachisoft.NCache.Config.Dom;
+using System.Globalization;
+using System.Threading;
 
 namespace Alachisoft.NCache.Config.Dom
 {
@@ -51,11 +53,20 @@ namespace Alachisoft.NCache.Config.Dom
             private static CacheServerConfig GetCacheConfiguration(Hashtable settings)
             {
                 CacheServerConfig cache = new CacheServerConfig();
-                cache.Name = settings["id"].ToString();
-                if (settings.ContainsKey("web-cache"))
-                    GetWebCache(cache, (Hashtable)settings["web-cache"]);
-                if (settings.ContainsKey("cache"))
-                    GetCache(cache, (Hashtable)settings["cache"]);
+                CultureInfo cultureInfo = Thread.CurrentThread.CurrentCulture;
+                try
+                {
+                    System.Threading.Thread.CurrentThread.CurrentCulture = new System.Globalization.CultureInfo("en-US");
+                    cache.Name = settings["id"].ToString();
+                    if (settings.ContainsKey("web-cache"))
+                        GetWebCache(cache, (Hashtable)settings["web-cache"]);
+                    if (settings.ContainsKey("cache"))
+                        GetCache(cache, (Hashtable)settings["cache"]);
+                }
+                finally
+                {
+                    System.Threading.Thread.CurrentThread.CurrentCulture = cultureInfo;
+                }
                 return cache;
             }
 
@@ -121,14 +132,13 @@ namespace Alachisoft.NCache.Config.Dom
             {
                 AutoLoadBalancing autoLoadBalancing = new AutoLoadBalancing();
                 if (settings.ContainsKey("enabled"))
-                    autoLoadBalancing.Enabled = Convert.ToBoolean(settings["enabled"]);
+                    autoLoadBalancing.Enabled=  Convert.ToBoolean(settings["enabled"]);
                 if (settings.ContainsKey("auto-balancing-threshold"))
                     autoLoadBalancing.Threshold = Convert.ToInt32(settings["auto-balancing-threshold"]);
                 if (settings.ContainsKey("auto-balancing-interval"))
                     autoLoadBalancing.Interval = Convert.ToInt32(settings["auto-balancing-interval"]);
                 return autoLoadBalancing;
             }
-
             private static void GetInternalCache(CacheServerConfig cache, Hashtable settings)
             {
 
@@ -337,10 +347,19 @@ namespace Alachisoft.NCache.Config.Dom
             public static Hashtable GetCacheConfiguration(CacheServerConfig cache)
             {
                 Hashtable config = new Hashtable();
-                config.Add("type", "cache-configuration");
-                config.Add("id", cache.Name);
-                config.Add("cache", GetCache(cache));
-                config.Add("web-cache", GetWebCache(cache));
+                CultureInfo cultureInfo = Thread.CurrentThread.CurrentCulture;
+                try
+                {
+                    System.Threading.Thread.CurrentThread.CurrentCulture = new System.Globalization.CultureInfo("en-US");
+                    config.Add("type", "cache-configuration");
+                    config.Add("id", cache.Name);
+                    config.Add("cache", GetCache(cache));
+                    config.Add("web-cache", GetWebCache(cache));
+                }
+                finally
+                {
+                    System.Threading.Thread.CurrentThread.CurrentCulture = cultureInfo;
+                }
 
                 return config;
             }
@@ -419,7 +438,6 @@ namespace Alachisoft.NCache.Config.Dom
                 settings.Add("auto-balancing-interval", autoLoadBalancing.Interval);
                 return settings;
             }
-
 
             private static void GetInternalCache(Hashtable source, CacheServerConfig cache, bool localCache)
             {

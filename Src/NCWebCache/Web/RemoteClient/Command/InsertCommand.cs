@@ -1,4 +1,4 @@
-// Copyright (c) 2015 Alachisoft
+// Copyright (c) 2017 Alachisoft
 // 
 // Licensed under the Apache License, Version 2.0 (the "License");
 // you may not use this file except in compliance with the License.
@@ -11,27 +11,19 @@
 // WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
 // See the License for the specific language governing permissions and
 // limitations under the License.
+
 using System;
-using System.Text;
 using System.Collections;
 
 using Alachisoft.NCache.Common;
 using Alachisoft.NCache.Caching;
-
-using Alachisoft.NCache.Web.Caching;
-using Alachisoft.NCache.Runtime.Exceptions;
 using Alachisoft.NCache.Runtime;
-using System.IO;
-using Alachisoft.NCache.Web.Communication;
-using Alachisoft.NCache.Common.Protobuf.Util;
-using Alachisoft.NCache.Web.Caching.Util;
 using Alachisoft.NCache.Common.Protobuf;
 using Alachisoft.NCache.Caching.Util;
 using Alachisoft.NCache.Runtime.Events;
-using Web = Alachisoft.NCache.Web;
 namespace Alachisoft.NCache.Web.Command
 {
-	internal sealed class InsertCommand : CommandBase
+    internal sealed class InsertCommand : CommandBase
 	{
         private Alachisoft.NCache.Common.Protobuf.InsertCommand _insertCommand;
 
@@ -40,7 +32,7 @@ namespace Alachisoft.NCache.Web.Command
         private short _itemUpdatedCallbackId;
         private short _itemRemovedCallbackId;
 		private CacheItemPriority _priority;
-private Hashtable _queryInfo;
+        private Hashtable _queryInfo;
         private BitSet _flagMap = new BitSet();
         private object _lockId;
         private LockAccessType _accessType;
@@ -97,17 +89,15 @@ private Hashtable _queryInfo;
 
         protected override void CreateCommand()
         {
-
             if (_insertCommand.sldExpiration != 0 && _insertCommand.absExpiration != 0)
                 throw new ArgumentException("You cannot set both sliding and absolute expirations on the same cache item");
-
-
+            
             base._command = new Alachisoft.NCache.Common.Protobuf.Command();
             base._command.requestID = base.RequestId;
             base._command.insertCommand = _insertCommand;
             base._command.type = Alachisoft.NCache.Common.Protobuf.Command.Type.INSERT;
             base._command.version = "4200";
-
-        }		
+        }
+                    
 	}
 }

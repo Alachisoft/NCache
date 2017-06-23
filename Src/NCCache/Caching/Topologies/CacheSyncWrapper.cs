@@ -1,4 +1,4 @@
-// Copyright (c) 2015 Alachisoft
+// Copyright (c) 2017 Alachisoft
 // 
 // Licensed under the Apache License, Version 2.0 (the "License");
 // you may not use this file except in compliance with the License.
@@ -11,20 +11,20 @@
 // WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
 // See the License for the specific language governing permissions and
 // limitations under the License.
+
 using System;
 using System.Collections;
 using System.Threading;
 using Alachisoft.NCache.Caching.AutoExpiration;
 using Alachisoft.NCache.Caching.Queries;
 using Alachisoft.NCache.Caching.Statistics;
-#if !CLIENT
 using Alachisoft.NCache.Caching.Topologies.Clustered;
-#endif
 using Alachisoft.NCache.Common;
 using Alachisoft.NCache.Common.DataStructures;
 using Alachisoft.NCache.Common.Monitoring;
 using Alachisoft.NCache.Common.Util;
 using Alachisoft.NCache.Common.DataStructures.Clustered;
+using Alachisoft.NCache.Common.DataReader;
 
 namespace Alachisoft.NCache.Caching.Topologies
 {
@@ -47,7 +47,8 @@ namespace Alachisoft.NCache.Caching.Topologies
                 throw new ArgumentNullException("cache");
             _cache = cache;
             _context = cache.Context;
-            _syncObj = _cache.Sync;
+            _KeyLockManager = _cache.KeyLocker;
+            _syncObj = cache.Sync;
         }
 
 
@@ -494,13 +495,9 @@ namespace Alachisoft.NCache.Caching.Topologies
             Sync.AcquireWriterLock(Timeout.Infinite);
             try
             {
-
-
                 Internal.Clear(cbEntry, operationContext);
-#if !CLIENT
-                    if (_context.CacheImpl.RequiresReplication)
-                        _context.CacheImpl.EnqueueForReplication(null, (int)ClusterCacheBase.OpCodes.Clear, new object[] { cbEntry, operationContext });
-#endif
+                if (_context.CacheImpl.RequiresReplication)
+                    _context.CacheImpl.EnqueueForReplication(null, (int)ClusterCacheBase.OpCodes.Clear, new object[] { cbEntry, operationContext });
             }
             finally
             {
@@ -520,22 +517,16 @@ namespace Alachisoft.NCache.Caching.Topologies
         {
             if (ServerMonitor.MonitorActivity) ServerMonitor.LogClientActivity("CacheSyncWrp.Cont", "enter");
 
-            if (!Sync.IsWriterLockHeld)
-            {
-                Sync.AcquireReaderLock(Timeout.Infinite);
-            }
+            KeyLocker.GetReaderLock(key);
+
             try
             {
                 return Internal.Contains(key, operationContext);
             }
             finally
             {
-                if (!Sync.IsWriterLockHeld)
-                {
-                    Sync.ReleaseReaderLock();
-                }
+                KeyLocker.ReleaseReaderLock(key);
                 if (ServerMonitor.MonitorActivity) ServerMonitor.LogClientActivity("CacheSyncWrp.Cont", "exit");
-
             }
         }
 
@@ -549,20 +540,13 @@ namespace Alachisoft.NCache.Caching.Topologies
         {
             if (ServerMonitor.MonitorActivity) ServerMonitor.LogClientActivity("CacheSyncWrp.ContBlk", "enter");
 
-            if (!Sync.IsWriterLockHeld)
-            {
-                Sync.AcquireReaderLock(Timeout.Infinite);
-            }
             try
             {
                 return Internal.Contains(keys, operationContext);
             }
             finally
             {
-                if (!Sync.IsWriterLockHeld)
-                {
-                    Sync.ReleaseReaderLock();
-                }
+               
                 if (ServerMonitor.MonitorActivity) ServerMonitor.LogClientActivity("CacheSyncWrp.ContBlk", "exit");
 
             }
@@ -571,15 +555,16 @@ namespace Alachisoft.NCache.Caching.Topologies
         internal override void UpdateLockInfo(object key, object lockId, DateTime lockDate, LockExpiration lockExpiration, OperationContext operationContext)
         {
             if (ServerMonitor.MonitorActivity) ServerMonitor.LogClientActivity("CacheSyncWrp.UpdLock", "enter");
+            KeyLocker.GetReaderLock(key);
 
-            Sync.AcquireWriterLock(Timeout.Infinite);
             try
             {
                 Internal.UpdateLockInfo(key, lockId, lockDate, lockExpiration, operationContext);
             }
             finally
-            {
-                Sync.ReleaseWriterLock();
+            { 
+                KeyLocker.ReleaseReaderLock(key);
+    
                 if (ServerMonitor.MonitorActivity) ServerMonitor.LogClientActivity("CacheSyncWrp.UpdLock", "exit");
 
             }
@@ -588,22 +573,21 @@ namespace Alachisoft.NCache.Caching.Topologies
         {
             CacheEntry entry = null;
             if (ServerMonitor.MonitorActivity) ServerMonitor.LogClientActivity("CacheSyncWrp.Get_2", "enter");
+            KeyLocker.GetReaderLock(key);
 
-            Sync.AcquireWriterLock(Timeout.Infinite);
             try
             {
                 entry = Internal.Get(key, IsUserOperation, ref lockId, ref lockDate, lockExpiration, accessType, operationContext);
-                    if (accessType == LockAccessType.ACQUIRE && entry != null && _context.CacheImpl.RequiresReplication)
-                    {
-                        string uniqueKey = System.Guid.NewGuid().ToString() + key;
-#if !CLIENT
-                        _context.CacheImpl.EnqueueForReplication(null, (int)ClusterCacheBase.OpCodes.UpdateLockInfo, new object[] { true, key, lockId, lockDate, lockExpiration, operationContext });
-#endif
-                    }
+                if (accessType == LockAccessType.ACQUIRE && entry != null && _context.CacheImpl.RequiresReplication)
+                {
+                    string uniqueKey = System.Guid.NewGuid().ToString() + key;
+                    _context.CacheImpl.EnqueueForReplication(null, (int)ClusterCacheBase.OpCodes.UpdateLockInfo, new object[] { true, key, lockId, lockDate, lockExpiration, operationContext });
+                }
             }
             finally
             {
-                Sync.ReleaseWriterLock();
+                KeyLocker.ReleaseReaderLock(key);
+
                 if (ServerMonitor.MonitorActivity) ServerMonitor.LogClientActivity("CacheSyncWrp.Get_2", "exit");
 
             }
@@ -624,24 +608,23 @@ namespace Alachisoft.NCache.Caching.Topologies
         {
             CacheEntry entry = null;
             if (ServerMonitor.MonitorActivity) ServerMonitor.LogClientActivity("CacheSyncWrp.Get_2", "enter");
+            KeyLocker.GetReaderLock(key);
 
-            Sync.AcquireReaderLock(Timeout.Infinite);
             try
             {
                 entry = Internal.Get(key, ref lockId, ref lockDate, lockExpiration, access, operationContext);
 
-                    if (access == LockAccessType.ACQUIRE && entry != null && _context.CacheImpl.RequiresReplication)
-                    {
-                        string uniqueKey = System.Guid.NewGuid().ToString() + key;
-#if !CLIENT
-                        _context.CacheImpl.EnqueueForReplication(null, (int)ClusterCacheBase.OpCodes.UpdateLockInfo, new object[] { true, key, lockId, lockDate, lockExpiration, operationContext });
-#endif
-                    }
+                if (access == LockAccessType.ACQUIRE && entry != null && _context.CacheImpl.RequiresReplication)
+                {
+                    string uniqueKey = System.Guid.NewGuid().ToString() + key;
+                    _context.CacheImpl.EnqueueForReplication(null, (int)ClusterCacheBase.OpCodes.UpdateLockInfo, new object[] { true, key, lockId, lockDate, lockExpiration, operationContext });
+                }
 
             }
             finally
             {
-                Sync.ReleaseReaderLock();
+                KeyLocker.ReleaseReaderLock(key);
+
                 if (ServerMonitor.MonitorActivity) ServerMonitor.LogClientActivity("CacheSyncWrp.Get_2", "exit");
 
             }
@@ -653,15 +636,15 @@ namespace Alachisoft.NCache.Caching.Topologies
             LockOptions lockInfo = null;
             if (ServerMonitor.MonitorActivity) ServerMonitor.LogClientActivity("CacheSyncWrp.IsLock", "enter");
 
-            Sync.AcquireWriterLock(Timeout.Infinite);
+            KeyLocker.GetReaderLock(key);
 
             try
             {
                 lockInfo = Internal.IsLocked(key, ref lockId, ref lockDate, operationContext);
             }
             finally
-            {
-                Sync.ReleaseWriterLock();
+            { 
+                KeyLocker.ReleaseReaderLock(key);
                 if (ServerMonitor.MonitorActivity) ServerMonitor.LogClientActivity("CacheSyncWrp.IsLock", "exit");
 
             }
@@ -673,22 +656,20 @@ namespace Alachisoft.NCache.Caching.Topologies
             LockOptions lockInfo = null;
             if (ServerMonitor.MonitorActivity) ServerMonitor.LogClientActivity("CacheSyncWrp.Lock", "enter");
 
-            Sync.AcquireWriterLock(Timeout.Infinite);
+            KeyLocker.GetReaderLock(key);
             try
             {
                 lockInfo = Internal.Lock(key, lockExpiration, ref lockId, ref lockDate, operationContext);
-
-                    if (_context.CacheImpl.RequiresReplication)
-                    {
-                        string uniqueKey = System.Guid.NewGuid().ToString() + key;
-#if !CLIENT
-                        _context.CacheImpl.EnqueueForReplication(null, (int)ClusterCacheBase.OpCodes.UpdateLockInfo, new object[] { true, key, lockId, lockDate, lockExpiration, operationContext });
-#endif
-                    }
+                if (_context.CacheImpl.RequiresReplication)
+                {
+                    string uniqueKey = System.Guid.NewGuid().ToString() + key;
+                    _context.CacheImpl.EnqueueForReplication(null, (int)ClusterCacheBase.OpCodes.UpdateLockInfo, new object[] { true, key, lockId, lockDate, lockExpiration, operationContext });
+                }
             }
             finally
             {
-                Sync.ReleaseWriterLock();
+                KeyLocker.ReleaseReaderLock(key);
+
                 if (ServerMonitor.MonitorActivity) ServerMonitor.LogClientActivity("CacheSyncWrp.Lock", "exit");
 
             }
@@ -698,22 +679,21 @@ namespace Alachisoft.NCache.Caching.Topologies
         public override void UnLock(object key, object lockId, bool isPreemptive, OperationContext operationContext)
         {
             if (ServerMonitor.MonitorActivity) ServerMonitor.LogClientActivity("CacheSyncWrp.Unlock", "enter");
-            Sync.AcquireWriterLock(Timeout.Infinite);
+            KeyLocker.GetReaderLock(key);
             try
             {
                 Internal.UnLock(key, lockId, isPreemptive, operationContext);
 
-#if !CLIENT
-                    if (_context.CacheImpl.RequiresReplication)
-                    {
-                        string uniqueKey = System.Guid.NewGuid().ToString() + key;
-                        _context.CacheImpl.EnqueueForReplication(null, (int)ClusterCacheBase.OpCodes.UpdateLockInfo, new object[] { false, key, lockId, DateTime.Now, null, isPreemptive, operationContext });
-                    }
-#endif
+                if (_context.CacheImpl.RequiresReplication)
+                {
+                    string uniqueKey = System.Guid.NewGuid().ToString() + key;
+                    _context.CacheImpl.EnqueueForReplication(null, (int)ClusterCacheBase.OpCodes.UpdateLockInfo, new object[] { false, key, lockId, DateTime.Now, null, isPreemptive, operationContext });
+                }
             }
             finally
             {
-                Sync.ReleaseWriterLock();
+                KeyLocker.ReleaseReaderLock(key);
+
                 if (ServerMonitor.MonitorActivity) ServerMonitor.LogClientActivity("CacheSyncWrp.Unlock", "exit");
 
             }
@@ -729,14 +709,12 @@ namespace Alachisoft.NCache.Caching.Topologies
         {
             if (ServerMonitor.MonitorActivity) ServerMonitor.LogClientActivity("CacheSyncWrp.GetBlk", "enter");
 
-            Sync.AcquireReaderLock(Timeout.Infinite);
             try
             {
                 return Internal.Get(keys, operationContext);
             }
             finally
             {
-                Sync.ReleaseReaderLock();
                 if (ServerMonitor.MonitorActivity) ServerMonitor.LogClientActivity("CacheSyncWrp.GetBlk", "exit");
             }
         }
@@ -746,22 +724,21 @@ namespace Alachisoft.NCache.Caching.Topologies
             bool depAdded = false;
             
             if (ServerMonitor.MonitorActivity) ServerMonitor.LogClientActivity("CacheSyncWrp.Add_3", "enter");
+            KeyLocker.GetWriterLock(key);
 
-            Sync.AcquireWriterLock(Timeout.Infinite);
             try
             {
                 depAdded = Internal.Add(key, eh, operationContext);
-                
-#if !CLIENT
-                if(depAdded && _context.CacheImpl.RequiresReplication)
+
+                if (depAdded && _context.CacheImpl.RequiresReplication)
                 {
                     _context.CacheImpl.EnqueueForReplication(null, (int)ClusterCacheBase.OpCodes.AddHint, new object[] { key, eh, operationContext });
                 }
-#endif
             }
             finally
-            {
-                Sync.ReleaseWriterLock();
+            { 
+                KeyLocker.ReleaseWriterLock(key);
+    
                 if (ServerMonitor.MonitorActivity) ServerMonitor.LogClientActivity("CacheSyncWrp.Add_3", "exit");
 
             }
@@ -782,7 +759,7 @@ namespace Alachisoft.NCache.Caching.Topologies
             bool requiresReplication = _context.CacheImpl.RequiresReplication;
             if (ServerMonitor.MonitorActivity) ServerMonitor.LogClientActivity("CacheSyncWrp.Add_1", "enter");
 
-            Sync.AcquireWriterLock(Timeout.Infinite);
+            KeyLocker.GetWriterLock(key);
             try
             {
                 CacheEntry clone = null;
@@ -806,18 +783,16 @@ namespace Alachisoft.NCache.Caching.Topologies
 
                             Array userPayLoad = cacheEntry.UserData;
                             long payLoadSize = cacheEntry.DataSize;
-#if !CLIENT
                             _context.CacheImpl.EnqueueForReplication(key, (int)ClusterCacheBase.OpCodes.Add, new object[] { key, cloneWithoutvalue, operationContext }, clone.Size, userPayLoad, payLoadSize);
-#endif
                         }
                     }
                 }
-
                 return result;
             }
             finally
-            {
-                Sync.ReleaseWriterLock();
+            { 
+                KeyLocker.ReleaseWriterLock(key);
+    
                 if (ServerMonitor.MonitorActivity) ServerMonitor.LogClientActivity("CacheSyncWrp.Add_1", "exit");
 
             }
@@ -858,19 +833,17 @@ namespace Alachisoft.NCache.Caching.Topologies
         public override CacheAddResult Add(object key, CacheEntry cacheEntry, bool notify, bool IsUserOperation, OperationContext operationContext)
         {
             if (ServerMonitor.MonitorActivity) ServerMonitor.LogClientActivity("CacheSyncWrp.Add_2", "enter");
-            Sync.AcquireWriterLock(Timeout.Infinite);
 
+            KeyLocker.GetWriterLock(key);
             try
             {
                 CacheAddResult result = Internal.Add(key, cacheEntry, notify, IsUserOperation, operationContext);
-
                 return result;
             }
             finally
-            {
-                Sync.ReleaseWriterLock();
+            { 
+                KeyLocker.ReleaseWriterLock(key);
                 if (ServerMonitor.MonitorActivity) ServerMonitor.LogClientActivity("CacheSyncWrp.Add_2", "exit");
-
             }
         }
 
@@ -886,15 +859,10 @@ namespace Alachisoft.NCache.Caching.Topologies
         public override Hashtable Add(object[] keys, CacheEntry[] cacheEntries, bool notify, OperationContext operationContext)
         {
             Hashtable result = null;
-
             bool requiresReplication = _context.CacheImpl.RequiresReplication;
-
             if (ServerMonitor.MonitorActivity) ServerMonitor.LogClientActivity("CacheSyncWrp.AddBlk", "enter");
-
-            Sync.AcquireWriterLock(Timeout.Infinite);
             try
             {
-
                 CacheEntry[] clone = null;
                 if (requiresReplication)
                 {
@@ -910,51 +878,48 @@ namespace Alachisoft.NCache.Caching.Topologies
 
                 result = Internal.Add(keys, cacheEntries, notify, operationContext);
 
-                    if ( requiresReplication)
+                if (requiresReplication)
+                {
+                    ArrayList successfulKeys = new ArrayList();
+                    ArrayList successfulEnteries = new ArrayList();
+
+                    if (result != null && result.Count > 0)
                     {
-                        ArrayList successfulKeys = new ArrayList();
-                        ArrayList successfulEnteries = new ArrayList();
-
-                        if (result != null && result.Count > 0)
+                        for (int i = 0; i < keys.Length; i++)
                         {
-                            for (int i = 0; i < keys.Length; i++)
+                            if (result.Contains(keys[i]))
                             {
-                                if (result.Contains(keys[i]))
+                                string key = keys[i] as string;
+                                if (result[keys[i]] is CacheAddResult)
                                 {
-                                    string key = keys[i] as string;
-                                    if (result[keys[i]] is CacheAddResult)
+                                    CacheAddResult addResult = (CacheAddResult)result[keys[i]];
+                                    if (addResult == CacheAddResult.Success || addResult == CacheAddResult.SuccessNearEviction)
                                     {
-                                        CacheAddResult addResult = (CacheAddResult)result[keys[i]];
-                                        if (addResult == CacheAddResult.Success || addResult == CacheAddResult.SuccessNearEviction)
+                                        if (requiresReplication)
                                         {
-                                            if (requiresReplication)
-                                            {
-                                                successfulKeys.Add(keys[i]);
-                                                if (clone != null)
-                                                    successfulEnteries.Add(clone[i]);
+                                            successfulKeys.Add(keys[i]);
+                                            if (clone != null)
+                                                successfulEnteries.Add(clone[i]);
 
-                                            }
                                         }
                                     }
                                 }
                             }
                         }
+                    }
 
-                        if (successfulKeys.Count > 0)
+                    if (successfulKeys.Count > 0)
+                    {
+                        for (int i = 0; i < successfulKeys.Count; i++)
                         {
-                            for (int i = 0; i < successfulKeys.Count; i++)
-                            {
-                                CacheEntry entry = successfulEnteries[i] as CacheEntry;
-#if !CLIENT
-                                _context.CacheImpl.EnqueueForReplication(successfulKeys[i], (int)ClusterCacheBase.OpCodes.Add, new object[] { successfulKeys[i], entry.CloneWithoutValue() as CacheEntry, operationContext }, entry.Size, entry.UserData, entry.DataSize);
-#endif
-                            }
+                            CacheEntry entry = successfulEnteries[i] as CacheEntry;
+                            _context.CacheImpl.EnqueueForReplication(successfulKeys[i], (int)ClusterCacheBase.OpCodes.Add, new object[] { successfulKeys[i], entry.CloneWithoutValue() as CacheEntry, operationContext }, entry.Size, entry.UserData, entry.DataSize);
                         }
                     }
+                }
             }
             finally
             {
-                Sync.ReleaseWriterLock();
                 if (ServerMonitor.MonitorActivity) ServerMonitor.LogClientActivity("CacheSyncWrp.AddBlk", "exit");
 
             }
@@ -972,34 +937,30 @@ namespace Alachisoft.NCache.Caching.Topologies
         {
             bool requiresReplication = false;
 
-
             requiresReplication = _context.CacheImpl.RequiresReplication;
-                
+
             if (ServerMonitor.MonitorActivity) ServerMonitor.LogClientActivity("CacheSyncWrp.Insert_1", "enter");
 
-            Sync.AcquireWriterLock(Timeout.Infinite);
-
+            KeyLocker.GetWriterLock(key);
             try
             {
 
                 CacheEntry clone = null;
-                    
-                    if (requiresReplication)
-                    {
-                        if (cacheEntry.HasQueryInfo)
-                            clone = cacheEntry.Clone() as CacheEntry;
-                        else
-                            clone = cacheEntry;
-                    }
+
+                if (requiresReplication)
+                {
+                    if (cacheEntry.HasQueryInfo)
+                        clone = cacheEntry.Clone() as CacheEntry;
+                    else
+                        clone = cacheEntry;
+                }
 
                 CacheInsResultWithEntry result = Internal.Insert(key, cacheEntry, notify, lockId, access, operationContext);
 
-               
                 if (requiresReplication)
                 {
                     if (result.Result == CacheInsResult.Success || result.Result == CacheInsResult.SuccessNearEvicition || result.Result == CacheInsResult.SuccessOverwrite || result.Result == CacheInsResult.SuccessOverwriteNearEviction)
                     {
-
                         CacheEntry cloneWithoutvalue = clone.CloneWithoutValue() as CacheEntry;
 
                         if (result.Result == CacheInsResult.SuccessOverwrite &&
@@ -1007,18 +968,17 @@ namespace Alachisoft.NCache.Caching.Topologies
                         {
                             clone.CopyLock(result.Entry.LockId, result.Entry.LockDate, result.Entry.LockExpiration);
                         }
-#if !CLIENT
                         _context.CacheImpl.EnqueueForReplication(key, (int)ClusterCacheBase.OpCodes.Insert, new object[] { key, cloneWithoutvalue, operationContext }, clone.Size, cacheEntry.UserData, cacheEntry.DataSize);
-#endif
-                           
+
                     }
                 }
-                
+
                 return result;
             }
             finally
             {
-                Sync.ReleaseWriterLock();
+                KeyLocker.ReleaseWriterLock(key);
+
                 if (ServerMonitor.MonitorActivity) ServerMonitor.LogClientActivity("CacheSyncWrp.Insert_1", "exit");
 
             }
@@ -1035,22 +995,21 @@ namespace Alachisoft.NCache.Caching.Topologies
         {
 
             bool requiresReplication = false;
-
-         
             requiresReplication = _context.CacheImpl.RequiresReplication;
 
             if (ServerMonitor.MonitorActivity) ServerMonitor.LogClientActivity("CacheSyncWrp.Insert_2", "enter");
 
-            Sync.AcquireWriterLock(Timeout.Infinite);
+            KeyLocker.GetWriterLock(key);
 
             try
             {
-                CacheInsResultWithEntry result = Internal.Insert(key, cacheEntry, notify, IsUserOperation, lockId, accessType, operationContext);                
+                CacheInsResultWithEntry result = Internal.Insert(key, cacheEntry, notify, IsUserOperation, lockId, accessType, operationContext);
                 return result;
             }
             finally
-            {
-                Sync.ReleaseWriterLock();
+            { 
+                KeyLocker.ReleaseWriterLock(key);
+    
                 if (ServerMonitor.MonitorActivity) ServerMonitor.LogClientActivity("CacheSyncWrp.Insert_2", "exit");
 
             }
@@ -1066,12 +1025,8 @@ namespace Alachisoft.NCache.Caching.Topologies
         public override Hashtable Insert(object[] keys, CacheEntry[] cacheEntries, bool notify, OperationContext operationContext)
         {
             Hashtable result = null;
-            
             bool requiresReplication = false;
-
             requiresReplication = _context.CacheImpl.RequiresReplication;
-            
-
             CacheEntry[] clone = null;
             if (requiresReplication)
             {
@@ -1087,7 +1042,6 @@ namespace Alachisoft.NCache.Caching.Topologies
 
             if (ServerMonitor.MonitorActivity) ServerMonitor.LogClientActivity("CacheSyncWrp.InsertBlk", "enter");
 
-            Sync.AcquireWriterLock(Timeout.Infinite);
             try
             {
                 result = Internal.Insert(keys, cacheEntries, notify, operationContext);
@@ -1125,19 +1079,14 @@ namespace Alachisoft.NCache.Caching.Topologies
                             for (int i = 0; i < successfulKeys.Count; i++)
                             {
                                 CacheEntry entry = successfulEnteries[i] as CacheEntry;
-#if !CLIENT
                                 _context.CacheImpl.EnqueueForReplication(successfulKeys[i], (int)ClusterCacheBase.OpCodes.Insert, new object[] { successfulKeys[i], entry.CloneWithoutValue() as CacheEntry, operationContext }, entry.Size, entry.UserData, entry.DataSize);
-#endif
                             }
                         }
                     }
                 }
-                
-
             }
             finally
             {
-                Sync.ReleaseWriterLock();
                 if (ServerMonitor.MonitorActivity) ServerMonitor.LogClientActivity("CacheSyncWrp.InsertBlk", "exit");
             }
 
@@ -1161,18 +1110,17 @@ namespace Alachisoft.NCache.Caching.Topologies
         {
             CacheEntry entry = null;
             if (ServerMonitor.MonitorActivity) ServerMonitor.LogClientActivity("CacheSyncWrp.Remove_1", "enter");
+            KeyLocker.GetWriterLock(key);
 
-            Sync.AcquireWriterLock(Timeout.Infinite);
             try
             {
 
                 entry = Internal.Remove(key, ir, notify, lockId, accessType, operationContext);
-                
+
                 object removeOnReplica = operationContext.GetValueByField(OperationContextFieldName.RemoveOnReplica);
 
                 if (entry != null)
                 {
-#if !CLIENT
                     if (_context.CacheImpl.RequiresReplication)
                         _context.CacheImpl.EnqueueForReplication(key, (int)ClusterCacheBase.OpCodes.Remove, new object[] { key, operationContext });
 
@@ -1182,15 +1130,13 @@ namespace Alachisoft.NCache.Caching.Topologies
                     _context.NCacheLog.Error("CacheSync Remove on Replica Key : " + key);
 
                     if (_context.CacheImpl.RequiresReplication)
-                        _context.CacheImpl.EnqueueForReplication(key, (int)ClusterCacheBase.OpCodes.Remove, new object[] { key,  operationContext });
-#endif
+                        _context.CacheImpl.EnqueueForReplication(key, (int)ClusterCacheBase.OpCodes.Remove, new object[] { key, operationContext });
                 }
-
-
             }
             finally
-            {
-                Sync.ReleaseWriterLock();
+            { 
+                KeyLocker.ReleaseWriterLock(key);
+    
                 if (ServerMonitor.MonitorActivity) ServerMonitor.LogClientActivity("CacheSyncWrp.Remove_1", "exit");
 
             }
@@ -1217,8 +1163,6 @@ namespace Alachisoft.NCache.Caching.Topologies
             bool requiresReplication = false;
 
             requiresReplication = _context.CacheImpl.RequiresReplication;
-            
-            Sync.AcquireWriterLock(Timeout.Infinite);
 
             try
             {
@@ -1247,16 +1191,13 @@ namespace Alachisoft.NCache.Caching.Topologies
                             //it is required by the replicator and we do not want this operation 2 be overriden
                             //in optimized queue.
                             string uniqueKey = System.Guid.NewGuid().ToString() + keys[0];
-#if !CLIENT
                             _context.CacheImpl.EnqueueForReplication(null, (int)Alachisoft.NCache.Caching.Topologies.Clustered.ClusterCacheBase.OpCodes.RemoveRange, new object[] { keys, ir, operationContext });
-#endif
                         }
                     }
                 }
             }
             finally
             {
-                Sync.ReleaseWriterLock();
                 if (ServerMonitor.MonitorActivity) ServerMonitor.LogClientActivity("CacheSyncWrp.RemoveBlk", "exit");
 
             }
@@ -1268,7 +1209,6 @@ namespace Alachisoft.NCache.Caching.Topologies
             Hashtable result = null;
             if (ServerMonitor.MonitorActivity) ServerMonitor.LogClientActivity("CacheSyncWrp.Remove_4", "enter");
            
-            Sync.AcquireWriterLock(Timeout.Infinite);
             try
             {
 
@@ -1276,7 +1216,6 @@ namespace Alachisoft.NCache.Caching.Topologies
             }
             finally
             {
-                Sync.ReleaseWriterLock();
                 if (ServerMonitor.MonitorActivity) ServerMonitor.LogClientActivity("CacheSyncWrp.Remove_4", "exit");
 
             }
@@ -1306,16 +1245,17 @@ namespace Alachisoft.NCache.Caching.Topologies
         {
             CacheEntry entry = null;
             if (ServerMonitor.MonitorActivity) ServerMonitor.LogClientActivity("CacheSyncWrp.Remove_5", "enter");
+            KeyLocker.GetWriterLock(key);
 
-            Sync.AcquireWriterLock(Timeout.Infinite);
             try
             {
 
                 entry = Internal.Remove(key, ir, notify, isUserOperation, lockId, accessType, operationContext);
             }
             finally
-            {
-                Sync.ReleaseWriterLock();
+            { 
+                KeyLocker.ReleaseWriterLock(key);
+    
                 if (ServerMonitor.MonitorActivity) ServerMonitor.LogClientActivity("CacheSyncWrp.Remove_5", "exit");
 
             }
@@ -1327,14 +1267,12 @@ namespace Alachisoft.NCache.Caching.Topologies
         {
             if (ServerMonitor.MonitorActivity) ServerMonitor.LogClientActivity("CacheSyncWrp.Search", "enter");
 
-            Sync.AcquireReaderLock(Timeout.Infinite);
             try
             {
                 return Internal.Search(query, values, operationContext);
             }
             finally
             {
-                Sync.ReleaseReaderLock();
                 if (ServerMonitor.MonitorActivity) ServerMonitor.LogClientActivity("CacheSyncWrp.Search", "exit");
 
             }
@@ -1344,20 +1282,55 @@ namespace Alachisoft.NCache.Caching.Topologies
         {
             if (ServerMonitor.MonitorActivity) ServerMonitor.LogClientActivity("CacheSyncWrp.SearchEnt", "enter");
 
-            Sync.AcquireReaderLock(Timeout.Infinite);
             try
             {
                 return Internal.SearchEntries(query, values, operationContext);
             }
             finally
             {
-                Sync.ReleaseReaderLock();
                 if (ServerMonitor.MonitorActivity) ServerMonitor.LogClientActivity("CacheSyncWrp.SearchEnt", "exit");
 
             }
         }
 
-       
+        #region ------------- Data Reader -----------------
+
+
+        public override ReaderResultSet Local_ExecuteReader(string query, IDictionary values, bool getData, int chunkSize, bool isInproc, OperationContext operationContext)
+        {
+            if (ServerMonitor.MonitorActivity) ServerMonitor.LogClientActivity("CacheSyncWrp.ExeReader", "enter");
+
+            try
+            {
+                return Internal.Local_ExecuteReader(query, values, getData, chunkSize, isInproc, operationContext);
+            }
+            finally
+            {
+                if (ServerMonitor.MonitorActivity) ServerMonitor.LogClientActivity("CacheSyncWrp.ExeReader", "exit");
+
+            }
+        }
+
+
+        public override ReaderResultSet GetReaderChunk(string readerId, int nextIndex, bool isInproc, OperationContext operationContext)
+        {
+            return Internal.GetReaderChunk(readerId, nextIndex, isInproc, operationContext);
+        }
+        public override void DisposeReader(string readerId, OperationContext context)
+        {
+            
+            Internal.DisposeReader(readerId, context);
+            
+        }
+        public override void DeclaredDeadClients(ArrayList clients)
+        {
+            InternalCache.DeclaredDeadClients(clients);
+        }
+
+
+        #endregion
+
+
         /// <summary>
         /// Returns a .NET IEnumerator interface so that a client should be able
         /// to iterate over the elements of the cache store.
@@ -1365,40 +1338,34 @@ namespace Alachisoft.NCache.Caching.Topologies
         /// <returns>IDictionaryEnumerator enumerator.</returns>
         public override IDictionaryEnumerator GetEnumerator()
         {
-            Sync.AcquireWriterLock(Timeout.Infinite);
             try
             {
                 return Internal.GetEnumerator();
             }
             finally
             {
-                Sync.ReleaseWriterLock();
             }
         }
 
         public override EnumerationDataChunk GetNextChunk(EnumerationPointer pointer, OperationContext operationContext)
         {
-            Sync.AcquireWriterLock(Timeout.Infinite);
             try
             {
                 return Internal.GetNextChunk(pointer, operationContext);
             }
             finally
             {
-                Sync.ReleaseWriterLock();
             }
         }
 
         public override bool HasEnumerationPointer(EnumerationPointer pointer)
         {
-            Sync.AcquireWriterLock(Timeout.Infinite);
             try
             {
                 return Internal.HasEnumerationPointer(pointer);
             }
             finally
             {
-                Sync.ReleaseWriterLock();
             }
         }
 
@@ -1408,7 +1375,7 @@ namespace Alachisoft.NCache.Caching.Topologies
 
         public override void RegisterKeyNotification(string key, CallbackInfo updateCallback, CallbackInfo removeCallback, OperationContext operationContext)
         {
-            Sync.AcquireWriterLock(Timeout.Infinite);
+            KeyLocker.GetReaderLock(key);
             try
             {
 
@@ -1417,99 +1384,64 @@ namespace Alachisoft.NCache.Caching.Topologies
                 if (_context.CacheImpl.RequiresReplication)
                 {
                     string uniqueKey = System.Guid.NewGuid().ToString() + key;
-#if !CLIENT
                     _context.CacheImpl.EnqueueForReplication(null, (int)ClusterCacheBase.OpCodes.RegisterKeyNotification, new object[] { key, updateCallback, removeCallback, operationContext });
-#endif
                 }
             }
             finally
-            {
-                Sync.ReleaseWriterLock();
+            { 
+                KeyLocker.ReleaseReaderLock(key);
+    
             }
         }
 
-        public override void RegisterKeyNotification(string[] keys, CallbackInfo updateCallback, CallbackInfo removeCallback, OperationContext operationContext)
+        public override void RegisterKeyNotification(string[] keys, CallbackInfo updateCallback,
+            CallbackInfo removeCallback, OperationContext operationContext)
         {
 
             bool mirrorReplication = _context.CacheImpl.RequiresReplication;
-            Sync.AcquireWriterLock(Timeout.Infinite);
-            try
+            Internal.RegisterKeyNotification(keys, updateCallback, removeCallback, operationContext);
+
+            if (mirrorReplication)
             {
-
-                Internal.RegisterKeyNotification(keys, updateCallback, removeCallback, operationContext);
-
-                if (mirrorReplication)
+                for (int i = 0; i < keys.Length; i++)
                 {
-                    for (int i = 0; i < keys.Length; i++)
-                    {
-                        if (mirrorReplication)
-                        {
-                            string uniqueKey = System.Guid.NewGuid().ToString() + keys[i];
-#if !CLIENT
-                            _context.CacheImpl.EnqueueForReplication(null, (int)ClusterCacheBase.OpCodes.RegisterKeyNotification, new object[] { keys[i], updateCallback, removeCallback, operationContext });
-#endif
-                        }
-                    }
+                    _context.CacheImpl.EnqueueForReplication(null,(int) ClusterCacheBase.OpCodes.RegisterKeyNotification,new object[] {keys[i], updateCallback, removeCallback, operationContext});
                 }
-                
+            }
 
-            }
-            finally
-            {
-                Sync.ReleaseWriterLock();
-            }
         }
 
         public override void UnregisterKeyNotification(string key, CallbackInfo updateCallback, CallbackInfo removeCallback, OperationContext operationContext)
         {
 
-            Sync.AcquireWriterLock(Timeout.Infinite);
+            KeyLocker.GetReaderLock(key);
             try
             {
-
                 Internal.UnregisterKeyNotification(key, updateCallback, removeCallback, operationContext);
 
                 if (_context.CacheImpl.RequiresReplication)
                 {
                     string uniqueKey = System.Guid.NewGuid().ToString() + key;
-#if !CLIENT
                     _context.CacheImpl.EnqueueForReplication(null, (int)ClusterCacheBase.OpCodes.UnregisterKeyNotification, new object[] { key, updateCallback, removeCallback, operationContext });
-#endif
                 }
             }
             finally
-            {
-                Sync.ReleaseWriterLock();
+            { 
+                KeyLocker.ReleaseReaderLock(key);
             }
         }
 
         public override void UnregisterKeyNotification(string[] keys, CallbackInfo updateCallback, CallbackInfo removeCallback, OperationContext operationContext)
         {
             bool mirrorReplication = _context.CacheImpl.RequiresReplication;
+            Internal.UnregisterKeyNotification(keys, updateCallback, removeCallback, operationContext);
 
-            Sync.AcquireWriterLock(Timeout.Infinite);
-            try
+            if (mirrorReplication)
             {
-
-                Internal.UnregisterKeyNotification(keys, updateCallback, removeCallback, operationContext);
-
-                if (mirrorReplication)
+                for (int i = 0; i < keys.Length; i++)
                 {
-                    for (int i = 0; i < keys.Length; i++)
-                    {
-                        if (mirrorReplication)
-                        {
-                            string uniqueKey = System.Guid.NewGuid().ToString() + keys[i];
-#if !CLIENT
-                            _context.CacheImpl.EnqueueForReplication(null, (int)ClusterCacheBase.OpCodes.UnregisterKeyNotification, new object[] { keys[i], updateCallback, removeCallback, operationContext });
-#endif
-                        }
-                    }
+                    _context.CacheImpl.EnqueueForReplication(null, (int)ClusterCacheBase.OpCodes.UnregisterKeyNotification, new object[] { keys[i], updateCallback, removeCallback, operationContext });
                 }
-            }
-            finally
-            {
-                Sync.ReleaseWriterLock();
             }
         }
 

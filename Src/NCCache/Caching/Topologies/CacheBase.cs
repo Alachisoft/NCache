@@ -1,4 +1,4 @@
-// Copyright (c) 2015 Alachisoft
+// Copyright (c) 2017 Alachisoft
 // 
 // Licensed under the Apache License, Version 2.0 (the "License");
 // you may not use this file except in compliance with the License.
@@ -11,20 +11,17 @@
 // WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
 // See the License for the specific language governing permissions and
 // limitations under the License.
+
 using System;
 using System.Collections;
 using System.Threading;
 using System.Collections.Generic;
+using Alachisoft.NCache.Common.Locking;
 using Alachisoft.NCache.Common.Stats;
 using Alachisoft.NCache.Util;
 using Alachisoft.NCache.Caching.Statistics;
-
 using Alachisoft.NCache.Common.DataStructures;
-
-
 using Alachisoft.NCache.Runtime.Exceptions;
-
-
 using Alachisoft.NCache.Common;
 using Alachisoft.NCache.Common.Threading;
 using Alachisoft.NCache.Caching.AutoExpiration;
@@ -32,15 +29,13 @@ using Alachisoft.NCache.Common.Util;
 using Alachisoft.NCache.Caching.Exceptions;
 using Alachisoft.NCache.Common.Enum;
 using Alachisoft.NCache.Caching.EvictionPolicies;
-
 using Alachisoft.NCache.Common.Net;
 using Alachisoft.NCache.Caching.Queries;
 using Alachisoft.NCache.Common.Logger;
 using System.Net;
 using Alachisoft.NCache.Common.DataStructures.Clustered;
-#if !CLIENT
+using Alachisoft.NCache.Common.DataReader;
 
-#endif
 
 
 namespace Alachisoft.NCache.Caching.Topologies
@@ -183,9 +178,9 @@ namespace Alachisoft.NCache.Caching.Topologies
         /// <summary> listener of Cache events. </summary>
         private ICacheEventsListener _listener;
 
-        /// <summary> Reader, writer lock to be used for synchronization. </summary>
+        /// <summary> Reader, writer lock manager for keys. </summary>
         [CLSCompliant(false)]
-        protected ReaderWriterLock _syncObj;
+        protected KeyLockManager<object> _KeyLockManager;
 
         /// <summary> The runtime context associated with the current cache. </summary>
         [CLSCompliant(false)]
@@ -198,14 +193,18 @@ namespace Alachisoft.NCache.Caching.Topologies
 
         private bool _keepDeflattedObjects = false;
 
-       
+        //public NewTrace nTrace = null;
 
         public System.IO.StreamWriter writer;
+
+        /// <summary> Reader, writer lock to be used for synchronization. </summary>
+        [CLSCompliant(false)]
+        protected ReaderWriterLock _syncObj;
 
         /// <summary>
         /// Default constructor.
         /// </summary>
-        protected CacheBase()
+        protected CacheBase()//:this(null)
         {
         }
 
@@ -218,6 +217,7 @@ namespace Alachisoft.NCache.Caching.Topologies
             _context = context;
             _listener = listener;
             _syncObj = new ReaderWriterLock();
+            _KeyLockManager = new KeyLockManager<object>(LockRecursionPolicy.SupportsRecursion);
 
         }
 
@@ -238,6 +238,7 @@ namespace Alachisoft.NCache.Caching.Topologies
                 }
             }
             _listener = null;
+            _KeyLockManager = null;
             _syncObj = null;
             GC.SuppressFinalize(this);
         }
@@ -303,9 +304,9 @@ namespace Alachisoft.NCache.Caching.Topologies
         /// <summary>
         /// get the synchronization object for this store.
         /// </summary>
-        public ReaderWriterLock Sync
+        public KeyLockManager<object> KeyLocker
         {
-            get { return _syncObj; }
+            get { return _KeyLockManager; }
         }
 
         /// <summary>
@@ -327,8 +328,13 @@ namespace Alachisoft.NCache.Caching.Topologies
             }
         }
 
-    
-                
+        /// <summary>
+        /// get the synchronization object for this store.
+        /// </summary>
+        public ReaderWriterLock Sync
+        {
+            get { return _syncObj; }
+        }
 
 
         public virtual int ServersCount
@@ -793,7 +799,7 @@ namespace Alachisoft.NCache.Caching.Topologies
         /// <summary>
         /// Remove item from the cluster to synchronize the replicated nodes.
         /// [WARNING]This method should be only called while removing items from
-        /// the cluster in order to synchronize them.[Taimoor]
+        /// the cluster in order to synchronize them.
         /// </summary>
         /// <param name="keys"></param>
         /// <param name="reason"></param>
@@ -825,7 +831,33 @@ namespace Alachisoft.NCache.Caching.Topologies
             return null;
         }
 
-   
+
+        #region--------------------------------Cache Data Reader----------------------------------------------
+
+        public virtual ClusteredList<ReaderResultSet> ExecuteReader(string query, IDictionary values, bool getData, int chunkSize, bool isInproc, OperationContext operationContext)
+        {
+            ReaderResultSet result = InternalCache.Local_ExecuteReader(query, values, getData, chunkSize, isInproc, operationContext);
+            ClusteredList<ReaderResultSet> resultList = new ClusteredList<ReaderResultSet>();
+            if (result != null)
+                resultList.Add(result);
+            return resultList;
+        }
+
+        public virtual ReaderResultSet Local_ExecuteReader(string query, IDictionary values, bool getData, int chunkSize, bool isInproc, OperationContext operationContext)
+        {
+            return null;
+        }
+        
+        public virtual ReaderResultSet GetReaderChunk(string readerId, int nextChunk, bool isInproc, OperationContext operationContext)
+        {
+            return InternalCache.GetReaderChunk(readerId, nextChunk, isInproc, operationContext);
+        }
+
+        public virtual void DisposeReader(string readerId, OperationContext operationContext)
+        {
+            InternalCache.DisposeReader(readerId, operationContext);
+        }
+        #endregion
 
         #region   /--           Bulk Operations              --
 
@@ -1020,6 +1052,38 @@ namespace Alachisoft.NCache.Caching.Topologies
         public virtual void ValidateItems(object key, object userPayloads)
         { }
 
+
+        public virtual ArrayList DetermineClientConnectivity(ArrayList clients)
+        {
+            if (clients == null) return null;
+            try
+            {
+                ArrayList result = new ArrayList();
+                CacheStatistics stats = InternalCache.Statistics as CacheStatistics;
+                foreach (string client in clients)
+                {
+                    if (!stats.ConnectedClients.Contains(client))
+                    {
+                        result.Add(client);
+                    }
+                }
+                return result;
+            }
+            catch (Exception e)
+            {
+                Context.NCacheLog.Error("Client-Death-Detection.DetermineClientConnectivity()", e.ToString());
+            }
+            finally
+            {
+                if (Context.NCacheLog.IsInfoEnabled) Context.NCacheLog.Info("Client-Death-Detection.DetermineClientConnectivity()", "determining client connectivity completed");
+            }
+            return null;
+        }
+
+        public virtual void DeclaredDeadClients(ArrayList clients)
+        {
+            InternalCache.DeclaredDeadClients(clients);
+        }
 
         /// <summary>
         /// Returns the thread safe synchronized wrapper over cache.

@@ -1,4 +1,4 @@
-// Copyright (c) 2015 Alachisoft
+// Copyright (c) 2017 Alachisoft
 // 
 // Licensed under the Apache License, Version 2.0 (the "License");
 // you may not use this file except in compliance with the License.
@@ -11,6 +11,7 @@
 // WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
 // See the License for the specific language governing permissions and
 // limitations under the License.
+
 using System;
 using System.Collections.Generic;
 using System.Text;
@@ -42,11 +43,13 @@ namespace Alachisoft.NCache.Config.NewDom
         Alachisoft.NCache.Config.Dom.Storage storage;
         Alachisoft.NCache.Config.Dom.EvictionPolicy evictionPolicy;
         Alachisoft.NCache.Config.Dom.AutoLoadBalancing autoBalancing;
+        Alachisoft.NCache.Config.Dom.ClientDeathDetection clientDeathDetection;
         CacheTopology cacheTopology;
         string _alias = string.Empty;
         public CacheServerConfigSetting()
         {
             log = new Alachisoft.NCache.Config.Dom.Log();
+            clientDeathDetection = new ClientDeathDetection();
         }
 
         [ConfigurationAttribute("cache-name")]
@@ -75,6 +78,13 @@ namespace Alachisoft.NCache.Config.NewDom
         {
             get { return lastModified; }
             set { lastModified = value; }
+        }
+
+        [ConfigurationSection("client-death-detection")]
+        public Alachisoft.NCache.Config.Dom.ClientDeathDetection ClientDeatheDetection
+        {
+            get { return clientDeathDetection; }
+            set { clientDeathDetection = value; }
         }
 
         public string CacheType
@@ -149,9 +159,6 @@ namespace Alachisoft.NCache.Config.NewDom
             get { return evictionPolicy; }
             set { evictionPolicy = value; }
         }
-
-       
-
         [ConfigurationSection("cache-topology", true, false)]
         public CacheTopology CacheTopology
         {
@@ -188,6 +195,7 @@ namespace Alachisoft.NCache.Config.NewDom
             config.EvictionPolicy = EvictionPolicy != null ? (Alachisoft.NCache.Config.Dom.EvictionPolicy)EvictionPolicy.Clone() : null;
             config.QueryIndices = QueryIndices != null ? (Alachisoft.NCache.Config.Dom.QueryIndex)QueryIndices.Clone() : null;
             config.cacheTopology = this.cacheTopology;
+            config.clientDeathDetection = this.clientDeathDetection;
 
             return config;
         }
@@ -209,6 +217,7 @@ namespace Alachisoft.NCache.Config.NewDom
         evictionPolicy = reader.ReadObject() as EvictionPolicy;
         cacheTopology = reader.ReadObject() as CacheTopology;
         _alias = reader.ReadObject() as String;
+        clientDeathDetection = reader.ReadObject() as ClientDeathDetection;
         }
 
         public void Serialize(Runtime.Serialization.IO.CompactWriter writer)
@@ -226,6 +235,7 @@ namespace Alachisoft.NCache.Config.NewDom
             writer.WriteObject(evictionPolicy);
             writer.WriteObject(cacheTopology);
             writer.WriteObject(_alias);
+            writer.WriteObject(clientDeathDetection);
         }
         #endregion
     }

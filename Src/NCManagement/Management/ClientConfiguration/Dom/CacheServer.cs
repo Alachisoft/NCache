@@ -1,4 +1,4 @@
-// Copyright (c) 2015 Alachisoft
+// Copyright (c) 2017 Alachisoft
 // 
 // Licensed under the Apache License, Version 2.0 (the "License");
 // you may not use this file except in compliance with the License.
@@ -11,6 +11,7 @@
 // WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
 // See the License for the specific language governing permissions and
 // limitations under the License.
+
 using System;
 using System.Collections.Generic;
 using System.Text;
@@ -87,7 +88,7 @@ namespace Alachisoft.NCache.Management.ClientConfiguration.Dom
         {
             CacheServer server = new CacheServer();
             server._serverName = _serverName;
-            
+            server._priority = _priority;
 
             return server;
         }
@@ -99,17 +100,13 @@ namespace Alachisoft.NCache.Management.ClientConfiguration.Dom
         public void Deserialize(Runtime.Serialization.IO.CompactReader reader)
         {
             _serverName = reader.ReadObject() as string;
-
-           
-
-            _serverPriority = (short)reader.ReadObject();
+            _priority = reader.ReadInt32();
         }
 
         public void Serialize(Runtime.Serialization.IO.CompactWriter writer)
         {
             writer.WriteObject(_serverName);
-            
-            writer.WriteObject(_serverPriority);
+            writer.Write(_priority);
         }
 
         #endregion

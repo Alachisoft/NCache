@@ -1,4 +1,4 @@
-// Copyright (c) 2015 Alachisoft
+// Copyright (c) 2017 Alachisoft
 // 
 // Licensed under the Apache License, Version 2.0 (the "License");
 // you may not use this file except in compliance with the License.
@@ -10,36 +10,24 @@
 // distributed under the License is distributed on an "AS IS" BASIS,
 // WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
 // See the License for the specific language governing permissions and
-// limitations under the License.
-using System.Reflection;
+// limitations under the License.using System.Reflection;
 using System.Runtime.CompilerServices;
 using System.Runtime.InteropServices;
 using System;
+using System.Reflection;
 
 // General Information about an assembly is controlled through the following 
 // set of attributes. Change these attribute values to modify the information
 // associated with an assembly.
-#if JAVA
-[assembly: CLSCompliantAttribute(true)]
-[assembly: AssemblyTitle("TayzGridContentOptimizationPlugin")]
-[assembly: AssemblyDescription("TayzGrid based plugin for web-based content optimization")]
-[assembly: AssemblyConfiguration("")]
-[assembly: AssemblyCompany("Alachisoft")]
-[assembly: AssemblyProduct("Alachisoft® TayzGrid")]
-[assembly: AssemblyCopyright("Copyright © 2005-2014 Alachisoft")]
-[assembly: AssemblyTrademark("TayzGrid ™ is a registered trademark of Alachisoft.")]
-[assembly: AssemblyCulture("")]
-#else
 [assembly: CLSCompliantAttribute(true)]
 [assembly: AssemblyTitle("NCacheContentOptimizationPlugin")]
 [assembly: AssemblyDescription("NCache based plugin for web-based content optimization")]
 [assembly: AssemblyConfiguration("")]
 [assembly: AssemblyCompany("Alachisoft")]
-[assembly: AssemblyProduct("Alachisoft® NCache")]
-[assembly: AssemblyCopyright("Copyright © 2005-2010 Alachisoft")]
+[assembly: AssemblyProduct("Alachisoft® NCache Open Source")]
+[assembly: AssemblyCopyright("Copyright © 2005-2017 Alachisoft")]
 [assembly: AssemblyTrademark("NCache ™ is a registered trademark of Alachisoft.")]
 [assembly: AssemblyCulture("")]
-#endif
 
 
 // Setting ComVisible to false makes the types in this assembly not visible 

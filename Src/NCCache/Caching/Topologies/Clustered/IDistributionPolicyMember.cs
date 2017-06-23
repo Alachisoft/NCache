@@ -1,4 +1,4 @@
-// Copyright (c) 2015 Alachisoft
+// Copyright (c) 2017 Alachisoft
 // 
 // Licensed under the Apache License, Version 2.0 (the "License");
 // you may not use this file except in compliance with the License.
@@ -11,6 +11,7 @@
 // WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
 // See the License for the specific language governing permissions and
 // limitations under the License.
+
 using System.Collections;
 using Alachisoft.NCache.Common.DataStructures;
 using Alachisoft.NCache.Common.Mirroring;
@@ -29,24 +30,17 @@ namespace Alachisoft.NCache.Caching.Topologies.Clustered
         /// <returns></returns>
         DistributionMaps GetDistributionMaps(DistributionInfoData distInfo);
 
-        ArrayList HashMap
-        {
-            get;
-            set;
-        }
+        ArrayList HashMap { get; set; }
 
-        Hashtable BucketsOwnershipMap
-        {
-            get;
-            set;
-        }
+        Hashtable BucketsOwnershipMap { get; set; }
 
         void EmptyBucket(int bucketId);
 
         void InstallHashMap(DistributionMaps distributionMaps, ArrayList leftMbrs);
+        
         void InstallMirrorMap(CacheNode[] nodes);
+        
         CacheNode[] GetMirrorMap();
-
 
         /// <summary>
         /// Gets the groupId for this node from the mirrorManager. If nodeIdentity is a mirror

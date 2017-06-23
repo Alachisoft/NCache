@@ -1,4 +1,4 @@
-// Copyright (c) 2015 Alachisoft
+// Copyright (c) 2017 Alachisoft
 // 
 // Licensed under the Apache License, Version 2.0 (the "License");
 // you may not use this file except in compliance with the License.
@@ -11,6 +11,7 @@
 // WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
 // See the License for the specific language governing permissions and
 // limitations under the License.
+
 using System;
 using System.Net.Sockets;
 using Alachisoft.NCache.Management;
@@ -28,15 +29,6 @@ namespace Alachisoft.NCache.ServiceControl
         private string _serviceName;
         protected ICacheServer cacheServer;
         
-        ///// <summary>
-        ///// Constructor
-        ///// </summary>
-        //public CacheService(string serviceName)
-        //{
-        //    this._serviceName = serviceName;
-        //}
-
-
         /// <summary>
         /// Overloaded Constructor
         /// </summary>
@@ -46,6 +38,17 @@ namespace Alachisoft.NCache.ServiceControl
         public CacheService(string serviceName,string server, long port):base(server,port,true)
         {
             this._serviceName = serviceName;
+        }
+
+        public CacheService(string server, int port, bool useTCP)
+            : base(server, port, useTCP)
+        {
+            ;
+        }
+
+        public CacheService(string address, bool p) : this(address, CacheConfigManager.HttpPort, true)
+        {
+            ;
         }
 
         public ICacheServer CacheServer
@@ -79,10 +82,7 @@ namespace Alachisoft.NCache.ServiceControl
                 }
                 try
                 {
-                    // Check and start NCache service and then try again
-
                     Start(timeout);
-
                     cm = ConnectCacheServer();
 
                 }
@@ -99,10 +99,7 @@ namespace Alachisoft.NCache.ServiceControl
             {
                 try
                 {
-                    // Check and start NCache service and then try again
-
                     Start(timeout);
-
                     cm = ConnectCacheServer();
                  
                 }
@@ -120,6 +117,7 @@ namespace Alachisoft.NCache.ServiceControl
 
         public virtual void RestartSvcAfterNICChanged(TimeSpan timeout, string previousServerNode)
         {
+            Restart(timeout);
         }
 
         /// <summary>

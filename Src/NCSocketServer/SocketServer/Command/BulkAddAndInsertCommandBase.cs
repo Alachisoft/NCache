@@ -1,4 +1,4 @@
-// Copyright (c) 2015 Alachisoft
+// Copyright (c) 2017 Alachisoft
 // 
 // Licensed under the Apache License, Version 2.0 (the "License");
 // you may not use this file except in compliance with the License.
@@ -11,6 +11,7 @@
 // WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
 // See the License for the specific language governing permissions and
 // limitations under the License.
+
 using System;
 using System.Collections;
 using Alachisoft.NCache.Caching;
@@ -34,17 +35,6 @@ namespace Alachisoft.NCache.SocketServer.Command
 
             public string RequestId;
             public string[] Keys;
-            //public short[] RemoveCallbackId;
-            //public int[] RemoveDataFilter;
-            //public short[] UpdateCallbackId;
-            //public int[] UpdateDataFilter;
-
-            //public ExpirationHint[] ExpirationHint;
-            //public PriorityEvictionHint[] EvictionHint;
-
-            //public CallbackEntry[] CallbackEnteries;
-
-            //public Hashtable[] QueryInfo;
             public BitSet Flag;
 
             public long ClientLastViewId;
@@ -89,6 +79,7 @@ namespace Alachisoft.NCache.SocketServer.Command
             int packageSize = 0;
             int index = 0;
             string version = string.Empty;
+            Hashtable queryInfoHashtable = null;
 
             switch (command.type)
             {
@@ -126,13 +117,13 @@ namespace Alachisoft.NCache.SocketServer.Command
                         }
 
 
-                        Hashtable queryInfo = new Hashtable();
+                        
 
                         version = command.version;
 
                         if (string.IsNullOrEmpty(version))
                         {
-                            queryInfo["query-info"] = Alachisoft.NCache.Caching.Util.ProtobufHelper.GetHashtableFromQueryInfoObj(addCommand.queryInfo);
+                            queryInfoHashtable = Alachisoft.NCache.Caching.Util.ProtobufHelper.GetHashtableFromQueryInfoObj(addCommand.queryInfo);
                         }
                         else
                         {
@@ -141,11 +132,16 @@ namespace Alachisoft.NCache.SocketServer.Command
                             
                             objectQueryInfo = addCommand.objectQueryInfo;
 
-                            queryInfo["query-info"] = Alachisoft.NCache.Caching.Util.ProtobufHelper.GetHashtableFromQueryInfoObj(objectQueryInfo.queryInfo);
+                            queryInfoHashtable = Alachisoft.NCache.Caching.Util.ProtobufHelper.GetHashtableFromQueryInfoObj(objectQueryInfo.queryInfo);
 
                         }
 
-                        cmdInfo.Entries[index].QueryInfo = queryInfo;
+                        if (queryInfoHashtable != null)
+                        {
+                            if (cmdInfo.Entries[index].QueryInfo == null) cmdInfo.Entries[index].QueryInfo = new Hashtable();
+                            cmdInfo.Entries[index].QueryInfo.Add("query-info", queryInfoHashtable);
+                        }
+                       
 
 
                         index++;
@@ -184,12 +180,12 @@ namespace Alachisoft.NCache.SocketServer.Command
                             cmdInfo.Entries[index].Value = cbEntry.Clone();
                         }
                         
-                        Hashtable queryInfo = new Hashtable();
+                        
                         version = command.version;
 
                         if (string.IsNullOrEmpty(version))
                         {
-                            queryInfo["query-info"] = Alachisoft.NCache.Caching.Util.ProtobufHelper.GetHashtableFromQueryInfoObj(insertCommand.queryInfo);
+                            queryInfoHashtable = Alachisoft.NCache.Caching.Util.ProtobufHelper.GetHashtableFromQueryInfoObj(insertCommand.queryInfo);
                            
                         }
                         else
@@ -197,11 +193,15 @@ namespace Alachisoft.NCache.SocketServer.Command
                             ObjectQueryInfo objectQueryInfo;
 
                             objectQueryInfo = insertCommand.objectQueryInfo;
-                            queryInfo["query-info"] = Alachisoft.NCache.Caching.Util.ProtobufHelper.GetHashtableFromQueryInfoObj(objectQueryInfo.queryInfo);
+                            queryInfoHashtable = Alachisoft.NCache.Caching.Util.ProtobufHelper.GetHashtableFromQueryInfoObj(objectQueryInfo.queryInfo);
                             
                         }
 
-                        cmdInfo.Entries[index].QueryInfo = queryInfo;
+                        if (queryInfoHashtable != null)
+                        {
+                            if (cmdInfo.Entries[index].QueryInfo == null) cmdInfo.Entries[index].QueryInfo = new Hashtable();
+                            cmdInfo.Entries[index].QueryInfo.Add("query-info", queryInfoHashtable);
+                        }
 
                         index++;
                     }

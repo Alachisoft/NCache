@@ -10,6 +10,7 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 // $Id: Util.java,v 1.13 2004/07/28 08:14:14 belaban Exp $
+
 using System;
 using System.IO;
 using System.Net;
@@ -378,7 +379,7 @@ namespace Alachisoft.NGroups.Util
 				sb.Append(hostname);
 			return sb.ToString();
 		}
-	
+		
 		/// <summary>Reads a number of characters from the current source Stream and writes the data to the target array at the specified index.</summary>
 		/// <param name="sourceStream">The source Stream to read from.</param>
 		/// <param name="target">Contains the array of characteres read from the source Stream.</param>
@@ -504,7 +505,7 @@ namespace Alachisoft.NGroups.Util
 
 			return ip;
 		}
-		
+	
 		/// <summary>Reads a number of characters from the current source TextReader and writes the data to the target array at the specified index.</summary>
 		/// <param name="sourceTextReader">The source TextReader to read from</param>
 		/// <param name="target">Contains the array of characteres read from the source TextReader.</param>

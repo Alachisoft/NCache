@@ -157,6 +157,7 @@
     </Compile>
     <Compile Include="Management\CacheInfo.cs" />
     <Compile Include="Management\CacheRegisterationInfo.cs" />
+    <Compile Include="Management\CacheRPCService.cs" />
     <Compile Include="Management\CacheServer.cs">
       <SubType>Code</SubType>
     </Compile>
@@ -165,8 +166,9 @@
     <Compile Include="Management\ClientConfiguration\Dom\CacheConfiguration.cs" />
     <Compile Include="Management\ClientConfiguration\Dom\CacheServer.cs" />
     <Compile Include="Management\ClientConfiguration\Dom\ClientConfiguration.cs" />
+    <Compile Include="Management\ClientConfiguration\Dom\Mapping.cs" />
     <Compile Include="Management\ClientConfiguration\Dom\NodeConfiguration.cs" />
-    <Compile Include="Management\HostBase.cs" />
+    <Compile Include="Management\HostServer.cs" />
     <Compile Include="Management\ICacheServer.cs" />
     <Compile Include="Management\MappingConfiguration\Dom\MappingConfiguration.cs" />
     <Compile Include="Management\MappingConfiguration\MappingConfigurationManager.cs" />
@@ -178,6 +180,7 @@
     <Compile Include="Management\RPC\ManagementChannelFormatter.cs" />
     <Compile Include="Management\RPC\RemoteCacheServer.cs" />
     <Compile Include="Management\RPC\RemoteServerBase.cs" />
+    <Compile Include="Management\ServerHost.cs" />
     <Compile Include="Management\ThinClientConfigManager.cs" />
     <Compile Include="Management\Util\ManagementWorkFlow.cs" />
     <Compile Include="ServiceControl\CacheService.cs" />
@@ -188,6 +191,8 @@
       <SubType>Code</SubType>
     </Compile>
     <Compile Include="ServiceControl\ServiceNames.cs" />
+    <Compile Include="ToolsCommon\ClientConfigUtil.cs" />
+    <Compile Include="ToolsCommon\ToolOperations.cs" />
   </ItemGroup>
   <ItemGroup>
     <ProjectReference Include="..\NCCache\NCCache.csproj">

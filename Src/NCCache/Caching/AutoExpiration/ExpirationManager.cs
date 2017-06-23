@@ -1,4 +1,4 @@
-// Copyright (c) 2015 Alachisoft
+// Copyright (c) 2017 Alachisoft
 // 
 // Licensed under the Apache License, Version 2.0 (the "License");
 // you may not use this file except in compliance with the License.
@@ -111,7 +111,7 @@ namespace Alachisoft.NCache.Caching.AutoExpiration
             }
         }
 
-        
+       
         #endregion
 
         /// <summary> The top level Cache. esentially to remove the items on the whole cluster for the cascaded dependencies. </summary>
@@ -180,7 +180,7 @@ namespace Alachisoft.NCache.Caching.AutoExpiration
         private int _cacheLastAccessInterval;
         private bool _cacheLastAccessCountEnabled;
         private bool _cacheLastAccessCountLoggingEnabled;
-        
+      
 
         /// <summary>
         /// True if this node is a "cordinator" or a "subcordinator" in case of partition-of-replica.
@@ -213,21 +213,7 @@ namespace Alachisoft.NCache.Caching.AutoExpiration
         {
             get
             {
-                string enableCacheLastAccessCount="NCacheServer.EnableCacheLastAccessCount";
-                bool isCachelastAccessEnabled = false;
-                try
-                {
-                    string str = System.Configuration.ConfigurationSettings.AppSettings[enableCacheLastAccessCount];
-                    if (str != null && str != string.Empty)
-                    {
-                        isCachelastAccessEnabled = Convert.ToBoolean(str);
-                    }
-                }
-                catch (Exception e)
-                {
-                    NCacheLog.Error("ExpirationManager.IsCacheLastAccessCountEnabled", "invalid value provided for " + enableCacheLastAccessCount);
-                }
-                return isCachelastAccessEnabled;
+                return ServiceConfiguration.EnableCacheLastAccessCount;
             }
         }
 
@@ -236,18 +222,8 @@ namespace Alachisoft.NCache.Caching.AutoExpiration
             get
             {
                 bool isCachelastAccessLogEnabled = false;
-                try
-                {
-                    string str = System.Configuration.ConfigurationSettings.AppSettings["NCacheServer.EnableCacheLastAccessCountLogging"];
-                    if (str != null && str != string.Empty)
-                    {
-                        isCachelastAccessLogEnabled = Convert.ToBoolean(str);
-                    }
-                }
-                catch (Exception e)
-                {
-                    NCacheLog.Error("ExpirationManager.IsCacheLastAccessLoggingEnabled", "invalid value provided for NCacheServer.EnableCacheLastAccessCount");
-                }
+
+                isCachelastAccessLogEnabled = ServiceConfiguration.EnableCacheLastAccessCountLogging;
 
                 if (IsCacheLastAccessCountEnabled && isCachelastAccessLogEnabled)
                 {
@@ -263,21 +239,7 @@ namespace Alachisoft.NCache.Caching.AutoExpiration
         {
             get
             {
-                string cacheLastAccessCount="NCacheServer.CacheLastAccessCountInterval";
-                int isCachelastAccessInterval = _cacheLastAccessInterval;
-                try
-                {
-                    string str = System.Configuration.ConfigurationSettings.AppSettings[cacheLastAccessCount];
-                    if (str != null && str != string.Empty)
-                    {
-                        isCachelastAccessInterval = Convert.ToInt32(str);
-                    }
-                }
-                catch (Exception e)
-                {
-                    NCacheLog.Error("ExpirationManager.CacheLastAccessCountInterval", "invalid value provided for " + cacheLastAccessCount);
-                }
-                return isCachelastAccessInterval;
+                return ServiceConfiguration.CacheLastAccessCountInterval;
             }
         }
 
@@ -285,21 +247,7 @@ namespace Alachisoft.NCache.Caching.AutoExpiration
         {
             get
             {
-                string cacheLastAccessLogInterval="NCacheServer.CacheLastAccessLogInterval";
-                int isCachelastAccessLogingInterval = _cacheLastAccessLoggingInterval;
-                try
-                {
-                    string str = System.Configuration.ConfigurationSettings.AppSettings[cacheLastAccessLogInterval];
-                    if (str != null && str != string.Empty)
-                    {
-                        isCachelastAccessLogingInterval = Convert.ToInt32(str);
-                    }
-                }
-                catch (Exception e)
-                {
-                    NCacheLog.Error("ExpirationManager.CacheLastAccessLogInterval", "invalid value provided for " + cacheLastAccessLogInterval);
-                }
-                return isCachelastAccessLogingInterval;
+                return ServiceConfiguration.CacheLastAccessLogInterval;
             }
         }
 
@@ -316,10 +264,9 @@ namespace Alachisoft.NCache.Caching.AutoExpiration
             
             Initialize(properties);
 
-            //muds:
             //new way to do this...
-            _sleepInterval = Convert.ToInt32(ServiceConfiguration.ExpirationBulkRemoveDelay);
-            _removeThreshhold = Convert.ToInt32(ServiceConfiguration.ExpirationBulkRemoveSize);           
+            _sleepInterval = ServiceConfiguration.ExpirationBulkRemoveDelay;
+            _removeThreshhold = ServiceConfiguration.ExpirationBulkRemoveSize;           
         }
 
         #region	/                 --- IDisposable ---           /
@@ -475,23 +422,20 @@ namespace Alachisoft.NCache.Caching.AutoExpiration
             //indicates whether some items expired during this interval or not...
             bool expired = false;
            
-            //muds:
-
             //if user has updated the file then the new values will be reloaded.
-            _sleepInterval = Convert.ToInt32(ServiceConfiguration.ExpirationBulkRemoveDelay);
-            _removeThreshhold = Convert.ToInt32(ServiceConfiguration.ExpirationBulkRemoveSize);
-           
-           
+            _sleepInterval = ServiceConfiguration.ExpirationBulkRemoveDelay;
+            _removeThreshhold = ServiceConfiguration.ExpirationBulkRemoveSize;
+
             CacheBase cacheInst = _context.CacheImpl;
             CacheBase cache = _context.CacheInternal;
             Cache rootCache = _context.CacheRoot;
-           
+
             if (cache == null)
                 throw new InvalidOperationException("No cache instance defined");
 
             bool allowExpire = AllowClusteredExpiry;
 
-            //in case of replication, only the coordinator/sub-coordinator is responsible to expire the items.
+            //in case of replication and por, only the coordinator/sub-coordinator is responsible to expire the items.
             if (!allowExpire) return false;
             ClusteredArrayList selectedKeys = new ClusteredArrayList();
             int oldItemsCount = 0;
@@ -773,7 +717,6 @@ namespace Alachisoft.NCache.Caching.AutoExpiration
                 IsInProgress = false;
                 if (_indexCleared)
                 {
-                    //_mainIndex.Clear();
                     _mainIndex = new HashVector();
                     _indexCleared = false;
                 }

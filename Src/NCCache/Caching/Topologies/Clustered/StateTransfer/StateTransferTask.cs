@@ -1,4 +1,4 @@
-// Copyright (c) 2015 Alachisoft
+// Copyright (c) 2017 Alachisoft
 // 
 // Licensed under the Apache License, Version 2.0 (the "License");
 // you may not use this file except in compliance with the License.
@@ -11,6 +11,7 @@
 // WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
 // See the License for the specific language governing permissions and
 // limitations under the License.
+
 using System;
 using System.Text;
 using System.Collections;
@@ -43,7 +44,7 @@ namespace Alachisoft.NCache.Caching.Topologies.Clustered
 
         /// <summary> 10K is the threshold data size. Above this threshold value, data will be state
         /// transfered in chunks. </summary>
-        //muds: temporarily we are disabling the bulk transfer of sparsed buckets.
+        //temporarily we are disabling the bulk transfer of sparsed buckets.
         //in future we may need it back.
         protected long _threshold = 0; //10 * 1000; 
 
@@ -223,8 +224,6 @@ namespace Alachisoft.NCache.Caching.Topologies.Clustered
                 bool transferQueue = (bool)obj[1];
                 int updateId = (int)obj[2];
 
-
-
                 _parent.DetermineClusterStatus();
 
                 if (!UpdateStateTransfer(buckets, updateId))
@@ -269,7 +268,6 @@ namespace Alachisoft.NCache.Caching.Topologies.Clustered
         /// </summary>
         protected virtual void Process()
         {
-            //muds:
             //fetch the latest stats from every node.
             _isRunning = true;
 
@@ -289,7 +287,6 @@ namespace Alachisoft.NCache.Caching.Topologies.Clustered
                     {
                         info = GetBucketsForTxfr();
 
-                        //muds: 
                         //if no more data to transfer then stop.
                         if (info.end)
                         {
@@ -369,7 +366,6 @@ namespace Alachisoft.NCache.Caching.Topologies.Clustered
             ArrayList ownershipChanged = null;
             ArrayList lockAcquired = null;
 
-            //muds:
             //ask coordinator node to lock this/these bucket(s) during the state transfer.
             Hashtable lockResults = AcquireLockOnBuckets(bucketIds);
 
@@ -378,7 +374,6 @@ namespace Alachisoft.NCache.Caching.Topologies.Clustered
                 ownershipChanged = (ArrayList)lockResults[BucketLockResult.OwnerChanged];
                 if (ownershipChanged != null && ownershipChanged.Count > 0)
                 {
-                    //muds:
                     //remove from local buckets. remove from sparsedBuckets. remove from filledBuckets.
                     //these are no more my property.
                     IEnumerator ie = ownershipChanged.GetEnumerator();
@@ -442,7 +437,6 @@ namespace Alachisoft.NCache.Caching.Topologies.Clustered
             {
                 if (_parent.Context.NCacheLog.IsInfoEnabled) _parent.Context.NCacheLog.Info(Name + ".TransferBuckets", " Starting transfer. Owner : " + owner.ToString() + " , Bucket : " + ((int)buckets[0]).ToString());
 
-
                 PrepareBucketsForStateTxfr(buckets);
 
                 long dataRecieved = 0;
@@ -461,9 +455,6 @@ namespace Alachisoft.NCache.Caching.Topologies.Clustered
                     }
                     else
                         _dataTransferred += currentIternationData;
-
-                    Boolean sleep = false;
-
 
                     resync = false;
                     transferEnd = true;
@@ -523,7 +514,6 @@ namespace Alachisoft.NCache.Caching.Topologies.Clustered
                         CacheEntry entry = null;
 
                         expectedTxfrId++;
-                        //muds:
                         //add data to local cache.
 
                         if (tbl != null && tbl.Count > 0)
@@ -581,7 +571,6 @@ namespace Alachisoft.NCache.Caching.Topologies.Clustered
                     {
                         BucketsTransfered(owner, buckets);
                         EndBucketsStateTxfr(buckets);
-                        //muds:
                         //send ack for the state transfer over.
                         //Ask every node to release lock on this/these bucket(s)
                         if (_parent.Context.NCacheLog.IsInfoEnabled) _parent.Context.NCacheLog.Info(Name + ".TransferBuckets", "Acknowledging transfer. Owner : " + owner.ToString() + " , Bucket : " + ((int)buckets[0]).ToString());

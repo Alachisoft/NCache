@@ -9,6 +9,7 @@
 // WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
 // See the License for the specific language governing permissions and
 // limitations under the License.
+
 // $Id: Queue.java,v 1.13 2004/03/30 06:47:28 belaban Exp $
 using System;
 using System.Collections;

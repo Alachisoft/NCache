@@ -1,0 +1,10 @@
+import "RecordColumn.proto";
+import "RecordRow.proto";
+
+package Alachisoft.NCache.Common.Protobuf;
+
+message RecordSet
+{
+	repeated RecordColumn columns = 1;
+	repeated RecordRow rows  = 2;
+}

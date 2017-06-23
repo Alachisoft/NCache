@@ -160,9 +160,6 @@
     </Compile>
   </ItemGroup>
   <ItemGroup>
-    <BaseApplicationManifest Include="Properties\app.manifest" />
-  </ItemGroup>
-  <ItemGroup>
     <ProjectReference Include="..\NCCache\NCCache.csproj">
       <Project>{BF3BCF64-ADEB-455B-AD8A-39EE84EE300D}</Project>
       <Name>NCCache</Name>

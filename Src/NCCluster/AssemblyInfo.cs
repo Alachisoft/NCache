@@ -26,14 +26,10 @@ using System.Runtime.InteropServices;
 [assembly: AssemblyConfiguration("")]
 
 [assembly: AssemblyCompany("Alachisoft")]
-
 [assembly: AssemblyTitle("Alachisoft.NGroups")]
-
 [assembly: AssemblyProduct("Alachisoft® NCache Open Source")]
-
 [assembly: AssemblyTrademark("NCache ™ is a registered trademark of Alachisoft.")]
-
-[assembly: AssemblyCopyright("Copyright © 2005-2015 Alachisoft")]
+[assembly: AssemblyCopyright("Copyright © 2005-2017 Alachisoft")]
 [assembly: AssemblyCulture("")]		
 
 //
@@ -47,7 +43,7 @@ using System.Runtime.InteropServices;
 // You can specify all the values or you can default the Revision and Build Numbers 
 // by using the '*' as shown below:
 
-[assembly: AssemblyVersion("4.4.0.0")]
+[assembly: AssemblyVersion("4.6.0.0")]
 
 //
 // In order to sign your assembly you must specify a key to use. Refer to the 
@@ -80,5 +76,5 @@ using System.Runtime.InteropServices;
 [assembly: AssemblyKeyFile("..\\..\\..\\..\\Resources\\ncache.snk")]
 
 [assembly: AssemblyDescriptionAttribute("Cluster Core")]
-[assembly:  AssemblyFileVersionAttribute("4.4.0.11")]
-[assembly: AssemblyInformationalVersion("4.4.0")]
+[assembly: AssemblyFileVersionAttribute("4.6.3.0")]
+[assembly: AssemblyInformationalVersion("4.6.0")]

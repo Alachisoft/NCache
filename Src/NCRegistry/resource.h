@@ -1,7 +1,6 @@
 //{{NO_DEPENDENCIES}}
 // Microsoft Visual C++ generated include file.
-// Used by NCLicense.rc
-//
+// 
 #define IDR_STUBDLL                     101
 
 // Next default values for new objects

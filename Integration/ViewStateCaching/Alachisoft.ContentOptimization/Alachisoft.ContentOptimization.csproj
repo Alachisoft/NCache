@@ -91,6 +91,9 @@
     <CodeAnalysisFailOnMissingRules>false</CodeAnalysisFailOnMissingRules>
   </PropertyGroup>
   <ItemGroup>
+    <Reference Include="Alachisoft.NCache.Common">
+      <HintPath>..\..\..\Src\build\Server\4x\Alachisoft.NCache.Common.dll</HintPath>
+    </Reference>
     <Reference Include="System" />
     <Reference Include="System.Configuration.Install" />
     <Reference Include="System.Web" />
@@ -143,11 +146,7 @@
   <PropertyGroup Condition="'$(Configuration)|$(Platform)' == 'Release|AnyCPU' OR '$(Configuration)|$(Platform)' == 'Debug|AnyCPU'">
     <PreBuildEvent>
     </PreBuildEvent>
-    <PostBuildEvent>xcopy /Y "$(TargetPath)" "$(SolutionDir)..\build\ContentOptimization\4x\"</PostBuildEvent>
+    <PostBuildEvent>xcopy /Y "$(TargetPath)" "$(SolutionDir)..\build\ContentOptimization\"</PostBuildEvent>
   </PropertyGroup>
-  <PropertyGroup Condition="'$(Configuration)|$(Platform)' == 'Release.2x|AnyCPU'">
-    <PreBuildEvent>
-    </PreBuildEvent>
-    <PostBuildEvent>xcopy /Y "$(TargetPath)" "$(SolutionDir)..\build\ContentOptimization\2x\"</PostBuildEvent>
-  </PropertyGroup>
+
 </Project>

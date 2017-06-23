@@ -1,0 +1,4 @@
+option java_outer_classname="DisposeReaderResponseProtocol";
+package Alachisoft.NCache.Common.Protobuf;
+message DisposeReaderResponse { 
+}

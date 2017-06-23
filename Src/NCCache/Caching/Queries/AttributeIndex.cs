@@ -1,4 +1,4 @@
-// Copyright (c) 2015 Alachisoft
+// Copyright (c) 2017 Alachisoft
 // 
 // Licensed under the Apache License, Version 2.0 (the "License");
 // you may not use this file except in compliance with the License.
@@ -11,17 +11,19 @@
 // WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
 // See the License for the specific language governing permissions and
 // limitations under the License.
+
 using System;
 using System.Collections;
 using Alachisoft.NCache.Common.DataStructures;
 using Alachisoft.NCache.Common.Util;
+using Alachisoft.NCache.Common.DataStructures.Clustered;
 
 namespace Alachisoft.NCache.Caching.Queries
 {
     [Serializable]
     public class AttributeIndex : IQueryIndex
     {
-        protected Hashtable _indexTable;
+        protected HashVector _indexTable;
         protected string _cacheName;
         protected string _type;
 
@@ -30,6 +32,8 @@ namespace Alachisoft.NCache.Caching.Queries
 
         //Cacluate Size of indexTable and IndexInformation Associated with Keys
         private long _keyIndexInformationSize;
+
+         private readonly object _mutex = new object();
 
         [NonSerialized]
         private TypeInfoMap _typeMap = null;
@@ -48,7 +52,7 @@ namespace Alachisoft.NCache.Caching.Queries
 
         public AttributeIndex(ArrayList attribList, string cacheName, string type)
         {
-            _indexTable = new Hashtable();
+            _indexTable = new HashVector();
             _cacheName = cacheName;
             _type = type;
 
@@ -57,7 +61,7 @@ namespace Alachisoft.NCache.Caching.Queries
 
         public AttributeIndex(ArrayList attribList, string cacheName, string type, TypeInfoMap typeMap)
         {
-            _indexTable = new Hashtable();
+            _indexTable = new HashVector();
             _cacheName = cacheName;
             _type = type;
             _typeMap = typeMap;
@@ -101,74 +105,80 @@ namespace Alachisoft.NCache.Caching.Queries
 
         public virtual void AddToIndex(object key, object value)
         {
-            QueryItemContainer container = (QueryItemContainer)value;
-            CacheEntry entry = container.Item;
-            Hashtable attributeValues = container.ItemArrtributes;
-            IDictionaryEnumerator valuesDic = attributeValues.GetEnumerator();
-            INodeReference keyNode = null;
-            while (valuesDic.MoveNext())
+            lock (_mutex)
             {
-                string indexKey = (string)valuesDic.Key;
-                string storeName = indexKey;
-                IIndexStore store = _indexTable[indexKey] as IIndexStore;
-                keyNode = null;
-
-                if (store != null)
+                QueryItemContainer container = (QueryItemContainer) value;
+                CacheEntry entry = container.Item;
+                Hashtable attributeValues = container.ItemArrtributes;
+                IDictionaryEnumerator valuesDic = attributeValues.GetEnumerator();
+                INodeReference keyNode = null;
+                while (valuesDic.MoveNext())
                 {
-                    long prev = store.IndexInMemorySize;
-                    object val = valuesDic.Value;
+                    string indexKey = (string) valuesDic.Key;
+                    string storeName = indexKey;
+                    IIndexStore store = _indexTable[indexKey] as IIndexStore;
+                    keyNode = null;
 
-                    if (val != null)
-                        keyNode = (INodeReference)store.Add(val, key);
+                    if (store != null)
+                    {
+                        long prev = store.IndexInMemorySize;
+                        object val = valuesDic.Value;
 
-                    _attributeIndexSize += store.IndexInMemorySize - prev;
+                        if (val != null)
+                            keyNode = (INodeReference) store.Add(val, key);
+
+                        _attributeIndexSize += store.IndexInMemorySize - prev;
+                    }
+
+                    storeName = Common.Util.StringPool.PoolString(storeName);
+
+                    IndexInformation info;
+
+                    if (entry.IndexInfo != null)
+                    {
+                        info = entry.IndexInfo;
+                    }
+                    else
+                    {
+                        info = new IndexInformation();
+                    }
+
+                    long prevSize = info.IndexInMemorySize;
+
+                    info.Add(storeName, store, keyNode);
+
+                    this._keyIndexInformationSize += info.IndexInMemorySize - prevSize;
+                    entry.IndexInfo = info;
+
                 }
-
-                storeName = Common.Util.StringPool.PoolString(storeName);
-
-                IndexInformation info;
-
-                if (entry.IndexInfo != null)
-                {
-                    info = entry.IndexInfo;
-                }
-                else
-                {
-                    info = new IndexInformation();
-                }
-
-                long prevSize = info.IndexInMemorySize;
-
-                info.Add(storeName, store, keyNode);
-
-                this._keyIndexInformationSize += info.IndexInMemorySize - prevSize;
-                entry.IndexInfo = info;
-
             }
         }
 
         public virtual void RemoveFromIndex(object key, object value)
         {
-            bool isNodeRemoved = false;
-            CacheEntry entry = (CacheEntry)value;
-            IndexInformation indexInfo = entry.IndexInfo;
-            if (indexInfo != null)
+            lock (_mutex)
             {
-                foreach (IndexStoreInformation indexStoreInfo in indexInfo.IndexStoreInformations)
+                bool isNodeRemoved = false;
+                CacheEntry entry = (CacheEntry) value;
+                IndexInformation indexInfo = entry.IndexInfo;
+                if (indexInfo != null)
                 {
-                    isNodeRemoved = false;
-                    IIndexStore store = indexStoreInfo.Store;
-                    if (indexStoreInfo.IndexPosition != null)
+                    foreach (IndexStoreInformation indexStoreInfo in indexInfo.IndexStoreInformations)
                     {
-                        long prevSize = store.IndexInMemorySize;
-                        isNodeRemoved = store.Remove(key, indexStoreInfo.IndexPosition);
-                        _attributeIndexSize += store.IndexInMemorySize - prevSize;
+                        isNodeRemoved = false;
+                        IIndexStore store = indexStoreInfo.Store;
+                        if (indexStoreInfo.IndexPosition != null)
+                        {
+                            long prevSize = store.IndexInMemorySize;
+                            isNodeRemoved = store.Remove(key, indexStoreInfo.IndexPosition);
+                            _attributeIndexSize += store.IndexInMemorySize - prevSize;
+                        }
                     }
+                    _keyIndexInformationSize -= indexInfo.IndexInMemorySize;
                 }
-                _keyIndexInformationSize -= indexInfo.IndexInMemorySize;
-            }
 
-            entry.IndexInfo = null;
+                entry.IndexInfo = null;
+            }
 
         }
         
@@ -177,17 +187,20 @@ namespace Alachisoft.NCache.Caching.Queries
             bool disacleException = QueryIndexManager.DisableException;
             IIndexStore store = null;
 
-            if (_indexTable.Contains(attrib))
-                store = _indexTable[attrib] as IIndexStore;
-            else
+            lock (_mutex)
             {
-                if (disacleException)
+                if (_indexTable.Contains(attrib))
+                    store = _indexTable[attrib] as IIndexStore;
+                else
                 {
-                    if (store == null)
+                    if (disacleException)
                     {
-                        store = new HashStore();
+                        if (store == null)
+                        {
+                            store = new HashStore();
+                        }
                     }
-                }
+                } 
             }
 
             return store;
@@ -195,28 +208,34 @@ namespace Alachisoft.NCache.Caching.Queries
 
         public void Clear()
         {
-            IDictionaryEnumerator e = _indexTable.GetEnumerator();
-
-            while (e.MoveNext())
+            lock (_mutex)
             {
-                IIndexStore store = e.Value as IIndexStore;
-                store.Clear();
-            }
+                IDictionaryEnumerator e = _indexTable.GetEnumerator();
 
-            _attributeIndexSize = 0;
+                while (e.MoveNext())
+                {
+                    IIndexStore store = e.Value as IIndexStore;
+                    store.Clear();
+                }
+
+                _attributeIndexSize = 0;
+            }
 
         }
 
         public IDictionaryEnumerator GetEnumerator(string type)
         {
-            IDictionaryEnumerator en = _indexTable.GetEnumerator();
- 
-            while (en.MoveNext())
+            lock (_mutex)
             {
-                IIndexStore store = en.Value as IIndexStore;
-                return store.GetEnumerator();
+                IDictionaryEnumerator en = _indexTable.GetEnumerator();
+
+                while (en.MoveNext())
+                {
+                    IIndexStore store = en.Value as IIndexStore;
+                    return store.GetEnumerator();
+                }
+                
             }
-           
 
             return null;
         }
@@ -240,16 +259,19 @@ namespace Alachisoft.NCache.Caching.Queries
             IndexInformation indexInformation = indexInfo;
 
             object value = null;
-            foreach (IndexStoreInformation indexStoreInfo in indexInformation.IndexStoreInformations)
+            lock (_mutex)
             {
-                if (indexStoreInfo.StoreName == storeName)
+                foreach (IndexStoreInformation indexStoreInfo in indexInformation.IndexStoreInformations)
                 {
-                    if (indexStoreInfo.IndexPosition != null)
-                        value = indexStoreInfo.IndexPosition.GetKey();
-                    else
-                        return null;
-                    break;
-                }
+                    if (indexStoreInfo.StoreName == storeName)
+                    {
+                        if (indexStoreInfo.IndexPosition != null)
+                            value = indexStoreInfo.IndexPosition.GetKey();
+                        else
+                            return null;
+                        break;
+                    }
+                } 
             }
             return value;
         }

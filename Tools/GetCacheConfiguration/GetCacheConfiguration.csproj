@@ -9,7 +9,6 @@
     <OutputType>Exe</OutputType>
     <AppDesignerFolder>Properties</AppDesignerFolder>
     <RootNamespace>Alachisoft.NCache.Tools.GetCacheConfiguration</RootNamespace>
-    <AssemblyOriginatorKeyFile>..\..\Resources\ncache.snk</AssemblyOriginatorKeyFile>
     <AssemblyName>getcacheconfiguration</AssemblyName>
     <TargetFrameworkVersion>v4.0</TargetFrameworkVersion>
     <TargetFrameworkProfile>
@@ -75,46 +74,26 @@
     <CodeAnalysisRuleDirectories>;C:\Program Files (x86)\Microsoft Visual Studio 10.0\Team Tools\Static Analysis Tools\FxCop\\Rules</CodeAnalysisRuleDirectories>
     <CodeAnalysisIgnoreBuiltInRules>true</CodeAnalysisIgnoreBuiltInRules>
   </PropertyGroup>
-  <PropertyGroup>
-    <SignAssembly>true</SignAssembly>
-  </PropertyGroup>
-  <PropertyGroup>
-    <AssemblyOriginatorKeyFile>
-    </AssemblyOriginatorKeyFile>
-  </PropertyGroup>
+
   <PropertyGroup>
     <ApplicationIcon>App.ico</ApplicationIcon>
   </PropertyGroup>
   <ItemGroup>
-    <Reference Include="Alachisoft.NCache.Cache, Version=4.4.0.0, Culture=neutral, PublicKeyToken=1448e8d1123e9096, processorArchitecture=MSIL">
+    <Reference Include="Alachisoft.NCache.Cache, Version=4.6.0.0, Culture=neutral, PublicKeyToken=cff5926ed6a53769, processorArchitecture=MSIL">
       <SpecificVersion>False</SpecificVersion>
       <HintPath>..\..\Src\build\Server\4x\Alachisoft.NCache.Cache.dll</HintPath>
     </Reference>
-    <Reference Include="Alachisoft.NCache.Common, Version=4.4.0.0, Culture=neutral, PublicKeyToken=1448e8d1123e9096, processorArchitecture=MSIL">
+    <Reference Include="Alachisoft.NCache.Common, Version=4.6.0.0, Culture=neutral, PublicKeyToken=cff5926ed6a53769, processorArchitecture=MSIL">
       <SpecificVersion>False</SpecificVersion>
       <HintPath>..\..\Src\build\Server\4x\Alachisoft.NCache.Common.dll</HintPath>
     </Reference>
-    <Reference Include="Alachisoft.NCache.Management, Version=4.4.0.0, Culture=neutral, PublicKeyToken=1448e8d1123e9096, processorArchitecture=MSIL">
+    <Reference Include="Alachisoft.NCache.Management, Version=4.6.0.0, Culture=neutral, PublicKeyToken=cff5926ed6a53769, processorArchitecture=MSIL">
       <SpecificVersion>False</SpecificVersion>
       <HintPath>..\..\Src\build\Server\4x\Alachisoft.NCache.Management.dll</HintPath>
     </Reference>
-    <Reference Include="Alachisoft.NCache.Runtime, Version=4.4.0.0, Culture=neutral, PublicKeyToken=1448e8d1123e9096, processorArchitecture=MSIL">
+    <Reference Include="Alachisoft.NCache.Runtime, Version=4.6.0.0, Culture=neutral, PublicKeyToken=cff5926ed6a53769, processorArchitecture=MSIL">
       <SpecificVersion>False</SpecificVersion>
       <HintPath>..\..\Src\build\Server\4x\Alachisoft.NCache.Runtime.dll</HintPath>
-    </Reference>
-    <Reference Include="Alachisoft.NCache.Web, Version=4.4.0.0, Culture=neutral, PublicKeyToken=1448e8d1123e9096, processorArchitecture=MSIL">
-      <SpecificVersion>False</SpecificVersion>
-      <HintPath>..\..\Src\build\Server\4x\Alachisoft.NCache.Web.dll</HintPath>
-    </Reference>
-    <Reference Include="Oracle.DataAccess, Version=2.112.2.0, Culture=neutral, PublicKeyToken=89b483f429c47342, processorArchitecture=AMD64">
-      <SpecificVersion>False</SpecificVersion>
-      <HintPath>..\..\..\Src\NCService\bin\4.0\debug.enterprise\Oracle.DataAccess.dll</HintPath>
-    </Reference>
-    <Reference Include="Renci.SshNet">
-      <HintPath>..\..\Src\NCWebCache\bin\4.0\release.professional\Renci.SshNet.dll</HintPath>
-    </Reference>
-    <Reference Include="SharpSnmpLib">
-      <HintPath>..\..\Src\NCCommon\bin\4.0\release.professional\SharpSnmpLib.dll</HintPath>
     </Reference>
     <Reference Include="System" />
     <Reference Include="System.Core" />
@@ -133,12 +112,6 @@
   </ItemGroup>
   <ItemGroup>
     <Content Include="App.ico" />
-  </ItemGroup>
-  <ItemGroup>
-    <ProjectReference Include="..\ToolServerOperations\ToolServerOperations.4x.csproj">
-      <Project>{200CB06E-BC59-469C-9339-81A0C16D79CF}</Project>
-      <Name>ToolServerOperations.4x</Name>
-    </ProjectReference>
   </ItemGroup>
   <Import Project="$(MSBuildToolsPath)\Microsoft.CSharp.targets" />
   <PropertyGroup>

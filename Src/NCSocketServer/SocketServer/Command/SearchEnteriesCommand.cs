@@ -1,4 +1,4 @@
-// Copyright (c) 2015 Alachisoft
+// Copyright (c) 2017 Alachisoft
 // 
 // Licensed under the Apache License, Version 2.0 (the "License");
 // you may not use this file except in compliance with the License.
@@ -11,13 +11,11 @@
 // WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
 // See the License for the specific language governing permissions and
 // limitations under the License.
+
 using System;
-using System.Text;
 using System.Collections;
-using Alachisoft.NCache.Common.Util;
 using System.Collections.Generic;
 using Alachisoft.NCache.Caching.Queries;
-using Alachisoft.NCache.Serialization.Formatters;
 using Alachisoft.NCache.SocketServer.Command.ResponseBuilders;
 using Alachisoft.NCache.Caching;
 
@@ -53,9 +51,8 @@ namespace Alachisoft.NCache.SocketServer.Command
                 }
                 return;
             }
-
+            
             //TODO
-            byte[] data = null;
 
             try
             {
@@ -71,9 +68,9 @@ namespace Alachisoft.NCache.SocketServer.Command
                     operationContext.Add(OperationContextFieldName.ClientLastViewId, cmdInfo.ClientLastViewId);
                 }
                 resultSet = nCache.Cache.SearchEntries(cmdInfo.Query, cmdInfo.Values, operationContext);
-
+                
                 SearchEnteriesResponseBuilder.BuildResponse(resultSet, cmdInfo.CommandVersion, cmdInfo.RequestId, _serializedResponsePackets);
-
+               
             }
             catch (Exception exc)
             {
@@ -89,29 +86,54 @@ namespace Alachisoft.NCache.SocketServer.Command
 
             Alachisoft.NCache.Common.Protobuf.SearchCommand searchCommand = command.searchCommand;
             cmdInfo.Query = searchCommand.query;
-
-            int index = cmdInfo.Query.IndexOf("$Text$");
-            if (index != -1)
+            if (clientManager.IsDotNetClient)
             {
-                cmdInfo.Query = cmdInfo.Query.Replace("$Text$", "System.String");
-            }
-            else
-            {
-                index = cmdInfo.Query.IndexOf("$TEXT$");
+                int index = cmdInfo.Query.IndexOf("$Text$");
                 if (index != -1)
                 {
-                    cmdInfo.Query = cmdInfo.Query.Replace("$TEXT$", "System.String");
+                    cmdInfo.Query = cmdInfo.Query.Replace("$Text$", "System.String");
                 }
                 else
                 {
-                    index = cmdInfo.Query.IndexOf("$text$");
+                    index = cmdInfo.Query.IndexOf("$TEXT$");
                     if (index != -1)
                     {
-                        cmdInfo.Query = cmdInfo.Query.Replace("$text$", "System.String");
+                        cmdInfo.Query = cmdInfo.Query.Replace("$TEXT$", "System.String");
+                    }
+                    else
+                    {
+                        index = cmdInfo.Query.IndexOf("$text$");
+                        if (index != -1)
+                        {
+                            cmdInfo.Query = cmdInfo.Query.Replace("$text$", "System.String");
+                        }
                     }
                 }
             }
-
+            else
+            {
+                int index = cmdInfo.Query.IndexOf("$Text$");
+                if (index != -1)
+                {
+                    cmdInfo.Query = cmdInfo.Query.Replace("$Text$", "java.lang.String");
+                }
+                else
+                {
+                    index = cmdInfo.Query.IndexOf("$TEXT$");
+                    if (index != -1)
+                    {
+                        cmdInfo.Query = cmdInfo.Query.Replace("$TEXT$", "java.lang.String");
+                    }
+                    else
+                    {
+                        index = cmdInfo.Query.IndexOf("$text$");
+                        if (index != -1)
+                        {
+                            cmdInfo.Query = cmdInfo.Query.Replace("$text$", "java.lang.String");
+                        }
+                    }
+                }
+            }
             cmdInfo.RequestId = searchCommand.requestId.ToString();
             cmdInfo.CommandVersion = command.commandVersion;
             cmdInfo.ClientLastViewId = command.clientLastViewId.ToString();
@@ -129,7 +151,7 @@ namespace Alachisoft.NCache.SocketServer.Command
                     foreach (Alachisoft.NCache.Common.Protobuf.ValueWithType valueWithType in valueWithTypes)
                     {
                         string typeStr = valueWithType.type;
-
+                       
                         type = Type.GetType(typeStr, true, true);
 
                         if (valueWithType.value != null)
@@ -179,7 +201,25 @@ namespace Alachisoft.NCache.SocketServer.Command
 
             return cmdInfo;
         }
+      
+        private object GetValueObject(string value, bool dotNetClient)
+        {
+            object retVal = null;
 
-   
+            try
+            {
+                // Now we move data-type along with the value.So extract them here.
+                string[] vals = value.Split(Delimitor);
+                object valObj = (object)vals[0];
+                string typeStr = vals[1];
+                Type objType = System.Type.GetType(typeStr);
+                retVal = Convert.ChangeType(valObj, objType);
+            }
+            catch (Exception ex)
+            {
+                throw ex;
+            }
+            return retVal;
+        }
     }
 }

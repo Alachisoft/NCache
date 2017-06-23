@@ -1,4 +1,4 @@
-// Copyright (c) 2015 Alachisoft
+// Copyright (c) 2017 Alachisoft
 // 
 // Licensed under the Apache License, Version 2.0 (the "License");
 // you may not use this file except in compliance with the License.
@@ -28,10 +28,10 @@ using System.Runtime.InteropServices;
 [assembly: AssemblyConfiguration("")]
 [assembly: AssemblyCompany("Alachisoft")]
 [assembly: AssemblyProduct("Alachisoft® NCache Open Source")]
-[assembly: AssemblyCopyright("Copyright © 2015 Alachisoft")]
+[assembly: AssemblyCopyright("Copyright © Alachisoft 2017")]
 [assembly: AssemblyTrademark("NCache ™ is a registered trademark of Alachisoft.")]
 [assembly: AssemblyCulture("")]
-[assembly: AssemblyVersion("4.4.0.0")]
+[assembly: AssemblyVersion("4.6.0.0")]
 [assembly: AssemblyDelaySign(false)]
 [assembly: AssemblyKeyName("")]
 
@@ -47,10 +47,10 @@ namespace Alachisoft.NCache.Tools.AddTestData
         /// </summary>
         public static void PrintLogo(bool printlogo)
         {
-            Assembly assembly = Assembly.GetExecutingAssembly();
-            string logo = @"Alachisoft (R) NCache Utility AddTestData. Version " + assembly.GetName().Version +
+            
+            string logo = @"Alachisoft (R) NCache Utility AddTestData. Version " + Common.ProductVersion.GetVersion() +
                 @"
-Copyright (C) Alachisoft 2015. All rights reserved.";
+Copyright (C) Alachisoft 2017. All rights reserved.";
 
             if (printlogo)
             {
@@ -83,6 +83,9 @@ Option:
  /S size
     Size in bytes of each item to be added to the cache. By default items of 1k
     (1024 bytes) are added to the cache.
+
+ /e absolute-expiration 
+    Specify in seconds, absolute expiration (default: 300; minimum: 15)
   
  /G /nologo
     Suppresses display of the logo banner. 

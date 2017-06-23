@@ -1,4 +1,4 @@
-// Copyright (c) 2015 Alachisoft
+// Copyright (c) 2017 Alachisoft
 // 
 // Licensed under the Apache License, Version 2.0 (the "License");
 // you may not use this file except in compliance with the License.
@@ -11,6 +11,7 @@
 // WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
 // See the License for the specific language governing permissions and
 // limitations under the License.
+
 using System;
 using System.Collections;
 using System.Threading;
@@ -48,6 +49,10 @@ using Alachisoft.NCache.Common.Net;
 
 using Runtime = Alachisoft.NCache.Runtime;
 using Alachisoft.NCache.Persistence;
+using Alachisoft.NCache.Common.DataReader;
+using Alachisoft.NCache.Caching.DataReader;
+using Alachisoft.NCache.Common.Queries;
+using Alachisoft.NCache.Common.DataStructures.Clustered;
 
 namespace Alachisoft.NCache.Caching.Topologies.Local
 {
@@ -78,6 +83,15 @@ namespace Alachisoft.NCache.Caching.Topologies.Local
 
         private Hashtable _stateTransferKeyList;
 
+        /// <summary>Data chunk size for cache data reader. Configurable from alachisoft.ncache.service.exe.config.</summary>
+        private int _dataChunkSize = 512 * 1024;
+
+        private ReaderResultSetManager RSManager;
+
+        int insertCounter=0;
+        int removeCounter = 0;
+
+
         /// <summary>
         /// Overloaded constructor. Takes the listener as parameter.
         /// </summary>
@@ -104,10 +118,13 @@ namespace Alachisoft.NCache.Caching.Topologies.Local
 
             _stats = new CacheStatistics();
 
+            _dataChunkSize = ServiceConfiguration.DataChunkSize;
+
             _stats.InstanceName = _context.PerfStatsColl.InstanceName;
 
             _parentCache = parentCache;
 
+            RSManager = new DataReader.ReaderResultSetManager(_context);
         }
 
 
@@ -191,7 +208,9 @@ namespace Alachisoft.NCache.Caching.Topologies.Local
         public sealed override void Clear(CallbackEntry cbEntry, OperationContext operationContext)
         {
             ClearInternal();
-         
+            EventContext eventContext = null;
+            EventId eventId = null;
+
             if (IsSelfInternal)
             {
                 _context.ExpiryMgr.Clear();
@@ -308,6 +327,7 @@ namespace Alachisoft.NCache.Caching.Topologies.Local
 
         public override void UnLock(object key, object lockId, bool isPreemptive, OperationContext operationContext)
         {
+            Object tmpLockId = null;
             DateTime tmpLockDate = DateTime.Now;
             CacheEntry e = GetInternal(key, false, operationContext);
             if (e != null)
@@ -517,7 +537,7 @@ namespace Alachisoft.NCache.Caching.Topologies.Local
 
                         try
                         {
-                            _context.ExpiryMgr.ResetHint(null, cacheEntry.ExpirationHint); //:muds
+                            _context.ExpiryMgr.ResetHint(null, cacheEntry.ExpirationHint); 
                         }
                         catch (Exception e)
                         {
@@ -573,7 +593,7 @@ namespace Alachisoft.NCache.Caching.Topologies.Local
                 OperationID opId = operationContext.OperatoinID;
                 EventId eventId = null;
                 EventContext eventContext = null;
-                
+
                 pe = GetInternal(key, false, operationContext);
                 result.Entry = pe;
 
@@ -601,13 +621,12 @@ namespace Alachisoft.NCache.Caching.Topologies.Local
                 }
                 ExpirationHint peExh = pe == null ? null : pe.ExpirationHint;
 
-				if (pe != null && pe.Value is CallbackEntry)
-				{
-					cbEtnry = pe.Value as CallbackEntry;
-					cacheEntry = CacheHelper.MergeEntries(pe, cacheEntry);
-				}
-				result.Result = InsertInternal(key, cacheEntry, isUserOperation, pe, operationContext, true);
-
+                if (pe != null && pe.Value is CallbackEntry)
+                {
+                    cbEtnry = pe.Value as CallbackEntry;
+                    cacheEntry = CacheHelper.MergeEntries(pe, cacheEntry);
+                }
+                result.Result = InsertInternal(key, cacheEntry, isUserOperation, pe, operationContext, true);
 
                 if ((result.Result == CacheInsResult.Success || result.Result == CacheInsResult.SuccessNearEvicition) && _stateTransferKeyList != null &&
                     _stateTransferKeyList.ContainsKey(key))
@@ -616,17 +635,18 @@ namespace Alachisoft.NCache.Caching.Topologies.Local
                 }
                 // Not enough space, evict and try again.
                 if (result.Result == CacheInsResult.NeedsEviction || result.Result == CacheInsResult.SuccessNearEvicition
-                    || result.Result == CacheInsResult.SuccessOverwriteNearEviction)
+                  || result.Result == CacheInsResult.SuccessOverwriteNearEviction)
                 {
                     Evict();
                     if (result.Result == CacheInsResult.SuccessNearEvicition) result.Result = CacheInsResult.Success;
                     if (result.Result == CacheInsResult.SuccessOverwriteNearEviction) result.Result = CacheInsResult.SuccessOverwrite;
+
                 }
 
                 // Operation completed!
                 if (result.Result == CacheInsResult.Success || result.Result == CacheInsResult.SuccessOverwrite)
                 {
-                    // commented by muds
+                   
                     //remove the old hint from expiry index.
                     if (peExh != null)
                         _context.ExpiryMgr.RemoveFromIndex(key);
@@ -655,7 +675,9 @@ namespace Alachisoft.NCache.Caching.Topologies.Local
                     }
                     if (IsSelfInternal)
                     {
+
                         _context.PerfStatsColl.IncrementCountStats((long)Count);
+
                     }
                 }
 
@@ -667,11 +689,13 @@ namespace Alachisoft.NCache.Caching.Topologies.Local
                     case CacheInsResult.SuccessOverwrite:
                         if (notify)
                         {
+
                             EventCacheEntry eventCacheEntry = CacheHelper.CreateCacheEventEntry(Runtime.Events.EventDataFilter.DataWithMetadata, cacheEntry); ;
                             EventCacheEntry oldEventCacheEntry = CacheHelper.CreateCacheEventEntry(Runtime.Events.EventDataFilter.DataWithMetadata, pe);
 
                             if (cbEtnry != null)
                             {
+
                                 if (cbEtnry.ItemUpdateCallbackListener != null && cbEtnry.ItemUpdateCallbackListener.Count > 0)
                                 {
                                     if (!operationContext.Contains(OperationContextFieldName.EventContext)) //for atomic operations
@@ -699,13 +723,13 @@ namespace Alachisoft.NCache.Caching.Topologies.Local
             }
             finally
             {
+
             }
 
-           if (_context.PerfStatsColl != null)
+            if (_context.PerfStatsColl != null)
             {
                 _context.PerfStatsColl.SetCacheSize(Size);
             }
-
 
             return result;
         }
@@ -763,8 +787,6 @@ namespace Alachisoft.NCache.Caching.Topologies.Local
                     }
                 }
 
-
-
                 e = RemoveInternal(actualKey, removalReason, isUserOperation, operationContext);
                 EventId eventId = null;
                 EventContext eventContext = null;
@@ -773,7 +795,7 @@ namespace Alachisoft.NCache.Caching.Topologies.Local
                 {
                     if (_stateTransferKeyList != null && _stateTransferKeyList.ContainsKey(key))
                         _stateTransferKeyList.Remove(key);
-                    // commented by muds
+                   
                     try
                     {
                         if (e.ExpirationHint != null)
@@ -871,9 +893,8 @@ namespace Alachisoft.NCache.Caching.Topologies.Local
                         break;
 
                     default:
-                        queryContext.Tree.Reduce();
-                        queryContext.CacheContext = _context.SerializationContext;
-                        queryContext.ResultSet.SearchKeysResult = queryContext.Tree.LeftList;
+                        if (queryContext.InternalQueryResult != null)
+                            queryContext.ResultSet.SearchKeysResult = queryContext.InternalQueryResult.GetArrayList();
                         break;
                 }
 
@@ -922,21 +943,15 @@ namespace Alachisoft.NCache.Caching.Topologies.Local
                         break;
 
                     default:
-                        Hashtable result = new Hashtable();
+                        HashVector result = new HashVector();
                         ICollection keyList = null;
                         ArrayList updatekeys =null;
-                        queryContext.Tree.Reduce();
-                        queryContext.CacheContext = _context.SerializationContext;
-                        if (queryContext.Tree.LeftList.Count > 0)
-                            keyList = queryContext.Tree.LeftList;
+                        if (queryContext.InternalQueryResult != null && queryContext.InternalQueryResult.Count > 0)
+                            keyList = queryContext.InternalQueryResult.GetArrayList();
 
                         if (keyList != null && keyList.Count > 0)
                         {
-
-                            object[] keys = new object[keyList.Count];
-                            keyList.CopyTo(keys, 0);
-
-                            IDictionary tmp = GetEntries(keys, operationContext);
+                            IDictionary tmp = GetEntries(keyList, operationContext);
                             IDictionaryEnumerator ide = tmp.GetEnumerator();
 
                             CompressedValueEntry cmpEntry = null;
@@ -1001,6 +1016,135 @@ namespace Alachisoft.NCache.Caching.Topologies.Local
         }
 
 
+
+        #region --------------- Data Reader ---------------------
+
+        public sealed override ReaderResultSet Local_ExecuteReader(string query, IDictionary values, bool getData, int chunkSize, bool isInproc, OperationContext operationContext)
+        {
+            ReaderResultSet result = ExecuteReaderInternal(query, values, operationContext);
+
+            if (result != null && result.RecordSet == null) //empty result set will not be registered
+                return result;
+
+
+            string clientId = operationContext.GetValueByField(OperationContextFieldName.ClientId) != null ? operationContext.GetValueByField(OperationContextFieldName.ClientId).ToString() : null;
+            if (RSManager != null)
+            {
+                if (chunkSize != -1)
+                    result.ChunkSize = chunkSize;
+                else
+                    result.ChunkSize = _dataChunkSize;
+                if (result.RecordSet != null)
+                {
+                    result.RecordSet.SubsetInfo = new Common.DataReader.SubsetInfo();
+                    result.RecordSet.SubsetInfo.LastAccessedRowID = 0;
+                    result.RecordSet.SubsetInfo.StartIndex = 0;
+                }
+                result.GetData = getData;
+                if (getData)
+                {
+                    if (result.RecordSet != null && result.RecordSet.GetColumnMetaData().Contains(QueryKeyWords.ValueColumn))
+                    {
+                        result.RecordSet.GetColumnMetaData()[QueryKeyWords.ValueColumn].IsHidden = false;
+                    }
+                }
+                if (result.RecordSet != null)
+                {
+                    result.ReaderID = RSManager.RegisterReader(clientId, result);
+                    result = RSManager.GetRecordSet(result.ReaderID, 0, isInproc, operationContext);//first chunk
+                }
+            }
+            return result;
+        }
+
+        public sealed override ReaderResultSet GetReaderChunk(string readerId, int nextIndex, bool isInproc, OperationContext operationContext)
+        {
+            ReaderResultSet result = null;
+            if (RSManager != null)
+                result = RSManager.GetRecordSet(readerId, nextIndex, isInproc, operationContext);
+            return result;
+        }
+
+        private ReaderResultSet ExecuteReaderInternal(string query, IDictionary values, OperationContext operationContext)
+        {
+            QueryContext queryContext = PrepareSearch(query, values);
+            ReaderResultSet result = null;
+            switch (queryContext.ResultSet.Type)
+            {
+                case Queries.QueryType.AggregateFunction:
+                    result = new ReaderResultSet();
+                    if (queryContext.ResultSet.AggregateFunctionResult.Value != null)
+                    {
+                        result.RecordSet = new RecordSet();
+                        RecordColumn aggColumn = new RecordColumn(queryContext.ResultSet.AggregateFunctionResult.Key.ToString());
+                        aggColumn.AggregateFunctionType = queryContext.ResultSet.AggregateFunctionType;
+                        aggColumn.ColumnType = ColumnType.AggregateResultColumn;
+                        aggColumn.DataType = RecordSet.ToColumnDataType(queryContext.ResultSet.AggregateFunctionResult.Value);
+                        aggColumn.IsFilled = true;
+                        aggColumn.IsHidden = false;
+                        result.RecordSet.AddColumn(aggColumn);
+
+                        RecordRow aggRow = result.RecordSet.CreateRow();
+                        aggRow[0] = queryContext.ResultSet.AggregateFunctionResult.Value;
+                        result.RecordSet.AddRow(aggRow);
+
+                        result.IsGrouped = true;
+                    }
+                    break;
+                default:
+                    result = new ReaderResultSet();
+                    if (queryContext.InternalQueryResult != null && queryContext.InternalQueryResult.Count > 0)
+                    {
+                        result.RecordSet = new RecordSet();
+
+                        RecordColumn keyColumn = new RecordColumn(QueryKeyWords.KeyColumn);
+                        keyColumn.AggregateFunctionType = AggregateFunctionType.NOTAPPLICABLE;
+                        keyColumn.ColumnType = ColumnType.KeyColumn;
+                        keyColumn.DataType = ColumnDataType.String;
+                        keyColumn.IsFilled = true;
+                        keyColumn.IsHidden = false;
+
+                        RecordColumn valueColumn = new RecordColumn(QueryKeyWords.ValueColumn);
+                        valueColumn.AggregateFunctionType = AggregateFunctionType.NOTAPPLICABLE;
+                        valueColumn.ColumnType = ColumnType.ValueColumn;
+                        valueColumn.DataType = ColumnDataType.CompressedValueEntry;
+                        valueColumn.IsFilled = false;
+                        valueColumn.IsHidden = true;
+
+                        result.RecordSet.AddColumn(keyColumn);
+                        result.RecordSet.AddColumn(valueColumn);
+
+                        foreach (string key in queryContext.InternalQueryResult)
+                        {
+                            RecordRow row = result.RecordSet.CreateRow();
+                            row[QueryKeyWords.KeyColumn] = key;
+                            result.RecordSet.AddRow(row);
+                        }
+                    }
+                    break;
+            }
+
+            return result;
+        }
+
+
+        public sealed override void DisposeReader(string readerId, OperationContext context)
+        {
+            if (RSManager != null)
+            {
+                RSManager.DisposeReader(readerId);
+            }
+        }
+        public sealed override void DeclaredDeadClients(ArrayList clients)
+        {
+            if (RSManager != null)
+            {
+                RSManager.DeadClients(clients);
+            }
+        }
+
+        #endregion
+
         private QueryContext PrepareSearch(string query, IDictionary values)
         {
             Reduction currentQueryReduction = null;
@@ -1010,8 +1154,6 @@ namespace Alachisoft.NCache.Caching.Topologies.Local
                 currentQueryReduction = GetPreparedReduction(query);
                 if (currentQueryReduction.Tokens[0].ToString().ToLower() != "select")
                     throw new Parser.ParserException("Only select query is supported");
-             
-               
 
                 return SearchInternal(currentQueryReduction.Tag as Predicate, values);
             }
@@ -1078,10 +1220,11 @@ namespace Alachisoft.NCache.Caching.Topologies.Local
             CacheEntry e = null;
             for (int i = 0; i < keys.Length; i++)
             {
+                KeyLocker.GetReaderLock(keys[i]);
                 try
                 {
-                    
-                    if(operationContext != null)
+
+                    if (operationContext != null)
                     {
                         operationContext.RemoveValueByField(OperationContextFieldName.EventContext);
                         OperationID opId = operationContext.OperatoinID;
@@ -1105,6 +1248,12 @@ namespace Alachisoft.NCache.Caching.Topologies.Local
                 {
                     entries[keys[i]] = se;
                 }
+                finally
+                {
+                    KeyLocker.ReleaseReaderLock(keys[i]);
+    
+                    
+                }
             }
             return entries;
         }
@@ -1119,16 +1268,17 @@ namespace Alachisoft.NCache.Caching.Topologies.Local
         /// </summary>
         /// <param name="keys"></param>
         /// <returns></returns>
-        private Hashtable GetEntries(object[] keys, OperationContext operationContext)
+        /// 
+        private Hashtable GetEntries(ICollection keys, OperationContext operationContext)
         {
             Hashtable entries = new Hashtable();
             CacheEntry e = null;
 
-            for (int i = 0; i < keys.Length; i++)
+            foreach (string key in keys)
             {
                 try
                 {
-                    e = GetEntryInternal(keys[i], true);
+                    e = GetEntryInternal(key, true);
 
                     if (e != null)
                     {
@@ -1141,7 +1291,7 @@ namespace Alachisoft.NCache.Caching.Topologies.Local
                                 // If cache forward is set we skip the expiration.
                                 if (!exh.NeedsReSync)
                                 {
-                                    Remove(keys[i], reason, true, null, LockAccessType.IGNORE_LOCK, operationContext);
+                                    Remove(key, reason, true, null, LockAccessType.IGNORE_LOCK, operationContext);
                                     e = null;
                                 }
                             }
@@ -1154,18 +1304,18 @@ namespace Alachisoft.NCache.Caching.Topologies.Local
                                 }
                                 catch (Exception ex)
                                 {
-                                    RemoveInternal(keys[i], ItemRemoveReason.Removed, false, operationContext);
+                                    RemoveInternal(key, ItemRemoveReason.Removed, false, operationContext);
                                     throw ex;
                                 }
                             }
                         }
                         if(e!=null)
-                            entries[keys[i]] = e;
+                            entries[key] = e;
                     }
                 }
                 catch (Exception ex)
                 {
-                    entries[keys[i]] = ex;
+                    entries[key] = ex;
                 }
             }
 
@@ -1188,6 +1338,7 @@ namespace Alachisoft.NCache.Caching.Topologies.Local
             OperationID opId = operationContext.OperatoinID;
             for (int i = 0; i < keys.Length; i++)
             {
+                KeyLocker.GetWriterLock(keys[i]);
                 try
                 {
 
@@ -1214,8 +1365,10 @@ namespace Alachisoft.NCache.Caching.Topologies.Local
                 {
                     table[keys[i]] = new OperationFailedException(inner.Message, inner);
                 }
-                finally 
+                finally
                 {
+                    KeyLocker.ReleaseWriterLock(keys[i]);
+    
                     operationContext.RemoveValueByField(OperationContextFieldName.EventContext);
                 }
             }
@@ -1243,6 +1396,7 @@ namespace Alachisoft.NCache.Caching.Topologies.Local
             OperationID opId = operationContext.OperatoinID;
             for (int i = 0; i < keys.Length; i++)
             {
+                KeyLocker.GetWriterLock(keys[i]);
                 try
                 {
                     operationContext.RemoveValueByField(OperationContextFieldName.EventContext);
@@ -1266,6 +1420,8 @@ namespace Alachisoft.NCache.Caching.Topologies.Local
                 }
                 finally
                 {
+                    KeyLocker.ReleaseWriterLock(keys[i]);
+    
                     operationContext.RemoveValueByField(OperationContextFieldName.EventContext);
                 }
             }
@@ -1309,6 +1465,7 @@ namespace Alachisoft.NCache.Caching.Topologies.Local
             OperationID opId = operationContext.OperatoinID;
             for (int i = 0; i < keys.Count; i++)
             {
+                KeyLocker.GetWriterLock(keys[i]);
                 try
                 {
                     operationContext.RemoveValueByField(OperationContextFieldName.EventContext);
@@ -1328,13 +1485,15 @@ namespace Alachisoft.NCache.Caching.Topologies.Local
                     {
                         table[keys[i]] = e;
                     }
-                }              
+                }
                 catch (StateTransferException e)
                 {
                     table[keys[i]] = e;
                 }
                 finally
                 {
+                    KeyLocker.ReleaseWriterLock(keys[i]);
+    
                     operationContext.RemoveValueByField(OperationContextFieldName.EventContext);
                 }
             }
@@ -1463,7 +1622,17 @@ namespace Alachisoft.NCache.Caching.Topologies.Local
             if (keys != null)
             {
                 foreach (string key in keys)
-                    RegisterKeyNotification(key, updateCallback, removeCallback, operationContext);
+                {
+                    KeyLocker.GetReaderLock(key);
+                    try
+                    {
+                        RegisterKeyNotification(key, updateCallback, removeCallback, operationContext);
+                    }
+                    finally
+                    {
+                        KeyLocker.ReleaseReaderLock(key);
+                    }
+                }
             }
         }
 
@@ -1489,7 +1658,17 @@ namespace Alachisoft.NCache.Caching.Topologies.Local
             if (keys != null)
             {
                 foreach (string key in keys)
-                    UnregisterKeyNotification(key, updateCallback, removeCallback, operationContext);
+                {
+                    KeyLocker.GetReaderLock(key);
+                    try
+                    {
+                        UnregisterKeyNotification(key, updateCallback, removeCallback, operationContext);
+                    }
+                    finally
+                    {
+                        KeyLocker.ReleaseReaderLock(key);
+                    }
+                }
             }
         }
 
@@ -1534,6 +1713,7 @@ namespace Alachisoft.NCache.Caching.Topologies.Local
             Reduction reduction = null;
             lock (_preparedQueryTable.SyncRoot)
             {
+                QueryIdentifier identifier = new QueryIdentifier(query);
                 if (!_preparedQueryTable.ContainsKey(query))
                 {
                     ParserHelper parser = new ParserHelper(InternalCache.NCacheLog);

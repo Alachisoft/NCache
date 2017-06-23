@@ -15,6 +15,7 @@ namespace Alachisoft.NCache.Common.Protobuf
   {
     public InitializeCacheResponse() {}
     
+
     private string _cacheType = "";
     [global::ProtoBuf.ProtoMember(1, IsRequired = false, Name=@"cacheType", DataFormat = global::ProtoBuf.DataFormat.Default)]
     [global::System.ComponentModel.DefaultValue("")]
@@ -22,6 +23,15 @@ namespace Alachisoft.NCache.Common.Protobuf
     {
       get { return _cacheType; }
       set { _cacheType = value; }
+    }
+
+    private byte[] _token = null;
+    [global::ProtoBuf.ProtoMember(2, IsRequired = false, Name=@"token", DataFormat = global::ProtoBuf.DataFormat.Default)]
+    [global::System.ComponentModel.DefaultValue(null)]
+    public byte[] token
+    {
+      get { return _token; }
+      set { _token = value; }
     }
     private global::ProtoBuf.IExtension extensionObject;
     global::ProtoBuf.IExtension global::ProtoBuf.IExtensible.GetExtensionObject(bool createIfMissing)

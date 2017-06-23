@@ -1,4 +1,4 @@
-// Copyright (c) 2015 Alachisoft
+// Copyright (c) 2017 Alachisoft
 // 
 // Licensed under the Apache License, Version 2.0 (the "License");
 // you may not use this file except in compliance with the License.
@@ -11,6 +11,7 @@
 // WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
 // See the License for the specific language governing permissions and
 // limitations under the License.
+
 using System;
 using System.Collections;
 using Alachisoft.NCache.Caching.Topologies;
@@ -68,8 +69,8 @@ namespace Alachisoft.NCache.Caching.EvictionPolicies
 					_priority = GetPriorityValue(defaultValue);
 				}
 			}
-            _sleepInterval = Convert.ToInt32(ServiceConfiguration.EvictionBulkRemoveDelay);
-            _removeThreshhold = Convert.ToInt32(ServiceConfiguration.EvictionBulkRemoveSize);
+            _sleepInterval = ServiceConfiguration.EvictionBulkRemoveDelay;
+            _removeThreshhold = ServiceConfiguration.EvictionBulkRemoveSize;
             _ratio = ratio / 100f;
 			Initialize();
 		}
@@ -127,7 +128,6 @@ namespace Alachisoft.NCache.Caching.EvictionPolicies
 
         void IEvictionPolicy.Notify(object key, EvictionHint oldhint, EvictionHint newHint)
         {
-            
             //always use the new priority eviction hint.
             EvictionHint hint = newHint;
             if (hint != null)
@@ -156,38 +156,32 @@ namespace Alachisoft.NCache.Caching.EvictionPolicies
 
                 lock (_index.SyncRoot)
                 {
-                    int changedIndex = -1;
                     switch (hintPriority)
                     {
                         case CacheItemPriority.Low:
                             if (_index[0] == null)
                                 _index[0] = new HashVector();
                             _index[0][key] = hint;
-                            changedIndex = 0;
                             break;
 						case CacheItemPriority.BelowNormal:
                             if (_index[1] == null)
                                 _index[1] = new HashVector();
                             _index[1][key] = hint;
-                            changedIndex = 1;
                             break;
 						case CacheItemPriority.Normal:
                             if (_index[2] == null)
                                 _index[2] = new HashVector();
                             _index[2][key] = hint;
-                            changedIndex = 2;
                             break;
 						case CacheItemPriority.AboveNormal:
                             if (_index[3] == null)
                                 _index[3] = new HashVector();
                             _index[3][key] = hint;
-                            changedIndex = 3;
                             break;
 						case CacheItemPriority.High:
                             if (_index[4] == null)
                                 _index[4] = new HashVector();
                             _index[4][key] = hint;
-                            changedIndex = 4;
                             break;
                     }                   
                 }
@@ -196,14 +190,16 @@ namespace Alachisoft.NCache.Caching.EvictionPolicies
 
         void IEvictionPolicy.Execute(CacheBase cache, CacheRuntimeContext context, long evictSize)
         {
-          
+            //notification is sent for a max of 100k data if multiple items...
+            //otherwise if a single item is greater than 100k then notification is sent for
+            //that item only...
             ILogger NCacheLog = cache.Context.NCacheLog;
             
             if (NCacheLog.IsInfoEnabled) NCacheLog.Info("LocalCache.Evict()", "Cache Size: {0}" + cache.Count.ToString());
 
-             //if user has updated the values in configuration file then new values will be reloaded.
-            _sleepInterval = Convert.ToInt32(ServiceConfiguration.EvictionBulkRemoveDelay);
-            _removeThreshhold = Convert.ToInt32(ServiceConfiguration.EvictionBulkRemoveSize);
+            //if user has updated the values in configuration file then new values will be reloaded.
+            _sleepInterval = ServiceConfiguration.EvictionBulkRemoveDelay;
+            _removeThreshhold = ServiceConfiguration.EvictionBulkRemoveSize;
             DateTime startTime = DateTime.Now;
             IList selectedKeys = this.GetSelectedKeys(cache, (long)Math.Ceiling(evictSize * _ratio));
             DateTime endTime = DateTime.Now;

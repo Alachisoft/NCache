@@ -10,6 +10,7 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 // $Id: Protocol.java,v 1.18 2004/07/05 14:17:33 belaban Exp $
+
 using System;
 using System.Threading;
 using System.Collections;
@@ -17,6 +18,7 @@ using System.Collections;
 using Alachisoft.NGroups;
 using Alachisoft.NGroups.Util;
 using Alachisoft.NCache.Common.Util;
+using Alachisoft.NCache.Common;
 
 namespace Alachisoft.NGroups.Stack
 {
@@ -301,10 +303,7 @@ namespace Alachisoft.NGroups.Stack
 				props.Remove("up_thread_prio");
 			}
 
-            if (System.Configuration.ConfigurationSettings.AppSettings["NCacheServer.EnableDebuggingCounters"] != null)
-            {
-                enableMonitoring = Convert.ToBoolean(System.Configuration.ConfigurationSettings.AppSettings["NCacheServer.EnableDebuggingCounters"]);
-            }
+            enableMonitoring = ServiceConfiguration.EnableDebuggingCounters;
 
             if (System.Configuration.ConfigurationSettings.AppSettings["useAvgStats"] != null)
             {
@@ -418,6 +417,17 @@ namespace Alachisoft.NGroups.Stack
 				{
                     up_queue = new Alachisoft.NCache.Common.DataStructures.Queue();
 					up_handler = new UpHandler(up_queue, this);
+					if (up_thread_prio >= 0)
+					{
+						try
+						{
+							//up_handler.Priority = System.Threading.ThreadPriority.AboveNormal;
+						}
+						catch (System.Exception t)
+						{
+                            stack.NCacheLog.Error("Protocol",  "priority " + up_thread_prio + " could not be set for thread: " + t.StackTrace);
+						}
+					}
 					up_handler.Start();
 				}
 			}
@@ -435,6 +445,17 @@ namespace Alachisoft.NGroups.Stack
 				{
                     down_queue = new Alachisoft.NCache.Common.DataStructures.Queue();
 					down_handler = new DownHandler(down_queue, this);
+					if (down_thread_prio >= 0)
+					{
+						try
+						{
+							//down_handler.Priority =  System.Threading.ThreadPriority.AboveNormal;
+						}
+						catch (System.Exception t)
+						{
+                            stack.NCacheLog.Error("Protocol.startDownHandler()", "priority " + down_thread_prio + " could not be set for thread: " + t.StackTrace);
+						}
+					}
 					down_handler.Start();
 				}
 			}

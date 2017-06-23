@@ -1,4 +1,4 @@
-// Copyright (c) 2015 Alachisoft
+// Copyright (c) 2017 Alachisoft
 // 
 // Licensed under the Apache License, Version 2.0 (the "License");
 // you may not use this file except in compliance with the License.
@@ -23,11 +23,11 @@ using System.Runtime.InteropServices;
 
 [assembly: AssemblyDescription("")]
 [assembly: AssemblyConfiguration("")]
-[assembly: AssemblyCompany("Microsoft")]
+[assembly: AssemblyCompany("Alachisoft")]
 
 [assembly: AssemblyProduct("VerifyNCacheLicence")]
 
-[assembly: AssemblyCopyright("Copyright © Microsoft 2013")]
+[assembly: AssemblyCopyright("Copyright © Alachisoft 2017")]
 [assembly: AssemblyTrademark("")]
 [assembly: AssemblyCulture("")]
 
@@ -49,8 +49,8 @@ using System.Runtime.InteropServices;
 // You can specify all the values or you can default the Build and Revision Numbers 
 // by using the '*' as shown below:
 // [assembly: AssemblyVersion("1.0.*")]
-[assembly: AssemblyVersion("4.4.0.0")]
-[assembly: AssemblyFileVersion("4.4.0.0")]
+[assembly: AssemblyVersion("4.6.0.0")]
+[assembly: AssemblyFileVersion("4.6.0.0")]
 
 namespace Alachisoft.NCache.Tools.VerifyNCacheLicence
 {
@@ -68,10 +68,10 @@ namespace Alachisoft.NCache.Tools.VerifyNCacheLicence
             Assembly assembly = Assembly.GetExecutingAssembly();
 
              string product="NCache";
-
-            string logo = @"Alachisoft (R) "+ product +" Utility Verify License. Version " + assembly.GetName().Version +
+             
+            string logo = @"Alachisoft (R) "+ product +" Utility Verify License. Version " +Common.ProductVersion.GetVersion() +
                 @"
-Copyright (C) Alachisoft 2015. All rights reserved.";
+Copyright (C) Alachisoft 2017. All rights reserved.";
 
             if (printlogo)
             {
@@ -89,12 +89,12 @@ Copyright (C) Alachisoft 2015. All rights reserved.";
 
              string product="NCache";
 
-            string usage = @"Description: This tool verify the " + product +" License. For registered version it will display the " +
+            string usage = @"Description: This tool verify the" + product +"License. For registered version it will display the " +
                         "registration details. In evaluation mode it will display the remaining day if evaluation is still valid else " +
                         "give the expiration message." +
                         "\n\nUsage:"+
 
-               "verifylicense"
+               "verifyncachelicense"
 
                +" [option[...]]." +
                         "\n\nOption:" +

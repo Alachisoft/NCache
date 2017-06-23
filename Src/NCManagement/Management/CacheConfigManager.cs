@@ -1,4 +1,4 @@
-// Copyright (c) 2015 Alachisoft
+// Copyright (c) 2017 Alachisoft
 // 
 // Licensed under the Apache License, Version 2.0 (the "License");
 // you may not use this file except in compliance with the License.
@@ -11,6 +11,7 @@
 // WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
 // See the License for the specific language governing permissions and
 // limitations under the License.
+
 using System;
 using System.Collections;
 using System.Collections.Generic;
@@ -92,11 +93,6 @@ namespace Alachisoft.NCache.Management
             get { return s_ncacheTcpPort; }
         }
 
-        static public int JvCacheTcpPort
-        {
-            get { return s_jvcacheTcpPort; }
-        }
-
         /// <summary>
         /// Configuration file name.
         /// </summary>
@@ -119,10 +115,7 @@ namespace Alachisoft.NCache.Management
         static public void ScanConfiguration()
         {
 
-
             string REGKEY = @"Software\Alachisoft\NCache";
-
-
             try
             {
 
@@ -172,18 +165,6 @@ namespace Alachisoft.NCache.Management
             catch (FormatException) { }
             catch (OverflowException) { }
 
-            try
-            {
-                object v = RegHelper.GetRegValue(REGKEY, "TayzGridTcp.Port", 0);
-                if (v != null)
-                {
-                    int port = Convert.ToInt32(v);
-                    if (port >= System.Net.IPEndPoint.MinPort &&
-                        port <= System.Net.IPEndPoint.MaxPort) s_jvcacheTcpPort = port;
-                }
-            }
-            catch (FormatException) { }
-            catch (OverflowException) { }
 
             try
             {
@@ -368,7 +349,7 @@ namespace Alachisoft.NCache.Management
             }
         }
 
-        //Method for converting New Dom into Old Dom for Passing to back to LoadConfig Method 
+//Method for converting New Dom into Old Dom for Passing to back to LoadConfig Method .. .. .. [Numan Hanif]
         private static Alachisoft.NCache.Config.Dom.CacheServerConfig[] convertToOldDom(Alachisoft.NCache.Config.NewDom.CacheServerConfig[] newCacheConfigsList)
         {
             IList<Alachisoft.NCache.Config.Dom.CacheServerConfig> oldCacheConfigsList = new List<Alachisoft.NCache.Config.Dom.CacheServerConfig>();
@@ -490,11 +471,10 @@ namespace Alachisoft.NCache.Management
             SaveConfiguration(convertToNewDom(configurations).ToArray());
         }
 
-        //Method for converting Old Dom into New Dom for Saving it on the nconf File 
+//Method for converting Old Dom into New Dom for Saving it on the nconf File 
         private static List<Alachisoft.NCache.Config.NewDom.CacheServerConfig> convertToNewDom(List<CacheServerConfig> oldCacheConfigsList)
         {
             List<Alachisoft.NCache.Config.NewDom.CacheServerConfig> newCacheConfigsList = new List<Alachisoft.NCache.Config.NewDom.CacheServerConfig>();
-
 
             IEnumerator itr = oldCacheConfigsList.GetEnumerator();
             while (itr.MoveNext())
@@ -515,6 +495,10 @@ namespace Alachisoft.NCache.Management
 
         }
 
+
+        
+
+ 
         /// <summary>
         /// Save the configuration
         /// </summary>
@@ -585,6 +569,25 @@ namespace Alachisoft.NCache.Management
                     fs.Dispose();
                     fs = null;
                 }
+            }
+        }
+
+        public static CacheServerConfig[] GetConfiguredCaches(string filePath)
+        {
+            if (String.IsNullOrEmpty(filePath))
+                throw new ManagementException("Can not locate cache configuration file. Installation might be corrupt.");
+            try
+            {
+                ConfigurationBuilder builder = new ConfigurationBuilder(filePath);
+                builder.RegisterRootConfigurationObject(typeof(Alachisoft.NCache.Config.NewDom.CacheServerConfig));
+                builder.ReadConfiguration();
+                Alachisoft.NCache.Config.NewDom.CacheServerConfig[] newCaches = new Alachisoft.NCache.Config.NewDom.CacheServerConfig[builder.Configuration.Length];
+                builder.Configuration.CopyTo(newCaches, 0);
+                return convertToOldDom(newCaches);
+            }
+            catch (Exception e)
+            {
+                throw new ManagementException(e.Message, e);
             }
         }
 

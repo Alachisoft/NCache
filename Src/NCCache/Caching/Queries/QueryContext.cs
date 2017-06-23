@@ -1,4 +1,4 @@
-// Copyright (c) 2015 Alachisoft
+// Copyright (c) 2017 Alachisoft
 // 
 // Licensed under the Apache License, Version 2.0 (the "License");
 // you may not use this file except in compliance with the License.
@@ -11,9 +11,11 @@
 // WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
 // See the License for the specific language governing permissions and
 // limitations under the License.
+
 using System;
 using System.Collections;
 using Alachisoft.NCache.Common.DataStructures;
+using Alachisoft.NCache.Common.Queries;
 
 namespace Alachisoft.NCache.Caching.Queries
 {
@@ -21,17 +23,22 @@ namespace Alachisoft.NCache.Caching.Queries
     {
         private Topologies.Local.LocalCacheBase _cache;
         private AttributeIndex _index;
-        private SRTree _tree;
         private string _cacheContext;
         private IDictionary _values;
         private bool _populateTree = true;
         private QueryResultSet _resultSet = new QueryResultSet();
         private string _typeName = String.Empty;
-        
+        private IQueryResult _internalQueryResult;
+
+        public IQueryResult InternalQueryResult
+        {
+            get { return _internalQueryResult; }
+            set { _internalQueryResult = value; }
+        }
+
         public QueryContext(Topologies.Local.LocalCacheBase cache)
         {
             _cache = cache;
-            _tree = new SRTree();
         }
 
         public string TypeName
@@ -76,11 +83,6 @@ namespace Alachisoft.NCache.Caching.Queries
             set { _index = value; }
         }
 
-        public SRTree Tree
-        {
-            get { return _tree; }
-            set { _tree = value; }
-        }
 
         public bool PopulateTree
         {

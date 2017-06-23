@@ -1,4 +1,4 @@
-// Copyright (c) 2015 Alachisoft
+// Copyright (c) 2017 Alachisoft
 // 
 // Licensed under the Apache License, Version 2.0 (the "License");
 // you may not use this file except in compliance with the License.
@@ -11,6 +11,7 @@
 // WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
 // See the License for the specific language governing permissions and
 // limitations under the License.
+
 using System;
 using System.Text;
 using System.Collections;
@@ -20,20 +21,28 @@ using Alachisoft.NCache.Runtime.Serialization;
 using Alachisoft.NCache.Common.Queries;
 using Alachisoft.NCache.Common.Enum;
 using Runtime = Alachisoft.NCache.Runtime;
+using Alachisoft.NCache.Common.DataReader;
+using Alachisoft.NCache.Common.DataStructures.Clustered;
 
 namespace Alachisoft.NCache.Caching.Queries
 {
     public class QueryResultSet : ICompactSerializable
     {
-        private ArrayList _searchKeysResult;
-        private Hashtable _searchEntriesResult;
+        private IList _searchKeysResult;
+        private IDictionary _searchEntriesResult;
         private DictionaryEntry _aggregateFunctionResult;
         private bool _isInitialized = false;
         private ArrayList _keysForUpdateIndices;
 
         private QueryType _queryType = QueryType.SearchKeys;
         private AggregateFunctionType _aggregateFunctionType = AggregateFunctionType.NOTAPPLICABLE;
+        private ReaderResultSet _readerResult;
 
+        public ReaderResultSet ReaderResult
+        {
+            get { return _readerResult; }
+            set { _readerResult = value; }
+        }
         public bool IsInitialized
         {
             get { return _isInitialized; }
@@ -51,13 +60,13 @@ namespace Alachisoft.NCache.Caching.Queries
             set { _aggregateFunctionType = value; }
         }
 
-        public ArrayList SearchKeysResult
+        public IList SearchKeysResult
         {
             get { return _searchKeysResult; }
             set { _searchKeysResult = value; }
         }
 
-        public Hashtable SearchEntriesResult
+        public IDictionary SearchEntriesResult
         {
             get { return _searchEntriesResult; }
             set { _searchEntriesResult = value; }
@@ -232,11 +241,26 @@ namespace Alachisoft.NCache.Caching.Queries
 
                 case QueryType.SearchKeys:
                     if (this.SearchKeysResult == null)
+                    {
                         this.SearchKeysResult = resultSet.SearchKeysResult;
-                    else
-                        if (resultSet.SearchKeysResult != null)
-                            this.SearchKeysResult.AddRange(resultSet.SearchKeysResult);
+                    }
+                    else if (resultSet.SearchKeysResult != null && resultSet.SearchKeysResult.Count > 0)
+                    {
+                        ClusteredArrayList skr = this.SearchKeysResult as ClusteredArrayList;
+                        if (skr != null)
+                        {
+                            skr.AddRange(resultSet.SearchKeysResult);
+                        }
+                        else
+                        {
+                            IEnumerator ienum = resultSet.SearchKeysResult.GetEnumerator();
 
+                            while (ienum.MoveNext())
+                            {
+                                this.SearchKeysResult.Add(ienum.Current);
+                            }
+                        }
+                    }
                     break;
 
                 case QueryType.SearchEntries:
@@ -258,8 +282,8 @@ namespace Alachisoft.NCache.Caching.Queries
         void ICompactSerializable.Deserialize(Runtime.Serialization.IO.CompactReader reader)
         {
             _aggregateFunctionResult = (DictionaryEntry)reader.ReadObject();
-            _searchKeysResult = reader.ReadObject() as ArrayList;
-            _searchEntriesResult = reader.ReadObject() as Hashtable;
+            _searchKeysResult = reader.ReadObject() as ClusteredArrayList;
+            _searchEntriesResult = reader.ReadObject() as HashVector;
             _queryType = (QueryType)reader.ReadInt32();
             _aggregateFunctionType = (AggregateFunctionType)reader.ReadInt32();
         }

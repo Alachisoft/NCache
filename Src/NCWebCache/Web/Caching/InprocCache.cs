@@ -1,4 +1,4 @@
-// Copyright (c) 2015 Alachisoft
+// Copyright (c) 2017 Alachisoft
 // 
 // Licensed under the Apache License, Version 2.0 (the "License");
 // you may not use this file except in compliance with the License.
@@ -11,6 +11,7 @@
 // WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
 // See the License for the specific language governing permissions and
 // limitations under the License.
+
 using System;
 using System.Collections;
 using Alachisoft.NCache.Caching;
@@ -27,11 +28,12 @@ using Alachisoft.NCache.Runtime;
 
 using Alachisoft.NCache.Caching.Queries;
 using Alachisoft.NCache.Runtime.Events;
-using System.Collections.Generic;
+using Alachisoft.NCache.Common.DataReader;
+using Alachisoft.NCache.Common.DataStructures.Clustered;
 
 namespace Alachisoft.NCache.Web.Caching
 {
-    internal sealed class InprocCache : CacheImplBase, IEnumerable
+    internal sealed class InprocCache : CacheImplBase, IEnumerable, IRecordSetLoader
     {
 		/// <summary> Underlying implementation of NCache. </summary>
 		internal Alachisoft.NCache.Caching.Cache	_nCache;
@@ -450,10 +452,8 @@ namespace Alachisoft.NCache.Web.Caching
 
             if ((short)onRemoveCallback != -1 || (short)onUpdateCallback != -1 )
                 value = new CallbackEntry(ClientID, -1, value, onRemoveCallback, onUpdateCallback, Flag, updateCallbackFilter, removeCallabackFilter);
-            ////muds:
             ////we can not specify both tags and groups for the same cache item.
-            //WebCacheHelper.EvaluateTagsParameters(queryInfo, group);
-
+      
             byte expType = WebCacheHelper.EvaluateExpirationParameters(absoluteExpiration, slidingExpiration);
             int options = 0;
 
@@ -655,16 +655,12 @@ namespace Alachisoft.NCache.Web.Caching
                 CompressedValueEntry cmpEntry = _nCache.Get(key, flagMap, ref lockId, ref lockDate, lockTimeout, accessType, new OperationContext(OperationContextFieldName.OperationType, OperationContextOperationType.CacheOperation));
                 if (cmpEntry != null && cmpEntry.Value != null)
                 {
-                    //muds:
                     //incase of inproc local cache we will get the user object directly...
                     //therefore, we need to confirm if the value is user binary object or not...
                     if (cmpEntry.Value is UserBinaryObject)
                     {
-                        if (cmpEntry.Value is UserBinaryObject)
-                        {
-                            UserBinaryObject ubObject = cmpEntry.Value as UserBinaryObject;
-                            cmpEntry.Value = ubObject.GetFullObject();
-                        }
+                        UserBinaryObject ubObject = cmpEntry.Value as UserBinaryObject;
+                        cmpEntry.Value = ubObject.GetFullObject();
                     }
                 }
 
@@ -1151,7 +1147,31 @@ namespace Alachisoft.NCache.Web.Caching
 
         #endregion
 
-      
+
+        #region ---------------------- Cache Data Reader ----------------------
+        /// <summary>
+        /// Provide data reader on <see cref="Cache"/> based on the query specified.
+        /// </example> 
+        public override IRecordSetEnumerator ExecuteReader(string query, IDictionary values, bool getData, int chunkSize)
+        {
+            if (_nCache == null)
+                return null;
+
+            IRecordSetEnumerator result = null;
+            Hashtable tempValues = GetValues(values);
+            ClusteredList<ReaderResultSet> readerResultSet = _nCache.ExecuteReader(query, tempValues, getData, chunkSize, true, new OperationContext(OperationContextFieldName.OperationType, OperationContextOperationType.CacheOperation));
+            if (readerResultSet != null && readerResultSet.Count > 0)
+            {
+                IRecordSetEnumerator rse = new RecordSetEnumerator(readerResultSet[0].RecordSet);
+                if (readerResultSet[0].RecordSet != null)
+                    rse = readerResultSet[0].RecordSet.GetEnumerator();
+
+                result = new PartitionRSEnumerator(rse, readerResultSet[0].ReaderID, readerResultSet[0].NodeAddress, readerResultSet[0].NextIndex, this);
+            }
+            return result;
+        }
+        #endregion
+
         #endregion
 
         #region /                 --- Serialize ---           /
@@ -1215,17 +1235,6 @@ namespace Alachisoft.NCache.Web.Caching
 
             return nextChunk;
         }
-        public override List<EnumerationDataChunk> GetNextChunk(List<EnumerationPointer> pointers)
-        {
-            EnumerationPointer pointer = null;
-            List<EnumerationDataChunk> chunks = new List<EnumerationDataChunk>();
-            if (pointers.Count > 0)
-            {
-                pointer = pointers[0];
-                chunks.Add(_nCache.GetNextChunk(pointer, new OperationContext()));
-            }
-            return chunks;
-        }
 
         #endregion
 
@@ -1244,10 +1253,21 @@ namespace Alachisoft.NCache.Web.Caching
         /// with the specified key is updated in the cache.</param>
         /// <param name="removeCallback">The CacheItemRemovedCallback is invoked when the item with
         /// the specified key is removed from the cache.</param>
-        public override void RegisterKeyNotificationCallback(string key, short updateCallbackid, short removeCallbackid,bool notifyOnitemExpiration)
+        public override void RegisterKeyNotificationCallback(string key, short update, short remove, EventDataFilter datafilter, bool notifyOnItemExpiration)
         {
+            CallbackInfo cbUpdate = null;
+            CallbackInfo cbRemove = null;
+
+
+            cbUpdate = new CallbackInfo(ClientID, update, datafilter);
+            cbRemove = new CallbackInfo(ClientID, remove, datafilter, notifyOnItemExpiration);
+
             if (_nCache != null)
-                _nCache.RegisterKeyNotificationCallback(key, new CallbackInfo(ClientID, updateCallbackid, EventDataFilter.None), new CallbackInfo(ClientID, removeCallbackid, EventDataFilter.DataWithMetadata, notifyOnitemExpiration), new OperationContext(OperationContextFieldName.OperationType, OperationContextOperationType.CacheOperation));
+                _nCache.RegisterKeyNotificationCallback(key,
+                  cbUpdate,
+                  cbRemove,
+                  new OperationContext(OperationContextFieldName.OperationType, OperationContextOperationType.CacheOperation));
+
         }
 
         /// <summary>
@@ -1264,6 +1284,35 @@ namespace Alachisoft.NCache.Web.Caching
             if (_nCache != null)
                 _nCache.UnregisterKeyNotificationCallback(key, new CallbackInfo(ClientID, updateCallbackid, EventDataFilter.None), new CallbackInfo(ClientID, removeCallbackid, EventDataFilter.DataWithMetadata), new OperationContext(OperationContextFieldName.OperationType, OperationContextOperationType.CacheOperation));
         }
+
+        public override void RegisterKeyNotificationCallback(string[] keys, short update, short remove, EventDataFilter datafilter, bool notifyOnItemExpiration)
+        {
+            CallbackInfo cbUpdate = null;
+            CallbackInfo cbRemove = null;
+
+
+            cbUpdate = new CallbackInfo(ClientID, update, datafilter);
+            cbRemove = new CallbackInfo(ClientID, remove, datafilter, notifyOnItemExpiration);
+
+            if (_nCache != null)
+                _nCache.RegisterKeyNotificationCallback(keys,cbUpdate,cbRemove, new OperationContext(OperationContextFieldName.OperationType, OperationContextOperationType.CacheOperation));
+        }
+
+        /// <summary>
+        /// Unregisters the <see cref="CacheItemUpdatedCallback"/> and/or <see cref="CacheItemRemovedCallback"/> already registered
+        /// for the specified list of keys.
+        /// </summary>
+        /// <param name="keys">The cache key used to reference the cache item.</param>
+        /// <param name="updateCallback">CacheItemUpdatedCallback that is invoked when the item 
+        /// with the specified key is updated in the cache.</param>
+        /// <param name="removeCallback">CacheItemRemovedCallback that is invoked when the item
+        /// with the key is removed from the cache.</param>
+        public override void UnRegisterKeyNotificationCallback(string[] keys, short updateCallbackid, short removeCallbackid)
+        {
+            if (_nCache != null)
+                _nCache.UnregisterKeyNotificationCallback(keys, new CallbackInfo(ClientID, updateCallbackid, EventDataFilter.None), new CallbackInfo(ClientID, removeCallbackid, EventDataFilter.None), new OperationContext(OperationContextFieldName.OperationType, OperationContextOperationType.CacheOperation));
+        }
+
 
         #endregion
 
@@ -1496,6 +1545,30 @@ namespace Alachisoft.NCache.Web.Caching
 
             return tempValues;
         }
+
+
+        #region ---------------------- IRecordSetLoader ----------------------
+        public ReaderResultSet GetRecordSet(string readerID, string nodeIP, int nextIndex)
+        {
+            ReaderResultSet nextChunk = null;
+
+            if (_nCache != null)
+            {
+                nextChunk = _nCache.GetReaderChunk(readerID, nextIndex, true, new OperationContext());
+            }
+
+            return nextChunk;
+        }
+        /// <summary>
+        /// Dispose reader resources on node specified
+        /// </example>
+        public void DisposeReader(string readerId, string nodeIp)
+        {
+            if (_nCache != null)
+                _nCache.DisposeReader(readerId, new OperationContext());
+        }
+        #endregion
+
     }
 }
 

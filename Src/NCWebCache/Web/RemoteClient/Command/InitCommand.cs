@@ -1,4 +1,4 @@
-// Copyright (c) 2015 Alachisoft
+// Copyright (c) 2017 Alachisoft
 // 
 // Licensed under the Apache License, Version 2.0 (the "License");
 // you may not use this file except in compliance with the License.
@@ -11,67 +11,46 @@
 // WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
 // See the License for the specific language governing permissions and
 // limitations under the License.
-using System;
+
 using System.IO;
 using Alachisoft.NCache.Web.Caching.Util;
-
 using Alachisoft.NCache.Web.Communication;
-using Alachisoft.NCache.Common.Protobuf.Util;
-using Common = Alachisoft.NCache.Common;
+
 namespace Alachisoft.NCache.Web.Command
 {
     internal sealed class InitCommand : CommandBase
 	{
-        private Alachisoft.NCache.Common.Protobuf.InitCommand _initCommand;
-        private byte[] _userName;
-        private byte[] _password;
+        private Common.Protobuf.InitCommand _initCommand;
         private string _clientID;
         private string _licenceCode;
-   
         private string _clientIp;
+        private Common.ProductVersion _currentVersion;
 
-      
-        private Alachisoft.NCache.Common.ProductVersion _currentVersion;
-       
-        #region Helper Methods
-        //This function is needed to parse byte to byte[] because all values in protobuf.ProductVersion are byte[]
-        private byte[] ParseToByteArray(byte value)
+
+        public InitCommand(string clientid, string id)
         {
-            byte[] tempArray = new byte[1];
-            tempArray[0] = value;
-            return tempArray;
-        }
-        #endregion
-
-
-        public InitCommand(string clientid, string id, string clientLocalIP)
-        {
-             _initCommand = new Alachisoft.NCache.Common.Protobuf.InitCommand();
-             base.name = "InitCommand";
-            _currentVersion = Alachisoft.NCache.Common.ProductVersion.ProductInfo;
+            _initCommand = new Common.Protobuf.InitCommand();
+            name = "InitCommand";
+            _currentVersion = Common.ProductVersion.ProductInfo;
             _initCommand.cacheId = id;
             _initCommand.clientId = clientid;
-            _initCommand.requestId = base.RequestId;
-            
-           
-            //Protobuf. Product Version is assigned values 
+            _initCommand.isDotnetClient = true;
+            _initCommand.requestId = RequestId;
+
             if (_initCommand.productVersion == null)
                 _initCommand.productVersion = new Common.Protobuf.ProductVersion();
-            
-                _initCommand.productVersion.AddiotionalData = _currentVersion.AdditionalData;
-                _initCommand.productVersion.EditionID = _currentVersion.EditionID;
-                _initCommand.productVersion.MajorVersion1 = this.ParseToByteArray(_currentVersion.MajorVersion1);
-                _initCommand.productVersion.MajorVersion2 = this.ParseToByteArray(_currentVersion.MajorVersion2);
-                _initCommand.productVersion.MinorVersion1 = this.ParseToByteArray(_currentVersion.MinorVersion1);
-                _initCommand.productVersion.MinorVersion2 = this.ParseToByteArray(_currentVersion.MinorVersion2);
-                _initCommand.productVersion.ProductName = _currentVersion.ProductName;
-                               
-            // from NCache 4.1 SP2 private patch 2 ownward client version will also be sent
-            //Client version has following format :
-            //[2 digits for major version][1 digit for service paack][1 digit for private patch]
-            //e.g. 4122 means 4.1 major , 2 for service pack 2 and last 4 for private patch 4
-            
-            _initCommand.clientVersion = 4200; //changed for 4.2 
+            _initCommand.productVersion.AddiotionalData = _currentVersion.AdditionalData;
+            _initCommand.productVersion.EditionID = _currentVersion.EditionID;
+            _initCommand.productVersion.MajorVersion1 = HelperFxn.ParseToByteArray(_currentVersion.MajorVersion1);
+            _initCommand.productVersion.MajorVersion2 = HelperFxn.ParseToByteArray(_currentVersion.MajorVersion2);
+            _initCommand.productVersion.MinorVersion1 = HelperFxn.ParseToByteArray(_currentVersion.MinorVersion1);
+            _initCommand.productVersion.MinorVersion2 = HelperFxn.ParseToByteArray(_currentVersion.MinorVersion2);
+            _initCommand.productVersion.ProductName = _currentVersion.ProductName;
+
+
+            _initCommand.clientVersion = 4610;
+
+
         }
 
         internal override CommandType CommandType
@@ -86,11 +65,44 @@ namespace Alachisoft.NCache.Web.Command
 
         protected override void CreateCommand()
         {
-            base._command = new Alachisoft.NCache.Common.Protobuf.Command();
-            base._command.requestID = base.RequestId;
-            base._command.initCommand = _initCommand;
-            base._command.type = Alachisoft.NCache.Common.Protobuf.Command.Type.INIT;
+            _command = new Common.Protobuf.Command();
+            _command.requestID = RequestId;
+            _command.initCommand = _initCommand;
+            _command.type = Common.Protobuf.Command.Type.INIT;
 
+        }
+
+        public override byte[] ToByte()
+        {
+            if (_commandBytes == null)
+            {
+                CreateCommand();
+                SerializeCommand();
+            }
+            return _commandBytes;
+        }
+
+        public override void SerializeCommand()
+        {
+            using (MemoryStream stream = new MemoryStream())
+            {
+                ///Write discarding buffer that socketserver reads
+                byte[] discardingBuffer = new byte[20];
+                stream.Write(discardingBuffer, 0, discardingBuffer.Length);
+
+                byte[] size = new byte[Connection.CmdSizeHolderBytesCount];
+                stream.Write(size, 0, size.Length);
+
+                ProtoBuf.Serializer.Serialize(stream, _command);
+                int messageLen = (int)stream.Length - (size.Length + discardingBuffer.Length);
+
+                size = HelperFxn.ToBytes(messageLen.ToString());
+                stream.Position = discardingBuffer.Length;
+                stream.Write(size, 0, size.Length);
+
+                this._commandBytes = stream.ToArray();
+                stream.Close();
+            }
         }
 	}
 }

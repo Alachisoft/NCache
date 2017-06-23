@@ -1,4 +1,4 @@
-// Copyright (c) 2015 Alachisoft
+// Copyright (c) 2017 Alachisoft
 // 
 // Licensed under the Apache License, Version 2.0 (the "License");
 // you may not use this file except in compliance with the License.
@@ -19,6 +19,7 @@ using Alachisoft.NCache.Common.DataStructures;
 using Alachisoft.NCache.Caching.Topologies.Local;
 using Alachisoft.NCache.Caching.Topologies;
 using System.Collections;
+using Alachisoft.NCache.Common.Util;
 
 namespace Alachisoft.NCache.Caching.Enumeration
 {
@@ -38,11 +39,6 @@ namespace Alachisoft.NCache.Caching.Enumeration
         private Array _snapshot;        
 
         /// <summary>
-        /// Size of the chunk to be sent on each next chunk call
-        /// </summary>
-        private int _chunkSize = 1000;
-
-        /// <summary>
         /// Sequence ID of the chunk being send for this particular enumerator.
         /// Holds -1 if all the chunks have been sent.
         /// </summary>
@@ -55,8 +51,7 @@ namespace Alachisoft.NCache.Caching.Enumeration
         {
             _cache = cache;
             _pointer = pointer;
-            if (System.Configuration.ConfigurationSettings.AppSettings.Get("NCacheServer.EnumeratorChunkSize") != null)
-                _chunkSize = Convert.ToInt32(System.Configuration.ConfigurationSettings.AppSettings.Get("NCacheServer.EnumeratorChunkSize"));
+            
             _snapshot = CacheSnapshotPool.Instance.GetSnaphot(pointer.Id, cache);
         }
 
@@ -66,7 +61,7 @@ namespace Alachisoft.NCache.Caching.Enumeration
             EnumerationDataChunk chunk = new EnumerationDataChunk();
             chunk.Data = new List<string>();
             int currentIndex = pointer.ChunkId;
-            while (currentIndex < _snapshot.Length - 1 && count < _chunkSize)
+            while (currentIndex < _snapshot.Length - 1 && count < ServiceConfiguration.EnumeratorChunkSize)
             {
                 currentIndex++;
                 chunk.Data.Add(_snapshot.GetValue(currentIndex).ToString());

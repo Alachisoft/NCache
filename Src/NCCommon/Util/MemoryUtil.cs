@@ -1,4 +1,4 @@
-﻿// Copyright (c) 2015 Alachisoft
+﻿// Copyright (c) 2017 Alachisoft
 // 
 // Licensed under the Apache License, Version 2.0 (the "License");
 // you may not use this file except in compliance with the License.
@@ -11,37 +11,25 @@
 // WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
 // See the License for the specific language governing permissions and
 // limitations under the License.
+
 using System;
-using System.Collections.Generic;
-using System.Text;
+using System.Collections;
 
 namespace Alachisoft.NCache.Common
 {
     public class MemoryUtil
     {
+        public const int KB = 1024;
         //24 Bytes overhead for every .net class
         public const int NetOverHead = 24;
         public const int NetHashtableOverHead = 45;
         public const int NetListOverHead = 8;
         public const int NetClassOverHead = 16;
-
-
-
         public const int NetIntSize = 4;
-
         public const int NetEnumSize = 4;
-
         public const int NetByteSize = 1;
-
-        public const int NetShortSize = 2;
-
-
-
-
         public const int NetLongSize = 8;
-
         public const int NetDateTimeSize = 8;
-
         public const int NetReferenceSize = 8;
 
         #region  Dot Net Primitive Tyes String Constants
@@ -293,8 +281,52 @@ namespace Alachisoft.NCache.Common
             temp += actualDataBytes + remainder;
             return temp;
         }
+
+        public static ArraySegment<TReturn>[] GetArraySegments<TReturn>(IList list)
+        {
+            ArraySegment<TReturn>[] segments = new ArraySegment<TReturn>[list.Count];
+            for (int i = 0; i < list.Count; i++)
+            {
+                TReturn[] array = (TReturn[])list[i];
+                segments[i] = new ArraySegment<TReturn>(array);
+            }
+            return segments;
+        }
+
+        /// <summary>
+        /// Returns .Net's LOH safe generic collection count...
+        /// </summary>
+        /// <param name="length"></param>
+        /// <returns></returns>
+        public static int GetSafeCollectionCount<T>(long length)
+        {
+            Type genericType = typeof(T);
+            int sizeOfReference;
+
+            if (genericType.IsValueType)
+            {
+                sizeOfReference = System.Runtime.InteropServices.Marshal.SizeOf(genericType);
+            }
+            else
+            {
+                sizeOfReference = IntPtr.Size;
+            }
+
+            int safeLength = (81920 / sizeOfReference);
+
+            return ((length > safeLength) ? safeLength : (int)length);
+        }
+        public static int GetSafeByteCollectionCount(long length)
+        {
+            return ((length > 81920) ? 81920 : (int)length);
+        }
     }
 
+            /// <summary>
+        /// Returns .Net's LOH safe generic collection count...
+        /// </summary>
+        /// <param name="length"></param>
+        /// <returns></returns>
 
     public enum AttributeTypeSize : byte
     {
@@ -305,4 +337,5 @@ namespace Alachisoft.NCache.Common
         Byte8,
         Byte16,
     }
+    
 }

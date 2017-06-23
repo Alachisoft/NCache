@@ -1,0 +1,10 @@
+
+option java_outer_classname="DisposeReaderCommandProtocol";
+package Alachisoft.NCache.Common.Protobuf;
+
+message DisposeReaderCommand {
+    optional string readerId = 1;
+	optional int64 requestId = 2;
+	optional string nodeIP = 3;
+}
+

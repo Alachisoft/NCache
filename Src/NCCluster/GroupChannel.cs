@@ -10,6 +10,7 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 // $Id: GroupChannel.java,v 1.25 2004/08/29 19:35:03 belaban Exp $
+
 using System;
 
 using ProtocolStack = Alachisoft.NGroups.Stack.ProtocolStack;

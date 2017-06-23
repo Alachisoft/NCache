@@ -10,6 +10,7 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 // $Id: RequestCorrelator.java,v 1.12 2004/09/05 04:54:21 ovidiuf Exp $
+
 using System;
 using System.IO;
 using Alachisoft.NGroups;
@@ -487,7 +488,7 @@ namespace Alachisoft.NGroups.Blocks
 			stopScheduler();
 			started = false;
 
-            if (_statusCleanerThread != null && _statusCleanerThread.IsAlive)
+            if (_statusCleanerThread != null)
             {
                 try
                 {

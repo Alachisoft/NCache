@@ -2,9 +2,7 @@
 using System.Collections.Generic;
 using System.Text;
 using System.Collections;
-#if !CLIENT
 using Alachisoft.NCache.Caching.Topologies.Clustered;
-#endif
 using Alachisoft.NCache.Common.Net;
 
 namespace Alachisoft.NCache.Caching.Topologies.Clustered
@@ -18,9 +16,7 @@ namespace Alachisoft.NCache.Caching.Topologies.Clustered
     {
         private ArrayList _activeClusterMbrs = ArrayList.Synchronized(new ArrayList());
         private ArrayList _tentativeClusterMbrs = ArrayList.Synchronized(new ArrayList());
-       
         
-#if !CLIENT
         private ClusterService _cluster;
 
         internal ClientsManager(ClusterService cluster)
@@ -28,7 +24,6 @@ namespace Alachisoft.NCache.Caching.Topologies.Clustered
             _cluster = cluster;
         }
 
-#endif
 
         internal bool AcceptClient(System.Net.IPAddress clientAddress)
         {

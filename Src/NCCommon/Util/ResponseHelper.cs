@@ -1,4 +1,4 @@
-// Copyright (c) 2015 Alachisoft
+// Copyright (c) 2017 Alachisoft
 // 
 // Licensed under the Apache License, Version 2.0 (the "License");
 // you may not use this file except in compliance with the License.
@@ -11,6 +11,7 @@
 // WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
 // See the License for the specific language governing permissions and
 // limitations under the License.
+
 using System.Collections.Generic;
 using System.Text;
 using System.IO;
@@ -93,7 +94,28 @@ namespace Alachisoft.NCache.Common.Util
 
 		public static byte[] SerializeExceptionResponse(Exception exc, long requestId)
 		{
-		    Alachisoft.NCache.Common.Protobuf.Exception ex = GetExceptionResponse(exc);
+            Alachisoft.NCache.Common.Protobuf.Exception ex = new Alachisoft.NCache.Common.Protobuf.Exception();
+            ex.message = exc.Message;
+            ex.exception = exc.ToString();
+            if (exc is InvalidReaderException)
+                ex.type = Alachisoft.NCache.Common.Protobuf.Exception.Type.INVALID_READER_EXCEPTION;
+            else if (exc is OperationFailedException)
+                ex.type = Alachisoft.NCache.Common.Protobuf.Exception.Type.OPERATIONFAILED;
+            else if (exc is Runtime.Exceptions.AggregateException)
+                ex.type = Alachisoft.NCache.Common.Protobuf.Exception.Type.AGGREGATE;
+            else if (exc is ConfigurationException)
+                ex.type = Alachisoft.NCache.Common.Protobuf.Exception.Type.CONFIGURATION;
+            else if (exc is OperationNotSupportedException)
+                ex.type = Alachisoft.NCache.Common.Protobuf.Exception.Type.NOTSUPPORTED;
+
+            else if (exc is TypeIndexNotDefined)
+                ex.type = Alachisoft.NCache.Common.Protobuf.Exception.Type.TYPE_INDEX_NOT_FOUND;
+            else if (exc is AttributeIndexNotDefined)
+                ex.type = Alachisoft.NCache.Common.Protobuf.Exception.Type.ATTRIBUTE_INDEX_NOT_FOUND;
+            else if (exc is StateTransferInProgressException)
+                ex.type = Alachisoft.NCache.Common.Protobuf.Exception.Type.STATE_TRANSFER_EXCEPTION;
+            else
+                ex.type = Alachisoft.NCache.Common.Protobuf.Exception.Type.GENERALFAILURE;
 
             Alachisoft.NCache.Common.Protobuf.Response response = new Alachisoft.NCache.Common.Protobuf.Response();
             response.requestId = requestId;

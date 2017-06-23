@@ -1,4 +1,4 @@
-// Copyright (c) 2015 Alachisoft
+// Copyright (c) 2017 Alachisoft
 // 
 // Licensed under the Apache License, Version 2.0 (the "License");
 // you may not use this file except in compliance with the License.
@@ -17,49 +17,8 @@ using System.Linq;
 using System.Text;
 using System.Collections;
 using System.Linq.Expressions;
-#if JAVA
-using Alachisoft.TayzGrid.Web.Caching;
-#else
 using Alachisoft.NCache.Web.Caching;
-#endif
 
-#if JAVA
-namespace Alachisoft.TayzGrid.Linq
-{
-    /// <summary>
-    /// Represents an IQueryable instance. Use this class to create a queryable object with the specified 
-    /// type 'T'.
-    /// </summary>
-    /// <typeparam name="T"></typeparam>
-    public class TayzGridQuery<T> : IQueryable<T>, IQueryable, IEnumerable<T>, IEnumerable
-    {
-        private QueryProviderBase _queryProvider;
-        Expression expression;
-
-        public TayzGridQuery(Cache cache)
-        {
-            _queryProvider = new TayzGrid.Linq.NCacheQueryProvider(cache);
-            this.expression = Expression.Constant(this);
-        }
-
-        internal TayzGridQuery(QueryProviderBase provider, Expression expression)
-        {
-            if (provider == null)
-            {
-                throw new ArgumentNullException("provider");
-            }
-            if (expression == null)
-            {
-                throw new ArgumentNullException("expression");
-            }
-            if (!typeof(IQueryable<T>).IsAssignableFrom(expression.Type))
-            {
-                throw new ArgumentOutOfRangeException("expression");
-            }
-            this._queryProvider = provider;
-            this.expression = expression;
-        }
-#else
 namespace Alachisoft.NCache.Linq
 {
     /// <summary>
@@ -95,7 +54,7 @@ namespace Alachisoft.NCache.Linq
             this._queryProvider = provider;
             this.expression = expression;
         }
-#endif
+
 
 
 

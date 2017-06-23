@@ -143,9 +143,20 @@
     <Compile Include="SocketServer\Callback Tasks\ItemUpdateCallback.cs" />
     <Compile Include="SocketServer\ClientDisposedCallback.cs" />
     <Compile Include="SocketServer\ClientManager.cs" />
+    <Compile Include="SocketServer\CommandProcessorPool.cs" />
+    <Compile Include="SocketServer\Command\DisposeReaderCommand.cs" />
+    <Compile Include="SocketServer\Command\ExecuteReaderCommand.cs" />
+    <Compile Include="SocketServer\Command\GetCacheBindingCommand.cs" />
     <Compile Include="SocketServer\Command\GetOptimalServerCommand.cs" />
+    <Compile Include="SocketServer\Command\GetReaderChunkCommand.cs" />
     <Compile Include="SocketServer\Command\GetRunningServersCommand.cs" />
     <Compile Include="SocketServer\Command\GetServerMappingCommand.cs" />
+    <Compile Include="SocketServer\Command\RegisterBulkKeyNotifcationCommand.cs" />
+    <Compile Include="SocketServer\Command\ResponseBuilders\ReaderResponseBuilder.cs" />
+    <Compile Include="SocketServer\Command\ServiceCacheBindingCommand.cs" />
+    <Compile Include="SocketServer\Command\ServiceGetOptimalServerCommand.cs" />
+    <Compile Include="SocketServer\Command\ServiceInitializeCommand.cs" />
+    <Compile Include="SocketServer\Command\UnRegsisterBulkKeyNotification.cs" />
     <Compile Include="SocketServer\Event Tasks\NodeJoinedEvent.cs" />
     <Compile Include="SocketServer\Event Tasks\NodeLeftEvent.cs" />
     <Compile Include="SocketServer\ICommandExecuter.cs" />
@@ -188,7 +199,6 @@
     <Compile Include="SocketServer\Command\RemoveCommand.cs" />
     <Compile Include="SocketServer\Command\ResponseBuilders\BulkGetResponseBuilder.cs" />
     <Compile Include="SocketServer\Command\ResponseBuilders\BulkRemoveResponseBuilder.cs" />
-    <Compile Include="SocketServer\Command\ResponseBuilders\ResponseBuilderBase.cs" />
     <Compile Include="SocketServer\Command\ResponseBuilders\SearchEnteriesResponseBuilder.cs" />
     <Compile Include="SocketServer\Command\ResponseBuilders\SearchResponseBuilder.cs" />
     <Compile Include="SocketServer\Command\SearchCommand.cs" />
@@ -210,16 +220,21 @@
     <Compile Include="SocketServer\ExceptionType.cs" />
     <Compile Include="SocketServer\GarbageCollectionTimer.cs" />
     <Compile Include="SocketServer\ICommandManager.cs" />
+    <Compile Include="SocketServer\IRequestProcessor.cs" />
     <Compile Include="SocketServer\ManagementCommandManager.cs" />
     <Compile Include="SocketServer\MappingTable.cs" />
     <Compile Include="SocketServer\NCache.cs" />
     <Compile Include="SocketServer\NotificationsType.cs" />
-    <Compile Include="SocketServer\SendContext.cs" />
+    <Compile Include="SocketServer\ServiceCommandManager.cs" />
+    <Compile Include="SocketServer\SocketContext\RecContextServer.cs" />
+    <Compile Include="SocketServer\SocketContext\SendContextServer.cs" />
     <Compile Include="SocketServer\SocketServer.cs" />
     <Compile Include="SocketServer\Statistics\PerfStatsCollector.cs" />
+    <Compile Include="SocketServer\Util\CommandHelper.cs" />
     <Compile Include="SocketServer\Util\EventHelper.cs" />
     <Compile Include="SocketServer\Util\HelperFxn.cs" />
     <Compile Include="SocketServer\Util\KeyPackageBuilder.cs" />
+    <Compile Include="SocketServer\Util\SocketHelper.cs" />
   </ItemGroup>
   <ItemGroup>
     <ProjectReference Include="..\NCCache\NCCache.csproj">

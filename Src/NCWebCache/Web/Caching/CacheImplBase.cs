@@ -1,4 +1,4 @@
-// Copyright (c) 2015 Alachisoft
+// Copyright (c) 2017 Alachisoft
 // 
 // Licensed under the Apache License, Version 2.0 (the "License");
 // you may not use this file except in compliance with the License.
@@ -11,6 +11,7 @@
 // WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
 // See the License for the specific language governing permissions and
 // limitations under the License.
+
 using System;
 using System.Collections;
 
@@ -24,6 +25,7 @@ using Alachisoft.NCache.Caching.Queries;
 using System.Collections.Generic;
 using Alachisoft.NCache.Runtime.Caching;
 using Alachisoft.NCache.Runtime.Events;
+using Alachisoft.NCache.Common.DataReader;
 
 namespace Alachisoft.NCache.Web.Caching
 {
@@ -189,6 +191,10 @@ namespace Alachisoft.NCache.Web.Caching
             return null;
         }
 
+        public virtual IRecordSetEnumerator ExecuteReader(string query, IDictionary values, bool getData, int chunkSize)
+        {
+            return null;
+        }
    
         public virtual object SafeSerialize(object serializableObject, string serializationContext, ref BitSet flag, CacheImplBase cacheImpl, ref long size)
         {
@@ -239,15 +245,14 @@ namespace Alachisoft.NCache.Web.Caching
             return false;
         }
 
-        public virtual void RegisterKeyNotificationCallback(string key, short updateCallbackid, short removeCallbackid, bool notifyOnItemExpiration) { }
-        public virtual void UnRegisterKeyNotificationCallback(string key, short updateCallbackid, short removeCallbackid) { }
-
 
         public virtual void RegisterKeyNotificationCallback(string key, short update, short remove, EventDataFilter datafilter, bool notifyOnItemExpiration) { }
 
-        public virtual void UnRegisterKeyNotificationCallback(string key, short update, short remove, EventType eventType) { }
+        public virtual void UnRegisterKeyNotificationCallback(string key, short updateCallbackid, short removeCallbackid) { }
 
+        public virtual void UnRegisterKeyNotificationCallback(string[] keys, short updateCallbackid, short removeCallbackid) { }
 
+        public virtual void RegisterKeyNotificationCallback(string[] key, short update, short remove, EventDataFilter datafilter, bool notifyOnItemExpiration) { }
 
     }
 

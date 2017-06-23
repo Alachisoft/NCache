@@ -1,4 +1,4 @@
-// Copyright (c) 2015 Alachisoft
+// Copyright (c) 2017 Alachisoft
 // 
 // Licensed under the Apache License, Version 2.0 (the "License");
 // you may not use this file except in compliance with the License.
@@ -20,11 +20,12 @@ using System.Runtime.InteropServices;
 // associated with an assembly.
 [assembly: AssemblyTitle("NHibernateNCache")]
 [assembly: AssemblyDescription("NHibernate Second level cache provider for NCache")]
+[assembly: AssemblyProduct("Alachisoft® NCache Open Source")]
+[assembly: AssemblyTrademark("NCache ™ is a registered trademark of Alachisoft.")]
 [assembly: AssemblyConfiguration("")]
 [assembly: AssemblyCompany("Alachisoft")]
-[assembly: AssemblyProduct("NHibernateNCache")]
-[assembly: AssemblyCopyright("")]
-[assembly: AssemblyTrademark("NCache")]
+
+[assembly: AssemblyCopyright("Copyright © 2005-2017 Alachisoft")]
 [assembly: AssemblyCulture("")]
 
 // Setting ComVisible to false makes the types in this assembly not visible 

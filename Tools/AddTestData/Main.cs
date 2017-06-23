@@ -1,4 +1,4 @@
-// Copyright (c) 2015 Alachisoft
+// Copyright (c) 2017 Alachisoft
 // 
 // Licensed under the Apache License, Version 2.0 (the "License");
 // you may not use this file except in compliance with the License.
@@ -43,6 +43,7 @@ namespace Alachisoft.NCache.Tools.AddTestData
         private string s_cacheId = "";
         private long s_itemCount = 10;
         private long s_dataSize = 1024;
+        private double s_absoluteExpiration = 300;
 
         public AddtestDataToolParam()
         {
@@ -68,6 +69,13 @@ namespace Alachisoft.NCache.Tools.AddTestData
             get { return s_dataSize; }
             set { s_dataSize = value; }
         }
+
+        [ArgumentAttribute(@"/e", 300)]
+        public double S_AbsoluteExpiration
+        {
+            get { return s_absoluteExpiration; }
+            set { s_absoluteExpiration = value; }
+        }
     }
 
     class AddTestDataTool
@@ -90,7 +98,7 @@ namespace Alachisoft.NCache.Tools.AddTestData
 
                 if (!ValidateParameters()) return;
 
-                AddTestData(cParam.S_cacheId,cParam.S_itemCount,cParam.S_dataSize);
+                AddTestData(cParam.S_cacheId, cParam.S_itemCount, cParam.S_dataSize, cParam.S_AbsoluteExpiration);
 
             }
             catch (Exception e)
@@ -117,7 +125,7 @@ namespace Alachisoft.NCache.Tools.AddTestData
             
         }
 
-        static void AddTestData(string cacheId, long itemCount, long dataSize)
+        static void AddTestData(string cacheId, long itemCount, long dataSize, double absoluteExpiration)
         {
             Cache cache;
 
@@ -128,7 +136,8 @@ namespace Alachisoft.NCache.Tools.AddTestData
                 long startCount = cache.Count;
 
                 Console.WriteLine("");
-                Console.WriteLine("Adding " + itemCount + " items. Size " + dataSize + " bytes. Expiration 5 minutes...");
+                Console.WriteLine("Adding " + itemCount + " items. Size " + dataSize + " bytes. " +
+                     "\nDefault Expiration: 300 seconds, unless otherwise specified.");
 
                 DateTime startDTime = DateTime.Now;
                 byte[] data = new byte[dataSize];
@@ -138,7 +147,7 @@ namespace Alachisoft.NCache.Tools.AddTestData
                     {
                         cache.Insert(index.ToString(),
                                         data,
-                                        System.DateTime.Now.AddMinutes(5),
+                                        System.DateTime.Now.AddSeconds(absoluteExpiration),
                                         Cache.NoSlidingExpiration,
                                         CacheItemPriority.Default);
                     }

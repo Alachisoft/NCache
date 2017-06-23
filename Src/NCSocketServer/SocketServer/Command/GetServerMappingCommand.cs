@@ -1,4 +1,4 @@
-// Copyright (c) 2015 Alachisoft
+// Copyright (c) 2017 Alachisoft
 // 
 // Licensed under the Apache License, Version 2.0 (the "License");
 // you may not use this file except in compliance with the License.
@@ -11,14 +11,9 @@
 // WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
 // See the License for the specific language governing permissions and
 // limitations under the License.
-using System;
-using System.Collections;
 
-using Alachisoft.NCache.Serialization.Formatters;
-using Alachisoft.NCache.SocketServer.Util;
-using Alachisoft.NCache.Web.Util;
-using Alachisoft.NCache.Common.DataStructures;
-using System.Collections.Generic;
+using System;
+
 using Alachisoft.NCache.Config;
 namespace Alachisoft.NCache.SocketServer.Command
 {
@@ -32,6 +27,7 @@ namespace Alachisoft.NCache.SocketServer.Command
         //PROTOBUF
         public override void ExecuteCommand(ClientManager clientManager, Alachisoft.NCache.Common.Protobuf.Command command)
         {
+
             CommandInfo cmdInfo;
 
             try
@@ -41,7 +37,6 @@ namespace Alachisoft.NCache.SocketServer.Command
             catch (Exception exc)
             {
                 if (!base.immatureId.Equals("-2")) 
-                    //_resultPacket = clientManager.ReplyPacket(base.ExceptionPacket(exc, base.immatureId), base.ParsingExceptionMessage(exc));
                     _serializedResponsePackets.Add(Alachisoft.NCache.Common.Util.ResponseHelper.SerializeExceptionResponse(exc, command.requestID));
                 return;
             }
@@ -84,9 +79,9 @@ namespace Alachisoft.NCache.SocketServer.Command
             }
             catch (Exception exc)
             {
-                //_resultPacket = clientManager.ReplyPacket(base.ExceptionPacket(exc, cmdInfo.RequestId), base.ExceptionMessage(exc));
                 _serializedResponsePackets.Add(Alachisoft.NCache.Common.Util.ResponseHelper.SerializeExceptionResponse(exc, command.requestID));
             }
+
         }
 
 

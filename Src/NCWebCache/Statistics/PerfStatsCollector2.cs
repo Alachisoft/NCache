@@ -1,4 +1,4 @@
-// Copyright (c) 2015 Alachisoft
+// Copyright (c) 2017 Alachisoft
 // 
 // Licensed under the Apache License, Version 2.0 (the "License");
 // you may not use this file except in compliance with the License.
@@ -11,6 +11,7 @@
 // WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
 // See the License for the specific language governing permissions and
 // limitations under the License.
+
 using System;
 using System.Diagnostics;
 using Alachisoft.NCache.Common.Stats;
@@ -316,7 +317,6 @@ namespace Alachisoft.NCache.Web.Statistics
 
                 lock (this)
                 {
-                    int ncounter = 1;
                     string instname = _instanceName;
 
                     _pcAddPerSec = new PerformanceCounter(PC_CATEGORY, "Additions/sec", _instanceName, false);
@@ -328,29 +328,29 @@ namespace Alachisoft.NCache.Web.Statistics
                     _pcEventProcesedPerSec = new PerformanceCounter(PC_CATEGORY, "Events Proccesed/sec", _instanceName, false);
 
                    
-                    _pcMsecPerGetAvg = new PerformanceCounter(PC_CATEGORY, "Average µs/fetch", _instanceName, false);
-                    _pcMsecPerGetBase = new PerformanceCounter(PC_CATEGORY, "Average µs/fetch base", _instanceName, false);
+                    _pcMsecPerGetAvg = new PerformanceCounter(PC_CATEGORY, "Average us/fetch", _instanceName, false);
+                    _pcMsecPerGetBase = new PerformanceCounter(PC_CATEGORY, "Average us/fetch base", _instanceName, false);
                     _usMsecPerGet = new UsageStats();
-                    _pcMsecPerAddAvg = new PerformanceCounter(PC_CATEGORY, "Average µs/add", _instanceName, false);
-                    _pcMsecPerAddBase = new PerformanceCounter(PC_CATEGORY, "Average µs/add base", _instanceName, false);
+                    _pcMsecPerAddAvg = new PerformanceCounter(PC_CATEGORY, "Average us/add", _instanceName, false);
+                    _pcMsecPerAddBase = new PerformanceCounter(PC_CATEGORY, "Average us/add base", _instanceName, false);
                     _usMsecPerAdd = new UsageStats();
-                    _pcMsecPerUpdAvg = new PerformanceCounter(PC_CATEGORY, "Average µs/insert", _instanceName, false);
-                    _pcMsecPerUpdBase = new PerformanceCounter(PC_CATEGORY, "Average µs/insert base", _instanceName, false);
+                    _pcMsecPerUpdAvg = new PerformanceCounter(PC_CATEGORY, "Average us/insert", _instanceName, false);
+                    _pcMsecPerUpdBase = new PerformanceCounter(PC_CATEGORY, "Average us/insert base", _instanceName, false);
                     _usMsecPerUpd = new UsageStats();
-                    _pcMsecPerDelAvg = new PerformanceCounter(PC_CATEGORY, "Average µs/remove", _instanceName, false);
-                    _pcMsecPerDelBase = new PerformanceCounter(PC_CATEGORY, "Average µs/remove base", _instanceName, false);
+                    _pcMsecPerDelAvg = new PerformanceCounter(PC_CATEGORY, "Average us/remove", _instanceName, false);
+                    _pcMsecPerDelBase = new PerformanceCounter(PC_CATEGORY, "Average us/remove base", _instanceName, false);
                     _usMsecPerDel = new UsageStats();
 
                     _pcReqrQueueSize = new PerformanceCounter(PC_CATEGORY, "Request queue size", _instanceName, false);
                     
-                    _pcMsecPerEventAvg = new PerformanceCounter(PC_CATEGORY, "Average µs/event", _instanceName, false);
-                    _pcMsecPerEventBase = new PerformanceCounter(PC_CATEGORY, "Average µs/event base", _instanceName, false);
+                    _pcMsecPerEventAvg = new PerformanceCounter(PC_CATEGORY, "Average us/event", _instanceName, false);
+                    _pcMsecPerEventBase = new PerformanceCounter(PC_CATEGORY, "Average us/event base", _instanceName, false);
                     _usMsecPerEvent = new UsageStats();
 
                     _usMsecPerDel = new UsageStats();
 
-                    _pcMsecPerSerializationAvg = new PerformanceCounter(PC_CATEGORY, "Average µs/serialization", _instanceName, false);
-                    _pcMsecPerSerializationAvgBase = new PerformanceCounter(PC_CATEGORY, "Average µs/serialization base", _instanceName, false);
+                    _pcMsecPerSerializationAvg = new PerformanceCounter(PC_CATEGORY, "Average us/serialization", _instanceName, false);
+                    _pcMsecPerSerializationAvgBase = new PerformanceCounter(PC_CATEGORY, "Average us/serialization base", _instanceName, false);
 
                 }
             }

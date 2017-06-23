@@ -1,4 +1,4 @@
-﻿// Copyright (c) 2015 Alachisoft
+﻿// Copyright (c) 2017 Alachisoft
 // 
 // Licensed under the Apache License, Version 2.0 (the "License");
 // you may not use this file except in compliance with the License.
@@ -11,10 +11,7 @@
 // WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
 // See the License for the specific language governing permissions and
 // limitations under the License.
-using System;
-using System.Collections.Generic;
-using System.Linq;
-using System.Text;
+
 
 namespace Alachisoft.NCache.Web.SessionState
 {
@@ -27,7 +24,7 @@ namespace Alachisoft.NCache.Web.SessionState
         /// <returns></returns>
         public static string GetSessionCacheKey(string sessionId)
         {
-            return string.IsNullOrEmpty(NSessionStoreProvider.ApplicationId) ? sessionId : sessionId + "." + NSessionStoreProvider.ApplicationId;
+            return string.IsNullOrEmpty(LegacyProvider.ApplicationId) ? sessionId : sessionId + "." + LegacyProvider.ApplicationId;
         }
 
         /// <summary>
@@ -36,7 +33,7 @@ namespace Alachisoft.NCache.Web.SessionState
         /// <returns></returns>
         public static string GetSessionCacheName()
         {
-            return NSessionStoreProvider.SessionCacheName;
+            return LegacyProvider.SessionCacheName;
         }
     }
 }

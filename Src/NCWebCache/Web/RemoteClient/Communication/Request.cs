@@ -1,4 +1,4 @@
-// Copyright (c) 2015 Alachisoft
+// Copyright (c) 2017 Alachisoft
 // 
 // Licensed under the Apache License, Version 2.0 (the "License");
 // you may not use this file except in compliance with the License.
@@ -11,6 +11,7 @@
 // WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
 // See the License for the specific language governing permissions and
 // limitations under the License.
+
 using System;
 using System.Collections.Generic;
 using System.Text;
@@ -19,9 +20,9 @@ using System.Collections;
 using Alachisoft.NCache.Common.Protobuf;
 using Alachisoft.NCache.Common.DataStructures;
 using Alachisoft.NCache.Runtime.Exceptions;
-using Alachisoft.NCache.Common.Net;
-using Alachisoft.NCache.Common.Stats;
-using Common = Alachisoft.NCache.Common;
+using Alachisoft.NCache.Caching;
+using Alachisoft.NCache.Common;
+using Alachisoft.NCache.Serialization.Formatters;
 
 namespace Alachisoft.NCache.Web.Communication
 {
@@ -29,13 +30,14 @@ namespace Alachisoft.NCache.Web.Communication
     {
         private long _requestId = -1;
         private bool _isAsync = false;
+        private string _cacheId=null;
         private bool _isBulk = false;
         private bool _isAsyncCallbackSpecified = false;
         private string _name;
         private CommandResponse _finalResponse = null;
         private object _responseMutex = new object();
 
-        private Alachisoft.NCache.Common.Protobuf.Response.Type _type;
+        private Response.Type _type;
         private Dictionary<Common.Net.Address, ResponseList> _responses = new Dictionary<Common.Net.Address, ResponseList>();
         private Dictionary<Common.Net.Address, CommandBase> _commands = new Dictionary<Common.Net.Address, CommandBase>();
         private Dictionary<Common.Net.Address, EnumerationDataChunk> _chunks = new Dictionary<Common.Net.Address, EnumerationDataChunk>();
@@ -164,9 +166,7 @@ namespace Alachisoft.NCache.Web.Communication
             get
             {
                 StringBuilder sb = new StringBuilder("Operation timed out. No response from the server(s)." );
-
                 sb.Append(" [");
-
                 lock (_responseMutex)
                 {
                     foreach (Common.Net.Address ip in Commands.Keys) 
@@ -205,8 +205,8 @@ namespace Alachisoft.NCache.Web.Communication
                         {
                             //in case exception is not thrown from 1st server.
                             if (!string.IsNullOrEmpty(rsp.ExceptionMsg) && rsp.ExceptionType != Alachisoft.NCache.Common.Enum.ExceptionType.STATE_TRANSFER_EXCEPTION
-                                && rsp.ExceptionType != Alachisoft.NCache.Common.Enum.ExceptionType.ATTRIBUTE_INDEX_NOT_FOUND
-                                && rsp.ExceptionType != Alachisoft.NCache.Common.Enum.ExceptionType.TYPE_INDEX_NOT_FOUND)
+                                && rsp.ExceptionType != Common.Enum.ExceptionType.ATTRIBUTE_INDEX_NOT_FOUND
+                                && rsp.ExceptionType != Common.Enum.ExceptionType.TYPE_INDEX_NOT_FOUND)
                             {
                                 _finalResponse = rsp;
                                 return _finalResponse;
@@ -357,27 +357,135 @@ namespace Alachisoft.NCache.Web.Communication
         {
             switch (_finalResponse.ResultSet.AggregateFunctionType)
             {
-                case Alachisoft.NCache.Common.Enum.AggregateFunctionType.MAX:
+                case Common.Enum.AggregateFunctionType.MAX:
                     _finalResponse.ResultSet.AggregateFunctionResult = new DictionaryEntry(AggregateFunctionType.MAX, _finalResponse.ResultSet.AggregateFunctionResult.Value);
                     break;
-                case Alachisoft.NCache.Common.Enum.AggregateFunctionType.MIN:
+                case Common.Enum.AggregateFunctionType.MIN:
                     _finalResponse.ResultSet.AggregateFunctionResult = new DictionaryEntry(AggregateFunctionType.MIN, _finalResponse.ResultSet.AggregateFunctionResult.Value);
                     break;
-                case Alachisoft.NCache.Common.Enum.AggregateFunctionType.COUNT:
+                case Common.Enum.AggregateFunctionType.COUNT:
                     _finalResponse.ResultSet.AggregateFunctionResult = new DictionaryEntry(AggregateFunctionType.COUNT, _finalResponse.ResultSet.AggregateFunctionResult.Value);
                     break;
-                case Alachisoft.NCache.Common.Enum.AggregateFunctionType.SUM:
+                case Common.Enum.AggregateFunctionType.SUM:
                     _finalResponse.ResultSet.AggregateFunctionResult = new DictionaryEntry(AggregateFunctionType.SUM, _finalResponse.ResultSet.AggregateFunctionResult.Value);
                     break;
-                case Alachisoft.NCache.Common.Enum.AggregateFunctionType.AVG:
+                case Common.Enum.AggregateFunctionType.AVG:
                     _finalResponse.ResultSet.AggregateFunctionResult = new DictionaryEntry(AggregateFunctionType.AVG, _finalResponse.ResultSet.AggregateFunctionResult.Value);
                     break;
             }
         }
 
+
+        private Common.DataReader.ReaderResultSet ConvertToReaderResult(Common.Protobuf.ReaderResultSet readerResultSetProto)
+        {
+            if (readerResultSetProto == null)
+                return null;
+            Common.DataReader.ReaderResultSet readerResultSet = new Common.DataReader.ReaderResultSet();
+            readerResultSet.IsGrouped = readerResultSetProto.isGrouped;
+            readerResultSet.NodeAddress = readerResultSetProto.nodeAddress;
+            readerResultSet.NextIndex = readerResultSetProto.nextIndex;
+            readerResultSet.ReaderID = readerResultSetProto.readerId;
+
+            Common.DataReader.RecordSet recordSet = null;
+            if (readerResultSetProto.recordSet != null)
+            {
+                recordSet = new Common.DataReader.RecordSet();
+                RecordSet recordSetProto = readerResultSetProto.recordSet;
+                foreach (RecordColumn columnProto in recordSetProto.columns)
+                {
+                    Common.DataReader.RecordColumn column = new Common.DataReader.RecordColumn(columnProto.name);
+                    column.AggregateFunctionType = (Common.Enum.AggregateFunctionType)Convert.ToInt32(columnProto.aggregateFunctionType);
+                    column.ColumnType = (Common.Enum.ColumnType)Convert.ToInt32(columnProto.columnType);
+                    column.DataType = (Common.Enum.ColumnDataType)Convert.ToInt32(columnProto.dataType);
+                    column.IsFilled = columnProto.isFilled;
+                    column.IsHidden = columnProto.isHidden;
+                    recordSet.AddColumn(column);
+                }
+
+                PopulateRows(recordSet, recordSetProto.rows);
+            }
+            readerResultSet.RecordSet = recordSet;
+            return readerResultSet;
+        }
+
+        private void PopulateRows(Common.DataReader.RecordSet recordSet, List<RecordRow> rows)
+        {
+            try
+            {
+                if (recordSet != null && rows != null)
+                {
+                    foreach (RecordRow rowProto in rows)
+                    {
+                        Common.DataReader.RecordRow row = recordSet.CreateRow();
+                        if (recordSet.Columns != null)
+                            for (int i = 0; i < recordSet.Columns.Count; i++)
+                            {
+                                if (rowProto.values[i] != null)
+                                {
+                                    if (recordSet.Columns[i].DataType != null)
+                                        switch (recordSet.Columns[i].DataType)
+                                        {
+                                            case Common.Enum.ColumnDataType.AverageResult:
+                                                Common.Queries.AverageResult avgResult = new Common.Queries.AverageResult();
+                                                avgResult.Sum = Convert.ToDecimal(rowProto.values[i].avgResult.sum);
+                                                avgResult.Count = Convert.ToDecimal(rowProto.values[i].avgResult.count);
+                                                row[i] = avgResult;
+                                                break;
+                                            case Common.Enum.ColumnDataType.CompressedValueEntry: 
+                                                Value val = rowProto.values[i].binaryObject;
+                                                UserBinaryObject ubObject = UserBinaryObject.CreateUserBinaryObject(val.data.ToArray());
+                                                byte[] bytes = ubObject.GetFullObject();
+                                                CompressedValueEntry cmpEntry = new CompressedValueEntry();
+                                                cmpEntry.Flag = new BitSet((byte)rowProto.values[i].flag);
+                                                cmpEntry.Value = bytes;
+                                                row[i] = ConvertToUserObject(cmpEntry);
+                                                break;
+                                            default:
+                                                row[i] = Common.DataReader.RecordSet.ToObject(rowProto.values[i].stringValue, recordSet.Columns[i].DataType);
+                                                break;
+                                        }
+                                }
+                            }
+                        recordSet.AddRow(row);
+                    }
+                }
+            }
+            catch (ArgumentOutOfRangeException ex)
+            {
+                throw new InvalidReaderException("Reader state has been lost.: ", ex);
+            }
+        }
+
+        public string CacheId
+        {
+            get{
+                return _cacheId;
+            }
+            set{_cacheId=value;}
+        }
+
+        private object ConvertToUserObject(CompressedValueEntry cmpEntry)
+        {
+            if (cmpEntry.Value is UserBinaryObject)
+            {
+                UserBinaryObject ubObject = cmpEntry.Value as UserBinaryObject;
+                cmpEntry.Value = ubObject.GetFullObject();
+            }
+
+            if (cmpEntry.Value is CallbackEntry)
+            {
+                CallbackEntry e = cmpEntry.Value as CallbackEntry;
+                cmpEntry.Value = e.Value;
+            }
+
+            return CompactBinaryFormatter.FromByteBuffer((byte[])cmpEntry.Value, CacheId);
+        }
+
         internal void MergeResponse(Common.Net.Address address, CommandResponse response)
         {
-            if (_finalResponse == null && response.Type != Alachisoft.NCache.Common.Protobuf.Response.Type.GET_NEXT_CHUNK)
+            if (_finalResponse == null && response.Type != Alachisoft.NCache.Common.Protobuf.Response.Type.GET_NEXT_CHUNK &&
+                response.Type != Alachisoft.NCache.Common.Protobuf.Response.Type.GET_READER_CHUNK &&
+                response.Type != Alachisoft.NCache.Common.Protobuf.Response.Type.EXECUTE_READER)
             {
                 _finalResponse = response;
 
@@ -490,6 +598,69 @@ namespace Alachisoft.NCache.Web.Communication
                             _finalResponse.NextChunk = new List<EnumerationDataChunk>(_chunks.Values);
 
                             break;
+                        case Alachisoft.NCache.Common.Protobuf.Response.Type.EXECUTE_READER:
+                            if (_finalResponse == null)
+                            {
+                                _finalResponse = response;
+                            }
+
+                            if ((_finalResponse.ExceptionType == Alachisoft.NCache.Common.Enum.ExceptionType.TYPE_INDEX_NOT_FOUND)
+                              || (_finalResponse.ExceptionType == Alachisoft.NCache.Common.Enum.ExceptionType.ATTRIBUTE_INDEX_NOT_FOUND))
+                            {
+                                _finalResponse = response;
+                                break;
+                            }
+
+                            List<ReaderResultSet> protoReaders = response.ProtobufResponse.executeReaderResponse.readerResultSets;
+
+                            if (protoReaders != null && protoReaders.Count > 0)
+                            {
+                                foreach (ReaderResultSet protoReaderResultSet in protoReaders)
+                                {
+                                    Common.DataReader.ReaderResultSet readerResultSet = null;
+
+                                    foreach (Common.DataReader.ReaderResultSet set in _finalResponse.ReaderResultSets)
+                                    {
+                                        if(protoReaderResultSet.readerId == set.ReaderID && protoReaderResultSet.nodeAddress== set.NodeAddress)
+                                        {
+                                            readerResultSet = set;
+                                            break;
+                                        }
+                                    }
+
+                                    if (readerResultSet != null)
+                                    {
+                                        PopulateRows((Common.DataReader.RecordSet)readerResultSet.RecordSet, protoReaderResultSet.recordSet.rows);
+                                    }
+                                    else
+                                    {
+                                        readerResultSet = ConvertToReaderResult(protoReaderResultSet);
+                                        _finalResponse.ReaderResultSets.Add(readerResultSet);
+                                    }
+                                }
+                            }
+
+                            break;
+
+                        case Common.Protobuf.Response.Type.GET_READER_CHUNK:
+
+                            if(_finalResponse == null)
+                                _finalResponse = response;
+
+                            ReaderResultSet protoReaderChunkResultSet = response.ProtobufResponse.getReaderChunkResponse.readerResultSets;
+                            Common.DataReader.ReaderResultSet readerChunkResultSet = _finalResponse.ReaderNextChunk;
+
+                            if (readerChunkResultSet != null)
+                            {
+                                PopulateRows((Common.DataReader.RecordSet)readerChunkResultSet.RecordSet, protoReaderChunkResultSet.recordSet.rows);
+                            }
+                            else
+                            {
+                                readerChunkResultSet = ConvertToReaderResult(protoReaderChunkResultSet);
+                                _finalResponse.ReaderNextChunk = readerChunkResultSet;
+                            }
+
+                            break;
                            
                         case Alachisoft.NCache.Common.Protobuf.Response.Type.EXCEPTION:
                             if (response.ExceptionType == Common.Enum.ExceptionType.STATE_TRANSFER_EXCEPTION)
@@ -526,6 +697,7 @@ namespace Alachisoft.NCache.Web.Communication
 
                 case Alachisoft.NCache.Common.Protobuf.Response.Type.SEARCH:
                 case Alachisoft.NCache.Common.Protobuf.Response.Type.SEARCH_ENTRIES:
+                case Common.Protobuf.Response.Type.EXECUTE_READER:
                     _finalResponse.SetBroker = true;
                     _finalResponse.ResetConnectionIP = response.ResetConnectionIP;
                     break;

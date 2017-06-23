@@ -1,4 +1,4 @@
-// Copyright (c) 2015 Alachisoft
+// Copyright (c) 2017 Alachisoft
 // 
 // Licensed under the Apache License, Version 2.0 (the "License");
 // you may not use this file except in compliance with the License.
@@ -11,6 +11,7 @@
 // WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
 // See the License for the specific language governing permissions and
 // limitations under the License.
+
 using System;
 using System.Text;
 using System.Collections;
@@ -98,7 +99,6 @@ namespace Alachisoft.NCache.Caching.Topologies.Clustered
 			 if (sparsedBuckets)
 			 {
                  return new StateTxfrInfo(true);
-                 //return GetData(bucketIds);
 			 }
 			 else
 			 {
@@ -124,7 +124,6 @@ namespace Alachisoft.NCache.Caching.Topologies.Clustered
                          _parent.InternalCache.GetKeyList(_currentBucket, enableLogs, out _keyList);
 						 _logableBuckets.Add(_currentBucket);
 
-						 //muds:
 						 //reset the _lastLogTblCount
 						 _sendLogData = false;
 					 }
@@ -149,99 +148,11 @@ namespace Alachisoft.NCache.Caching.Topologies.Clustered
                      return new StateTxfrInfo(new HashVector(), false, 0, null);
 				 }
 
-				
 				 //take care that we need to send data in chunks if 
 				 //bucket is too large.
 				 return GetData(_currentBucket);
 			 }
 		 }
-
-         //protected StateTxfrInfo GetData(ArrayList bucketIds)
-         //{
-         //    try
-         //    {
-         //        object[] keys = null;
-         //        Hashtable data = null;
-         //        Hashtable result = new Hashtable();
-         //        ArrayList payLoad = new ArrayList();
-         //        ArrayList payLoadCompilationInfo = new ArrayList();
-
-         //        if (!_sendLogData)
-         //        {
-         //            IEnumerator ie = bucketIds.GetEnumerator();
-         //            while (ie.MoveNext())
-         //            {
-         //                int bucketId = (int)ie.Current;
-         //                if (_parent.Context.NCacheLog.IsInfoEnabled) _parent.Context.NCacheLog.Info("StateTxfrCorresponder.GetData(1)", "transfering data for bucket : " + bucketId);
-         //                bool enableLogs = _transferType == StateTransferType.MOVE_DATA ? true : false;
-         //                _parent.InternalCache.GetKeyList(bucketId, enableLogs, _keyList);
-         //                _logableBuckets.Add(bucketId);
-
-         //                data = null;
-         //                if (keyList != null)
-         //                {
-         //                    if (_parent.Context.NCacheLog.IsInfoEnabled) _parent.Context.NCacheLog.Info("StateTxfrCorresponder.GetData(1)", "bucket : " + bucketId + " [" + keyList.Count + " ]");
-
-         //                    keys = keyList.ToArray();
-
-         //                    OperationContext operationContext = new OperationContext(OperationContextFieldName.OperationType, OperationContextOperationType.CacheOperation);
-         //                    operationContext.Add(OperationContextFieldName.GenerateQueryInfo, true);
-         //                    data = _parent.InternalCache.Get(keys,operationContext);
-         //                }
-                        
-         //                if (data != null && data.Count > 0)
-         //                {
-         //                    if (result.Count == 0)
-         //                    {
-         //                        result = data.Clone() as Hashtable;
-         //                    }
-         //                    else
-         //                    {
-         //                        IDictionaryEnumerator ide = data.GetEnumerator();
-         //                        while (ide.MoveNext())
-         //                        {
-         //                            CacheEntry entry = ide.Value as CacheEntry;
-         //                            UserBinaryObject ubObject = null;
-         //                            if (entry.Value is CallbackEntry)
-         //                            {
-         //                                ubObject = ((CallbackEntry)entry.Value).Value as UserBinaryObject;
-         //                            }
-         //                            else
-         //                                ubObject = entry.Value as UserBinaryObject;
-
-         //                            payLoad.AddRange(ubObject.Data);
-         //                            long size = entry.DataSize;
-         //                            int index = payLoadCompilationInfo.Add(size);
-         //                            PayloadInfo payLoadInfo = new PayloadInfo(entry.CloneWithoutValue(), index);
-         //                            result[ide.Key] = payLoadInfo;
-         //                        }
-
-         //                    }
-         //                }
-         //            }
-         //            _sendLogData = true;
-         //            if (_parent.Context.NCacheLog.IsInfoEnabled)
-         //                _parent.Context.NCacheLog.Info("State Transfer Corresponder", "BalanceDataLoad = " + _isBalanceDataLoad.ToString());
-         //            if (_isBalanceDataLoad)
-         //            {
-         //                _parent.Context.PerfStatsColl.IncrementDataBalPerSecStatsBy(result.Count);
-         //            }
-         //            else
-         //            {
-         //                _parent.Context.PerfStatsColl.IncrementStateTxfrPerSecStatsBy(result.Count);
-         //            }
-
-         //            return new StateTxfrInfo(result,payLoad,payLoadCompilationInfo, false);
-         //        }
-         //        else
-         //            return GetLoggedData(bucketIds);
-         //    }
-         //    catch (Exception ex)
-         //    {
-         //        _parent.Context.NCacheLog.Error("StateTxfrCorresponder.GetData(1)", ex.ToString());
-         //        return null;
-         //    }
-         //}
 
 		 protected StateTxfrInfo GetData(int bucketId)
 		 {
@@ -370,7 +281,6 @@ namespace Alachisoft.NCache.Caching.Topologies.Clustered
 			 {
                 
 			 }
-		
 			 //no operation has been logged during state transfer.
 			 //so announce completion of state transfer for this bucket.
              return new StateTxfrInfo(_result, true, 0, this.stream);

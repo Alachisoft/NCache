@@ -139,11 +139,28 @@
     <Reference Include="System.DirectoryServices.Protocols" />
     <Reference Include="System.Management" />
     <Reference Include="System.Runtime.Remoting" />
+    <Reference Include="System.ServiceProcess" />
     <Reference Include="System.XML">
       <Name>System.XML</Name>
     </Reference>
   </ItemGroup>
   <ItemGroup>
+    <Compile Include="DataReader\ColumnCollection.cs" />
+    <Compile Include="DataReader\DistributedGroupedRSEnumerator.cs" />
+    <Compile Include="DataReader\DistributedOrderedRSEnumerator.cs" />
+    <Compile Include="DataReader\DistributedRSEnumerator.cs" />
+    <Compile Include="DataReader\IRecordSet.cs" />
+    <Compile Include="DataReader\IRecordSetEnumerator.cs" />
+    <Compile Include="DataReader\IRecordSetLoader.cs" />
+    <Compile Include="DataReader\PartitionRSEnumerator.cs" />
+    <Compile Include="DataReader\ReaderResultSet.cs" />
+    <Compile Include="DataReader\RecordColumn.cs" />
+    <Compile Include="DataReader\RecordRow.cs" />
+    <Compile Include="DataReader\RecordSet.cs" />
+    <Compile Include="DataReader\RecordSetEnumerator.cs" />
+    <Compile Include="DataReader\RecordSetMetaData.cs" />
+    <Compile Include="DataReader\RowCollection.cs" />
+    <Compile Include="DataReader\SubsetInfo.cs" />
     <Compile Include="DataStructures\Clustered\BinaryCompatibility.cs" />
     <Compile Include="DataStructures\Clustered\ClusteredArray.cs" />
     <Compile Include="DataStructures\Clustered\ClusteredArrayList.cs" />
@@ -159,6 +176,24 @@
     <Compile Include="DataStructures\Clustered\__Error.cs" />
     <Compile Include="DataStructures\INodeReference.cs" />
     <Compile Include="DataStructures\ITreeNode.cs" />
+    <Compile Include="Enum\CollectionOperation.cs" />
+    <Compile Include="Enum\ManualDistType.cs" />
+    <Compile Include="Enum\ColumnDataType.cs" />
+    <Compile Include="Enum\ColumnType.cs" />
+    <Compile Include="Enum\DataFormat.cs" />
+    <Compile Include="Enum\Order.cs" />
+    <Compile Include="Enum\PortType.cs" />
+    <Compile Include="Enum\ReceivingState.cs" />
+    <Compile Include="Locking\FastSemaphore.cs" />
+    <Compile Include="Locking\KeyLockManager.cs" />
+    <Compile Include="Locking\LockModeEnum.cs" />
+    <Compile Include="Locking\SemaphoreLock.cs" />
+    <Compile Include="Locking\SemaphoreReaderWriterLock.cs" />
+    <Compile Include="Locking\SlimLockWrapper.cs" />
+    <Compile Include="Monitoring\CacheNodeStatistics.cs" />
+    <Compile Include="Monitoring\ClientNode.cs" />
+    <Compile Include="Monitoring\ClientProcessStats.cs" />
+    <Compile Include="Net\Helper.cs" />
     <Compile Include="Protobuf\AddAttributeResponse.cs">
       <DependentUpon>AddAttributeResponse.proto</DependentUpon>
       <SubType>Code</SubType>
@@ -250,6 +285,9 @@
       <DesignTimeSharedInput>True</DesignTimeSharedInput>
       <AutoGen>True</AutoGen>
     </Compile>
+    <Compile Include="Protobuf\ColumnDataType.cs" />
+    <Compile Include="Protobuf\ColumnType.cs" />
+    <Compile Include="Protobuf\ColumnValue.cs" />
     <Compile Include="Protobuf\Commands\AddAttributeCommand.cs">
       <DependentUpon>AddAttributeCommand.proto</DependentUpon>
       <SubType>Code</SubType>
@@ -340,6 +378,7 @@
       <DesignTimeSharedInput>True</DesignTimeSharedInput>
       <AutoGen>True</AutoGen>
     </Compile>
+    <Compile Include="Protobuf\Commands\DisposeReaderCommand.cs" />
     <Compile Include="Protobuf\Commands\EnumerationPointer.cs">
       <DependentUpon>EnumerationPointer.proto</DependentUpon>
       <SubType>Code</SubType>
@@ -354,6 +393,8 @@
       <DesignTimeSharedInput>True</DesignTimeSharedInput>
       <AutoGen>True</AutoGen>
     </Compile>
+    <Compile Include="Protobuf\Commands\ExecuteReaderCommand.cs" />
+    <Compile Include="Protobuf\Commands\GetCacheBindingCommand.cs" />
     <Compile Include="Protobuf\Commands\GetCacheItemCommand.cs">
       <DependentUpon>GetCacheItemCommand.proto</DependentUpon>
       <SubType>Code</SubType>
@@ -409,6 +450,7 @@
       <DesignTimeSharedInput>True</DesignTimeSharedInput>
       <AutoGen>True</AutoGen>
     </Compile>
+    <Compile Include="Protobuf\Commands\GetReaderNextChunkCommand.cs" />
     <Compile Include="Protobuf\Commands\GetRunningServersCommand.cs">
       <DependentUpon>GetRunningServersCommand.proto</DependentUpon>
       <SubType>Code</SubType>
@@ -633,6 +675,7 @@
       <DesignTimeSharedInput>True</DesignTimeSharedInput>
       <AutoGen>True</AutoGen>
     </Compile>
+    <Compile Include="Protobuf\DisposeReaderResponse.cs" />
     <Compile Include="Protobuf\DisposeResponse.cs">
       <DependentUpon>DisposeResponse.proto</DependentUpon>
       <SubType>Code</SubType>
@@ -668,6 +711,7 @@
       <DesignTimeSharedInput>True</DesignTimeSharedInput>
       <AutoGen>True</AutoGen>
     </Compile>
+    <Compile Include="Protobuf\ExecuteReaderResponse.cs" />
     <Compile Include="Protobuf\FragmentedResponse.cs">
       <DependentUpon>FragmentedResponse.proto</DependentUpon>
       <SubType>Code</SubType>
@@ -675,6 +719,7 @@
       <DesignTimeSharedInput>True</DesignTimeSharedInput>
       <AutoGen>True</AutoGen>
     </Compile>
+    <Compile Include="Protobuf\GetCacheBindingResponse.cs" />
     <Compile Include="Protobuf\GetCacheItemResponse.cs">
       <DependentUpon>GetCacheItemResponse.proto</DependentUpon>
       <SubType>Code</SubType>
@@ -723,6 +768,7 @@
       <DesignTimeSharedInput>True</DesignTimeSharedInput>
       <AutoGen>True</AutoGen>
     </Compile>
+    <Compile Include="Protobuf\GetReaderChunkResponse.cs" />
     <Compile Include="Protobuf\GetResponse.cs">
       <DependentUpon>GetResponse.proto</DependentUpon>
       <SubType>Code</SubType>
@@ -865,6 +911,8 @@
       <DesignTimeSharedInput>True</DesignTimeSharedInput>
       <DependentUpon>NodeLeftEventResponse.proto</DependentUpon>
     </Compile>
+    <Compile Include="Protobuf\Order.cs" />
+    <Compile Include="Protobuf\OrderByArgument.cs" />
     <Compile Include="Protobuf\QueryResultSet.cs">
       <DependentUpon>QueryResultSet.proto</DependentUpon>
       <SubType>Code</SubType>
@@ -893,6 +941,11 @@
       <DesignTimeSharedInput>True</DesignTimeSharedInput>
       <AutoGen>True</AutoGen>
     </Compile>
+    <Compile Include="Protobuf\ReaderResultSet.cs" />
+    <Compile Include="Protobuf\RecordColumn.cs" />
+    <Compile Include="Protobuf\RecordRow.cs" />
+    <Compile Include="Protobuf\RecordSet.cs" />
+    <Compile Include="Protobuf\RecordSetValue.cs" />
     <Compile Include="Protobuf\RegisterBulkKeyNotifResponse.cs">
       <DependentUpon>RegisterBulkKeyNotifResponse.proto</DependentUpon>
       <SubType>Code</SubType>
@@ -972,6 +1025,16 @@
       <DesignTimeSharedInput>True</DesignTimeSharedInput>
       <AutoGen>True</AutoGen>
     </Compile>
+    <Compile Include="Queries\WrapperQueryResult.cs" />
+    <Compile Include="Queries\HashedQueryResult.cs" />
+    <Compile Include="Queries\ListQueryResult.cs" />
+    <Compile Include="Queries\HashSetQueryResult.cs" />
+    <Compile Include="Queries\OrderByArgument.cs" />
+    <Compile Include="Queries\QueryKeyWords.cs" />
+    <Compile Include="Queries\IQueryResult.cs" />
+    <Compile Include="Sockets\CommunicationContext.cs" />
+    <Compile Include="Sockets\ReceiveContext.cs" />
+    <Compile Include="Sockets\SendContext.cs" />
     <Compile Include="StatusInfo.cs" />
     <Compile Include="LoggingInfo.cs" />
     <Compile Include="Communication\Exceptions\ChannelException.cs" />
@@ -1009,7 +1072,6 @@
     <Compile Include="DataStructures\IOptimizedQueueOperation.cs" />
     <Compile Include="DataStructures\IPriorityQueue.cs" />
     <Compile Include="DataStructures\IQueueDistributionStrategy.cs" />
-    <Compile Include="Enum\ManualDistType.cs" />
     <Compile Include="DataStructures\NewHashmap.cs" />
     <Compile Include="DataStructures\ReplicatedStateTransferStatus.cs">
       <SubType>Code</SubType>
@@ -1041,7 +1103,6 @@
     <Compile Include="Interop\SYSTEM_INFO.cs" />
     <Compile Include="ISizable.cs" />
     <Compile Include="Locking\LockManager.cs" />
-    <Compile Include="Locking\LockMode.cs" />
     <Compile Include="Logger\ILogger.cs" />
     <Compile Include="Logger\LoggerNames.cs" />
     <Compile Include="Logger\NCacheLogger.cs" />
@@ -1071,7 +1132,6 @@
     <Compile Include="Net\ObjectProvider.cs" />
     <Compile Include="ProductVersion.cs" />
     <Compile Include="Queries\AverageResult.cs" />
-    <Compile Include="Remoting\RemotingChannels.cs" />
     <Compile Include="Resources\Resource1.Designer.cs">
       <AutoGen>True</AutoGen>
       <DesignTime>True</DesignTime>
@@ -1093,7 +1153,6 @@
     <Compile Include="Stats\HPTime.cs" />
     <Compile Include="Stats\HPTimeStats.cs" />
     <Compile Include="Stats\NanoSecTimeStats.cs" />
-    <Compile Include="Stats\SystemMemoryTask.cs" />
     <Compile Include="Threading\EventQueueComparer.cs" />
     <Compile Include="Threading\IThreadRunnable.cs" />
     <Compile Include="Threading\Latch.cs" />
@@ -1130,6 +1189,11 @@
     <Compile Include="Threading\TimeScheduler.cs">
       <SubType>Code</SubType>
     </Compile>
+    <Compile Include="ToolsCommon\ArgumentAttribute.cs" />
+    <Compile Include="ToolsCommon\CommandLineArgumentParser.cs" />
+    <Compile Include="ToolsCommon\CommandLineParamsBase.cs" />
+    <Compile Include="ToolsCommon\ConfigurationValidator.cs" />
+    <Compile Include="ToolsCommon\ProductVersion.cs" />
     <Compile Include="Trace.cs">
       <SubType>Code</SubType>
     </Compile>
@@ -1139,19 +1203,25 @@
     <Compile Include="Util\BitSetHelper.cs" />
     <Compile Include="Util\BufferPool.cs" />
     <Compile Include="Util\BufferStatus.cs" />
+    <Compile Include="Util\CacheHostInfo.cs" />
+    <Compile Include="Util\CacheHostParam.cs" />
     <Compile Include="Util\DirectoryUtil.cs" />
     <Compile Include="Util\EnumerationPointerConversionUtil.cs" />
     <Compile Include="Util\EventCategories.cs" />
     <Compile Include="Util\EventID.cs" />
+    <Compile Include="Util\IConnectionManager.cs" />
     <Compile Include="Util\LanguageContext.cs" />
-    <Compile Include="Util\LargBuffer.cs" />
     <Compile Include="Util\LockOptions.cs" />
     <Compile Include="Util\Log4net.cs" />
     <Compile Include="Util\LoggingInformation.cs" />
+    <Compile Include="Util\ManagementPortHandler.cs" />
     <Compile Include="Util\ManagementUtil.cs" />
     <Compile Include="Util\MemoryStatus.cs" />
     <Compile Include="Util\MemoryUtil.cs" />
     <Compile Include="Util\NCacheLog.cs" />
+    <Compile Include="Util\ProcessExecutor.cs" />
+    <Compile Include="Util\ProcessExitCodes.cs" />
+    <Compile Include="Util\ProcessInfo.cs" />
     <Compile Include="Util\ProcessorAffinity.cs" />
     <Compile Include="Util\Protector.cs" />
     <Compile Include="Util\ReflectionUtil.cs" />
@@ -1236,6 +1306,9 @@
       <Generator>ProtoBufTool</Generator>
       <LastGenOutput>ClearResponse.cs</LastGenOutput>
     </None>
+    <None Include="Protobuf\ColumnDataType.proto" />
+    <None Include="Protobuf\ColumnType.proto" />
+    <None Include="Protobuf\ColumnValue.proto" />
     <None Include="Protobuf\Commands\AddAttributeCommand.proto">
       <Generator>ProtoBufTool</Generator>
       <LastGenOutput>AddAttributeCommand.cs</LastGenOutput>
@@ -1288,6 +1361,7 @@
       <Generator>ProtoBufTool</Generator>
       <LastGenOutput>DisposeCommand.cs</LastGenOutput>
     </None>
+    <None Include="Protobuf\Commands\DisposeReaderCommand.proto" />
     <None Include="Protobuf\Commands\EnumerationPointer.proto">
       <Generator>ProtoBufTool</Generator>
       <LastGenOutput>EnumerationPointer.cs</LastGenOutput>
@@ -1296,6 +1370,8 @@
       <Generator>ProtoBufTool</Generator>
       <LastGenOutput>EventIdCommand.cs</LastGenOutput>
     </None>
+    <None Include="Protobuf\Commands\ExecuteReaderCommand.proto" />
+    <None Include="Protobuf\Commands\GetCacheBindingCommand.proto" />
     <None Include="Protobuf\Commands\GetCacheItemCommand.proto">
       <Generator>ProtoBufTool</Generator>
       <LastGenOutput>GetCacheItemCommand.cs</LastGenOutput>
@@ -1328,6 +1404,7 @@
       <Generator>ProtoBufTool</Generator>
       <LastGenOutput>GetProductVersionCommand.cs</LastGenOutput>
     </None>
+    <None Include="Protobuf\Commands\GetReaderNextChunkCommand.proto" />
     <None Include="Protobuf\Commands\GetRunningServersCommand.proto">
       <Generator>ProtoBufTool</Generator>
       <LastGenOutput>GetRunningServersCommand.cs</LastGenOutput>
@@ -1456,6 +1533,7 @@
       <Generator>ProtoBufTool</Generator>
       <LastGenOutput>DictionaryItem.cs</LastGenOutput>
     </None>
+    <None Include="Protobuf\DisposeReaderResponse.proto" />
     <None Include="Protobuf\DisposeResponse.proto">
       <Generator>ProtoBufTool</Generator>
       <LastGenOutput>DisposeResponse.cs</LastGenOutput>
@@ -1476,10 +1554,12 @@
       <Generator>ProtoBufTool</Generator>
       <LastGenOutput>Exception.cs</LastGenOutput>
     </None>
+    <None Include="Protobuf\ExecuteReaderResponse.proto" />
     <None Include="Protobuf\FragmentedResponse.proto">
       <Generator>ProtoBufTool</Generator>
       <LastGenOutput>FragmentedResponse.cs</LastGenOutput>
     </None>
+    <None Include="Protobuf\GetCacheBindingResponse.proto" />
     <None Include="Protobuf\GetCacheItemResponse.proto">
       <Generator>ProtoBufTool</Generator>
       <LastGenOutput>GetCacheItemResponse.cs</LastGenOutput>
@@ -1508,6 +1588,7 @@
       <Generator>ProtoBufTool</Generator>
       <LastGenOutput>GetProductVersionResponse.cs</LastGenOutput>
     </None>
+    <None Include="Protobuf\GetReaderChunkResponse.proto" />
     <None Include="Protobuf\GetResponse.proto">
       <Generator>ProtoBufTool</Generator>
       <LastGenOutput>GetResponse.cs</LastGenOutput>
@@ -1588,6 +1669,8 @@
       <Generator>ProtoBufTool</Generator>
       <LastGenOutput>NodeLeftEventResponse.cs</LastGenOutput>
     </None>
+    <None Include="Protobuf\Order.proto" />
+    <None Include="Protobuf\OrderByArgument.proto" />
     <None Include="Protobuf\QueryResultSet.proto">
       <Generator>ProtoBufTool</Generator>
       <LastGenOutput>QueryResultSet.cs</LastGenOutput>
@@ -1604,6 +1687,11 @@
       <Generator>ProtoBufTool</Generator>
       <LastGenOutput>RaiseCustomEventResponse.cs</LastGenOutput>
     </None>
+    <None Include="Protobuf\ReaderResultSet.proto" />
+    <None Include="Protobuf\RecordColumn.proto" />
+    <None Include="Protobuf\RecordRow.proto" />
+    <None Include="Protobuf\RecordSet.proto" />
+    <None Include="Protobuf\RecordSetValue.proto" />
     <None Include="Protobuf\RegisterBulkKeyNotifResponse.proto">
       <Generator>ProtoBufTool</Generator>
       <LastGenOutput>RegisterBulkKeyNotifResponse.cs</LastGenOutput>
@@ -1648,6 +1736,8 @@
       <Generator>ProtoBufTool</Generator>
       <LastGenOutput>VerifyLockResponse.cs</LastGenOutput>
     </None>
+    <None Include="Protobuf\{2B69F1C9-E1AB-48D9-8F8C-892D13DD5B32}" />
+    <None Include="Protobuf\{FC7FA165-4B49-4EBD-A64A-51E19D18EA3E}" />
   </ItemGroup>
   <ItemGroup>
     <BootstrapperPackage Include="Microsoft.Net.Client.3.5">

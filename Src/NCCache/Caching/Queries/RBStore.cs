@@ -1,4 +1,4 @@
-// Copyright (c) 2015 Alachisoft
+// Copyright (c) 2017 Alachisoft
 // 
 // Licensed under the Apache License, Version 2.0 (the "License");
 // you may not use this file except in compliance with the License.
@@ -11,9 +11,12 @@
 // WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
 // See the License for the specific language governing permissions and
 // limitations under the License.
+
 using System;
 using System.Collections;
 using Alachisoft.NCache.Common.DataStructures;
+using Alachisoft.NCache.Common.Queries;
+using Alachisoft.NCache.Common.Enum;
 
 namespace Alachisoft.NCache.Caching.Queries
 {
@@ -72,10 +75,9 @@ namespace Alachisoft.NCache.Caching.Queries
             return new RedBlackEnumerator();
         }
 
-        public ArrayList GetData(object key, ComparisonType comparisonType)
+        public void GetData(object key, ComparisonType comparisonType, IQueryResult result, CollectionOperation mergeType)
         {
             RedBlack<T>.COMPARE compare = RedBlack<T>.COMPARE.EQ;
-            ArrayList result = new ArrayList();
 
             if (_rbTree != null)
             {
@@ -113,20 +115,12 @@ namespace Alachisoft.NCache.Caching.Queries
                         compare = RedBlack<T>.COMPARE.IREGEX;
                         break;
                 }
-                try
-                {
-                    if (key is T)
-                        result = _rbTree.GetData((T)key, compare) as ArrayList;
-                    else
-                        throw new Exception("Object must be of type " + _storeDataType);
-                }
-                catch
-                {
-                    throw;
-                }
+                if (key is T)
+                    _rbTree.GetData((T)key, compare, result, mergeType);
+                else 
+                    throw new InvalidCastException("Object must be of type " + typeof(T).Name);
             }
 
-            return result;
         }
 
         public int Count

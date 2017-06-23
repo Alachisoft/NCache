@@ -10,6 +10,7 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 // $Id: CoordGmsImpl.java,v 1.13 2004/09/08 09:17:17 belaban Exp $
+
 using System;
 using System.Collections;
 using Alachisoft.NGroups;
@@ -279,8 +280,7 @@ namespace Alachisoft.NGroups.Protocols.pbcast
                 System.Collections.ArrayList new_mbrs = System.Collections.ArrayList.Synchronized(new System.Collections.ArrayList(1));
                 View v = null;
                 Digest d, tmp;
-
-
+                
                 gms.Stack.NCacheLog.CriticalInfo("CoordGmsImpl.handleJoin", "mbr=" + mbr);
 
                 if (gms.local_addr.Equals(mbr))
@@ -619,7 +619,33 @@ namespace Alachisoft.NGroups.Protocols.pbcast
                 if (!gms.VerifySuspect(suspected))
                 {
                     if (gms.Stack.NCacheLog.IsInfoEnabled) gms.Stack.NCacheLog.Info("CoodGmsImpl.handleConnectionBroken", suspected + " is not dead");
-                                        
+
+                    //Do not delete this code, we may use it in future.
+                    //Node is not dead. it means that there is some trouble on the network
+                    //let's solve the puzzle. We get the connection mesh from all the nodes.
+                    //connectedNodesPromise.Reset();
+                    //lock (connectedNodesMap.SyncRoot)
+                    //{
+                    //    conNodesReqId++;
+                    //    connectedNodesMap.Clear();
+                    //    ArrayList currentMbrs = gms.members.Members;
+                    //    currentMbrs.Remove(gms.local_addr); //exclude ourself
+                    //    foreach (Address mbr in currentMbrs)
+                    //    {
+                    //        connectedNodesMap.Add(mbr, null);
+                    //    }
+                    //    missingResults = currentMbrs.Count; 
+                    //}
+                    ////Approximate time for waiting = 1000 (ms) * no of nodes
+                    //long timeToWait = 1000 * connectedNodesMap.Count; 
+
+                    //Message msg = new Message(null, null, new byte[0]);
+                    //msg.putHeader(HeaderType.GMS, new GMS.HDR(GMS.HDR.CONNECTED_NODES_REQUEST,conNodesReqId));
+                    //gms.passDown(new Event(Event.MSG, msg, Priority.Critical));
+
+                    ////wait for the response from all the nodes.
+                    //connectedNodesPromise.WaitResult(timeToWait);
+
                     Membership mbrs = gms.members.copy();
                     Address seniorNode = mbrs.DetermineSeniority(informer, suspected);
 

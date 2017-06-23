@@ -50,7 +50,7 @@ using System.Threading;
 
 namespace Alachisoft.NCache.Common.DataStructures.Clustered
 {
-    // Implements a variable-size List that uses an array of objects to store the
+  // Implements a variable-size List that uses an array of objects to store the
     // elements. A ArrayList has a capacity, which is the allocated length
     // of the internal array. As elements are added to a ArrayList, the capacity
     // of the ArrayList is automatically increased as required by reallocating the
@@ -105,7 +105,7 @@ namespace Alachisoft.NCache.Common.DataStructures.Clustered
             if (capacity < 0) throw new ArgumentOutOfRangeException("capacity", ResourceHelper.GetResourceString("ArgumentOutOfRange_MustBeNonNegNum"));
 #if DEBUG
             Contract.EndContractBlock();
-#endif
+#endif 
             if (capacity == 0)
                 _items = emptyArray;
             else
@@ -179,7 +179,7 @@ namespace Alachisoft.NCache.Common.DataStructures.Clustered
             }
         }
 
-
+       
 
         // Read-only property describing how many elements are in the List.
         public virtual int Count
@@ -481,7 +481,7 @@ namespace Alachisoft.NCache.Common.DataStructures.Clustered
 #if DEBUG
             Contract.Ensures(Contract.Result<IEnumerator>() != null);
 #endif
-            return new ArrayListEnumeratorSimple(this);
+            return new ImmutableSimpleEnumerator(this);
         }
 
         // Returns an enumerator for a section of this list with the given
@@ -504,7 +504,7 @@ namespace Alachisoft.NCache.Common.DataStructures.Clustered
             Contract.Ensures(Contract.Result<IEnumerator>() != null);
             Contract.EndContractBlock();
 #endif
-            return new ArrayListEnumerator(this, index, count);
+            return new ImmutableEnumerator(this, index, count);
         }
 
         // Returns the index of the first occurrence of a given value in a range of
@@ -616,6 +616,7 @@ namespace Alachisoft.NCache.Common.DataStructures.Clustered
             Contract.EndContractBlock();
 #endif
             int count = c.Count;
+            int i = index;
             if (count > 0)
             {
                 EnsureCapacity(_size + count);
@@ -625,9 +626,12 @@ namespace Alachisoft.NCache.Common.DataStructures.Clustered
                     ClusteredArray<object>.Copy(_items, index, _items, index + count, _size - index);
                 }
 
-                Object[] itemsToInsert = new Object[count];
-                c.CopyTo(itemsToInsert, 0);
-                _items.CopyFrom(itemsToInsert, 0, index, count);
+                IEnumerator e = c.GetEnumerator();
+                while(e.MoveNext())
+                {
+                    _items[i] = (Object)e.Current;
+                    i++;
+                }
                 _size += count;
                 _version++;
             }
@@ -665,7 +669,7 @@ namespace Alachisoft.NCache.Common.DataStructures.Clustered
 #if DEBUG
             Contract.Ensures(Contract.Result<int>() < Count);
             Contract.EndContractBlock();
-#endif
+#endif 
             return LastIndexOf(value, startIndex, startIndex + 1);
         }
 
@@ -851,7 +855,7 @@ namespace Alachisoft.NCache.Common.DataStructures.Clustered
             if (count > 0)
             {
                 object[] obj = new object[count];
-                c.CopyTo(obj, 0);
+                c.CopyTo(obj,0);
                 _items.CopyFrom(obj, 0, index, count);
                 _version++;
             }
@@ -1010,8 +1014,8 @@ namespace Alachisoft.NCache.Common.DataStructures.Clustered
                     if (value < Count) throw new ArgumentOutOfRangeException("value", ResourceHelper.GetResourceString("ArgumentOutOfRange_SmallCapacity"));
 #if DEBUG
                     Contract.EndContractBlock();
-#endif
-                }
+#endif 
+                    }
             }
 
             public override int Count
@@ -1357,7 +1361,7 @@ namespace Alachisoft.NCache.Common.DataStructures.Clustered
                     throw new ArgumentOutOfRangeException((index < 0 ? "index" : "count"), ResourceHelper.GetResourceString("ArgumentOutOfRange_NeedNonNegNum"));
 #if DEBUG
                 Contract.EndContractBlock();
-
+         
 #endif
                 if (_list.Count - index < count)
                     throw new ArgumentException(ResourceHelper.GetResourceString("Argument_InvalidOffLen"));
@@ -2765,7 +2769,7 @@ namespace Alachisoft.NCache.Common.DataStructures.Clustered
 #if DEBUG
                     Contract.EndContractBlock();
 #endif
-                }
+                    }
             }
 
 
@@ -3128,6 +3132,7 @@ namespace Alachisoft.NCache.Common.DataStructures.Clustered
         private sealed class ArrayListEnumeratorSimple : IEnumerator, ICloneable
         {
             private ClusteredArrayList list;
+
             private int index;
             private int version;
             private Object currentElement;
@@ -3219,5 +3224,130 @@ namespace Alachisoft.NCache.Common.DataStructures.Clustered
                 index = -1;
             }
         }
-    }
+
+        #region Private Class
+        [Serializable]
+        private sealed class ImmutableEnumerator : IEnumerator, ICloneable
+        {
+            private readonly ClusteredArray<object> _currentItems;
+            private int _index;
+            private readonly int _endIndex;       // Where to stop.
+            private Object _currentElement;
+            private readonly int _startIndex;     // Save this for Reset.
+            
+            
+
+            internal ImmutableEnumerator(ClusteredArrayList list, int index, int count)
+            {
+                _currentItems = (ClusteredArray<object>)list._items.Clone();
+                _startIndex = index;
+                _index = index - 1;
+                _endIndex = _index + count;  // last valid index
+                _currentElement = null;
+            }
+
+            public Object Clone()
+            {
+                return MemberwiseClone();
+            }
+
+            public bool MoveNext()
+            {
+
+                if (_index < _endIndex)
+                {
+                    _currentElement = _currentItems[++_index];
+                    return true;
+                }
+                _index = _endIndex + 1;
+
+                return false;
+
+            }
+
+            public Object Current
+            {
+                get
+                {
+                    if (_index < _startIndex)
+                        throw new InvalidOperationException(ResourceHelper.GetResourceString(ResId.InvalidOperation_EnumNotStarted));
+                    if (_index > _endIndex)
+                    {
+                        throw new InvalidOperationException(ResourceHelper.GetResourceString(ResId.InvalidOperation_EnumEnded));
+                    }
+                    return _currentElement;
+                }
+            }
+
+            public void Reset()
+            {
+                _index = _startIndex - 1;
+            }
+        }
+
+        [Serializable]
+        private sealed class ImmutableSimpleEnumerator : IEnumerator, ICloneable
+        {
+            private readonly ClusteredArray<object> _currentItems;
+            private int _index;
+            private readonly int _size;
+            private Object _currentElement;
+            private bool _isArrayList;
+            static readonly object DummyObject = new Object();
+
+            internal ImmutableSimpleEnumerator(ClusteredArrayList list)
+            {
+                 _currentItems = (ClusteredArray<object>)list._items.Clone(); 
+                _index = -1;
+                _size = list.Count;
+                _isArrayList = (list.GetType() == typeof(ClusteredArrayList));
+                _currentElement = DummyObject;
+            }
+
+            public Object Clone()
+            {
+                return MemberwiseClone();
+            }
+
+            public bool MoveNext()
+            {
+                if (_index < _size - 1)
+                {
+                    _currentElement = _currentItems[++_index];
+                    return true;
+                }
+                _index = _size;
+                _currentElement = DummyObject;
+                return false;
+            }
+
+            public Object Current
+            {
+                get
+                {
+                    object temp = _currentElement;
+                    if (DummyObject == temp)
+                    {
+                        // check if enumeration has not started or has terminated
+                        if (_index == -1)
+                        {
+                            throw new InvalidOperationException(ResourceHelper.GetResourceString(ResId.InvalidOperation_EnumNotStarted));
+                        }
+                        throw new InvalidOperationException(ResourceHelper.GetResourceString(ResId.InvalidOperation_EnumEnded));
+                    }
+
+                    return temp;
+                }
+            }
+
+            public void Reset()
+            {
+                _currentElement = DummyObject;
+                _index = -1;
+            }
+        }
+
+        #endregion
+        
+    }    
 }

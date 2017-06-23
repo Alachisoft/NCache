@@ -4,8 +4,6 @@ $fileName="";
 $filePath="";
 $firstName="";
 $lastName="";
-$edition= 0;
-$key = "";
 $email = "";
 $company = "";
 $installpath="C:\Program Files\NCache";
@@ -33,7 +31,7 @@ SYNOPSIS
     Install NCache on target machines in quite mode 
 	
 SYNTAX
-    IntallNCache.ps1 /k key /file file-name /file-path complete-file-path [option[...]]. 
+    IntallNCache.ps1 /file file-name /file-path complete-file-path [option[...]]. 
 
 DETAILED DESCRIPTION
     This script install NCache on multiple machines in quite mode. This script uses win32_Product class
@@ -45,9 +43,6 @@ PARAMETERS
 		
     /file-path complete-file-path
         Allows the user to specify the complete file-path/file-location of the setup file.
-		
-    /k key
-        Allows the user to specify a valid license key.
 	    
 	/email email-address
 		Allows the user to specify the his email address.
@@ -63,10 +58,7 @@ OPTIONS
 	
     /l last-name
 	Allows the user to specify the his last name.
-	
-    /e edition
-	Allows the user to specify the edition of NCache. Default is "0".
-	
+
     /company company-name
 	Allows the user to specify the company name.
 	
@@ -91,18 +83,12 @@ while($i -lt $args.length)
  switch ($array[$i])
   { 
 	"/s"         	{$servers=$array[$i+1]; $i++; $i++; }
-	
-	"/k" 	     	{$key=$array[$i+1];$i++; $bKey=$true;}
-	"/key"  		{$key=$array[$i+1];$i++; $bKey=$true;}
-	
+			
 	"/f" 	        {$firstName=$array[$i+1];$i++; }
 	"/first-name"   {$firstName=$array[$i+1];$i++; }
 	
 	"/l" 	     	{$lastName=$array[$i+1];$i++; }
 	"/last-name"    {$lastName=$array[$i+1];$i++; }
-	
-	"/e" 	        {$edition=$array[$i+1];$i++; }
-	"/edition"      {$edition=$array[$i+1];$i++; }
 	
 	"/file" 	    {$fileName=$array[$i+1];$i++; $bfileName=$true;}
 	"/file-name"    {$fileName=$array[$i+1];$i++; $bfileName=$true;}
@@ -121,44 +107,40 @@ while($i -lt $args.length)
   }
 }
 
-$Options = "EDITION=""$edition"" KEY=""$key"" USERFIRSTNAME=""$firstName"" USERLASTNAME=""$lastName"" COMPANYNAME=""$company"" EMAILADDRESS=""$email"" INSTALLDIR=""$installpath"" SETPERMISSION=""$setpermission"""
+$Options = "USERFIRSTNAME=""$firstName"" USERLASTNAME=""$lastName"" COMPANYNAME=""$company"" EMAILADDRESS=""$email"" INSTALLDIR=""$installpath"" SETPERMISSION=""$setpermission"""
 
 if ($bfileName) 
 {
 	if($bfilePath)
     {
-		if ($bKey) 
+		if ($bEmail)
 		{
-			if ($bEmail)
+			$i=0;
+			$check = $servers -is [array] ;
+			if($check)
 			{
-				$i=0;
-				$check = $servers -is [array] ;
-				if($check)
+				while($i -lt $servers.length)
 				{
-					while($i -lt $servers.length)
-					{
-						$System = $servers[$i];
-						echo "Installing NCache on Machine $System";
-						echo "Status:"									
-						$Setup_obj = [WMICLASS]"\\$System\ROOT\CIMV2:win32_Product"
-						copy-item "$filePath\$fileName" \\$System\c$\ -force
-						$Setup_obj.install("\\$System\C$\$fileName","$Options",$true)
-						$i++;						
-					}
-				}
-				else
-				{		    
-					$System = $servers;
-					echo "installing NCache on Machine $System";
-					echo "Status:"						
+					$System = $servers[$i];
+					echo "Installing NCache on Machine $System";
+					echo "Status:"									
 					$Setup_obj = [WMICLASS]"\\$System\ROOT\CIMV2:win32_Product"
 					copy-item "$filePath\$fileName" \\$System\c$\ -force
 					$Setup_obj.install("\\$System\C$\$fileName","$Options",$true)
+					$i++;						
 				}
 			}
-			else {write-host "Argument '/email' for email is invalid or missing" -foregroundcolor  RED;}
+			else
+			{		    
+				$System = $servers;
+				echo "installing NCache on Machine $System";
+				echo "Status:"						
+				$Setup_obj = [WMICLASS]"\\$System\ROOT\CIMV2:win32_Product"
+				copy-item "$filePath\$fileName" \\$System\c$\ -force
+				$Setup_obj.install("\\$System\C$\$fileName","$Options",$true)
+			}
 		}
-		else {write-host "Argument '/k' for key is invalid or missing" -foregroundcolor  RED;}
+		else {write-host "Argument '/email' for email is invalid or missing" -foregroundcolor  RED;}
 	}
 	else {write-host "Argument '/file-path' for file path is invalid or missing" -foregroundcolor  RED;}
 }

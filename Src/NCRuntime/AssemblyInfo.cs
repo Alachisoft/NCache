@@ -1,4 +1,4 @@
-// Copyright (c) 2015 Alachisoft
+// Copyright (c) 2017 Alachisoft
 // 
 // Licensed under the Apache License, Version 2.0 (the "License");
 // you may not use this file except in compliance with the License.
@@ -29,7 +29,7 @@ using System.Security.Permissions;
 [assembly: AssemblyConfiguration("")]
 [assembly: AssemblyCompany("Alachisoft")]
 [assembly: AssemblyProduct("Alachisoft® NCache Open Source")]
-[assembly: AssemblyCopyright("Copyright © 2005-2015 Alachisoft")]
+[assembly: AssemblyCopyright("Copyright © 2005-2017 Alachisoft")]
 [assembly: AssemblyTrademark("NCache ™ is a registered trademark of Alachisoft.")]
 [assembly: AssemblyCulture("")]
 
@@ -44,7 +44,7 @@ using System.Security.Permissions;
 // You can specify all the values or you can default the Revision and Build Numbers 
 // by using the '*' as shown below:
 
-[assembly: AssemblyVersion("4.4.0.0")]
+[assembly: AssemblyVersion("4.6.0.0")]
 
 
 //
@@ -75,9 +75,9 @@ using System.Security.Permissions;
 [assembly: AssemblyDelaySign(false)]
 [assembly: AssemblyKeyName("")]
 [assembly: AssemblyKeyFile("..\\..\\..\\..\\Resources\\ncache.snk")]
-[assembly:  AssemblyFileVersionAttribute("4.4.0.11")]
+[assembly: AssemblyFileVersionAttribute("4.6.3.0")]
 [assembly: AssemblyDescriptionAttribute("Runtime Classes")]
-[assembly: AssemblyInformationalVersion("4.4.0")]
+[assembly: AssemblyInformationalVersion("4.6.0")]
 
 [assembly: InternalsVisibleTo("Alachisoft.NCache.Bridge,PublicKey=0024000004800000940000000602000000240000525341310004000001000100b16f71d5e462ad034fb344ec235497a2d166d10e4a11230426362180f6f9b29afb405db837b5a1f2de4ab78012d1568449d21db6b77d87da2a7077038275f0c380cfe26569880b91ee0cad51834bb34d22204d42e4023ff2e16e1b8660ad691794e65bbde0f1361bdc66978bd592d9098b8f382de007616ecb43a5e584e569d0")]
 [assembly: InternalsVisibleTo("Alachisoft.NCache.Cache,PublicKey=0024000004800000940000000602000000240000525341310004000001000100b16f71d5e462ad034fb344ec235497a2d166d10e4a11230426362180f6f9b29afb405db837b5a1f2de4ab78012d1568449d21db6b77d87da2a7077038275f0c380cfe26569880b91ee0cad51834bb34d22204d42e4023ff2e16e1b8660ad691794e65bbde0f1361bdc66978bd592d9098b8f382de007616ecb43a5e584e569d0")]

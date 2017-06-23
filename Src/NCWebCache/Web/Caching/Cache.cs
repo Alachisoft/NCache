@@ -1,4 +1,4 @@
-// Copyright (c) 2015 Alachisoft
+// Copyright (c) 2017 Alachisoft
 // 
 // Licensed under the Apache License, Version 2.0 (the "License");
 // you may not use this file except in compliance with the License.
@@ -11,6 +11,7 @@
 // WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
 // See the License for the specific language governing permissions and
 // limitations under the License.
+
 using System;
 using System.Collections;
 using Microsoft.Win32;
@@ -162,7 +163,8 @@ namespace Alachisoft.NCache.Web.Caching
         /// absolute expirations when inserting an item in the <see cref="Cache"/>.
         /// <code>
         /// Cache cache = NCache.InitializeCache("myCache");
-        ///	cache.Insert("DSN", connectionString,Cache.NoAbsoluteExpiration, TimeSpan.FromSeconds(10), CacheItemPriority.Normal);      
+        ///	cache.Insert("DSN", connectionString, null, Cache.NoAbsoluteExpiration, TimeSpan.FromSeconds(10));
+        /// 
         /// </code>
         /// </example>
         public static readonly DateTime NoAbsoluteExpiration = DateTime.MaxValue.ToUniversalTime();
@@ -178,7 +180,7 @@ namespace Alachisoft.NCache.Web.Caching
         /// <see cref="Cache"/> object using the <see cref="NoSlidingExpiration"/> field.
         /// <code>
         /// Cache cache = NCache.InitializeCache("myCache");
-        ///	cache.Insert("DSN", connectionString, DateTime.Now.AddMinutes(2), Cache.NoSlidingExpiration, CacheItemPriority.Normal);
+        ///	cache.Insert("DSN", connectionString, null, DateTime.Now.AddMinutes(2), Cache.NoSlidingExpiration);
         /// 
         /// </code>
         /// </example>
@@ -259,6 +261,9 @@ namespace Alachisoft.NCache.Web.Caching
         /// </summary>
         internal Cache()
         {
+            _notificationWrapper = new GeneralDataNotificationWrapper(this);
+            _eventManager = new EventManager(_cacheId, null, this);
+            _listener = new CacheEventsListener(this, _eventManager);
         }
 
     
@@ -269,14 +274,14 @@ namespace Alachisoft.NCache.Web.Caching
         /// <param name="config"></param>
         internal Cache(CacheImplBase objectCache, CacheConfig config)
         {
-            _cacheImpl = objectCache;
+            CacheImpl = objectCache;
             _config = config;
             _cacheId = config.CacheId;
 
-            if (_cacheImpl != null)
+            if (CacheImpl != null)
             {
-                _serializationContext = _cacheImpl.Name; //Sets the serialization context.
-                _cacheId = _cacheImpl.Name;
+                _serializationContext = CacheImpl.Name; //Sets the serialization context.
+                _cacheId = CacheImpl.Name;
             }
             _eventManager = new EventManager(_cacheId, null, this);
             _listener = new CacheEventsListener(this, _eventManager);
@@ -293,11 +298,11 @@ namespace Alachisoft.NCache.Web.Caching
 
         internal Cache(CacheImplBase objectCache, string cacheId, PerfStatsCollector2 perfStatsCollector)
         {
-            _cacheImpl = objectCache;
+            CacheImpl = objectCache;
             _cacheId = cacheId;
-            if (_cacheImpl != null)
+            if (CacheImpl != null)
             {
-                _serializationContext = _cacheImpl.Name; //Sets the serialization context.
+                _serializationContext = CacheImpl.Name; //Sets the serialization context.
             }
 
             _eventManager = new EventManager(_cacheId, null, this);
@@ -359,8 +364,8 @@ namespace Alachisoft.NCache.Web.Caching
                             NCache.Caches.Remove(_cacheId);
                     }
 
-                    if (_cacheImpl != null) _cacheImpl.Dispose(disposing);
-                    _cacheImpl = null;
+                    if (CacheImpl != null) CacheImpl.Dispose(disposing);
+                    CacheImpl = null;
                    
                     if (disposing) GC.SuppressFinalize(this);
                 }
@@ -405,7 +410,8 @@ namespace Alachisoft.NCache.Web.Caching
         /// <example> This sample shows how to set the <see cref="ExceptionsEnabled"/> property.
         /// <code>
         /// Cache cache = NCache.InitializeCache("myCache");
-        /// cache.ExceptionsEnabled = true;        
+        /// cache.ExceptionsEnabled = true;
+        ///      
         /// </code>
         /// </example>
         public virtual bool ExceptionsEnabled
@@ -434,7 +440,7 @@ namespace Alachisoft.NCache.Web.Caching
             {
                 try
                 {
-                    if (_cacheImpl != null) return _cacheImpl.Count;
+                    if (CacheImpl != null) return CacheImpl.Count;
                 }
                 catch (Exception)
                 {
@@ -455,7 +461,7 @@ namespace Alachisoft.NCache.Web.Caching
         /// <para><b>Note:</b> If exceptions are enabled through the <see cref="ExceptionsEnabled"/> 
         /// setting, this property throws exception incase of failure.</para>
         /// </remarks>
-        /// <example>The following example demonstrates how to clear <see cref="Cache"/>.
+        /// <example>The following example demonstrates how to check for containment of an item in the <see cref="Cache"/>.
         /// <code>
         /// Cache cache = NCache.InitializeCache("myCache");
         ///	cache.Clear();
@@ -464,17 +470,30 @@ namespace Alachisoft.NCache.Web.Caching
         /// </example>
         public virtual void Clear()
         {
-            if (_cacheImpl == null) return;
+            if (CacheImpl == null) return;
             try
             {
 
-                _cacheImpl.Clear(new BitSet());
+                CacheImpl.Clear(new BitSet());
             }
             catch (Exception)
             {
                 if (ExceptionsEnabled) throw;
             }
-        }       
+        }
+
+        /// <summary>
+        /// Removes all elements from the client cache.
+        /// </summary>                
+        /// <para><b>Note:</b> If exceptions are enabled through the <see cref="ExceptionsEnabled"/> 
+        /// setting, this function throws exception incase of failure.</para>        
+        /// <example>The following example demonstrates how to clear the client cache.
+        /// <code>
+        /// Cache cache = NCache.InitializeCache("myCache");
+        ///	cache.ClearClientCache();
+        /// 
+        /// </code>
+        /// </example>
         #endregion
 
         #region	/                 --- Contains ---           /
@@ -511,10 +530,10 @@ namespace Alachisoft.NCache.Web.Caching
             if (!key.GetType().IsSerializable)
                 throw new ArgumentException("key is not serializable");
 
-            if (_cacheImpl == null) return false;
+            if (CacheImpl == null) return false;
             try
             {
-                return _cacheImpl.Contains(key);
+                return CacheImpl.Contains(key);
             }
             catch (Exception)
             {
@@ -524,7 +543,12 @@ namespace Alachisoft.NCache.Web.Caching
         }
 
         #endregion
-       
+
+        /// <summary>
+        /// 
+        /// </summary>
+        /// <param name="key"></param>
+        /// <param name="value"></param>
         private void ValidateKeyValue(object key, object value)
         {
             Type type = typeof(ICompactSerializable);
@@ -534,39 +558,29 @@ namespace Alachisoft.NCache.Web.Caching
             if (!key.GetType().IsSerializable && !type.IsAssignableFrom(key.GetType())) throw new ArgumentException("key is not serializable");
         }
 
+      
 
-        /// <summary>
-        /// Set Attributes for a specific key in cache
-        /// </summary>
-        /// <param name="key">The key for which Attributes are set in the <see cref="Cache"/>.</param>        
-        /// <para><b>Note:</b> If exceptions are enabled through the <see cref="ExceptionsEnabled"/> 
-        /// setting, this property throws exception incase of failure.</para>
-        /// </remarks>
-        /// <exception cref="ArgumentNullException"><paramref name="key"/> contains a null reference (Nothing in Visual Basic).</exception>
-        /// <exception cref="ArgumentException"><paramref name="key"/> is not serializable.</exception>
-        /// <example>The following example demonstrates how to set attributes for item in the <see cref="Cache"/>.
-        /// <code>        
-        /// CacheItemAttributes attrib=new CacheItemAttributes();
-        /// attrib.AbsoluteExpiration=DateTime.Now.AddHours(10);
-        /// Cache cache = NCache.InitializeCache("myCache");
-        /// cache.SetAttributes("MyKey",attrib);
-        /// </code>        
-        /// </example>
+          /// <summary>
         /// 
+        /// </summary>
+        /// <param name="key"></param>
+        /// <param name="attributes"></param>
+        /// <returns></returns>
+        /// <exception cref="ArgumentNullException"></exception>
         public virtual bool SetAttributes(string key, CacheItemAttributes attributes)
         {
             if (key == null) throw new ArgumentNullException();
 
             if (attributes == null) throw new ArgumentNullException();
 
-            return _cacheImpl.SetAttributes(key, attributes);
+            return CacheImpl.SetAttributes(key, attributes);
         }
 
         private Hashtable GetQueryInfo(Object value)
         {
             Hashtable queryInfo = null;
 
-            if (_cacheImpl.TypeMap == null)
+            if (CacheImpl.TypeMap == null)
                 return null;
 
             try
@@ -574,13 +588,13 @@ namespace Alachisoft.NCache.Web.Caching
                 string typeName = value.GetType().FullName;
                 typeName = typeName.Replace("+", ".");
 
-                int handleId = _cacheImpl.TypeMap.GetHandleId(typeName);
+                int handleId = CacheImpl.TypeMap.GetHandleId(typeName);
                 if (handleId != -1)
                 {
                     queryInfo = new Hashtable();
                     Type valType = null; // (Cattering Case-InSensetive string comparisons.
                     ArrayList attribValues = new ArrayList();
-                    ArrayList attributes = _cacheImpl.TypeMap.GetAttribList(handleId);
+                    ArrayList attributes = CacheImpl.TypeMap.GetAttribList(handleId);
                     for (int i = 0; i < attributes.Count; i++)
                     {
                         PropertyInfo propertyAttrib = value.GetType().GetProperty((string)attributes[i]);
@@ -597,7 +611,6 @@ namespace Alachisoft.NCache.Web.Caching
                             {
                                 Object attribValue = fieldAttrib.GetValue(value);
                                 //Donot lower strings here because we need to return the string in original form in case of MIN and MAX
-                               // if (attribValue!=null)
                                 attribValues.Add(attribValue);
                             }
                             else
@@ -619,7 +632,8 @@ namespace Alachisoft.NCache.Web.Caching
         /// and using default values provided by the CacheItemPriority enumeration.
         /// </summary>
         /// <param name="key">The cache key used to reference the item.</param>
-        /// <param name="value">The item to be added to the cache.</param>        
+        /// <param name="value">The item to be added to the cache.</param>
+        /// <returns>An instance of <see cref="CacheItemVersion"/></returns>
         /// <exception cref="ArgumentNullException"><paramref name="key"/> or <paramref name="value"/> contains a null reference (Nothing in Visual Basic).</exception>
         /// <exception cref="ArgumentException"><paramref name="key"/> or <paramref name="value"/> is not serializable.</exception>
         /// <remarks>
@@ -661,7 +675,8 @@ namespace Alachisoft.NCache.Web.Caching
         /// <param name="priority">The relative cost of the object, as expressed by 
         /// the <see cref="CacheItemPriority"/> enumeration. The cache uses this value when it 
         /// evicts objects; objects with a lower cost are removed from the cache 
-        /// before objects with a higher cost.</param>        
+        /// before objects with a higher cost.</param>
+        /// <returns>An instance of <see cref="CacheItemVersion"/></returns>
         /// <exception cref="ArgumentNullException"><paramref name="key"/> or <paramref name="value"/> contains a null reference (Nothing in Visual Basic).</exception>
         /// <exception cref="ArgumentException"><paramref name="key"/> or <paramref name="value"/> is not serializable.</exception>
         /// <remarks>
@@ -681,7 +696,7 @@ namespace Alachisoft.NCache.Web.Caching
         /// high.
         /// <code>
         /// Cache cache = NCache.InitializeCache("myCache");
-        ///	cache.Add("timestamp", timeStamp, Cache.NoAbsoluteExpiration, new TimeSpan(0,5,0), CacheItemPriority.High);
+        ///	cache.Add("timestamp", timeStamp, null, Cache.NoAbsoluteExpiration, new TimeSpan(0,5,0), CacheItemPriority.High);
         /// 
         /// </code>        
         /// </example>
@@ -703,7 +718,8 @@ namespace Alachisoft.NCache.Web.Caching
         /// Add a <see cref="CacheItem"/> to the cache
         /// </summary>
         /// <param name="key">The cache key used to reference the item.</param>
-        /// <param name="item">The item that is to be stored</param>        
+        /// <param name="item">The item that is to be stored</param>
+        /// <returns>An instance of <see cref="CacheItemVersion"/></returns>
         /// <remarks> If CacheItem contains invalid values the related exception is thrown. 
         /// See <see cref="CacheItem"/> for invalid property values and related exceptions</remarks>
         /// <example>The following example demonstrates how to add an item to the cache with an absolute 
@@ -797,7 +813,7 @@ namespace Alachisoft.NCache.Web.Caching
             CacheDataNotificationCallback cacheItemUdpatedCallback, CacheDataNotificationCallback cacheItemRemovedCallaback,
             EventDataFilter itemUpdateDataFilter, EventDataFilter itemRemovedDataFilter, ref long size, bool allowQueryTags)
         {
-            if (_cacheImpl == null) throw new OperationFailedException("Cache is not initialized");
+            if (CacheImpl == null) throw new OperationFailedException("Cache is not initialized");
             ValidateKeyValue(key, value);
             UsageStats stats = new UsageStats();
             stats.BeginSample();
@@ -840,7 +856,7 @@ namespace Alachisoft.NCache.Web.Caching
 
                 absoluteExpiration = ToUTC(absoluteExpiration);
                 
-                _cacheImpl.Add(key, value, absoluteExpiration, slidingExpiration, priority, removeCallbackID, updateCallbackID, queryInfo, flagMap, itemUpdateDataFilter, itemRemovedDataFilter, size);
+                CacheImpl.Add(key, value, absoluteExpiration, slidingExpiration, priority, removeCallbackID, updateCallbackID, queryInfo, flagMap, itemUpdateDataFilter, itemRemovedDataFilter, size);
 
                 if (_perfStatsCollector != null)
                 {
@@ -877,7 +893,7 @@ namespace Alachisoft.NCache.Web.Caching
         {
             try
             {
-                _cacheImpl.MakeTargetCacheActivePassive(makeActive);
+                CacheImpl.MakeTargetCacheActivePassive(makeActive);
             }
             catch (Exception)
             {
@@ -924,7 +940,7 @@ namespace Alachisoft.NCache.Web.Caching
         /// </example>
         internal virtual IDictionary AddBulkOperation(string[] keys, CacheItem[] items, ref long[] sizes, bool allowQueryTags)
         {
-            if (_cacheImpl == null) throw new OperationFailedException("Cache is not initialized");
+            if (CacheImpl == null) throw new OperationFailedException("Cache is not initialized");
 
             if (keys == null) throw new ArgumentNullException("keys");
             if (items == null) throw new ArgumentNullException("items");
@@ -987,7 +1003,7 @@ namespace Alachisoft.NCache.Web.Caching
             short dsItemAddedCallbackID = -1;
             try
             {
-                return _cacheImpl.Add(keys, clonedItems, sizes);
+                return CacheImpl.Add(keys, clonedItems, sizes);
             }
             catch (Exception)
             {
@@ -1015,7 +1031,8 @@ namespace Alachisoft.NCache.Web.Caching
         /// box server control.
         /// <code>
         /// Cache cache = NCache.InitializeCache("myCache");
-        ///	cache.Get("MyTextBox.Value");       
+        ///	cache.Get("MyTextBox.Value");
+        /// 
         /// </code>
         /// </example>
         public virtual object Get(string key)
@@ -1099,7 +1116,7 @@ namespace Alachisoft.NCache.Web.Caching
         ///  </example>
         public virtual IDictionary GetBulk(string[] keys)
         {
-            if (_cacheImpl == null) throw new OperationFailedException("Cache is not initialized");
+            if (CacheImpl == null) throw new OperationFailedException("Cache is not initialized");
 
             if (keys == null) throw new ArgumentNullException("keys");
             if (keys.Length == 0) throw new ArgumentException("There is no key present in keys array");
@@ -1108,7 +1125,7 @@ namespace Alachisoft.NCache.Web.Caching
             {
 
                 BitSet flagMap = new BitSet();
-                IDictionary table = (IDictionary)_cacheImpl.Get(keys, flagMap);
+                IDictionary table = (IDictionary)CacheImpl.Get(keys, flagMap);
 
                 long sumObjectSize = 0;
                 int noOfObjects = 0;
@@ -1227,7 +1244,7 @@ namespace Alachisoft.NCache.Web.Caching
 
         internal virtual CacheItem GetCacheItemInternal(string key, LockAccessType accessType, TimeSpan lockTimeout, ref LockHandle lockHandle)
         {
-            if (_cacheImpl == null) throw new OperationFailedException("Cache is not initialized");
+            if (CacheImpl == null) throw new OperationFailedException("Cache is not initialized");
 
             if (key == null) throw new ArgumentNullException("keys");
             if (key == string.Empty) throw new ArgumentException("key cannot be empty string");
@@ -1238,7 +1255,7 @@ namespace Alachisoft.NCache.Web.Caching
 
 
                 BitSet flagMap = new BitSet();
-                object value = _cacheImpl.GetCacheItem(key, flagMap, ref lockHandle, lockTimeout, accessType);
+                object value = CacheImpl.GetCacheItem(key, flagMap, ref lockHandle, lockTimeout, accessType);
 
                 long objectSize = 0;
 
@@ -1272,9 +1289,9 @@ namespace Alachisoft.NCache.Web.Caching
                     {
                         foreach (CallbackInfo cbInfo in cb.ItemRemoveCallbackListener)
                         {
-                            if (cbInfo.Client == _cacheImpl.ClientID)
+                            if (cbInfo.Client == CacheImpl.ClientID)
                             {
-                                item.SetCacheDataNotification((CacheDataNotificationCallback)_callbackIDsMap.GetResource(cbInfo.Callback), EventType.ItemRemoved);
+                                item.SetCacheDataNotification((CacheDataNotificationCallback)_callbackIDsMap.GetResource(cbInfo.Callback), EventType.ItemRemoved, cbInfo.DataFilter);
                                break;
                             }
                         }
@@ -1283,10 +1300,10 @@ namespace Alachisoft.NCache.Web.Caching
                     {
                         foreach (CallbackInfo cbInfo in cb.ItemUpdateCallbackListener)
                         {
-                            if (cbInfo.Client == _cacheImpl.ClientID)
+                            if (cbInfo.Client == CacheImpl.ClientID)
                             {
 
-                                item.SetCacheDataNotification((CacheDataNotificationCallback)_callbackIDsMap.GetResource(cbInfo.Callback), EventType.ItemUpdated);
+                                item.SetCacheDataNotification((CacheDataNotificationCallback)_callbackIDsMap.GetResource(cbInfo.Callback), EventType.ItemUpdated, cbInfo.DataFilter);
                                 break;
                             }
                         }
@@ -1340,7 +1357,7 @@ namespace Alachisoft.NCache.Web.Caching
         
         internal virtual object GetInternal(string key,  LockAccessType accessType, TimeSpan lockTimeout, ref LockHandle lockHandle)
         {
-            if (_cacheImpl == null) throw new OperationFailedException("Cache is not initialized");
+            if (CacheImpl == null) throw new OperationFailedException("Cache is not initialized");
 
             if (key == null) throw new ArgumentNullException("key");
             if (key == string.Empty) throw new ArgumentException("key cannot be empty string");
@@ -1352,7 +1369,7 @@ namespace Alachisoft.NCache.Web.Caching
                 BitSet flagMap = new BitSet();
                 UsageStats stats = new UsageStats();
                 stats.BeginSample();
-                result = _cacheImpl.Get(key, flagMap, ref lockHandle, lockTimeout, accessType);
+                result = CacheImpl.Get(key, flagMap, ref lockHandle, lockTimeout, accessType);
                 if (_perfStatsCollector != null)
                 {
                     stats.EndSample();
@@ -1418,7 +1435,9 @@ namespace Alachisoft.NCache.Web.Caching
                     null, LockAccessType.IGNORE_LOCK, null, null, EventDataFilter.None, EventDataFilter.None, ref size, true);
 
         }
-       
+
+
+        //newly added method for NCache Lite Edition
         /// <summary>
         /// Inserts an object into the <see cref="Cache"/> with dependencies, expiration and 
         /// priority policies.
@@ -1451,7 +1470,7 @@ namespace Alachisoft.NCache.Web.Caching
         /// it into your application's <see cref="Cache"/> object.
         /// <code>
         /// Cache cache = NCache.InitializeCache("myCache");
-        ///	cache.Insert("DSN", connectionString, DateTime.Now.AddMinutes(2), TimeSpan.Zero, CacheItemPriority.High);
+        ///	cache.Insert("DSN", connectionString, null, DateTime.Now.AddMinutes(2), TimeSpan.Zero, CacheItemPriority.High);
         /// 
         /// </code>
         /// </example>
@@ -1467,7 +1486,8 @@ namespace Alachisoft.NCache.Web.Caching
         /// Add a <see cref="CacheItem"/> to the cache
         /// </summary>
         /// <param name="key">The cache key used to reference the item.</param>
-        /// <param name="item">The item that is to be stored</param>        
+        /// <param name="item">The item that is to be stored</param>
+        /// <returns>An instance of <see cref="CacheItemVersion"/></returns>
         /// <remarks> If CacheItem contains invalid values the related exception is thrown. 
         /// See <see cref="CacheItem"/> for invalid property values and related exceptions</remarks>		
         /// <example>The following example demonstrates how to add an item to the cache with a sliding expiration of 5 minutes and a priority of 
@@ -1507,7 +1527,8 @@ namespace Alachisoft.NCache.Web.Caching
         /// <param name="key">The cache key used to reference the item.</param>
         /// <param name="item">The item that is to be stored</param>
         /// <param name="lockHandle">An instance of <see cref="LockHandle"/>. If the item is locked, then it can be updated only if the correct lockHandle is specified.</param>
-        /// <param name="releaseLock">A flag to determine whether or not release lock after operation is performed.</param>        
+        /// <param name="releaseLock">A flag to determine whether or not release lock after operation is performed.</param>
+        /// <returns>The object item added to the Cache.</returns>
         /// <remarks>If lockId does not match with the lockId associated with cached item,
         /// an exception will be thrown.</remarks>		
         /// <example>The following example demonstrates how to update a locked item in the cache.
@@ -1640,7 +1661,7 @@ namespace Alachisoft.NCache.Web.Caching
         ///  </example>        
         internal virtual IDictionary InsertBulkOperation(string[] keys, CacheItem[] items, ref long[] sizes, bool allowQueryTags)
         {
-            if (_cacheImpl == null) throw new OperationFailedException("Cache is not initialized");
+            if (CacheImpl == null) throw new OperationFailedException("Cache is not initialized");
 
             if (keys == null) throw new ArgumentNullException("keys");
             if (items == null) throw new ArgumentNullException("items");
@@ -1703,7 +1724,7 @@ namespace Alachisoft.NCache.Web.Caching
 
             try
             {
-                return _cacheImpl.Insert(keys, clonedItems, sizes);
+                return CacheImpl.Insert(keys, clonedItems, sizes);
             }
             catch (Exception)
             {
@@ -1720,7 +1741,7 @@ namespace Alachisoft.NCache.Web.Caching
             LockHandle lockHandle, LockAccessType accessType, CacheDataNotificationCallback cacheItemUdpatedCallback,
             CacheDataNotificationCallback cacheItemRemovedCallaback, EventDataFilter itemUpdateDataFilter, EventDataFilter itemRemovedDataFilter, ref long size, bool allowQueryTags)
         {
-            if (_cacheImpl == null) throw new OperationFailedException("Cache is not initialized");
+            if (CacheImpl == null) throw new OperationFailedException("Cache is not initialized");
 
 
             ValidateKeyValue(key, value);
@@ -1769,7 +1790,7 @@ namespace Alachisoft.NCache.Web.Caching
 
                 absoluteExpiration = ToUTC(absoluteExpiration);
                 
-                _cacheImpl.Insert(key, value, absoluteExpiration, slidingExpiration, priority, removeCallbackId, updateCallbackId, queryInfo, flagMap, lockId, accessType, itemUpdateDataFilter, itemRemovedDataFilter, size);
+                CacheImpl.Insert(key, value, absoluteExpiration, slidingExpiration, priority, removeCallbackId, updateCallbackId, queryInfo, flagMap, lockId, accessType, itemUpdateDataFilter, itemRemovedDataFilter, size);
  
                 if (_perfStatsCollector != null)
                 {
@@ -1786,43 +1807,7 @@ namespace Alachisoft.NCache.Web.Caching
         #endregion
 
         #region /                --- Key based notifications registration ---       /
-
-
-        
-        /// <summary>
-        /// Registers ItemUpdate or ItemRemoved events with cache
-        /// </summary>
-        /// <remarks>
-        /// Client application can show interest in receiving events if an item is update or removed from the cache.
-        /// As soon as the item is updated or removed from the cache, the client application is notified
-        /// and actions can be taken accordingly.
-        /// </remarks>
-        /// <param name="cacheDataNotificationCallback">the CacheDataNotificationCallback that is invoked when an item is added, updated or removed from the cache.</param>
-        /// <param name="eventType">Tells whether the event is to be raised on Item Added, Updated or Removed</param>
-        /// <param name="datafilter">Tells whether to receive metadata, data with metadata or none when a notification is triggered</param>
-        /// <example>
-        /// First create an ItemCallback
-        /// <code>
-        /// ItemCallback(string key, CacheEventArg e)
-        /// {
-        ///    ...
-        /// }
-        /// </code>
-        /// Then register the Cache Notification
-        /// <code>
-        /// Cache cache = NCache.InitializeCache("myCache");
-        /// CacheEventDescriptor descriptor=cache.RegisterCacheNotification(new CacheDataNotificationCallback(ItemCallback), EventType.ItemAdded, EventDataFilter.None);
-        /// 
-        /// </code>
-        /// </example>
-        internal virtual CacheEventDescriptor RegisterCacheNotification(CacheDataNotificationCallback cacheDataNotificationCallback, EventType eventType, EventDataFilter datafilter)
-        {
-            if (cacheDataNotificationCallback == null)
-                throw new ArgumentException("cacheDataNotificationCallback");
-
-            return RegisterCacheNotificationInternal(null, cacheDataNotificationCallback, eventType, datafilter, true);
-        }
-
+       
 
         /// <summary>
         /// Registers the ItemUpdate or ItemRemoved events for the specified key.
@@ -1846,35 +1831,9 @@ namespace Alachisoft.NCache.Web.Caching
         /// 
         /// </code>
         /// </example>
-        public virtual void RegisterCacheNotification(string key, CacheDataNotificationCallback selectiveCacheDataNotificationCallback, EventType eventType)
+        public virtual void RegisterCacheNotification(string key, CacheDataNotificationCallback callback, EventType eventType)
         {
-            if (key == null || key.Length == 0)
-                throw new ArgumentNullException("key");
-
-            if (selectiveCacheDataNotificationCallback == null)
-                throw new ArgumentException("selectiveCacheDataNotificationCallback");
-            EventDataFilter datafilter = EventDataFilter.None;
-
-            RegisterCacheNotificationInternal(key, selectiveCacheDataNotificationCallback, eventType, datafilter, true);
-        }
-
-        internal virtual CacheEventDescriptor RegisterCacheNotificationInternal(string key, CacheDataNotificationCallback callback, EventType eventType, EventDataFilter datafilter, bool notifyOnItemExpiration)
-        {
-            if (_cacheImpl == null) throw new OperationFailedException("Cache is not initialized");
-            CacheEventDescriptor discriptor = null;
-            try
-            {
-                if (key != null)
-                {
-                    short[] callbackRefs = _eventManager.RegisterSelectiveEvent(callback, eventType, datafilter);
-                    _cacheImpl.RegisterKeyNotificationCallback(key, callbackRefs[0], callbackRefs[1], datafilter, notifyOnItemExpiration);
-                }
-            }
-            catch (Exception)
-            {
-                if (ExceptionsEnabled) throw;
-            }
-            return discriptor;
+            RegisterCacheNotificationInternal(key, callback, eventType, EventDataFilter.None, true);
         }
 
         /// <summary>
@@ -1887,17 +1846,22 @@ namespace Alachisoft.NCache.Web.Caching
         /// Let us consider you registered an event against a key
         /// <code>
         /// Cache cache = NCache.InitializeCache("myCache");
-        /// cache.RegisterCacheNotification(key, new CacheDataNotificationCallback(ItemCallback), EventType.ItemUpdated, EventDataFilter.None);
+        /// cache.RegisterCacheNotification(key, new CacheDataNotificationCallback(ItemCallback), EventType.ItemAdded, EventDataFilter.None);
         /// </code>
         /// Now, Unregister this event by providing the key, callback and eventtype
         /// <code>
-        /// cache.UnRegisterCacheNotification(key, new CacheDataNotificationCallback(ItemCallback), EventType.ItemUpdated);
+        /// cache.UnRegisterCacheNotification(key, new CacheDataNotificationCallback(ItemCallback), EventType.ItemAdded);
         /// </code>
         /// </example>
         public virtual void UnRegisterCacheNotification(string key, CacheDataNotificationCallback callback, EventType eventType)
         {
-            if (_cacheImpl == null)
-                if (_cacheImpl == null) throw new OperationFailedException("Cache is not initialized");
+            UnRegisterCacheNotificationInternal(key, callback, eventType);
+        }
+
+        internal void UnRegisterCacheNotificationInternal(string key, CacheDataNotificationCallback callback, EventType eventType)
+        {
+            if (CacheImpl == null)
+                if (CacheImpl == null) throw new OperationFailedException("Cache is not initialized");
             if (key == null)
                 throw new ArgumentNullException("key");
             if (callback == null)
@@ -1909,13 +1873,143 @@ namespace Alachisoft.NCache.Web.Caching
                 short update = value[0];
                 short remove = value[1];
 
-                _cacheImpl.UnRegisterKeyNotificationCallback(key, update, remove);
+                CacheImpl.UnRegisterKeyNotificationCallback(key, update, remove);
             }
             catch (Exception)
             {
                 if (ExceptionsEnabled) throw;
             }
         }
+
+        internal CacheEventDescriptor RegisterCacheNotificationInternal(string key, CacheDataNotificationCallback callback, EventType eventType, EventDataFilter datafilter, bool notifyOnItemExpiration)
+        {
+
+            if (key == null || key.Length == 0)
+                throw new ArgumentNullException("key");
+
+            if (callback == null)
+                throw new ArgumentException("callback");
+
+            if (CacheImpl == null) throw new OperationFailedException("Cache is not initialized");
+            CacheEventDescriptor discriptor = null;
+            try
+            {
+                if (key != null)
+                {
+                    short[] callbackRefs = _eventManager.RegisterSelectiveEvent(callback, eventType, datafilter);
+                    CacheImpl.RegisterKeyNotificationCallback(key, callbackRefs[0], callbackRefs[1], datafilter, notifyOnItemExpiration);
+                }
+            }
+            catch (Exception)
+            {
+                if (ExceptionsEnabled) throw;
+            }
+            return discriptor;
+        }
+
+        /// <summary>
+        /// Registers the ItemUpdate or ItemRemoved events for the specified keys.
+        /// </summary>
+        /// <param name="keys">An array of cache keys used to reference the cache items.</param>
+        /// <param name="selectiveCacheDataNotificationCallback">The CacheDataNotificationCallback that is invoked when an item is added, updated or removed from the cache.</param>
+        /// <param name="eventType">Tells whether the event is to be raised on item updated or removed</param>
+        /// <example>
+        /// First create an ItemCallback
+        /// <code>
+        /// ItemCallback(string key, CacheEventArg e)
+        /// {
+        ///    ...
+        /// }
+        /// </code>
+        /// Then register the Key Notification
+        /// <code>
+        /// Cache cache = NCache.InitializeCache("myCache");
+        /// string[] keys=new string[size];
+        /// cache.RegisterCacheNotification(keys,new CacheDataNotificationCallback(ItemCallback), EventType.ItemUpdated);
+        /// 
+        /// </code>
+        /// </example>
+        public virtual void RegisterCacheNotification(string[] keys, CacheDataNotificationCallback callback, EventType eventType)
+        {
+            RegisterCacheNotificationInternal(keys, callback, eventType, EventDataFilter.None);
+        }
+
+        /// <summary>
+        /// Unregisters any event that may have been registered by the user against multiple cache keys
+        /// </summary>
+        /// <param name="key">An array of cache keys used to reference the cache itemst</param>
+        /// <param name="callback">The CacheDataNotificationCallback that was specified while registering the event.</param>
+        /// <param name="eventType">Type of event to unregister</param>
+        /// <example>
+        /// Let us consider you registered an event against a bulk of keys
+        /// <code>
+        /// Cache cache = NCache.InitializeCache("myCache");
+        /// string[] keys=new string[size];
+        /// cache.RegisterCacheNotification(keys, new CacheDataNotificationCallback(ItemCallback), EventType.ItemAdded, EventDataFilter.None);
+        /// </code>
+        /// Now, Unregister this event by providing the key, callback and eventtype
+        /// <code>
+        /// cache.UnRegisterCacheNotification(keys, new CacheDataNotificationCallback(ItemCallback), EventType.ItemAdded);
+        /// </code>
+        /// </example>
+        public virtual void UnRegisterCacheNotification(string[] keys, CacheDataNotificationCallback callback, EventType eventType)
+        {
+            UnRegisterCacheNotificationInternal(keys, callback, eventType);
+        }
+
+        internal void UnRegisterCacheNotificationInternal(string[] keys, CacheDataNotificationCallback callback, EventType eventType)
+        {
+            if (CacheImpl == null)
+                if (CacheImpl == null) throw new OperationFailedException("Cache is not initialized");
+            if (keys == null)
+                throw new ArgumentNullException("key");
+            if (callback == null)
+                throw new ArgumentNullException("CacheDataNotificationCallback");
+
+            try
+            {
+                short[] value = this._eventManager.UnregisterSelectiveNotification(callback, eventType);
+
+                short update = value[0];
+                short remove = value[1];
+
+                CacheImpl.UnRegisterKeyNotificationCallback(keys, update, remove);
+            }
+            catch (Exception)
+            {
+                if (ExceptionsEnabled) throw;
+            }
+        }
+
+        internal void RegisterCacheNotificationInternal(string[] keys, CacheDataNotificationCallback callback, EventType eventType, EventDataFilter datafilter)
+        {
+            if (keys == null || keys.Length == 0)
+                throw new ArgumentNullException("key");
+            for (int i = 0; i < keys.Length; i++)
+            {
+                if (String.IsNullOrEmpty(keys[i]))
+                    throw new ArgumentNullException("key can't be null or empty");
+            }
+
+            if (callback == null)
+                throw new ArgumentException("callback");
+
+            if (CacheImpl == null) throw new OperationFailedException("Cache is not initialized");
+
+            try
+            {
+                if (keys != null)
+                {
+                    short[] callbackRefs = _eventManager.RegisterSelectiveEvent(callback, eventType, datafilter);
+                    CacheImpl.RegisterKeyNotificationCallback(keys, callbackRefs[0], callbackRefs[1], datafilter, true);
+                }
+            }
+            catch (Exception)
+            {
+                if (ExceptionsEnabled) throw;
+            }
+        }
+
           #endregion
 
         #region /                 --- Lock/Unlock ---       /
@@ -1934,12 +2028,12 @@ namespace Alachisoft.NCache.Web.Caching
         /// </example>
         public virtual void Unlock(string key)
         {
-            if (_cacheImpl == null) throw new OperationFailedException("Cache is not initialized");
+            if (CacheImpl == null) throw new OperationFailedException("Cache is not initialized");
             if (key == null) throw new ArgumentNullException("key is null.");
 
             try
             {
-                _cacheImpl.Unlock(key);
+                CacheImpl.Unlock(key);
             }
             catch (Exception)
             {
@@ -1962,12 +2056,12 @@ namespace Alachisoft.NCache.Web.Caching
         /// </example>
         public virtual void Unlock(string key, LockHandle lockHandle)
         {
-            if (_cacheImpl == null) throw new OperationFailedException("Cache is not initialized");
+            if (CacheImpl == null) throw new OperationFailedException("Cache is not initialized");
             if (key == null) throw new ArgumentNullException("key is null.");
             object lockId = (lockHandle == null) ? null : lockHandle.LockId;
             try
             {
-                _cacheImpl.Unlock(key, lockId);
+                CacheImpl.Unlock(key, lockId);
             }
             catch (Exception)
             {
@@ -1993,14 +2087,14 @@ namespace Alachisoft.NCache.Web.Caching
         /// </example>
         public virtual bool Lock(string key, TimeSpan lockTimeout, out LockHandle lockHandle)
         {
-            if (_cacheImpl == null) throw new OperationFailedException("Cache is not initialized");
+            if (CacheImpl == null) throw new OperationFailedException("Cache is not initialized");
             if (key == null) throw new ArgumentNullException("key is null.");
 
             lockHandle = null;
             bool lockAcquired = false;
             try
             {
-                lockAcquired = _cacheImpl.Lock(key, lockTimeout, out lockHandle);
+                lockAcquired = CacheImpl.Lock(key, lockTimeout, out lockHandle);
             }
             catch (Exception)
             {
@@ -2017,12 +2111,12 @@ namespace Alachisoft.NCache.Web.Caching
         /// <returns>true if the item is locked, false otherwise</returns>
         internal virtual bool IsLocked(string key, ref LockHandle lockHandle)
         {
-            if (_cacheImpl == null) throw new OperationFailedException("Cache is not initialized");
+            if (CacheImpl == null) throw new OperationFailedException("Cache is not initialized");
             if (key == null) throw new ArgumentNullException("key is null.");
 
             try
             {
-                return _cacheImpl.IsLocked(key, ref lockHandle);
+                return CacheImpl.IsLocked(key, ref lockHandle);
             }
             catch (Exception)
             {
@@ -2085,7 +2179,7 @@ namespace Alachisoft.NCache.Web.Caching
 
         internal virtual object Remove(string key, LockHandle lockHandle, LockAccessType accessType)
         {
-            if (_cacheImpl == null) throw new OperationFailedException("Cache is not initialized");
+            if (CacheImpl == null) throw new OperationFailedException("Cache is not initialized");
 
             if (key == null) throw new ArgumentNullException("key");
             if (key == string.Empty) throw new ArgumentException("key cannot be empty string");
@@ -2099,7 +2193,7 @@ namespace Alachisoft.NCache.Web.Caching
                 BitSet flagMap = new BitSet();
                 short dsItemRemovedCallbackId = -1;
 
-                CompressedValueEntry result = _cacheImpl.Remove(key, flagMap, lockId,  accessType);
+                CompressedValueEntry result = CacheImpl.Remove(key, flagMap, lockId,  accessType);
                 if (result != null && result.Value != null)
                 {
                     if (result.Value != null && result.Value is CallbackEntry)
@@ -2139,7 +2233,7 @@ namespace Alachisoft.NCache.Web.Caching
         
         internal virtual void Delete(string key, LockHandle lockHandle,  LockAccessType accessType)
         {
-            if (_cacheImpl == null) throw new OperationFailedException("Cache is not initialized");
+            if (CacheImpl == null) throw new OperationFailedException("Cache is not initialized");
 
             if (key == null) throw new ArgumentNullException("key");
             if (key == string.Empty) throw new ArgumentException("key cannot be empty string");
@@ -2150,7 +2244,7 @@ namespace Alachisoft.NCache.Web.Caching
                 object lockId = (lockHandle == null) ? null : lockHandle.LockId; 
                 BitSet flagMap = new BitSet();
                
-                _cacheImpl.Delete(key, flagMap, lockId, accessType);
+                CacheImpl.Delete(key, flagMap, lockId, accessType);
             }
             catch (Exception)
             {
@@ -2229,7 +2323,7 @@ namespace Alachisoft.NCache.Web.Caching
         ///     try
         ///     {
         ///         //Now remove the cached item using lockHandle acquired earlier.
-        ///         theCache.Delete("cachedItemKey", lockHandle);
+        ///         object removedItem = theCache.Remove("cachedItemKey", lockHandle);
         ///     }
         ///     catch (OperationFailedException ex)
         ///     {
@@ -2243,8 +2337,8 @@ namespace Alachisoft.NCache.Web.Caching
         {
             Delete(key, lockHandle, LockAccessType.DEFAULT);
         }
-        
-        /// <summary>
+
+/// <summary>
         /// Removes the objects from the <see cref="Cache"/>.
         /// </summary>
         /// <param name="keys">The cache keys used to reference the item.</param>
@@ -2261,14 +2355,14 @@ namespace Alachisoft.NCache.Web.Caching
         /// <code>
         /// Cache cache = NCache.InitializeCache("myCache");
         /// string[] keys = new string[]{"myItem1", "myItem2"};
-        ///	cache.RemoveBulk(keys);
+        ///	cache.Remove(keys);
         /// 
         /// </code>
         /// </example>
         /// 
-        public virtual IDictionary RemoveBulk(string[] keys)
+           public virtual IDictionary RemoveBulk(string[] keys)
         {
-            if (_cacheImpl == null) throw new OperationFailedException("Cache is not initialized");
+            if (CacheImpl == null) throw new OperationFailedException("Cache is not initialized");
 
             if (keys == null) throw new ArgumentNullException("keys");
             if (keys.Length == 0) throw new ArgumentException("There is no key present in keys array");
@@ -2279,7 +2373,7 @@ namespace Alachisoft.NCache.Web.Caching
             try
             {
                 BitSet flagMap = new BitSet();
-                IDictionary table = _cacheImpl.Remove(keys, flagMap);
+                IDictionary table = CacheImpl.Remove(keys, flagMap);
 
                 if (table != null)
                 {
@@ -2344,7 +2438,7 @@ namespace Alachisoft.NCache.Web.Caching
 
         public virtual void DeleteBulk(string[] keys)
         {
-            if (_cacheImpl == null) throw new OperationFailedException("Cache is not initialized");
+            if (CacheImpl == null) throw new OperationFailedException("Cache is not initialized");
 
             if (keys == null) throw new ArgumentNullException("keys");
             if (keys.Length == 0) throw new ArgumentException("There is no key present in keys array");
@@ -2352,7 +2446,7 @@ namespace Alachisoft.NCache.Web.Caching
             try
             {
                 BitSet flagMap = new BitSet();
-                _cacheImpl.Delete(keys, flagMap);
+                CacheImpl.Delete(keys, flagMap);
             }
             catch (Exception)
             {
@@ -2366,7 +2460,7 @@ namespace Alachisoft.NCache.Web.Caching
         #region /                 --- Search ---            /
 
         /// <summary>
-        /// Performs search on the <see cref="Cache"/> based on the query specified, and return keys.
+        /// Performs search on the <see cref="Cache"/> based on the query specified.
         /// </summary>
         /// <param name="query">simple SQL like query syntax to query objects from cache</param>
         /// <param name="values">The IDictionary of atribute names and values.</param>
@@ -2398,17 +2492,17 @@ namespace Alachisoft.NCache.Web.Caching
         /// </example>
         public virtual ICollection Search(string query, IDictionary values)
         {
-            if (_cacheImpl == null) throw new OperationFailedException("Cache is not initialized");
+            if (CacheImpl == null) throw new OperationFailedException("Cache is not initialized");
 
             if (String.IsNullOrEmpty(query)) throw new ArgumentNullException("query");
             if (values == null) throw new ArgumentNullException("values");
 
             QueryResultSet resultSet = null;
-            ArrayList collection = new ArrayList();
+            IList collection = new ArrayList();
 
             try
             {
-                resultSet = _cacheImpl.Search(query, values);
+                resultSet = CacheImpl.Search(query, values);
 
                 switch (resultSet.Type)
                 {
@@ -2436,40 +2530,9 @@ namespace Alachisoft.NCache.Web.Caching
             return collection;
         }
 
-        /// <summary>
-        /// Performs search on the <see cref="Cache"/> based on the query specified, and return cache items.
-        /// </summary>
-        /// <param name="query">simple SQL like query syntax to query objects from cache</param>
-        /// <param name="values">The IDictionary of atribute names and values.</param>
-        /// <returns>Returns a list of cache keys</returns>
-        /// <example>
-        /// These operators are supported by NCache Queries.
-        /// 1. Comparison Operators = , == , != , &lt;> , &lt; , > , &lt;=, >=, IN 
-        /// 2. Logical Operators AND , OR , NOT 
-        /// 3. Miscellaneous () , DateTime.Now , DateTime("any date time compatible string")
-        /// 
-        /// <code>
-        /// 
-        /// Hashtable values = new Hashtable();
-        /// values.add("Name", "Paul Jones");
-        /// "select Test.Application.Employee where this.Name = ?"
-        /// 
-        /// values.add("Salary", 2000);
-        /// "select Test.Application.Employee where this.Salary > ?"
-        /// 
-        /// values.Add("Name", "Paul jones");
-        /// values.Add("Salary", 2000);
-        /// "select Test.Application.Employee where this.Name = ? and this.Salary > ?"
-        /// 
-        /// values.Add("Name", "Paul Jones");
-        /// values.Add("Salary", 2000);
-        /// "select Test.Application.Employee where Not(this.Name = 'Paul Jones' and this.Salary > 2000)"
-        /// 
-        /// </code>
-        /// </example>
         public virtual IDictionary SearchEntries(string query, IDictionary values)
         {
-            if (_cacheImpl == null) throw new OperationFailedException("Cache is not initialized");
+            if (CacheImpl == null) throw new OperationFailedException("Cache is not initialized");
 
             if (String.IsNullOrEmpty(query)) throw new ArgumentNullException("query");
             if (values == null) throw new ArgumentNullException("values");
@@ -2480,7 +2543,7 @@ namespace Alachisoft.NCache.Web.Caching
 
             try
             {
-                resultSet = _cacheImpl.SearchEntries(query, values);
+                resultSet = CacheImpl.SearchEntries(query, values);
 
                 switch (resultSet.Type)
                 {
@@ -2545,18 +2608,96 @@ namespace Alachisoft.NCache.Web.Caching
 
         #endregion
 
+
+        #region ---ExecuteReader---
+
+        /// <summary>
+        /// Performs search on the <see cref="Cache"/> based on the query specified where query contains 'group by' clause.
+        /// </summary>
+        /// <param name="query">simple SQL like query syntax to query objects from cache</param>
+        /// <param name="values">The IDictionary of atribute names and values.</param>
+        /// <returns>Returns a cache data reader ICacheReader</returns>
+        /// <example>
+        /// These operators are supported by NCache Queries.
+        /// 1. Comparison Operators = , == , != , &lt;> , &lt; , > , &lt;=, >=, IN 
+        /// 2. Logical Operators AND , OR , NOT 
+        /// 3. Miscellaneous () , DateTime.Now , DateTime("any date time compatible string")
+        /// 
+        /// <code>
+        /// 
+        /// Cache _cache = NCache.InitializeCache("myCache");
+        /// 
+        /// Hashtable values = new Hashtable();
+        /// values.Add("Name", "Paul Jones");
+        /// string query="select Test.Application.Employee where this.Name = ?";
+        /// ICacheReader result=_cache.ExecuteReader(query,values);
+        /// 
+        /// values.Clear();
+        /// values.Add("Salary", 2000);
+        /// query="select Test.Application.Employee where this.Salary > ?";
+        /// result=_cache.ExecuteReader(query,values);
+        /// 
+        /// values.Clear();
+        /// values.Add("Name", "Paul jones");
+        /// values.Add("Salary", 2000);
+        /// query="select Test.Application.Employee where this.Name = ? and this.Salary > ?";
+        /// result=_cache.ExecuteReader(query,values);
+        /// 
+        /// values.Clear();
+        /// values.Add("Name", "Paul Jones");
+        /// values.Add("Salary", 2000);
+        /// query="select Test.Application.Employee where Not(this.Name = 'Paul Jones' and this.Salary > 2000)";
+        /// result=_cache.ExecuteReader(query,values);
+        /// 
+        /// </code>
+        /// </example>
+        /// 
+        public virtual ICacheReader ExecuteReader(string query, IDictionary values, bool getData, int chunkSize)
+        {
+            if (CacheImpl == null) throw new OperationFailedException("Cache is not initialized");
+
+            if (String.IsNullOrEmpty(query)) throw new ArgumentNullException("query");
+            if (values == null) throw new ArgumentNullException("values");
+            if (query.ToLower().Contains("group by")) throw new OperationFailedException("Queries with GROUP BY clause is not supported in this edition of NCache.");
+            if (query.ToLower().Contains("order by")) throw new OperationFailedException("Queries with ORDER BY clause is not supported in this edition of NCache.");
+            ICacheReader reader = null;
+
+            try
+            {
+                reader = new CacheDataReader(CacheImpl.ExecuteReader(query, values, getData, chunkSize));
+
+            }
+            catch (Exception)
+            {
+                if (ExceptionsEnabled) throw;
+            }
+
+            return reader;
+        }
+        public virtual ICacheReader ExecuteReader(string query, IDictionary values)
+        {
+            return ExecuteReader(query, values, true, -1);
+        }
+        public virtual ICacheReader ExecuteReader(string query, IDictionary values, bool getData)
+        {
+            return ExecuteReader(query, values, getData, -1);
+        }
+
+
+        #endregion
+
         internal virtual object SafeSerialize(object serializableObject, string serializationContext, ref BitSet flag, ref long size)
         {
             object serializedObject = null;
 
-            if (_cacheImpl == null)
+            if (CacheImpl == null)
                 throw new OperationFailedException("Cache is not initialized");
 
             if (serializableObject != null)
             {
                 UsageStats statsSerialization = new UsageStats();
                 statsSerialization.BeginSample();
-                serializedObject = _cacheImpl.SafeSerialize(serializableObject, serializationContext, ref flag, _cacheImpl, ref size);
+                serializedObject = CacheImpl.SafeSerialize(serializableObject, serializationContext, ref flag, CacheImpl, ref size);
                 statsSerialization.EndSample();
                 if (_perfStatsCollector != null)
                     _perfStatsCollector.IncrementMsecPerSerialization(statsSerialization.Current);
@@ -2569,14 +2710,14 @@ namespace Alachisoft.NCache.Web.Caching
         {
             object deSerializedObject = null;
 
-            if (_cacheImpl == null)
+            if (CacheImpl == null)
                 throw new OperationFailedException("Cache is not initialized");
 
             if (serializedObject != null)
             {
                 UsageStats statsSerialization = new UsageStats();
                 statsSerialization.BeginSample();
-                deSerializedObject = _cacheImpl.SafeDeserialize(serializedObject, serializationContext, flag, _cacheImpl);
+                deSerializedObject = CacheImpl.SafeDeserialize(serializedObject, serializationContext, flag, CacheImpl);
                 statsSerialization.EndSample();
                 if (_perfStatsCollector != null)
                     _perfStatsCollector.IncrementMsecPerSerialization(statsSerialization.Current);
@@ -2612,14 +2753,14 @@ namespace Alachisoft.NCache.Web.Caching
 
         internal virtual List<EnumerationDataChunk> GetNextChunk(List<EnumerationPointer> pointer)
         {
-            if (_cacheImpl == null)
+            if (CacheImpl == null)
                 throw new OperationFailedException("Cache is not initialized");
 
             List<EnumerationDataChunk> chunks = null;
 
             try
             {
-                chunks = _cacheImpl.GetNextChunk(pointer);
+                chunks = CacheImpl.GetNextChunk(pointer);
             }
             catch (Exception ex)
             {
@@ -2631,7 +2772,7 @@ namespace Alachisoft.NCache.Web.Caching
                 }
                 try
                 {
-                    _cacheImpl.GetNextChunk(pointer);
+                    CacheImpl.GetNextChunk(pointer);
                 }
                 catch (Exception)
                 {

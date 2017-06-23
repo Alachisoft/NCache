@@ -1,4 +1,4 @@
-// Copyright (c) 2015 Alachisoft
+// Copyright (c) 2017 Alachisoft
 // 
 // Licensed under the Apache License, Version 2.0 (the "License");
 // you may not use this file except in compliance with the License.
@@ -11,15 +11,19 @@
 // WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
 // See the License for the specific language governing permissions and
 // limitations under the License.
-using System;
-using System.Collections.Generic;
-using System.Text;
+
 
 namespace Alachisoft.NCache.Common.Enum
 {
     public class CacheTopologyType
     {
         private CacheTopologyType() { }
+
         public static readonly string ClusteredCache = "clustered-cache";
+        public static readonly string LocalCache = "local-cache";
+        public static readonly string Partioned = "partitioned";
+        public static readonly string PartitionedOfReplica = "partitioned-replica";
+        public static readonly string Replicated = "replicated";
+       
     }
 }

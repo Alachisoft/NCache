@@ -1,0 +1,9 @@
+option java_outer_classname="OrderProtocol";
+
+package Alachisoft.NCache.Common.Protobuf;
+
+enum Order 
+{
+		ASC = 0;
+		DESC = 1;
+}

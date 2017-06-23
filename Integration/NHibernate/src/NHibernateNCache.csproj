@@ -62,45 +62,19 @@
     <CodeAnalysisRuleSet>AllRules.ruleset</CodeAnalysisRuleSet>
     <TargetFrameworkVersion>v4.0</TargetFrameworkVersion>
   </PropertyGroup>
-  <PropertyGroup Condition="'$(Configuration)|$(Platform)' == 'Release2x|AnyCPU'">
-    <OutputPath>bin\Release2x\</OutputPath>
-    <DefineConstants>TRACE</DefineConstants>
-    <TargetFrameworkVersion>v3.5</TargetFrameworkVersion>
-    <PlatformTarget>AnyCPU</PlatformTarget>
-    <CodeAnalysisUseTypeNameInSuppression>true</CodeAnalysisUseTypeNameInSuppression>
-    <CodeAnalysisModuleSuppressionsFile>GlobalSuppressions.cs</CodeAnalysisModuleSuppressionsFile>
-    <ErrorReport>prompt</ErrorReport>
-    <CodeAnalysisRuleSet>AllRules.ruleset</CodeAnalysisRuleSet>
-    <CodeAnalysisRuleSetDirectories>;C:\Program Files (x86)\Microsoft Visual Studio 10.0\Team Tools\Static Analysis Tools\\Rule Sets</CodeAnalysisRuleSetDirectories>
-    <CodeAnalysisRuleDirectories>;C:\Program Files (x86)\Microsoft Visual Studio 10.0\Team Tools\Static Analysis Tools\FxCop\\Rules</CodeAnalysisRuleDirectories>
-  </PropertyGroup>
-  <ItemGroup Condition=" '$(Configuration)|$(Platform)' == 'Release|AnyCPU' ">
-    <Reference Include="Alachisoft.NCache.Cache, Version=4.4.0.0, Culture=neutral, PublicKeyToken=1448e8d1123e9096, processorArchitecture=MSIL">
-      <SpecificVersion>False</SpecificVersion>
-      <HintPath>..\..\..\Src\build\Server\4x\Alachisoft.NCache.Cache.dll</HintPath>
-      <Private>True</Private>
-    </Reference>
-    <Reference Include="Alachisoft.NCache.Common, Version=4.4.0.0, Culture=neutral, PublicKeyToken=1448e8d1123e9096, processorArchitecture=MSIL">
-      <SpecificVersion>False</SpecificVersion>
-      <HintPath>..\..\..\Src\build\Server\4x\Alachisoft.NCache.Common.dll</HintPath>
-      <Private>True</Private>
-    </Reference>
-    <Reference Include="Alachisoft.NCache.Management, Version=4.4.0.0, Culture=neutral, PublicKeyToken=1448e8d1123e9096, processorArchitecture=MSIL">
-      <SpecificVersion>False</SpecificVersion>
-      <HintPath>..\..\..\Src\build\Server\4x\Alachisoft.NCache.Management.dll</HintPath>
-      <Private>True</Private>
-    </Reference>
-    <Reference Include="Alachisoft.NCache.Runtime, Version=4.4.0.0, Culture=neutral, PublicKeyToken=1448e8d1123e9096, processorArchitecture=MSIL">
-      <HintPath>..\..\..\Src\build\Server\4x\Alachisoft.NCache.Runtime.dll</HintPath>
-      <Private>True</Private>
-    </Reference>
-    <Reference Include="Alachisoft.NCache.Web, Version=4.4.0.0, Culture=neutral, PublicKeyToken=1448e8d1123e9096, processorArchitecture=MSIL">
-      <SpecificVersion>False</SpecificVersion>
-      <HintPath>..\..\..\Src\build\Server\4x\Alachisoft.NCache.Web.dll</HintPath>
-      <Private>True</Private>
-    </Reference>
-  </ItemGroup>
   <ItemGroup>
+    <Reference Include="Alachisoft.NCache.Cache">
+      <HintPath>..\..\..\Src\build\Server\4x\Alachisoft.NCache.Cache.dll</HintPath>
+    </Reference>
+    <Reference Include="Alachisoft.NCache.Common">
+      <HintPath>..\..\..\Src\build\Server\4x\Alachisoft.NCache.Common.dll</HintPath>
+    </Reference>
+    <Reference Include="Alachisoft.NCache.Runtime">
+      <HintPath>..\..\..\Src\build\Server\4x\Alachisoft.NCache.Runtime.dll</HintPath>
+    </Reference>
+    <Reference Include="Alachisoft.NCache.Web">
+      <HintPath>..\..\..\Src\build\Server\4x\Alachisoft.NCache.Web.dll</HintPath>
+    </Reference>
     <Reference Include="System">
       <Private>False</Private>
     </Reference>
@@ -132,32 +106,6 @@
     <Reference Include="NHibernate">
       <HintPath>..\..\..\Resources\nhibernate\NHibernate.dll</HintPath>
       <Private>False</Private>
-    </Reference>
-  </ItemGroup>
-  <ItemGroup Condition="'$(Configuration)|$(Platform)' == 'Release2x|AnyCPU'">
-    <Reference Include="Alachisoft.NCache.Cache, Version=4.4.0.0, Culture=neutral, PublicKeyToken=1448e8d1123e9096, processorArchitecture=MSIL">
-      <SpecificVersion>False</SpecificVersion>
-      <HintPath>..\..\..\Src\build\Server\2x\Alachisoft.NCache.Cache.dll</HintPath>
-      <Private>True</Private>
-    </Reference>
-    <Reference Include="Alachisoft.NCache.Common, Version=4.4.0.0, Culture=neutral, PublicKeyToken=1448e8d1123e9096, processorArchitecture=MSIL">
-      <SpecificVersion>False</SpecificVersion>
-      <HintPath>..\..\..\Src\build\Server\2x\Alachisoft.NCache.Common.dll</HintPath>
-      <Private>True</Private>
-    </Reference>
-    <Reference Include="Alachisoft.NCache.Management, Version=4.4.0.0, Culture=neutral, PublicKeyToken=1448e8d1123e9096, processorArchitecture=MSIL">
-      <SpecificVersion>False</SpecificVersion>
-      <HintPath>..\..\..\Src\build\Server\2x\Alachisoft.NCache.Management.dll</HintPath>
-      <Private>True</Private>
-    </Reference>
-    <Reference Include="Alachisoft.NCache.Runtime, Version=4.4.0.0, Culture=neutral, PublicKeyToken=1448e8d1123e9096, processorArchitecture=MSIL">
-      <HintPath>..\..\..\Src\build\Server\2x\Alachisoft.NCache.Runtime.dll</HintPath>
-      <Private>True</Private>
-    </Reference>
-    <Reference Include="Alachisoft.NCache.Web, Version=4.4.0.0, Culture=neutral, PublicKeyToken=1448e8d1123e9096, processorArchitecture=MSIL">
-      <SpecificVersion>False</SpecificVersion>
-      <HintPath>..\..\..\Src\build\Server\2x\Alachisoft.NCache.Web.dll</HintPath>
-      <Private>True</Private>
     </Reference>
   </ItemGroup>
   <ItemGroup>
@@ -199,4 +147,11 @@
   <Target Name="AfterBuild">
   </Target>
   -->
+  
+  
+  <PropertyGroup Condition="'$(Configuration)|$(Platform)' == 'Release|AnyCPU'">
+    <PreBuildEvent>
+    </PreBuildEvent>
+    <PostBuildEvent>xcopy /Y "$(TargetPath)" "$(SolutionDir)\..\..\build\NHibernate\"</PostBuildEvent>
+  </PropertyGroup>
 </Project>

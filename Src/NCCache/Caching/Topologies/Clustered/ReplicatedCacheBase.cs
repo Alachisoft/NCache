@@ -148,6 +148,8 @@ namespace Alachisoft.NCache.Caching.Topologies.Clustered
             CacheEntry retVal = null;
             try
             {
+                if (operationContext.Contains(OperationContextFieldName.IsClusteredOperation))
+                    throw new InvalidReaderException("Reader state has been lost due to state transfer.");
                 if (ServerMonitor.MonitorActivity) ServerMonitor.LogClientActivity("RepCacheBase.Get", "enter");
                 Function func = new Function((int)OpCodes.Get, new object[] { key, operationContext });
                 object result = Cluster.SendMessage(address, func, GroupRequest.GET_FIRST, false);
@@ -476,7 +478,6 @@ namespace Alachisoft.NCache.Caching.Topologies.Clustered
 
             pEntries = Get(keys, operationContext); //dont remove
 
-            Hashtable existingItems;
             Hashtable jointTable = new Hashtable();
             Hashtable failedTable = new Hashtable();
             Hashtable insertable = new Hashtable();
@@ -496,20 +497,20 @@ namespace Alachisoft.NCache.Caching.Topologies.Clustered
 
             Hashtable keyValTable = jointTable.Clone() as Hashtable;
 
-            //if (jointTable.Count > 0)
-            //{
-            //    index = 0;
-            //    validKeys = new object[jointTable.Count];
-            //    validEnteries = new CacheEntry[jointTable.Count];
+            if (jointTable.Count > 0)
+            {
+                index = 0;
+                validKeys = new object[jointTable.Count];
+                validEnteries = new CacheEntry[jointTable.Count];
 
-            //    IDictionaryEnumerator ide = jointTable.GetEnumerator();
-            //    while (ide.MoveNext())
-            //    {
-            //        key = ide.Key;
-            //        validKeys[index] = key;
-            //        index += 1;
-            //    }
-            //}
+                IDictionaryEnumerator ide = jointTable.GetEnumerator();
+                while (ide.MoveNext())
+                {
+                    key = ide.Key;
+                    validKeys[index] = key;
+                    index += 1;
+                }
+            }
 
             if (jointTable.Count > 0)
             {
@@ -525,17 +526,16 @@ namespace Alachisoft.NCache.Caching.Topologies.Clustered
                     added.Add(key);
                     index += 1;
                 }
-                //for (int i = 0; i < validKeys.Length; i++)
-                //{
-                //    key = validKeys[i];
-                //    if (jointTable.Contains(key))
-                //        jointTable.Remove(key);
-                //}
+                for (int i = 0; i < validKeys.Length; i++)
+                {
+                    key = validKeys[i];
+                    if (jointTable.Contains(key))
+                        jointTable.Remove(key);
+                }
                 try
                 {
                     insertResults = null;
-                    if (validKeys.Length>0)
-                      insertResults = Clustered_Insert(Cluster.Servers, validKeys, validEnteries,  operationContext);
+                    insertResults = Clustered_Insert(Cluster.Servers, validKeys, validEnteries,  operationContext);
                 }
                 catch (Exception e)
                 {

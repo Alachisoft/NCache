@@ -1,0 +1,12 @@
+import "AverageResult.proto";
+import "Commands/Value.proto";
+
+package Alachisoft.NCache.Common.Protobuf;
+
+message RecordSetValue
+{
+	optional string stringValue = 1;
+	optional AverageResult avgResult = 2;
+	optional Value binaryObject = 3;
+	optional int32 flag = 4;
+}

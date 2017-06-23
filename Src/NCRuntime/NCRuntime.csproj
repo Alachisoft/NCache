@@ -126,6 +126,7 @@
     <Compile Include="Exceptions\ConnectionException.cs" />
     <Compile Include="Exceptions\CacheException.cs" />
     <Compile Include="Exceptions\GeneralFailureException.cs" />
+    <Compile Include="Exceptions\InvalidReaderException.cs" />
     <Compile Include="Exceptions\LockingException.cs" />
     <Compile Include="Exceptions\ManagementException.cs" />
     <Compile Include="Exceptions\OperationFailedException.cs" />

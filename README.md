@@ -6,11 +6,13 @@ NCache is used by hundreds of companies all over the world in mission critical a
 
 **Features:**
 
--	Cache CRUD operations
+-   Separate process for cache  
+-   Query execution using data reader approach	
+-   Cache CRUD operations
 -	Bulk CRUD operations
 -	Lock/Unlock cached items
 -	Item level event notifications
--	SQL & LINQ searching of the cache
+-	SQL & LINQ searching of the cache    
 -	Indexing data for faster SQL & LINQ search
 -	Evictions
 -	Absolute and sliding expirations

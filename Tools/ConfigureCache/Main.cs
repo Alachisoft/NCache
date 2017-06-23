@@ -1,4 +1,4 @@
-// Copyright (c) 2015 Alachisoft
+// Copyright (c) 2017 Alachisoft
 // 
 // Licensed under the Apache License, Version 2.0 (the "License");
 // you may not use this file except in compliance with the License.
@@ -77,13 +77,14 @@ namespace Alachisoft.NCache.Tools.CreateCache
         private string _topology = string.Empty;
         private string _repStrategy = "async";
         private int _clusterPort = -1;
+        private bool _isInProc = false;
+
+        
         private string _defPriority = string.Empty;
         private const string PARTITIONED_TOPOLOGY_NAME = "partitioned";
         private const string REPLICATED_TOPOLOGY_NAME = "replicated";
         private const string LOCAL_TOPOLOGY_NAME = "local";
-        private bool _isInProc = false;
 
-        
 
         private static bool IsValidTopologyName(string topology)
         {
@@ -106,7 +107,6 @@ namespace Alachisoft.NCache.Tools.CreateCache
         {
         }
 
-
         [ArgumentAttribute("", "")]
         public string CacheId
         {
@@ -120,6 +120,7 @@ namespace Alachisoft.NCache.Tools.CreateCache
             get { return _isInProc; }
             set { _isInProc = value; }
         }
+
         [ArgumentAttribute(@"/T", @"/path")]
         public string Path
         {
@@ -259,10 +260,11 @@ namespace Alachisoft.NCache.Tools.CreateCache
             {
                 if (!ccParam.Topology.Equals("local"))
                 {
-                    Console.Error.WriteLine(AppendBlankLine("Error: Cluster Cache cannot be InProc."));
+                    Console.Error.WriteLine("Error: Cluster Cache cannot be InProc.");
                     return false;
                 }
             }
+
 
             if (string.IsNullOrEmpty(ccParam.Path))
             {
@@ -456,7 +458,6 @@ namespace Alachisoft.NCache.Tools.CreateCache
 
                     if (ccParam.IsInProc && _SimpleCacheConfig.CacheSettings.CacheTopology.Topology.Equals("local-cache"))
                         _SimpleCacheConfig.CacheSettings.InProc = true;
-
 
                     if (_SimpleCacheConfig.CacheSettings.CacheType == "clustered-cache")
                     {

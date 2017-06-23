@@ -1,4 +1,4 @@
-// Copyright (c) 2015 Alachisoft
+// Copyright (c) 2017 Alachisoft
 // 
 // Licensed under the Apache License, Version 2.0 (the "License");
 // you may not use this file except in compliance with the License.
@@ -11,36 +11,16 @@
 // WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
 // See the License for the specific language governing permissions and
 // limitations under the License.
+
 using System;
 using System.Collections;
 using Alachisoft.NCache.Runtime.Events;
-using Microsoft.Win32;
-using System.Reflection;
-using System.Text;
-using System.Runtime.InteropServices;
 
 using Alachisoft.NCache.Caching;
-using Alachisoft.NCache.Caching.AutoExpiration;
-using Alachisoft.NCache.Caching.EvictionPolicies;
-using Alachisoft.NCache.Serialization.Formatters;
-using Alachisoft.NCache.Management;
-using Alachisoft.NCache.Web.Net;
-using Alachisoft.NCache.Runtime.Exceptions;
-using Alachisoft.NCache.Runtime.Serialization;
-using Alachisoft.NCache.Web.RemoteClient.Config;
 using Alachisoft.NCache.Runtime;
 using Alachisoft.NCache.Web.Caching.APILogging;
-using Alachisoft.NCache.Web.Statistics;
 using Alachisoft.NCache.Common;
-using Alachisoft.NCache.Common.Stats;
-using Alachisoft.NCache.Serialization;
-using Alachisoft.NCache.IO;
-using Alachisoft.NCache.Util;
-using Alachisoft.NCache.Common.DataStructures;
-using Alachisoft.NCache.Common.Enum;
-using Alachisoft.NCache.Common.Util;
 using System.Collections.Generic;
-using Common = Alachisoft.NCache.Common;
 
 
 /// <summary>
@@ -104,7 +84,7 @@ namespace Alachisoft.NCache.Web.Caching
             get { return _webCache.CacheId; }
         }
 
-       
+
 
         internal override CacheImplBase CacheImpl
         {
@@ -195,7 +175,7 @@ namespace Alachisoft.NCache.Web.Caching
             }
         }
 
-        
+
 
         public override bool Contains(string key)
         {
@@ -545,14 +525,14 @@ namespace Alachisoft.NCache.Web.Caching
             return cItem;
         }
 
-    
+
 
         internal override CacheItem GetCacheItemInternal(string key, LockAccessType accessType, TimeSpan lockTimeout, ref LockHandle lockHandle)
         {
             return _webCache.GetCacheItemInternal(key, accessType, lockTimeout, ref lockHandle);
         }
- 
-      public override void Insert(string key, object value, DateTime absoluteExpiration, TimeSpan slidingExpiration, Runtime.CacheItemPriority priority)
+
+        public override void Insert(string key, object value, DateTime absoluteExpiration, TimeSpan slidingExpiration, Runtime.CacheItemPriority priority)
         {
             string exceptionMessage = null;
             try
@@ -580,21 +560,21 @@ namespace Alachisoft.NCache.Web.Caching
                 { }
                 _webCache.APILogHashTable.Remove(System.Threading.Thread.CurrentThread.ManagedThreadId);
             }
-            
+
         }
 
-        internal override object GetInternal(string key,  LockAccessType accessType, TimeSpan lockTimeout, ref LockHandle lockHandle)
+        internal override object GetInternal(string key, LockAccessType accessType, TimeSpan lockTimeout, ref LockHandle lockHandle)
         {
             return _webCache.GetInternal(key, accessType, lockTimeout, ref lockHandle);
         }
 
-       public override void Insert(string key, object value)
+        public override void Insert(string key, object value)
         {
-            
+
             string exceptionMessage = null;
             try
             {
-               _webCache.Insert(key, value);
+                _webCache.Insert(key, value);
             }
             catch (Exception e)
             {
@@ -617,10 +597,10 @@ namespace Alachisoft.NCache.Web.Caching
                 { }
                 _webCache.APILogHashTable.Remove(System.Threading.Thread.CurrentThread.ManagedThreadId);
             }
-           
+
         }
 
-       public override void Insert(string key, CacheItem item)
+        public override void Insert(string key, CacheItem item)
         {
             string exceptionMessage = null;
             try
@@ -650,7 +630,7 @@ namespace Alachisoft.NCache.Web.Caching
             }
         }
 
-       public override void Insert(string key, CacheItem item, LockHandle lockHandle, bool releaseLock)
+        public override void Insert(string key, CacheItem item, LockHandle lockHandle, bool releaseLock)
         {
             string exceptionMessage = null;
             try
@@ -681,7 +661,7 @@ namespace Alachisoft.NCache.Web.Caching
             }
         }
 
-       public override IDictionary InsertBulk(string[] keys, CacheItem[] items)
+        public override IDictionary InsertBulk(string[] keys, CacheItem[] items)
         {
             System.Collections.IDictionary iDict = null;
             string exceptionMessage = null;
@@ -714,7 +694,7 @@ namespace Alachisoft.NCache.Web.Caching
             }
             return iDict;
         }
-       
+
 
         public override void Unlock(string key)
         {
@@ -874,12 +854,12 @@ namespace Alachisoft.NCache.Web.Caching
             }
         }
 
-        internal override object Remove(string key,  LockHandle lockHandle, LockAccessType accessType)
+        internal override object Remove(string key, LockHandle lockHandle, LockAccessType accessType)
         {
-            return _webCache.Remove(key,  lockHandle, accessType);
+            return _webCache.Remove(key, lockHandle, accessType);
         }
 
-        internal override void Delete(string key,  LockHandle lockHandle, LockAccessType accessType)
+        internal override void Delete(string key, LockHandle lockHandle, LockAccessType accessType)
         {
             _webCache.Delete(key, lockHandle, accessType);
         }
@@ -946,7 +926,7 @@ namespace Alachisoft.NCache.Web.Caching
             }
         }
 
-       
+
         public override IDictionary RemoveBulk(string[] keys)
         {
             System.Collections.IDictionary iDict = null;
@@ -1011,7 +991,7 @@ namespace Alachisoft.NCache.Web.Caching
                 { }
             }
         }
-       
+
         public override System.Collections.ICollection Search(string query, System.Collections.IDictionary values)
         {
             System.Collections.ICollection iCol = null;
@@ -1130,7 +1110,7 @@ namespace Alachisoft.NCache.Web.Caching
 
         internal override IDictionary AddBulkOperation(string[] keys, CacheItem[] items, ref long[] sizes, bool allowQueryTags)
         {
-            return  _webCache.AddBulkOperation(keys, items, ref sizes, true);
+            return _webCache.AddBulkOperation(keys, items, ref sizes, true);
         }
 
         public override bool Equals(object obj)
@@ -1165,7 +1145,7 @@ namespace Alachisoft.NCache.Web.Caching
             return result;
         }
 
-        
+
         public override int GetHashCode()
         {
             int result;
@@ -1198,24 +1178,23 @@ namespace Alachisoft.NCache.Web.Caching
             return result;
         }
 
-      
+
         internal override IDictionary InsertBulkOperation(string[] keys, CacheItem[] items, ref long[] sizes, bool allowQueryTags)
         {
             return _webCache.InsertBulkOperation(keys, items, ref sizes, true);
         }
 
-        internal override void InsertOperation(string key, object value, DateTime absoluteExpiration, TimeSpan slidingExpiration, CacheItemPriority priority,  LockHandle lockHandle, LockAccessType accessType, CacheDataNotificationCallback cacheItemUdpatedCallback, CacheDataNotificationCallback cacheItemRemovedCallaback, EventDataFilter itemUpdateDataFilter, EventDataFilter itemRemovedDataFilter, ref long size, bool allowQueryTags)
+        internal override void InsertOperation(string key, object value, DateTime absoluteExpiration, TimeSpan slidingExpiration, CacheItemPriority priority, LockHandle lockHandle, LockAccessType accessType, CacheDataNotificationCallback cacheItemUdpatedCallback, CacheDataNotificationCallback cacheItemRemovedCallaback, EventDataFilter itemUpdateDataFilter, EventDataFilter itemRemovedDataFilter, ref long size, bool allowQueryTags)
         {
             _webCache.InsertOperation(key, value, absoluteExpiration, slidingExpiration, priority, lockHandle, accessType, cacheItemUdpatedCallback, cacheItemRemovedCallaback, itemUpdateDataFilter, itemRemovedDataFilter, ref size, true);
         }
 
-        internal override CacheEventDescriptor RegisterCacheNotification(CacheDataNotificationCallback cacheDataNotificationCallback, Runtime.Events.EventType eventType, Runtime.Events.EventDataFilter datafilter) 
+        public override void RegisterCacheNotification(string key, CacheDataNotificationCallback callback, Runtime.Events.EventType eventType)
         {
-            CacheEventDescriptor result = null;
             string exceptionMessage = null;
             try
             {
-                result = _webCache.RegisterCacheNotification(cacheDataNotificationCallback, eventType, datafilter);
+                _webCache.RegisterCacheNotificationInternal(key, callback, eventType, EventDataFilter.None, true);
             }
             catch (Exception e)
             {
@@ -1229,37 +1208,7 @@ namespace Alachisoft.NCache.Web.Caching
                     if (_debugConfigurations.IsInLoggingInterval())
                     {
                         APILogItem logItem = new APILogItem();
-                        logItem.Signature = "RegisterCacheNotification(string key, CacheDataNotificationCallback selectiveCacheDataNotificationCallback, Runtime.Events.EventType eventType, Runtime.Events.EventDataFilter datafilter)";
-                        logItem.ExceptionMessage = exceptionMessage;
-                        _apiLogger.Log(logItem);
-                    }
-                }
-                catch (Exception)
-                { }
-            }
-            return result;
-        }
-
-        public override void RegisterCacheNotification(string key, CacheDataNotificationCallback selectiveCacheDataNotificationCallback, Runtime.Events.EventType eventType)
-        {
-            string exceptionMessage = null;
-            try
-            {
-                _webCache.RegisterCacheNotification(key, selectiveCacheDataNotificationCallback, eventType);
-            }
-            catch (Exception e)
-            {
-                exceptionMessage = e.Message;
-                throw;
-            }
-            finally
-            {
-                try
-                {
-                    if (_debugConfigurations.IsInLoggingInterval())
-                    {
-                        APILogItem logItem = new APILogItem();
-                        logItem.Signature = "RegisterCacheNotification(string key, CacheDataNotificationCallback selectiveCacheDataNotificationCallback, Runtime.Events.EventType eventType, Runtime.Events.EventDataFilter datafilter)";
+                        logItem.Signature = "RegisterCacheNotification(string key, CacheDataNotificationCallback selectiveCacheDataNotificationCallback, Runtime.Events.EventType eventType)";
                         logItem.ExceptionMessage = exceptionMessage;
                         logItem.Key = key;
                         _apiLogger.Log(logItem);
@@ -1270,34 +1219,13 @@ namespace Alachisoft.NCache.Web.Caching
             }
         }
 
-        internal override CacheEventDescriptor RegisterCacheNotificationInternal(string key, CacheDataNotificationCallback callback, Runtime.Events.EventType eventType, Runtime.Events.EventDataFilter datafilter, bool notifyOnItemExpiration)
-        {
-            return _webCache.RegisterCacheNotificationInternal(key, callback, eventType, datafilter, notifyOnItemExpiration);
-        }
-
-        internal override object SafeDeserialize(object serializedObject, string serializationContext, BitSet flag)
-        {
-            return _webCache.SafeDeserialize(serializedObject, serializationContext, flag);
-        }
-
-        internal override object SafeSerialize(object serializableObject, string serializationContext, ref BitSet flag, ref long size)
-        {
-                return _webCache.SafeSerialize(serializableObject, serializationContext, ref flag, ref size);
-        }
-
-        public override string ToString()
-        {
-            return _webCache.ToString();
-        }
-
-
         public override void UnRegisterCacheNotification(string key, CacheDataNotificationCallback callback, Runtime.Events.EventType eventType)
         {
             string exceptionMessage = null;
 
             try
             {
-                _webCache.UnRegisterCacheNotification(key, callback, eventType);
+                _webCache.UnRegisterCacheNotificationInternal(key, callback, eventType);
             }
             catch (Exception e)
             {
@@ -1321,5 +1249,84 @@ namespace Alachisoft.NCache.Web.Caching
                 { }
             }
         }
+
+        public override void RegisterCacheNotification(string[] keys, CacheDataNotificationCallback callback, Runtime.Events.EventType eventType)
+        {
+            string exceptionMessage = null;
+            try
+            {
+                _webCache.RegisterCacheNotificationInternal(keys, callback, eventType, EventDataFilter.None);
+            }
+            catch (Exception e)
+            {
+                exceptionMessage = e.Message;
+                throw;
+            }
+            finally
+            {
+                try
+                {
+                    if (_debugConfigurations.IsInLoggingInterval())
+                    {
+                        APILogItem logItem = new APILogItem();
+                        logItem.Signature = "RegisterCacheNotification(string[] keys, CacheDataNotificationCallback callback, Runtime.Events.EventType eventType)";
+                        logItem.ExceptionMessage = exceptionMessage;
+                        logItem.NoOfKeys = keys.Length;
+                        _apiLogger.Log(logItem);
+                    }
+                }
+                catch (Exception)
+                { }
+            }
+        }
+
+        public override void UnRegisterCacheNotification(string[] keys, CacheDataNotificationCallback callback, Runtime.Events.EventType eventType)
+        {
+            string exceptionMessage = null;
+
+            try
+            {
+                _webCache.UnRegisterCacheNotificationInternal(keys, callback, eventType);
+            }
+            catch (Exception e)
+            {
+                exceptionMessage = e.Message;
+                throw;
+            }
+            finally
+            {
+                try
+                {
+                    if (_debugConfigurations.IsInLoggingInterval())
+                    {
+                        APILogItem logItem = new APILogItem();
+                        logItem.Signature = "UnRegisterCacheNotification(string[] keys, CacheDataNotificationCallback callback, Runtime.Events.EventType eventType)";
+                        logItem.NoOfKeys = keys.Length;
+                        logItem.ExceptionMessage = exceptionMessage;
+                        _apiLogger.Log(logItem);
+                    }
+                }
+                catch (Exception)
+                { }
+            }
+        }
+
+
+        internal override object SafeDeserialize(object serializedObject, string serializationContext, BitSet flag)
+        {
+            return _webCache.SafeDeserialize(serializedObject, serializationContext, flag);
+        }
+
+        internal override object SafeSerialize(object serializableObject, string serializationContext, ref BitSet flag, ref long size)
+        {
+            return _webCache.SafeSerialize(serializableObject, serializationContext, ref flag, ref size);
+        }
+
+        public override string ToString()
+        {
+            return _webCache.ToString();
+        }
+
     }
+       
 }

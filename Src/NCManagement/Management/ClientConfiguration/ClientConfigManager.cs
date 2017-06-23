@@ -1,4 +1,4 @@
-// Copyright (c) 2015 Alachisoft
+// Copyright (c) 2017 Alachisoft
 // 
 // Licensed under the Apache License, Version 2.0 (the "License");
 // you may not use this file except in compliance with the License.
@@ -11,6 +11,7 @@
 // WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
 // See the License for the specific language governing permissions and
 // limitations under the License.
+
 using System;
 using System.Collections.Generic;
 using System.Text;
@@ -27,6 +28,8 @@ using Alachisoft.NCache.Management.ClientConfiguration.Dom;
 using Alachisoft.NCache.Common.Enum;
 using Alachisoft.NCache.Config.Dom;
 using Runtime = Alachisoft.NCache.Runtime;
+using System.Globalization;
+using System.Threading;
 
 namespace Alachisoft.NCache.Management.ClientConfiguration
 {
@@ -47,6 +50,8 @@ namespace Alachisoft.NCache.Management.ClientConfiguration
 
         static Hashtable _caches = Hashtable.Synchronized(new Hashtable());
         static ClientConfiguration.Dom.ClientConfiguration _configuration;
+        static object _lock = new object();
+
 
         public static void AvailableNIC(Hashtable nic)
         {
@@ -203,7 +208,7 @@ namespace Alachisoft.NCache.Management.ClientConfiguration
             SaveConfiguration();
         }
 
-        public static void AddCache(string cacheId, RtContextValue serverRuntimeContext)
+        public static void AddCache(string cacheId, int cachePort, RtContextValue serverRuntimeContext)
         {
             LoadXml();
 
@@ -218,6 +223,7 @@ namespace Alachisoft.NCache.Management.ClientConfiguration
                     cacheConfiguration.CacheId = cacheId;
                     cacheConfiguration.ServerRuntimeContext = serverRuntimeContext;
                     cacheConfiguration.AddLocalServer();
+                    //cacheConfiguration.CachePort = cachePort;
                     _configuration.CacheConfigurationsMap[cacheId.ToLower()] = cacheConfiguration;
                 }
             }
@@ -238,6 +244,9 @@ namespace Alachisoft.NCache.Management.ClientConfiguration
                 {
                     CacheConfiguration cacheConfiguration = new CacheConfiguration();
                     cacheConfiguration.CacheId = cacheId;
+                    cacheConfiguration.BindIp = BindIP; // Internal static property set for local node.
+                    if (config.AutoLoadBalancing != null)
+                    cacheConfiguration.LoadBalance = config.AutoLoadBalancing.Enabled;
 
                     if (config.Cluster != null && config.Cluster.Nodes != null)
                     {
@@ -252,33 +261,43 @@ namespace Alachisoft.NCache.Management.ClientConfiguration
 
                             // Sort priority list i.e. local node at top
                             string[] copyServerList = new string[serverList.Length];
-                            for (int i = 0; i < serverList.Length; i++)
+                            int nodeCount = 1;
+                            int bindIPPosition = Array.IndexOf(serverList, cacheConfiguration.BindIp);
+                            if (bindIPPosition == -1)
                             {
-                                if (serverList[i] == cacheConfiguration.BindIp)
+                                for (int serverListCount = 0; serverListCount < serverList.Length; serverListCount++)
                                 {
-                                    copyServerList[0] = serverList[i];
-                                    cacheConfiguration.AddServer(cacheConfiguration.BindIp, 0);
+                                    copyServerList[serverListCount] = serverList[serverListCount];
+                                    cacheConfiguration.AddServer(serverList[serverListCount], serverListCount);
                                 }
-                                else if (String.IsNullOrEmpty(copyServerList[0]))
+                            }
+                            else
+                            {
+                                copyServerList[0] = serverList[bindIPPosition];
+                                cacheConfiguration.AddServer(copyServerList[0], 0);
+                                for (int serverListCount = 0; serverListCount < serverList.Length; serverListCount++)
                                 {
-                                    copyServerList[i + 1] = serverList[i];
-                                    cacheConfiguration.AddServer(serverList[i], i + 1);
+                                    if (serverListCount == bindIPPosition)
+                                        continue;
+
+                                    copyServerList[nodeCount] = serverList[serverListCount];
+                                    cacheConfiguration.AddServer(copyServerList[nodeCount], nodeCount);
+
+                                    nodeCount++;
                                 }
-                                else
-                                {
-                                    copyServerList[i] = serverList[i];
-                                    cacheConfiguration.AddServer(serverList[i], i);
-                                }
+
                             }
                         }
                         else
-                            cacheConfiguration.AddServer(config.Cluster.NodeIdentities[0].NodeName, 0);
+                        {
+                            if (config.Cluster.Nodes.Count > 0)
+                                    cacheConfiguration.AddServer(config.Cluster.NodeIdentities[0].NodeName, 0);
+                        }
                     }
                     else
                     {
                         cacheConfiguration.AddLocalServer();
                     }
-                   
                     _configuration.CacheConfigurationsMap[cacheId.ToLower()] = cacheConfiguration;
                 }
             }
@@ -293,22 +312,25 @@ namespace Alachisoft.NCache.Management.ClientConfiguration
 
             FileStream fs = null;
             StreamWriter sw = null;
+            lock (_lock)
+            {
 
-            try
-            {
-                fs = new FileStream(c_configFileName, FileMode.Create);
-                sw = new StreamWriter(fs);
-                sw.Write(ToXml());
-                sw.Flush();
-            }
-            catch (Exception e)
-            {
-                throw new ManagementException(e.Message, e);
-            }
-            finally
-            {
-                if (sw != null) sw.Close();
-                if (fs != null) fs.Close();
+                try
+                {
+                    fs = new FileStream(c_configFileName, FileMode.Create);
+                    sw = new StreamWriter(fs);
+                    sw.Write(ToXml());
+                    sw.Flush();
+                }
+                catch (Exception e)
+                {
+                    throw new ManagementException(e.Message, e);
+                }
+                finally
+                {
+                    if (sw != null) sw.Close();
+                    if (fs != null) fs.Close();
+                }
             }
         }
 
@@ -317,19 +339,27 @@ namespace Alachisoft.NCache.Management.ClientConfiguration
             StringBuilder sb = new StringBuilder();
             sb.Append("<?xml version=\"1.0\" encoding=\"UTF-8\"?>");
 
-                sb.Append(ENDSTRING + "<!-- Client configuration file is used by client to connect to out-proc caches. " +
-                    ENDSTRING + "This file is automatically generated each time a new cache/cluster is created or " +
-                    ENDSTRING + "cache/cluster configuration settings are applied." +
-                    ENDSTRING + "-->");
+            sb.Append(ENDSTRING + "<!-- Client configuration file is used by client to connect to out-proc caches. " +
+                ENDSTRING + "This file is automatically generated each time a new cache/cluster is created or " +
+                ENDSTRING + "cache/cluster configuration settings are applied." +
+                ENDSTRING + "-->");
 
 
             sb.Append("\n");
-
-            object[] configuration = new object[1];
-            configuration[0] = _configuration;
-            ConfigurationBuilder cfgBuilder = new ConfigurationBuilder(configuration);
-            cfgBuilder.RegisterRootConfigurationObject(typeof(ClientConfiguration.Dom.ClientConfiguration));
-            sb.Append(cfgBuilder.GetXmlString());
+            CultureInfo cultureInfo = Thread.CurrentThread.CurrentCulture;
+            try
+            {
+                Thread.CurrentThread.CurrentCulture = new CultureInfo("en-US");
+                object[] configuration = new object[1];
+                configuration[0] = _configuration;
+                ConfigurationBuilder cfgBuilder = new ConfigurationBuilder(configuration);
+                cfgBuilder.RegisterRootConfigurationObject(typeof(ClientConfiguration.Dom.ClientConfiguration));
+                sb.Append(cfgBuilder.GetXmlString());
+            }
+            finally
+            {
+                Thread.CurrentThread.CurrentCulture = cultureInfo;
+            }
 
             return sb.ToString();
         }
@@ -345,19 +375,20 @@ namespace Alachisoft.NCache.Management.ClientConfiguration
 
                 cacheId = cacheId.ToLower();
                 CacheConfiguration cacheConfiguration = null;
-
-                if (!_configuration.CacheConfigurationsMap.TryGetValue(cacheId, out cacheConfiguration))
+                
+                if (_configuration.CacheConfigurationsMap.TryGetValue(cacheId, out cacheConfiguration))
+                {
+                    cacheConfiguration.ServersPriorityList = serversPriorityList.ServersList;
+                }
+                else
                 {
                     cacheConfiguration = new CacheConfiguration();
                     cacheConfiguration.CacheId = cacheId;
                     cacheConfiguration.BindIp = bindIp;
                     cacheConfiguration.ServerRuntimeContext = serverRuntimeContext;
+                    cacheConfiguration.ServersPriorityList = serversPriorityList.ServersList;
                     _configuration.CacheConfigurationsMap.Add(cacheId, cacheConfiguration);
                 }
-
-               
-
-                cacheConfiguration.ServersPriorityList = serversPriorityList.ServersList;
             }
 
             SaveConfiguration();
@@ -385,17 +416,14 @@ namespace Alachisoft.NCache.Management.ClientConfiguration
 
             for (int i = 0; i < servers.Length; i++)
             {
-                Alachisoft.NCache.Management.ClientConfiguration.Dom.CacheServer server = new Alachisoft.NCache.Management.ClientConfiguration.Dom.CacheServer();
+                Dom.CacheServer server = new Dom.CacheServer();
                 server.ServerName = servers[i];
                 server.Priority = i;
                 cacheConfiguration.ServersPriorityList[i] = server;
             }
-
             
             cacheConfiguration.LoadBalance = loadBalance;
-
             SaveConfiguration();
-            
             xml = string.Empty;
         }
 
@@ -433,7 +461,7 @@ namespace Alachisoft.NCache.Management.ClientConfiguration
         }
        
 
-        internal static ClientConfiguration.Dom.ClientConfiguration GetClientConfiguration(string cacheId)
+        internal static Dom.ClientConfiguration GetClientConfiguration(string cacheId)
         {
             LoadXml();
             return _configuration;

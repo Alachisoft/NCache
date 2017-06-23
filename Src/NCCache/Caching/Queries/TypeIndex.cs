@@ -1,4 +1,4 @@
-// Copyright (c) 2015 Alachisoft
+// Copyright (c) 2017 Alachisoft
 // 
 // Licensed under the Apache License, Version 2.0 (the "License");
 // you may not use this file except in compliance with the License.
@@ -11,69 +11,84 @@
 // WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
 // See the License for the specific language governing permissions and
 // limitations under the License.
+
 using System.Collections;
 using System;
+using Alachisoft.NCache.Common.DataStructures.Clustered;
 
 namespace Alachisoft.NCache.Caching.Queries
 {
     public class TypeIndex : IQueryIndex
     {
-        private Hashtable _indexTable;
+        private HashVector _indexTable;
         private bool _indexForAll;
+        private readonly object _mutex = new object();
 
         public TypeIndex(string type, bool indexForAll)
         {
             _indexForAll = indexForAll;
-            _indexTable = new Hashtable();
+            _indexTable = new HashVector();
             _indexTable[type.ToLower()] = new Hashtable();
         }
 
         public void AddToIndex(object key, object value)
         {
-            if (_indexTable.Contains(value.GetType().ToString().ToLower()))
+            lock (_mutex)
             {
-                Hashtable tbl = _indexTable[value.GetType().ToString().ToLower()] as Hashtable;
-                tbl[key] = null;
+                if (_indexTable.Contains(value.GetType().ToString().ToLower()))
+                {
+                    Hashtable tbl = _indexTable[value.GetType().ToString().ToLower()] as Hashtable;
+                    tbl[key] = null;
+                }
             }
         }
 
         public void RemoveFromIndex(object key, object value)
         {
-            if (_indexTable.Contains(value.GetType().ToString().ToLower()))
+            lock (_mutex)
             {
-                Hashtable tbl = _indexTable[value.GetType().ToString().ToLower()] as Hashtable;
-                if (tbl.Contains(key))
+                if (_indexTable.Contains(value.GetType().ToString().ToLower()))
                 {
-                    tbl.Remove(key);
+                    Hashtable tbl = _indexTable[value.GetType().ToString().ToLower()] as Hashtable;
+                    if (tbl.Contains(key))
+                    {
+                        tbl.Remove(key);
+                    }
                 }
             }
         }
 
         public void Clear()
         {
-            if (_indexForAll)
+            lock (_mutex)
             {
-                _indexTable.Clear();
-            }
-            else
-            {
-                IDictionaryEnumerator e = _indexTable.GetEnumerator();
-                while (e.MoveNext())
+                if (_indexForAll)
                 {
-                    Hashtable tbl = e.Value as Hashtable;
-                    tbl.Clear();
+                    _indexTable.Clear();
+                }
+                else
+                {
+                    IDictionaryEnumerator e = _indexTable.GetEnumerator();
+                    while (e.MoveNext())
+                    {
+                        Hashtable tbl = e.Value as Hashtable;
+                        tbl.Clear();
+                    }
                 }
             }
         }
 
         public IDictionaryEnumerator GetEnumerator(string typeName)
         {
-            IDictionaryEnumerator en = _indexTable.GetEnumerator();
-
-            while (en.MoveNext())
+            lock (_mutex)
             {
-                Hashtable tbl = en.Value as Hashtable;
-                return tbl.GetEnumerator();
+                IDictionaryEnumerator en = _indexTable.GetEnumerator();
+
+                while (en.MoveNext())
+                {
+                    Hashtable tbl = en.Value as Hashtable;
+                    return tbl.GetEnumerator();
+                } 
             }
 
             return null;

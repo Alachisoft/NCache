@@ -1,4 +1,4 @@
-// Copyright (c) 2015 Alachisoft
+// Copyright (c) 2017 Alachisoft
 // 
 // Licensed under the Apache License, Version 2.0 (the "License");
 // you may not use this file except in compliance with the License.
@@ -11,6 +11,7 @@
 // WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
 // See the License for the specific language governing permissions and
 // limitations under the License.
+
 using System;
 using System.Xml.XPath;
 using System.Collections;
@@ -243,8 +244,6 @@ namespace Alachisoft.NCache.Config
             properties = ConfigConverter.ToHashtable(convertToOldDom(newCaches));
         }
 
-        //JAVA TO C# CONVERTER WARNING: Method 'throws' clauses are not available in .NET:
-        //ORIGINAL LINE: private static Alachisoft.NCache.Config.Dom.CacheServerConfig[] convertToOldDom(Alachisoft.NCache.Config.NewDom.CacheServerConfig[] newCacheConfigsList) throws Exception
         private static Alachisoft.NCache.Config.Dom.CacheServerConfig[] convertToOldDom(Alachisoft.NCache.Config.NewDom.CacheServerConfig[] newCacheConfigsList)
         {
             Alachisoft.NCache.Config.Dom.CacheServerConfig[] oldCacheConfigsList = new CacheServerConfig[newCacheConfigsList.Length];

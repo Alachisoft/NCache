@@ -1,4 +1,4 @@
-// Copyright (c) 2015 Alachisoft
+// Copyright (c) 2017 Alachisoft
 // 
 // Licensed under the Apache License, Version 2.0 (the "License");
 // you may not use this file except in compliance with the License.
@@ -11,6 +11,7 @@
 // WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
 // See the License for the specific language governing permissions and
 // limitations under the License.
+
 using System;
 using System.Collections.Generic;
 using System.Text;
@@ -33,7 +34,6 @@ namespace Alachisoft.NCache.Caching
     {
         private Hashtable _fieldValueTable;
         
-        //TODO best not to keep such a heavy object in reference
         public EventCacheEntry Item
         {
             get { return (EventCacheEntry)this.GetValueByField(EventContextFieldName.EventCacheEntry); }
@@ -46,7 +46,7 @@ namespace Alachisoft.NCache.Caching
             set { Add(EventContextFieldName.OldEventCacheEntry, value); }
         }
 
-        public EventContext() { /*_fieldValueTable = new Hashtable();*/ }
+        public EventContext() { }
 
         public EventContext(EventContextFieldName fieldName, object fieldValue)
         {

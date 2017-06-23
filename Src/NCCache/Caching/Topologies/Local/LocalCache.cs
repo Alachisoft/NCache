@@ -1,4 +1,4 @@
-// Copyright (c) 2015 Alachisoft
+// Copyright (c) 2017 Alachisoft
 // 
 // Licensed under the Apache License, Version 2.0 (the "License");
 // you may not use this file except in compliance with the License.
@@ -11,6 +11,7 @@
 // WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
 // See the License for the specific language governing permissions and
 // limitations under the License.
+
 using System;
 using System.Collections;
 using System.Threading;
@@ -169,7 +170,6 @@ namespace Alachisoft.NCache.Caching.Topologies.Local
             {
                 if (_cacheStore != null)
                 {
-                  
                     //if the cache has less data than the new maximum size.
                     //we can not apply the new size to the cache if the cache has already more data.
                     if (_cacheStore.Size <= value)
@@ -230,6 +230,7 @@ namespace Alachisoft.NCache.Caching.Topologies.Local
 
                 IDictionary storageProps = properties["storage"] as IDictionary;               
 
+               
 				_cacheStore = CacheStorageFactory.CreateStorageProvider(storageProps, this._context.SerializationContext, _evictionPolicy != null, _context.NCacheLog);
 
                 _stats.MaxCount = _cacheStore.MaxCount;
@@ -420,13 +421,9 @@ namespace Alachisoft.NCache.Caching.Topologies.Local
                 cacheEntry.EvictionHint = _evictionPolicy.CompatibleHint(cacheEntry.EvictionHint);
             }
 
-            //+ Numan@14102014: No Need to insert Eviction if Eviction is turned off it will reduce cache-entry overhead
-
+            //No Need to insert Eviction if Eviction is turned off it will reduce cache-entry overhead
             if (_evictionPolicy == null)
                 cacheEntry.EvictionHint = null;
-
-            //+ Numan@14102014
-
 
             StoreAddResult result = _cacheStore.Add(key, cacheEntry, !isUserOperation);
             // Operation completed!
@@ -486,12 +483,12 @@ namespace Alachisoft.NCache.Caching.Topologies.Local
 
             EvictionHint peEvh = oldEntry == null ? null : oldEntry.EvictionHint;
 
-            //+ Numan@14102014: No Need to insert Eviction if Eviction is turned off it will reduce cache-entry overhead
+            // No Need to insert Eviction if Eviction is turned off it will reduce cache-entry overhead
 
             if (_evictionPolicy == null)
                 cacheEntry.EvictionHint = null;
             
-            //+ Numan@14102014
+            //
 
             StoreInsResult result = _cacheStore.Insert(key, cacheEntry, !isUserOperation);
             // Operation completed!            
@@ -502,7 +499,6 @@ namespace Alachisoft.NCache.Caching.Topologies.Local
             }
             else if (result == StoreInsResult.SuccessOverwrite || result == StoreInsResult.SuccessOverwriteNearEviction)
             {
-                //alam:
                 //update the cache item last modifeid time...
                 cacheEntry.UpdateLastModifiedTime(oldEntry);
 
@@ -600,7 +596,7 @@ namespace Alachisoft.NCache.Caching.Topologies.Local
                 e.ExpirationHint = null;
             }
 
-            //SAL: Our store may not be an in memory store
+            // Our store may not be an in memory store
             
             if (_notifyCacheFull)
             {

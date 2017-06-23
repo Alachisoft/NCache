@@ -1,4 +1,4 @@
-// Copyright (c) 2015 Alachisoft
+// Copyright (c) 2017 Alachisoft
 // 
 // Licensed under the Apache License, Version 2.0 (the "License");
 // you may not use this file except in compliance with the License.
@@ -20,6 +20,7 @@ using Alachisoft.NCache.Common.DataStructures;
 using Alachisoft.NCache.Common.DataStructures;
 using Alachisoft.NCache.Caching.Topologies.Local;
 using Alachisoft.NCache.Caching.Topologies;
+using Alachisoft.NCache.Common.Util;
 
 namespace Alachisoft.NCache.Caching.Enumeration
 {
@@ -34,22 +35,7 @@ namespace Alachisoft.NCache.Caching.Enumeration
     {
         static readonly CacheSnapshotPool instance = new CacheSnapshotPool();
 
-        /// <summary>
-        /// Minimum number of keys to be present in cache to go for snaphot pooling. 
-        /// </summary>
-        private int _minSnaphotSizeForPooling = 100000;
-
-        /// <summary>
-        /// The maximum number of Snaphots available for pooling.
-        /// </summary>
-        private int _maxSnapshotsInPool = 10;
-
-        /// <summary>
-        /// The time after which we will genarate a new snaphot if a client requests enumerator on cache and 
-        /// if this time is not elapsed we will return the same pool.
-        /// </summary>
-        private int _newSnapshotCreationThreshold = 120; // In secs
-
+        
         /// <summary>
         /// Contains the mapping between cache id and pool specific to that cache.
         /// </summary>
@@ -62,13 +48,7 @@ namespace Alachisoft.NCache.Caching.Enumeration
 
         CacheSnapshotPool()
         {
-                        if (System.Configuration.ConfigurationSettings.AppSettings.Get("NCacheServer.EnableSnapshotPoolingCacheSize") != null)
-                _minSnaphotSizeForPooling = Convert.ToInt32(System.Configuration.ConfigurationSettings.AppSettings.Get("NCacheServer.MinimumSnaphotSizeForPooling"));
-            if (System.Configuration.ConfigurationSettings.AppSettings.Get("NCacheServer.MaxNumOfSnapshotsInPool") != null)
-                _maxSnapshotsInPool = Convert.ToInt32(System.Configuration.ConfigurationSettings.AppSettings.Get("NCacheServer.SnapshotPoolSize"));
-            if (System.Configuration.ConfigurationSettings.AppSettings.Get("NCacheServer.NewSnapshotCreationTimeInSec") != null)
-                _newSnapshotCreationThreshold = Convert.ToInt32(System.Configuration.ConfigurationSettings.AppSettings.Get("NCacheServer.SnapshotCreationThreshold"));
-            _cachePoolMap = new Hashtable();
+             _cachePoolMap = new Hashtable();
         }
 
         public static CacheSnapshotPool Instance
@@ -96,7 +76,7 @@ namespace Alachisoft.NCache.Caching.Enumeration
             }
             else
             {
-                pool = new CachePool(_minSnaphotSizeForPooling, _maxSnapshotsInPool, _newSnapshotCreationThreshold);
+                pool = new CachePool();
                 _cachePoolMap.Add(cache.Context.CacheRoot.Name, pool);
 
             }
@@ -130,22 +110,7 @@ namespace Alachisoft.NCache.Caching.Enumeration
 
         class CachePool
         {
-            /// <summary>
-            /// Minimum number of keys to be present in cache to go for snaphot pooling. 
-            /// </summary>
-            private int _minimumSnaphotSizeForPooling = 100000;
-
-            /// <summary>
-            /// The maximum number of Snaphots available for pooling.
-            /// </summary>
-            private int _maxNumOfSnapshotsInPool = 10;
-
-            /// <summary>
-            /// The time after which we will genarate a new snaphot if a client requests enumerator on cache and 
-            /// if this time is not elapsed we will return the same pool.
-            /// </summary>
-            private int _newSnapshotCreationTimeInSec = 120;
-
+           
             /// <summary>
             /// The time on which a new snapshot was created and added to Snaphot Pool
             /// </summary>
@@ -182,11 +147,9 @@ namespace Alachisoft.NCache.Caching.Enumeration
             }
 
 
-            internal CachePool(int minSnaphotSizeForPooling, int maxSnapshotsInPool, int newSnapshotCreationThreshold)
+            internal CachePool()
             {
-                _minimumSnaphotSizeForPooling = minSnaphotSizeForPooling;
-                _maxNumOfSnapshotsInPool = maxSnapshotsInPool;
-                _newSnapshotCreationTimeInSec = newSnapshotCreationThreshold;
+                
             }
 
             /// <summary>
@@ -199,7 +162,7 @@ namespace Alachisoft.NCache.Caching.Enumeration
             {
                 string uniqueID = string.Empty;
 
-                if (cache.Count < _minimumSnaphotSizeForPooling)
+                if (cache.Count < ServiceConfiguration.EnableSnapshotPoolingCacheSize)
                 {
                     return cache.Keys;
                 }
@@ -212,10 +175,10 @@ namespace Alachisoft.NCache.Caching.Enumeration
                         _lastSnaphotCreationTime = DateTime.Now;
                         _currentUsableSnapshot = uniqueID;
                     }
-                    else if (_pool.Count < _maxNumOfSnapshotsInPool)
+                    else if (_pool.Count < ServiceConfiguration.SnapshotPoolSize)
                     {
                         TimeSpan elapsedTime = DateTime.Now.Subtract(_lastSnaphotCreationTime);
-                        if (elapsedTime.TotalSeconds >= _newSnapshotCreationTimeInSec)
+                        if (elapsedTime.TotalSeconds >= ServiceConfiguration.SnapshotCreationThreshold)
                         {
                             uniqueID = GetNewUniqueID();
                             _pool.Add(uniqueID, cache.Keys);

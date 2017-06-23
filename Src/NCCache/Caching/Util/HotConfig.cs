@@ -1,4 +1,4 @@
-// Copyright (c) 2015 Alachisoft
+// Copyright (c) 2017 Alachisoft
 // 
 // Licensed under the Apache License, Version 2.0 (the "License");
 // you may not use this file except in compliance with the License.
@@ -11,12 +11,14 @@
 // WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
 // See the License for the specific language governing permissions and
 // limitations under the License.
+
+using Alachisoft.NCache.Runtime.Serialization;
 using System;
 using System.Text;
 
 namespace Alachisoft.NCache.Caching.Util
 {
-    public class HotConfig
+    public class HotConfig : ICompactSerializable
     {
         private bool    _isErrorLogsEnabled;
         private bool    _isDetailedLogsEnabled;
@@ -108,6 +110,26 @@ namespace Alachisoft.NCache.Caching.Util
         {
             beginQuoteIndex = endQuoteIndex;
             endQuoteIndex = attributes.IndexOf(delim, beginQuoteIndex + 1);
+        }
+
+
+
+        public void Deserialize(Runtime.Serialization.IO.CompactReader reader)
+        {
+            IsErrorLogsEnabled = (reader.ReadBoolean());
+            IsDetailedLogsEnabled = (reader.ReadBoolean());
+            CacheMaxSize = (reader.ReadInt64());
+            CleanInterval = (reader.ReadInt64());
+            EvictRatio = (reader.ReadSingle());
+        }
+
+        public void Serialize(Runtime.Serialization.IO.CompactWriter writer)
+        {
+            writer.Write(IsErrorLogsEnabled);
+            writer.Write(IsDetailedLogsEnabled);
+            writer.Write(CacheMaxSize);
+            writer.Write(CleanInterval);
+            writer.Write(EvictRatio);
         }
     }
 }

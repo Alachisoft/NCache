@@ -10,6 +10,7 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
+
 using System;
 using System.Collections;
 using System.Threading;
@@ -116,6 +117,8 @@ namespace Alachisoft.NCache.Common.Threading
 
 		/// <summary>Sorted list of <code>IntTask</code>s </summary>
 		private EventQueue queue;
+
+        bool _concurrent;
 
 		/// <summary>
 		/// Set the thread state to running, create and start the thread
@@ -225,6 +228,7 @@ namespace Alachisoft.NCache.Common.Threading
                             {
                                 lock (e)
                                 {
+                                    interval = e.Interval;
                                     task = e.Task;
                                     if (task.IsCancelled())
                                     {
@@ -233,8 +237,6 @@ namespace Alachisoft.NCache.Common.Threading
                                     }
 
                                     elapsedTime = e.ElapsedTime;
-                                    interval = e.Interval;
-
                                     if (elapsedTime >= interval)
                                     {
                                         // Reschedule the task
@@ -245,17 +247,9 @@ namespace Alachisoft.NCache.Common.Threading
                                         }
                                     }
                                 }
-                                if (elapsedTime < interval)
-                                { 
-                                    // argument out of range exception, might be fixed with this check.. hopefully
-                                    if (interval - elapsedTime > 0)
-                                    {
-                                        if ((interval - elapsedTime) > Int32.MaxValue)
-                                            Monitor.Wait(queue, Int32.MaxValue);
-                                        else
-                                            Monitor.Wait(queue, (int)(interval - elapsedTime));
-                                    }
-
+                                if (elapsedTime < e.Interval)
+                                {
+                                    Monitor.Wait(queue, (int)(e.Interval - elapsedTime));
                                     continue;
                                 }
                             }
@@ -270,15 +264,20 @@ namespace Alachisoft.NCache.Common.Threading
                             return;
                         }
                     }
-					try 
-					{
-                        if(task != null && task.Enabled)
-						    task.Run();
-					} 
-					catch(Exception ex) 
-					{
+                    try
+                    {
+                        if (task != null)
+                        {
+                            if (_concurrent)
+                                ThreadPool.QueueUserWorkItem(ExecuterCallback, task);
+                            else
+                                task.Run();
+                        }
+                    }
+                    catch (Exception ex)
+                    {
                         Trace.error("TimeScheduler._run()", ex.ToString());
-					}
+                    }
 				}
 			}
 			catch(ThreadInterruptedException ex) 
@@ -287,6 +286,15 @@ namespace Alachisoft.NCache.Common.Threading
 			}
 		
 		}
+
+        private void ExecuterCallback(object state)
+        {
+            var task = state as Task;
+            if (task != null)
+            {
+                task.Run();
+            }
+        }
 
 		/// <summary>
 		/// Create a scheduler that executes tasks in dynamically adjustable
@@ -303,12 +311,20 @@ namespace Alachisoft.NCache.Common.Threading
 			this.suspend_interval = suspend_interval;
 		}
 
-		/// <summary>
-		/// Create a scheduler that executes tasks in dynamically adjustable
-		/// intervals
-		/// </summary>
-		public TimeScheduler() : this(2000){}
+        /// <summary>
+        /// Create a scheduler that executes tasks in dynamically adjustable
+        /// intervals
+        /// </summary>
+        public TimeScheduler() : this(2000) { }
 
+        public TimeScheduler(bool concurrent) : this(concurrent, 2000) { }
+
+
+        public TimeScheduler(bool concurrent, long interval)
+            : this(interval)
+        {
+            _concurrent = concurrent;
+        }
 
 		/// <remarks>
 		/// <b>Relative Scheduling</b>

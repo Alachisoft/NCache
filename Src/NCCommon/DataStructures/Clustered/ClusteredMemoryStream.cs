@@ -302,9 +302,9 @@ namespace Alachisoft.NCache.Common.DataStructures.Clustered
             return (ClusteredArray<byte>)_buffer.Clone();
         }
 
-        public byte[][] GetInternalBuffer()
+        public ClusteredArrayList GetInternalBuffer()
         {
-            return _buffer.ToArray();
+            return _buffer.ToInternalList(Length);
         }
 
 

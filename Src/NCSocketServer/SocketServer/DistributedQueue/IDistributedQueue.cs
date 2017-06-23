@@ -1,4 +1,4 @@
-// Copyright (c) 2015 Alachisoft
+// Copyright (c) 2017 Alachisoft
 // 
 // Licensed under the Apache License, Version 2.0 (the "License");
 // you may not use this file except in compliance with the License.
@@ -11,28 +11,17 @@
 // WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
 // See the License for the specific language governing permissions and
 // limitations under the License.
-using System;
-using System.Collections.Generic;
-using System.Text;
-using System.Collections;
+
 
 namespace Alachisoft.NCache.SocketServer
 {
-    
-
     interface IDistributedQueue
     {
-       
         object Dequeue();
-
         string RegisterSlaveQueue(IQueue queue,string clientId);
         void UnRegisterSlaveQueue(string queueId);
-
         void Enqueue(object item, string queueId);
-       
-
         long Count { get; }
-
         void Close();
     }
 }

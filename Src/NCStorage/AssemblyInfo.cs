@@ -1,4 +1,4 @@
-// Copyright (c) 2015 Alachisoft
+// Copyright (c) 2017 Alachisoft
 // 
 // Licensed under the Apache License, Version 2.0 (the "License");
 // you may not use this file except in compliance with the License.
@@ -11,11 +11,8 @@
 // WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
 // See the License for the specific language governing permissions and
 // limitations under the License.
-using System;
 using System.Reflection;
-using System.Runtime.CompilerServices;
 using System.Runtime.InteropServices;
-
 
 //
 // General Information about an assembly is controlled through the following 
@@ -29,7 +26,7 @@ using System.Runtime.InteropServices;
 [assembly: AssemblyTrademark("NCache ™ is a registered trademark of Alachisoft.")]
 [assembly: AssemblyConfiguration("")]
 [assembly: AssemblyCompany("Alachisoft")]
-[assembly: AssemblyCopyright("Copyright © 2005-2015 Alachisoft")]
+[assembly: AssemblyCopyright("Copyright © 2005-2017 Alachisoft")]
 [assembly: AssemblyCulture("")]
 
 //
@@ -43,7 +40,7 @@ using System.Runtime.InteropServices;
 // You can specify all the values or you can default the Revision and Build Numbers 
 // by using the '*' as shown below:
 
-[assembly: AssemblyVersion("4.4.0.0")]
+[assembly: AssemblyVersion("4.6.0.0")]
 
 //
 // Since we need to support two runtimes which are not fully backward compatible we have
@@ -97,6 +94,6 @@ using System.Runtime.InteropServices;
 [assembly: AssemblyDelaySign(false)]
 [assembly: AssemblyKeyName("")]
 [assembly: AssemblyKeyFile("..\\..\\..\\..\\Resources\\ncache.snk")]
-[assembly:  AssemblyFileVersionAttribute("4.4.0.11")]
+[assembly: AssemblyFileVersionAttribute("4.6.0.3")]
 [assembly: AssemblyDescriptionAttribute("Storage Classes")]
-[assembly: AssemblyInformationalVersion("4.4.0")]
+[assembly: AssemblyInformationalVersion("4.6.0")]

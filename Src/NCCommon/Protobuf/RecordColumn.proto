@@ -1,0 +1,16 @@
+import "ColumnType.proto";
+import "ColumnValue.proto";
+import "AggregateFunctionType.proto";
+import "ColumnDataType.proto";
+
+package Alachisoft.NCache.Common.Protobuf;
+
+message RecordColumn
+{
+	optional string name = 1;
+	optional bool isHidden = 2;
+	optional ColumnType columnType = 3 [default = ATTRIBUTE_COLUMN];
+	optional ColumnDataType dataType = 4 [default = OBJECT];
+	optional AggregateFunctionType aggregateFunctionType = 5 [default = NOTAPPLICABLE];
+	optional bool isFilled = 6;
+}

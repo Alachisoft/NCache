@@ -1,4 +1,4 @@
-// Copyright (c) 2015 Alachisoft
+// Copyright (c) 2017 Alachisoft
 // 
 // Licensed under the Apache License, Version 2.0 (the "License");
 // you may not use this file except in compliance with the License.
@@ -11,6 +11,7 @@
 // WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
 // See the License for the specific language governing permissions and
 // limitations under the License.
+
 using Alachisoft.NCache.Common.DataStructures;
 using Alachisoft.NCache.Common;
 
@@ -22,7 +23,7 @@ namespace Alachisoft.NCache.Caching.Queries
         private INodeReference _rbnodes;
         private string _storeName;
 
-        //Usman: Since an object takes 24 bits, it also saves 8 bits of members in these 24 bits. This makes the total size: object size + members size - 8  = 24 + (8*3) -8 = 40
+        // Since an object takes 24 bits, it also saves 8 bits of members in these 24 bits. This makes the total size: object size + members size - 8  = 24 + (8*3) -8 = 40
         private const int RefSize = 40; 
 
 

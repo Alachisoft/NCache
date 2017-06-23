@@ -1,4 +1,4 @@
-// Copyright (c) 2015 Alachisoft
+// Copyright (c) 2017 Alachisoft
 // 
 // Licensed under the Apache License, Version 2.0 (the "License");
 // you may not use this file except in compliance with the License.
@@ -11,18 +11,16 @@
 // WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
 // See the License for the specific language governing permissions and
 // limitations under the License.
+
 using System;
 using System.Collections;
-using System.Diagnostics;
-using System.Net;
-using System.Xml;
-using Microsoft.Win32;
 
 using Alachisoft.NCache.Config;
 using Alachisoft.NCache.Runtime.Exceptions;
-using Alachisoft.NCache.Caching.Util;
 
 using Alachisoft.NCache.Config.Dom;
+using System.Globalization;
+using System.Threading;
 
 namespace Alachisoft.NCache.Management
 {
@@ -54,6 +52,14 @@ namespace Alachisoft.NCache.Management
         ///<summary>Cluster port.</summary>
         private int _clusterPort;
         ///<summary>Cluster port.</summary>
+        private int _managementPort;
+
+        
+        ///<summary>Cluster port.</summary>
+        private int _socketPort;
+
+        
+        ///<summary>Cluster port range.</summary>
         private int _clusterPortRange;
         /// <summary>Fatal and error logs.</summary>
         private bool _errorLogsEnabled;
@@ -69,25 +75,45 @@ namespace Alachisoft.NCache.Management
         /// <summary>list of all the servers participating in a clustered cache.</summary>
         private ArrayList _servers;
 
-      
-      
-       
+        private bool _expirationEnabled;
 
-        private bool _useHeartBeat = false;        
+        private bool _absoluteLongerEnabled;
+        private bool _absoluteLongestEnabled;
+
+        private long _absoluteDefault;
+        private long _absoluteLonger;
+        private long _absoluteLongest;
+
+        private bool _slidingLongerEnabled;
+        private bool _slidingLongestEnabled;
+
+        private long _slidingDefault;
+        private long _slidingLonger;
+        private long _slidingLongest;
         
+    
+        private bool _useHeartBeat = false;        
+		
+		private Hashtable _alertNotifications;
+
         private static readonly string NET_TYPE = "net";
         private static readonly string NET_TYPE_WITH_COLON = ":net";
         private static readonly string JAVA_TYPE = "java";        
         private static readonly string JAVA_TYPE_WITH_COLON = ":java";
         private static string PLATFORM_TYPE = string.Empty;
-         
 
-
+      
         public ArrayList Servers
         {
             get { return _servers; }
         }
-        
+
+		public Hashtable AlertNotification
+		{
+			get { return _alertNotifications; }
+		}
+
+
         public long CacheMaxSize
         {
             get { return _cacheMaxSize; }
@@ -103,7 +129,62 @@ namespace Alachisoft.NCache.Management
             get { return _evictRatio; }
         }
 
-        /// <summary> Type of the cache. i.e partitioned-server, partitioned-replica-server, local-cache.</summary>
+        public bool ExpirationEnabled
+        {
+            get { return _expirationEnabled; }
+        }
+
+        public bool AbsoluteLongerEnabled
+        {
+            get { return _absoluteLongerEnabled; }
+        }
+
+        public bool AbsoluteLongestEnabled
+        {
+            get { return _absoluteLongestEnabled; }
+        }
+
+        public bool SlidingLongerEnabled
+        {
+            get { return _slidingLongerEnabled; }
+        }
+
+        public bool SlidingLongestEnabled
+        {
+            get { return _slidingLongestEnabled; }
+        }
+
+        public long SlidingDefault
+        {
+            get { return _slidingDefault; }
+        }
+
+        public long SlidingLonger
+        {
+            get { return _slidingLonger; }
+        }
+
+        public long SlidingLongest
+        {
+            get { return _slidingLongest; }
+        }
+
+        public long AbsoluteDefault
+        {
+            get { return _absoluteDefault; }
+        }
+
+        public long AbsoluteLonger
+        {
+            get { return _absoluteLonger; }
+        }
+
+        public long AbsoluteLongest
+        {
+            get { return _absoluteLongest; }
+        }
+
+        /// <summary> Type of the cache. i.e mirror-server, replicated-server, partitioned-server, partitioned-replica-server, local-cache.</summary>
         public string CacheType
         {
             get { return _cacheType; }
@@ -159,6 +240,12 @@ namespace Alachisoft.NCache.Management
             set { _propertyString = value; }
         }
 
+        /// <summary> Registered compact known types. </summary>
+        public Hashtable CompactKnownTypes
+        {
+            get { return _cmptKnownTypes; }
+            set { _cmptKnownTypes = value; }
+        }
         /// <summary>
         /// Registered Backing Source.
         /// </summary>
@@ -185,6 +272,20 @@ namespace Alachisoft.NCache.Management
             set { _clusterPort = value; }
         }
 
+        /// <summary> Management port of the node. </summary>
+        public int ManagementPort
+        {
+            get { return _managementPort; }
+            set { _managementPort = value; }
+        }
+
+        /// <summary> Client/Socket port of the node. </summary>
+        public int SocketPort
+        {
+            get { return _socketPort; }
+            set { _socketPort = value; }
+        }
+
         /// <summary> Cluster port range. </summary>
         public int ClusterPortRange
         {
@@ -209,7 +310,7 @@ namespace Alachisoft.NCache.Management
             get { return _useHeartBeat; }
             set { _useHeartBeat = value; }
         }
-
+       
         /// <summary> 
         /// Constructor
         /// </summary>
@@ -249,7 +350,7 @@ namespace Alachisoft.NCache.Management
 
                 cConfig._useInProc = configuration.InProc;
                 cConfig.CacheId = configuration.Name;
-
+                
 
                 if (configuration.Cluster != null)
                 {
@@ -294,14 +395,11 @@ namespace Alachisoft.NCache.Management
                     cConfig._errorLogsEnabled = configuration.Log.TraceErrors;
                     cConfig._detailedLogsEnabled = configuration.Log.TraceDebug;
                 }
-                
+
             }
             return cConfig;
         }
-
-
-       
-
+        
      private static Hashtable GetParameters(Parameter[] parameters)
         {
             if (parameters == null)
@@ -314,7 +412,49 @@ namespace Alachisoft.NCache.Management
 
             return settings;
         }
-        
+
+
+        private static Hashtable GetServerMapping(ServerMapping serverMapping)
+        {
+            Hashtable settings = new Hashtable();
+            if (serverMapping.MappingServers != null && serverMapping.MappingServers.Length > 0)
+            {
+                foreach (Mapping mapping in serverMapping.MappingServers)
+                    settings.Add(mapping.PrivateIP, GetMapping(mapping));
+            }
+
+            return settings;
+        }
+
+        private static Hashtable GetMapping(Mapping mapping)
+        {
+            Hashtable settings = new Hashtable();
+            if (mapping != null)
+            {
+                settings.Add("private-ip", mapping.PrivateIP.ToString());
+                settings.Add("private-port", mapping.PrivatePort.ToString());
+                settings.Add("public-ip", mapping.PublicIP.ToString());
+                settings.Add("public-port", mapping.PublicPort.ToString());
+            }
+            return settings;
+        }
+
+
+        /// <summary>
+        /// Populates the object from specified configuration string.
+        /// </summary>
+        /// <returns></returns>
+        internal static CacheConfig FromPropertyString(string props)
+        {
+            CacheConfig cConfig = null;
+            if (props != null)
+            {
+                PropsConfigReader pcr = new PropsConfigReader(props);
+                IDictionary cacheConfig = pcr.Properties;
+                cConfig = CacheConfig.FromProperties(cacheConfig);
+            }
+            return cConfig;
+        }
 
         internal static ArrayList GetConfigs(ArrayList props)
         {
@@ -489,18 +629,12 @@ namespace Alachisoft.NCache.Management
                 }
             }
 
-            //return props;
-
-
-            //send the updated properties...
             return FromProperties(properties);
         }
 
         internal static CacheConfig GetUpdatedConfig(IDictionary properties, string partId, string newNode, ref ArrayList affectedNodes, ref ArrayList affectedPartitions, bool isJoining)
         {
             
-            //update the properties...
-
             string list = "";
             int clusterPort = 0;
 
@@ -615,10 +749,6 @@ namespace Alachisoft.NCache.Management
                 }
             }
 
-            //return props;
-
-
-            //send the updated properties...
             return FromProperties(properties);
         }
 
@@ -796,7 +926,6 @@ namespace Alachisoft.NCache.Management
             properties.Remove("type");
             data.PropertyString = ConfigReader.ToPropertiesString(properties);
 
-
             return data;
         }
 
@@ -807,121 +936,94 @@ namespace Alachisoft.NCache.Management
         internal static CacheConfig FromProperties(IDictionary properties)
         {
             CacheConfig data = new CacheConfig();
-
-            if (properties.Contains("partitionid"))
-                data.PartitionId = properties["partitionid"].ToString().ToLower();
-
-            IDictionary webprops = properties["web-cache"] as IDictionary;
-            IDictionary cacheprops = properties["cache"] as IDictionary;
-
-            if (properties == null)
-                throw new ManagementException(@"Invalid configuration; missing 'web-cache' element.");
-
-
+            CultureInfo cultureInfo = Thread.CurrentThread.CurrentCulture;
             try
             {
-                if (cacheprops.Contains("cache-classes"))
+                Thread.CurrentThread.CurrentCulture =  new System.Globalization.CultureInfo("en-US");
+                if (properties.Contains("partitionid"))
+                    data.PartitionId = properties["partitionid"].ToString().ToLower();
+
+                IDictionary webprops = properties["web-cache"] as IDictionary;
+                IDictionary cacheprops = properties["cache"] as IDictionary;
+
+                if (properties == null)
+                    throw new ManagementException(@"Invalid configuration; missing 'web-cache' element.");
+
+
+                try
                 {
-                    IDictionary cacheClassesProps = cacheprops["cache-classes"] as IDictionary;
-                    string cacheName = Convert.ToString(cacheprops["name"]);
-                    cacheName = cacheName.ToLower();
-                    if (cacheClassesProps.Contains(cacheName))
+                    // Get start_port (ClusterPort) and port_range (ClusterPortRange) from the config file
+                    if (cacheprops.Contains("cache-classes"))
                     {
-                        IDictionary topologyProps = cacheClassesProps[cacheName] as IDictionary;
-                        if (topologyProps.Contains("cluster"))
+                        IDictionary cacheClassesProps = cacheprops["cache-classes"] as IDictionary;
+                        string cacheName = Convert.ToString(cacheprops["name"]);
+                        cacheName = cacheName.ToLower();
+                        if (cacheClassesProps.Contains(cacheName))
                         {
-                            IDictionary clusterProps = topologyProps["cluster"] as IDictionary;
-                            if (clusterProps.Contains("channel"))
+                            IDictionary topologyProps = cacheClassesProps[cacheName] as IDictionary;
+                            if (topologyProps.Contains("cluster"))
                             {
-                                IDictionary channelProps = clusterProps["channel"] as IDictionary;
-                                if (channelProps.Contains("tcp"))
+                                IDictionary clusterProps = topologyProps["cluster"] as IDictionary;
+                                if (clusterProps.Contains("channel"))
                                 {
-                                    IDictionary tcpProps = channelProps["tcp"] as IDictionary;
-                                    if (tcpProps.Contains("start_port"))
+                                    IDictionary channelProps = clusterProps["channel"] as IDictionary;
+                                    if (channelProps.Contains("tcp"))
                                     {
-                                        data.ClusterPort = Convert.ToInt32(tcpProps["start_port"]);
+                                        IDictionary tcpProps = channelProps["tcp"] as IDictionary;
+                                        if (tcpProps.Contains("start_port"))
+                                        {
+                                            data.ClusterPort = Convert.ToInt32(tcpProps["start_port"]);
+                                        }
+                                        if (tcpProps.Contains("use_heart_beat"))
+                                        {
+                                            data.UseHeartBeat = Convert.ToBoolean(tcpProps["use_heart_beat"]);
+                                        }
+                                        if (tcpProps.Contains("port_range"))
+                                        {
+                                            data.ClusterPortRange = Convert.ToInt32(tcpProps["port_range"]);
+                                        }
+                                        else
+                                        {
+                                            data.ClusterPortRange = 2;
+                                        }
                                     }
-                                    if (tcpProps.Contains("use_heart_beat"))
+                                    if (channelProps.Contains("tcpping"))
                                     {
-                                        data.UseHeartBeat = Convert.ToBoolean(tcpProps["use_heart_beat"]);
-                                    }
-                                    if (tcpProps.Contains("port_range"))
-                                    {
-                                        data.ClusterPortRange = Convert.ToInt32(tcpProps["port_range"]);
-                                    }
-                                    else
-                                    {
-                                        data.ClusterPortRange = 2;
+                                        IDictionary tcppingProps = channelProps["tcpping"] as IDictionary;
+                                        if (tcppingProps.Contains("initial_hosts"))
+                                        {
+                                            string hostString = (string)tcppingProps["initial_hosts"];
+                                            data._servers = FromHostListToServers(hostString);
+                                        }
                                     }
                                 }
-                                if (channelProps.Contains("tcpping"))
-                                {
-                                    IDictionary tcppingProps = channelProps["tcpping"] as IDictionary;
-                                    if (tcppingProps.Contains("initial_hosts"))
-                                    {
-                                        string hostString = (string)tcppingProps["initial_hosts"];
-                                        data._servers = FromHostListToServers(hostString);
-                                    }
-                                }
-                            }
-                        }
-
-                        if (topologyProps.Contains("type"))
-                        {
-                            data._cacheType = Convert.ToString(topologyProps["type"]);
-                        }
-
-                        if (topologyProps.Contains("clean-interval"))
-                        {
-                            data._cleanInterval = Convert.ToInt64(topologyProps["clean-interval"]) * 1000; //convert to ms
-                        }
-
-                        if (topologyProps.Contains("scavenging-policy"))
-                        {
-                            IDictionary scavengingProps = topologyProps["scavenging-policy"] as IDictionary;
-                            if (scavengingProps.Contains("evict-ratio"))
-                            {
-                                data._evictRatio = Convert.ToSingle(scavengingProps["evict-ratio"]);
-                            }
-                        }
-
-                        //We need to extract storage information from the properties 
-                        //because user can now change the cache size at runtime.
-                        //hot apply configuration option for cache size.
-                        if (topologyProps.Contains("storage"))
-                        {
-                            IDictionary storageProps = topologyProps["storage"] as IDictionary;
-                            if (storageProps.Contains("class"))
-                            {
-                                string storageClass = storageProps["class"] as string;
-                                IDictionary storageProviderProps = storageProps[storageClass] as IDictionary;
-                                if (storageProviderProps.Contains("max-size"))
-                                {
-                                    data._cacheMaxSize = Convert.ToInt64(storageProviderProps["max-size"]) * 1024 * 1024; //from MBs to bytes
-                                }
-                            }
-                        }
-                        else if (topologyProps.Contains("internal-cache"))
-                        {
-                            IDictionary internalProps = topologyProps["internal-cache"] as IDictionary;
-
-                            if (internalProps.Contains("clean-interval"))
-                            {
-                                data._cleanInterval = Convert.ToInt64(internalProps["clean-interval"]) * 1000; //convert to ms
                             }
 
-                            if (internalProps.Contains("scavenging-policy"))
+                            if (topologyProps.Contains("type"))
                             {
-                                IDictionary scavengingProps = internalProps["scavenging-policy"] as IDictionary;
+                                data._cacheType = Convert.ToString(topologyProps["type"]);
+                            }
+
+                            if (topologyProps.Contains("clean-interval"))
+                            {
+                                data._cleanInterval = Convert.ToInt64(topologyProps["clean-interval"]) * 1000; //convert to ms
+                            }
+
+                            if (topologyProps.Contains("scavenging-policy"))
+                            {
+                                IDictionary scavengingProps = topologyProps["scavenging-policy"] as IDictionary;
                                 if (scavengingProps.Contains("evict-ratio"))
                                 {
                                     data._evictRatio = Convert.ToSingle(scavengingProps["evict-ratio"]);
                                 }
                             }
 
-                            if (internalProps.Contains("storage"))
+                            //We need to extract storage information from the properties 
+                            //because user can now change the cache size at runtime.
+                            //hot apply configuration option for cache size.
+                            if (topologyProps.Contains("storage"))
                             {
-                                IDictionary storageProps = internalProps["storage"] as IDictionary;
+                                IDictionary storageProps = topologyProps["storage"] as IDictionary;
                                 if (storageProps.Contains("class"))
                                 {
                                     string storageClass = storageProps["class"] as string;
@@ -932,57 +1034,92 @@ namespace Alachisoft.NCache.Management
                                     }
                                 }
                             }
+                            else if (topologyProps.Contains("internal-cache"))
+                            {
+                                IDictionary internalProps = topologyProps["internal-cache"] as IDictionary;
+
+                                if (internalProps.Contains("clean-interval"))
+                                {
+                                    data._cleanInterval = Convert.ToInt64(internalProps["clean-interval"]) * 1000; //convert to ms
+                                }
+
+                                if (internalProps.Contains("scavenging-policy"))
+                                {
+                                    IDictionary scavengingProps = internalProps["scavenging-policy"] as IDictionary;
+                                    if (scavengingProps.Contains("evict-ratio"))
+                                    {
+                                        data._evictRatio = Convert.ToSingle(scavengingProps["evict-ratio"]);
+                                    }
+                                }
+
+                                if (internalProps.Contains("storage"))
+                                {
+                                    IDictionary storageProps = internalProps["storage"] as IDictionary;
+                                    if (storageProps.Contains("class"))
+                                    {
+                                        string storageClass = storageProps["class"] as string;
+                                        IDictionary storageProviderProps = storageProps[storageClass] as IDictionary;
+                                        if (storageProviderProps.Contains("max-size"))
+                                        {
+                                            data._cacheMaxSize = Convert.ToInt64(storageProviderProps["max-size"]) * 1024 * 1024; //from MBs to bytes
+                                        }
+                                    }
+                                }
+                            }
                         }
                     }
-                }
 
-                // Get Error and Detailed logs enable status from the config file
-                if (cacheprops.Contains("log"))
-                {
-                    IDictionary cacheLogProps = cacheprops["log"] as IDictionary;
-                    if (cacheLogProps.Contains("enabled"))
+                    // Get Error and Detailed logs enable status from the config file
+                    if (cacheprops.Contains("log"))
                     {
-                        bool logsEnabled = Convert.ToBoolean(cacheLogProps["enabled"]);
-                        if (logsEnabled)
+                        IDictionary cacheLogProps = cacheprops["log"] as IDictionary;
+                        if (cacheLogProps.Contains("enabled"))
                         {
-                            if (cacheLogProps.Contains("trace-errors"))
-                                data.IsErrorLogsEnabled = Convert.ToBoolean(cacheLogProps["trace-errors"]);
-                            if (cacheLogProps.Contains("trace-debug"))
-                                data.IsDetailedLogsEnabled = Convert.ToBoolean(cacheLogProps["trace-debug"]);
+                            bool logsEnabled = Convert.ToBoolean(cacheLogProps["enabled"]);
+                            if (logsEnabled)
+                            {
+                                if (cacheLogProps.Contains("trace-errors"))
+                                    data.IsErrorLogsEnabled = Convert.ToBoolean(cacheLogProps["trace-errors"]);
+                                if (cacheLogProps.Contains("trace-debug"))
+                                    data.IsDetailedLogsEnabled = Convert.ToBoolean(cacheLogProps["trace-debug"]);
+                            }
                         }
                     }
                 }
+                catch (Exception) { }
+
+                data.CacheId = Convert.ToString(webprops["cache-id"]);
+                if (data.CacheId == null || data.CacheId.Length == 0)
+                    throw new ManagementException(@"'cache-id' not specified in configuration.");
+
+                if (webprops.Contains("channel"))
+                {
+                    string channel = Convert.ToString(webprops["channel"]);
+                    channel = channel.ToLower();
+                    if (channel.CompareTo("http") == 0)
+                        data.UseTcp = false;
                 }
-            catch (Exception) { }
 
-            data.CacheId = Convert.ToString(webprops["cache-id"]);
-            if (data.CacheId == null || data.CacheId.Length == 0)
-                throw new ManagementException(@"'cache-id' not specified in configuration.");
+                if (webprops.Contains("shared"))
+                    data.UseInProc = !Convert.ToBoolean(webprops["shared"]);
 
-            if (webprops.Contains("channel"))
-            {
-                string channel = Convert.ToString(webprops["channel"]);
-                channel = channel.ToLower();
-                if (channel.CompareTo("http") == 0)
-                    data.UseTcp = false;
+                if (webprops.Contains("port"))
+                    data.Port = Convert.ToUInt32(webprops["port"]);
+                else
+                    data.Port = data.UseTcp ? CacheConfigManager.NCacheTcpPort : CacheConfigManager.HttpPort;
+
+                if (webprops.Contains("server"))
+                    data.ServerName = Convert.ToString(webprops["server"]);
+
+                properties.Remove("id");
+                properties.Remove("type");
+                data.PropertyString = ConfigReader.ToPropertiesString(properties);
+
             }
-
-            if (webprops.Contains("shared"))
-                data.UseInProc = !Convert.ToBoolean(webprops["shared"]);
-
-            if (webprops.Contains("port"))
-                data.Port = Convert.ToUInt32(webprops["port"]);
-            else
-                data.Port = data.UseTcp ? CacheConfigManager.NCacheTcpPort : CacheConfigManager.HttpPort;
-
-            if (webprops.Contains("server"))
-                data.ServerName = Convert.ToString(webprops["server"]);
-
-            properties.Remove("id");
-            properties.Remove("type");
-            data.PropertyString = ConfigReader.ToPropertiesString(properties);
-
-
+            finally
+            {
+                Thread.CurrentThread.CurrentCulture = cultureInfo;
+            }
 
             return data;
         }
@@ -1040,6 +1177,8 @@ namespace Alachisoft.NCache.Management
                         }
                     }
                 }
+
+                // Get start_port (ClusterPort) and port_range (ClusterPortRange) from the config file
                 if (properties.Contains("cluster"))
                 {
                     IDictionary clusterProps = properties["cluster"] as IDictionary;

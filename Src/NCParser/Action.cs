@@ -8,6 +8,7 @@
 // The translation is based on the other engine translations:
 // Delphi engine by Alexandre Rai (riccio@gmx.at)
 // C# engine by Marcus Klimstra (klimstra@home.nl)
+
 namespace Alachisoft.NCache.Parser
 {
     /// constants associated with what action should be performed 

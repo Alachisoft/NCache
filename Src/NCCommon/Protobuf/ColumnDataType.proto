@@ -1,0 +1,25 @@
+package Alachisoft.NCache.Common.Protobuf;
+
+enum ColumnDataType
+{
+        OBJECT = 0;
+        BOOL = 1;
+        CHAR = 2;
+        DATETIME = 3;
+        DECIMAL = 4;
+        DOUBLE = 5;
+        FLOAT = 6;
+        INT16 =7;
+        INT32 = 8;
+        INT64 = 9;
+        UINT16 = 10;
+        UINT32 = 11;
+        UINT64 = 12;
+        STRING = 13;
+        BYTE = 14;
+        SBYTE = 15;
+
+        AVERAGERESULT = 16;
+		USER_BINARY_OBJECT = 17;
+
+}

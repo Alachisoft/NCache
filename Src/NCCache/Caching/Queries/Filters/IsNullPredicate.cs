@@ -1,4 +1,4 @@
-// Copyright (c) 2015 Alachisoft
+// Copyright (c) 2017 Alachisoft
 // 
 // Licensed under the Apache License, Version 2.0 (the "License");
 // you may not use this file except in compliance with the License.
@@ -11,9 +11,12 @@
 // WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
 // See the License for the specific language governing permissions and
 // limitations under the License.
+
 using System;
 using System.Collections;
 using Alachisoft.NCache.Parser;
+using Alachisoft.NCache.Common.Queries;
+using Alachisoft.NCache.Common.Enum;
 
 namespace Alachisoft.NCache.Caching.Queries.Filters
 {
@@ -36,7 +39,7 @@ namespace Alachisoft.NCache.Caching.Queries.Filters
             return Inverse ? "is not null" : "is null";
         }
 
-        internal override void ExecuteInternal(QueryContext queryContext, ref SortedList list)
+        internal override void ExecuteInternal(QueryContext queryContext, CollectionOperation mergeType)
         {
             throw new ParserException("Incorrect query format. \'" + this.ToString() + "\' not supported.");
         }

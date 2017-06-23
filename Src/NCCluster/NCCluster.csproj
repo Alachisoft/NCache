@@ -327,9 +327,6 @@
     <Compile Include="Util\Util.cs">
       <SubType>Code</SubType>
     </Compile>
-    <Compile Include="Version.cs">
-      <SubType>Code</SubType>
-    </Compile>
     <Compile Include="View.cs">
       <SubType>Code</SubType>
     </Compile>
@@ -370,7 +367,7 @@
   </ItemGroup>
   <ProjectExtensions>
     <VisualStudio>
-      <UserProperties tArchitectTAProfile="False" tArchitectProject="False" tArchitectGeneration="Disabled" />
+      <UserProperties tArchitectGeneration="Disabled" tArchitectProject="False" tArchitectTAProfile="False" />
     </VisualStudio>
   </ProjectExtensions>
   <Import Project="$(MSBuildBinPath)\Microsoft.CSharp.targets" />

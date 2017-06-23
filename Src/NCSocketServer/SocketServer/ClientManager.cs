@@ -1,4 +1,4 @@
-// Copyright (c) 2015 Alachisoft
+// Copyright (c) 2017 Alachisoft
 // 
 // Licensed under the Apache License, Version 2.0 (the "License");
 // you may not use this file except in compliance with the License.
@@ -11,33 +11,38 @@
 // WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
 // See the License for the specific language governing permissions and
 // limitations under the License.
+
 using System;
+using System.Collections.Concurrent;
 using System.Net;
 using System.Net.Sockets;
 using System.Threading;
 using System.Collections;
-
+using Alachisoft.NCache.Common.DataStructures.Clustered;
+using Alachisoft.NCache.Common.Sockets;
 using Alachisoft.NCache.SocketServer.Util;
 using Alachisoft.NCache.Common.Net;
 using Alachisoft.NCache.Common.Util;
 using System.Collections.Generic;
 using Alachisoft.NCache.Common.DataStructures;
-using Alachisoft.NCache.Common;
 
 namespace Alachisoft.NCache.SocketServer
 {
+
     /// <summary>
     /// One instance of this class is created per client connection, and it remains 
     /// valid as long as the client is connected. 
     /// </summary>
-    internal sealed class ClientManager
+    public sealed class ClientManager
     {
         /// <summary> True if socket has read the size of incomming command and data, false otherwise</summary>
         internal bool IsSizeRead = true;
 
-        /// <summary> True if client connection is closed, false otherwise</summary>
+        /// <summary> True if client connection is closed, flase otherwise</summary>
         internal bool ConnectionLost = false;
 
+        /// <summary> True if this client is a .Net client, flase otherwise</summary>
+        internal bool IsDotNetClient = false;
 
         /// <summary> Holds the data packet recieved from cleint</summary>
         internal byte[] Buffer = null;
@@ -48,11 +53,13 @@ namespace Alachisoft.NCache.SocketServer
 
         internal byte[] discardingBuffer = new byte[20];
 
+
         internal byte[] sendBuffer = null;
 
         /// <summary> Underlying client socket object</summary>
         private Socket _clientSocket = null;
 
+    
         /// <summary> Unique clientId holder</summary>
         private string _clientSocketId = null;
 
@@ -90,18 +97,41 @@ namespace Alachisoft.NCache.SocketServer
         private string _beginSendTimeString; //only for dump analysis
         private DateTime _endSendTime;
 
-        private Alachisoft.NCache.Common.DataStructures.WeightageBasedPriorityQueue _asyncSendQueue;
         private int _eventPriorityRatio = 30;
         private static int _eventBulkCount = 50;
-        private int _bulkEventCollectionInterval = 1;
-
+        private bool supportAcknowledgement = false;
         private Dictionary<string, EnumerationPointer> _enumerationPointers = new Dictionary<string, EnumerationPointer>();
-
         private EventsQueue _eventsQueue;
         private DateTime _lastEventCollectionTime;
         private string _slaveId;
         private bool _raiseClientDisconnectedEvent = true;
         private ConnectionManager _connectionManager;
+
+        #region Aync response to client stuff
+
+        private bool _isSending;
+        private SocketAsyncEventArgs _sendAsyncArgs;
+        private SocketAsyncEventArgs _receiveAsyncArgs;
+
+        public SocketAsyncEventArgs SendEventArgs
+        {
+            get { return _sendAsyncArgs; }
+            set { _sendAsyncArgs = value; }
+        }
+
+        public SocketAsyncEventArgs ReceiveEventArgs
+        {
+            get { return _receiveAsyncArgs; }
+            set { _receiveAsyncArgs = value; }
+        }
+
+        public bool SendingResponse
+        {
+            get { return _isSending; }
+            set { _isSending = value; }
+        }
+
+        #endregion
 
         public Dictionary<string, EnumerationPointer> EnumerationPointers
         {
@@ -125,23 +155,18 @@ namespace Alachisoft.NCache.SocketServer
             get { return _clientIp; }
             set { _clientIp = value; }
         }
+
+        public bool IsAzureClient
+        {
+            get { return _isAzureClient; }
+            set { _isAzureClient = value; }
+        }
         
-        private IPAddress _clientAddress = null;
+      
 
         static ClientManager()
         {
-            if (!string.IsNullOrEmpty(System.Configuration.ConfigurationSettings.AppSettings["NCacheServer.EventBulkCount"]))
-            {
-                try
-                {
-                    _eventBulkCount = Convert.ToInt32(System.Configuration.ConfigurationSettings.AppSettings["NCacheServer.EventBulkCount"]);
-                }
-                catch (Exception e)
-                { throw new Exception("Invalid value specified for NCacheServer.EventBulkCount."); }
-            }
-
-            if (_eventBulkCount <= 0)
-                _eventBulkCount = 50;
+            _eventBulkCount = ServiceConfiguration.EventBulkCount;
         }
 
 
@@ -151,85 +176,120 @@ namespace Alachisoft.NCache.SocketServer
         /// </summary>
         /// <param name="clientSocketId"> Underlying client socket connection object</param>
         /// <param name="size"> Size of the data packet to recieve in buffer.</param>
-        internal ClientManager(ConnectionManager conectionManager,Socket clientSocket, int size, int pinnedBufferSize)
+        internal ClientManager(ConnectionManager conectionManager, Socket clientSocket, int size, int pinnedBufferSize)
         {
             _connectionManager = conectionManager;
             InitializeBuffer(size, pinnedBufferSize);
 
-            if (!string.IsNullOrEmpty(System.Configuration.ConfigurationSettings.AppSettings["NCacheServer.EventPriorityRatio"]))
-            {
-                try
-                {
-                    _eventPriorityRatio = Convert.ToInt32(System.Configuration.ConfigurationSettings.AppSettings["NCacheServer.EventPriorityRatio"]);
-                }
-                catch (Exception e)
-                { throw new Exception("Invalid value specified for NCacheServer.EventPriorityRatio."); }
-            }
-
-            if (_eventPriorityRatio <= 0)
-                _eventPriorityRatio = 30;
+            _eventPriorityRatio = ServiceConfiguration.EventPriorityRatio;
 
             _asyncSendQueue = new Alachisoft.NCache.Common.DataStructures.WeightageBasedPriorityQueue(_eventPriorityRatio);          
 
-            if (!string.IsNullOrEmpty(System.Configuration.ConfigurationSettings.AppSettings["NCacheServer.BulkEventCollectionInterval"]))
-            {
-                try
-                {
-                    _bulkEventCollectionInterval = Convert.ToInt32(System.Configuration.ConfigurationSettings.AppSettings["NCacheServer.BulkEventCollectionInterval"]);
-                }
-                catch (Exception e)
-                { throw new Exception("Invalid value specified for NCacheServer.BulkEventCollectionInterval."); }
-            }
-
-            if (_bulkEventCollectionInterval <= 0)
-                _bulkEventCollectionInterval = 1;
-
             _clientSocket = clientSocket;
             _clientSocketId = new Address(((IPEndPoint)clientSocket.RemoteEndPoint).Address, ((IPEndPoint)clientSocket.RemoteEndPoint).Port).ToString();
+           
+           
         }
-
-        internal IPAddress ClientAddress
-        {
-            get { return _clientAddress; }
-        }
-
-        internal bool IsLocalClient
-        {
-            get
-            {
-                try
-                {
-                    string hostName = Dns.GetHostName();
-                    IPHostEntry hostEntry = Dns.GetHostByName(hostName);
-                    IPAddress[] addressList = hostEntry.AddressList;
-                    if (addressList != null)
-                    {
-                        for (int i = 0; i < addressList.Length; i++)
-                        {
-                            IPAddress address = addressList[i];
-                            if (address.Equals(_clientAddress)) return true;
-                        }
-                    }
-                }
-                catch (Exception ex)
-                {
-                    return false;
-                }
-                return false;
-            }
-        }
-
-        
 
         public Alachisoft.NCache.Common.DataStructures.WeightageBasedPriorityQueue PendingSendOperationQueue
         {
             get { return _asyncSendQueue; }
         }
 
+        #region Pending response queue modifications.
+
+        private int _topChunkResps = 0;
+        private int _respsQueued = 0;
+        private int _currChunckIndex = 0;
+
+        private readonly WeightageBasedPriorityQueue _asyncSendQueue;
+        private readonly ClusteredList<long> _commandsSizes = new ClusteredList<long>();
+        private readonly object _queueLock = new object();
+
+        /// <summary>
+        /// A flag to indicate wheather there are any pending commands to be sent to the server.
+        /// </summary>
+        internal bool AreResponsesPending
+        {
+            get
+            {
+                lock (_queueLock)
+                {
+                    return _asyncSendQueue.Count > 0;
+                }
+            }
+        }
+
+        
+
+        /// <summary>
+        /// Gets a composite binary response of the number of responses queued/getting queued. 
+        /// </summary>
+        internal ClusteredArrayList CompositeResponse
+        {
+            get
+            {
+               
+                    lock (_queueLock)
+                    {
+                        return (ClusteredArrayList)_asyncSendQueue.remove();
+                    }
+              
+
+                using (ClusteredMemoryStream data = new ClusteredMemoryStream(256))
+                {
+
+                    byte[] chunkSize = new byte[10];
+                    data.Write(chunkSize, 0, chunkSize.Length);
+                    int respSize = 0;
+                    int respsCopied = 0;
+
+                    while (respsCopied < ConnectionManager.MaxRspThreshold && AreResponsesPending)
+                    {
+                        IList serCommand;
+                        lock (_queueLock)
+                        {
+                            serCommand = (IList)_asyncSendQueue.remove();
+                        }
+                        foreach (byte[] chunk in serCommand)
+                        {
+                            respSize += chunk.Length;
+                            data.Write(chunk, 0, chunk.Length);
+                        }
+                        respsCopied++;
+                    }
+
+                    chunkSize = HelperFxn.ToBytes(respSize.ToString());
+                    data.Position = 0;
+                    data.Write(chunkSize, 0, chunkSize.Length);
+                    return data.GetInternalBuffer();
+                }
+            }
+        }
+
+        /// <summary>
+        /// Add a response to the pending send operation queue.
+        /// Previously the instance of queue was directly accessed by the container scopes.
+        /// </summary>
+        /// <param name="buffer"></param>
+        /// <param name="priority"></param>
+        internal void AddPendingQueueOperation(IList buffer, Common.Enum.Priority priority)
+        {
+            lock (_queueLock)
+            {
+                _asyncSendQueue.add(buffer, priority);
+            }
+        }
+
+        #endregion
+
         public int ClientVersion
         {
             get { return _clientVersion; }
-            set { _clientVersion = value; }
+            set
+            {
+                _clientVersion = value;
+            }
         }
 
         public bool OperationInProgress
@@ -256,6 +316,13 @@ namespace Alachisoft.NCache.SocketServer
             add { _clientDisposed += value; }
             remove { _clientDisposed -= value; }
         }
+
+        public bool SupportAcknowledgement
+        {
+            get { return supportAcknowledgement; }
+            set { supportAcknowledgement = value; }
+        }
+
         /// <summary>
         /// Initializes buffer to hold new data packet.
         /// </summary>
@@ -332,13 +399,13 @@ namespace Alachisoft.NCache.SocketServer
             try
             {
                 bool removeMessageFromQueue = false;
-                if (_eventsQueue.Count > _eventBulkCount)
+                if (_eventsQueue.Count > ServiceConfiguration.EventBulkCount)
                 {
                     removeMessageFromQueue = true;
                 }
                 else
                 {
-                    if ((DateTime.Now - _lastEventCollectionTime).TotalMilliseconds > _bulkEventCollectionInterval)
+                    if ((DateTime.Now - _lastEventCollectionTime).TotalMilliseconds > ServiceConfiguration.BulkEventCollectionInterval)
                     {
                         removeMessageFromQueue = true;
                     }
@@ -351,7 +418,7 @@ namespace Alachisoft.NCache.SocketServer
                         Alachisoft.NCache.Common.Protobuf.Response response = null;
                         Alachisoft.NCache.Common.Protobuf.BulkEventResponse bulkEvent = new Common.Protobuf.BulkEventResponse();
 
-                        for (int i = 0; i < _eventBulkCount; i++)
+                        for (int i = 0; i < ServiceConfiguration.EventBulkCount; i++)
                         {
                             eventItem = null;
                             lock (_eventsQueue)
@@ -377,7 +444,7 @@ namespace Alachisoft.NCache.SocketServer
                             response.responseType = Common.Protobuf.Response.Type.BULK_EVENT;
                         }
 
-                        hasMessages = _eventsQueue.Count > _eventBulkCount;
+                        hasMessages = _eventsQueue.Count > ServiceConfiguration.EventBulkCount;
                         return response;
                     }
                 }
@@ -386,7 +453,7 @@ namespace Alachisoft.NCache.SocketServer
             {
                 if (SocketServer.IsServerCounterEnabled) SocketServer.Logger.NCacheLog.Error("ClientManager.GetEvents", ex.ToString());
             }
-            hasMessages = _eventsQueue.Count > _eventBulkCount;
+            hasMessages = _eventsQueue.Count > ServiceConfiguration.EventBulkCount;
             return null;
         }
 
@@ -461,6 +528,7 @@ namespace Alachisoft.NCache.SocketServer
         public bool IsDisposed
         {
             get { return _disposed; }
+            set { _disposed = value; }
         }
 
         /// <summary>
@@ -522,6 +590,7 @@ namespace Alachisoft.NCache.SocketServer
         /// <returns>constructed packet</returns>
         internal byte[] ReplyPacket(string result, byte[] resultData)
         {
+            
             byte[] command = HelperFxn.ToBytes(result);
             byte[] buffer = new byte[ConnectionManager.cmdSizeHolderBytesCount + ConnectionManager.valSizeHolderBytesCount + command.Length + resultData.Length];
 
@@ -532,7 +601,7 @@ namespace Alachisoft.NCache.SocketServer
             dataSize.CopyTo(buffer, ConnectionManager.cmdSizeHolderBytesCount);
             command.CopyTo(buffer, ConnectionManager.totSizeHolderBytesCount);
             resultData.CopyTo(buffer, ConnectionManager.totSizeHolderBytesCount + command.Length);
-
+            
             return buffer;
         }
 
@@ -569,9 +638,24 @@ namespace Alachisoft.NCache.SocketServer
         /// </summary>
         internal void Dispose(bool disposingIntentionally)
         {
+            if (_disposed) return;
             lock (_disposeSync)
             {
                 _disposed = true;
+
+                if (_sendAsyncArgs != null)
+                {
+                    _sendAsyncArgs.Dispose();
+                    _sendAsyncArgs = null;
+                }
+
+                if (_receiveAsyncArgs != null)
+                {
+                    _receiveAsyncArgs.Dispose();
+                    _receiveAsyncArgs = null;
+                }
+
+
 
                 if (_enumerationPointers != null && !_cacheStopped)
                 {
@@ -591,7 +675,7 @@ namespace Alachisoft.NCache.SocketServer
                         {
                             _clientSocket.Shutdown(SocketShutdown.Both);
                         }
-                        catch (SocketException e) {/* log.Append(e.Message); */}
+                        catch (SocketException e) {}
                         catch (ObjectDisposedException e) { /*log.Append(e.Message);*/ }
                     }
                     if (_clientSocket != null) _clientSocket.Close();
@@ -616,7 +700,6 @@ namespace Alachisoft.NCache.SocketServer
                             if (opContext != null)
                             {
                                 if (SocketServer.IsServerCounterEnabled) _connectionManager.PerfStatsColl.DecrementResponsesQueueCountStats();
-                                if (SocketServer.IsServerCounterEnabled) _connectionManager.PerfStatsColl.DecrementResponsesQueueSizeStats(opContext.expectedSize);
                             }
                         }
                     }
@@ -694,6 +777,7 @@ namespace Alachisoft.NCache.SocketServer
         {
             if (this.PinnedBuffer.Length < size)
             {
+                BufferPool.CheckinBuffer(this.PinnedBuffer);
                 this.PinnedBuffer = new byte[size];
             }
             return this.PinnedBuffer;
@@ -714,6 +798,6 @@ namespace Alachisoft.NCache.SocketServer
         }
         public EventsQueue EventQueue { get { return _eventsQueue; } set { _eventsQueue = value; } }
 
-        public static int EventBulkCount { get { return _eventBulkCount; } }
+        public static int EventBulkCount { get { return ServiceConfiguration.EventBulkCount; } }
     }
 }

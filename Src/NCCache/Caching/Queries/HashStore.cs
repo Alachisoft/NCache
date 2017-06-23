@@ -1,4 +1,4 @@
-// Copyright (c) 2015 Alachisoft
+// Copyright (c) 2017 Alachisoft
 // 
 // Licensed under the Apache License, Version 2.0 (the "License");
 // you may not use this file except in compliance with the License.
@@ -11,9 +11,12 @@
 // WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
 // See the License for the specific language governing permissions and
 // limitations under the License.
+
 using System;
 using System.Collections;
 using Alachisoft.NCache.Common.Util;
+using Alachisoft.NCache.Common.Queries;
+using Alachisoft.NCache.Common.Enum;
 
 namespace Alachisoft.NCache.Caching.Queries
 {
@@ -65,9 +68,8 @@ namespace Alachisoft.NCache.Caching.Queries
             get { return _store != null ? _store.Count : 0; }
         }
 
-        public ArrayList GetData(object key, ComparisonType comparisonType)
+        public void GetData(object key, ComparisonType comparisonType, IQueryResult result, CollectionOperation op)
         {
-            ArrayList result = new ArrayList();
             IComparable keyToCompare = key as IComparable;
 
             if (_store != null)
@@ -76,7 +78,7 @@ namespace Alachisoft.NCache.Caching.Queries
                 {
                     case ComparisonType.EQUALS:
                         if (_store.Contains(key))
-                            result.Add(_store[key]);
+                            result.AddObject(_store[key], op);
 
                         break;
 
@@ -84,7 +86,7 @@ namespace Alachisoft.NCache.Caching.Queries
                         foreach (object storedKey in _store.Keys)
                         {
                             if (((IComparable)storedKey).CompareTo(keyToCompare) != 0)
-                                result.Add(_store[storedKey]);
+                                result.AddObject(_store[storedKey], op);
                         }
 
                         break;
@@ -93,7 +95,7 @@ namespace Alachisoft.NCache.Caching.Queries
                         foreach (object storedKey in _store.Keys)
                         {
                             if (((IComparable)storedKey).CompareTo(keyToCompare) < 0)
-                                result.Add(_store[storedKey]);
+                                result.AddObject(_store[storedKey], op);
                         }
                         break;
 
@@ -101,7 +103,7 @@ namespace Alachisoft.NCache.Caching.Queries
                         foreach (object storedKey in _store.Keys)
                         {
                             if (((IComparable)storedKey).CompareTo(keyToCompare) > 0)
-                                result.Add(_store[storedKey]);
+                                result.AddObject(_store[storedKey], op);
                         }
                         break;
 
@@ -109,7 +111,7 @@ namespace Alachisoft.NCache.Caching.Queries
                         foreach (object storedKey in _store.Keys)
                         {
                             if (((IComparable)storedKey).CompareTo(keyToCompare) <= 0)
-                                result.Add(_store[storedKey]);
+                                result.AddObject(_store[storedKey], op);
                         }
                         break;
 
@@ -117,7 +119,7 @@ namespace Alachisoft.NCache.Caching.Queries
                         foreach (object storedKey in _store.Keys)
                         {
                             if (((IComparable)storedKey).CompareTo(keyToCompare) >= 0)
-                                result.Add(_store[storedKey]);
+                                result.AddObject(_store[storedKey], op);
                         }
                         break;
 
@@ -130,7 +132,7 @@ namespace Alachisoft.NCache.Caching.Queries
                             if (storedKey is string)
                             {
                                 if (regex.IsMatch((string)storedKey))
-                                    result.Add(_store[storedKey]);
+                                    result.AddObject(_store[storedKey], op);
                             }
                         }
 
@@ -145,15 +147,15 @@ namespace Alachisoft.NCache.Caching.Queries
                             if (storedKey is string)
                             {
                                 if (!regex.IsMatch((string)storedKey))
-                                    result.Add(_store[storedKey]);
+                                    result.AddObject(_store[storedKey], op);
                             }
                         }
 
                         break;
                 }
+                result.Mark(op);
             }
 
-            return result;
         }
 
         public void Deserialize(Runtime.Serialization.IO.CompactReader reader)

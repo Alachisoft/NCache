@@ -9,6 +9,7 @@
 // WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
 // See the License for the specific language governing permissions and
 // limitations under the License.
+
 using System;
 using System.Runtime.Serialization;
 using System.Runtime.Serialization.Formatters.Binary;
@@ -256,6 +257,10 @@ namespace Alachisoft.NGroups
 			headers = new Hashtable();
 			if(obj!=null)
 			{
+//				if(obj is Array)
+//					setMessageArray((Array)obj);
+//				else 
+			
 				if(obj.GetType().IsSerializable)
 					setObject(obj);
 				else

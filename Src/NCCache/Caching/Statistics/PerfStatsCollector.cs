@@ -1,4 +1,4 @@
-// Copyright (c) 2015 Alachisoft
+// Copyright (c) 2017 Alachisoft
 // 
 // Licensed under the Apache License, Version 2.0 (the "License");
 // you may not use this file except in compliance with the License.
@@ -11,6 +11,7 @@
 // WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
 // See the License for the specific language governing permissions and
 // limitations under the License.
+
 using System;
 using System.Diagnostics;
 
@@ -445,44 +446,54 @@ namespace Alachisoft.NCache.Caching.Statistics
 
                     _pcCount = new PerformanceCounter(PC_CATEGORY, "Count", _instanceName, false);
                     _pcCachelastAccessCount = new PerformanceCounter(PC_CATEGORY, "CacheLastAccessCount", _instanceName, false);
-                    _pcHitsPerSec = new PerformanceCounter(PC_CATEGORY, "Hits/sec", _instanceName, false);
-                    _pcMissPerSec = new PerformanceCounter(PC_CATEGORY, "Misses/sec", _instanceName, false);
-                    _pcHitsRatioSec = new PerformanceCounter(PC_CATEGORY, "Hits ratio/sec (%)", _instanceName, false);
-                    _pcHitsRatioSecBase = new PerformanceCounter(PC_CATEGORY, "Hits ratio/sec base", _instanceName, false);
-                    _pcAddPerSec = new PerformanceCounter(PC_CATEGORY, "Additions/sec", _instanceName, false);
                     _pcGetPerSec = new PerformanceCounter(PC_CATEGORY, "Fetches/sec", _instanceName, false);
+                    _pcAddPerSec = new PerformanceCounter(PC_CATEGORY, "Additions/sec", _instanceName, false);
                     _pcUpdPerSec = new PerformanceCounter(PC_CATEGORY, "Updates/sec", _instanceName, false);
                     _pcDelPerSec = new PerformanceCounter(PC_CATEGORY, "Deletes/sec", _instanceName, false);
-                    _pcEvictPerSec = new PerformanceCounter(PC_CATEGORY, "Evictions/sec", _instanceName, false);
-                    _pcExpiryPerSec = new PerformanceCounter(PC_CATEGORY, "Expirations/sec", _instanceName, false);
-
-                    _pcCacheSize = new PerformanceCounter(PC_CATEGORY, "Cache Size", _instanceName, false);
-                    _pcQueryIndexSize = new PerformanceCounter(PC_CATEGORY, "Query Index Size", _instanceName, false);
-                    _pcEvictionIndexSize = new PerformanceCounter(PC_CATEGORY, "Eviction Index Size", _instanceName, false);
-                    _pcExpirationIndexSize = new PerformanceCounter(PC_CATEGORY, "Expiration Index Size", _instanceName, false);                    
-                    _pcQueryPerSec = new PerformanceCounter(PC_CATEGORY, "Queries/sec", _instanceName, false);
-                    _pcAvgQueryExecutionTime = new PerformanceCounter(PC_CATEGORY, "Average µs/Query Execution", _instanceName, false);
-                    _pcAvgQueryExecutionTimeBase = new PerformanceCounter(PC_CATEGORY, "Average µs/Query Execution base", _instanceName, false);
-                    _usMsecPerQueryExecution = new UsageStats();
-                    _pcAvgQuerySize = new PerformanceCounter(PC_CATEGORY, "Average Query Size", _instanceName, false);
-                    _pcAvgQuerySizeBase = new PerformanceCounter(PC_CATEGORY, "Average Query Size base", _instanceName, false);                                     
-
-                    _pcMsecPerGetAvg = new PerformanceCounter(PC_CATEGORY, "Average µs/fetch", _instanceName, false);
-                    _pcMsecPerGetBase = new PerformanceCounter(PC_CATEGORY, "Average µs/fetch base", _instanceName, false);
+                   
+                    _pcMsecPerGetAvg = new PerformanceCounter(PC_CATEGORY, "Average us/fetch", _instanceName, false);
+                    _pcMsecPerGetBase = new PerformanceCounter(PC_CATEGORY, "Average us/fetch base", _instanceName, false);
                     _usMsecPerGet = new UsageStats();
-                    _pcMsecPerAddAvg = new PerformanceCounter(PC_CATEGORY, "Average µs/add", _instanceName, false);
-                    _pcMsecPerAddBase = new PerformanceCounter(PC_CATEGORY, "Average µs/add base", _instanceName, false);
+                    _pcMsecPerAddAvg = new PerformanceCounter(PC_CATEGORY, "Average us/add", _instanceName, false);
+                    _pcMsecPerAddBase = new PerformanceCounter(PC_CATEGORY, "Average us/add base", _instanceName, false);
                     _usMsecPerAdd = new UsageStats();
-                    _pcMsecPerUpdAvg = new PerformanceCounter(PC_CATEGORY, "Average µs/insert", _instanceName, false);
-                    _pcMsecPerUpdBase = new PerformanceCounter(PC_CATEGORY, "Average µs/insert base", _instanceName, false);
+                    _pcMsecPerUpdAvg = new PerformanceCounter(PC_CATEGORY, "Average us/insert", _instanceName, false);
+                    _pcMsecPerUpdBase = new PerformanceCounter(PC_CATEGORY, "Average us/insert base", _instanceName, false);
                     _usMsecPerUpd = new UsageStats();
-                    _pcMsecPerDelAvg = new PerformanceCounter(PC_CATEGORY, "Average µs/remove", _instanceName, false);
-                    _pcMsecPerDelBase = new PerformanceCounter(PC_CATEGORY, "Average µss/remove base", _instanceName, false);
+                    _pcMsecPerDelAvg = new PerformanceCounter(PC_CATEGORY, "Average us/remove", _instanceName, false);
+                    _pcMsecPerDelBase = new PerformanceCounter(PC_CATEGORY, "Average us/remove base", _instanceName, false);
                     _usMsecPerDel = new UsageStats();
+                    
+                    _pcExpiryPerSec = new PerformanceCounter(PC_CATEGORY, "Expirations/sec", _instanceName, false);
+                    _pcEvictPerSec = new PerformanceCounter(PC_CATEGORY, "Evictions/sec", _instanceName, false);
+                    _pcHitsPerSec = new PerformanceCounter(PC_CATEGORY, "Hits/sec", _instanceName, false);
+                    
+                    _pcHitsRatioSec = new PerformanceCounter(PC_CATEGORY, "Hits ratio/sec (%)", _instanceName, false);
+                    _pcHitsRatioSecBase = new PerformanceCounter(PC_CATEGORY, "Hits ratio/sec base", _instanceName, false);
+                    _pcMissPerSec = new PerformanceCounter(PC_CATEGORY, "Misses/sec", _instanceName, false);
+
+
+
                     _pcStateTxfrPerSec = new PerformanceCounter(PC_CATEGORY, "State transfer/sec", _instanceName, false);
                     _pcMirrorQueueSize = new PerformanceCounter(PC_CATEGORY, "Mirror queue size", _instanceName, false);
                     _pcSlidingIndexQueueSize = new PerformanceCounter(PC_CATEGORY, "Sliding Index queue size", _instanceName, false);
                     _pcDataBalPerSec = new PerformanceCounter(PC_CATEGORY, "Data balance/sec", _instanceName, false);
+                     _pcCacheSize = new PerformanceCounter(PC_CATEGORY, "Cache Size", _instanceName, false);
+                    _pcQueryIndexSize = new PerformanceCounter(PC_CATEGORY, "Query Index Size", _instanceName, false);
+                    _pcEvictionIndexSize = new PerformanceCounter(PC_CATEGORY, "Eviction Index Size", _instanceName, false);
+                    _pcExpirationIndexSize = new PerformanceCounter(PC_CATEGORY, "Expiration Index Size", _instanceName, false);                    
+                    _pcQueryPerSec = new PerformanceCounter(PC_CATEGORY, "Queries/sec", _instanceName, false);
+                    _pcAvgQueryExecutionTime = new PerformanceCounter(PC_CATEGORY, "Average us/Query Execution", _instanceName, false);
+                    _pcAvgQueryExecutionTimeBase = new PerformanceCounter(PC_CATEGORY, "Average us/Query Execution base", _instanceName, false);
+                    _usMsecPerQueryExecution = new UsageStats();
+                    _pcAvgQuerySize = new PerformanceCounter(PC_CATEGORY, "Average Query Size", _instanceName, false);
+                    _pcAvgQuerySizeBase = new PerformanceCounter(PC_CATEGORY, "Average Query Size base", _instanceName, false);                                     
+
+                   
+                  
+                    
+                    
+                    
 
                     _usMsecPerDel = new UsageStats();
                 }
@@ -890,7 +901,7 @@ namespace Alachisoft.NCache.Caching.Statistics
                 lock (_pcMsecPerGetAvg)
                 {
                     _usMsecPerGet.EndSample();
-                    _pcMsecPerGetAvg.IncrementBy(_usMsecPerGet.Current * 1000000);// ts.Milliseconds);
+                    _pcMsecPerGetAvg.IncrementBy(_usMsecPerGet.Current * 1000000);
                     _pcMsecPerGetBase.Increment();
                 }
             }

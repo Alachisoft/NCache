@@ -9,6 +9,7 @@
 // WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
 // See the License for the specific language governing permissions and
 // limitations under the License.
+
 using System;
 using System.Collections;
 using Alachisoft.NCache.Common.Net;
@@ -144,7 +145,18 @@ namespace Alachisoft.NGroups
 
         public string CoordinatorGmsId { get { return _coordinatorGmsId; } set { _coordinatorGmsId = value; } }
 
- 
+        //public ArrayList HashMap
+        //{
+        //    get { return _hashMap; }
+        //    set { _hashMap = value; }
+        //}
+
+        //public Hashtable BucketsOwnershipMap
+        //{
+        //    get { return _bucketsOwnershipMap; }
+        //    set { _bucketsOwnershipMap = value; }
+        //}
+
         public DistributionMaps DistributionMaps
         {
             get { return _distributionMaps; }

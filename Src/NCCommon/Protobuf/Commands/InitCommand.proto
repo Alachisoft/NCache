@@ -7,8 +7,13 @@ message InitCommand {
 	optional string clientId = 3;
 	optional string userId = 4 [default="dummyUser"];
 	optional string pwd = 5 [default="dummypassword"];
-	optional int32 clientVersion = 6;
-	optional string clientIP = 7;
-	optional ProductVersion productVersion = 8;
-
+	optional string licenceCode = 6;
+	optional string licenceInfo = 7;
+	optional bool isDotnetClient = 8;
+	optional string clientEditionId = 9;
+	optional int32 clientVersion = 10;
+	optional string clientIP = 11;
+	optional bool isAzureClient = 12;
+	optional ProductVersion productVersion = 13;
+	optional bytes token = 14;
 }

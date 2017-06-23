@@ -1,4 +1,4 @@
-// Copyright (c) 2015 Alachisoft
+// Copyright (c) 2017 Alachisoft
 // 
 // Licensed under the Apache License, Version 2.0 (the "License");
 // you may not use this file except in compliance with the License.
@@ -11,6 +11,7 @@
 // WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
 // See the License for the specific language governing permissions and
 // limitations under the License.
+
 using System;
 using System.Text;
 using System.Collections;
@@ -48,7 +49,7 @@ namespace Alachisoft.NCache.Common.Util
                 typeList.Add(innerProps["name"]);
             }
 
-            //Taimoor:we sort types to generate same type handles on all server nodes
+            //we sort types to generate same type handles on all server nodes
             typeList.Sort();
             Hashtable typetoHandleMap = new Hashtable();
 
@@ -95,7 +96,7 @@ namespace Alachisoft.NCache.Common.Util
                     _map.Add(typehandle, type);
 
                     _typeToHandleMap.Add(type["name"] as string, typehandle);
-                    //_typeHandle++;
+                   
                 }
             }
         }

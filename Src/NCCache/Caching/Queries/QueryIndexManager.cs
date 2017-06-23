@@ -1,4 +1,4 @@
-// Copyright (c) 2015 Alachisoft
+// Copyright (c) 2017 Alachisoft
 // 
 // Licensed under the Apache License, Version 2.0 (the "License");
 // you may not use this file except in compliance with the License.
@@ -11,6 +11,7 @@
 // WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
 // See the License for the specific language governing permissions and
 // limitations under the License.
+
 using System;
 using System.Text;
 using System.Collections;
@@ -88,7 +89,6 @@ namespace Alachisoft.NCache.Caching.Queries
         private bool _indexForAll;
         private Topologies.Local.IndexedLocalCache _cache;
         private IDictionary _props;
-      
         protected string _cacheName;
 
         protected TypeInfoMap _typeMap;
@@ -177,7 +177,9 @@ namespace Alachisoft.NCache.Caching.Queries
                                 _indexMap[typename] = new TypeIndex(typename, _indexForAll);
                             indexedDefined = true;
                         }
+
                     }
+
                 }
             }
             else
@@ -205,7 +207,6 @@ namespace Alachisoft.NCache.Caching.Queries
                 _indexMap = null;
             }
             _cache = null;
-            
         }
 
         public virtual void AddToIndex(object key, object value, OperationContext operationContext)
@@ -237,7 +238,7 @@ namespace Alachisoft.NCache.Caching.Queries
                         {
                             string attribute = attribList[i].ToString();
                             string val = _typeMap.GetAttributes(handleId)[attribList[i]] as string;
-                         
+                           
                             Type t1 =Type.GetType(val, true, true);
 
                             object obj = null;
@@ -269,6 +270,8 @@ namespace Alachisoft.NCache.Caching.Queries
                             metaInfoAttribs.Add(attribute, obj);
                         }
 
+                        
+
                         entry.ObjectType = _typeMap.GetTypeName(handleId);
                         IQueryIndex index = (IQueryIndex)_indexMap[type];
                         
@@ -289,25 +292,6 @@ namespace Alachisoft.NCache.Caching.Queries
                 _asyncProcessor.Enqueue(new IndexAddTask(this, key, value, operationContext));
             }
         }
-
-        //public virtual void RemoveFromIndex(object key, string value)
-        //{
-        //    if (value == null)
-        //    {
-        //        return;
-        //    }
-        //    lock (_indexMap.SyncRoot)
-        //    {
-        //        string type = value.ToString();
-        //        if (_indexMap.Contains(type))
-        //        {
-        //            IQueryIndex index = (IQueryIndex)_indexMap[type];
-        //            long prevSize = index.IndexInMemorySize;
-        //            index.RemoveFromIndex(key);
-        //            this._queryIndexMemorySize += index.IndexInMemorySize - prevSize;
-        //        }
-        //    }
-        //}
 
         public virtual void RemoveFromIndex(object key, object value)
         {
@@ -358,49 +342,52 @@ namespace Alachisoft.NCache.Caching.Queries
                 return queryInfo;
             IQueryIndex index = (IQueryIndex)_indexMap[entry.ObjectType];
             IndexInformation indexInformation = _cache.GetInternal(key).IndexInfo;
-            if (_typeMap != null)
+            lock (_indexMap.SyncRoot)
             {
-                int handleId = _typeMap.GetHandleId(entry.ObjectType);
-                if (handleId > -1)
+                if (_typeMap != null && indexInformation != null)
                 {
-                    ArrayList attributes = _typeMap.GetAttribList(handleId);
-
-                    ArrayList attributeValues = new ArrayList();
-
-                    for (int i = 0; i < attributes.Count; i++)
+                    int handleId = _typeMap.GetHandleId(entry.ObjectType);
+                    if (handleId > -1)
                     {
-                        foreach (IndexStoreInformation indexStoreInfo in indexInformation.IndexStoreInformations)
+                        ArrayList attributes = _typeMap.GetAttribList(handleId);
+
+                        ArrayList attributeValues = new ArrayList();
+
+                        for (int i = 0; i < attributes.Count; i++)
                         {
-
-                            if (attributes[i].ToString() == indexStoreInfo.StoreName)
+                            foreach (IndexStoreInformation indexStoreInfo in indexInformation.IndexStoreInformations)
                             {
-                                if (indexStoreInfo.IndexPosition == null)
-                                    attributeValues.Add(null);
-                                else
+
+                                if (attributes[i].ToString() == indexStoreInfo.StoreName)
                                 {
-                                    object val = indexStoreInfo.IndexPosition.GetKey();
-
-                                    string objValue = null;
-
-                                    if (val is DateTime)
-                                    {
-                                        objValue = ((DateTime)val).Ticks.ToString();
-                                    }
+                                    if (indexStoreInfo.IndexPosition == null)
+                                        attributeValues.Add(null);
                                     else
                                     {
-                                        objValue = val.ToString();
+                                        object val = indexStoreInfo.IndexPosition.GetKey();
+
+                                        string objValue = null;
+
+                                        if (val is DateTime)
+                                        {
+                                            objValue = ((DateTime)val).Ticks.ToString();
+                                        }
+                                        else
+                                        {
+                                            objValue = val.ToString();
+                                        }
+
+                                        attributeValues.Add(objValue);
                                     }
-
-                                    attributeValues.Add(objValue);
+                                    break;
                                 }
-                                break;
                             }
-                        }
 
+                        }
+                        queryIndex.Add(handleId, attributeValues);
+                        queryInfo["query-info"] = queryIndex;
                     }
-                    queryIndex.Add(handleId, attributeValues);
-                    queryInfo["query-info"] = queryIndex;
-                }
+                } 
             }
             return queryInfo;
         }

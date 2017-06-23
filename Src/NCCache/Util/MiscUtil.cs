@@ -1,4 +1,4 @@
-// Copyright (c) 2015 Alachisoft
+// Copyright (c) 2017 Alachisoft
 // 
 // Licensed under the Apache License, Version 2.0 (the "License");
 // you may not use this file except in compliance with the License.
@@ -11,6 +11,7 @@
 // WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
 // See the License for the specific language governing permissions and
 // limitations under the License.
+
 using System;
 using System.Net;
 using System.Collections;
@@ -23,20 +24,19 @@ using Alachisoft.NCache.Caching;
 using Alachisoft.NCache.Caching.AutoExpiration;
 using Alachisoft.NCache.Serialization.Surrogates;
 
-using Alachisoft.NCache.Common.Util;
 using Alachisoft.NCache.Common.Net;
 using Alachisoft.NCache.Common.DataStructures;
-using System.Text;
-#if !CLIENT
-using Alachisoft.NCache.Caching.Topologies.Clustered;
 
-#endif
+
+using Alachisoft.NCache.Caching.Topologies.Clustered;
 
 namespace Alachisoft.NCache.Util
 {
 
 	public class MiscUtil
     {
+   
+       
         /// <summary>
         /// Registers types with the Compact Serializatin Framework. Range of reserved
         /// typeHandle is (61 - 1000). 
@@ -45,7 +45,6 @@ namespace Alachisoft.NCache.Util
         {
             TypeSurrogateSelector.RegisterTypeSurrogate(new ArraySerializationSurrogate(typeof(CacheEntry[])));
             TypeSurrogateSelector.RegisterTypeSurrogate(new CustomArraySerializationSurrogate(typeof(CustomArraySerializationSurrogate)));
-            //WARNING :  From 80 to  are also alredy in use , in different classes.
             CompactFormatterServices.RegisterCompactType(typeof(CacheEntry), 61);
             CompactFormatterServices.RegisterCompactType(typeof(PriorityEvictionHint), 64);
             CompactFormatterServices.RegisterCompactType(typeof(CacheStatistics), 65);
@@ -68,20 +67,28 @@ namespace Alachisoft.NCache.Util
             CompactFormatterServices.RegisterCompactType(typeof(EventCacheEntry), 262);
             CompactFormatterServices.RegisterCompactType(typeof(EventContext), 263);
             CompactFormatterServices.RegisterCompactType(typeof(Alachisoft.NCache.Caching.AutoExpiration.LockMetaInfo), 264);
-#if !CLIENT
+
             CompactFormatterServices.RegisterCompactType(typeof(Function), 75);
             CompactFormatterServices.RegisterCompactType(typeof(AggregateFunction), 76);
             CompactFormatterServices.RegisterCompactType(typeof(PartitionedCacheBase.Identity), 77);
             CompactFormatterServices.RegisterCompactType(typeof(ReplicatedCacheBase.Identity), 78);
             CompactFormatterServices.RegisterCompactType(typeof(StateTxfrInfo), 116);
             CompactFormatterServices.RegisterCompactType(typeof(CompressedValueEntry), 133);
-#endif
+
             CompactFormatterServices.RegisterCompactType(typeof(Alachisoft.NCache.Caching.Queries.QueryResultSet), 151);
             CompactFormatterServices.RegisterCompactType(typeof(Alachisoft.NCache.Caching.OperationContext), 153);
             CompactFormatterServices.RegisterCompactType(typeof(Alachisoft.NCache.Caching.OperationContext[]), 345);
             CompactFormatterServices.RegisterCompactType(typeof(Alachisoft.NCache.Caching.EventContext[]), 346);
             CompactFormatterServices.RegisterCompactType(typeof(Alachisoft.NCache.Caching.OperationID), 163);
             CompactFormatterServices.RegisterCompactType(typeof(Alachisoft.NCache.Caching.NCacheSessionItem), 129);
+
+            CompactFormatterServices.RegisterCompactType(typeof(Alachisoft.NCache.Common.DataReader.ReaderResultSet), 333);
+            CompactFormatterServices.RegisterCompactType(typeof(Alachisoft.NCache.Common.DataReader.RecordSet), 334);
+            CompactFormatterServices.RegisterCompactType(typeof(Alachisoft.NCache.Common.DataReader.ColumnCollection), 335);
+            CompactFormatterServices.RegisterCompactType(typeof(Alachisoft.NCache.Common.DataReader.RowCollection), 336);
+            CompactFormatterServices.RegisterCompactType(typeof(Alachisoft.NCache.Common.DataReader.SubsetInfo), 337);
+            CompactFormatterServices.RegisterCompactType(typeof(Alachisoft.NCache.Common.DataReader.RecordRow), 338);
+            CompactFormatterServices.RegisterCompactType(typeof(Alachisoft.NCache.Common.DataReader.RecordColumn), 339);
         }
         /// <summary>
         /// Converts the Address into a System.Net.IPEndPoint.

@@ -1,4 +1,4 @@
-// Copyright (c) 2015 Alachisoft
+// Copyright (c) 2017 Alachisoft
 // 
 // Licensed under the Apache License, Version 2.0 (the "License");
 // you may not use this file except in compliance with the License.
@@ -11,6 +11,7 @@
 // WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
 // See the License for the specific language governing permissions and
 // limitations under the License.
+
 using System;
 using System.Text;
 using System.Threading;
@@ -19,6 +20,7 @@ using Alachisoft.NCache.SocketServer;
 using Alachisoft.NCache.Runtime.Exceptions;
 using System.Collections.Generic; 
 using Runtime = Alachisoft.NCache.Runtime;
+using Alachisoft.NCache.SocketServer.Statistics;
 
 namespace Alachisoft.NCache.SocketServer.Command
 {
@@ -51,6 +53,14 @@ namespace Alachisoft.NCache.SocketServer.Command
 
         //PROTOBUF
         abstract public void ExecuteCommand(ClientManager clientManager, Alachisoft.NCache.Common.Protobuf.Command command);
+
+
+
+        // For Counters
+        public virtual void IncrementCounter(PerfStatsCollector collector, long value) 
+        {
+
+        }
 
         /// <summary>
         /// Update the indexes passed to the next and current delimiter

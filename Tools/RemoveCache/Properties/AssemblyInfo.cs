@@ -1,4 +1,4 @@
-// Copyright (c) 2015 Alachisoft
+// Copyright (c) 2017 Alachisoft
 // 
 // Licensed under the Apache License, Version 2.0 (the "License");
 // you may not use this file except in compliance with the License.
@@ -27,10 +27,10 @@ using Alachisoft.NCache.Management;
 [assembly: AssemblyConfiguration("")]
 [assembly: AssemblyCompany("Alachisoft")]
 [assembly: AssemblyProduct("Alachisoft® NCache")]
-[assembly: AssemblyCopyright("Copyright© 2015 Alachisoft")]
+[assembly: AssemblyCopyright("Copyright© Alachisoft 2017")]
 [assembly: AssemblyTrademark("NCache™ is a registered trademark of Alachisoft.")]
 [assembly: AssemblyCulture("")]
-[assembly: AssemblyVersion("4.4.0.0")]
+[assembly: AssemblyVersion("4.6.0.0")]
 [assembly: AssemblyInformationalVersion("4.4.0")]
 [assembly: AssemblyDelaySign(false)]
 [assembly: AssemblyKeyName("")]
@@ -49,10 +49,10 @@ namespace Alachisoft.NCache.Tools.RemoveCache
         /// <param name="printlogo">specifies whether to display logo or not</param>
         public static void PrintLogo(bool printlogo)
         {
-            Assembly assembly = Assembly.GetExecutingAssembly();
-            string logo = @"Alachisoft (R) NCache Utility RemoveCache. Version " + assembly.GetName().Version +
+          
+            string logo = @"Alachisoft (R) NCache Utility RemoveCache. Version " +Common.ProductVersion.GetVersion() +
                 @"
-Copyright (C) Alachisoft 2015. All rights reserved.";
+Copyright (C) Alachisoft 2017. All rights reserved.";
 
             if (printlogo)
             {
@@ -74,6 +74,7 @@ Copyright (C) Alachisoft 2015. All rights reserved.";
     server.
 
 Optional:
+
  /s /server
     Specifies a server name where the NCache service is running and a cache 
     with the specified cache-id is registered.The default is the local machine.

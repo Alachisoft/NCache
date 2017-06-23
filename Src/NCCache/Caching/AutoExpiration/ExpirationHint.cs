@@ -1,4 +1,4 @@
-// Copyright (c) 2015 Alachisoft
+// Copyright (c) 2017 Alachisoft
 // 
 // Licensed under the Apache License, Version 2.0 (the "License");
 // you may not use this file except in compliance with the License.
@@ -30,20 +30,18 @@ namespace Alachisoft.NCache.Caching.AutoExpiration
     [Serializable]
     public abstract class ExpirationHint : IComparable, IDisposable, ICompactSerializable, ISizable
 	{
-		public const int 				EXPIRED = 1;
-		public const int 				NEEDS_RESYNC = 2;
-		public const int 				IS_VARIANT = 4;
-		public const int 				NON_ROUTABLE = 8;
-		public const int 				DISPOSED = 16;
-
-        // _cacheKey + _bits + _objNotify + _hintType
+		public const int EXPIRED = 1;
+		public const int NEEDS_RESYNC = 2;
+		public const int IS_VARIANT = 4;
+		public const int NON_ROUTABLE = 8;
+		public const int DISPOSED = 16;
         public const int ExpirationHintSize = 24;
 
-        private string                  _cacheKey;
-		private int						_bits;
-		private IExpirationEventSink	_objNotify;
+        private string _cacheKey;
+		private int	_bits;
+		private IExpirationEventSink _objNotify;
 		[CLSCompliant(false)]
-        public ExpirationHintType       _hintType;
+        public ExpirationHintType _hintType;
 		protected ExpirationHint()
 		{            
             _hintType = ExpirationHintType.Parent;
@@ -129,8 +127,7 @@ namespace Alachisoft.NCache.Caching.AutoExpiration
 			_bits &= ~EXPIRED;
             if (_ncacheLog == null)
                 _ncacheLog = context.NCacheLog;
-			//return false;
-            return true;
+			            return true;
 		}
 
         internal virtual void ResetVariant(CacheRuntimeContext context)

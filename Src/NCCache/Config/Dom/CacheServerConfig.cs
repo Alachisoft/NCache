@@ -1,4 +1,4 @@
-// Copyright (c) 2015 Alachisoft
+// Copyright (c) 2017 Alachisoft
 // 
 // Licensed under the Apache License, Version 2.0 (the "License");
 // you may not use this file except in compliance with the License.
@@ -11,6 +11,7 @@
 // WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
 // See the License for the specific language governing permissions and
 // limitations under the License.
+
 using System;
 using System.Collections;
 using System.Text;
@@ -48,13 +49,14 @@ namespace Alachisoft.NCache.Config.Dom
         Cluster cluster;
         AutoLoadBalancing autoBalancing;
         ClientNodes clientNodes;
+        ClientDeathDetection deathDetection;
 
-        // 20121202
         private ServerMapping _serverMapping;
 
         public CacheServerConfig() 
         {
             log = new Log();
+            deathDetection = new ClientDeathDetection();
            
         }
 
@@ -137,8 +139,6 @@ namespace Alachisoft.NCache.Config.Dom
         [ConfigurationAttribute("type")]
         public string CacheType
         {
-            ///[Ata]Type is part of 3.8 config. This is to be uncommented
-            ///after development is complete.
             get 
             {
                 string type = this.cacheType;
@@ -219,7 +219,13 @@ namespace Alachisoft.NCache.Config.Dom
             set { cluster = value; }
         }
 
-        // 20110124
+        [ConfigurationSection("client-death-detection")]
+        public ClientDeathDetection ClientDeathDetection
+        {
+            get { return deathDetection; }
+            set { deathDetection = value; }
+        }
+
 
         #region ICloneable Members
 
@@ -245,6 +251,7 @@ namespace Alachisoft.NCache.Config.Dom
             config.IsRunning = this.IsRunning;
             config.licenseIsExpired = this.licenseIsExpired;
             config.RuntimeContext = this.RuntimeContext;
+            config.ClientDeathDetection = this.deathDetection;
             return config;
         }
 
@@ -271,6 +278,7 @@ namespace Alachisoft.NCache.Config.Dom
             evictionPolicy = reader.ReadObject() as EvictionPolicy;
             cluster = reader.ReadObject() as Cluster;            
             clientNodes = reader.ReadObject() as ClientNodes;
+            deathDetection = reader.ReadObject() as ClientDeathDetection;
             _runtimeContextValue = reader.ReadObject() as string == "1" ? RtContextValue.JVCACHE : RtContextValue.NCACHE;
 
         }
@@ -295,6 +303,7 @@ namespace Alachisoft.NCache.Config.Dom
             writer.WriteObject(evictionPolicy);
             writer.WriteObject(cluster);
             writer.WriteObject(clientNodes);
+            writer.WriteObject(deathDetection);
             writer.WriteObject(_runtimeContextValue == RtContextValue.JVCACHE ? "1" : "0");
         }
 

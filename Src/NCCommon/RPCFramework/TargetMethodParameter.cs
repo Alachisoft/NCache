@@ -1,4 +1,4 @@
-// Copyright (c) 2015 Alachisoft
+// Copyright (c) 2017 Alachisoft
 // 
 // Licensed under the Apache License, Version 2.0 (the "License");
 // you may not use this file except in compliance with the License.
@@ -11,13 +11,11 @@
 // WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
 // See the License for the specific language governing permissions and
 // limitations under the License.
+
 using System;
-using System.Collections.Generic;
-using System.Text;
 using System.Collections;
 
 using Alachisoft.NCache.Runtime.Serialization;
-using Runtime = Alachisoft.NCache.Runtime;
 
 namespace Alachisoft.NCache.Common.RPCFramework
 {
@@ -51,7 +49,6 @@ namespace Alachisoft.NCache.Common.RPCFramework
         public void Deserialize(Runtime.Serialization.IO.CompactReader reader)
         {
             int length = reader.ReadInt32();
-            
             _parameterList = new ArrayList();
              bool isByteArray = false;
             for (int i = 0; i < length; i++)

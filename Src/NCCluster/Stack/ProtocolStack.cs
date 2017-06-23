@@ -10,6 +10,7 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 // $Id: ProtocolStack.java,v 1.12 2004/07/05 14:17:33 belaban Exp $
+
 using System;
 using Microsoft.Win32;
 
@@ -23,6 +24,7 @@ using Alachisoft.NCache.Common.DataStructures;
 using Alachisoft.NCache.Common.Threading;
 using Alachisoft.NCache.Common.Util;
 using Alachisoft.NCache.Common.Logger;
+using Alachisoft.NCache.Common;
 
 namespace Alachisoft.NGroups.Stack
 {
@@ -82,6 +84,15 @@ namespace Alachisoft.NGroups.Stack
 
         public PerfStatsCollector perfStatsColl = new PerfStatsCollector("EMpty");
 
+		//private NewTrace _nTrace = null;
+        //private string _cacheName = null;
+
+        //public string LoggerName
+        //{
+        //    get { return _cacheName; }
+        //    set { _cacheName = value; }
+        //}
+
         private ILogger _ncacheLog;
         public ILogger NCacheLog
         {
@@ -95,24 +106,37 @@ namespace Alachisoft.NGroups.Stack
             }
         }
 
- 		
+        //public MessageObjectProvider msgProvider = new MessageObjectProvider(6);
+        //public TotalHeaderProvider totalHeaderProvider = new TotalHeaderProvider(5);
+        //public TcpHeaderProvider tcpHeaderProvider = new TcpHeaderProvider(5);
+        //public NackAckHeaderProvider nackHeaderProvider = new NackAckHeaderProvider(5);
+        //public RequestCorrelatorHeaderProvider reqCoHeaderProvider = new RequestCorrelatorHeaderProvider(5);
+       // public EventProvider eventProvider = new EventProvider(5);
+       // public MemoryManager memManager = new MemoryManager();
+		
 		public ProtocolStack(GroupChannel channel, string setup_string)
 		{
 			this.setup_string = setup_string;
 			this.channel = channel;
-       	}
+
+            //Register the object providers to the memory manager.
+            //memManager.RegisterObjectProvider(msgProvider);
+            //memManager.RegisterObjectProvider(totalHeaderProvider);
+            //memManager.RegisterObjectProvider(tcpHeaderProvider);
+            //memManager.RegisterObjectProvider(nackHeaderProvider);
+           // memManager.RegisterObjectProvider(reqCoHeaderProvider);
+           // memManager.RegisterObjectProvider(eventProvider);
+
+		}
 
         public void InitializePerfCounters(string instance)
         {
             perfStatsColl.InstanceName = instance;
             bool enableDebuggingCounters = false;
 
-            if (System.Configuration.ConfigurationSettings.AppSettings["NCacheServer.EnableDebuggingCounters"] != null)
-            {
-                enableDebuggingCounters = Convert.ToBoolean(System.Configuration.ConfigurationSettings.AppSettings["NCacheServer.EnableDebuggingCounters"]);
-            }
+            enableDebuggingCounters = ServiceConfiguration.EnableDebuggingCounters;
 
-          
+            //perfStatsColl.nTrace = _nTrace;
             perfStatsColl.NCacheLog = _ncacheLog;
             perfStatsColl.InitializePerfCounters(enableDebuggingCounters);
         }

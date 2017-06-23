@@ -19,7 +19,7 @@ namespace RegUtil
 	bool KeyExists(HKEY hRootKey, LPCTSTR subKey)
 	{
 		HKEY hKey;
-#if defined(WIN64) 
+#if defined(WIN64)
 		if(ERROR_SUCCESS != RegOpenKeyEx(hRootKey, subKey,0,KEY_READ|KEY_WOW64_64KEY, &hKey) )
 		{
 			return false;
@@ -165,7 +165,7 @@ namespace RegUtil
 	// Returns a string containing all multiple regesitry enteries under a section
 	// All keys are concatinated and returned back as a single string. 
 	//
-	bool GetRegKeys(HKEY root, LPCTSTR keyPath, LPCTSTR keyName, string& val, short prodId) 
+	bool GetRegKeys(HKEY root, LPCTSTR keyPath, LPCTSTR keyName, string& val, short prodId) //Added by 
 	{
 		long retCodeA,retCodeB;
 		HKEY hKeyResult;
@@ -178,7 +178,7 @@ namespace RegUtil
 		string token = ":";
 		string allKeys = "";
 
-#if defined(WIN64)||defined(NCWOW64)//[Asif Imam]
+#if defined(WIN64)||defined(NCWOW64)
 		
 		retCodeA = RegOpenKeyEx(root, keyPath, 0, KEY_READ|KEY_WOW64_64KEY, &hKeyResult);
 #else
@@ -292,5 +292,7 @@ namespace RegUtil
 		string szKeyName = GetRegBase (prodId) + string(_T("\\")) + szSection;
 		return SetRegValue(g_AppKeyHive, szKeyName.c_str(), szKey, nValue, prodId);
 	}
-		
+
+
+	
 };

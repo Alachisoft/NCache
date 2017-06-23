@@ -1,4 +1,4 @@
-// Copyright (c) 2015 Alachisoft
+// Copyright (c) 2017 Alachisoft
 // 
 // Licensed under the Apache License, Version 2.0 (the "License");
 // you may not use this file except in compliance with the License.
@@ -11,6 +11,7 @@
 // WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
 // See the License for the specific language governing permissions and
 // limitations under the License.
+
 using System;
 using System.Collections;
 using System.Threading;
@@ -18,16 +19,13 @@ using System.Runtime.Remoting;
 using System.Runtime.Remoting.Channels.Tcp;
 using System.Runtime.Remoting.Lifetime;
 using System.Diagnostics;
-using System.Net;
 using Alachisoft.NCache.Common;
 using Alachisoft.NCache.Common.Threading;
-using Alachisoft.NCache.Common.Remoting;
 using Alachisoft.NCache.Common.Util;
 using Alachisoft.NCache.Common.Stats;
 using Alachisoft.NCache.Caching.Topologies;
 using Alachisoft.NCache.Caching.AutoExpiration;
 using Alachisoft.NCache.Caching.Statistics;
-
 using Alachisoft.NCache.Caching.EvictionPolicies;
 using Alachisoft.NCache.Util;
 using Alachisoft.NCache.Config;
@@ -38,17 +36,13 @@ using Alachisoft.NCache.Common.Monitoring;
 using Alachisoft.NCache.Common.DataStructures;
 using Alachisoft.NCache.Config.Dom;
 using System.Collections.Generic;
-
-using Alachisoft.NCache.Common.Enum;
 using Alachisoft.NCache.Common.Net;
 using Alachisoft.NCache.Runtime;
 using Alachisoft.NCache.Caching.Queries;
-
 using Alachisoft.NCache.Common.Logger;
 using Alachisoft.NCache.Caching.Enumeration;
-#if !CLIENT
+using Alachisoft.NCache.Common.DataStructures.Clustered;
 using Alachisoft.NCache.Caching.Topologies.Clustered;
-#endif
 
 namespace Alachisoft.NCache.Caching
 {
@@ -59,22 +53,11 @@ namespace Alachisoft.NCache.Caching
     public class Cache : MarshalByRefObject, IEnumerable, ICacheEventsListener, IClusterEventsListener, IDisposable
     {
 
-        #region	/                 --- Performance statistics collection Task ---           /
-
-        #endregion
-
-        /// <summary> The name of the cache instance. </summary>
+            /// <summary> The name of the cache instance. </summary>
         private CacheInfo _cacheInfo = new CacheInfo();
 
         /// <summary> The runtime context associated with the current cache. </summary>
         private CacheRuntimeContext _context = new CacheRuntimeContext();
-
-        /// <summary> sponsor object </summary>
-        private ISponsor _sponsor = new RemoteObjectSponsor();
-
-        /// <summary> The runtime context associated with the current cache. </summary>
-        private RemotingChannels _channels;
-
         /// <summary> delegate for custom  remove callback notifications. </summary>
         private event CustomRemoveCallback _customRemoveNotif;
 
@@ -104,18 +87,18 @@ namespace Alachisoft.NCache.Caching
 
         public static int ServerPort;
 
-        private static float s_clientsRequests = 0;
-        private static float s_clientsBytesRecieved = 0;
-        private static float s_clientsBytesSent = 0;
         private long _lockIdTicker = 0;
+
+        private bool _deathDetectionEnabled = false;
+        private int _graceTime = 0;
 
         /// <summary> Holds the cach type name. </summary>
         private string _cacheType;
-        
+
         private bool _isPersistEnabled = false;
         private int _persistenceInterval = 5;
 
-       
+
         string _cacheserver = "NCache";
 
         public bool IsPersistEnabled
@@ -142,8 +125,7 @@ namespace Alachisoft.NCache.Caching
         private Thread _instantStatsUpdateTimer;
         private bool threadRunning = true;
         TimeSpan InstantStatsUpdateInterval = new TimeSpan(0, 0, 1);
-  
-        static bool s_logClientEvents;
+
 
         /// <summary>
         /// Default constructor.
@@ -151,11 +133,7 @@ namespace Alachisoft.NCache.Caching
         static Cache()
         {
             MiscUtil.RegisterCompactTypes();
-            string tmpStr = System.Configuration.ConfigurationSettings.AppSettings["NCacheServer.LogClientEvents"];
-            if (tmpStr != null && tmpStr != "")
-            {
-                s_logClientEvents = Convert.ToBoolean(tmpStr);
-            }
+
         }
 
         /// <summary>
@@ -252,11 +230,7 @@ namespace Alachisoft.NCache.Caching
 
                 if (_context.CacheImpl != null)
                     _context.CacheImpl.StopServices();
-                
 
-               
-
-               
 
                 if (_connectedClients != null)
                     lock (_connectedClients.SyncRoot)
@@ -265,7 +239,7 @@ namespace Alachisoft.NCache.Caching
                     }
 
                 _cacheStopped = null;
-                _sponsor = null;
+              
 
                 if (NCacheLog != null)
                 {
@@ -273,14 +247,7 @@ namespace Alachisoft.NCache.Caching
                     NCacheLog.Flush();
                     NCacheLog.Close();
                 }
-
-
-                try
-                {
-                    if (_channels != null) _channels.UnregisterTcpChannels();
-                }
-                catch (Exception) { }
-                _channels = null;
+              
                 GC.Collect();
 
                 if (disposing)
@@ -312,7 +279,7 @@ namespace Alachisoft.NCache.Caching
             try
             {
                 Dispose(true);
-                
+
             }
             catch (Exception exp)
             {
@@ -348,7 +315,7 @@ namespace Alachisoft.NCache.Caching
         }
 
 
-#if !CLIENT
+
         public bool IsCoordinator
         {
             get
@@ -361,7 +328,7 @@ namespace Alachisoft.NCache.Caching
                     return false;
             }
         }
-#endif
+
         /// <summary>
         /// Get the running cache type name.
         /// </summary>
@@ -492,7 +459,7 @@ namespace Alachisoft.NCache.Caching
             }
             catch (Exception exception)
             {
-               throw;
+                throw;
             }
         }
 
@@ -503,7 +470,7 @@ namespace Alachisoft.NCache.Caching
         /// <param name="cacheId"></param>
         public void OnClientDisconnected(string client, string cacheId)
         {
-            if (_context.CacheImpl != null) 
+            if (_context.CacheImpl != null)
             {
                 lock (_connectedClients.SyncRoot)
                 {
@@ -512,7 +479,7 @@ namespace Alachisoft.NCache.Caching
 
                 _context.CacheImpl.ClientDisconnected(client, _inProc);
 
-                if (s_logClientEvents)
+                if (ServiceConfiguration.LogClientEvents)
                 {
                     AppUtil.LogEvent(_cacheserver, "Client \"" + client + "\" has disconnected from " + _cacheInfo.Name, EventLogEntryType.Information, EventCategories.Information, EventID.ClientDisconnected);
                 }
@@ -523,7 +490,7 @@ namespace Alachisoft.NCache.Caching
 
         public void OnClientForceFullyDisconnected(string clientId)
         {
-            if (s_logClientEvents)
+            if (ServiceConfiguration.LogClientEvents)
             {
                 AppUtil.LogEvent(_cacheserver, "Client \"" + clientId + "\" has forcefully been disconnected due to scoket dead lock from " + _cacheInfo.Name, EventLogEntryType.Information, EventCategories.Information, EventID.ClientDisconnected);
             }
@@ -533,7 +500,7 @@ namespace Alachisoft.NCache.Caching
 
         public void OnClientConnected(string client, string cacheId)
         {
-            if (_context.CacheImpl != null) 
+            if (_context.CacheImpl != null)
             {
                 if (!_connectedClients.Contains(client))
                     lock (_connectedClients.SyncRoot)
@@ -542,7 +509,7 @@ namespace Alachisoft.NCache.Caching
                     }
 
                 _context.CacheImpl.ClientConnected(client, _inProc);
-                if (s_logClientEvents)
+                if (ServiceConfiguration.LogClientEvents)
                 {
                     AppUtil.LogEvent(_cacheserver, "Client \"" + client + "\" has connected to " + _cacheInfo.Name, EventLogEntryType.Information, EventCategories.Information, EventID.ClientConnected);
                 }
@@ -558,19 +525,20 @@ namespace Alachisoft.NCache.Caching
         {
             Dispose();
         }
-   
-internal void Initialize(IDictionary properties, bool inProc)
+
+        internal void Initialize(IDictionary properties, bool inProc)
         {
             Initialize(properties, inProc, false, false);
         }
 
         internal void Initialize(IDictionary properties, bool inProc, bool isStartingAsMirror, bool twoPhaseInitialization)
         {
-           
+
             //Just to initialze the HP time
             HPTime time = HPTime.Now;
             for (int i = 1; i < 1000; i++) time = HPTime.Now;
             _inProc = inProc;
+            _context.InProc = inProc;
             if (properties == null)
                 throw new ArgumentNullException("properties");
 
@@ -603,11 +571,22 @@ internal void Initialize(IDictionary properties, bool inProc)
                         _context.NCacheLog.Initialize(null, _cacheInfo.CurrentPartitionId, _cacheInfo.Name);
                     }
 
+                    if (cacheConfig.Contains("client-death-detection"))
+                    {
+                        IDictionary deathDetection = cacheConfig["client-death-detection"] as IDictionary;
+                        if (deathDetection.Contains("enable"))
+                        {
+                            _deathDetectionEnabled = Convert.ToBoolean(deathDetection["enable"]);
+                            _graceTime = Convert.ToInt32(deathDetection["grace-interval"]);
+                            if (_deathDetectionEnabled)
+                                _context.ClientDeathDetection = new ClientDeathDetectionMgr(_graceTime);
+                        }
+                    }
 
                     _context.SerializationContext = _cacheInfo.Name;
                     _context.TimeSched = new TimeScheduler();
-                    _context.TimeSched.AddTask(new SystemMemoryTask(_context.NCacheLog));
-                    _context.AsyncProc = new AsyncProcessor(_context.NCacheLog); 
+
+                    _context.AsyncProc = new AsyncProcessor(_context.NCacheLog);
                     if (!inProc)
                     {
                         if (_cacheInfo.CurrentPartitionId != string.Empty)
@@ -623,42 +602,28 @@ internal void Initialize(IDictionary properties, bool inProc)
                     }
                     else
                     {
-                        _channels = new RemotingChannels();
-                        _channels.RegisterTcpChannels("InProc", 0);
-                        if (_cacheInfo.CurrentPartitionId != string.Empty)
-                            RemotingServices.Marshal(this, _cacheInfo.Name + ":" + _cacheInfo.CurrentPartitionId);
-                        else
-                            RemotingServices.Marshal(this, _cacheInfo.Name);
-
-                        //get the port number selected.
-                        TcpServerChannel serverChannel = (TcpServerChannel)_channels.TcpServerChannel;
-                        string uri = serverChannel.GetChannelUri();
-                        int port = Convert.ToInt32(uri.Substring(uri.LastIndexOf(":") + 1));
-                        if (isStartingAsMirror)// this is a special case for Partitioned Mirror Topology.
-                            _context.PerfStatsColl = new PerfStatsCollector(Name + "-" + "replica", false);
-                        else
-                            _context.PerfStatsColl = new PerfStatsCollector(Name, port, inProc);
+                   
+                     
+                       _context.PerfStatsColl = new PerfStatsCollector(Name,  inProc);
 
                         _context.PerfStatsColl.NCacheLog = _context.NCacheLog;
                     }
 
                     _context.IsStartedAsMirror = isStartingAsMirror;
 
+
                     CreateInternalCache(cacheConfig, isStartingAsMirror, twoPhaseInitialization);
                     //setting cache Impl instance
 
                     if (inProc && _context.CacheImpl != null)
                     {
-                        
                         //we keep unserialized user objects in case of local inproc caches...
-                        _context.CacheImpl.KeepDeflattedValues = false;// we no longer keep seralized data in inproc cache
+                        _context.CacheImpl.KeepDeflattedValues = false; 
                     }
                     // we bother about perf stats only if the user has read/write rights over counters.
                     _context.PerfStatsColl.IncrementCountStats(CacheHelper.GetLocalCount(_context.CacheImpl));
 
                     _cacheInfo.ConfigString = ConfigHelper.CreatePropertyString(properties);
-
-
                 }
 
                 _context.NCacheLog.CriticalInfo("Cache '" + _context.CacheRoot.Name + "' started successfully.");
@@ -734,12 +699,11 @@ internal void Initialize(IDictionary properties, bool inProc)
                     }
                 }
                 bool isClusterable = true;
-
                 _context.ExpiryMgr = new ExpirationManager(schemeProps, _context);
 
                 _cacheInfo.ClassName = Convert.ToString(schemeProps["type"]).ToLower();
                 _context.AsyncProc.Start();
-#if !CLIENT
+
                 if (_cacheInfo.ClassName.CompareTo("replicated-server") == 0)
                     {
                         if (isClusterable)
@@ -757,7 +721,7 @@ internal void Initialize(IDictionary properties, bool inProc)
                         }
                     }
                 else
-#endif
+
                 {
                     if (_cacheInfo.ClassName.CompareTo("local-cache") == 0)
                     {
@@ -800,6 +764,7 @@ internal void Initialize(IDictionary properties, bool inProc)
                 Dispose();
                 throw;
             }
+
             catch (Exception e)
             {
                 _context.NCacheLog.Error("Cache.CreateInternalCache()", e.ToString());
@@ -833,8 +798,11 @@ internal void Initialize(IDictionary properties, bool inProc)
                             bEnableCounter = Convert.ToBoolean(perfCountersProps["enabled"]);
                     }
                 }
-                               
-                 _context.ExpiryMgr = new ExpirationManager(properties, _context);
+
+                //there is no licensing in the express edtion but we still wants
+                //to provide replicated cluster.
+
+                _context.ExpiryMgr = new ExpirationManager(properties, _context);
 
                 IDictionary clusterProps = null;
 
@@ -850,7 +818,10 @@ internal void Initialize(IDictionary properties, bool inProc)
                 }
 
                 _context.AsyncProc.Start();
-                
+
+
+                // We should use an InternalCacheFactory for the code below
+
                 if (_cacheInfo.ClassName.CompareTo("local") == 0)
                 {
                     LocalCacheImpl cache = new LocalCacheImpl();
@@ -860,7 +831,7 @@ internal void Initialize(IDictionary properties, bool inProc)
                 }
                 else
                 {
-                    throw new ConfigurationException("Specified cache class '" + _cacheInfo.ClassName + "' is not available in this edition of "+_cacheserver+".");
+                    throw new ConfigurationException("Specified cache class '" + _cacheInfo.ClassName + "' is not available in this edition of " + _cacheserver + ".");
                 }
 
                 _cacheType = _cacheInfo.ClassName;
@@ -894,33 +865,9 @@ internal void Initialize(IDictionary properties, bool inProc)
                 throw new ConfigurationException("Configuration Error: " + e.ToString(), e);
             }
         }
-        /// <summary>
-        /// Creates the underlying instance of the actual cache.
-        /// </summary>
-        /// <param name="properties"></param>
-        public override object InitializeLifetimeService()
-        {
-            ILease lease = (ILease)base.InitializeLifetimeService();
-            if (lease != null && _sponsor != null)
-                lease.Register(_sponsor);
-            return lease;
-        }
+       
 
-        #region /       RemoteObjectSponsor      /
-        private class RemoteObjectSponsor : ISponsor
-        {
-            /// <summary>
-            /// Requests a sponsoring client to renew the lease for the specified object.
-            /// </summary>
-            /// <param name="lease">The lifetime lease of the object that requires lease renewal.</param>
-            /// <returns>The additional lease time for the specified object.</returns>
-            public TimeSpan Renewal(ILease lease)
-            {
-                return TimeSpan.FromMinutes(10);
-            }
-        }
-        #endregion
-
+       
         #endregion
 
         internal static void Resize(ref object[] array, int newLength)
@@ -978,23 +925,20 @@ internal void Initialize(IDictionary properties, bool inProc)
             {
                 string connectedIpAddress = ipAddress;
                 int connectedPort = serverPort;
-#if  !CLIENT
-            ArrayList nodes = ((ClusterCacheBase)this._context.CacheImpl)._stats.Nodes;
 
-            foreach (NodeInfo i in nodes)
-            {
-               
-                if (i.RendererAddress != null)
+                ArrayList nodes = ((ClusterCacheBase)this._context.CacheImpl)._stats.Nodes;
+
+                foreach (NodeInfo i in nodes)
                 {
-                    ipAddress = (string)i.RendererAddress.IpAddress.ToString();
-                    serverPort = i.RendererAddress.Port;
-                    runningServers.Add(ipAddress, serverPort);
+
+                    if (i.RendererAddress != null)
+                    {
+                        ipAddress = (string)i.RendererAddress.IpAddress.ToString();
+                        serverPort = i.RendererAddress.Port;
+                        runningServers.Add(ipAddress, serverPort);
+                    }
+
                 }
-               
-            }
-#else
-             runningServers.Add(ipAddress, serverPort);
-#endif
             }
             return runningServers;
         }
@@ -1004,34 +948,36 @@ internal void Initialize(IDictionary properties, bool inProc)
         {
             string connectedIpAddress = ipAddress;
             int connectedPort = serverPort;
-
+            ArrayList nodes = null;
             if (!this._context.IsClusteredImpl) return;
             if (_inProc) return;
-
-            ArrayList nodes = ((ClusterCacheBase)this._context.CacheImpl)._stats.Nodes;
+           nodes = ((ClusterCacheBase)this._context.CacheImpl)._stats.Nodes;
 
             NodeInfo localNodeInfo = null;
             int min = int.MaxValue;
 
-            foreach (NodeInfo i in nodes)
+            if (nodes != null)
             {
-                if (i.IsStartedAsMirror) continue;
-
-                if (i.ConnectedClients.Count < min)
+                foreach (NodeInfo i in nodes)
                 {
-                    if (i.RendererAddress != null)
+                    if (i.IsStartedAsMirror) continue;
+
+                    if (i.ConnectedClients.Count < min)
                     {
-                        ipAddress = (string)i.RendererAddress.IpAddress.ToString();
-                        serverPort = i.RendererAddress.Port;
+                        if (i.RendererAddress != null)
+                        {
+                            ipAddress = (string)i.RendererAddress.IpAddress.ToString();
+                            serverPort = i.RendererAddress.Port;
+                        }
+                        else
+                            ipAddress = (string)i.Address.IpAddress.ToString();
+
+                        min = i.ConnectedClients.Count;
                     }
-                    else
-                        ipAddress = (string)i.Address.IpAddress.ToString();
 
-                    min = i.ConnectedClients.Count;
+                    if (i.Address.IpAddress.ToString().Equals(connectedIpAddress))
+                        localNodeInfo = i;
                 }
-
-                if (i.Address.IpAddress.ToString().Equals(connectedIpAddress))
-                    localNodeInfo = i;
             }
 
             ///we dont need to reconnect the the selected server if the selected server has same clients
@@ -1042,7 +988,6 @@ internal void Initialize(IDictionary properties, bool inProc)
                 serverPort = connectedPort;
             }
         }
-
 
 
 
@@ -1073,9 +1018,9 @@ internal void Initialize(IDictionary properties, bool inProc)
         public void Clear(BitSet flag, CallbackEntry cbEntry, OperationContext operationContext)
         {
             // Cache has possibly expired so do default.
-            if (!IsRunning) return; 
+            if (!IsRunning) return;
 
-          
+
             try
             {
                 _context.CacheImpl.Clear(null, operationContext);
@@ -1107,7 +1052,7 @@ internal void Initialize(IDictionary properties, bool inProc)
                 throw new ArgumentException("key is not serializable");
 
             // Cache has possibly expired so do default.
-            if (!IsRunning) return false; 
+            if (!IsRunning) return false;
 
             try
             {
@@ -1143,7 +1088,7 @@ internal void Initialize(IDictionary properties, bool inProc)
                 throw new ArgumentException("key is not serializable");
 
             // Cache has possibly expired so do default.
-            if (!IsRunning) return null; 
+            if (!IsRunning) return null; //throw new InvalidOperationException();
 
             try
             {
@@ -1153,7 +1098,7 @@ internal void Initialize(IDictionary properties, bool inProc)
 
                 LockExpiration lockExpiration = null;
 
-                //if lockId will be empty if item is not already lock provided by user
+                //: if lockId will be empty if item is not already lock provided by user
                 if ((lockId != null && lockId.ToString() == "") || lockId == null)
                 {
                     if (accessType == LockAccessType.ACQUIRE)
@@ -1170,13 +1115,13 @@ internal void Initialize(IDictionary properties, bool inProc)
 
                 object generatedLockId = lockId;
 
-                // if only key is provided by user
+                //: if only key is provided by user
                 if ((accessType == LockAccessType.IGNORE_LOCK || accessType == LockAccessType.DONT_ACQUIRE))
                 {
                     entry = _context.CacheImpl.Get(key, operationContext);
                 }
 
-                 //if key and locking information is provided by user
+                 //: if key and locking information is provided by user
                 else
                 {
 
@@ -1192,7 +1137,7 @@ internal void Initialize(IDictionary properties, bool inProc)
                     }
                 }
 
-                
+
                 _context.PerfStatsColl.MsecPerGetEndSample();
 
                 if (entry != null)
@@ -1226,7 +1171,7 @@ internal void Initialize(IDictionary properties, bool inProc)
             return Get(key, new BitSet(), new OperationContext(OperationContextFieldName.OperationType, OperationContextOperationType.CacheOperation));
         }
 
-       
+
 
         public void Unlock(object key, object lockId, bool isPreemptive, OperationContext operationContext)
         {
@@ -1295,7 +1240,7 @@ internal void Initialize(IDictionary properties, bool inProc)
         {
             object lockId = null;
             DateTime lockDate = DateTime.UtcNow;
-						return Get(key, flagMap, ref lockId, ref lockDate, TimeSpan.Zero, LockAccessType.IGNORE_LOCK, operationContext);
+            return Get(key, flagMap, ref lockId, ref lockDate, TimeSpan.Zero, LockAccessType.IGNORE_LOCK, operationContext);
         }
 
         private object GetLockId(object key)
@@ -1312,13 +1257,13 @@ internal void Initialize(IDictionary properties, bool inProc)
         /// Retrieve the object from the cache.
         /// </summary>
         /// <param name="key"></param>
-               /// <returns></returns>
+        /// <returns></returns>
         [CLSCompliant(false)]
-        public CompressedValueEntry Get(object key, BitSet flagMap,ref object lockId, ref DateTime lockDate, TimeSpan lockTimeout, LockAccessType accessType, OperationContext operationContext)
+        public CompressedValueEntry Get(object key, BitSet flagMap, ref object lockId, ref DateTime lockDate, TimeSpan lockTimeout, LockAccessType accessType, OperationContext operationContext)
         {
             if (ServerMonitor.MonitorActivity) ServerMonitor.LogClientActivity("Cache.GetGrp", "");
             // Cache has possibly expired so do default.
-            if (!IsRunning) return null; 
+            if (!IsRunning) return null;
 
             CompressedValueEntry result = new CompressedValueEntry();
             CacheEntry e = null;
@@ -1345,7 +1290,7 @@ internal void Initialize(IDictionary properties, bool inProc)
                 object generatedLockId = lockId;
 
                 e = _context.CacheImpl.Get(key, ref lockId, ref lockDate, lockExpiration, accessType, operationContext);
-                
+
 
                 if (e == null && accessType == LockAccessType.ACQUIRE)
                 {
@@ -1357,7 +1302,7 @@ internal void Initialize(IDictionary properties, bool inProc)
                 }
                 if (flagMap != null)
                 {
-                    
+
                     if (e != null)
                     {
                         /// increment the counter for hits/sec
@@ -1369,7 +1314,6 @@ internal void Initialize(IDictionary properties, bool inProc)
                 }
                 _context.PerfStatsColl.MsecPerGetEndSample();
                 getTime.EndSample();
-                
                 /// update the counter for hits/sec or misses/sec
                 if (result.Value != null)
                 {
@@ -1414,12 +1358,12 @@ internal void Initialize(IDictionary properties, bool inProc)
             if (keys == null) throw new ArgumentNullException("keys");
 
             // Cache has possibly expired so do default.
-            if (!IsRunning) return null; 
+            if (!IsRunning) return null;
 
             Hashtable table = null;
             try
             {
-              
+
                 HPTimeStats getTime = new HPTimeStats();
                 getTime.BeginSample();
 
@@ -1486,7 +1430,7 @@ internal void Initialize(IDictionary properties, bool inProc)
             }
 
             ExpirationHint eh = ExpirationHelper.MakeExpirationHint(cce.Expiration, isAbsolute);
-            CacheEntry e = new CacheEntry(cce.Value, eh, new PriorityEvictionHint((CacheItemPriority)priority));       
+            CacheEntry e = new CacheEntry(cce.Value, eh, new PriorityEvictionHint((CacheItemPriority)priority));
             e.QueryInfo = cce.QueryInfo;
             e.Flag = cce.Flag;
 
@@ -1525,7 +1469,7 @@ internal void Initialize(IDictionary properties, bool inProc)
             cce = (CompactCacheEntry)entry;
 
             CacheEntry e = MakeCacheEntry(cce);
-            Add(cce.Key, e.Value, e.ExpirationHint, e.EvictionHint, e.QueryInfo, e.Flag,operationContext);
+            Add(cce.Key, e.Value, e.ExpirationHint, e.EvictionHint, e.QueryInfo, e.Flag, operationContext);
         }
 
         /// <summary>
@@ -1540,7 +1484,7 @@ internal void Initialize(IDictionary properties, bool inProc)
         /// Overload of Add operation. Uses an additional ExpirationHint parameter to be used 
         /// for Item Expiration Feature.
         /// </summary>
-        internal void Add(object key, object value, ExpirationHint expiryHint,OperationContext operationContext)
+        internal void Add(object key, object value, ExpirationHint expiryHint, OperationContext operationContext)
         {
             Add(key, value, expiryHint, null, null, operationContext);
         }
@@ -1569,7 +1513,7 @@ internal void Initialize(IDictionary properties, bool inProc)
 
         internal void Add(object key, object value, ExpirationHint expiryHint, EvictionHint evictionHint, Hashtable queryInfo, OperationContext operationContext)
         {
-            Add(key, value, expiryHint, evictionHint,queryInfo, new BitSet(), operationContext);
+            Add(key, value, expiryHint, evictionHint, queryInfo, new BitSet(), operationContext);
         }
 
         /// <summary>
@@ -1577,7 +1521,7 @@ internal void Initialize(IDictionary properties, bool inProc)
         /// </summary>
         public void Add(object key, object value,
                         ExpirationHint expiryHint, EvictionHint evictionHint,
-                        Hashtable queryInfo, BitSet flag, 
+                        Hashtable queryInfo, BitSet flag,
                        OperationContext operationContext)
         {
             if (key == null) throw new ArgumentNullException("key");
@@ -1593,30 +1537,24 @@ internal void Initialize(IDictionary properties, bool inProc)
                 throw new ArgumentException("evictionHint is not serializable");
 
             // Cache has possibly expired so do default.
-            if (!IsRunning) return; 
-           
+            if (!IsRunning) return;
+
             CacheEntry e = new CacheEntry(value, expiryHint, evictionHint);
             ////Object size for inproc
             object dataSize = operationContext.GetValueByField(OperationContextFieldName.ValueDataSize);
             if (dataSize != null)
                 e.DataSize = Convert.ToInt64(dataSize);
-           
+
             e.QueryInfo = queryInfo;
-            e.Flag.Data |= flag.Data;        
-            try
-            {
-                HPTimeStats addTime = new HPTimeStats();
-                _context.PerfStatsColl.MsecPerAddBeginSample();
-                
-                addTime.BeginSample();
-                Add(key, e, operationContext);
-                addTime.EndSample();
-                _context.PerfStatsColl.MsecPerAddEndSample();
-            }
-            catch (Exception inner)
-            {
-                throw;
-            }
+            e.Flag.Data |= flag.Data;
+
+            HPTimeStats addTime = new HPTimeStats();
+            _context.PerfStatsColl.MsecPerAddBeginSample();
+            addTime.BeginSample();
+            Add(key, e, operationContext);
+            addTime.EndSample();
+            _context.PerfStatsColl.MsecPerAddEndSample();
+
         }
 
 
@@ -1630,50 +1568,39 @@ internal void Initialize(IDictionary properties, bool inProc)
             if (keys == null) throw new ArgumentNullException("keys");
             if (enteries == null) throw new ArgumentNullException("entries");
 
-            try
+            Hashtable result = _context.CacheImpl.Add(keys, enteries, true, operationContext);
+            if (result != null)
             {
-                Hashtable result = _context.CacheImpl.Add(keys, enteries, true, operationContext);
-                if (result != null)
-                {
 
-                    Hashtable tmp = (Hashtable)result.Clone();
-                    IDictionaryEnumerator ide = tmp.GetEnumerator();
-                    while (ide.MoveNext())
+                Hashtable tmp = (Hashtable)result.Clone();
+                IDictionaryEnumerator ide = tmp.GetEnumerator();
+                while (ide.MoveNext())
+                {
+                    CacheAddResult addResult = CacheAddResult.Failure;
+                    if (ide.Value is CacheAddResult)
                     {
-                        CacheAddResult addResult = CacheAddResult.Failure;
-                        if (ide.Value is CacheAddResult)
+                        addResult = (CacheAddResult)ide.Value;
+                        switch (addResult)
                         {
-                            addResult = (CacheAddResult)ide.Value;
-                            switch (addResult)
-                            {
-                                case CacheAddResult.Failure:
-                                    break;
-                                case CacheAddResult.KeyExists:
-                                    result[ide.Key] = new OperationFailedException("The specified key already exists.");
-                                    break;
-                                case CacheAddResult.NeedsEviction:
-                                    result[ide.Key] = new OperationFailedException("The cache is full and not enough items could be evicted.");
-                                    break;
-                                case CacheAddResult.Success:
-                                    result.Remove(ide.Key);
-                                    break;
-                            }
+                            case CacheAddResult.Failure:
+                                break;
+                            case CacheAddResult.KeyExists:
+                                result[ide.Key] = new OperationFailedException("The specified key already exists.");
+                                break;
+                            case CacheAddResult.NeedsEviction:
+                                result[ide.Key] = new OperationFailedException("The cache is full and not enough items could be evicted.");
+                                break;
+                            case CacheAddResult.Success:
+                                result.Remove(ide.Key);
+                                break;
                         }
                     }
                 }
-                return result;
-
-
             }
-            catch (Exception)
-            {
-                //NCacheLog.Error(_context.CacheName, "Cache.Add():", inner.ToString());
-                throw;
-            }
-
+            return result;
         }
 
-        
+
 
         /// <summary>
         /// Internal Add operation. Does write-through as well.
@@ -1684,7 +1611,6 @@ internal void Initialize(IDictionary properties, bool inProc)
             try
             {
                 CacheAddResult result = CacheAddResult.Failure;
-
                 if (ServerMonitor.MonitorActivity) ServerMonitor.LogClientActivity("Cache.Add", key as string);
 
                 result = _context.CacheImpl.Add(key, e, true, operationContext);
@@ -1766,15 +1692,15 @@ internal void Initialize(IDictionary properties, bool inProc)
                 }
             }
 
-            IDictionary items = Add(keys, values, callbackEnteries, exp,  evc,  queryInfo, flags, operationContext);
+            IDictionary items = Add(keys, values, callbackEnteries, exp, evc, queryInfo, flags, operationContext);
             return items;
         }
-       
+
         /// <summary>
         /// Overload of Add operation for bulk additions. Uses EvictionHint and ExpirationHint arrays.
         /// </summary>        
         public IDictionary Add(string[] keys, object[] values, CallbackEntry[] callbackEnteries,
-                                ExpirationHint[] expirations, EvictionHint[] evictions, Hashtable[] queryInfos, BitSet[] flags,OperationContext operationContext)
+                                ExpirationHint[] expirations, EvictionHint[] evictions, Hashtable[] queryInfos, BitSet[] flags, OperationContext operationContext)
         {
             if (ServerMonitor.MonitorActivity) ServerMonitor.LogClientActivity("Cache.InsertBlk", "");
 
@@ -1821,22 +1747,13 @@ internal void Initialize(IDictionary properties, bool inProc)
                 }
             }
 
-            try
-            {
-                IDictionary result;
-                HPTimeStats addTime = new HPTimeStats();
+            IDictionary result;
+            HPTimeStats addTime = new HPTimeStats();
 
-                CacheEntry[] clone = null;
-                addTime.BeginSample();
-                result = Add(keys, enteries, operationContext);
-                addTime.EndSample();
-                return result;
-            }
-            catch (Exception inner)
-            {
-                throw;
-            }
-
+            addTime.BeginSample();
+            result = Add(keys, enteries, operationContext);
+            addTime.EndSample();
+            return result;
         }
 
         /// <summary>
@@ -1850,7 +1767,7 @@ internal void Initialize(IDictionary properties, bool inProc)
                 result = _context.CacheImpl.Add(keys, entries, true, operationContext);
                 if (result != null)
                 {
-                    
+
                     Hashtable tmp = (Hashtable)result.Clone();
                     IDictionaryEnumerator ide = tmp.GetEnumerator();
                     while (ide.MoveNext())
@@ -1912,8 +1829,8 @@ internal void Initialize(IDictionary properties, bool inProc)
 
             CacheEntry e = MakeCacheEntry(cce);
 
-           
-Insert(cce.Key, e.Value, e.ExpirationHint, e.EvictionHint,e.QueryInfo, e.Flag, e.LockId, e.LockAccessType, operationContext);
+
+            Insert(cce.Key, e.Value, e.ExpirationHint, e.EvictionHint, e.QueryInfo, e.Flag, e.LockId, e.LockAccessType, operationContext);
 
         }
 
@@ -1952,7 +1869,7 @@ Insert(cce.Key, e.Value, e.ExpirationHint, e.EvictionHint,e.QueryInfo, e.Flag, e
         /// </summary>
         internal void Insert(object key, object value, ExpirationHint expiryHint, EvictionHint evictionHint, OperationContext operationContext)
         {
-            Insert(key, value, expiryHint,  evictionHint, null, operationContext);
+            Insert(key, value, expiryHint, evictionHint, null, operationContext);
         }
         internal void Insert(object key, object value, ExpirationHint expiryHint, EvictionHint evictionHint, Hashtable queryInfo, OperationContext operationContext)
         {
@@ -1979,20 +1896,18 @@ Insert(cce.Key, e.Value, e.ExpirationHint, e.EvictionHint,e.QueryInfo, e.Flag, e
 
             // Cache has possibly expired so do default.
             if (!IsRunning)
-                return; 
+                return;
 
             CacheEntry e = new CacheEntry(value, expiryHint, evictionHint);
 
             e.QueryInfo = queryInfo;
             e.Flag.Data |= flag.Data;
 
-          
-
             // update the counters for various statistics
             try
             {
                 CacheEntry clone;
-                    clone = e;
+                clone = e;
                 _context.PerfStatsColl.MsecPerUpdBeginSample();
                 Insert(key, e, null, LockAccessType.IGNORE_LOCK, operationContext);
                 _context.PerfStatsColl.MsecPerUpdEndSample();
@@ -2029,7 +1944,7 @@ Insert(cce.Key, e.Value, e.ExpirationHint, e.EvictionHint,e.QueryInfo, e.Flag, e
 
                 // Cache has possibly expired so do default.
                 if (!IsRunning)
-                    return; 
+                    return;
 
                 CacheEntry e = new CacheEntry(value, expiryHint, evictionHint);
                 e.QueryInfo = queryInfo;
@@ -2038,11 +1953,8 @@ Insert(cce.Key, e.Value, e.ExpirationHint, e.EvictionHint,e.QueryInfo, e.Flag, e
                 object dataSize = operationContext.GetValueByField(OperationContextFieldName.ValueDataSize);
                 if (dataSize != null)
                     e.DataSize = Convert.ToInt64(dataSize);
-          
+                /// update the counters for various statistics
 
-
-            /// update the counters for various statistics
-            
                 _context.PerfStatsColl.MsecPerUpdBeginSample();
                 Insert(key, e, lockId, accessType, operationContext);
                 _context.PerfStatsColl.MsecPerUpdEndSample();
@@ -2059,7 +1971,7 @@ Insert(cce.Key, e.Value, e.ExpirationHint, e.EvictionHint,e.QueryInfo, e.Flag, e
         /// </summary>
         private void Insert(object key, CacheEntry e, object lockId, LockAccessType accessType, OperationContext operationContext)
         {
-           
+
             HPTimeStats insertTime = new HPTimeStats();
             insertTime.BeginSample();
 
@@ -2076,7 +1988,7 @@ Insert(cce.Key, e.Value, e.ExpirationHint, e.EvictionHint,e.QueryInfo, e.Flag, e
 
                     case CacheInsResult.NeedsEviction:
                     case CacheInsResult.NeedsEvictionNotRemove:
-                       throw new OperationFailedException("The cache is full and not enough items could be evicted.", false);
+                        throw new OperationFailedException("The cache is full and not enough items could be evicted.", false);
 
                     case CacheInsResult.SuccessOverwrite:
                         _context.PerfStatsColl.IncrementUpdPerSecStats();
@@ -2152,8 +2064,8 @@ Insert(cce.Key, e.Value, e.ExpirationHint, e.EvictionHint,e.QueryInfo, e.Flag, e
                 }
             }
 
-            IDictionary items= Insert(keys, values, callbackEnteries, exp, evc, queryInfo, flags, operationContext);
-           
+            IDictionary items = Insert(keys, values, callbackEnteries, exp, evc, queryInfo, flags, operationContext);
+
             return items;
         }
 
@@ -2207,20 +2119,15 @@ Insert(cce.Key, e.Value, e.ExpirationHint, e.EvictionHint,e.QueryInfo, e.Flag, e
                     throw new ArgumentException("evictionHint is not serializable");
 
                 // Cache has possibly expired so do default.
-                if (!IsRunning) return null; 
+                if (!IsRunning) return null;
 
                 ce[i] = new CacheEntry(value, expiryHint, evictionHint);
 
             }
             /// update the counters for various statistics
-            try
-            {
-                return Insert(keys, ce, operationContext);
-            }
-            catch (Exception inner)
-            {
-                throw;
-            }
+
+            return Insert(keys, ce, operationContext);
+
         }
 
 
@@ -2229,14 +2136,14 @@ Insert(cce.Key, e.Value, e.ExpirationHint, e.EvictionHint,e.QueryInfo, e.Flag, e
         /// </summary>
         public IDictionary Insert(object[] keys, object[] values, CallbackEntry[] callbackEnteries,
                                            ExpirationHint[] expirations, EvictionHint[] evictions,
-                                           Hashtable[] queryInfos, BitSet[] flags,OperationContext operationContext)
+                                           Hashtable[] queryInfos, BitSet[] flags, OperationContext operationContext)
         {
             if (ServerMonitor.MonitorActivity) ServerMonitor.LogClientActivity("Cache.InsertBlk", "");
 
             if (keys == null) throw new ArgumentNullException("keys");
             if (values == null) throw new ArgumentNullException("items");
             if (keys.Length != values.Length) throw new ArgumentException("keys count is not equals to values count");
-           
+
 
             CacheEntry[] ce = new CacheEntry[values.Length];
             long[] sizes = null;
@@ -2269,7 +2176,7 @@ Insert(cce.Key, e.Value, e.ExpirationHint, e.EvictionHint,e.QueryInfo, e.Flag, e
 
                 ce[i].QueryInfo = queryInfos[i];
                 ce[i].Flag.Data |= flags[i].Data;
-                if(sizes != null)
+                if (sizes != null)
                     ce[i].DataSize = sizes[i];
                 if (callbackEnteries[i] != null)
                 {
@@ -2281,23 +2188,15 @@ Insert(cce.Key, e.Value, e.ExpirationHint, e.EvictionHint,e.QueryInfo, e.Flag, e
             }
 
             /// update the counters for various statistics
-            try
-            {
-               
 
-                HPTimeStats insertTime = new HPTimeStats();
-                insertTime.BeginSample();
+            HPTimeStats insertTime = new HPTimeStats();
+            insertTime.BeginSample();
 
-                IDictionary result = Insert(keys, ce, operationContext);
+            IDictionary result = Insert(keys, ce, operationContext);
 
-                insertTime.EndSample();
+            insertTime.EndSample();
 
-                return result;
-            }
-            catch (Exception inner)
-            {
-                throw;
-            }
+            return result;
         }
 
         /// <summary>
@@ -2380,7 +2279,7 @@ Insert(cce.Key, e.Value, e.ExpirationHint, e.EvictionHint,e.QueryInfo, e.Flag, e
                 throw new ArgumentException("key is not serializable");
 
             // Cache has possibly expired so do default.
-            if (!IsRunning) return null; 
+            if (!IsRunning) return null;
             try
             {
                 HPTimeStats removeTime = new HPTimeStats();
@@ -2390,7 +2289,7 @@ Insert(cce.Key, e.Value, e.ExpirationHint, e.EvictionHint,e.QueryInfo, e.Flag, e
 
                 object packedKey = key;
 
-                CacheEntry e = CascadedRemove(key, packedKey, ItemRemoveReason.Removed, true, lockId,accessType, operationContext);
+                CacheEntry e = CascadedRemove(key, packedKey, ItemRemoveReason.Removed, true, lockId, accessType, operationContext);
                 _context.PerfStatsColl.MsecPerDelEndSample();
                 _context.PerfStatsColl.IncrementDelPerSecStats();
                 removeTime.EndSample();
@@ -2440,7 +2339,7 @@ Insert(cce.Key, e.Value, e.ExpirationHint, e.EvictionHint,e.QueryInfo, e.Flag, e
 
                 object packedKey = key;
 
-                CacheEntry e = CascadedRemove(key, packedKey, ItemRemoveReason.Removed, true, lockId,accessType, operationContext);
+                CacheEntry e = CascadedRemove(key, packedKey, ItemRemoveReason.Removed, true, lockId, accessType, operationContext);
 
                 _context.PerfStatsColl.MsecPerDelEndSample();
                 _context.PerfStatsColl.IncrementDelPerSecStats();
@@ -2478,7 +2377,7 @@ Insert(cce.Key, e.Value, e.ExpirationHint, e.EvictionHint,e.QueryInfo, e.Flag, e
             if (keys == null) throw new ArgumentNullException("keys");
 
             // Cache has possibly expired so do default.
-            if (!IsRunning) return null; 
+            if (!IsRunning) return null;
 
             try
             {
@@ -2515,7 +2414,6 @@ Insert(cce.Key, e.Value, e.ExpirationHint, e.EvictionHint,e.QueryInfo, e.Flag, e
                 _context.NCacheLog.Error("Cache.Remove()", inner.ToString());
                 throw new OperationFailedException("Remove operation failed. Error : " + inner.Message, inner);
             }
-            return null;
         }
 
         /// <summary>
@@ -2528,9 +2426,7 @@ Insert(cce.Key, e.Value, e.ExpirationHint, e.EvictionHint,e.QueryInfo, e.Flag, e
             if (keys == null) throw new ArgumentNullException("keys");
 
             // Cache has possibly expired so do default.
-            if (!IsRunning) return; 
-
-           
+            if (!IsRunning) return;
 
             try
             {
@@ -2558,7 +2454,7 @@ Insert(cce.Key, e.Value, e.ExpirationHint, e.EvictionHint,e.QueryInfo, e.Flag, e
         {
             // Cache has possibly expired so do default.
             if (!IsRunning)
-                return null; 
+                return null;
 
             try
             {
@@ -2592,7 +2488,7 @@ Insert(cce.Key, e.Value, e.ExpirationHint, e.EvictionHint,e.QueryInfo, e.Flag, e
         }
 
         #endregion
-        
+
         #region	/                 --- ICacheEventsListener ---           /
 
         /// <summary>
@@ -2722,27 +2618,28 @@ Insert(cce.Key, e.Value, e.ExpirationHint, e.EvictionHint,e.QueryInfo, e.Flag, e
         /// <param name="newHashmap">new hashmap</param>
         void ICacheEventsListener.OnHashmapChanged(NewHashmap newHashmap, bool updateClientMap)
         {
-                if (this._hashmapChanged == null) return;
-                Delegate[] dlgList = this._hashmapChanged.GetInvocationList();
 
-                NewHashmap.Serialize(newHashmap, this._context.SerializationContext, updateClientMap);
+            if (this._hashmapChanged == null) return;
+            Delegate[] dlgList = this._hashmapChanged.GetInvocationList();
 
-                foreach (HashmapChangedCallback subscriber in dlgList)
+            NewHashmap.Serialize(newHashmap, this._context.SerializationContext, updateClientMap);
+
+            foreach (HashmapChangedCallback subscriber in dlgList)
+            {
+                try
                 {
-                    try
-                    {
-                        subscriber.BeginInvoke(newHashmap, null, new AsyncCallback(HashmapChangedAsyncCallbackHandler), subscriber);
-                    }
-                    catch (System.Net.Sockets.SocketException ex)
-                    {
-                        _context.NCacheLog.Error("Cache.OnHashmapChanged", ex.ToString());
-                        this._hashmapChanged -= subscriber;
-                    }
-                    catch (Exception ex)
-                    {
-                        _context.NCacheLog.Error("Cache.OnHashmapChanged", ex.ToString());
-                    }
+                    subscriber.BeginInvoke(newHashmap, null, new AsyncCallback(HashmapChangedAsyncCallbackHandler), subscriber);
                 }
+                catch (System.Net.Sockets.SocketException ex)
+                {
+                    _context.NCacheLog.Error("Cache.OnHashmapChanged", ex.ToString());
+                    this._hashmapChanged -= subscriber;
+                }
+                catch (Exception ex)
+                {
+                    _context.NCacheLog.Error("Cache.OnHashmapChanged", ex.ToString());
+                }
+            }
         }
 
         /// <summary>
@@ -2810,7 +2707,7 @@ Insert(cce.Key, e.Value, e.ExpirationHint, e.EvictionHint,e.QueryInfo, e.Flag, e
                     _cacheStopped -= subscriber;
                 }
             }
-           
+
             if (_customUpdateNotif != null)
             {
                 Delegate[] dltList = _customUpdateNotif.GetInvocationList();
@@ -2834,6 +2731,95 @@ Insert(cce.Key, e.Value, e.ExpirationHint, e.EvictionHint,e.QueryInfo, e.Flag, e
         #endregion
 
 
+        #region /                 --- Cache Data Reader ---           /
+        public ClusteredList<Alachisoft.NCache.Common.DataReader.ReaderResultSet> ExecuteReader(string query, IDictionary values, bool getData, int chunkSize, bool isInproc, OperationContext operationContext)
+        {
+            if (!IsRunning) return null;
+
+            if (query == null || query == String.Empty)
+                throw new ArgumentNullException("query");
+            try
+            {
+                return _context.CacheImpl.ExecuteReader(query, values, getData, chunkSize, isInproc, operationContext);
+            }
+            catch (OperationFailedException ex)
+            {
+                if (ex.IsTracable)
+                {
+                    if (_context.NCacheLog.IsErrorEnabled) _context.NCacheLog.Error("ExecuteReader operation failed. Error: " + ex.ToString());
+                }
+                throw;
+            }
+            catch (StateTransferInProgressException inner)
+            {
+                throw;
+            }
+            catch (Exception ex)
+            {
+                if (_context.NCacheLog.IsErrorEnabled) _context.NCacheLog.Error("ExecuteReader operation failed. Error: " + ex.ToString());
+
+                if (ex is Alachisoft.NCache.Parser.TypeIndexNotDefined)
+                    throw new Runtime.Exceptions.TypeIndexNotDefined("ExecuteReader operation failed. Error: " + ex.Message, ex);
+                if (ex is Alachisoft.NCache.Parser.AttributeIndexNotDefined)
+                    throw new Runtime.Exceptions.AttributeIndexNotDefined("ExecuteReader operation failed. Error: " + ex.Message, ex);
+
+                throw new OperationFailedException("ExecuteReader operation failed. Error: " + ex.Message, ex);
+            }
+        }
+        public Alachisoft.NCache.Common.DataReader.ReaderResultSet GetReaderChunk(string readerId, int nextChunk, bool isInproc, OperationContext operationContext)
+        {
+            if (!IsRunning) return null;
+
+            try
+            {
+                return _context.CacheImpl.GetReaderChunk(readerId, nextChunk, isInproc, operationContext);
+            }
+            catch (OperationFailedException ex)
+            {
+                if (ex.IsTracable)
+                {
+                    if (_context.NCacheLog.IsErrorEnabled) _context.NCacheLog.Error("GetReaderChunk operation failed. Error: " + ex.ToString());
+                }
+                throw;
+            }
+            catch (StateTransferInProgressException inner)
+            {
+                throw;
+            }
+            catch (Exception ex)
+            {
+                if (_context.NCacheLog.IsErrorEnabled) _context.NCacheLog.Error("GetReaderChunk operation failed. Error: " + ex.ToString());
+                throw new OperationFailedException("GetReaderChunk operation failed. Error: " + ex.Message, ex);
+            }
+        }
+        public void DisposeReader(string readerId, OperationContext operationContext)
+        {
+            if (!IsRunning) return;
+
+            try
+            {
+                _context.CacheImpl.DisposeReader(readerId, operationContext);
+            }
+            catch (OperationFailedException ex)
+            {
+                if (ex.IsTracable)
+                {
+                    if (_context.NCacheLog.IsErrorEnabled) _context.NCacheLog.Error("DisposeReader operation failed. Error: " + ex.ToString());
+                }
+                throw;
+            }
+            catch (StateTransferInProgressException inner)
+            {
+                throw;
+            }
+            catch (Exception ex)
+            {
+                if (_context.NCacheLog.IsErrorEnabled) _context.NCacheLog.Error("DisposeReader operation failed. Error: " + ex.ToString());
+                throw new OperationFailedException("DisposeReader operation failed. Error: " + ex.Message, ex);
+            }
+        }
+
+        #endregion
 
         #region /                 --- Search ---           /
 
@@ -2912,14 +2898,14 @@ Insert(cce.Key, e.Value, e.ExpirationHint, e.EvictionHint,e.QueryInfo, e.Flag, e
 
         #endregion
 
-        
+
         #region /               --- CacheImpl Calls for Cascading Dependnecies ---          /
 
         internal CacheInsResultWithEntry CascadedInsert(object key, CacheEntry entry, bool notify, object lockId, LockAccessType accessType, OperationContext operationContext)
         {
-  
 
-          CacheInsResultWithEntry result = _context.CacheImpl.Insert(key, entry, notify, lockId, accessType, operationContext);
+
+            CacheInsResultWithEntry result = _context.CacheImpl.Insert(key, entry, notify, lockId, accessType, operationContext);
             return result;
         }
 
@@ -2942,16 +2928,6 @@ Insert(cce.Key, e.Value, e.ExpirationHint, e.EvictionHint,e.QueryInfo, e.Flag, e
             return table;
         }
 
-       
-
-
-
-
-
-      
-
-        
-
         #endregion
 
         #region IClusterEventsListener Members
@@ -2959,7 +2935,6 @@ Insert(cce.Key, e.Value, e.ExpirationHint, e.EvictionHint,e.QueryInfo, e.Flag, e
         {
             if (_clientsInvalidated != null)
             {
-                //object add = SerializationUtil.CompactSerialize(address, _context.SerializationContext);
                 Delegate[] dltList = _clientsInvalidated.GetInvocationList();
                 for (int i = dltList.Length - 1; i >= 0; i--)
                 {
@@ -3008,8 +2983,7 @@ Insert(cce.Key, e.Value, e.ExpirationHint, e.EvictionHint,e.QueryInfo, e.Flag, e
                 _context.NCacheLog.Error("Cache.MemberJoinedAsyncCallbackHandler", e.ToString());
             }
         }
-        
-#if !CLIENT
+
         public int GetNumberOfClientsToDisconect()
         {
 
@@ -3050,15 +3024,13 @@ Insert(cce.Key, e.Value, e.ExpirationHint, e.EvictionHint,e.QueryInfo, e.Flag, e
             return 0;
 
         }
-#endif
+
         public void OnMemberJoined(Alachisoft.NCache.Common.Net.Address clusterAddress, Alachisoft.NCache.Common.Net.Address serverAddress)
         {
             int clientsToDisconnect = 0;
             try
             {
-#if !CLIENT
-                    clientsToDisconnect = this.GetNumberOfClientsToDisconect();
-#endif
+                clientsToDisconnect = this.GetNumberOfClientsToDisconect();
             }
             catch (Exception)
             {
@@ -3207,9 +3179,9 @@ Insert(cce.Key, e.Value, e.ExpirationHint, e.EvictionHint,e.QueryInfo, e.Flag, e
 
         }
 
-        internal void RegisterKeyNotificationCallback(string[] keys, CallbackInfo updateCallback, CallbackInfo removeCallback, OperationContext operationContext)
+        public void RegisterKeyNotificationCallback(string[] keys, CallbackInfo updateCallback, CallbackInfo removeCallback, OperationContext operationContext)
         {
-            if (!IsRunning) return; 
+            if (!IsRunning) return;
             if (keys == null) throw new ArgumentNullException("keys");
             if (keys.Length == 0) throw new ArgumentException("Keys count can not be zero");
             if (updateCallback == null && removeCallback == null) throw new ArgumentNullException();
@@ -3239,7 +3211,7 @@ Insert(cce.Key, e.Value, e.ExpirationHint, e.EvictionHint,e.QueryInfo, e.Flag, e
         /// <param name="removeCallback"></param>
         public void UnregisterKeyNotificationCallback(string key, CallbackInfo updateCallback, CallbackInfo removeCallback, OperationContext operationContext)
         {
-            if (!IsRunning) return; 
+            if (!IsRunning) return;
             if (key == null) throw new ArgumentNullException("key");
             if (updateCallback == null && removeCallback == null) throw new ArgumentNullException();
 
@@ -3260,7 +3232,7 @@ Insert(cce.Key, e.Value, e.ExpirationHint, e.EvictionHint,e.QueryInfo, e.Flag, e
 
         }
 
-        internal void UnregisterKeyNotificationCallback(string[] keys, CallbackInfo updateCallback, CallbackInfo removeCallback, OperationContext operationContext)
+        public void UnregisterKeyNotificationCallback(string[] keys, CallbackInfo updateCallback, CallbackInfo removeCallback, OperationContext operationContext)
         {
             if (!IsRunning) return; 
             if (keys == null) throw new ArgumentNullException("keys");
@@ -3291,9 +3263,9 @@ Insert(cce.Key, e.Value, e.ExpirationHint, e.EvictionHint,e.QueryInfo, e.Flag, e
         /// </summary>
         /// <param name="cacheConfig"></param>
 
-        public Exception CanApplyHotConfig(HotConfig hotConfig)
+        public Exception CanApplyHotConfig(long size)
         {
-            if (this._context.CacheImpl != null && !this._context.CacheImpl.CanChangeCacheSize(hotConfig.CacheMaxSize))
+            if (this._context.CacheImpl != null && !this._context.CacheImpl.CanChangeCacheSize(size))
                 return new Exception("You need to remove some data from cache before applying the new size");
             return null;
         }
@@ -3341,7 +3313,7 @@ Insert(cce.Key, e.Value, e.ExpirationHint, e.EvictionHint,e.QueryInfo, e.Flag, e
 
         public void BalanceDataLoad()
         {
-           _context.CacheImpl.BalanceDataLoad();
+            _context.CacheImpl.BalanceDataLoad();
         }
 
         #endregion
@@ -3351,20 +3323,6 @@ Insert(cce.Key, e.Value, e.ExpirationHint, e.EvictionHint,e.QueryInfo, e.Flag, e
             return _context.CacheImpl.GetOwnerHashMapTable(out bucketSize);
         }
 
-        internal static float ClientsRequests
-        {
-            get { return Interlocked.Exchange(ref s_clientsRequests, 0); }
-        }
-
-        internal static float ClientsBytesSent
-        {
-            get { return Interlocked.Exchange(ref s_clientsBytesSent, 0); }
-        }
-
-        internal static float ClientsBytesRecieved
-        {
-            get { return Interlocked.Exchange(ref s_clientsBytesRecieved, 0); }
-        }
 
         public CacheServerConfig Configuration
         {
@@ -3372,16 +3330,7 @@ Insert(cce.Key, e.Value, e.ExpirationHint, e.EvictionHint,e.QueryInfo, e.Flag, e
             set { _cacheInfo.Configuration = value; }
         }
 
-        /// <summary>
-        /// Update socket server statistics
-        /// </summary>
-        /// <param name="stats"></param>
-        public void UpdateSocketServerStats(SocketServerStats stats)
-        {
-            Interlocked.Exchange(ref s_clientsRequests, s_clientsRequests + stats.Requests);
-            Interlocked.Exchange(ref s_clientsBytesSent, s_clientsBytesSent + stats.BytesSent);
-            Interlocked.Exchange(ref s_clientsBytesRecieved, s_clientsBytesRecieved + stats.BytesRecieved);
-        }
+        
 
         /// <summary>
         /// To Get the string for the TypeInfoMap used in Queries.
@@ -3389,7 +3338,7 @@ Insert(cce.Key, e.Value, e.ExpirationHint, e.EvictionHint,e.QueryInfo, e.Flag, e
         /// <returns>String representation of the TypeInfoMap for this cache.</returns>
         public TypeInfoMap GetTypeInfoMap()
         {
-            
+            //throw new Exception("The method or operation is not implemented.");
             if (!IsRunning) return null;
             else return _context.CacheImpl.TypeInfoMap;
 
@@ -3399,7 +3348,7 @@ Insert(cce.Key, e.Value, e.ExpirationHint, e.EvictionHint,e.QueryInfo, e.Flag, e
             return _context.CacheImpl.IsServerNodeIp(clientAddress);
         }
 
-   
+
     }
 }
 

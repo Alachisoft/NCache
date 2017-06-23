@@ -10,6 +10,7 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 // $Id: TOTAL.java,v 1.6 2004/07/05 14:17:16 belaban Exp $
+
 using System;
 using Alachisoft.NGroups;
 using Alachisoft.NGroups.Protocols;
@@ -49,16 +50,14 @@ namespace Alachisoft.NGroups.Protocols
 			
 		}
 		internal System.Collections.ArrayList members = System.Collections.ArrayList.Synchronized(new System.Collections.ArrayList(10)), initial_members = System.Collections.ArrayList.Synchronized(new System.Collections.ArrayList(10));
-		//		internal SetSupport members_set = new HashSetSupport(); //copy of the members vector for fast random access    
+	
 		internal Address local_addr = null;
 		internal string group_addr = null;
 		internal string subGroup_addr = null;
 		internal System.String groupname = null;
         internal long timeout = 5000;
 		internal long num_initial_members = 20;
-        internal bool twoPhaseConnect;
-        //muds: 24-06-08
-        //as per iqbal sb. decision changing the default port-range to '1'
+       
         internal int port_range = 1; // number of ports to be probed for initial membership
 		
         internal ThreadClass mcast_receiver = null;
@@ -74,7 +73,7 @@ namespace Alachisoft.NGroups.Protocols
 
         internal bool mbrDiscoveryInProcess = false;
 
-       
+        internal bool twoPhaseConnect;
 
 		/// <summary>
 		/// These two values are used to authorize a user so that he can not join 
@@ -142,7 +141,7 @@ namespace Alachisoft.NGroups.Protocols
                 }
                 if (num_initial_members > 5)
                 {
-                    //Taim:We estimate the time for finding initital members
+                    //We estimate the time for finding initital members
                     //for every member we add 1 sec timeout.
                     long temp = num_initial_members - 5;
                     timeout += (temp * 1000);
@@ -248,7 +247,7 @@ return ;
 						rsp = (PingRsp) hdr.arg;
 
 
-                        //muds:
+                        
                         //check if the received response is valid i.e. successful security authorization
                         //at other end.
                         if (rsp.OwnAddress == null && rsp.CoordAddress == null && rsp.HasJoined == false)
@@ -342,8 +341,6 @@ return ;
 			
 			switch (evt.Type)
 			{
-				
-				
 				case Event.FIND_INITIAL_MBRS:  // sent by GMS layer, pass up a GET_MBRS_OK event
 
                     //We pass this event down to tcp so that it can take some measures.

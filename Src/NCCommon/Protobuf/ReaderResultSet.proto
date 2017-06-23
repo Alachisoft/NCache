@@ -1,0 +1,17 @@
+option java_outer_classname="ReaderResultSetProtocol";
+
+import "RecordSet.proto";
+import "OrderByArgument.proto";
+
+package Alachisoft.NCache.Common.Protobuf;
+
+
+message ReaderResultSet
+{
+	optional string readerId = 1;
+	optional RecordSet recordSet = 2;
+	optional string nodeAddress = 3;
+	repeated OrderByArgument orderByArguments = 4;
+	optional bool isGrouped = 5;
+	optional int32 nextIndex = 6;
+}

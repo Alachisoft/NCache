@@ -1,4 +1,4 @@
-// Copyright (c) 2015 Alachisoft
+// Copyright (c) 2017 Alachisoft
 // 
 // Licensed under the Apache License, Version 2.0 (the "License");
 // you may not use this file except in compliance with the License.
@@ -11,8 +11,12 @@
 // WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
 // See the License for the specific language governing permissions and
 // limitations under the License.
+
 using System;
+using Alachisoft.NCache.Common.Queries;
 using System.Collections;
+using Alachisoft.NCache.Common.DataStructures.Clustered;
+using Alachisoft.NCache.Common.Enum;
 
 namespace Alachisoft.NCache.Caching.Queries.Filters
 {
@@ -42,41 +46,30 @@ namespace Alachisoft.NCache.Caching.Queries.Filters
             return !Inverse;
         }
 
-        internal override void ExecuteInternal(QueryContext queryContext, ref SortedList list)
+        internal override void ExecuteInternal(QueryContext queryContext, CollectionOperation mergeType)
         {
             bool sortAscending = true;
-            ArrayList keys = new ArrayList();
+            ClusteredArrayList keys = new ClusteredArrayList();
 
             if (Inverse)
                 sortAscending = false;
 
             SortedList tmpList = new SortedList(new QueryResultComparer(sortAscending));
 
+            IQueryResult temp = queryContext.InternalQueryResult;
+            queryContext.InternalQueryResult = new Common.Queries.HashedQueryResult();
+            
             for (int i = 0; i < members.Count; i++)
             {
                 Predicate predicate = (Predicate)members[i];
-                predicate.ExecuteInternal(queryContext, ref tmpList);
+                CollectionOperation mergeTypeX = (Inverse == true || (queryContext.InternalQueryResult.Count == 0 & i == 0)) ? CollectionOperation.Union : CollectionOperation.Intersection;
+                predicate.ExecuteInternal(queryContext, mergeTypeX);
             }
-
-            if (Inverse)
-                keys = GetUnion(tmpList);
-            else
-                keys = GetIntersection(tmpList);
-
-            if (keys != null)
-                list.Add(keys.Count, keys);
+            queryContext.InternalQueryResult.Merge(temp, mergeType);
         }
 
         internal override void Execute(QueryContext queryContext, Predicate nextPredicate)
         {
-            bool sortAscending = true;
-            bool normalizePredicates = true;
-
-            if (Inverse)
-                sortAscending = false;
-
-            SortedList list = new SortedList(new QueryResultComparer(sortAscending));
-
             for (int i = 0; i < members.Count; i++)
             {
                 Predicate predicate = (Predicate)members[i];
@@ -85,20 +78,12 @@ namespace Alachisoft.NCache.Caching.Queries.Filters
                 if (isOfTypePredicate)
                 {
                     predicate.Execute(queryContext, (Predicate)members[++i]);
-                    normalizePredicates = false;
                 }
                 else
                 {
-                    predicate.ExecuteInternal(queryContext, ref list);
+                    CollectionOperation mergeType = (Inverse == true || (queryContext.InternalQueryResult.Count == 0 & i == 0)) ? CollectionOperation.Union : CollectionOperation.Intersection;
+                    predicate.ExecuteInternal(queryContext, mergeType);
                 }
-            }
-
-            if (normalizePredicates)
-            {
-                if (Inverse)
-                    queryContext.Tree.RightList = GetUnion(list);
-                else
-                    queryContext.Tree.RightList = GetIntersection(list);
             }
         }
 
@@ -107,13 +92,13 @@ namespace Alachisoft.NCache.Caching.Queries.Filters
         /// </summary>
         /// <param name="list"></param>
         /// <returns></returns>
-        private ArrayList GetUnion(SortedList list)
+        private ClusteredArrayList GetUnion(SortedList list)
         {
-            Hashtable finalTable = new Hashtable();
+            HashVector finalTable = new HashVector();
 
             if (list.Count > 0)
             {
-                ArrayList finalKeys = list.GetByIndex(0) as ArrayList;
+                ClusteredArrayList finalKeys = list.GetByIndex(0) as ClusteredArrayList;
                 for (int i = 0; i < finalKeys.Count; i++)
                 {
                     finalTable[finalKeys[i]] = null;
@@ -121,7 +106,7 @@ namespace Alachisoft.NCache.Caching.Queries.Filters
 
                 for (int i = 1; i < list.Count; i++)
                 {
-                    ArrayList keys = list.GetByIndex(i) as ArrayList;
+                    ClusteredArrayList keys = list.GetByIndex(i) as ClusteredArrayList;
 
                     if (keys != null && keys.Count > 0)
                     {
@@ -133,7 +118,7 @@ namespace Alachisoft.NCache.Caching.Queries.Filters
                 }
             }
 
-            return new ArrayList(finalTable.Keys);
+            return new ClusteredArrayList(finalTable.Keys);
         }
 
         /// <summary>
@@ -141,13 +126,13 @@ namespace Alachisoft.NCache.Caching.Queries.Filters
         /// </summary>
         /// <param name="list"></param>
         /// <returns></returns>
-        private ArrayList GetIntersection(SortedList list)
+        private ClusteredArrayList GetIntersection(SortedList list)
         {
-            Hashtable finalTable = new Hashtable();
+            HashVector finalTable = new HashVector();
 
             if (list.Count > 0)
             {
-                ArrayList keys = list.GetByIndex(0) as ArrayList;
+                ClusteredArrayList keys = list.GetByIndex(0) as ClusteredArrayList;
 
                 for (int i = 0; i < keys.Count; i++)
                 {
@@ -156,8 +141,8 @@ namespace Alachisoft.NCache.Caching.Queries.Filters
 
                 for (int i = 1; i < list.Count; i++)
                 {
-                    Hashtable shiftTable = new Hashtable();
-                    keys = list.GetByIndex(i) as ArrayList;
+                    HashVector shiftTable = new HashVector();
+                    keys = list.GetByIndex(i) as ClusteredArrayList;
 
                     if (keys != null)
                     {
@@ -174,7 +159,7 @@ namespace Alachisoft.NCache.Caching.Queries.Filters
                 }
             }
 
-            return new ArrayList(finalTable.Keys);
+            return new ClusteredArrayList(finalTable.Keys);
         }
 
         public override string ToString()

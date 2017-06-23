@@ -1,4 +1,4 @@
-﻿﻿/*
+﻿/*
 * Copyright (c) 2015, Alachisoft. All Rights Reserved.
 *
 * Licensed under the Apache License, Version 2.0 (the "License");
@@ -14,12 +14,13 @@
 * limitations under the License.
 */
 
-
-
 using System;
 using System.Collections.Generic;
-//using System.Linq;
+using System.Linq;
+using System.Reflection.Emit;
 using System.Text;
+using Alachisoft.NCache.Runtime.Serialization;
+using System.Reflection.Emit;
 
 namespace Alachisoft.NCache.Common.DataStructures.Clustered
 {
@@ -30,49 +31,86 @@ namespace Alachisoft.NCache.Common.DataStructures.Clustered
         private int _lengthThreshold;
         public T[][] _chunks;
         private int _length = 0;
+        private readonly bool customLength = false;
 
         public ClusteredArray(int length)
         {
             Initialize(length);
         }
 
+        public ClusteredArray(int lengthThreshold,int length)
+        {
+            customLength = true;
+            _lengthThreshold = lengthThreshold;
+            Initialize(length);
+        }
+
         private void Initialize(int length)
         {
-            Type genericType = typeof(T);
-            if (genericType.IsValueType)
+            if (!customLength)
             {
-                _sizeOfReference = System.Runtime.InteropServices.Marshal.SizeOf(genericType);
+                Type genericType = typeof (T);
+                T defaultOfType = default(T);
+
+                try
+                {
+                    ISizable reference = defaultOfType as ISizable;
+
+                    if (reference != null)
+                    {
+                        _sizeOfReference = reference.Size;
+                    }
+                    else if (genericType.IsValueType)
+                    {
+                        _sizeOfReference = System.Runtime.InteropServices.Marshal.SizeOf(defaultOfType);
+                    }
+                    else
+                        _sizeOfReference = IntPtr.Size;
+                }
+                catch
+                {
+                    _sizeOfReference = SizeOfType(genericType);
+                }
+
+                _lengthThreshold = (81920 / _sizeOfReference);
+                _length = length;
+                int superLength = (length/_lengthThreshold) + 1;
+
+                //Usman:
+                //I still believe we need this exception, if we need to keep the main referencial array in SOH.
+                //An array declared with greater supersize than length threshold will be declared in LOH.
+                //The exception should be removed if we don't care that the main referencial array is being taken to LOH.
+                //Otherwise it should be caught by user, who will then declare a new clustered array structure.
+
+                //if (superLength < 0 || superLength > _lengthThreshold)
+                //    throw new ArgumentOutOfRangeException(length.ToString("length"));
+
+                //Your call.
+                //Update: Let it grow, care later.
+
+                _chunks = new T[superLength][];
+                for (int i = 0; i < superLength; i++)
+                {
+                    _chunks[i] = new T[length < _lengthThreshold ? length : _lengthThreshold];
+                    length -= _lengthThreshold;
+                }
             }
-            else
-                _sizeOfReference = IntPtr.Size;
-            _lengthThreshold = (81920 / _sizeOfReference);
-            _length = length;
-            int superLength = (length / _lengthThreshold) + 1;
+        }
 
-            //Usman:
-            //I still believe we need this exception, if we need to keep the main referencial array in SOH.
-            //An array declared with greater supersize than length threshold will be declared in LOH.
-            //The exception should be removed if we don't care that the main referencial array is being taken to LOH.
-            //Otherwise it should be caught by user, who will then declare a new clustered array structure.
-
-            //if (superLength < 0 || superLength > _lengthThreshold)
-            //    throw new ArgumentOutOfRangeException(length.ToString("length"));
-
-            //Your call.
-            //Update: Let it grow, care later.
-
-            _chunks = new T[superLength][];
-            for (int i = 0; i < superLength; i++)
-            {
-                _chunks[i] = new T[length < _lengthThreshold ? length : _lengthThreshold];
-                length -= _lengthThreshold;
-            }
+        private static int SizeOfType(Type type)
+        {
+            var dm = new DynamicMethod("SizeOfType", typeof(int), new Type[] { });
+            ILGenerator il = dm.GetILGenerator();
+            il.Emit(OpCodes.Sizeof, type);
+            il.Emit(OpCodes.Ret);
+            return (int)dm.Invoke(null, null);
         }
 
         public int LengthThreshold
         {
             get { return _lengthThreshold; }
         }
+
         public void Resize(int newLength)
         {
             if (_chunks == null)
@@ -108,7 +146,7 @@ namespace Alachisoft.NCache.Common.DataStructures.Clustered
                 return _chunks[chunkNumber][index % _lengthThreshold];
             }
         }
-
+        
         public T Get(int chunkNumber, int chunkIndex)
         {
             return _chunks[chunkNumber][chunkIndex];
@@ -275,21 +313,18 @@ namespace Alachisoft.NCache.Common.DataStructures.Clustered
             }
 
         }
-
         public static void Copy(ClusteredArray<T> source, int sourceIndex, ClusteredArray<T> destination,
             int destinationIndex, int length)
         {
             if (source == null) throw new ArgumentNullException("source");
             if (destination == null) throw new ArgumentNullException("destination");
-            if (sourceIndex > source.Length) throw new ArgumentOutOfRangeException("sourceIndex");
+            if (sourceIndex > source.Length ) throw new ArgumentOutOfRangeException("sourceIndex");
             if (destinationIndex > destination.Length) throw new ArgumentOutOfRangeException("destinationIndex");
-            if ((sourceIndex + length) > source.Length) throw new ArgumentOutOfRangeException("length");
-            if ((destinationIndex + length) > destination.Length) throw new ArgumentOutOfRangeException("length");
+            if((sourceIndex + length) > source.Length) throw new ArgumentOutOfRangeException("length"); 
+            if((destinationIndex + length) > destination.Length) throw new ArgumentOutOfRangeException("length");
 
-
-            int lengthThreshold = source._lengthThreshold;
-            VirtualIndex srcIndex = new VirtualIndex(source._lengthThreshold, sourceIndex);
-            VirtualIndex dstIndex = new VirtualIndex(source._lengthThreshold, destinationIndex);
+            VirtualIndex srcIndex = new VirtualIndex(source._lengthThreshold,sourceIndex);
+            VirtualIndex dstIndex = new VirtualIndex(source._lengthThreshold,destinationIndex);
             int dataCopied = 0;
 
             while (dataCopied < length)
@@ -311,6 +346,8 @@ namespace Alachisoft.NCache.Common.DataStructures.Clustered
                 srcIndex.IncrementBy(data2Copy);
                 dstIndex.IncrementBy(data2Copy);
             }
+
+
         }
 
         public static void Clear(ClusteredArray<T> array, int index, int length)
@@ -323,7 +360,7 @@ namespace Alachisoft.NCache.Common.DataStructures.Clustered
             int chunkIndex = index % _lengthThreshold;
             if (superStartIndex == superEndIndex)
             {
-                Array.Clear(array._chunks[superStartIndex], index % _lengthThreshold, length);
+                Array.Clear(array._chunks[superStartIndex], chunkIndex, length); 
                 return;
             }
             for (int i = superStartIndex; i <= superEndIndex; i++)
@@ -347,12 +384,53 @@ namespace Alachisoft.NCache.Common.DataStructures.Clustered
             return clone;
         }
 
+        public static explicit operator ClusteredArray<T>(T[] array)
+        {
+            ClusteredArray<T> newArray = new ClusteredArray<T>(array.Length);
+            newArray.CopyFrom(array, 0, 0, array.Length);
+            return newArray;
+        }
+
+        public static explicit operator T[](ClusteredArray<T> array)
+        {
+            T[] newarray = new T[array.Length];
+            array.CopyTo(newarray, 0, 0, array.Length);
+            return newarray;
+        }
+        public ClusteredArrayList ToInternalList(long newSize)
+        {
+            
+            ClusteredArrayList list = new ClusteredArrayList();
+
+            long consumed = 0;
+            for (int i = 0; i < _chunks.Length; i++)
+            {
+                long dataLeft = newSize - consumed;
+                if (consumed + _chunks[i].Length <= newSize)
+                {
+                    consumed += _chunks[i].Length;
+                    list.Add(_chunks[i]);
+                }
+                else if (dataLeft > 0)
+                {
+                    Array.Resize(ref _chunks[i], Convert.ToInt32(newSize - consumed));
+                    list.Add(_chunks[i]);
+                    break;
+                }
+                else
+                    break;
+            }
+            
+            return list;
+        }
+
+      
+
         public object Clone()
         {
             ClusteredArray<T> newarray = new ClusteredArray<T>(_length);
-            ClusteredArray<T>.Copy(this, 0, newarray, 0, _length);
+            Copy(this, 0, newarray, 0, _length);
             return newarray;
         }
-
     }
 }

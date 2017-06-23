@@ -34,14 +34,13 @@
 
 using System;
 using System.Collections.Generic;
-//using System.Linq;
-using System.Text;
+
 #if DEBUG
 using System.Diagnostics.Contracts;
 #endif
-using System.Diagnostics;
 using System.Collections.ObjectModel;
 using System.Runtime;
+using System.Diagnostics;
 
 namespace Alachisoft.NCache.Common.DataStructures.Clustered
 {

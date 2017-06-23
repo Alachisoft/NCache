@@ -13,7 +13,6 @@
 using System;
 using System.IO;
 
-
 namespace Alachisoft.NGroups
 {
     public class OperationResponse

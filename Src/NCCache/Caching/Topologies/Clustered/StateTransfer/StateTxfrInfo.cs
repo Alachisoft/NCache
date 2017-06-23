@@ -1,4 +1,4 @@
-// Copyright (c) 2015 Alachisoft
+// Copyright (c) 2017 Alachisoft
 // 
 // Licensed under the Apache License, Version 2.0 (the "License");
 // you may not use this file except in compliance with the License.
@@ -12,11 +12,9 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-
 using System.Collections;
 using Alachisoft.NCache.Common.DataStructures.Clustered;
 using System.IO;
-
 
 namespace Alachisoft.NCache.Caching.Topologies.Clustered
 {
@@ -24,8 +22,6 @@ namespace Alachisoft.NCache.Caching.Topologies.Clustered
     {
         public HashVector data;
         public bool transferCompleted;
-        //private ArrayList _payLoad;
-        //private ArrayList _payLoadCompilationInformation;
         private long sendDataSize;
         private Stream stream;
 
@@ -43,12 +39,6 @@ namespace Alachisoft.NCache.Caching.Topologies.Clustered
             this.stream = st;
         }
 
-        //public StateTxfrInfo(Hashtable data, ArrayList payLoad, ArrayList payLoadCompInfo, bool transferCompleted, long dataSize)
-        //    : this(data, payLoad, payLoadCompInfo, transferCompleted)
-        //{           
-        //    this.sendDataSize = dataSize;
-        //}
-
         public Stream SerlizationStream
         {
             get { return this.stream; }
@@ -58,24 +48,13 @@ namespace Alachisoft.NCache.Caching.Topologies.Clustered
         {
             get { return sendDataSize; }
         }
-
-        //public ArrayList PayLoad
-        //{
-        //    get { return _payLoad; }
-        //}
-
-        //public ArrayList PayLoadCompilationInfo
-        //{
-        //    get { return _payLoadCompilationInformation; }
-        //}
-
+       
         #region ICompactSerializable Members
 
         void Runtime.Serialization.ICompactSerializable.Deserialize(Runtime.Serialization.IO.CompactReader reader)
         {
             data = (HashVector)reader.ReadObject();
             transferCompleted = reader.ReadBoolean();
-            //_payLoadCompilationInformation = reader.ReadObject() as ArrayList;
             this.sendDataSize = reader.ReadInt64();
         }
 
@@ -83,7 +62,6 @@ namespace Alachisoft.NCache.Caching.Topologies.Clustered
         {
             writer.WriteObject(data);
             writer.Write(transferCompleted);
-            //writer.WriteObject(_payLoadCompilationInformation);
             writer.Write(this.sendDataSize);
         }
 

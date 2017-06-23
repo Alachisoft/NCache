@@ -1,4 +1,4 @@
-// Copyright (c) 2015 Alachisoft
+// Copyright (c) 2017 Alachisoft
 // 
 // Licensed under the Apache License, Version 2.0 (the "License");
 // you may not use this file except in compliance with the License.
@@ -11,6 +11,7 @@
 // WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
 // See the License for the specific language governing permissions and
 // limitations under the License.
+
 using System;
 using System.Collections;
 using Alachisoft.NCache.Caching;
@@ -66,6 +67,8 @@ namespace Alachisoft.NCache.Web.Command
         /// <summary>Tells if the broker is reset due to lost connection</summary>
         private bool _brokerReset = false;
 
+        /// <summary>Cache Initialization Token</summary>
+        private byte[] _token;
 
         /// <summary>Tells with which ip connection is broken</summary>
         private Common.Net.Address _resetConnectionIP;
@@ -153,7 +156,17 @@ namespace Alachisoft.NCache.Web.Command
         EventDataFilter _dataFilter = EventDataFilter.None;
 
 
+        private List<Common.DataReader.ReaderResultSet> _readerResultSets = new List<Common.DataReader.ReaderResultSet>();
+        private Common.DataReader.ReaderResultSet _readerNextChunk = null;
 
+        public List<Common.DataReader.ReaderResultSet> ReaderResultSets
+        { get { return _readerResultSets; } }
+
+        public Common.DataReader.ReaderResultSet ReaderNextChunk
+        {
+            get { return _readerNextChunk; }
+            set { _readerNextChunk = value; }
+        }
        
 
         public Alachisoft.NCache.Caching.EventId EventId
@@ -179,6 +192,7 @@ namespace Alachisoft.NCache.Web.Command
         /// </summary>
         private int _sequenceId = 1;
         private int _numberOfChunks = 1;
+        private bool _isRunning = false;
 
         internal int SequenceId
         {
@@ -195,7 +209,10 @@ namespace Alachisoft.NCache.Web.Command
             get { return _cacheType; }
         }
 
-       
+        internal byte[] Token
+        {
+            get { return _token; }
+        }      
 
         internal TypeInfoMap TypeMap
         {
@@ -417,6 +434,7 @@ namespace Alachisoft.NCache.Web.Command
                     case Response.Type.UNREGISTER_KEY_NOTIF:
                     case Response.Type.UNLOCK:
                     case Response.Type.DISPOSE:
+                    case Response.Type.DISPOSE_READER:
                         _requestId = value.requestId;
                         break;
 
@@ -513,6 +531,7 @@ namespace Alachisoft.NCache.Web.Command
                     case Response.Type.INIT:
                         _requestId = value.requestId;
                         _cacheType = value.initCache.cacheType;
+                        _token = value.initCache.token;
                         _response = value;
                         break;
 
@@ -669,6 +688,12 @@ namespace Alachisoft.NCache.Web.Command
                         }
                         break;
 
+                    case Response.Type.EXECUTE_READER:
+                    case Response.Type.GET_READER_CHUNK:
+                        _requestId = value.requestId;
+                        _response = value;
+                        break;
+
                     case Response.Type.ADD_BULK:
                         _requestId = value.requestId;
                         _intendedRecipient = value.intendedRecipient;
@@ -711,7 +736,7 @@ namespace Alachisoft.NCache.Web.Command
                         {
                             case QueryType.AGGREGATE_FUNCTIONS:
                                 _resultSet.Type = Alachisoft.NCache.Caching.Queries.QueryType.AggregateFunction;
-                                // proto to QueryResultSet; if value is "" this means null is returned
+                                // 20110204 proto to QueryResultSet; if value is "" this means null is returned
                                 _resultSet.AggregateFunctionType = (Alachisoft.NCache.Common.Enum.AggregateFunctionType)(int)protoResultSet.aggregateFunctionType;
                                 if (protoResultSet.aggregateFunctionResult.value != null)
                                 {
@@ -854,6 +879,12 @@ namespace Alachisoft.NCache.Web.Command
                             }
                         }
                         break;
+
+                    case Response.Type.GET_CACHE_BINDING:
+                        _requestId = value.requestId;
+                        _serverIp = System.Net.IPAddress.Parse(value.getCacheBindingResponse.server);
+                        _serverPort = value.getCacheBindingResponse.port;
+                        break;
               }
             }
         }
@@ -994,6 +1025,8 @@ namespace Alachisoft.NCache.Web.Command
                         throw new OperationFailedException(_exceptionString);
                     case ExceptionType.STATE_TRANSFER_EXCEPTION:
                         throw new StateTransferInProgressException(_exceptionString);
+                    case ExceptionType.INVALID_READER_EXCEPTION:
+                        throw new InvalidReaderException(_exceptionString);
 
                     case ExceptionType.MAX_CLIENTS_REACHED:
                         throw new System.Exception("Server cannot accept more than 3 clients in this edition of NCache.");

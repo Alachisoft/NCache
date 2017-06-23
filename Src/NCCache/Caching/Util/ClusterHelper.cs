@@ -1,4 +1,4 @@
-// Copyright (c) 2015 Alachisoft
+// Copyright (c) 2017 Alachisoft
 // 
 // Licensed under the Apache License, Version 2.0 (the "License");
 // you may not use this file except in compliance with the License.
@@ -11,6 +11,7 @@
 // WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
 // See the License for the specific language governing permissions and
 // limitations under the License.
+
 using System;
 using System.Collections;
 
@@ -34,11 +35,10 @@ namespace Alachisoft.NCache.Caching.Util
     /// </summary>
     internal class ClusterHelper
     {
-        public static void ValidateResponses(RspList results, Type type, string serializationContext)
+        public static void ValidateResponses(RspList results, Type type, string serializationContext, bool throwSuspected = false)
         {
             if (results == null) return;
 
-            //muds:
 
             ArrayList parserExceptions = new ArrayList();
             ArrayList exceptions = new ArrayList(11);
@@ -48,6 +48,7 @@ namespace Alachisoft.NCache.Caching.Util
 
                 if (rsp.wasSuspected())
                 {
+                    if (throwSuspected) throw new Alachisoft.NGroups.SuspectedException(rsp.Sender);
                     continue;
                 }
 
@@ -60,12 +61,22 @@ namespace Alachisoft.NCache.Caching.Util
                 {
                     object rspValue = rsp.Value;
 
+                    if ((rspValue as Exception) is Alachisoft.NCache.Runtime.Exceptions.InvalidReaderException)
+                    {
+                        Exception invlidReader = rspValue as Exception;
+                        throw invlidReader;
+
+                    }
                     if (rspValue is ParserException)
                     {
                         parserExceptions.Add((Exception)rspValue);
                         continue;
                     }
-
+                    if (((rspValue as Exception) is Alachisoft.NCache.Parser.AttributeIndexNotDefined) || ((rspValue as Exception) is Alachisoft.NCache.Parser.TypeIndexNotDefined))
+                    {
+                        parserExceptions.Add((Exception)rspValue);
+                        continue;
+                    }        
                     if (rspValue is Exception)
                     {
                         exceptions.Add((Exception)rspValue);
@@ -79,7 +90,6 @@ namespace Alachisoft.NCache.Caching.Util
                     }
                 }
             }
-            //muds:
             //in case or partitioned caches search requests are broadcasted.
             //it is possible that tag index are defined on one node but not defined on some other node.
             //we will throw the exception back only if we receive exception from every node.
@@ -132,13 +142,11 @@ namespace Alachisoft.NCache.Caching.Util
 
                 if (rsp.wasSuspected())
                 {
-                    //throw new Alachisoft.NGroups.SuspectedException(rsp.Sender);
                     suspectedCount++;
                     continue;
                 }
                 if (!rsp.wasReceived() && !rsp.wasSuspected())
                 {
-                    //throw new Alachisoft.NGroups.TimeoutException();
                     timeoutCount++;
                     continue;
                 }
@@ -205,16 +213,13 @@ namespace Alachisoft.NCache.Caching.Util
             {
                 Rsp rsp = (Rsp)results.elementAt(i);
 
-
                 if (!rsp.wasReceived() && !rsp.wasSuspected())
                 {
-                    
                     timeoutCount++;
                     continue;
                 }
                 if (rsp.wasSuspected())
                 {
-                    
                     suspectedCount++;
                     continue;
                 }
@@ -243,7 +248,6 @@ namespace Alachisoft.NCache.Caching.Util
             return retRsp;
         }
 
-
         public static LockOptions FindAtomicIsLockedStatusReplicated(RspList results, ref object lockId, ref DateTime lockDate)
         {
             LockOptions lockInfo = null;
@@ -270,7 +274,6 @@ namespace Alachisoft.NCache.Caching.Util
             }
             return lockInfo;
         }
-
 
         public static bool FindAtomicLockStatusReplicated(RspList results, ref object lockId, ref DateTime lockDate)
         {
@@ -385,8 +388,6 @@ namespace Alachisoft.NCache.Caching.Util
             return res;
         }
 
-
-
         /// <summary>
         /// Returns the array of keys for which Bulk operation failed.
         /// </summary>
@@ -423,14 +424,6 @@ namespace Alachisoft.NCache.Caching.Util
                         failedKeys[result[j]] = result[j];
                     }
                 }
-
-                /*
-                if(Trace.isInfoEnabled) Trace.info("FindAtomicAddStatusReplicated", "Sender = " + rsp.Sender + ", result = " + res);
-                if(res != CacheAddResult.Success && res != CacheAddResult.KeyExists) 
-                {
-                    return res;
-                }
-                */
             }
 
             object[] failed = new object[failedKeys.Count];
@@ -438,7 +431,6 @@ namespace Alachisoft.NCache.Caching.Util
 
             return failed;
         }
-
 
         /// <summary>
         /// Returns the set of nodes where the insertion was performed as an atomic operation.
@@ -530,7 +522,6 @@ namespace Alachisoft.NCache.Caching.Util
             return res;
         }
 
-
         /// <summary>
         /// Returns the set of nodes where the insertion was performed as an atomic operation.
         /// </summary>
@@ -583,7 +574,6 @@ namespace Alachisoft.NCache.Caching.Util
             return insertedKeys;
         }
 
-
         /// <summary>
         /// Find first entry in the response list that is not null and didnt timeout.
         /// </summary>
@@ -595,25 +585,38 @@ namespace Alachisoft.NCache.Caching.Util
                 return null;
 
             Rsp rsp = null;
+            bool found = false;
+            ArrayList removeRsps = null;
             for (int i = 0; i < results.size(); i++)
             {
                 rsp = (Rsp)results.elementAt(i);
 
-                if (rsp.wasSuspected())
+                if (rsp.wasSuspected() || !rsp.wasReceived())
                 {
-                    
-                    results.removeElementAt(i);
-                    continue;
-                }
-                if (!rsp.wasReceived())
-                {
-                    
-                    results.removeElementAt(i);
+                    if (removeRsps == null) removeRsps = new ArrayList();
+
+                    removeRsps.Add(i);
                     continue;
                 }
 
-                if (rsp.Value != null) return rsp;
+                if (rsp.Value != null)
+                {
+                    found = true;
+                    break;
+                }
             }
+
+            if (removeRsps != null && removeRsps.Count > 0)
+            {
+                for (int index = 0; index < removeRsps.Count; index++)
+                {
+                    int removeAt = (int)removeRsps[index];
+                    results.removeElementAt(removeAt);
+                }
+            }
+
+            if (found) return rsp;
+
             return null;
         }
 
@@ -632,25 +635,39 @@ namespace Alachisoft.NCache.Caching.Util
                 return null;
 
             Rsp rsp = null;
+            bool found = false;
+            ArrayList removeRsps = null;
             for (int i = 0; i < results.size(); i++)
             {
                 rsp = (Rsp)results.elementAt(i);
 
-                if (rsp.wasSuspected())
+                if (rsp.wasSuspected() || !rsp.wasReceived())
                 {
-                    
-                    results.removeElementAt(i);
-                    continue;
-                }
-                if (!rsp.wasReceived())
-                {
-                    
-                    results.removeElementAt(i);
+                    if (removeRsps == null) removeRsps = new ArrayList();
+
+                    removeRsps.Add(i);
                     continue;
                 }
 
-                if (rsp.Value != null && rsp.Value.GetType().Equals(type)) return rsp;
+                if (rsp.Value != null && rsp.Value.GetType().Equals(type))
+                {
+                    found = true;
+                    break;
+                }
             }
+
+
+            if (removeRsps != null && removeRsps.Count > 0)
+            {
+                for (int index = 0; index < removeRsps.Count; index++)
+                {
+                    int removeAt = (int)removeRsps[index];
+                    results.removeElementAt(removeAt);
+                }
+            }
+
+            if (found) return rsp;
+
             return null;
         }
 
@@ -668,18 +685,15 @@ namespace Alachisoft.NCache.Caching.Util
                 return null;
 
             Rsp rsp = null;
+            ArrayList removeRsps = null;
             for (int i = 0; i < results.size(); i++)
             {
                 rsp = (Rsp)results.elementAt(i);
 
-                if (rsp.wasSuspected())
+                if (rsp.wasSuspected() || !rsp.wasReceived())
                 {
-                    results.removeElementAt(i);
-                    continue;
-                }
-                if (!rsp.wasReceived())
-                {
-                    results.removeElementAt(i);
+                    if (removeRsps == null) removeRsps = new ArrayList();
+                    removeRsps.Add(rsp);
                     continue;
                 }
 
@@ -688,6 +702,15 @@ namespace Alachisoft.NCache.Caching.Util
                     list.Add(rsp);
                 }
             }
+
+            if (removeRsps != null && removeRsps.Count > 0)
+            {
+                foreach (Rsp r in removeRsps)
+                {
+                    results.removeRsp(r);
+                }
+            }
+
             return list;
         }
 
@@ -841,6 +864,25 @@ namespace Alachisoft.NCache.Caching.Util
             else
                 return null;
         }
+
+        public static void VerifySuspectedResponses(RspList results)
+        {
+            if (results == null)
+                return;
+
+            Rsp rsp = null;
+            for (int i = 0; i < results.size(); i++)
+            {
+                rsp = (Rsp)results.elementAt(i);
+
+                if (rsp.wasSuspected())
+                {
+                    throw new Alachisoft.NGroups.SuspectedException(rsp.Sender);
+                }
+            }
+        }
+
+
     }
 }
 

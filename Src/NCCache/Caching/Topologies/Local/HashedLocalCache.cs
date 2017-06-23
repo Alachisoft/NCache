@@ -1,4 +1,4 @@
-// Copyright (c) 2015 Alachisoft
+// Copyright (c) 2017 Alachisoft
 // 
 // Licensed under the Apache License, Version 2.0 (the "License");
 // you may not use this file except in compliance with the License.
@@ -11,11 +11,13 @@
 // WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
 // See the License for the specific language governing permissions and
 // limitations under the License.
+
 using System.Collections;
 using Alachisoft.NCache.Caching.Exceptions;
 using Alachisoft.NCache.Caching.Statistics;
 using Alachisoft.NCache.Common;
 using Alachisoft.NCache.Common.DataStructures.Clustered;
+using Alachisoft.NCache.Common.Locking;
 
 namespace Alachisoft.NCache.Caching.Topologies.Local
 {
@@ -31,6 +33,8 @@ namespace Alachisoft.NCache.Caching.Topologies.Local
         private long _keyListSize = 0;
 
         private OpLogManager _logMgr;
+
+        private readonly SemaphoreLock _keyListLock = new SemaphoreLock();
 
         public HashedLocalCache(IDictionary cacheClasses, CacheBase parentCache, IDictionary properties, ICacheEventsListener listener, CacheRuntimeContext context, bool logEntries)
             : base(cacheClasses, parentCache, properties, listener, context)
@@ -61,10 +65,8 @@ namespace Alachisoft.NCache.Caching.Topologies.Local
                 {
                     HashVector keyTbl = _keyList[bucketId] as HashVector;
                     keyList.AddRange(keyTbl.Keys);
-                    //return _keyList[bucketId] as ArrayList;
                 }
             }
-            //return null;
         }
 
         /// <summary>
@@ -130,25 +132,37 @@ namespace Alachisoft.NCache.Caching.Topologies.Local
 
             if (_keyList == null)
                 _keyList = new HashVector();
+
             if (_keyList != null)
             {
-                if (_keyList.Contains(bucketId))
+                HashVector keys;
+                bool isKeyExist = false;
+        
+                _keyListLock.Enter();
+
+                if (!_keyList.Contains(bucketId))
                 {
-                    HashVector keys = (HashVector)_keyList[bucketId];
-                    long oldSize = keys.BucketCount * MemoryUtil.NetHashtableOverHead;
+                    keys = new HashVector();
                     keys[key] = null;
-                    long newSize = keys.BucketCount * MemoryUtil.NetHashtableOverHead;
-                    _keyListSize += newSize - oldSize;
-                }
-                else
-                {
-                    HashVector keys = new HashVector();
-                    long oldSize = keys.BucketCount * MemoryUtil.NetHashtableOverHead;
-                    keys[key] = null;
-                    long newSize = keys.BucketCount * MemoryUtil.NetHashtableOverHead;
-                    _keyListSize += newSize - oldSize;
+                    long keySize = keys.BucketCount * MemoryUtil.NetHashtableOverHead;
+                    long currentsize = _keyListSize;
+                    _keyListSize = currentsize + keySize;
                     _keyList[bucketId] = keys;
+                    isKeyExist = true;
                 }
+
+                _keyListLock.Exit();
+         
+                if (isKeyExist) return;
+                keys = (HashVector)_keyList[bucketId];
+                long oldSize = keys.BucketCount * MemoryUtil.NetHashtableOverHead;
+                lock (keys)
+                {
+                    keys[key] = null;
+                }
+                long newSize = keys.BucketCount * MemoryUtil.NetHashtableOverHead;
+                long tmpsize = _keyListSize;
+                _keyListSize = tmpsize + (newSize - oldSize);
             }
         }
 
@@ -158,22 +172,42 @@ namespace Alachisoft.NCache.Caching.Topologies.Local
             {
                 ((BucketStatistics)_stats.LocalBuckets[bucketId]).Decrement(dataSize);
             }
-
+            bool isKeysEmpty = false;
+            HashVector keys = null;
             if (_keyList != null)
             {
-                if (_keyList.Contains(bucketId))
-                {
-                    HashVector keys = (HashVector)_keyList[bucketId];
-                    long oldSize = keys.BucketCount * MemoryUtil.NetHashtableOverHead;
-                    keys.Remove(key);
-                    long newSize = 0;
-                    if (keys.Count == 0)
+
+                _keyListLock.Enter();
+
+                    if (_keyList.Contains(bucketId))
                     {
-                        _keyList.Remove(bucketId);
+                        keys = (HashVector)_keyList[bucketId];
                     }
-                    else
-                        newSize = keys.BucketCount * MemoryUtil.NetHashtableOverHead;
-                    _keyListSize += newSize - oldSize;
+
+                _keyListLock.Exit();
+
+                if (keys != null)
+                {
+                    long oldSize = keys.BucketCount * MemoryUtil.NetHashtableOverHead;
+                    long newSize = 0;
+                    lock (keys)
+                    {
+                        keys.Remove(key);
+                        if (keys.Count != 0)
+                            newSize = keys.BucketCount * MemoryUtil.NetHashtableOverHead;
+                        else
+                            isKeysEmpty = true;
+                    }
+                    long currentsize = _keyListSize;
+                    _keyListSize = currentsize + (newSize - oldSize);
+                    if (isKeysEmpty)
+                    {
+                        _keyListLock.Enter();
+
+                            _keyList.Remove(bucketId);
+
+                             _keyListLock.Exit();
+                    }
                     if (_keyListSize < 0) _keyListSize = 0;
                 }
             }
@@ -230,7 +264,6 @@ namespace Alachisoft.NCache.Caching.Topologies.Local
                                 }
                             }
                         }
-                        //muds:
                         //disable logging for this bucket...
                         _logMgr.RemoveLogger((int)ie.Current);
                     }
@@ -339,9 +372,7 @@ namespace Alachisoft.NCache.Caching.Topologies.Local
         internal override CacheInsResult InsertInternal(object key, CacheEntry cacheEntry, bool isUserOperation, CacheEntry oldEntry, OperationContext operationContext, bool updateIndex)
         {
             int bucketId = GetBucketId(key as string);
-            OperationLogger opLogger = null;
 
-            //muds:
             //fetch the operation logger...
             if (_logMgr.IsOperationAllowed(bucketId) && LocalBuckets.Contains(bucketId))
             {

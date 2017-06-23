@@ -1,4 +1,4 @@
-// Copyright (c) 2015 Alachisoft
+// Copyright (c) 2017 Alachisoft
 // 
 // Licensed under the Apache License, Version 2.0 (the "License");
 // you may not use this file except in compliance with the License.
@@ -11,6 +11,7 @@
 // WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
 // See the License for the specific language governing permissions and
 // limitations under the License.
+
 using System;
 using System.Collections;
 
@@ -200,6 +201,7 @@ namespace Alachisoft.NCache.Web.Caching
            return InitializeCache(cacheId, new CacheInitParams());
         }
 
+
         public static Cache InitializeCache(string cacheId, CacheInitParams initParams)
         {
             return InitializeCacheInternal(cacheId, initParams);
@@ -240,7 +242,7 @@ namespace Alachisoft.NCache.Web.Caching
                                 case CacheMode.OutProc: config.InProc = false; break;
                             }
                         }
-                        break; //muds: break the while loop...
+                        break; 
                     } while (maxTries > 0);
                 }
 

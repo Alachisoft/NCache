@@ -10,6 +10,7 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 // $Id: ChannelClosedException.java,v 1.2 2003/11/27 21:36:46 belaban Exp $
+
 using System;
 
 namespace Alachisoft.NGroups

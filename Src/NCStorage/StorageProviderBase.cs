@@ -1,4 +1,4 @@
-// Copyright (c) 2015 Alachisoft
+// Copyright (c) 2017 Alachisoft
 // 
 // Licensed under the Apache License, Version 2.0 (the "License");
 // you may not use this file except in compliance with the License.
@@ -11,6 +11,7 @@
 // WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
 // See the License for the specific language governing permissions and
 // limitations under the License.
+
 using System;
 using System.Collections;
 using System.Data;
@@ -159,32 +160,19 @@ namespace Alachisoft.NCache.Storage
             Initialize(properties, evictionEnabled);
             _ncacheLog = NCacheLog;
 
+            _evictionReportSize = ServiceConfiguration.CacheSizeThreshold;
+            if (_evictionReportSize > 0)
+                _reportCacheNearEviction = true;
 
-            string tmp = System.Configuration.ConfigurationSettings.AppSettings["NCacheServer.CacheSizeThreshold"];
-
-            if (tmp != null && tmp != "")
-            {
-                int size = Convert.ToInt32(tmp);
-                if (size > 0)
-                {
-                    _evictionReportSize = size;
-                    _reportCacheNearEviction = true;
-                }
-            }
-            tmp = System.Configuration.ConfigurationSettings.AppSettings["NCacheServer.CacheSizeReportInterval"];
-
-            if (tmp != null && tmp != "")
-            {
-                int interval = Convert.ToInt32(tmp);
-                if (interval > 5)
-                {
-                    _reportInterval = interval;
-                }
-            }
+            _reportInterval = ServiceConfiguration.CacheSizeReportInterval;
         }
 
         protected void CheckForStoreNearEviction()
         {
+            //check for updated Properties in service config
+            _evictionReportSize = ServiceConfiguration.CacheSizeThreshold;
+            _reportInterval = ServiceConfiguration.CacheSizeReportInterval;
+
             if (_reportCacheNearEviction && !VirtualUnlimitedSpace)
             {
                 if (_lastReportedTime.AddMinutes(_reportInterval) < DateTime.Now)
@@ -433,13 +421,6 @@ namespace Alachisoft.NCache.Storage
             long nextSize = TotalDataSize + item.InMemorySize + keySize;
             StoreStatus status = StoreStatus.HasSpace;
 
-            if (SystemMemoryTask.PercentMemoryUsed > 90)
-            {
-                if (_extraDataSize > 0)
-                    status = StoreStatus.NearEviction;
-                else
-                    status = StoreStatus.HasNotEnoughSpace;
-            }
             if (nextSize > maxSize)
             {
                 if (nextSize > (maxSize + _extraDataSize))
@@ -474,16 +455,7 @@ namespace Alachisoft.NCache.Storage
             long nextSize = TotalDataSize + newItem.InMemorySize - (oldItem == null ? -keySize : oldItem.InMemorySize);
             StoreStatus status = StoreStatus.HasSpace;
 
-            try
-            {
-                if (SystemMemoryTask.PercentMemoryUsed > 90)
-                {
-                    if (_extraDataSize > 0)
-                        return StoreStatus.NearEviction;
-                    return StoreStatus.HasNotEnoughSpace;
-                }
-            }
-            catch (Exception) { }
+           
 
             if (nextSize > maxSize)
             {

@@ -1,4 +1,4 @@
-// Copyright (c) 2015 Alachisoft
+// Copyright (c) 2017 Alachisoft
 // 
 // Licensed under the Apache License, Version 2.0 (the "License");
 // you may not use this file except in compliance with the License.
@@ -11,6 +11,7 @@
 // WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
 // See the License for the specific language governing permissions and
 // limitations under the License.
+
 using System;
 using System.Collections;
 using System.Collections.Generic;
@@ -24,8 +25,6 @@ namespace Alachisoft.NCache.Caching.Topologies.Clustered
         private HashVector _queue = new HashVector(1000);
         private HashVector _keyToIndexMap = new HashVector(1000);
         private HashVector _indexToKeyMap = new HashVector(1000);
-        //private Dictionary<string, int> _keyToIndexMap = new Dictionary<string, int>(1000);
-        //private Dictionary<int, string> _indexToKeyMap = new Dictionary<int, string>(1000);
 
         private int _tail = -1;
         private int _head = -1;

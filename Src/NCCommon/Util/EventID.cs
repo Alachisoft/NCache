@@ -1,4 +1,4 @@
-// Copyright (c) 2015 Alachisoft
+// Copyright (c) 2017 Alachisoft
 // 
 // Licensed under the Apache License, Version 2.0 (the "License");
 // you may not use this file except in compliance with the License.
@@ -11,6 +11,7 @@
 // WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
 // See the License for the specific language governing permissions and
 // limitations under the License.
+
 namespace Alachisoft.NCache.Common
 {
     public class EventID
@@ -35,7 +36,7 @@ namespace Alachisoft.NCache.Common
         public const int GeneralError = 1017;
         public const int GeneralInformation = 1018;
         public const int ConfigurationError = 1019;
-        public const int LicensingError = 1020;
+
         public const int BadClientFound = 1021;
 
         public static string EventText(int eventID)
@@ -97,9 +98,7 @@ namespace Alachisoft.NCache.Common
                 case EventID.ConfigurationError:
                     text = "Configuration Error";
                     break;
-                case EventID.LicensingError:
-                    text = "Licensing Error";
-                    break;
+               
                 case EventID.BadClientFound:
                     text = "Bad Client Found";
                     break;

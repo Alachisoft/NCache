@@ -1,5 +1,5 @@
-Microsoft Visual Studio Solution File, Format Version 11.00
-# Visual Studio 2010
+Microsoft Visual Studio Solution File, Format Version 12.00
+# Visual Studio 2012
 Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "ListCaches.4x", "ListCaches\ListCaches.4x.csproj", "{5D753ABA-4B74-4473-9149-6DA9E869C542}"
 EndProject
 Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "StartCache.4x", "StartCache\StartCache.4x.csproj", "{8F90193E-9A84-42EF-9DF6-B71132517235}"
@@ -25,8 +25,6 @@ EndProject
 Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "RemoveClientNode.4x", "RemoveClientNode\RemoveClientNode.4x.csproj", "{D3957D74-17B3-4626-9BF1-D917AEB67D4F}"
 EndProject
 Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "ConfigureCache", "ConfigureCache\ConfigureCache.csproj", "{CAF1B738-D6A9-482D-8B18-73BBDA1AECB3}"
-EndProject
-Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "ToolServerOperations.4x", "ToolServerOperations\ToolServerOperations.4x.csproj", "{200CB06E-BC59-469C-9339-81A0C16D79CF}"
 EndProject
 Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "AddQueryIndex", "AddQueryIndex\AddQueryIndex.csproj", "{C1BF516D-53BF-4F86-B1AC-A8BAB29B3840}"
 EndProject
@@ -180,16 +178,6 @@ Global
 		{CAF1B738-D6A9-482D-8B18-73BBDA1AECB3}.Release|Mixed Platforms.Build.0 = Release|Any CPU
 		{CAF1B738-D6A9-482D-8B18-73BBDA1AECB3}.Release|x86.ActiveCfg = Release|x86
 		{CAF1B738-D6A9-482D-8B18-73BBDA1AECB3}.Release|x86.Build.0 = Release|x86
-		{200CB06E-BC59-469C-9339-81A0C16D79CF}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
-		{200CB06E-BC59-469C-9339-81A0C16D79CF}.Debug|Any CPU.Build.0 = Debug|Any CPU
-		{200CB06E-BC59-469C-9339-81A0C16D79CF}.Debug|Mixed Platforms.ActiveCfg = Debug|Any CPU
-		{200CB06E-BC59-469C-9339-81A0C16D79CF}.Debug|Mixed Platforms.Build.0 = Debug|Any CPU
-		{200CB06E-BC59-469C-9339-81A0C16D79CF}.Debug|x86.ActiveCfg = Debug|Any CPU
-		{200CB06E-BC59-469C-9339-81A0C16D79CF}.Release|Any CPU.ActiveCfg = Release|Any CPU
-		{200CB06E-BC59-469C-9339-81A0C16D79CF}.Release|Any CPU.Build.0 = Release|Any CPU
-		{200CB06E-BC59-469C-9339-81A0C16D79CF}.Release|Mixed Platforms.ActiveCfg = Release|Any CPU
-		{200CB06E-BC59-469C-9339-81A0C16D79CF}.Release|Mixed Platforms.Build.0 = Release|Any CPU
-		{200CB06E-BC59-469C-9339-81A0C16D79CF}.Release|x86.ActiveCfg = Release|Any CPU
 		{C1BF516D-53BF-4F86-B1AC-A8BAB29B3840}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
 		{C1BF516D-53BF-4F86-B1AC-A8BAB29B3840}.Debug|Any CPU.Build.0 = Debug|Any CPU
 		{C1BF516D-53BF-4F86-B1AC-A8BAB29B3840}.Debug|Mixed Platforms.ActiveCfg = Debug|Any CPU

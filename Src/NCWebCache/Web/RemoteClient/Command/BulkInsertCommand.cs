@@ -1,4 +1,4 @@
-// Copyright (c) 2015 Alachisoft
+// Copyright (c) 2017 Alachisoft
 // 
 // Licensed under the Apache License, Version 2.0 (the "License");
 // you may not use this file except in compliance with the License.
@@ -11,18 +11,10 @@
 // WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
 // See the License for the specific language governing permissions and
 // limitations under the License.
-using System;
-using System.IO;
-using System.Text;
-using System.Collections;
 
-using Alachisoft.NCache.Web.Caching.Util;
-using Alachisoft.NCache.Serialization.Formatters;
+using System.Collections;
 using Alachisoft.NCache.Web.Caching;
-using Alachisoft.NCache.Runtime.Exceptions;
 using Alachisoft.NCache.Caching.Util;
-using Alachisoft.NCache.Common.Protobuf.Util;
-using Alachisoft.NCache.Web.Communication;
 using Alachisoft.NCache.Common.Protobuf;
 using Alachisoft.NCache.Runtime.Events;
 
@@ -62,7 +54,6 @@ namespace Alachisoft.NCache.Web.Command
                 _insertCommand.flag = item.FlagMap.Data;
                _insertCommand.priority = (int)item.Priority;
 
-                // Updated in Version 4.2 [Dated 20-Nov-2013; Author: Sami]
                 ObjectQueryInfo objectQueryInfo = new ObjectQueryInfo();
 
                 if (item.QueryInfo["query-info"] != null)

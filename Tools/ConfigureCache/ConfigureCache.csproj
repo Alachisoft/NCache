@@ -12,7 +12,6 @@
     <AssemblyName>createcache</AssemblyName>
     <TargetFrameworkVersion>v4.0</TargetFrameworkVersion>
     <FileAlignment>512</FileAlignment>
-    <AssemblyOriginatorKeyFile>..\..\Resources\ncache.snk</AssemblyOriginatorKeyFile>
     <TargetFrameworkProfile />
     <SccProjectName>
     </SccProjectName>
@@ -77,24 +76,22 @@
   <PropertyGroup>
     <ApplicationIcon>App.ico</ApplicationIcon>
   </PropertyGroup>
-  <PropertyGroup>
-    <SignAssembly>true</SignAssembly>
-  </PropertyGroup>
-  <PropertyGroup>
-    <AssemblyOriginatorKeyFile>
-    </AssemblyOriginatorKeyFile>
-  </PropertyGroup>
+
   <ItemGroup>
-    <Reference Include="Alachisoft.NCache.Cache, Version=4.4.0.0, Culture=neutral, PublicKeyToken=1448e8d1123e9096, processorArchitecture=MSIL">
+    <Reference Include="Alachisoft.NCache.Cache, Version=4.6.0.0, Culture=neutral, PublicKeyToken=cff5926ed6a53769, processorArchitecture=MSIL">
+      <SpecificVersion>False</SpecificVersion>
       <HintPath>..\..\Src\build\Server\4x\Alachisoft.NCache.Cache.dll</HintPath>
     </Reference>
-    <Reference Include="Alachisoft.NCache.Common, Version=4.4.0.0, Culture=neutral, PublicKeyToken=1448e8d1123e9096, processorArchitecture=MSIL">
+    <Reference Include="Alachisoft.NCache.Common, Version=4.6.0.0, Culture=neutral, PublicKeyToken=cff5926ed6a53769, processorArchitecture=MSIL">
+      <SpecificVersion>False</SpecificVersion>
       <HintPath>..\..\Src\build\Server\4x\Alachisoft.NCache.Common.dll</HintPath>
     </Reference>
-    <Reference Include="Alachisoft.NCache.Management, Version=4.4.0.0, Culture=neutral, PublicKeyToken=1448e8d1123e9096, processorArchitecture=MSIL">
+    <Reference Include="Alachisoft.NCache.Management, Version=4.6.0.0, Culture=neutral, PublicKeyToken=cff5926ed6a53769, processorArchitecture=MSIL">
+      <SpecificVersion>False</SpecificVersion>
       <HintPath>..\..\Src\build\Server\4x\Alachisoft.NCache.Management.dll</HintPath>
     </Reference>
-    <Reference Include="Alachisoft.NCache.Runtime, Version=4.4.0.0, Culture=neutral, PublicKeyToken=1448e8d1123e9096, processorArchitecture=MSIL">
+    <Reference Include="Alachisoft.NCache.Runtime, Version=4.6.0.0, Culture=neutral, PublicKeyToken=cff5926ed6a53769, processorArchitecture=MSIL">
+      <SpecificVersion>False</SpecificVersion>
       <HintPath>..\..\Src\build\Server\4x\Alachisoft.NCache.Runtime.dll</HintPath>
     </Reference>
     <Reference Include="System" />
@@ -113,12 +110,6 @@
   </ItemGroup>
   <ItemGroup>
     <Content Include="App.ico" />
-  </ItemGroup>
-  <ItemGroup>
-    <ProjectReference Include="..\ToolServerOperations\ToolServerOperations.4x.csproj">
-      <Project>{200CB06E-BC59-469C-9339-81A0C16D79CF}</Project>
-      <Name>ToolServerOperations.4x</Name>
-    </ProjectReference>
   </ItemGroup>
   <Import Project="$(MSBuildToolsPath)\Microsoft.CSharp.targets" />
   <PropertyGroup>

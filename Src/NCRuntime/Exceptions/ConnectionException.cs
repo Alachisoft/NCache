@@ -1,4 +1,4 @@
-// Copyright (c) 2015 Alachisoft
+// Copyright (c) 2017 Alachisoft
 // 
 // Licensed under the Apache License, Version 2.0 (the "License");
 // you may not use this file except in compliance with the License.
@@ -11,6 +11,7 @@
 // WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
 // See the License for the specific language governing permissions and
 // limitations under the License.
+
 using System;
 using System.Runtime.Serialization;
 using System.Security.Permissions;
@@ -38,6 +39,8 @@ namespace Alachisoft.NCache.Runtime.Exceptions
     [Serializable]
     public class ConnectionException : OperationFailedException
     {
+        private System.Net.IPAddress _address = null;
+        private int _port;
         /// <summary> 
         /// default constructor. 
         /// </summary>
@@ -45,6 +48,35 @@ namespace Alachisoft.NCache.Runtime.Exceptions
         {
         }
 
+        /// <summary> 
+        /// overloaded constructor, takes the reason, ipAddress and port as parameter. 
+        /// </summary>
+        public ConnectionException(string reason, System.Net.IPAddress ipAddress, int port)
+        {
+            _address = ipAddress;
+            _port = port;
+        }
+
+        /// <summary> 
+        /// overloaded constructor, takes the  ipAddress and port as parameter. 
+        /// </summary>
+        public ConnectionException(System.Net.IPAddress ipAddress, int port)
+        {
+            _address = ipAddress;
+            _port = port;
+        }
+
+        /// <summary>
+        /// IPAddress of broken connection
+        /// </summary>
+        public System.Net.IPAddress IPAddress
+        { get { return _address; } }
+
+        /// <summary>
+        /// Port of broken connection
+        /// </summary>
+        public int Port
+        { get { return _port; } }
         /// <summary> 
         /// overloaded constructor, takes the reason as parameter. 
         /// </summary>
