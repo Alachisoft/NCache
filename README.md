@@ -6,6 +6,8 @@ NCache is used by hundreds of companies all over the world in mission critical a
 
 **Features:**
 
+- Separate process for cache  
+- Query execution using data reader approach	
 -	Cache CRUD operations
 -	Bulk CRUD operations
 -	Lock/Unlock cached items
