@@ -1,4 +1,4 @@
-// Copyright (c) 2015 Alachisoft
+// Copyright (c) 2017 Alachisoft
 // 
 // Licensed under the Apache License, Version 2.0 (the "License");
 // you may not use this file except in compliance with the License.
@@ -11,24 +11,18 @@
 // WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
 // See the License for the specific language governing permissions and
 // limitations under the License.
+
 using System;
 using System.Collections;
-using System.Text;
 using System.IO;
 using System.Xml;
-using System.Configuration;
-using Microsoft.Win32;
 using Alachisoft.NCache.Common;
-using Alachisoft.NCache.Web.Caching.Util;
 using Alachisoft.NCache.Web.Caching;
-using Alachisoft.NCache.Management;
 using System.Collections.Generic;
-using Alachisoft.NCache.Common.Monitoring;
-using Runtime = Alachisoft.NCache.Runtime;
+using System.Globalization;
+using System.Threading;
 namespace Alachisoft.NCache.Web.RemoteClient.Config
 {
-
-
     /// <summary>
     /// Contains the
     /// </summary>
@@ -60,23 +54,16 @@ namespace Alachisoft.NCache.Web.RemoteClient.Config
         private bool _enableDetailedClientLogs = false;
         private Search _search = Search.LocalSearch;
         private Search _result = Search.LocalSearch;
-       
-       
-
         internal const string OPTIMEOUT = "opTimeOut";
         internal const string CONNECTIONTIMEOUT = "connectionTimeOut";
         internal const string CONNECTIONRETRIES = "connectionRetries";
         internal const string RETRYINTERVAL = "retryInterval";
         internal const string LOADBALANCE = "balanceNodes";
         internal const string PORT = "port";
-      
-        internal const string RETRYCONNECTIONDELAY = "retryConnectionDelay"; //[ for connection retry delay]
-       
+        internal const string RETRYCONNECTIONDELAY = "retryConnectionDelay"; 
         internal const string SERVERLIST = "serverlist";
         internal const string BINDIP = "bindIP";
         internal const string JVCPORT = "jvc-port";
-
-        
         private bool _isAzureRemoteClient = false;
 
         public bool EnableClientLogs
@@ -89,12 +76,10 @@ namespace Alachisoft.NCache.Web.RemoteClient.Config
             get { return _enableDetailedClientLogs; }
         }
 
-
         public  bool IPMappingConfigured 
         {
           get { return _isAzureRemoteClient; }
         }
-
 
         public ClientConfiguration(string cacheId)
         {
@@ -103,8 +88,7 @@ namespace Alachisoft.NCache.Web.RemoteClient.Config
             initParam = null;
         }
 
-
-        //Moiz: added to set the internal cacheInitparam with the parameters from above
+        // added to set the internal cacheInitparam with the parameters from above
         internal ClientConfiguration(string cacheId, CacheInitParams param)
         {
             _cacheId = cacheId;
@@ -126,13 +110,10 @@ namespace Alachisoft.NCache.Web.RemoteClient.Config
             }
         }
 
-
         public int ServerCount
         {
             get { return _servers.Count; }
         }
-
-        
 
         /// <summary>
         /// Add remote server to list only if it is not present
@@ -200,26 +181,35 @@ namespace Alachisoft.NCache.Web.RemoteClient.Config
                     configuration.Load(fs);
 
                     XmlNodeList clientNodes = configuration.GetElementsByTagName("ncache-client");
-                    if (clientNodes != null && clientNodes.Count > 0)
+                    CultureInfo cultureInfo = Thread.CurrentThread.CurrentCulture;
+                    try
                     {
-                        XmlNode childNode = clientNodes.Item(0);
-                        if (childNode != null)
+                        Thread.CurrentThread.CurrentCulture = new CultureInfo("en-US");
+                        if (clientNodes != null && clientNodes.Count > 0)
                         {
-                            XmlAttributeCollection attributes = childNode.Attributes;
-                            if (attributes != null)
+                            XmlNode childNode = clientNodes.Item(0);
+                            if (childNode != null)
                             {
-                                string currentAttrib = string.Empty;
-
-                                if (attributes["bind-ip-address"] != null)
+                                XmlAttributeCollection attributes = childNode.Attributes;
+                                if (attributes != null)
                                 {
-                                    currentAttrib = attributes["bind-ip-address"].Value;
-                                    if (currentAttrib != null)
+                                    string currentAttrib = string.Empty;
+
+                                    if (attributes["bind-ip-address"] != null)
                                     {
-                                        bindIP = Convert.ToString(currentAttrib);
+                                        currentAttrib = attributes["bind-ip-address"].Value;
+                                        if (currentAttrib != null)
+                                        {
+                                            bindIP = Convert.ToString(currentAttrib);
+                                        }
                                     }
                                 }
                             }
                         }
+                    }
+                    finally
+                    {
+                        Thread.CurrentThread.CurrentCulture = cultureInfo;
                     }
                     return bindIP;
                 }
@@ -286,11 +276,11 @@ namespace Alachisoft.NCache.Web.RemoteClient.Config
             FileStream fs = null;
             string c_configFileName = null;
             XmlDocument configuration = new XmlDocument();
-            
+
             try
             {
                 if (_cacheId == null) return;
-                c_configFileName = DirectoryUtil.GetBaseFilePath("client.ncconf",_search,out _result);
+                c_configFileName = DirectoryUtil.GetBaseFilePath("client.ncconf", _search, out _result);
                 if (c_configFileName == null)
                 {
                     return;
@@ -299,99 +289,198 @@ namespace Alachisoft.NCache.Web.RemoteClient.Config
                 fs = fileInfo.OpenRead();
                 configuration.Load(fs);
                 fileInfo = null;
-  
+
                 bool serverPortFound = false;
 
                 XmlNodeList serverPortList = configuration.GetElementsByTagName("ncache-server");
-                if (serverPortList != null && serverPortList.Count > 0)
+                CultureInfo cultureInfo = Thread.CurrentThread.CurrentCulture;
+                try
                 {
-                    XmlNode portNode = serverPortList.Item(0);
-                    if (portNode != null)
+                    Thread.CurrentThread.CurrentCulture = new CultureInfo("en-US");
+                    if (serverPortList != null && serverPortList.Count > 0)
                     {
-                        XmlAttributeCollection attributes = portNode.Attributes;
-                        if (attributes != null)
+                        XmlNode portNode = serverPortList.Item(0);
+                        if (portNode != null)
                         {
-                            string currentAttrib = string.Empty;
+                            XmlAttributeCollection attributes = portNode.Attributes;
+                            if (attributes != null)
+                            {
+                                string currentAttrib = string.Empty;
 
-                            if (initParam.ServerList !=null && initParam.ServerList.Length > 0)
-                            {
-                                if(initParam.ServerList[0].Port > 0)
-                                    _serverPort = initParam.ServerList[0].Port;
-                            }
-                            else
-                            {
-                                if (attributes["port"] != null)
+                                if (initParam.ServerList != null && initParam.ServerList.Length > 0)
                                 {
-                                    currentAttrib = attributes["port"].Value;
+                                    if (initParam.ServerList[0].Port > 0)
+                                        _serverPort = initParam.ServerList[0].Port;
+                                }
+                                else
+                                {
+                                    if (attributes["port"] != null)
+                                    {
+                                        currentAttrib = attributes["port"].Value;
+                                        if (currentAttrib != null)
+                                        {
+                                            _serverPort = Convert.ToInt32(currentAttrib);
+                                        }
+                                    }
+                                }
+
+                                if (initParam != null && initParam.IsSet(OPTIMEOUT))
+                                {
+                                    _timeout = initParam.ClientRequestTimeOut * 1000; // because the property return value/1000
+                                }
+                                else
+                                {
+                                    if (attributes["client-request-timeout"] != null)
+                                    {
+                                        currentAttrib = attributes["client-request-timeout"].Value;
+
+                                    }
                                     if (currentAttrib != null)
                                     {
-                                        _serverPort = Convert.ToInt32(currentAttrib);
+                                        _timeout = Convert.ToInt32(currentAttrib);
+                                        _timeout *= 1000; //convert to miliseconds
+                                    }
+                                }
+
+                                if (initParam != null && initParam.IsSet(CONNECTIONRETRIES))
+                                {
+                                    _retries = initParam.ConnectionRetries;
+
+                                }
+                                else
+                                {
+                                    if (attributes["connection-retries"] != null)
+                                    {
+                                        currentAttrib = attributes["connection-retries"].Value;
+
+                                    }
+                                    if (currentAttrib != null)
+                                    {
+                                        _retries = Convert.ToInt32(currentAttrib);
+                                    }
+                                }
+
+                                if (initParam != null && initParam.IsSet(RETRYINTERVAL))
+                                {
+                                    _retrySleep = initParam.RetryInterval * 1000;
+                                }
+                                else
+                                {
+                                    if (attributes["retry-interval"] != null)
+                                    {
+                                        currentAttrib = attributes["retry-interval"].Value;
+
+                                        if (currentAttrib != null)
+                                        {
+                                            _retrySleep = Convert.ToInt32(currentAttrib);
+                                            _retrySleep *= 1000; //convert to milliseconds.
+                                        }
+                                    }
+                                }
+
+                                if (initParam != null && initParam.IsSet(CONNECTIONTIMEOUT))
+                                {
+                                    _connectionTimeout = initParam.ConnectionTimeout * 1000;
+                                }
+                                else
+                                {
+                                    if (attributes["connection-timeout"] != null)
+                                    {
+                                        currentAttrib = attributes["connection-timeout"].Value;
+
+                                    }
+                                    if (currentAttrib != null)
+                                    {
+                                        _connectionTimeout = Convert.ToInt32(currentAttrib);
+                                        _connectionTimeout *= 1000; //convert to miliseconds
+                                    }
+                                }
+
+                                if (initParam != null && initParam.IsSet(RETRYCONNECTIONDELAY))
+                                {
+                                    _retryConnectionDelay = initParam.RetryConnectionDelay * 1000;
+                                }
+                                else
+                                {
+                                    if (attributes["retry-connection-delay"] != null)
+                                    {
+                                        currentAttrib = attributes["retry-connection-delay"].Value;
+
+                                    }
+                                    if (currentAttrib != null)
+                                    {
+                                        _retryConnectionDelay = Convert.ToInt32(currentAttrib);
+                                        _retryConnectionDelay *= 1000; //convert to miliseconds
                                     }
                                 }
                             }
+                            serverPortFound = true;
                         }
-                        serverPortFound = true;
                     }
-                }
 
-                if (!serverPortFound)
-                    throw new Runtime.Exceptions.ConfigurationException("ncache-server missing in client confiugration");
+                    if (!serverPortFound)
+                        throw new Runtime.Exceptions.ConfigurationException("ncache-server missing in client confiugration");
 
-                XmlNodeList cacheList = configuration.GetElementsByTagName("cache");
-                XmlNodeList cacheConfig = null;
+                    XmlNodeList cacheList = configuration.GetElementsByTagName("cache");
+                    XmlNodeList cacheConfig = null;
 
-                for (int i = 0; i < cacheList.Count; i++)
-                {
-                    XmlNode cache = cacheList.Item(i);
-                    if (cache.Attributes.GetNamedItem("id").Value.ToLower().Equals(_cacheId.ToLower()))
+                    for (int i = 0; i < cacheList.Count; i++)
                     {
-
-                        if (cache.Attributes["load-balance"] != null)
+                        XmlNode cache = cacheList.Item(i);
+                        if (cache.Attributes.GetNamedItem("id").Value.ToLower().Equals(_cacheId.ToLower()))
                         {
-                            this._balanceNodes = Convert.ToBoolean(cache.Attributes["load-balance"].Value);
+
+                            if (cache.Attributes["load-balance"] != null)
+                            {
+                                this._balanceNodes = Convert.ToBoolean(cache.Attributes["load-balance"].Value);
+                            }
+                            if (initParam != null && initParam.IsSet(LOADBALANCE))
+                            {
+                                this._balanceNodes = initParam.LoadBalance;
+                            }
+
+
+
+                            try
+                            {
+                                if (cache.Attributes["enable-client-logs"] != null)
+                                    this._enableClientLogs = Convert.ToBoolean(cache.Attributes["enable-client-logs"].Value.ToString());
+                            }
+                            catch (Exception)
+                            { }
+
+                            if (cache.Attributes["log-level"] != null)
+                                this._enableDetailedClientLogs = cache.Attributes["log-level"].Value.ToString().ToLower() == "info" ? true : false;
+
+                            this.serverRuntimeContext = RtContextValue.NCACHE;
+                            _importHashmap = true;
+
+                            cacheConfig = cache.ChildNodes;
+                            break;
                         }
-                        if (initParam != null && initParam.IsSet(LOADBALANCE))
-                        {
-                            this._balanceNodes = initParam.LoadBalance;
-                        }
-
-
-
-                      try
-                        {
-                            if (cache.Attributes["enable-client-logs"] != null)
-                                this._enableClientLogs = Convert.ToBoolean(cache.Attributes["enable-client-logs"].Value.ToString());
-                        }
-                        catch (Exception)
-                        { }
-
-                        if(cache.Attributes["log-level"] != null)
-                            this._enableDetailedClientLogs = cache.Attributes["log-level"].Value.ToString().ToLower() == "info" ? true : false;
-                        
-                        this.serverRuntimeContext = RtContextValue.NCACHE;
-                        _importHashmap = true;
-
-                        cacheConfig = cache.ChildNodes;
-                        break;
                     }
-                }
 
-                if (cacheConfig == null)
-                {
-                    if (!String.IsNullOrEmpty(_cacheId))
+                    if (cacheConfig == null)
                     {
-                        if (_result != Search.GlobalSearch)
+                        if (!String.IsNullOrEmpty(_cacheId))
                         {
-                            _search = _result + 1;
-                            LoadConfiguration();
+                            if (_result != Search.GlobalSearch)
+                            {
+                                _search = _result + 1;
+                                LoadConfiguration();
+                            }
                         }
+                        return;
                     }
-                    return;
-                }
-                _search = _result;
-                LoadRemoteServerMappingConfig(cacheConfig);
+                    _search = _result;
+                    LoadRemoteServerMappingConfig(cacheConfig);
 
-                LoadRemoteServerConfig(cacheConfig);
+                    LoadRemoteServerConfig(cacheConfig);
+                }
+                finally
+                {
+                    System.Threading.Thread.CurrentThread.CurrentCulture = cultureInfo;
+                }
             }
             catch (Runtime.Exceptions.ConfigurationException)
             {
@@ -400,7 +489,7 @@ namespace Alachisoft.NCache.Web.RemoteClient.Config
             catch (System.IO.IOException) { throw; }
             catch (Exception e)
             {
-                throw new Runtime.Exceptions.ConfigurationException("An error occured while reading client.ncconf. " + e.Message);
+                throw new Runtime.Exceptions.ConfigurationException("An error occurred while reading client.ncconf. " + e.Message);
 
             }
 
@@ -422,7 +511,6 @@ namespace Alachisoft.NCache.Web.RemoteClient.Config
                     if (currentConfig.Name.Equals("server"))
                     {
                         RemoteServer remoteServer = new RemoteServer();
-                        short serverPriority = 1;
                         try
                         {
                             remoteServer.Name = currentConfig.Attributes["name"].InnerText;
@@ -493,7 +581,7 @@ namespace Alachisoft.NCache.Web.RemoteClient.Config
                                 }
                                 catch (Exception) { }
 
-                                if (privateServer.Name != null || privateServer.Port != null)
+                                if (privateServer.Name != null )
                                 {
                                     lock (_mappedServer.SyncRoot)
                                     {
@@ -542,7 +630,7 @@ namespace Alachisoft.NCache.Web.RemoteClient.Config
                     publicServer.Name = node.PublicIP;
                     publicServer.Port = node.PublicPort;
 
-                    if (privateServer.Name != null || privateServer.Port != null)
+                    if (privateServer.Name != null )
                     {
                         lock (_mappedServer.SyncRoot)
                         {
@@ -614,7 +702,6 @@ namespace Alachisoft.NCache.Web.RemoteClient.Config
                 {
                     if (_servers != null && _servers.Count > 0)
                     {
-                        
                         //if servers are removed from the server list, there is 
                         //a chance that _current server is greater than total 
                         //present servers. indexoutofrange exception can occur.

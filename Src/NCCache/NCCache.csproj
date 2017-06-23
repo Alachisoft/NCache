@@ -175,6 +175,7 @@
     <Compile Include="Caching\CacheStoppedCallback.cs" />
     <Compile Include="Caching\CallbackEntry.cs" />
     <Compile Include="Caching\CallbackInfo.cs" />
+    <Compile Include="Caching\ClientDeathDetection.cs" />
     <Compile Include="Caching\ClientsInvalidatedCallback.cs" />
     <Compile Include="Caching\CompactCacheEntry.cs" />
     <Compile Include="Caching\CompactEntryProvider.cs" />
@@ -182,6 +183,7 @@
     <Compile Include="Caching\ConfigurationModified.cs" />
     <Compile Include="Caching\CustomRemoveCallback.cs" />
     <Compile Include="Caching\CustomUpdateCallback.cs" />
+    <Compile Include="Caching\DataReader\RecordSetManager.cs" />
     <Compile Include="Caching\Enumeration\CacheSnapshotPool.cs" />
     <Compile Include="Caching\Enumeration\EnumerationIndex.cs" />
     <Compile Include="Caching\Enumeration\IEnumerationProvider.cs" />
@@ -255,6 +257,7 @@
     <Compile Include="Caching\Queries\IQueryIndex.cs" />
     <Compile Include="Caching\Queries\NCQLParser.cs" />
     <Compile Include="Caching\Queries\NCQLParserRule.cs" />
+    <Compile Include="Caching\Queries\QueryItemContainer.cs" />
     <Compile Include="Caching\Queries\QueryResultSet.cs" />
     <Compile Include="Caching\Queries\QueryContext.cs" />
     <Compile Include="Caching\Queries\QueryIndexManager.cs" />
@@ -326,7 +329,6 @@
     <Compile Include="Caching\Topologies\Clustered\StateTransfer\BucketLockResult.cs" />
     <Compile Include="Caching\Topologies\Clustered\StateTransfer\BucketsPack.cs" />
     <Compile Include="Caching\Topologies\Clustered\StateTransfer\BucketTxfrInfo.cs" />
-    <Compile Include="Caching\Topologies\Clustered\StateTransfer\PayloadInfo.cs" />
     <Compile Include="Caching\Topologies\Clustered\StateTransfer\StateTransferType.cs" />
     <Compile Include="Caching\Topologies\Clustered\StateTransfer\StateTxfrCorresponder.cs" />
     <Compile Include="Caching\Topologies\Clustered\StateTransfer\StateTxfrInfo.cs" />
@@ -343,9 +345,7 @@
     <Compile Include="Caching\Topologies\Local\DataAffinity.cs" />
     <Compile Include="Caching\Topologies\Local\OperationInfo.cs" />
     <Compile Include="Caching\Topologies\Local\HashedLocalCache.cs" />
-    <Compile Include="Caching\Topologies\Local\HashedOverflowCache.cs" />
     <Compile Include="Caching\Topologies\Local\IndexedLocalCache.cs" />
-    <Compile Include="Caching\Topologies\Local\IndexedOverflowCache.cs" />
     <Compile Include="Caching\Topologies\Local\LocalCache.cs">
       <SubType>Code</SubType>
     </Compile>
@@ -394,10 +394,10 @@
     <Compile Include="Caching\Util\ClusterHelper.cs">
       <SubType>Code</SubType>
     </Compile>
-    <Compile Include="Caching\Util\ConvHelper.cs" />
     <Compile Include="Caching\Util\CacheEnumerator.cs">
       <SubType>Code</SubType>
     </Compile>
+    <Compile Include="Caching\Util\ExpirationHelper.cs" />
     <Compile Include="Caching\Util\HotConfig.cs" />
     <Compile Include="Caching\Util\LazyKeysetEnumerator.cs" />
     <Compile Include="Caching\Util\ParserHelper.cs" />
@@ -422,6 +422,7 @@
     <Compile Include="Config\Dom\Channel.cs" />
     <Compile Include="Config\Dom\Class.cs" />
     <Compile Include="Config\Dom\Cleanup.cs" />
+    <Compile Include="Config\Dom\ClientDeathDetection.cs" />
     <Compile Include="Config\Dom\ClientNode.cs" />
     <Compile Include="Config\Dom\ClientNodes.cs" />
     <Compile Include="Config\Dom\ClientNodeStatusWrapper.cs" />
@@ -452,10 +453,6 @@
     <Compile Include="Config\XMLConfigReader.cs">
       <SubType>Code</SubType>
     </Compile>
-    <Compile Include="Exceptions\ClusterExceptions.cs">
-      <SubType>Code</SubType>
-    </Compile>
-    <Compile Include="Exceptions\LicensingException.cs" />
     <Compile Include="Exceptions\StateTransferException.cs">
       <SubType>Code</SubType>
     </Compile>
@@ -464,7 +461,6 @@
     <Compile Include="Util\MiscUtil.cs">
       <SubType>Code</SubType>
     </Compile>
-    <Compile Include="Util\MSHyperVThread.cs" />
     <Compile Include="Util\SerializationUtil.cs" />
     <EmbeddedResource Include="Caching\Statistics\PerfInstaller.resx">
       <DependentUpon>PerfInstaller.cs</DependentUpon>

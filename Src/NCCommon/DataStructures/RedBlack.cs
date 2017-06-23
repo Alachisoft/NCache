@@ -13,10 +13,13 @@ using System;
 using System.Reflection;
 using System.Text.RegularExpressions;
 using Alachisoft.NCache.Common.Util;
+using Alachisoft.NCache.Common.DataStructures.Clustered;
+using Alachisoft.NCache.Common.Queries;
+using Alachisoft.NCache.Common.Enum;
 
 namespace Alachisoft.NCache.Common.DataStructures
 {
-    public class RedBlack : ISizableIndex
+    public class RedBlack<T> : ISizableIndex where T:IComparable
 	{
         //REGEX is the comparison based on the regular expression.
         //It is used for LIKE type comparisons.
@@ -37,13 +40,13 @@ namespace Alachisoft.NCache.Common.DataStructures
 		// identifies the owner of the tree
 		
 		// the tree
-		private RedBlackNode	rbTree;
+		private RedBlackNode<T>	rbTree;
         
 		//  sentinelNode is convenient way of indicating a leaf node.
-        private RedBlackNode _sentinelNode = new RedBlackNode();
+        private RedBlackNode<T> _sentinelNode = new RedBlackNode<T>();
         
 		// the node that was last found; used to optimize searches
-		private RedBlackNode	lastNodeFound;
+		private RedBlackNode<T>	lastNodeFound;
 
         //  Tree Type 
         private AttributeTypeSize _typeSize;
@@ -51,7 +54,9 @@ namespace Alachisoft.NCache.Common.DataStructures
         private long _rbNodeKeySize;
         // Tree Data Size
         private long _rbNodeDataSize;
-		
+
+        private object _mutex = new object();
+
 
         //whether a duplicate key.
 
@@ -65,7 +70,7 @@ namespace Alachisoft.NCache.Common.DataStructures
             // implementation and for understanding the red-black tree properties.
             _sentinelNode.Left = _sentinelNode.Right = _sentinelNode;
             _sentinelNode.Parent = null;
-            _sentinelNode.Color = RedBlackNode.BLACK;
+            _sentinelNode.Color = RedBlackNode<T>.BLACK;
             rbTree = _sentinelNode;
             lastNodeFound = _sentinelNode;
         }
@@ -77,110 +82,113 @@ namespace Alachisoft.NCache.Common.DataStructures
             _typeSize = size;
         }
 
-        public RedBlackNode SentinelNode
+        public RedBlackNode<T> SentinelNode
         {
             get { return _sentinelNode; }
         }
 		
 		///<summary>
 		/// Add
-		/// args: ByVal key As IComparable, ByVal data As Object
+		/// args: ByVal key As T, ByVal data As Object
 		/// key is object that implements IComparable interface
 		/// performance tip: change to use use int type (such as the hashcode)
 		///</summary>
-        public object Add(IComparable key, object data)
+        public object Add(T key, object data)
 		{
-            bool collision = false;
-            RedBlackNodeReference keyNodeRfrnce = null;
-            try
+            lock (_mutex)
             {
-                if (key == null || data == null)
-                    throw (new RedBlackException("RedBlackNode key and data must not be null"));
-
-                // traverse tree - find where node belongs
-                int result = 0;
-                // create new node
-                RedBlackNode node = new RedBlackNode();
-                RedBlackNode temp = rbTree;				// grab the rbTree node of the tree
-
-                while (temp != _sentinelNode)
-                {	// find Parent
-                    node.Parent = temp;
-                    if(key is string)
-                        result = key.ToString().ToLower().CompareTo(temp.Key.ToString().ToLower());
-                    else
-                        result = key.CompareTo(temp.Key);
-                    if (result == 0)
-                    {
-                        collision = true; //data with the same key.
-                        break;
-                    }
-
-                    if (result > 0)
-                    {
-                        temp = temp.Right;
-                        collision = false;
-                    }
-                    else
-                    {
-                        temp = temp.Left;
-                        collision = false;
-                    }
-                }
-
-                if (collision)
+                bool collision = false;
+                RedBlackNodeReference<T> keyNodeRfrnce = null;
+                try
                 {
-                    long prevSize = temp.IndexInMemorySize;
-                    temp.Insert(data, null);//.Data[data] = null;
-                    keyNodeRfrnce = temp.RBNodeReference;
+                    if (key == null || data == null)
+                        throw (new RedBlackException("RedBlackNode<T> key and data must not be null"));
 
-                    _rbNodeDataSize += temp.IndexInMemorySize - prevSize;
-                }
-                else
-                {
-                    // setup node
-                    node.Key = key;
-                    node.Insert(data, null);//.Data.Add(data, null);
-                    node.Left = _sentinelNode;
-                    node.Right = _sentinelNode;
+                    // traverse tree - find where node belongs
+                    int result = 0;
+                    // create new node
+                    RedBlackNode<T> node = new RedBlackNode<T>();
+                    RedBlackNode<T> temp = rbTree;				// grab the rbTree node of the tree
 
-                    if (_typeSize != AttributeTypeSize.Variable)
-                        _rbNodeKeySize += MemoryUtil.GetTypeSize(_typeSize);
-                    else
-                        _rbNodeKeySize += MemoryUtil.GetStringSize(key);
-
-                    _rbNodeDataSize += node.IndexInMemorySize;
-
-                    // insert node into tree starting at parent's location
-                    if (node.Parent != null)
-                    {
+                    while (temp != _sentinelNode)
+                    {	// find Parent
+                        node.Parent = temp;
                         if (key is string)
-                            result = node.Key.ToString().ToLower().CompareTo(node.Parent.Key.ToString().ToLower());
+                            result = key.ToString().ToLower().CompareTo(temp.Key.ToString().ToLower());
                         else
-                            result = node.Key.CompareTo(node.Parent.Key);
-                        
+                            result = key.CompareTo(temp.Key);
+                        if (result == 0)
+                        {
+                            collision = true; //data with the same key.
+                            break;
+                        }
+
                         if (result > 0)
-                            node.Parent.Right = node;
+                        {
+                            temp = temp.Right;
+                            collision = false;
+                        }
                         else
-                            node.Parent.Left = node;
+                        {
+                            temp = temp.Left;
+                            collision = false;
+                        }
+                    }
+
+                    if (collision)
+                    {
+                        long prevSize = temp.IndexInMemorySize;
+                        temp.Insert(data, null);
+                        keyNodeRfrnce = temp.RBNodeReference;
+
+                        _rbNodeDataSize += temp.IndexInMemorySize - prevSize;
                     }
                     else
-                        rbTree = node;					// first node added
+                    {
+                        // setup node
+                        node.Key = key;
+                        node.Insert(data, null);
+                        node.Left = _sentinelNode;
+                        node.Right = _sentinelNode;
 
-                    RestoreAfterInsert(node);           // restore red-black properities
+                        if (_typeSize != AttributeTypeSize.Variable)
+                            _rbNodeKeySize += MemoryUtil.GetTypeSize(_typeSize);
+                        else
+                            _rbNodeKeySize += MemoryUtil.GetStringSize(key);
 
-                    lastNodeFound = node;
+                        _rbNodeDataSize += node.IndexInMemorySize;
 
-                    intCount = intCount + 1;
+                        // insert node into tree starting at parent's location
+                        if (node.Parent != null)
+                        {
+                            if (key is string)
+                                result = node.Key.ToString().ToLower().CompareTo(node.Parent.Key.ToString().ToLower());
+                            else
+                                result = node.Key.CompareTo(node.Parent.Key);
 
-                    keyNodeRfrnce= node.RBNodeReference;
+                            if (result > 0)
+                                node.Parent.Right = node;
+                            else
+                                node.Parent.Left = node;
+                        }
+                        else
+                            rbTree = node;					// first node added
+
+                        RestoreAfterInsert(node);           // restore red-black properities
+
+                        lastNodeFound = node;
+
+                        intCount = intCount + 1;
+
+                        keyNodeRfrnce = node.RBNodeReference;
+                    }
                 }
-            }
-            catch (Exception ex)
-            {
-            }
+                catch (Exception ex)
+                {
+                }
 
-            return keyNodeRfrnce;
+                return keyNodeRfrnce; 
+            }
 		}
         ///<summary>
         /// RestoreAfterInsert
@@ -188,27 +196,27 @@ namespace Alachisoft.NCache.Common.DataStructures
         /// properties. Examine the tree and restore. Rotations are normally 
         /// required to restore it
         ///</summary>
-		private void RestoreAfterInsert(RedBlackNode x)
+		private void RestoreAfterInsert(RedBlackNode<T> x)
 		{   
             // x and y are used as variable names for brevity, in a more formal
             // implementation, you should probably change the names
 
-			RedBlackNode y;
+			RedBlackNode<T> y;
 
 			// maintain red-black tree properties after adding x
-			while(x != rbTree && x.Parent.Color == RedBlackNode.RED)
+			while(x != rbTree && x.Parent.Color == RedBlackNode<T>.RED)
 			{
 				// Parent node is .Colored red; 
 				if(x.Parent == x.Parent.Parent.Left)	// determine traversal path			
 				{										// is it on the Left or Right subtree?
 					y = x.Parent.Parent.Right;			// get uncle
-					if(y!= null && y.Color == RedBlackNode.RED)
+					if(y!= null && y.Color == RedBlackNode<T>.RED)
 					{	// uncle is red; change x's Parent and uncle to black
-						x.Parent.Color			= RedBlackNode.BLACK;
-						y.Color					= RedBlackNode.BLACK;
+						x.Parent.Color			= RedBlackNode<T>.BLACK;
+						y.Color					= RedBlackNode<T>.BLACK;
 						// grandparent must be red. Why? Every red node that is not 
 						// a leaf has only black children 
-						x.Parent.Parent.Color	= RedBlackNode.RED;	
+						x.Parent.Parent.Color	= RedBlackNode<T>.RED;	
 						x						= x.Parent.Parent;	// continue loop with grandparent
 					}	
 					else
@@ -221,8 +229,8 @@ namespace Alachisoft.NCache.Common.DataStructures
 							RotateLeft(x);
 						}
 						// no, x is less than Parent
-						x.Parent.Color			= RedBlackNode.BLACK;	// make Parent black
-						x.Parent.Parent.Color	= RedBlackNode.RED;		// make grandparent black
+						x.Parent.Color			= RedBlackNode<T>.BLACK;	// make Parent black
+						x.Parent.Parent.Color	= RedBlackNode<T>.RED;		// make grandparent black
 						RotateRight(x.Parent.Parent);					// rotate right
 					}
 				}
@@ -230,11 +238,11 @@ namespace Alachisoft.NCache.Common.DataStructures
 				{	// x's Parent is on the Right subtree
 					// this code is the same as above with "Left" and "Right" swapped
 					y = x.Parent.Parent.Left;
-					if(y!= null && y.Color == RedBlackNode.RED)
+					if(y!= null && y.Color == RedBlackNode<T>.RED)
 					{
-						x.Parent.Color			= RedBlackNode.BLACK;
-						y.Color					= RedBlackNode.BLACK;
-						x.Parent.Parent.Color	= RedBlackNode.RED;
+						x.Parent.Color			= RedBlackNode<T>.BLACK;
+						y.Color					= RedBlackNode<T>.BLACK;
+						x.Parent.Parent.Color	= RedBlackNode<T>.RED;
 						x						= x.Parent.Parent;
 					}
 					else
@@ -244,26 +252,26 @@ namespace Alachisoft.NCache.Common.DataStructures
 							x = x.Parent;
 							RotateRight(x);
 						}
-						x.Parent.Color			= RedBlackNode.BLACK;
-						x.Parent.Parent.Color	= RedBlackNode.RED;
+						x.Parent.Color			= RedBlackNode<T>.BLACK;
+						x.Parent.Parent.Color	= RedBlackNode<T>.RED;
 						RotateLeft(x.Parent.Parent);
 					}
 				}																													
 			}
-			rbTree.Color = RedBlackNode.BLACK;		// rbTree should always be black
+			rbTree.Color = RedBlackNode<T>.BLACK;		// rbTree should always be black
 		}
 		
 		///<summary>
 		/// RotateLeft
 		/// Rebalance the tree by rotating the nodes to the left
 		///</summary>
-		public void RotateLeft(RedBlackNode x)
+		private void RotateLeft(RedBlackNode<T> x)
 		{
 			// pushing node x down and to the Left to balance the tree. x's Right child (y)
 			// replaces x (since y > x), and y's Left child becomes x's Right child 
 			// (since it's < y but > x).
             
-			RedBlackNode y = x.Right;			// get x's Right node, this becomes y
+			RedBlackNode<T> y = x.Right;			// get x's Right node, this becomes y
 
 			// set x's Right link
 			x.Right = y.Left;					// y's Left child's becomes x's Right child
@@ -294,13 +302,13 @@ namespace Alachisoft.NCache.Common.DataStructures
 		/// RotateRight
 		/// Rebalance the tree by rotating the nodes to the right
 		///</summary>
-		public void RotateRight(RedBlackNode x)
+		private void RotateRight(RedBlackNode<T> x)
 		{
 			// pushing node x down and to the Right to balance the tree. x's Left child (y)
 			// replaces x (since x < y), and y's Right child becomes x's Left child 
 			// (since it's < x but > y).
             
-			RedBlackNode y = x.Left;			// get x's Left node, this becomes y
+			RedBlackNode<T> y = x.Left;			// get x's Left node, this becomes y
 
 			// set x's Right link
 			x.Left = y.Right;					// y's Right child becomes x's Left child
@@ -333,234 +341,178 @@ namespace Alachisoft.NCache.Common.DataStructures
 		/// GetData
 		/// Gets the data object associated with the specified key
 		///<summary>
-		public object GetData(IComparable key, COMPARE compareType)
+        public void GetData(T key, COMPARE compareType, IQueryResult resultKeys,  CollectionOperation mergeType)
 		{
-			int result;
-            ArrayList keyList = new ArrayList();
-            RedBlackNode treeNode = rbTree;     // begin at root
-            IDictionaryEnumerator en = this.GetEnumerator();
-            string pattern;
-            WildcardEnabledRegex regex;
-            Hashtable finalTable = null;
-            Hashtable skippedKeys = null;
-            bool isStringValue = false;
-
-            if (key is string)
-                isStringValue = true;
-
-            switch(compareType)
+            lock (_mutex)
             {
-                case COMPARE.EQ:
-                    // traverse tree until node is found
-                    while (treeNode != _sentinelNode)
-                    {
-                        if (isStringValue && treeNode.Key is string)
-                            result = treeNode.Key.ToString().ToLower().CompareTo(key.ToString().ToLower());
-                        else
-                            result = treeNode.Key.CompareTo(key);
-				        if(result == 0)
-				        {
-					        lastNodeFound = treeNode;
-                            keyList.AddRange(treeNode.Data.Keys);
-					        //return treeNode.Data;
-                            return keyList;
-				        }
-				        if(result > 0) //treenode is Greater then the one we are looking. Move to Left branch 
-					        treeNode = treeNode.Left;
-				        else
-					        treeNode = treeNode.Right; //treenode is Less then the one we are looking. Move to Right branch.
-			        }
-                    break;
+                int result;
+                ClusteredArrayList keyList = new ClusteredArrayList();
+                RedBlackNode<T> treeNode = rbTree;     // begin at root
+                IDictionaryEnumerator en = this.GetEnumerator();
+                string pattern;
+                WildcardEnabledRegex regex;
+                HashVector finalTable = null;
+                HashVector skippedKeys = null;
+                bool isStringValue = false;
 
-                case COMPARE.NE:
-                    // traverse tree until node is found
-                    finalTable = new Hashtable();
-                    
-                    while (en.MoveNext())
-                    {
-                        if (isStringValue && en.Key is string)
-                            result = ((IComparable)en.Key).ToString().ToLower().CompareTo(key.ToString().ToLower());
-                        else
-                            result = ((IComparable)en.Key).CompareTo(key);
+                if (key is string)
+                    isStringValue = true;
 
-                        if (result != 0)
+                switch (compareType)
+                {
+                    case COMPARE.EQ:
+                        // traverse tree until node is found
+                        while (treeNode != _sentinelNode)
                         {
-                            Hashtable tmp = en.Value as Hashtable;
-                            IDictionaryEnumerator ide = tmp.GetEnumerator();
-                    
-                            while (ide.MoveNext())
-                                finalTable[ide.Key] = ide.Value;
-                        }
-                    }
-
-                    return new ArrayList(finalTable.Keys);//keyList;
-
-                    break;
-
-                case COMPARE.GT:
-                    finalTable = new Hashtable();
-					while (en.MoveNext())
-					{
-                        if (isStringValue && en.Key is string)
-                            result = ((IComparable)en.Key).ToString().ToLower().CompareTo(key.ToString().ToLower());
-                        else
-                            result = ((IComparable)en.Key).CompareTo(key);
-
-                        if (result > 0)
-                        {
-                            Hashtable tmp = en.Value as Hashtable;
-                            IDictionaryEnumerator ide = tmp.GetEnumerator();
-                            
-                            while (ide.MoveNext())
-                                finalTable[ide.Key] = ide.Value;
-
-                        }
-					}
-
-                    return new ArrayList(finalTable.Keys);//keyList;
-                    
-                    break;
-
-                case COMPARE.LT:
-                    finalTable = new Hashtable();
-                    while (en.MoveNext())
-                    {
-                        if (isStringValue && en.Key is string)
-                            result = ((IComparable)en.Key).ToString().ToLower().CompareTo(key.ToString().ToLower());
-                        else
-                            result = ((IComparable)en.Key).CompareTo(key);
-
-                        if (result < 0)
-                        {
-                            Hashtable tmp = en.Value as Hashtable;
-                            IDictionaryEnumerator ide = tmp.GetEnumerator();
-                            while (ide.MoveNext())
-                                finalTable[ide.Key] = ide.Value;
-
-                        }
-                    }
-
-                    return new ArrayList(finalTable.Keys);//keyList;
-                    
-                    break;
-
-                case COMPARE.GTEQ:
-                    finalTable = new Hashtable();
-
-					while (en.MoveNext())
-					{
-                        if (isStringValue && en.Key is string)
-                            result = ((IComparable)en.Key).ToString().ToLower().CompareTo(key.ToString().ToLower());
-                        else
-                            result = ((IComparable)en.Key).CompareTo(key);
-
-                        if (result >= 0)
-                        {
-                            Hashtable tmp = en.Value as Hashtable;
-                            IDictionaryEnumerator ide = tmp.GetEnumerator();
-                            while (ide.MoveNext())
-                                finalTable[ide.Key] = ide.Value;
-
-                        }
-					}
-
-                    return new ArrayList(finalTable.Keys);//keyList;
-                    
-                    break;
-
-                case COMPARE.LTEQ:
-                    finalTable = new Hashtable();
-                    while (en.MoveNext())
-                    {
-                        if (isStringValue && en.Key is string)
-                            result = ((IComparable)en.Key).ToString().ToLower().CompareTo(key.ToString().ToLower());
-                        else
-                            result = ((IComparable)en.Key).CompareTo(key);
-
-                        if (result <= 0)
-                        {
-                            Hashtable tmp = en.Value as Hashtable;
-                            IDictionaryEnumerator ide = tmp.GetEnumerator();
-                            while (ide.MoveNext())
-                                finalTable[ide.Key] = ide.Value;
-
-                        }
-                        else break;
-                    }
-
-                    return new ArrayList(finalTable.Keys);//keyList;
-                    
-                    break;
-
-                case COMPARE.REGEX:
-                    finalTable = new Hashtable();
-                    pattern = key as string;
-                    regex = new WildcardEnabledRegex(pattern);
-                    while (en.MoveNext())
-                    {
-                        if (en.Key is string)
-                        {
-                            if (regex.IsMatch((string)en.Key.ToString().ToLower()))
-                            {
-                                Hashtable tmp = en.Value as Hashtable;
-                                IDictionaryEnumerator ide = tmp.GetEnumerator();
-                             
-                                while (ide.MoveNext())
-                                    finalTable[ide.Key] = ide.Value;
-                            }
-                        }
-                    }
-
-                    return new ArrayList(finalTable.Keys);//keyList;
-                    
-                    break;
-
-                case COMPARE.IREGEX:
-                    finalTable = new Hashtable();
-                    pattern = key as string;
-                    regex = new WildcardEnabledRegex(pattern);
-                    skippedKeys = new Hashtable();
-                    while (en.MoveNext())
-                    {
-                        if (en.Key is string)
-                        {
-                            if (regex.IsMatch((string)en.Key.ToString().ToLower()))
-                            {
-                                Hashtable tmp = en.Value as Hashtable;
-                                IDictionaryEnumerator ide = tmp.GetEnumerator();
-                                while (ide.MoveNext())
-                                {
-                                    skippedKeys[ide.Key] = ide.Value;
-                                }
-                            }
+                            if (isStringValue && treeNode.Key is string)
+                                result = treeNode.Key.ToString().ToLower().CompareTo(key.ToString().ToLower());
                             else
+                                result = treeNode.Key.CompareTo(key);
+                            if (result == 0)
                             {
-                                Hashtable tmp = en.Value as Hashtable;
-                                IDictionaryEnumerator ide = tmp.GetEnumerator();
-                                while (ide.MoveNext())
+                                lastNodeFound = treeNode;
+                                resultKeys.Add(treeNode.Data, mergeType);
+                                //return treeNode.Data;
+                            }
+                            if (result > 0) //treenode is Greater then the one we are looking. Move to Left branch 
+                                treeNode = treeNode.Left;
+                            else
+                                treeNode = treeNode.Right; //treenode is Less then the one we are looking. Move to Right branch.
+                        }
+                        break;
+
+                    case COMPARE.NE:
+                        // traverse tree until node is found
+                        finalTable = new HashVector();
+
+                        while (en.MoveNext())
+                        {
+                            if (isStringValue && en.Key is string)
+                                result = en.Key.ToString().ToLower().CompareTo(key.ToString().ToLower());
+                            else
+                                result = ((IComparable)en.Key).CompareTo(key);
+
+                            if (result != 0)
+                            {
+                                HashVector tmp = en.Value as HashVector;
+                                resultKeys.Add(tmp, mergeType);
+                            }
+                        }
+
+                        break;
+
+                    case COMPARE.GT:
+                        finalTable = new HashVector();
+                        while (en.MoveNext())
+                        {
+                            if (isStringValue && en.Key is string)
+                                result = en.Key.ToString().ToLower().CompareTo(key.ToString().ToLower());
+                            else
+                                result = ((IComparable)en.Key).CompareTo(key);
+
+                            if (result > 0)
+                            {
+                                HashVector tmp = en.Value as HashVector;
+                                resultKeys.Add(tmp, mergeType);
+
+                            }
+                        }
+
+                        break;
+
+                    case COMPARE.LT:
+                        finalTable = new HashVector();
+                        while (en.MoveNext())
+                        {
+                            if (isStringValue && en.Key is string)
+                                result = en.Key.ToString().ToLower().CompareTo(key.ToString().ToLower());
+                            else
+                                result = ((IComparable)en.Key).CompareTo(key);
+
+                            if (result < 0)
+                            {
+                                HashVector tmp = en.Value as HashVector;
+                                resultKeys.Add(tmp, mergeType);
+
+                            }
+                        }
+                        break;
+
+                    case COMPARE.GTEQ:
+                        finalTable = new HashVector();
+
+                        while (en.MoveNext())
+                        {
+                            if (isStringValue && en.Key is string)
+                                result = en.Key.ToString().ToLower().CompareTo(key.ToString().ToLower());
+                            else
+                                result = ((IComparable)en.Key).CompareTo(key);
+
+                            if (result >= 0)
+                            {
+                                HashVector tmp = en.Value as HashVector;
+                                resultKeys.Add(tmp, mergeType);
+
+                            }
+                        }
+                        break;
+
+                    case COMPARE.LTEQ:
+                        finalTable = new HashVector();
+                        while (en.MoveNext())
+                        {
+                            if (isStringValue && en.Key is string)
+                                result = en.Key.ToString().ToLower().CompareTo(key.ToString().ToLower());
+                            else
+                                result = ((IComparable)en.Key).CompareTo(key);
+
+                            if (result <= 0)
+                            {
+                                HashVector tmp = en.Value as HashVector;
+                                resultKeys.Add(tmp, mergeType);
+
+                            }
+                            else break;
+                        }
+                        break;
+
+                    case COMPARE.REGEX:
+                        en = this.GetEnumerator();
+                        pattern = key as string;
+                        regex = new WildcardEnabledRegex(pattern);
+                        while (en.MoveNext())
+                        {
+                            if (en.Key is string)
+                            {
+                                if (regex.IsMatch(en.Key.ToString().ToLower()))
                                 {
-                                    finalTable[ide.Key] = ide.Value;
+                                    HashVector tmp = en.Value as HashVector;
+                                    resultKeys.Add(tmp, mergeType);
                                 }
                             }
                         }
-                    }
+                        break;
 
-                    ArrayList list = new ArrayList(finalTable.Keys);// keyList;
-                    
-                    for (int idx = list.Count - 1; idx >= 0; idx--)
-                    {
-                        if (skippedKeys.ContainsKey(list[idx]))
+                    case COMPARE.IREGEX:
+                        en = this.GetEnumerator();
+                        pattern = key as string;
+                        regex = new WildcardEnabledRegex(pattern);
+                        while (en.MoveNext())
                         {
-                            list.RemoveAt(idx);
+                            if (en.Key is string)
+                            {
+                                if (!regex.IsMatch(en.Key.ToString().ToLower()))
+                                {
+                                    HashVector tmp = en.Value as HashVector;
+                                    resultKeys.Add(tmp, mergeType);
+                                }
+                            }
                         }
-                    }
+                        break;
+                }
 
-                    return list;
-
-                    break;
+                resultKeys.Mark(mergeType); 
             }
-			
-            return keyList;
 		}
 		
 
@@ -568,46 +520,52 @@ namespace Alachisoft.NCache.Common.DataStructures
 		///<summary>
 		/// return true if a specifeid key exists
 		///<summary>
-		public bool Contains(IComparable key)
+		public bool Contains(T key)
 		{
-			int result;
-			RedBlackNode treeNode = rbTree;     // begin at root
-            
-			// traverse tree until node is found
-			while(treeNode != _sentinelNode)
-			{
-                result = treeNode.Key.CompareTo(key);                
-				if(result == 0)
-				{
-					lastNodeFound = treeNode;
-					return true;
-				}
+            lock (_mutex)
+            {
+                int result;
+                RedBlackNode<T> treeNode = rbTree;     // begin at root
 
-                if (result > 0) //treenode is Greater then the one we are looking. Move to Left branch 
-                    treeNode = treeNode.Left;
-                else
-                    treeNode = treeNode.Right; //treenode is Less then the one we are looking. Move to Right branch.
-			}
-			return false;
+                // traverse tree until node is found
+                while (treeNode != _sentinelNode)
+                {
+                    result = treeNode.Key.CompareTo(key);
+                    if (result == 0)
+                    {
+                        lastNodeFound = treeNode;
+                        return true;
+                    }
+
+                    if (result > 0) //treenode is Greater then the one we are looking. Move to Left branch 
+                        treeNode = treeNode.Left;
+                    else
+                        treeNode = treeNode.Right; //treenode is Less then the one we are looking. Move to Right branch.
+                }
+                return false; 
+            }
 		}
 
 		///<summary>
 		/// GetMinKey
 		/// Returns the minimum key value
 		///<summary>
-		public IComparable MinKey
+		public T MinKey
 		{
 			get 
 			{
-				RedBlackNode treeNode = rbTree;
-				if(treeNode == null || treeNode == _sentinelNode) return null;
-		
-				// traverse to the extreme left to find the smallest key
-				while(treeNode.Left != _sentinelNode)
-					treeNode = treeNode.Left;
-		
-				lastNodeFound = treeNode;
-				return treeNode.Key;
+                lock (_mutex)
+                {
+                    RedBlackNode<T> treeNode = rbTree;
+                    if (treeNode == null || treeNode == _sentinelNode) return default(T);
+
+                    // traverse to the extreme left to find the smallest key
+                    while (treeNode.Left != _sentinelNode)
+                        treeNode = treeNode.Left;
+
+                    lastNodeFound = treeNode;
+                    return treeNode.Key; 
+                }
 			}
 		}
 
@@ -615,20 +573,23 @@ namespace Alachisoft.NCache.Common.DataStructures
 		/// GetMaxKey
 		/// Returns the maximum key value
 		///<summary>
-		public IComparable MaxKey
+		public T MaxKey
 		{
 			get
 			{
-				RedBlackNode treeNode = rbTree;
-				if(treeNode == null || treeNode == _sentinelNode)
-					throw(new RedBlackException("RedBlack tree is empty"));
+                lock (_mutex)
+                {
+                    RedBlackNode<T> treeNode = rbTree;
+                    if (treeNode == null || treeNode == _sentinelNode)
+                        throw (new RedBlackException("RedBlack tree is empty"));
 
-				// traverse to the extreme right to find the largest key
-				while(treeNode.Right != _sentinelNode)
-					treeNode = treeNode.Right;
+                    // traverse to the extreme right to find the largest key
+                    while (treeNode.Right != _sentinelNode)
+                        treeNode = treeNode.Right;
 
-				lastNodeFound = treeNode;
-				return treeNode.Key;
+                    lastNodeFound = treeNode;
+                    return treeNode.Key; 
+                }
 			}
 		}
 
@@ -639,9 +600,12 @@ namespace Alachisoft.NCache.Common.DataStructures
 		///<summary>
 		public RedBlackEnumerator GetEnumerator()
 		{
-            // elements is simply a generic name to refer to the 
-            // data objects the nodes contain
-			return Elements(true);      
+            lock (_mutex)
+            {
+                // elements is simply a generic name to refer to the 
+                // data objects the nodes contain
+                return Elements(true);  
+            }     
 		}
 
 		///<summary>
@@ -651,12 +615,18 @@ namespace Alachisoft.NCache.Common.DataStructures
 		///<summary>
 		public RedBlackEnumerator Keys()
 		{
-			return Keys(true);
+            lock (_mutex)
+            {
+                return Keys(true); 
+            }
 		}
 
 		public RedBlackEnumerator Keys(bool ascending)
 		{
-			return new RedBlackEnumerator(rbTree, ascending, _sentinelNode);
+            lock (_mutex)
+            {
+                return new RedBlackEnumerator(rbTree, ascending, _sentinelNode); 
+            }
 		}
 		
 		///<summary>
@@ -667,12 +637,18 @@ namespace Alachisoft.NCache.Common.DataStructures
 		///<summary>
 		public RedBlackEnumerator Elements()
 		{
-			return Elements(true);
+            lock (_mutex)
+            {
+                return Elements(true); 
+            }
 		}
 
 		public RedBlackEnumerator Elements(bool ascending)
 		{
-			return new RedBlackEnumerator(rbTree, ascending, _sentinelNode);
+            lock (_mutex)
+            {
+                return new RedBlackEnumerator(rbTree, ascending, _sentinelNode); 
+            }
 		}
 
 		///<summary>
@@ -695,17 +671,21 @@ namespace Alachisoft.NCache.Common.DataStructures
 		///<summary>
 		public bool Remove(object cacheKey, object node)
 		{
-            bool isNodeRemoved = false;
-            RedBlackNodeReference keyNodeReference = (RedBlackNodeReference)node;
-            RedBlackNode keyNode = keyNodeReference.RBReference;
-			try
-			{
+            lock (_mutex)
+            {
+                bool isNodeRemoved = false;
+                RedBlackNodeReference<T> keyNodeReference = (RedBlackNodeReference<T>)node;
+                RedBlackNode<T> keyNode = keyNodeReference.RBReference;
+                try
+                {
                     if (cacheKey != null && keyNode.Data.Count > 1)
                     {
                         if (keyNode.Data.Contains(cacheKey))
                         {
+                            long initialSize = keyNode.IndexInMemorySize;
                             keyNode.Data.Remove(cacheKey);
                             isNodeRemoved = false;
+                            _rbNodeDataSize += keyNode.IndexInMemorySize - initialSize;
                         }
                     }
                     else
@@ -720,106 +700,110 @@ namespace Alachisoft.NCache.Common.DataStructures
                         Delete(keyNode);
                         isNodeRemoved = true;
                     }
-				
-			}
-			catch(Exception)
-			{
-				throw;
-			}
-			
-            if(isNodeRemoved)
-                intCount = intCount - 1;
 
-            return isNodeRemoved;
+                }
+                catch (Exception)
+                {
+                    throw;
+                }
+
+                if (isNodeRemoved)
+                    intCount = intCount - 1;
+
+                return isNodeRemoved; 
+            }
 		}
 
-        public void Remove(IComparable indexKey, object cacheKey)
+        public void Remove(T indexKey, object cacheKey)
         {
-            bool isNodeRemoved = false;
-            if (indexKey == null)
-                throw (new RedBlackException("RedBlackNode key is null"));
-
-            try
+            lock (_mutex)
             {
-                // find node
-                int result;
-                RedBlackNode node;
-
-                // see if node to be deleted was the last one found
-                if(indexKey is string)
-                    result = indexKey.ToString().ToLower().CompareTo(lastNodeFound.Key.ToString().ToLower());
-                else
-                    result = indexKey.CompareTo(lastNodeFound.Key);
-                if (result == 0)
-                    node = lastNodeFound;
-                else
-                {	// not found, must search		
-                    node = rbTree;
-                    while (node != _sentinelNode)
-                    {
-                        if (indexKey is string)
-                            result = indexKey.ToString().ToLower().CompareTo(node.Key.ToString().ToLower());
-                        else
-                            result = indexKey.CompareTo(node.Key);
-                       
-                        if (result == 0)
-                            break;
-                        if (result < 0)
-                            node = node.Left;
-                        else
-                            node = node.Right;
-                    }
-
-                    if (node == _sentinelNode)
-                    {
-                        return;				// key not found
-                        
-                    }
-                }
+                bool isNodeRemoved = false;
+                if (indexKey == null)
+                    throw (new RedBlackException("RedBlackNode<T> key is null"));
 
                 try
                 {
-                    if (cacheKey != null && node.Data.Count > 1)
-                    {
-                        if (node.Data.Contains(cacheKey))
-                        {
-                            node.Data.Remove(cacheKey);
+                    // find node
+                    int result;
+                    RedBlackNode<T> node;
 
-                            isNodeRemoved = false;
+                    // see if node to be deleted was the last one found
+                    if (indexKey is string)
+                        result = indexKey.ToString().ToLower().CompareTo(lastNodeFound.Key.ToString().ToLower());
+                    else
+                        result = indexKey.CompareTo(lastNodeFound.Key);
+                    if (result == 0)
+                        node = lastNodeFound;
+                    else
+                    {	// not found, must search		
+                        node = rbTree;
+                        while (node != _sentinelNode)
+                        {
+                            if (indexKey is string)
+                                result = indexKey.ToString().ToLower().CompareTo(node.Key.ToString().ToLower());
+                            else
+                                result = indexKey.CompareTo(node.Key);
+
+                            if (result == 0)
+                                break;
+                            if (result < 0)
+                                node = node.Left;
+                            else
+                                node = node.Right;
+                        }
+
+                        if (node == _sentinelNode)
+                        {
+                            return;				// key not found
+
                         }
                     }
-                    else
+
+                    try
                     {
-                        if (_typeSize != AttributeTypeSize.Variable)
-                            _rbNodeKeySize -= MemoryUtil.GetTypeSize(_typeSize);
+                        if (cacheKey != null && node.Data.Count > 1)
+                        {
+                            if (node.Data.Contains(cacheKey))
+                            {
+                                node.Data.Remove(cacheKey);
+
+                                isNodeRemoved = false;
+                            }
+                        }
                         else
-                            _rbNodeKeySize -= MemoryUtil.GetStringSize(node.Key);
+                        {
+                            if (_typeSize != AttributeTypeSize.Variable)
+                                _rbNodeKeySize -= MemoryUtil.GetTypeSize(_typeSize);
+                            else
+                                _rbNodeKeySize -= MemoryUtil.GetStringSize(node.Key);
 
-                        _rbNodeDataSize -= node.IndexInMemorySize;
+                            _rbNodeDataSize -= node.IndexInMemorySize;
 
-                        Delete(node);
+                            Delete(node);
 
-                        isNodeRemoved = true;
+                            isNodeRemoved = true;
+                        }
+                    }
+                    catch (Exception)
+                    {
+                        return;
                     }
                 }
                 catch (Exception)
                 {
-                    return;
+                    throw;
                 }
-            }
-            catch (Exception)
-            {
-                throw;
-            }
 
-            if (isNodeRemoved)
-                intCount = intCount - 1;
+                if (isNodeRemoved)
+                    intCount = intCount - 1; 
+            }
         }
 		///<summary>
 		/// Delete
 		/// Delete a node from the tree and restore red black properties
 		///<summary>
-		private void Delete(RedBlackNode z)
+		private void Delete(RedBlackNode<T> z)
 		{
 			// A node to be deleted will be: 
 			//		1. a leaf with no children
@@ -828,8 +812,8 @@ namespace Alachisoft.NCache.Common.DataStructures
 			// If the deleted node is red, the red black properties still hold.
 			// If the deleted node is black, the tree needs rebalancing
 
-			RedBlackNode x = new RedBlackNode();	// work node to contain the replacement node
-			RedBlackNode y;					// work node 
+			RedBlackNode<T> x = new RedBlackNode<T>();	// work node to contain the replacement node
+			RedBlackNode<T> y;					// work node 
 
 			// find the replacement node (the successor to x) - the node one with 
 			// at *most* one child. 
@@ -870,12 +854,12 @@ namespace Alachisoft.NCache.Common.DataStructures
 			if(y != z) 
 			{
 				z.Key	= y.Key;
-				z.Data	= y.Data; //un-commented by [Asif Imam] 12 Jun,08
+				z.Data	= y.Data; 
                 z.RBNodeReference = y.RBNodeReference;
                 z.RBNodeReference.RBReference = z;
 			}
 
-			if(y.Color == RedBlackNode.BLACK)
+			if(y.Color == RedBlackNode<T>.BLACK)
 				RestoreAfterDelete(x);
 
 			lastNodeFound = _sentinelNode;
@@ -887,42 +871,42 @@ namespace Alachisoft.NCache.Common.DataStructures
         /// properties. Examine the tree and restore. Rotations are normally 
         /// required to restore it
         ///</summary>
-		private void RestoreAfterDelete(RedBlackNode x)
+		private void RestoreAfterDelete(RedBlackNode<T> x)
 		{
 			// maintain Red-Black tree balance after deleting node 			
 
-			RedBlackNode y;
+			RedBlackNode<T> y;
 
-			while(x != rbTree && x.Color == RedBlackNode.BLACK) 
+			while(x != rbTree && x.Color == RedBlackNode<T>.BLACK) 
 			{
 				if(x == x.Parent.Left)			// determine sub tree from parent
 				{
 					y = x.Parent.Right;			// y is x's sibling 
-					if(y.Color == RedBlackNode.RED) 
+					if(y.Color == RedBlackNode<T>.RED) 
 					{	// x is black, y is red - make both black and rotate
-						y.Color			= RedBlackNode.BLACK;
-						x.Parent.Color	= RedBlackNode.RED;
+						y.Color			= RedBlackNode<T>.BLACK;
+						x.Parent.Color	= RedBlackNode<T>.RED;
 						RotateLeft(x.Parent);
 						y = x.Parent.Right;
 					}
-					if(y.Left.Color == RedBlackNode.BLACK && 
-						y.Right.Color == RedBlackNode.BLACK) 
+					if(y.Left.Color == RedBlackNode<T>.BLACK && 
+						y.Right.Color == RedBlackNode<T>.BLACK) 
 					{	// children are both black
-						y.Color = RedBlackNode.RED;		// change parent to red
+						y.Color = RedBlackNode<T>.RED;		// change parent to red
 						x = x.Parent;					// move up the tree
 					} 
 					else 
 					{
-						if(y.Right.Color == RedBlackNode.BLACK) 
+						if(y.Right.Color == RedBlackNode<T>.BLACK) 
 						{
-							y.Left.Color	= RedBlackNode.BLACK;
-							y.Color			= RedBlackNode.RED;
+							y.Left.Color	= RedBlackNode<T>.BLACK;
+							y.Color			= RedBlackNode<T>.RED;
 							RotateRight(y);
 							y				= x.Parent.Right;
 						}
 						y.Color			= x.Parent.Color;
-						x.Parent.Color	= RedBlackNode.BLACK;
-						y.Right.Color	= RedBlackNode.BLACK;
+						x.Parent.Color	= RedBlackNode<T>.BLACK;
+						y.Right.Color	= RedBlackNode<T>.BLACK;
 						RotateLeft(x.Parent);
 						x = rbTree;
 					}
@@ -930,37 +914,37 @@ namespace Alachisoft.NCache.Common.DataStructures
 				else 
 				{	// right subtree - same as code above with right and left swapped
 					y = x.Parent.Left;
-					if(y.Color == RedBlackNode.RED) 
+					if(y.Color == RedBlackNode<T>.RED) 
 					{
-						y.Color			= RedBlackNode.BLACK;
-						x.Parent.Color	= RedBlackNode.RED;
+						y.Color			= RedBlackNode<T>.BLACK;
+						x.Parent.Color	= RedBlackNode<T>.RED;
 						RotateRight (x.Parent);
 						y = x.Parent.Left;
 					}
-					if(y.Right.Color == RedBlackNode.BLACK && 
-						y.Left.Color == RedBlackNode.BLACK) 
+					if(y.Right.Color == RedBlackNode<T>.BLACK && 
+						y.Left.Color == RedBlackNode<T>.BLACK) 
 					{
-						y.Color = RedBlackNode.RED;
+						y.Color = RedBlackNode<T>.RED;
 						x		= x.Parent;
 					} 
 					else 
 					{
-						if(y.Left.Color == RedBlackNode.BLACK) 
+						if(y.Left.Color == RedBlackNode<T>.BLACK) 
 						{
-							y.Right.Color	= RedBlackNode.BLACK;
-							y.Color			= RedBlackNode.RED;
+							y.Right.Color	= RedBlackNode<T>.BLACK;
+							y.Color			= RedBlackNode<T>.RED;
 							RotateLeft(y);
 							y				= x.Parent.Left;
 						}
 						y.Color			= x.Parent.Color;
-						x.Parent.Color	= RedBlackNode.BLACK;
-						y.Left.Color	= RedBlackNode.BLACK;
+						x.Parent.Color	= RedBlackNode<T>.BLACK;
+						y.Left.Color	= RedBlackNode<T>.BLACK;
 						RotateRight(x.Parent);
 						x = rbTree;
 					}
 				}
 			}
-			x.Color = RedBlackNode.BLACK;
+			x.Color = RedBlackNode<T>.BLACK;
 		}
 		
 		///<summary>
@@ -970,7 +954,7 @@ namespace Alachisoft.NCache.Common.DataStructures
 		public void RemoveMin()
 		{
             if(rbTree == null)
-                throw(new RedBlackException("RedBlackNode is null"));
+                throw(new RedBlackException("RedBlackNode<T> is null"));
             
              Remove(MinKey);
 		}
@@ -981,7 +965,7 @@ namespace Alachisoft.NCache.Common.DataStructures
 		public void RemoveMax()
 		{
             if(rbTree == null)
-                throw(new RedBlackException("RedBlackNode is null"));
+                throw(new RedBlackException("RedBlackNode<T> is null"));
             
             Remove(MaxKey);
 		}
@@ -991,11 +975,14 @@ namespace Alachisoft.NCache.Common.DataStructures
 		///<summary>
 		public void Clear ()
 		{
-            rbTree      = _sentinelNode;
-            intCount    = 0;
+            lock (_mutex)
+            {
+                rbTree = _sentinelNode;
+                intCount = 0;
 
-            _rbNodeDataSize = 0;
-            _rbNodeKeySize = 0;
+                _rbNodeDataSize = 0;
+                _rbNodeKeySize = 0; 
+            }
 		}
 		///<summary>
 		/// Size
@@ -1014,13 +1001,13 @@ namespace Alachisoft.NCache.Common.DataStructures
 			if(obj == null)
 				return false;
 			
-			if(!(obj is RedBlackNode ))
+			if(!(obj is RedBlackNode<T> ))
 				return false;
 			
 			if(this == obj)
 				return true;
 			
-			return (ToString().Equals(((RedBlackNode)(obj)).ToString()));
+			return (ToString().Equals(((RedBlackNode<T>)(obj)).ToString()));
 			
 		}
 		///<summary>

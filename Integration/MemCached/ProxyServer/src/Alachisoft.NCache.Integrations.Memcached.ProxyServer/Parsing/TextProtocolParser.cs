@@ -1,4 +1,4 @@
-// Copyright (c) 2015 Alachisoft
+// Copyright (c) 2017 Alachisoft
 // 
 // Licensed under the Apache License, Version 2.0 (the "License");
 // you may not use this file except in compliance with the License.
@@ -449,9 +449,16 @@ namespace Alachisoft.NCache.Integrations.Memcached.ProxyServer.Parsing
             }
         }
 
-        private void CreateInvalidCommand(string error = null)
+        private void CreateInvalidCommand(string error)
         {
             _command = new InvalidCommand(error);
+            this.State = ParserState.ReadyToDispatch;
+            return;
+        }
+
+        private void CreateInvalidCommand()
+        {
+            _command = new InvalidCommand(null);
             this.State = ParserState.ReadyToDispatch;
             return;
         }

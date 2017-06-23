@@ -327,9 +327,6 @@
     <Compile Include="Util\Util.cs">
       <SubType>Code</SubType>
     </Compile>
-    <Compile Include="Version.cs">
-      <SubType>Code</SubType>
-    </Compile>
     <Compile Include="View.cs">
       <SubType>Code</SubType>
     </Compile>

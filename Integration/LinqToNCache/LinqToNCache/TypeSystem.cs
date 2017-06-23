@@ -1,4 +1,4 @@
-// Copyright (c) 2015 Alachisoft
+// Copyright (c) 2017 Alachisoft
 // 
 // Licensed under the Apache License, Version 2.0 (the "License");
 // you may not use this file except in compliance with the License.
@@ -16,12 +16,7 @@ using System.Collections.Generic;
 using System.Linq;
 using System.Text;
 
-
-#if JAVA
-namespace Alachisoft.TayzGrid.Linq
-#else
 namespace Alachisoft.NCache.Linq
-#endif
 {
     internal static class TypeSystem
     {

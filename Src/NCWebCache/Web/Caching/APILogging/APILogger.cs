@@ -1,4 +1,4 @@
-// Copyright (c) 2015 Alachisoft
+// Copyright (c) 2017 Alachisoft
 // 
 // Licensed under the Apache License, Version 2.0 (the "License");
 // you may not use this file except in compliance with the License.
@@ -11,6 +11,7 @@
 // WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
 // See the License for the specific language governing permissions and
 // limitations under the License.
+
 using System;
 using System.Collections;
 using System.IO;
@@ -67,7 +68,7 @@ namespace Alachisoft.NCache.Web.Caching.APILogging
                 {
                     try
                     {
-                        APILogItem logItem = new APILogItem(null, "An error occured while logging" + e.ToString());
+                        APILogItem logItem = new APILogItem(null, "An error occurred while logging" + e.ToString());
                         LogInternal(logItem);
                     }
                     catch (Exception) { }

@@ -1,4 +1,4 @@
-// Copyright (c) 2015 Alachisoft
+// Copyright (c) 2017 Alachisoft
 // 
 // Licensed under the Apache License, Version 2.0 (the "License");
 // you may not use this file except in compliance with the License.
@@ -11,6 +11,7 @@
 // WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
 // See the License for the specific language governing permissions and
 // limitations under the License.
+
 using System;
 using System.Collections;
 using System.Threading;
@@ -45,8 +46,6 @@ namespace Alachisoft.NCache.Caching.Topologies.Local
     /// </summary>
 	internal class IndexedLocalCache : LocalCache
     {
-
-
         /// <summary> The underlying local cache used. </summary>
         private QueryIndexManager _queryIndexManager;
         private EnumerationIndex _enumerationIndex;
@@ -71,16 +70,12 @@ namespace Alachisoft.NCache.Caching.Topologies.Local
             _queryIndexManager = new QueryIndexManager(props, this, _context.CacheRoot.Name);
             if (!_queryIndexManager.Initialize()) _queryIndexManager = null;
 
-
-            //+Numan16122014
             _cacheStore.ISizableQueryIndexManager = _queryIndexManager;            
             _cacheStore.ISizableEvictionIndexManager = _evictionPolicy;
             _cacheStore.ISizableExpirationIndexManager = _context.ExpiryMgr;
 
             _stats.MaxCount = _cacheStore.MaxCount;
             _stats.MaxSize = _cacheStore.MaxSize;
-
-            //+Numan16122014
 
             if (_context.PerfStatsColl != null)
             {
@@ -140,6 +135,10 @@ namespace Alachisoft.NCache.Caching.Topologies.Local
             }
         }
 
+        internal CacheEntry GetInternal(object key)
+        {
+            return base.GetInternal(key, false, null);
+        }
 
         /// <summary>
         ///         /// returns the keylist fullfilling the specified criteria.
@@ -163,31 +162,17 @@ namespace Alachisoft.NCache.Caching.Topologies.Local
             }
         }
 
-     
+
         internal override CacheEntry GetInternal(object key, bool isUserOperation, OperationContext operationContext)
         {
-            
-                CacheEntry entry = base.GetInternal(key, isUserOperation, operationContext);
-
-                if (entry != null)
-                {
-                    if (operationContext != null)
-                    {
-                        if (operationContext.Contains(OperationContextFieldName.GenerateQueryInfo))
-                        {
-                            if (entry.ObjectType != null)
-                            {
-                                CacheEntry clone = (CacheEntry)entry.Clone();
-
-                                clone.QueryInfo = _queryIndexManager.GetQueryInfo(key, entry);
-                                return clone;
-                            }
-                        }
-                    }
-
-                }
-
-                return entry;
+            CacheEntry entry = base.GetInternal(key, isUserOperation, operationContext);
+            if (entry != null && operationContext != null && entry.ObjectType != null && operationContext.Contains(OperationContextFieldName.GenerateQueryInfo))
+            {
+                CacheEntry clone = (CacheEntry)entry.Clone();
+                clone.QueryInfo = _queryIndexManager.GetQueryInfo(key, entry);
+                return clone;
+            }
+            return entry;
         }
 
      
@@ -200,20 +185,19 @@ namespace Alachisoft.NCache.Caching.Topologies.Local
         /// <param name="key">key of the entry.</param>
         /// <param name="cacheEntry">the cache entry.</param>
         /// <returns>returns the result of operation.</returns>
-        internal override CacheAddResult AddInternal(object key, CacheEntry cacheEntry, bool isUserOperation)
+        internal override CacheAddResult AddInternal(object key, CacheEntry cacheEntry, bool isUserOperation, OperationContext operationContext)
         {
-            CacheAddResult result = base.AddInternal(key, cacheEntry, isUserOperation);
+            CacheAddResult result = base.AddInternal(key, cacheEntry, isUserOperation, operationContext);
             if (result == CacheAddResult.Success || result == CacheAddResult.SuccessNearEviction)
             {
-                //muds:
                 if (_queryIndexManager != null && cacheEntry.QueryInfo != null)
                 {
-                    _queryIndexManager.AddToIndex(key, cacheEntry);
+                    _queryIndexManager.AddToIndex(key, cacheEntry, operationContext);
                 }
 
                 if (_context.PerfStatsColl != null && _queryIndexManager!=null)
                 {                    
-                        _context.PerfStatsColl.SetQueryIndexSize(_queryIndexManager.IndexInMemorySize);
+                   _context.PerfStatsColl.SetQueryIndexSize(_queryIndexManager.IndexInMemorySize);
                 }
 
             }
@@ -227,35 +211,31 @@ namespace Alachisoft.NCache.Caching.Topologies.Local
         /// <param name="key">key of the entry.</param>
         /// <param name="cacheEntry">the cache entry.</param>
         /// <returns>returns the result of operation.</returns>
-        internal override CacheInsResult InsertInternal(object key, CacheEntry cacheEntry, bool isUserOperation, CacheEntry oldEntry, OperationContext operationContext)
+        internal override CacheInsResult InsertInternal(object key, CacheEntry cacheEntry, bool isUserOperation, CacheEntry oldEntry, OperationContext operationContext, bool updateIndex)
         {
 
-            CacheInsResult result = base.InsertInternal(key, cacheEntry, isUserOperation, oldEntry, operationContext);
+            CacheInsResult result = base.InsertInternal(key, cacheEntry, isUserOperation, oldEntry, operationContext, updateIndex);
             if (result == CacheInsResult.Success || result == CacheInsResult.SuccessNearEvicition)
             {
-
-                //muds:
                 if (_queryIndexManager != null && cacheEntry.QueryInfo != null)
                 {
-                    _queryIndexManager.AddToIndex(key, cacheEntry);
+                    _queryIndexManager.AddToIndex(key, cacheEntry, operationContext);
                 }
             }
-            else if (result == CacheInsResult.SuccessOverwrite || result == CacheInsResult.SuccessOverwriteNearEviction)
+            else if ((result == CacheInsResult.SuccessOverwrite || result == CacheInsResult.SuccessOverwriteNearEviction) && updateIndex)
             {
 
-                //muds:
                 if (_queryIndexManager != null)
                 {
                     if (oldEntry != null && oldEntry.ObjectType != null)
                     {
-                        _queryIndexManager.RemoveFromIndex(key, oldEntry.ObjectType);
+                        _queryIndexManager.RemoveFromIndex(key, oldEntry);
                     }
 
                     if (cacheEntry.QueryInfo != null)
-                        _queryIndexManager.AddToIndex(key, cacheEntry);
+                        _queryIndexManager.AddToIndex(key, cacheEntry, operationContext);
                 }
             }
-
 
             if (_context.PerfStatsColl != null && _queryIndexManager!=null)
             {
@@ -281,10 +261,9 @@ namespace Alachisoft.NCache.Caching.Topologies.Local
             if (e != null)
             {
 
-                //muds:
                 if (_queryIndexManager != null && e.ObjectType != null)
                 {
-                    _queryIndexManager.RemoveFromIndex(key, e.ObjectType);
+                    _queryIndexManager.RemoveFromIndex(key, e);
                 }
             }
 

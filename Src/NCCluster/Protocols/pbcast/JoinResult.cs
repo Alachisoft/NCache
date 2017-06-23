@@ -9,12 +9,12 @@
 // WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
 // See the License for the specific language governing permissions and
 // limitations under the License.
+
 namespace Alachisoft.NGroups.Protocols.pbcast
 {
     internal enum JoinResult
     {
         Success,
-        MaxMbrLimitReached, //muds: in express edition only 3 members can join the cluster.
         Rejected,
         HandleLeaveInProgress,
         HandleJoinInProgress,

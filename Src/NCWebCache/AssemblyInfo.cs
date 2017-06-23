@@ -1,4 +1,4 @@
-// Copyright (c) 2015 Alachisoft
+// Copyright (c) 2017 Alachisoft
 // 
 // Licensed under the Apache License, Version 2.0 (the "License");
 // you may not use this file except in compliance with the License.
@@ -11,9 +11,7 @@
 // WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
 // See the License for the specific language governing permissions and
 // limitations under the License.
-using System;
 using System.Reflection;
-using System.Runtime.CompilerServices;
 using System.Runtime.InteropServices;
 
 //
@@ -24,13 +22,11 @@ using System.Runtime.InteropServices;
 
 [assembly: ComVisible(false)]
 [assembly: AssemblyTitle("Alachisoft.NCache.Web")]
-
 [assembly: AssemblyConfiguration("")]
 [assembly: AssemblyCompany("Alachisoft")]
 [assembly: AssemblyProduct("Alachisoft® NCache Open Source")]
-[assembly: AssemblyCopyright("Copyright ™ 2005-2015 Alachisoft")]
+[assembly: AssemblyCopyright("Copyright ™ 2005-2017 Alachisoft")]
 [assembly: AssemblyTrademark("NCache © is a registered trademark of Alachisoft.")]
-
 [assembly: AssemblyCulture("")]
 
 //
@@ -44,7 +40,7 @@ using System.Runtime.InteropServices;
 // You can specify all the values or you can default the Revision and Build Numbers 
 // by using the '*' as shown below:
 
-[assembly: AssemblyVersion("4.4.0.0")]
+[assembly: AssemblyVersion("4.6.0.0")]
 
 
 //
@@ -77,5 +73,5 @@ using System.Runtime.InteropServices;
 [assembly: AssemblyKeyFile("..\\..\\..\\..\\Resources\\ncache.snk")]
 
 [assembly: AssemblyDescriptionAttribute("Web API")]
-[assembly:  AssemblyFileVersionAttribute("4.4.0.11")]
-[assembly: AssemblyInformationalVersion("4.4.0")]
+[assembly: AssemblyFileVersionAttribute("4.6.0.3")]
+[assembly: AssemblyInformationalVersion("4.6.0")]

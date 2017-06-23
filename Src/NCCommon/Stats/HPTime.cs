@@ -1,4 +1,4 @@
-// Copyright (c) 2015 Alachisoft
+// Copyright (c) 2017 Alachisoft
 // 
 // Licensed under the Apache License, Version 2.0 (the "License");
 // you may not use this file except in compliance with the License.
@@ -11,6 +11,7 @@
 // WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
 // See the License for the specific language governing permissions and
 // limitations under the License.
+
 using System;
 using System.Text;
 
@@ -26,7 +27,6 @@ namespace Alachisoft.NCache.Common.Stats
     /// It is a relative time not synchronized with system time. The time accuracy
     /// is upto micro seconds.
     /// </summary>
-    /// <author>Taimoor Haider</author>
     public class HPTime : IComparable, ICompactSerializable
     {
         private int _hr;

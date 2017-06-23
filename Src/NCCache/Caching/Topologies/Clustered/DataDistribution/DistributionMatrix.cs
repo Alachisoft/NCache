@@ -1,4 +1,4 @@
-// Copyright (c) 2015 Alachisoft
+// Copyright (c) 2017 Alachisoft
 // 
 // Licensed under the Apache License, Version 2.0 (the "License");
 // you may not use this file except in compliance with the License.
@@ -11,6 +11,7 @@
 // WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
 // See the License for the specific language governing permissions and
 // limitations under the License.
+
 using System;
 using System.Collections;
 using Alachisoft.NCache.Common.Logger;
@@ -50,7 +51,6 @@ namespace Alachisoft.NCache.Caching.Topologies.Clustered
             _percentWeightToSacrifice = 0;
             _weightBalanceThreshold = Convert.ToInt32((_maxCacheSize * WeightBalanceThresholdPercent) / 100); //10%, threshold at which we feel to balance weight for incoming nodes. its value is percent of MaxCacheSize 
             if (NCacheLog.IsInfoEnabled) NCacheLog.Error("DistributionMatrix.ctor", "Address->" + address.ToString() + ", DistributionData->" + distData.ToString());
-            //muds:
             //this is the temp code just to put some trace...
             int bucketCount = 0;
             foreach (WeightIdPair wiPair in weightIdList)
@@ -197,9 +197,8 @@ namespace Alachisoft.NCache.Caching.Topologies.Clustered
         public long WeightBalanceThreshold
         {
             get 
-            {
-                //10%, threshold at which we feel to balance weight for incoming nodes. its value is percent of MaxCacheSize ; 
-                _weightBalanceThreshold = Convert.ToInt64((_maxCacheSize * WeightBalanceThresholdPercent) / 100); 
+            { 
+                _weightBalanceThreshold = Convert.ToInt64((_maxCacheSize * WeightBalanceThresholdPercent) / 100); //10%, threshold at which we feel to balance weight for incoming nodes. its value is percent of MaxCacheSize ; 
                 return _weightBalanceThreshold;    
             }
             set { _weightBalanceThreshold = value; }

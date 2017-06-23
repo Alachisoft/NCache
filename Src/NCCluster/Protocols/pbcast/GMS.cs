@@ -10,6 +10,7 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 // $Id: GMS.java,v 1.17 2004/09/03 12:28:04 belaban Exp $
+
 using System;
 using System.Threading;
 using System.Collections;
@@ -188,7 +189,7 @@ namespace Alachisoft.NGroups.Protocols.pbcast
 
         private object membership_mutex = new object(); //synchronizes the ASK_JOIN/ASK_JOIN_RESP events
 
-        private bool _membershipChangeInProgress = false;
+   
 
         private object resume_mutex = new object(); //synchronizes the ASK_JOIN/ASK_JOIN_RESP events
 
@@ -200,6 +201,8 @@ namespace Alachisoft.NGroups.Protocols.pbcast
         internal SateTransferPromise _stateTransferPromise;
         internal int _stateTransferQueryTimesout = 3000;
         private bool _startedAsMirror;
+      
+      
 
         public GMS()
         {
@@ -647,7 +650,7 @@ namespace Alachisoft.NGroups.Protocols.pbcast
 
                 lock (members)
                 {
-                    //@UH Members are same as in the previous view. No need to apply view
+                    // Members are same as in the previous view. No need to apply view
                     if (view_id != null)
                     {
                         Membership newMembers = new Membership(mbrs);
@@ -656,7 +659,7 @@ namespace Alachisoft.NGroups.Protocols.pbcast
 
                             Stack.NCacheLog.Error("GMS.InstallView", "[" + local_addr + "] received view has the same members as current view;" + " discarding it (current vid: " + view_id + ", new vid: " + vid + ')');
                             Event viewEvt = new Event(Event.VIEW_CHANGE_OK, null, Priority.Critical);
-                            //#usama@15-4-2013 joining, leaving and tmp_members are needed to be synchronized even if view is same
+                            //joining, leaving and tmp_members are needed to be synchronized even if view is same
                             Global.ICollectionSupport.RemoveAll(joining, mbrs); // remove all members in mbrs from joining
                             // remove all elements from 'leaving' that are not in 'mbrs'
                             Global.ICollectionSupport.RetainAll(leaving, mbrs);
@@ -727,6 +730,8 @@ namespace Alachisoft.NGroups.Protocols.pbcast
 
                     // Send VIEW_CHANGE event up and down the stack:
                     if (Stack.NCacheLog.IsInfoEnabled) Stack.NCacheLog.Info("GMS.installView", "broadcasting view change within stack");
+
+                   
 
                     coord = determineCoordinator();
                    
@@ -1405,6 +1410,7 @@ namespace Alachisoft.NGroups.Protocols.pbcast
                 shun = Convert.ToBoolean(props["shun"]);
                 props.Remove("shun");
             }
+            
             if (props.Contains("is_part_replica"))
             {
                 isPartReplica = Convert.ToBoolean(props["is_part_replica"]);
@@ -1494,11 +1500,11 @@ namespace Alachisoft.NGroups.Protocols.pbcast
         internal void acquireHashmap(System.Collections.ArrayList mbrs, bool isJoining, string subGroup, bool isStartedAsMirror)
         {
             int maxTries = 3;
-                
+       
                 //new code for getting hash map from caching layer.
                 lock (acquireMap_mutex)
                 {
-                    //20110910 -> In NCache there was a problem when sometime on starting the cache the 
+                    // In NCache there was a problem when sometime on starting the cache the 
                     //Everything get's hang we get null reference exception.
                     //The problem fixed here was that we were not reseting the _hashmap before requesting the 
                     //new hashmap and in that case even when we wont get hashmap in three seconds we sent the old hashmap
@@ -1541,7 +1547,7 @@ namespace Alachisoft.NGroups.Protocols.pbcast
         {
             
             if (!isPartReplica) return true;
-            //muds:
+            //
             //new code for disabling the join while in state transfer.
             lock (acquirePermission_mutex)
             {
@@ -1777,13 +1783,11 @@ namespace Alachisoft.NGroups.Protocols.pbcast
 
                 if (join_rsp == null)
                     Stack.NCacheLog.Error("pbcast.GMS.handleJoinRequest()", impl.GetType().ToString() + ".handleJoin(" + mbr + ") returned null: will not be able to multicast new view");
-
-                //muds:
+                         
                 //sends a request to the caching layer for the new hashmap after this member joins.
                 System.Collections.ArrayList mbrs = new System.Collections.ArrayList(1);
                 mbrs.Add(mbr);
-
-                //muds:
+         
                 //some time coordinator gms impl returns the same existing view in join response. 
                 //we dont need to acquire the hashmap again in this case coz that hashmap has already been acquired.
                 if (acauireHashmap)
@@ -1794,8 +1798,7 @@ namespace Alachisoft.NGroups.Protocols.pbcast
                 // Check NAKACK's TMP_VIEW handling for details
                 if (join_rsp != null && join_rsp.View != null)
                 {
-                    //muds:
-                    //add the hash map as part of view.
+                                 //add the hash map as part of view.
                     if (_hashmap != null)
                     {
                         Object[] mapsArray = (Object[])_hashmap;
@@ -1805,10 +1808,7 @@ namespace Alachisoft.NGroups.Protocols.pbcast
                            
                             join_rsp.View.DistributionMaps = maps;
                         }
-                        
-
                         join_rsp.View.MirrorMapping = mapsArray[1] as CacheNode[];
-
                     }
                     passDown(new Event(Event.TMP_VIEW, join_rsp.View));
                 } 

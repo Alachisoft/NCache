@@ -38,6 +38,8 @@ using System.Collections.Generic;
 using Alachisoft.NCache.Common.Logger;
 using Alachisoft.NCache.Common.Enum;
 using Runtime = Alachisoft.NCache.Runtime;
+using Alachisoft.NCache.Common.DataStructures.Clustered;
+using Alachisoft.NCache.Common.DataReader;
 
 
 namespace Alachisoft.NCache.Caching.Topologies.Clustered
@@ -260,7 +262,6 @@ namespace Alachisoft.NCache.Caching.Topologies.Clustered
 
             Context.NCacheLog.Info("OnAfterMembershipChange", "bridge replicator started with source cache unique id: " + ((ClusterCacheBase)this).BridgeSourceCacheId);
 
-            
             //async replicator is used to replicate the update index operations to other replica nodes.
             if (Cluster.Servers.Count > 1)
             {
@@ -285,7 +286,7 @@ namespace Alachisoft.NCache.Caching.Topologies.Clustered
         /// <summary>
         /// Called when a new member joins the group.
         /// </summary>
-        /// <param name="address">address of the joining member</param>
+        /// 		/// <param name="address">address of the joining member</param>
         /// <param name="identity">additional identity information</param>
         /// <returns>true if the node joined successfuly</returns>
         public override bool OnMemberJoined(Address address, NodeIdentity identity)
@@ -368,12 +369,6 @@ namespace Alachisoft.NCache.Caching.Topologies.Clustered
         /// <returns></returns>
         public override object HandleClusterMessage(Address src, Function func)
         {
-            if (!Cluster.ValidMembers.Contains(src))
-            {
-                if (Context.NCacheLog.IsInfoEnabled) Context.NCacheLog.Info("ReplicatedCache.HandleClusterMessage()", src + " is not a valid member so its message is discarded");
-                return null;
-            }
-
             switch (func.Opcode)
             {
                 case (int)OpCodes.PeriodicUpdate:
@@ -569,6 +564,7 @@ namespace Alachisoft.NCache.Caching.Topologies.Clustered
             return c;
         }
 
+
         /// <summary>
         /// Update the list of the clients connected to this node
         /// and replicate it over the entire cluster.
@@ -578,6 +574,9 @@ namespace Alachisoft.NCache.Caching.Topologies.Clustered
         {
             base.ClientConnected(client, isInproc);
             AnnouncePresence(false);
+            if (_context.ClientDeathDetection != null) UpdateClientStatus(client, true);
+            _statusLatch.WaitForAny(NodeStatus.Initializing | NodeStatus.Running);
+
         }
 
         /// <summary>
@@ -589,9 +588,46 @@ namespace Alachisoft.NCache.Caching.Topologies.Clustered
         {
             base.ClientDisconnected(client, isInproc);
             AnnouncePresence(false);
+            if (_context.ClientDeathDetection != null) UpdateClientStatus(client, true);
+        }
+
+        public override ArrayList DetermineClientConnectivity(ArrayList clients)
+        {
+            ArrayList result = null;
+            if (clients == null) return null;
+            if (Context.NCacheLog.IsInfoEnabled) Context.NCacheLog.Info("Client-Death-Detection.DetermineClientConnectivity()", "going to determine client connectivity in cluster");
+            try
+            {
+                DetermineClusterStatus();//updating stats
+                result = clients;
+                foreach (string client in clients)
+                {
+                    foreach (NodeInfo node in _stats.Nodes)
+                    {
+                        if (node.ConnectedClients.Contains(client))
+                        {
+                            if (result.Contains(client))
+                                result.Remove(client);
+                            break;
+                        }
+                    }
+                }
+            }
+            catch (Exception e)
+            {
+                Context.NCacheLog.Error("Client-Death-Detection.DetermineClientConnectivity()", e.ToString());
+            }
+            finally
+            {
+                if (Context.NCacheLog.IsInfoEnabled) Context.NCacheLog.Info("Client-Death-Detection.DetermineClientConnectivity()", "determining client connectivity in cluster completed");
+            }
+            return result;
         }
 
         #endregion
+
+
+
 
         #region	/                 --- State Transfer ---           /
 
@@ -683,7 +719,7 @@ namespace Alachisoft.NCache.Caching.Topologies.Clustered
                     {
                         keysTable.Add(ie.Key,null);
                     }
-                    if (NCacheLog.IsErrorEnabled) NCacheLog.Info("ReplicatedServerCache.StateTransfer", "Transfered keys list" + keysTable.Count);
+                    if (NCacheLog.IsErrorEnabled) NCacheLog.Info("ReplicatedServerCache.StateTransfer", "Transfered keys list"+keysTable.Count);
                     _parent._internalCache.SetStateTransferKeyList(keysTable);
                     _parent._stateTransferLatch.SetStatusBit((byte)ReplicatedStateTransferStatus.STATE_TRANSFER_COMPLETED, (byte)ReplicatedStateTransferStatus.UNDER_STATE_TRANSFER);
 
@@ -1725,7 +1761,7 @@ namespace Alachisoft.NCache.Caching.Topologies.Clustered
                 }
                 catch (Exception) { }
 
-                // muds : throw actual exception that was caused due to add operation.
+                //throw actual exception that was caused due to add operation.
                 if (thrown != null) throw thrown;
                 if (timeout)
                 {
@@ -2182,7 +2218,6 @@ namespace Alachisoft.NCache.Caching.Topologies.Clustered
                     // Try to add to the local node and the cluster.
                     retVal = Clustered_Insert(key, cacheEntry, lockId, accessType, operationContext);
 
-                    //muds:
                     //if coordinator has sent the previous entry, use that one...
                     //otherwise send back the localy got previous entry...
                     if (retVal.Entry != null)
@@ -2271,7 +2306,6 @@ namespace Alachisoft.NCache.Caching.Topologies.Clustered
                 Hashtable existingItems;
                 Hashtable jointTable = new Hashtable();
                 Hashtable failedTable = new Hashtable();
-                Hashtable insertable = new Hashtable();
                 ArrayList inserted = new ArrayList();
                 ArrayList added = new ArrayList();
                
@@ -2289,14 +2323,60 @@ namespace Alachisoft.NCache.Caching.Topologies.Clustered
                 existingItems = Local_Get(keys, operationContext);
                 if (existingItems != null && existingItems.Count > 0)
                 {
-                    IDictionaryEnumerator ide = existingItems.GetEnumerator();
-                    while (ide.MoveNext())
+                    IDictionaryEnumerator ide;
+                    if (existingItems != null)
                     {
-                        key = ide.Key;
-                        if (jointTable.Contains(key))
+                        index = 0;
+                        validKeys = new object[existingItems.Count];
+                        validEnteries = new CacheEntry[existingItems.Count];
+                        ide = existingItems.GetEnumerator();
+                        while (ide.MoveNext())
                         {
-                            failedTable.Add(key, new OperationFailedException("Data group of the inserted item does not match the existing item's data group"));
+                            key = ide.Key;
+                            validKeys[index] = key;
+                            validEnteries[index] = (CacheEntry)jointTable[key];
                             jointTable.Remove(key);
+                            inserted.Add(key);
+                            index += 1;
+                        }
+
+                        if (validKeys.Length > 0)
+                        {
+                            try
+                            {
+                                insertResults = Local_Insert(validKeys, validEnteries, Cluster.LocalAddress, true, operationContext);
+                            }
+                            catch (Exception e)
+                            {
+                                Context.NCacheLog.Error("ReplicatedServerCache.Insert(Keys)", e.ToString());
+                                for (int i = 0; i < validKeys.Length; i++)
+                                {
+                                    failedTable.Add(validKeys[i], e);
+                                    inserted.Remove(validKeys[i]);
+                                }
+                                Clustered_Remove(validKeys, ItemRemoveReason.Removed, null, false, operationContext);
+                            }
+
+                            if (insertResults != null)
+                            {
+                                IDictionaryEnumerator ie = insertResults.GetEnumerator();
+                                while (ie.MoveNext())
+                                {
+                                    if (ie.Value is CacheInsResultWithEntry)
+                                    {
+                                        CacheInsResultWithEntry res = ie.Value as CacheInsResultWithEntry;
+                                        switch (res.Result)
+                                        {
+                                            case CacheInsResult.Failure:
+                                                failedTable[ie.Key] = new OperationFailedException("Generic operation failure; not enough information is available.");
+                                                break;
+                                            case CacheInsResult.NeedsEviction:
+                                                failedTable[ie.Key] = new OperationFailedException("The cache is full and not enough items could be evicted.");
+                                                break;
+                                        }
+                                    }
+                                }        
+                            }
                         }
                     }
                 }
@@ -2458,13 +2538,12 @@ namespace Alachisoft.NCache.Caching.Topologies.Clustered
                 bool returnEntry = false;
                 OperationContext operationContext = null;
 
-                //KS: operation Context
+                // operation Context
                 if (objs.Length == 3)
                 {
                     operationContext = objs[2] as OperationContext;
                 }
                 
-                //muds: 
                 //if client node is requesting for the previous cache entry
                 //then cluster coordinator must send it back...
                 if (objs.Length == 6)
@@ -2505,7 +2584,6 @@ namespace Alachisoft.NCache.Caching.Topologies.Clustered
                         }
                         else
                         {
-                            //muds: 
                             //we need not to send this entry back... it is needed only for custom notifications and/or key dependencies...
                             opRes.UserPayload = null;
                         }
@@ -2638,7 +2716,7 @@ namespace Alachisoft.NCache.Caching.Topologies.Clustered
         /// Expirations and Evictions are replicated and again the node initiating the replication
         /// triggers the cluster-wide notification.
         /// </remarks>
-        public override Hashtable Remove(object[] keys, ItemRemoveReason ir, bool notify, OperationContext operationContext)
+        public override Hashtable Remove(IList keys, ItemRemoveReason ir, bool notify, OperationContext operationContext)
         {
             if (ServerMonitor.MonitorActivity) ServerMonitor.LogClientActivity("RepCache.RemoveBlk", "");
             /// Wait until the object enters any running status
@@ -2707,7 +2785,7 @@ namespace Alachisoft.NCache.Caching.Topologies.Clustered
         /// <param name="ir"></param>
         /// <param name="notify"></param>
         /// <returns>keys and values that actualy removed from the cache</returns>
-        private Hashtable Local_Remove(object[] keys, ItemRemoveReason ir, Address src, CallbackEntry cbEntry, bool notify, OperationContext operationContext)
+        private Hashtable Local_Remove(IList keys, ItemRemoveReason ir, Address src, CallbackEntry cbEntry, bool notify, OperationContext operationContext)
         {
             Hashtable retVal = null;
             if (_internalCache != null)
@@ -2868,7 +2946,7 @@ namespace Alachisoft.NCache.Caching.Topologies.Clustered
 
         public override EnumerationDataChunk GetNextChunk(EnumerationPointer pointer, OperationContext operationContext)
         {
-            /*[KS]: All clustered operation have been removed as they use to return duplicate keys because the snapshots
+            /* All clustered operation have been removed as they use to return duplicate keys because the snapshots
             created on all the nodes of replicated for a particular enumerator were not sorted and in case of node up and down we might 
             get duplicate keys when a request is routed to another client. As per discussion with iqbal sahab it has been decided that 
             whenever a node leaves the cluster we will throw Enumeration has been modified exception to the client.*/
@@ -3332,7 +3410,7 @@ namespace Alachisoft.NCache.Caching.Topologies.Clustered
 
             if (IsInStateTransfer())
             {
-                result = Clustered_Search(GetDestInStateTransfer(), query, values, operationContext);
+                result = Clustered_Search(GetDestInStateTransfer(), query, values, operationContext, false);
             }
             else
             {
@@ -3355,7 +3433,7 @@ namespace Alachisoft.NCache.Caching.Topologies.Clustered
             
             if (IsInStateTransfer())
             {
-                result = Clustered_SearchEntries(GetDestInStateTransfer(), query, values, operationContext);
+                result = Clustered_SearchEntries(GetDestInStateTransfer(), query, values, operationContext,false);
             }
             else
             {
@@ -3396,13 +3474,32 @@ namespace Alachisoft.NCache.Caching.Topologies.Clustered
             return list;
         }
 
+        #region--------------------------------Cache Data Reader----------------------------------------------
+        /// <summary>
+        /// Open reader based on the query specified.
+        /// </summary>
+        public override ClusteredList<ReaderResultSet> ExecuteReader(string query, IDictionary values, bool getData, int chunkSize, bool isInproc, OperationContext operationContext)
+        {
+            if (_internalCache == null) throw new InvalidOperationException();
+
+            ClusteredList<ReaderResultSet> resultList = new ClusteredList<ReaderResultSet>();
+
+
+            if (IsInStateTransfer())//open reader on cordinator node
+            {
+                resultList = Clustered_ExecuteReader(GetDestInStateTransfer(), query, values, getData, chunkSize, operationContext);
+            }
+            else
+            {
+                ReaderResultSet result = _internalCache.Local_ExecuteReader(query, values, getData, chunkSize, isInproc, operationContext);
+                resultList.Add(result);
+            }
+            return resultList;
+        }
+
+        #endregion
        
     }
-
-
- 
-
-
 
 }
 

@@ -1,4 +1,4 @@
-// Copyright (c) 2015 Alachisoft
+// Copyright (c) 2017 Alachisoft
 // 
 // Licensed under the Apache License, Version 2.0 (the "License");
 // you may not use this file except in compliance with the License.
@@ -11,24 +11,20 @@
 // WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
 // See the License for the specific language governing permissions and
 // limitations under the License.
+
 using System;
-using Microsoft.Win32;
-using System.Text;
-using System.Reflection;
 
 using Alachisoft.NCache.Caching;
 using Alachisoft.NCache.Caching.AutoExpiration;
-using Alachisoft.NCache.Caching.EvictionPolicies;
 using Alachisoft.NCache.Web.Caching;
-using Alachisoft.NCache.Runtime;
 
 
 namespace Alachisoft.NCache.Web
 {
-	/// <summary>
-	/// Summary description for Util.
-	/// </summary>
-	internal sealed class WebCacheHelper
+    /// <summary>
+    /// Summary description for Util.
+    /// </summary>
+    internal sealed class WebCacheHelper
 	{
 		
 

@@ -1,4 +1,4 @@
-// Copyright (c) 2015 Alachisoft
+// Copyright (c) 2017 Alachisoft
 // 
 // Licensed under the Apache License, Version 2.0 (the "License");
 // you may not use this file except in compliance with the License.
@@ -11,9 +11,9 @@
 // WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
 // See the License for the specific language governing permissions and
 // limitations under the License.
+
 using System;
 using System.Collections.Generic;
-using System.Text;
 using System.Collections;
 using Alachisoft.NCache.Common;
 using Alachisoft.NCache.Caching;
@@ -21,7 +21,7 @@ using Alachisoft.NCache.Config.Dom;
 using Alachisoft.NCache.Common.Enum;
 using Alachisoft.NCache.Common.Monitoring;
 using Alachisoft.NCache.Management.Management;
-
+using Alachisoft.NCache.Caching.Util;
 namespace Alachisoft.NCache.Management
 {
     public interface ICacheServer : IDisposable
@@ -40,8 +40,6 @@ namespace Alachisoft.NCache.Management
         /// <param name="buffer"></param>
         void CopyAssemblies(string cacheName, string assemblyFileName, byte[] buffer);
 
-           
-
         /// <summary>
         /// 
         /// </summary>
@@ -50,9 +48,7 @@ namespace Alachisoft.NCache.Management
         /// <returns></returns>
         byte[] GetAssembly(string cacheName, string fileName);
 
-   
        
-
         /// <summary>
         /// Clear cache
         /// </summary>
@@ -60,7 +56,7 @@ namespace Alachisoft.NCache.Management
         /// <summary>
         void ClearCache(string cacheId);
 
-        bool Authorize();
+      
 
         /// <summary>
         /// Get a list of running caches (local + clustered)
@@ -78,7 +74,7 @@ namespace Alachisoft.NCache.Management
         /// it now saves CacheServerConfig instance:
         /// 
         /// |local-cache-id               | CacheServerConfig instance
-        /// | | IDictionary
+        /// |partitioned-replica-cache-id | IDictionary
         ///                               | replica-id  | CacheServerConfig instance
         /// </remarks>
         IDictionary CacheProps();
@@ -112,7 +108,7 @@ namespace Alachisoft.NCache.Management
         /// <exception cref="ArgumentNullException">cacheId is a null reference (Nothing in Visual Basic).</exception>
         /// 
 
-        bool RegisterCache(string cacheId, CacheServerConfig config, string partId, bool overwrite, bool hotApply);
+        bool RegisterCache(string cacheId, Alachisoft.NCache.Config.NewDom.CacheServerConfig config, string partId, bool overwrite, bool hotApply);
 
         
         /// <summary>
@@ -124,7 +120,7 @@ namespace Alachisoft.NCache.Management
         /// <param name="overwrite"></param>
         /// <param name="hotApply"></param>
         /// <returns></returns>
-        bool RegisterCache(string cacheId, CacheServerConfig config, string partId, bool overwrite, bool hotApply, bool isLocalNode);
+        bool RegisterCache(string cacheId, CacheServerConfig config, string partId, bool overwrite, bool hotApply);
 
         NodeInfoMap GetNodeInfo();
 
@@ -144,18 +140,15 @@ namespace Alachisoft.NCache.Management
 
         string GetBindIP();
 
+        int GetClientConfigId();
 
         ClientNodeStatusWrapper GetClientNodeStatus(string cacheId);
 
-        int GetClientConfigId();
         Node[] GetCacheServers(string cacheId);
 
         ConfiguredCacheInfo[] GetAllConfiguredCaches();
-
-       Alachisoft.NCache.Caching.Statistics.CacheStatistics GetCacheStatistics2(string cacheId);
-
-        ConfiguredCacheInfo[] GetConfiguredPartitionedReplicaCaches();
-      
+        
+        Alachisoft.NCache.Caching.Statistics.CacheStatistics GetCacheStatistics2(string cacheId);
 
         /// <summary>
         /// Disbale logging
@@ -187,11 +180,11 @@ namespace Alachisoft.NCache.Management
         void UnregisterCache(string cacheId, string partId, bool removeServerOnly);        
 
         void StartCache(string cacheId);       
-
-        void StartCache(string cacheId, string partitionId);        
-
-
+        
         void StartCachePhase2(string cacheId);       
+
+        void StartCache(string cacheId, string partitionId);
+        
         /// <summary>
         /// Start a cache and provide call backs
         /// </summary>
@@ -199,8 +192,7 @@ namespace Alachisoft.NCache.Management
         /// <param name="propertyString"></param>
         /// <returns></returns>
         /// <exception cref="ArgumentNullException">cacheId is a null reference (Nothing in Visual Basic).</exception>
-        void StartCache(string cacheId, string partitionId,
-        bool twoPhaseInitialization);
+        void StartCache(string cacheId, string partitionId, bool twoPhaseInitialization);
        
 
         void StopCache(string cacheId);
@@ -212,9 +204,6 @@ namespace Alachisoft.NCache.Management
         /// <param name="cacheId"></param>
         /// <exception cref="ArgumentNullException">cacheId is a null reference (Nothing in Visual Basic).</exception>
         void StopCache(string cacheId, string partitionId);
-
-       
-
 
         /// <summary>
         /// Detect and return all the available NICs on this machine
@@ -236,7 +225,8 @@ namespace Alachisoft.NCache.Management
         /// </summary>
         /// <returns>Max cluster port</returns>
         int GetMaxPort();
-       
+
+      
 
         /// <summary>
         /// Checks if the current cache is a Cluster cache or not, used in NCache UnReg cache tool as now UnReg is only applicable to cluster caches only
@@ -250,7 +240,7 @@ namespace Alachisoft.NCache.Management
         /// </summary>
         /// <param name="port">Cluster port</param>
         /// <returns>'true' if the port is available, otherwise 'flase'</returns>
-        bool PortIsAvailable(int port);
+        bool IsPortAvailable(int port, string cacheName);
         
 
         /// <summary>
@@ -285,7 +275,11 @@ namespace Alachisoft.NCache.Management
         /// </summary>
         void PublishActivity();
 
-       
+        /// <summary>
+        /// Marks a mirror cache running on this node as active cache
+        /// </summary>
+        /// <param name="cacheId"></param>
+        void MakeCacheActive(string cacheId,bool active);
 
         /// <summary>
         /// Clears the content of given cache
@@ -314,9 +308,11 @@ namespace Alachisoft.NCache.Management
         /// <returns></returns>
         long GetCacheCount(string cacheId);
 
-
-
         bool IsCacheRegistered(string cacheId);
+
+        CacheNodeStatistics[] GetCacheStatistics(string cacheId);
+
+     
 
         void StopServer();
 
@@ -326,17 +322,17 @@ namespace Alachisoft.NCache.Management
         
         Alachisoft.NCache.Config.NewDom.CacheServerConfig GetNewConfiguration(string cacheId);
 
-        bool RegisterCache(string cacheId, Alachisoft.NCache.Config.NewDom.CacheServerConfig config, string partId, bool overwrite, bool hotApply);
-
-        bool RegisterCache(string cacheId, Alachisoft.NCache.Config.NewDom.CacheServerConfig config, string partId, bool overwrite, bool hotApply, bool isLocalNode);
-
         bool ApplyCacheConfiguration(string cacheId, Alachisoft.NCache.Config.NewDom.CacheServerConfig props, bool hotApply);
 
         NewCacheRegisterationInfo GetNewUpdatedCacheConfiguration(string cacheId, string partId, string newNode, bool isJoining);
 
+        List<Alachisoft.NCache.Common.Monitoring.ClientNode> GetCacheClients(string cacheId);
+
+        List<Alachisoft.NCache.Common.Monitoring.ClientProcessStats> GetClientProcessStats(string cacheId);
+
         Common.ProductVersion GetProductVersion();  
 
-       
+      
 
         Hashtable GetServerMappingForConfig();
 
@@ -344,5 +340,22 @@ namespace Alachisoft.NCache.Management
 
         MappingConfiguration.Dom.MappingConfiguration GetServerMappingForClient();
         void GarbageCollect(bool block, bool isCompactLOH);
+        
+        int GetProcessID(string cacheId);
+
+        Cache GetCache(string cacheId);
+
+        void StopCacheInstance(string cache, CacheInfo cacheInfo, CacheServer.CacheStopReason reason);
+
+        void TransferConnection(System.Net.Sockets.SocketInformation socketInfo, String cacheId, byte[] transferCommand);
+
+
+        string GetCacheName(int port);
+
+        void StopCacheOnCacheHost(string cacheName);
+        void StopCachesOnNode(ArrayList cacheName);
+
+        void ApplyHotConfiguration(string cacheId, HotConfig hotConfig);
+
     }
 }

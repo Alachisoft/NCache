@@ -9,6 +9,7 @@
 // WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
 // See the License for the specific language governing permissions and
 // limitations under the License.
+
 using System;
 using System.Collections;
 using Alachisoft.NCache.Common.Enum;
@@ -33,10 +34,10 @@ namespace Alachisoft.NGroups.Blocks
             _ncacheLog = NCacheLog;
         }
 
-        public void AddDedicatedSenderThread(ConnectionTable.Connection connection, bool onPrimaryNIC, bool doNaggling, int nagglingSize)
+        public void AddDedicatedSenderThread(ConnectionTable.Connection connection, bool onPrimaryNIC)
         {
 
-            DedicatedMessageSender dmSender = new DedicatedMessageSender(mq, connection, sync_lock, _ncacheLog, onPrimaryNIC, doNaggling, nagglingSize);
+            DedicatedMessageSender dmSender = new DedicatedMessageSender(mq, connection, sync_lock, _ncacheLog, onPrimaryNIC);
 
             dmSender.Start();
             lock (senderList.SyncRoot)

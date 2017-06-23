@@ -1,4 +1,4 @@
-// Copyright (c) 2015 Alachisoft
+// Copyright (c) 2017 Alachisoft
 // 
 // Licensed under the Apache License, Version 2.0 (the "License");
 // you may not use this file except in compliance with the License.
@@ -11,44 +11,35 @@
 // WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
 // See the License for the specific language governing permissions and
 // limitations under the License.
+
 using System;
-using System.Collections.Generic;
-using System.Text;
-
 using Alachisoft.NCache.Web.Caching;
-
-
-using Alachisoft.NCache.Runtime;
 
 namespace Alachisoft.NCache.Web.Command
 
 {
     internal sealed class AddAttributeCommand : CommandBase
     {
-        private Alachisoft.NCache.Common.Protobuf.AddAttributeCommand _addAttributeCommand;
+        private Common.Protobuf.AddAttributeCommand _addAttributeCommand;
 
         internal AddAttributeCommand(string key, DateTime absoluteExpiration)
         {
-            base.name = "AddAttributeCommand";
+            name = "AddAttributeCommand";
             base.key = key;
-           
-
-            _addAttributeCommand = new Alachisoft.NCache.Common.Protobuf.AddAttributeCommand();
+            _addAttributeCommand = new Common.Protobuf.AddAttributeCommand();
             if (absoluteExpiration != Cache.NoAbsoluteExpiration)
                 _addAttributeCommand.absExpiration = absoluteExpiration.ToUniversalTime().Ticks;
 
             _addAttributeCommand.key = key;
-            _addAttributeCommand.requestId = base.RequestId;
-   
+            _addAttributeCommand.requestId = RequestId;
         }
 
         protected override void CreateCommand()
         {
-
-            base._command = new Alachisoft.NCache.Common.Protobuf.Command();
-            base._command.requestID = base.RequestId;
-            base._command.addAttributeCommand = _addAttributeCommand;
-            base._command.type = Alachisoft.NCache.Common.Protobuf.Command.Type.ADD_ATTRIBUTE;
+            _command = new Common.Protobuf.Command();
+            _command.requestID = RequestId;
+            _command.addAttributeCommand = _addAttributeCommand;
+            _command.type = Common.Protobuf.Command.Type.ADD_ATTRIBUTE;
         }
 
         internal override CommandType CommandType

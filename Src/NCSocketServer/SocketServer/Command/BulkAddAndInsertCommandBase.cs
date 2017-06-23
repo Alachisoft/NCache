@@ -1,4 +1,4 @@
-// Copyright (c) 2015 Alachisoft
+// Copyright (c) 2017 Alachisoft
 // 
 // Licensed under the Apache License, Version 2.0 (the "License");
 // you may not use this file except in compliance with the License.
@@ -11,6 +11,7 @@
 // WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
 // See the License for the specific language governing permissions and
 // limitations under the License.
+
 using System;
 using System.Collections;
 using Alachisoft.NCache.Caching;
@@ -30,22 +31,11 @@ namespace Alachisoft.NCache.SocketServer.Command
         {
             public int PackageSize;
 
-            public object[] Values;
+            public CacheEntry[] Entries;
 
             public string RequestId;
             public string[] Keys;
-            public short[] RemoveCallbackId;
-            public int[] RemoveDataFilter;
-            public short[] UpdateCallbackId;
-            public int[] UpdateDataFilter;
-
-            public ExpirationHint[] ExpirationHint;
-            public PriorityEvictionHint[] EvictionHint;
-
-            public CallbackEntry[] CallbackEnteries;
-
-            public Hashtable[] QueryInfo;
-            public BitSet[] Flags;
+            public BitSet Flag;
 
             public long ClientLastViewId;
             public string IntendedRecipient;
@@ -89,6 +79,7 @@ namespace Alachisoft.NCache.SocketServer.Command
             int packageSize = 0;
             int index = 0;
             string version = string.Empty;
+            Hashtable queryInfoHashtable = null;
 
             switch (command.type)
             {
@@ -98,16 +89,7 @@ namespace Alachisoft.NCache.SocketServer.Command
                     packageSize = bulkAddCommand.addCommand.Count;
 
                     cmdInfo.Keys = new string[packageSize];
-                    cmdInfo.UpdateCallbackId = new short[packageSize];
-                    cmdInfo.UpdateDataFilter = new int[packageSize];
-                    cmdInfo.RemoveCallbackId = new short[packageSize];
-                    cmdInfo.RemoveDataFilter = new int[packageSize];
-                    cmdInfo.CallbackEnteries = new CallbackEntry[packageSize];
-                    cmdInfo.EvictionHint = new PriorityEvictionHint[packageSize];
-                    cmdInfo.ExpirationHint = new ExpirationHint[packageSize];
-                    cmdInfo.Flags = new BitSet[packageSize];
-                    cmdInfo.Values = new object[packageSize];
-                    cmdInfo.QueryInfo = new Hashtable[packageSize];
+                    cmdInfo.Entries = new CacheEntry[packageSize];
 
                     cmdInfo.RequestId = bulkAddCommand.requestId.ToString();
                     cmdInfo.ClientLastViewId = command.clientLastViewId;
@@ -115,47 +97,33 @@ namespace Alachisoft.NCache.SocketServer.Command
                     foreach (Alachisoft.NCache.Common.Protobuf.AddCommand addCommand in bulkAddCommand.addCommand)
                     {
                         cmdInfo.Keys[index] = addCommand.key;
-                        cmdInfo.UpdateCallbackId[index] = (short)addCommand.updateCallbackId;
 
-                        if (addCommand.updateDataFilter != -1)
-                            cmdInfo.UpdateDataFilter[index] = addCommand.updateDataFilter;
-                        else
-                            cmdInfo.UpdateDataFilter[index] = (int) EventDataFilter.None;
-
-                        cmdInfo.RemoveCallbackId[index] = (short)addCommand.removeCallbackId;
-
-                        if (addCommand.removeDataFilter != -1)
-                            cmdInfo.RemoveDataFilter[index] = addCommand.removeDataFilter;
-                        else
-                            cmdInfo.RemoveDataFilter[index] = (int)EventDataFilter.DataWithMetadata;
-
-                        cmdInfo.EvictionHint[index] = new PriorityEvictionHint((CacheItemPriority)addCommand.priority);
-                        cmdInfo.ExpirationHint[index] = Alachisoft.NCache.Caching.Util.ProtobufHelper.GetExpirationHintObj(addCommand.absExpiration, addCommand.sldExpiration, serailizationContext);
-                        cmdInfo.Flags[index] = new BitSet((byte)addCommand.flag);
+                        cmdInfo.Entries[index] = new CacheEntry(UserBinaryObject.CreateUserBinaryObject(addCommand.data.ToArray()), Alachisoft.NCache.Caching.Util.ProtobufHelper.GetExpirationHintObj(addCommand.absExpiration, addCommand.sldExpiration, serailizationContext), new PriorityEvictionHint((CacheItemPriority)addCommand.priority));
+                        if (index == 0) cmdInfo.Flag = new BitSet((byte)addCommand.flag);
 
                         CallbackEntry cbEntry = null;
-                        if (cmdInfo.UpdateCallbackId[index] != -1 || cmdInfo.RemoveCallbackId[index] != -1)
+                        if ((short)addCommand.updateCallbackId != -1 || (short)addCommand.removeCallbackId != -1)
                         {
                             cbEntry = new CallbackEntry(ClientId,
                                 Convert.ToInt32(cmdInfo.RequestId),
-                                cmdInfo.Values[index],
-                                cmdInfo.RemoveCallbackId[index],
-                                cmdInfo.UpdateCallbackId[index],
-                                cmdInfo.Flags[index],
-                                (EventDataFilter)cmdInfo.UpdateDataFilter[index],
-                                (EventDataFilter)cmdInfo.RemoveDataFilter[index]
+                                UserBinaryObject.CreateUserBinaryObject(addCommand.data.ToArray()),
+                                (short)addCommand.removeCallbackId,
+                                (short)addCommand.updateCallbackId,
+                                new BitSet((byte)addCommand.flag),
+                                (EventDataFilter)(addCommand.updateDataFilter != -1 ? (int)addCommand.updateDataFilter : (int)EventDataFilter.None),
+                                (EventDataFilter)(addCommand.removeDataFilter != -1 ? (int)addCommand.removeDataFilter : (int)EventDataFilter.DataWithMetadata)
                                 );
+                            cmdInfo.Entries[index].Value = cbEntry.Clone();
                         }
 
-                        cmdInfo.CallbackEnteries[index] = cbEntry;
 
-                        Hashtable queryInfo = new Hashtable();
+                        
 
                         version = command.version;
 
                         if (string.IsNullOrEmpty(version))
                         {
-                            queryInfo["query-info"] = Alachisoft.NCache.Caching.Util.ProtobufHelper.GetHashtableFromQueryInfoObj(addCommand.queryInfo);
+                            queryInfoHashtable = Alachisoft.NCache.Caching.Util.ProtobufHelper.GetHashtableFromQueryInfoObj(addCommand.queryInfo);
                         }
                         else
                         {
@@ -164,12 +132,17 @@ namespace Alachisoft.NCache.SocketServer.Command
                             
                             objectQueryInfo = addCommand.objectQueryInfo;
 
-                            queryInfo["query-info"] = Alachisoft.NCache.Caching.Util.ProtobufHelper.GetHashtableFromQueryInfoObj(objectQueryInfo.queryInfo);
+                            queryInfoHashtable = Alachisoft.NCache.Caching.Util.ProtobufHelper.GetHashtableFromQueryInfoObj(objectQueryInfo.queryInfo);
 
                         }
 
-                        cmdInfo.QueryInfo[index] = queryInfo;
-                        cmdInfo.Values[index] = UserBinaryObject.CreateUserBinaryObject(addCommand.data.ToArray());
+                        if (queryInfoHashtable != null)
+                        {
+                            if (cmdInfo.Entries[index].QueryInfo == null) cmdInfo.Entries[index].QueryInfo = new Hashtable();
+                            cmdInfo.Entries[index].QueryInfo.Add("query-info", queryInfoHashtable);
+                        }
+                       
+
 
                         index++;
                     }
@@ -182,62 +155,37 @@ namespace Alachisoft.NCache.SocketServer.Command
                     packageSize = bulkInsertCommand.insertCommand.Count;
 
                     cmdInfo.Keys = new string[packageSize];
-                    cmdInfo.UpdateCallbackId = new short[packageSize];
-                    cmdInfo.UpdateDataFilter = new int[packageSize];
-                    cmdInfo.RemoveCallbackId = new short[packageSize];
-                    cmdInfo.RemoveDataFilter = new int[packageSize];
-                    cmdInfo.CallbackEnteries = new CallbackEntry[packageSize];
-                    cmdInfo.EvictionHint = new PriorityEvictionHint[packageSize];
-                    cmdInfo.ExpirationHint = new ExpirationHint[packageSize];
-                    cmdInfo.Flags = new BitSet[packageSize];
-                    cmdInfo.Values = new object[packageSize];
-                    cmdInfo.QueryInfo = new Hashtable[packageSize];
+                    cmdInfo.Entries = new CacheEntry[packageSize];
                     cmdInfo.RequestId = bulkInsertCommand.requestId.ToString();
                     cmdInfo.ClientLastViewId = command.clientLastViewId;
                     cmdInfo.IntendedRecipient = command.intendedRecipient;
                     foreach (Alachisoft.NCache.Common.Protobuf.InsertCommand insertCommand in bulkInsertCommand.insertCommand)
                     {
                         cmdInfo.Keys[index] = insertCommand.key;
-                        cmdInfo.UpdateCallbackId[index] = (short)insertCommand.updateCallbackId;
-                        cmdInfo.RemoveCallbackId[index] = (short)insertCommand.removeCallbackId;
-
-                        if (insertCommand.updateDataFilter != -1)
-                            cmdInfo.UpdateDataFilter[index] = insertCommand.updateDataFilter;
-                        else
-                            cmdInfo.UpdateDataFilter[index] = (int)EventDataFilter.None;
-                        //for old clients eventdata filter will be missing
-                        if (insertCommand.removeDataFilter != -1)
-                            cmdInfo.RemoveDataFilter[index] = insertCommand.removeDataFilter;
-                        else
-                            cmdInfo.RemoveDataFilter[index] = (int) EventDataFilter.DataWithMetadata;
-                        
-                        cmdInfo.EvictionHint[index] = new PriorityEvictionHint((CacheItemPriority)insertCommand.priority);
-                        cmdInfo.ExpirationHint[index] = Alachisoft.NCache.Caching.Util.ProtobufHelper.GetExpirationHintObj(insertCommand.absExpiration, insertCommand.sldExpiration, serailizationContext);
-                        cmdInfo.Flags[index] = new BitSet((byte)insertCommand.flag);
+                        cmdInfo.Entries[index] = new CacheEntry(UserBinaryObject.CreateUserBinaryObject(insertCommand.data.ToArray()), Alachisoft.NCache.Caching.Util.ProtobufHelper.GetExpirationHintObj(insertCommand.absExpiration, insertCommand.sldExpiration,  serailizationContext), new PriorityEvictionHint((CacheItemPriority)insertCommand.priority));
+                        if (index == 0) cmdInfo.Flag = new BitSet((byte)insertCommand.flag);
 
                         CallbackEntry cbEntry = null;
-                        if (cmdInfo.UpdateCallbackId[index] != -1 || cmdInfo.RemoveCallbackId[index] != -1)
+                        if (insertCommand.updateCallbackId != -1 || insertCommand.removeCallbackId != -1)
                         {
                             cbEntry = new CallbackEntry(ClientId,
                                 Convert.ToInt32(cmdInfo.RequestId),
-                                cmdInfo.Values[index],
-                                cmdInfo.RemoveCallbackId[index],
-                                cmdInfo.UpdateCallbackId[index],
-                                cmdInfo.Flags[index],
-                                (EventDataFilter)cmdInfo.UpdateDataFilter[index],
-                                (EventDataFilter)cmdInfo.RemoveDataFilter[index]
+                                UserBinaryObject.CreateUserBinaryObject(insertCommand.data.ToArray()),
+                                 (short)insertCommand.removeCallbackId,
+                                 (short)insertCommand.updateCallbackId,
+                                new BitSet((byte)insertCommand.flag),
+                                (EventDataFilter)(insertCommand.updateDataFilter != -1 ? (int)insertCommand.updateDataFilter : (int)EventDataFilter.None),
+                                (EventDataFilter)(insertCommand.removeDataFilter != -1 ? (int)insertCommand.removeDataFilter : (int)EventDataFilter.None)
                                 );
+                            cmdInfo.Entries[index].Value = cbEntry.Clone();
                         }
-
-                        cmdInfo.CallbackEnteries[index] = cbEntry;
-
-
-                        Hashtable queryInfo = new Hashtable();
+                        
+                        
                         version = command.version;
 
                         if (string.IsNullOrEmpty(version))
                         {
-                            queryInfo["query-info"] = Alachisoft.NCache.Caching.Util.ProtobufHelper.GetHashtableFromQueryInfoObj(insertCommand.queryInfo);
+                            queryInfoHashtable = Alachisoft.NCache.Caching.Util.ProtobufHelper.GetHashtableFromQueryInfoObj(insertCommand.queryInfo);
                            
                         }
                         else
@@ -245,12 +193,15 @@ namespace Alachisoft.NCache.SocketServer.Command
                             ObjectQueryInfo objectQueryInfo;
 
                             objectQueryInfo = insertCommand.objectQueryInfo;
-                            queryInfo["query-info"] = Alachisoft.NCache.Caching.Util.ProtobufHelper.GetHashtableFromQueryInfoObj(objectQueryInfo.queryInfo);
+                            queryInfoHashtable = Alachisoft.NCache.Caching.Util.ProtobufHelper.GetHashtableFromQueryInfoObj(objectQueryInfo.queryInfo);
                             
                         }
 
-                        cmdInfo.QueryInfo[index] = queryInfo;
-                        cmdInfo.Values[index] = UserBinaryObject.CreateUserBinaryObject(insertCommand.data.ToArray());
+                        if (queryInfoHashtable != null)
+                        {
+                            if (cmdInfo.Entries[index].QueryInfo == null) cmdInfo.Entries[index].QueryInfo = new Hashtable();
+                            cmdInfo.Entries[index].QueryInfo.Add("query-info", queryInfoHashtable);
+                        }
 
                         index++;
                     }

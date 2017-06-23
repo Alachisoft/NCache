@@ -10,6 +10,7 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 // $Id: RspList.java,v 1.3 2004/03/30 06:47:28 belaban Exp $
+
 using System;
 using Alachisoft.NCache.Common.Net;
 
@@ -172,7 +173,12 @@ namespace Alachisoft.NGroups.Util
         {
             rsps.RemoveAt(i);
         }
-		
+
+        public void removeRsp(Rsp r)
+        {
+            rsps.Remove(r);
+        }
+        
 		public override string ToString()
 		{
 			System.Text.StringBuilder ret = new System.Text.StringBuilder();

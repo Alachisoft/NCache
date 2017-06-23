@@ -1,4 +1,4 @@
-// Copyright (c) 2015 Alachisoft
+// Copyright (c) 2017 Alachisoft
 // 
 // Licensed under the Apache License, Version 2.0 (the "License");
 // you may not use this file except in compliance with the License.
@@ -11,12 +11,14 @@
 // WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
 // See the License for the specific language governing permissions and
 // limitations under the License.
+
 using System;
 using System.Collections;
 using Alachisoft.NCache.Caching;
 using Alachisoft.NCache.Config;
 using Alachisoft.NCache.Config.Dom;
 using Alachisoft.NCache.Runtime.Serialization;
+using Alachisoft.NCache.ServiceControl;
 
 namespace Alachisoft.NCache.Management
 {
@@ -25,19 +27,55 @@ namespace Alachisoft.NCache.Management
     {
            
         private LeasedCache _cache;
+        private int _cacheProcessId;
+        private int _port = 0;
+        private string cacheName;
+        private CacheServerConfig _cacheServerConfiguration;
+
+        private ICacheServer _cacheServer = null;
+        private CacheService _service = null;
+
+        public CacheService Service
+        {
+            get { return _service; }
+            set { _service = value; }
+        }
+
+        public string CacheName
+        {
+            get { return cacheName; }
+            set { cacheName = value; }
+        }
+
+        public ICacheServer CacheServer 
+        {
+            get { return _cacheServer; }
+            set { _cacheServer = value; }
+        
+        }
+
+        public int CacheProcessId
+        {
+            get { return _cacheProcessId; }
+            set { _cacheProcessId = value; }
+        }
+
+        public int ManagementPort
+        {
+            get { return _port; }
+            set { _port = value; }
+        }
 
         public CacheServerConfig CacheProps
         {
             get
             {
-                if (this._cache != null)
-                {
-                    return this._cache.Configuration;
-                }
-                return null;
+                return this._cacheServerConfiguration;
+                
             }
             set
             {
+                this._cacheServerConfiguration = value;
                 if (this._cache != null)
                 {
                     this._cache.Configuration = value;

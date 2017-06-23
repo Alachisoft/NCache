@@ -50,7 +50,10 @@ import "GetOptimalServerResponse.proto";
 import "GetRunningServersResponse.proto";
 import "NodeJoinedEventResponse.proto";
 import "NodeLeftEventResponse.proto";
-
+import "GetCacheBindingResponse.proto";
+import "DisposeReaderResponse.proto";
+import "ExecuteReaderResponse.proto";
+import "GetReaderChunkResponse.proto";
 
 option java_outer_classname="ResponseProtocol";
 package Alachisoft.NCache.Common.Protobuf;
@@ -110,6 +113,10 @@ enum Type
 		GET_RUNNING_SERVERS= 50;
 		NODE_JOINED_EVENT = 51;
 		NODE_LEFT_EVENT = 52;
+		GET_CACHE_BINDING = 53;
+		DISPOSE_READER = 54;
+        EXECUTE_READER = 55;
+        GET_READER_CHUNK = 56;
 
 	}
 	
@@ -170,5 +177,10 @@ enum Type
 	optional GetRunningServersResponse getRunningServer = 55;
 	optional NodeJoinedEventResponse nodeJoined = 56;
 	optional NodeLeftEventResponse nodeLeft = 57;
+	optional GetCacheBindingResponse getCacheBindingResponse = 58;
+
+    optional DisposeReaderResponse disposeReaderResponse = 59;
+    optional ExecuteReaderResponse executeReaderResponse = 60;
+    optional GetReaderChunkResponse getReaderChunkResponse = 61;
 }
 

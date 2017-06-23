@@ -1,4 +1,4 @@
-// Copyright (c) 2015 Alachisoft
+// Copyright (c) 2017 Alachisoft
 // 
 // Licensed under the Apache License, Version 2.0 (the "License");
 // you may not use this file except in compliance with the License.
@@ -11,6 +11,7 @@
 // WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
 // See the License for the specific language governing permissions and
 // limitations under the License.
+
 using System;
 using System.Collections;
 using System.Threading;
@@ -45,6 +46,8 @@ using Alachisoft.NCache.Caching.Exceptions;
 using Alachisoft.NCache.Caching.Queries;
 using Alachisoft.NCache.Runtime.Events;
 using Runtime = Alachisoft.NCache.Runtime;
+using Alachisoft.NCache.Common.DataReader;
+using Alachisoft.NCache.Common.DataStructures.Clustered;
 
 namespace Alachisoft.NCache.Caching.Topologies.Clustered
 {
@@ -146,7 +149,21 @@ namespace Alachisoft.NCache.Caching.Topologies.Clustered
             UpdateLockInfo,
             IsLocked,
             GetNextChunk,
-            
+
+            /// <summary>
+            /// Execute Reader
+            /// </summary>
+            ExecuteReader,
+            /// <summary>
+            /// Get Reader Chunk in Cache data reader
+            /// </summary>
+            GetReaderChunk,
+            /// <summary>
+            /// Dispose Reader
+            /// </summary>
+            DisposeReader,
+
+            UpdateClientStatus
 
 
         }
@@ -210,9 +227,12 @@ namespace Alachisoft.NCache.Caching.Topologies.Clustered
 
         internal Hashtable _bucketStateTxfrStatus = new Hashtable();
 
-       
-        
-        //private string _currentSequenceNumber = null;
+        protected int _onSuspectedWait = 5000;
+
+        public virtual bool IsRetryOnSuspected
+        {
+            get { return false; }
+        }
 
         protected ReplicationOperation GetClearReplicationOperation(int opCode, object info)
         {
@@ -243,8 +263,21 @@ namespace Alachisoft.NCache.Caching.Topologies.Clustered
             object intendedRecipient = operationContext.GetValueByField(OperationContextFieldName.IntendedRecipient);
             if (intendedRecipient != null)
             {
-                IntendedRecipient = intendedRecipient.ToString();                
+                IntendedRecipient = intendedRecipient.ToString();
+
+                ArrayList nodes = _stats.Nodes;
+                if (nodes != null)
+                {
+                    foreach (NodeInfo node in nodes)
+                    {
+                        if (node.RendererAddress != null && node.RendererAddress.IpAddress.ToString().Equals(IntendedRecipient))
+                        {
+                            return node.Address.IpAddress.ToString();
+                        }
+                    }
+                }
             }
+
             return IntendedRecipient;
         }
         /// <summary> 
@@ -388,6 +421,11 @@ namespace Alachisoft.NCache.Caching.Topologies.Clustered
         protected ArrayList ValidMembers { get { return _cluster.ValidMembers; } }
         protected ArrayList Servers { get { return _cluster.Servers; } }
 
+        public virtual ArrayList ActiveServers
+        {
+            get { return this.Members; }
+        }
+
         /// <summary> The local address of this instance. </summary>
         protected Address LocalAddress { get { return _cluster.LocalAddress; } }
 
@@ -519,11 +557,7 @@ namespace Alachisoft.NCache.Caching.Topologies.Clustered
             }
         }
 
-        protected virtual void InitializeCluster(IDictionary properties,
-        string channelName,
-        string domain,
-        NodeIdentity identity,
-        bool twoPhaseInitialization, bool isPor)
+        protected virtual void InitializeCluster(IDictionary properties,string channelName,string domain,NodeIdentity identity,bool twoPhaseInitialization, bool isPor)
         {
             if (properties == null)
                 throw new ArgumentNullException("properties");
@@ -619,7 +653,17 @@ namespace Alachisoft.NCache.Caching.Topologies.Clustered
 
         public virtual void OnAfterMembershipChange()
         {
+            if (_cluster.IsCoordinator && !_context.IsStartedAsMirror)
+            {
+                _statusLatch.SetStatusBit(NodeStatus.Coordinator, 0);
+            }
+            
+            if (_context.ExpiryMgr != null)
+            {
+                _context.ExpiryMgr.IsCoordinatorNode = _cluster.IsCoordinator;
+            }
 
+            if (Context.NCacheLog.IsInfoEnabled) Context.NCacheLog.Info("ClusterCacheBase.OnAfterMembershipChange()", "New Coordinator is: " + _cluster.Coordinator);
         }
 
         public virtual object HandleClusterMessage(Address src, Function func, out Address destination, out Message replicationMsg)
@@ -658,6 +702,17 @@ namespace Alachisoft.NCache.Caching.Topologies.Clustered
                 case (int)OpCodes.PublishMap:
                     handlePublishMap(func.Operand);
                     break;
+
+                case (int)OpCodes.ExecuteReader:
+                    return handleExecuteReader(func.Operand);
+                case (int)OpCodes.GetReaderChunk:
+                    return handleGetReaderChunk(func.Operand);
+                case (int)OpCodes.DisposeReader:
+                    handleDisposeReader(func.Operand);
+                    break;
+                case (int)OpCodes.UpdateClientStatus:
+                    handleUpdateClientStatus(func.Operand);
+                    break;
             }
             return null;
         }
@@ -683,8 +738,6 @@ namespace Alachisoft.NCache.Caching.Topologies.Clustered
             if (result is Exception)
             {
                 NCacheLog.Error("ClusterCacheBase.EndStateTransfer", " State transfer ended with Exception " + result.ToString());
-                /// What to do? if we failed the state transfer?. Proabably we'll keep
-                /// servicing in degraded mode? For the time being we don't!
             }
 
             /// Set the status to fully-functional (Running) and tell everyone about it.
@@ -770,38 +823,13 @@ namespace Alachisoft.NCache.Caching.Topologies.Clustered
                     transferInfo = opResponse.SerializablePayload as StateTxfrInfo;
                     if (transferInfo != null)
                     {
-                        if (opResponse.UserPayload != null && opResponse.UserPayload.Length > 0)
+                        if (transferInfo.data != null)
                         {
-                            Hashtable payloadTable = GetAllPayLoads(opResponse.UserPayload, transferInfo.PayLoadCompilationInfo);
-
-                            if (payloadTable != null && transferInfo.data != null)
-                            {
-                                string[] keys = new string[transferInfo.data.Keys.Count];
-                                transferInfo.data.Keys.CopyTo(keys, 0);
-                                Hashtable data = transferInfo.data;
-                                foreach (string key in keys)
-                                {
-                                    PayloadInfo payloadInfo = data[key] as PayloadInfo;
-                                    if (payloadInfo != null)
-                                    {
-                                        Array userPayload = payloadTable[payloadInfo.PayloadIndex] as Array;
-                                        CacheEntry e = payloadInfo.Entry;
-                                        if (e.Value == null)
-                                            e.Value = userPayload;
-                                        else if (e.Value is CallbackEntry)
-                                        {
-                                            CallbackEntry cbEntry = e.Value as CallbackEntry;
-                                            if (cbEntry.Value == null)
-                                                e.Value = userPayload;
-                                        }
-                                        data[key] = e;
-                                    }
-                                }
-                            }
+                            string[] keys = new string[transferInfo.data.Keys.Count];
+                            transferInfo.data.Keys.CopyTo(keys, 0);                            
                         }
                     }
-
-                }
+                }                
 
                 return transferInfo;
             }
@@ -813,8 +841,6 @@ namespace Alachisoft.NCache.Caching.Topologies.Clustered
         protected static Hashtable GetAllPayLoads(Array userPayLoad, ArrayList compilationInfo)
         {
             Hashtable result = new Hashtable();
-            int arrayIndex = 0;
-            int readIndex = 0;
 
             VirtualArray payLoadArray = new VirtualArray(userPayLoad);
             Alachisoft.NCache.Common.DataStructures.VirtualIndex virtualIndex = new Alachisoft.NCache.Common.DataStructures.VirtualIndex();
@@ -889,7 +915,8 @@ namespace Alachisoft.NCache.Caching.Topologies.Clustered
                 if (Context.NCacheLog.IsInfoEnabled) Context.NCacheLog.Info("ClusteredCacheBase.AnnouncePresence()", " announcing presence ;urget " + urgent);
                 if (this.ValidMembers.Count > 1)
                 {
-                    Function func = new Function((int)OpCodes.PeriodicUpdate, _stats.LocalNode.Clone());
+                    NodeInfo localStats = _stats.LocalNode;
+                    Function func = new Function((int)OpCodes.PeriodicUpdate, localStats.Clone() as NodeInfo);
                     if (!urgent)
                         Cluster.SendNoReplyMessage(func);
                     else
@@ -931,7 +958,7 @@ namespace Alachisoft.NCache.Caching.Topologies.Clustered
                     return retVal;
                 }
                 retVal = (CacheEntry)((OperationResponse)result).SerializablePayload;
-                if (retVal != null) retVal.Value = ((OperationResponse)result).UserPayload;
+                if (retVal != null && ((OperationResponse)result).UserPayload !=null ) retVal.Value = ((OperationResponse)result).UserPayload;
             }
             catch (Runtime.Exceptions.TimeoutException te)
             {
@@ -965,6 +992,8 @@ namespace Alachisoft.NCache.Caching.Topologies.Clustered
             CacheEntry retVal = null;
             try
             {
+                if (operationContext.Contains(OperationContextFieldName.IsClusteredOperation))
+                    throw new InvalidReaderException("Reader state has been lost due to state transfer.");
                 Function func = new Function((int)OpCodes.Get, new object[] { key, lockId, lockDate, access, lockExpiration, operationContext });
                 object result = Cluster.SendMessage(address, func, GetFirstResponse);
                 if (result == null)
@@ -974,10 +1003,10 @@ namespace Alachisoft.NCache.Caching.Topologies.Clustered
 
                 object[] objArr = (object[])((OperationResponse)result).SerializablePayload;
                 retVal = objArr[0] as CacheEntry;
-                if (retVal != null)
-                {
+
+                if (retVal != null && ((OperationResponse)result).UserPayload != null) 
                     retVal.Value = ((OperationResponse)result).UserPayload;
-                }
+
                 lockId = objArr[1];
                 lockDate = (DateTime)objArr[2];
             }
@@ -1177,9 +1206,304 @@ namespace Alachisoft.NCache.Caching.Topologies.Clustered
             }
         }
 
-     
-       
 
+
+        #region--------------------------------Cache Data Reader----------------------------------------------
+
+        public override ClusteredList<ReaderResultSet> ExecuteReader(string query, IDictionary values, bool getData, int chunkSize, bool isInproc, OperationContext operationContext)
+        {
+            if (_internalCache == null) throw new InvalidOperationException();
+
+            ClusteredList<ReaderResultSet> recordSets = new ClusteredList<ReaderResultSet>();
+            ArrayList dests = new ArrayList();
+
+            long clientLastViewId = GetClientLastViewId(operationContext);
+            if (clientLastViewId == forcedViewId) // for dedicated request
+            {
+                ArrayList servers = GetServerParticipatingInStateTransfer();
+                operationContext.Add(OperationContextFieldName.IsClusteredOperation, false);
+                try
+                {
+                    recordSets = Clustered_ExecuteReader(servers, query, values, getData, chunkSize, operationContext, IsRetryOnSuspected);
+                }
+                catch (NGroups.SuspectedException ex)
+                {
+                    if (!IsRetryOnSuspected) throw;
+
+                    //Sleep is used to be sure that new view applied and node is marked in state transfer...
+                    Thread.Sleep(_onSuspectedWait);
+                    servers = GetServerParticipatingInStateTransfer();
+
+                    recordSets = Clustered_ExecuteReader(servers, query, values, getData, chunkSize, operationContext);
+
+
+                }
+            }
+            else if (!VerifyClientViewId(clientLastViewId))
+            {
+                throw new StateTransferInProgressException("Operation could not be completed due to state transfer");
+            }
+            else
+            {
+                if (IsInStateTransfer())
+                {
+                    throw new StateTransferInProgressException("Operation could not be completed due to state transfer");
+
+                }
+                recordSets.Add(InternalCache.Local_ExecuteReader(query, values, getData, chunkSize, isInproc, operationContext));
+
+            }
+            return recordSets;
+        }
+
+        private ArrayList GetServerParticipatingInStateTransfer()
+        {
+            ArrayList servers = null;
+            if (IsInStateTransfer()) //I have the updated map I can locate the replica
+            {
+                servers = GetDestInStateTransfer();
+            }
+            else
+            {
+                servers = this.ActiveServers.Clone() as ArrayList;
+            }
+            return servers;
+        }
+
+        /// <summary>
+        /// Retrieve the reader result set from the cache based on the specified query.
+        /// </summary>
+        protected ClusteredList<ReaderResultSet> Clustered_ExecuteReader(ArrayList dests, string queryText, IDictionary values, bool getData, int chunkSize, OperationContext operationContext, bool throwSuspected = false)
+        {
+            ClusteredList<ReaderResultSet> resultSet = new ClusteredList<ReaderResultSet>();
+
+            try
+            {
+                Function func = new Function((int)OpCodes.ExecuteReader, new object[] { queryText, values, getData, chunkSize, operationContext }, false);
+                RspList results = Cluster.Multicast(dests, func, GroupRequest.GET_ALL, false, Cluster.Timeout * 10);
+
+                if (results == null)
+                    return null;
+               
+                if (throwSuspected) ClusterHelper.VerifySuspectedResponses(results);
+
+                IList rspList = ClusterHelper.GetAllNonNullRsp(results, typeof(ReaderResultSet));
+                try
+                {
+                    ClusterHelper.ValidateResponses(results, typeof(ReaderResultSet), Name);
+                }
+                catch (Exception e)
+                {
+                    Context.NCacheLog.Error("ClusteredCacheBase.Clustered_ExecuteReader()", e.ToString());
+
+                    if (rspList != null && rspList.Count > 0)
+                    {
+                        IEnumerator im = rspList.GetEnumerator();
+                        while (im.MoveNext())
+                        {
+                            Rsp rsp = (Rsp)im.Current;
+                            ReaderResultSet rResultSet = (ReaderResultSet)rsp.Value;
+
+                            try
+                            {
+                                Clustered_DisposeReader(rsp.Sender as Address, rResultSet.ReaderID, operationContext);
+                            }
+                            catch (Exception ex)
+                            {
+                                Context.NCacheLog.Error("ClusteredCacheBase.Clustered_ExecuteReader.Clustered_DisposeReader()", ex.ToString());
+                            }
+                        }
+                    }
+                    if (e is InvalidReaderException) throw;
+
+                    throw new InvalidReaderException("Reader state has been lost.", e);
+                }
+
+                if (rspList.Count <= 0)
+                {
+                    return null;
+                }
+                else
+                {
+                    IEnumerator im = rspList.GetEnumerator();
+                    while (im.MoveNext())
+                    {
+                        Rsp rsp = (Rsp)im.Current;
+                        ReaderResultSet rResultSet = (ReaderResultSet)rsp.Value;
+                        resultSet.Add(rResultSet);
+                    }
+                }
+
+                return resultSet;
+            }
+            catch (NGroups.SuspectedException e)
+            {
+                if (throwSuspected)
+                {
+                    throw;
+                }
+
+                throw new GeneralFailureException(e.Message, e);
+            }
+            catch (CacheException e)
+            {
+                throw;
+            }
+            catch (Exception e)
+            {
+                throw new GeneralFailureException(e.Message, e);
+            }
+        }
+
+        public override ReaderResultSet GetReaderChunk(string readerId, int nextIndex, bool isInproc, OperationContext operationContext)
+        {
+            _statusLatch.WaitForAny(NodeStatus.Initializing | NodeStatus.Running);
+            if (_internalCache == null) throw new InvalidOperationException();
+
+            ReaderResultSet reader = null;
+
+            string intenededRecepient = GetIntendedRecipient(operationContext);
+            Array servers = Array.CreateInstance(typeof(Address), Cluster.Servers.Count);
+            Cluster.Servers.CopyTo(servers);
+            Address targetNode = null;
+
+            if (!string.IsNullOrEmpty(intenededRecepient))
+            {
+                for (int i = 0; i < servers.Length; i++)
+                {
+                    Address server = servers.GetValue(i) as Address;
+                    if (server.IpAddress.ToString() == intenededRecepient)
+                    {
+                        targetNode = server;
+                        break;
+                    }
+                }
+                if (targetNode != null)
+                {
+                    if (targetNode.Equals(Cluster.LocalAddress))
+                        reader = InternalCache.GetReaderChunk(readerId, nextIndex, isInproc, operationContext);
+                    else
+                    {
+                        try
+                        {
+                            operationContext.Add(OperationContextFieldName.IsClusteredOperation, false);
+                            reader = Clustered_GetReaderChunk(targetNode, readerId, nextIndex, operationContext);
+                        }
+                        catch (InvalidReaderException readerException)
+                        {
+                            if (!string.IsNullOrEmpty(readerId))
+                                InternalCache.DisposeReader(readerId, operationContext);
+                            throw readerException;
+                        }
+                    }
+                }
+                else
+                    throw new InvalidReaderException("Reader state has been lost due to state transfer.");
+            }
+            return reader;
+        }
+        private ReaderResultSet Clustered_GetReaderChunk(Address targetNode, string readerId, int nextIndex, OperationContext operationContext)
+        {
+            try
+            {
+                Function func = new Function((int)OpCodes.GetReaderChunk, new object[] { readerId, nextIndex, operationContext });
+                object result = Cluster.SendMessage(targetNode, func, GroupRequest.GET_FIRST, Cluster.Timeout);
+
+                ReaderResultSet readerChunk = result as ReaderResultSet;
+
+                return readerChunk;
+            }
+            catch (Alachisoft.NCache.Runtime.Exceptions.SuspectedException sexp)
+            {
+                throw new InvalidReaderException("Reader state has been lost due to state transfer.");
+            }
+            catch (CacheException e)
+            {
+                throw;
+            }
+            catch (Exception e)
+            {
+                throw new GeneralFailureException(e.Message, e);
+            }
+        }
+
+        public override void DisposeReader(string readerId, OperationContext operationContext)
+        {
+            _statusLatch.WaitForAny(NodeStatus.Initializing | NodeStatus.Running);
+            if (_internalCache == null) throw new InvalidOperationException();
+
+            string intenededRecepient = GetIntendedRecipient(operationContext);
+            Array servers = Array.CreateInstance(typeof(Address), Cluster.Servers.Count);
+            Cluster.Servers.CopyTo(servers);
+            Address targetNode = null;
+
+            if (!string.IsNullOrEmpty(intenededRecepient))
+            {
+                for (int i = 0; i < servers.Length; i++)
+                {
+                    Address server = servers.GetValue(i) as Address;
+                    if (server.IpAddress.ToString() == intenededRecepient)
+                    {
+                        targetNode = server;
+                        break;
+                    }
+                }
+                if (targetNode != null)
+                {
+                    if (targetNode.Equals(Cluster.LocalAddress))
+                        InternalCache.DisposeReader(readerId, operationContext);
+                    else
+                        Clustered_DisposeReader(targetNode, readerId, operationContext);
+                }
+            }
+        }
+
+        private void Clustered_DisposeReader(Address targetNode, string readerId, OperationContext operationContext)
+        {
+            try
+            {
+                Function func = new Function((int)OpCodes.DisposeReader, new object[] { readerId, operationContext });
+                Cluster.SendNoReplyMessage(targetNode, func);
+
+            }
+            catch (CacheException e)
+            {
+                throw;
+            }
+            catch (Exception e)
+            {
+                throw new GeneralFailureException(e.Message, e);
+            }
+        }
+        private object handleExecuteReader(object arguments)
+        {
+            if (_internalCache != null)
+            {
+                object[] data = (object[])arguments;
+                return _internalCache.Local_ExecuteReader(data[0] as string, data[1] as IDictionary, (bool)data[2], (int)data[3], false, data[4] as OperationContext);
+            }
+
+            return null;
+        }
+        private object handleGetReaderChunk(object arguments)
+        {
+            if (_internalCache != null)
+            {
+                object[] data = (object[])arguments;
+                return _internalCache.GetReaderChunk(data[0] as string, (int)data[1], false, data[2] as OperationContext);
+            }
+
+            return null;
+        }
+        private void handleDisposeReader(object arguments)
+        {
+            if (_internalCache != null)
+            {
+                object[] data = (object[])arguments;
+                _internalCache.DisposeReader(data[0] as string, data[1] as OperationContext);
+            }
+        }
+        #endregion
 
 
 
@@ -1196,16 +1520,23 @@ namespace Alachisoft.NCache.Caching.Topologies.Clustered
             long clientLastViewId = GetClientLastViewId(operationContext);
             if (clientLastViewId == forcedViewId) //Client wants only me to collect data from cluster and return
             {
-                ArrayList servers = new ArrayList();
-                if (IsInStateTransfer()) //I have the updated map I can locate the replica
+                ArrayList servers = GetServerParticipatingInStateTransfer();
+                try
                 {
-                    servers = GetDestInStateTransfer();
+                    result = Clustered_Search(servers, query, values, operationContext, IsRetryOnSuspected);
                 }
-                else
+                catch (Alachisoft.NGroups.SuspectedException ex)
                 {
-                    servers.AddRange(this.Servers);
+                    if (!IsRetryOnSuspected) throw;
+
+
+                    //Sleep is used to be sure that new view applied and node is marked in state transfer...
+                    Thread.Sleep(_onSuspectedWait);
+                    servers.Clear();
+
+                    servers = GetServerParticipatingInStateTransfer();
+                    result = Clustered_Search(servers, query, values, operationContext,false);
                 }
-                result = Clustered_Search(servers, query, values, operationContext);
             }
             else if (!VerifyClientViewId(clientLastViewId))
             {
@@ -1237,16 +1568,22 @@ namespace Alachisoft.NCache.Caching.Topologies.Clustered
             long clientLastViewId = GetClientLastViewId(operationContext);
             if (clientLastViewId == forcedViewId) //Client wants only me to collect data from cluster and return
             {
-                ArrayList servers = new ArrayList();
-                if (IsInStateTransfer()) //I have the updated map I can locate the replica
+                ArrayList servers = GetServerParticipatingInStateTransfer();
+
+                try
                 {
-                    servers = GetDestInStateTransfer();
+                    result = Clustered_SearchEntries(servers, query, values, operationContext, IsRetryOnSuspected);
                 }
-                else
+                catch (Alachisoft.NGroups.SuspectedException ex)
                 {
-                    servers.AddRange(this.Servers);
+                    if (!IsRetryOnSuspected) throw;
+
+
+                    //Sleep is used to be sure that new view applied and node is marked in state transfer...
+                    Thread.Sleep(_onSuspectedWait);
+                    servers = GetServerParticipatingInStateTransfer();
+                    result = Clustered_SearchEntries(servers, query, values, operationContext,false);
                 }
-                result = Clustered_SearchEntries(servers, query, values, operationContext);
             }
             else if (!VerifyClientViewId(clientLastViewId))
             {
@@ -1274,12 +1611,6 @@ namespace Alachisoft.NCache.Caching.Topologies.Clustered
             throw new NotImplementedException();
         }
 
-    
-
-       
-
-
-
         protected virtual bool VerifyClientViewId(long clientLastViewId)
         {
             throw new NotImplementedException();
@@ -1299,7 +1630,7 @@ namespace Alachisoft.NCache.Caching.Topologies.Clustered
         /// <summary>
         /// Retrieve the list of keys from the cache based on the specified query.
         /// </summary>
-        protected QueryResultSet Clustered_Search(ArrayList dests, string queryText, IDictionary values, OperationContext operationContext)
+        protected QueryResultSet Clustered_Search(ArrayList dests, string queryText, IDictionary values, OperationContext operationContext, bool throwSuspected)
         {
             QueryResultSet resultSet = new QueryResultSet();
 
@@ -1310,7 +1641,7 @@ namespace Alachisoft.NCache.Caching.Topologies.Clustered
 
                 if (results == null)
                     return null;
-                ClusterHelper.ValidateResponses(results, typeof(QueryResultSet), Name);
+                ClusterHelper.ValidateResponses(results, typeof(QueryResultSet), Name, throwSuspected);
                 ArrayList rspList = ClusterHelper.GetAllNonNullRsp(results, typeof(QueryResultSet));
                 if (rspList.Count <= 0)
                     return null;
@@ -1334,12 +1665,21 @@ namespace Alachisoft.NCache.Caching.Topologies.Clustered
                             {
                                 tbl[key] = null;
                             }
-                            resultSet.SearchKeysResult = new ArrayList(tbl.Keys);
+                            resultSet.SearchKeysResult = new ClusteredArrayList(tbl.Keys);
                         }
                     }
                 }
 
                 return resultSet;
+            }
+            catch (Runtime.Exceptions.SuspectedException e)
+            {
+                if (throwSuspected)
+                {
+                    throw;
+                }
+
+                throw new GeneralFailureException(e.Message, e);
             }
             catch (CacheException e)
             {
@@ -1354,7 +1694,7 @@ namespace Alachisoft.NCache.Caching.Topologies.Clustered
         /// <summary>
         /// Retrieve the list of keys and values from the cache based on the specified query.
         /// </summary>
-        protected QueryResultSet Clustered_SearchEntries(ArrayList dests, string queryText, IDictionary values, OperationContext operationContext)
+        protected QueryResultSet Clustered_SearchEntries(ArrayList dests, string queryText, IDictionary values, OperationContext operationContext, bool throwSuspected)
         {
             QueryResultSet resultSet = new QueryResultSet();
 
@@ -1365,7 +1705,7 @@ namespace Alachisoft.NCache.Caching.Topologies.Clustered
 
                 if (results == null)
                     return null;
-                ClusterHelper.ValidateResponses(results, typeof(QueryResultSet), Name);
+                ClusterHelper.ValidateResponses(results, typeof(QueryResultSet), Name, throwSuspected);
                 ArrayList rspList = ClusterHelper.GetAllNonNullRsp(results, typeof(QueryResultSet));
                 if (rspList.Count <= 0)
                 {
@@ -1383,6 +1723,15 @@ namespace Alachisoft.NCache.Caching.Topologies.Clustered
                 }
 
                 return resultSet;
+            }
+            catch (NGroups.SuspectedException e)
+            {
+                if (throwSuspected)
+                {
+                    throw;
+                }
+
+                throw new GeneralFailureException(e.Message, e);
             }
             catch (CacheException e)
             {
@@ -1557,6 +1906,50 @@ namespace Alachisoft.NCache.Caching.Topologies.Clustered
             }
             catch (Exception)
             {
+            }
+        }
+
+
+        /// <summary>
+        /// Update Client connectivity status 
+        /// </summary>
+        public void UpdateClientStatus(string client, bool isConnected)
+        {
+            try
+            {
+                if (Context.NCacheLog.IsInfoEnabled) Context.NCacheLog.Info("ClusteredCacheBase.UpdateClientStatus()", " Updating Client Status accross the cluster");
+                if (this.ValidMembers.Count > 1)
+                {
+                    Object[] objects = null;
+                    if (isConnected)
+                        objects = new Object[] { client, true };
+                    else
+                        objects = new Object[] { client, false, DateTime.Now };
+                    Function func = new Function((int)OpCodes.UpdateClientStatus, objects, true);
+                    Cluster.Broadcast(func, GroupRequest.GET_NONE, false, Priority.Normal);
+                }
+            }
+            catch (Exception e)
+            {
+                Context.NCacheLog.Error("ClusteredCacheBase.AnnouncePresence()", e.ToString());
+            }
+        }
+
+        /// <summary>
+        /// Update Client connectivity status 
+        /// </summary>
+        private void handleUpdateClientStatus(object Obj)
+        {
+            Object[] args = Obj as Object[];
+
+            if (_context.ClientDeathDetection != null)
+            {
+                string client = args[0].ToString();
+                bool isConnected = (bool)args[1];
+                if (isConnected)
+                    _context.ClientDeathDetection.ClientConnected(client);
+                else
+                    _context.ClientDeathDetection.ClientDisconnected(client, (DateTime)args[2]);
             }
         }
 
@@ -1821,7 +2214,7 @@ namespace Alachisoft.NCache.Caching.Topologies.Clustered
                 }
 
                 object[] packed = new object[] { key, reason, intendedNotifiers, operationContext, eventContext };
-                ///Incase of parition, there can be same clients connected
+                ///Incase of parition and partition of replica, there can be same clients connected
                 ///to multiple server. therefore the destinations list will contain more then 
                 ///one servers. so the callback will be sent to the same client through different server
                 ///to avoid this, we will check the list for local server. if client is connected with
@@ -1857,7 +2250,7 @@ namespace Alachisoft.NCache.Caching.Topologies.Clustered
         /// </summary>
         /// <param name="dest">Addess of the callback node</param>
         /// <param name="packed">key,item and actual callback</param>
-        private void RaiseCustomUpdateCalbackNotifier(ArrayList dests, object packed, EventContext eventContext)
+        private void RaiseCustomUpdateCalbackNotifier(ArrayList dests, object packed, EventContext eventContext, bool broadCasteClusterEvent= true)
         {
             // If everything went ok!, initiate local and cluster-wide notifications.
             bool sendLocal = false;
@@ -1870,7 +2263,7 @@ namespace Alachisoft.NCache.Caching.Topologies.Clustered
                 sendLocal = true;
             }
 
-            if (ValidMembers.Count > 1)
+            if (ValidMembers.Count > 1 && broadCasteClusterEvent) 
             {
                 _cluster.SendNoReplyMcastMessageAsync(dests, new Function((int)OpCodes.NotifyCustomUpdateCallback, new object[] { objs[0], callbackListeners.Clone(), objs[2], eventContext }));
             }
@@ -1940,7 +2333,7 @@ namespace Alachisoft.NCache.Caching.Topologies.Clustered
         /// </summary>
         /// <param name="key">key</param>
         /// <param name="cbEntry">callback entry</param>
-        protected void RaiseCustomUpdateCalbackNotifier(object key, ArrayList itemUpdateCallbackListener, EventContext eventContext)
+        protected void RaiseCustomUpdateCalbackNotifier(object key, ArrayList itemUpdateCallbackListener, EventContext eventContext, bool broadCasteClusterEvent = true)
         {
             ArrayList destinations = null;
             ArrayList nodes = null;
@@ -1985,13 +2378,13 @@ namespace Alachisoft.NCache.Caching.Topologies.Clustered
             {
                 object[] packed = new object[] { key, itemUpdateCallbackListener, intendedNotifiers };
                 ArrayList selectedServer = new ArrayList(1);
-                ///[Ata]Incase of parition and partition of replica, there can be same clients connected
+                ///Incase of parition and partition of replica, there can be same clients connected
                 ///to multiple server. therefore the destinations list will contain more then 
                 ///one servers. so the callback will be sent to the same client through different server
                 ///to avoid this, we will check the list for local server. if client is connected with
                 ///local node, then there is no need to send callback to all other nodes
                 ///if there is no local node, then we select the first node in the list.
-                RaiseCustomUpdateCalbackNotifier(destinations, packed, eventContext);
+                RaiseCustomUpdateCalbackNotifier(destinations, packed, eventContext, broadCasteClusterEvent);
             }
         }
 
@@ -2189,7 +2582,79 @@ namespace Alachisoft.NCache.Caching.Topologies.Clustered
                 PublishMaps(maps);
             }
         }
-                
+
+        public void PrintHashMap(ArrayList HashMap, Hashtable BucketsOwnershipMap, string ModuleName)
+        {
+            ArrayList newMap = HashMap;
+            Hashtable newBucketsOwnershipMap = BucketsOwnershipMap;
+
+            string moduleName = ModuleName;
+
+            try
+            {
+                //print hashmap
+                if (newMap != null)
+                {
+                    System.Text.StringBuilder sb = new System.Text.StringBuilder();
+                    for (int i = 0; i < newMap.Count; i++)
+                    {
+                        sb.Append("  " + newMap[i].ToString());
+                        if ((i + 1) % 10 == 0)
+                        {
+                            sb.Remove(0, sb.Length);
+                        }
+                    }
+                }
+                else
+                {
+                }
+
+
+                HashMapBucket bkt;
+                if (newBucketsOwnershipMap != null)
+                {
+
+                    IDictionaryEnumerator ide = newBucketsOwnershipMap.GetEnumerator();
+                    System.Text.StringBuilder sb = new System.Text.StringBuilder();
+                    while (ide.MoveNext())
+                    {
+                        Address owner = ide.Key as Address;
+                        ArrayList myMap = ide.Value as ArrayList;
+                        int functionBkts = 0, bktsUnderTxfr = 0, bktsNeedTxfr = 0;
+
+                        for (int i = 0; i < myMap.Count; i++)
+                        {
+                            bkt = myMap[i] as HashMapBucket;
+                            switch (bkt.Status)
+                            {
+                                case BucketStatus.Functional:
+                                    functionBkts++;
+                                    break;
+
+                                case BucketStatus.UnderStateTxfr:
+                                    bktsUnderTxfr++;
+                                    break;
+
+                                case BucketStatus.NeedTransfer:
+                                    bktsNeedTxfr++;
+                                    break;
+                            }
+
+                            sb.Append("  " + bkt.ToString());
+                            if ((i + 1) % 10 == 0)
+                            {
+                                sb.Remove(0, sb.Length);
+                            }
+                        }
+
+                    }
+                }
+            }
+            catch (Exception e)
+            {
+            }
+        }
+
         public void PublishMaps(DistributionMaps distributionMaps)
         {
             Clustered_PublishMaps(distributionMaps);
@@ -2214,10 +2679,6 @@ namespace Alachisoft.NCache.Caching.Topologies.Clustered
             try
             {
                 object[] package = info as object[];
-                
-                //ArrayList hashMap = package[0] as ArrayList;
-                //Hashtable bucketsOwnershipMap = package[1] as Hashtable;
-
                 DistributionMaps distributionMaps = package[0] as DistributionMaps;
                 InstallHashMap(distributionMaps, null);
                 UpdateLocalBuckets();

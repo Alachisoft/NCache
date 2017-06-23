@@ -1,4 +1,4 @@
-// Copyright (c) 2015 Alachisoft
+// Copyright (c) 2017 Alachisoft
 // 
 // Licensed under the Apache License, Version 2.0 (the "License");
 // you may not use this file except in compliance with the License.
@@ -11,6 +11,7 @@
 // WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
 // See the License for the specific language governing permissions and
 // limitations under the License.
+
 using System;
 using System.Collections;
 
@@ -106,6 +107,7 @@ namespace Alachisoft.NCache.Caching.Topologies.Clustered
 
         #endregion
 
+        #region /                 --- Partitioned State Transfer Methods ---           /
         /// <summary>
         /// Authenticate the client and see if it is allowed to join the list of valid members.
         /// </summary>
@@ -164,12 +166,10 @@ namespace Alachisoft.NCache.Caching.Topologies.Clustered
                 throw new GeneralFailureException(e.Message, e);
             }
         }
-
-
-
-       
-
-        #region	/                 --- Partitioned ICache.Insert ---           /
+        
+        #endregion
+        
+        #region	/                 --- Partitioned ICache.Clear ---           /
 
         /// <summary>
         /// Removes all entries from the cluster.
@@ -338,6 +338,7 @@ namespace Alachisoft.NCache.Caching.Topologies.Clustered
 
         #endregion
 
+        #region /                 --- Partitioned ICache.Search ---           /
 
         protected QueryResultSet Clustered_Search(ArrayList dests, string queryText, IDictionary values, bool excludeSelf, OperationContext operationContext)
         {
@@ -424,6 +425,9 @@ namespace Alachisoft.NCache.Caching.Topologies.Clustered
                 throw new GeneralFailureException(e.Message, e);
             }
         }
+        
+        #endregion
+       
         #region	/                 --- Partitioned ICache.Insert ---           /
 
         /// <summary>
@@ -613,7 +617,6 @@ namespace Alachisoft.NCache.Caching.Topologies.Clustered
                     return removedEntries;
                 }
 
-                //muds:
                 if (results.SuspectedMembers.Count == dests.Count)
                 {
                     //All the members of this group has gone down. 

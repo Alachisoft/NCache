@@ -1,4 +1,4 @@
-// Copyright (c) 2015 Alachisoft
+// Copyright (c) 2017 Alachisoft
 // 
 // Licensed under the Apache License, Version 2.0 (the "License");
 // you may not use this file except in compliance with the License.
@@ -11,6 +11,7 @@
 // WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
 // See the License for the specific language governing permissions and
 // limitations under the License.
+
 using System;
 using System.Collections;
 using Alachisoft.NCache.Common.Net;
@@ -101,6 +102,7 @@ namespace Alachisoft.NCache.Config.NewDom
 
 				oldDom.CacheType = newDom.CacheSettings.CacheType;
 				}
+
 
 				if (oldDom.CacheType.Equals("clustered-cache"))
 				{
@@ -259,6 +261,15 @@ namespace Alachisoft.NCache.Config.NewDom
 					newDom.CacheSettings.CacheTopology = new CacheTopology();
 				}
 
+                if (newDom.CacheSettings.ClientDeatheDetection != null)
+                {
+                    oldDom.ClientDeathDetection = newDom.CacheSettings.ClientDeatheDetection;
+                }
+                else 
+                {
+                    oldDom.ClientDeathDetection = new Dom.ClientDeathDetection();
+                }
+
 				newDom.CacheSettings.CacheType = oldDom.CacheType;
 				if (oldDom.Cluster != null)
 				{
@@ -316,9 +327,8 @@ namespace Alachisoft.NCache.Config.NewDom
 					{
 						newDom.CacheDeployment.Servers = new ServersNodes();
 					}
-#if !CLIENT
 					newDom.CacheDeployment.Servers.NodesList = createServers(oldDom.Cluster.Channel.InitialHosts);
-#endif
+
                     if (oldDom.ClientNodes != null)
 					{
 						if (newDom.CacheDeployment.ClientNodes == null)
@@ -362,32 +372,26 @@ namespace Alachisoft.NCache.Config.NewDom
 			return newDom;
 		}
 
-#if !CLIENT
+
 		 private static ArrayList createServers(string l)
 		 {
 			Global.Tokenizer tok = new Global.Tokenizer(l, ",");
 			string t;
-			Address addr;
 			int port;
 			ArrayList retval = new ArrayList();
 			Hashtable hosts = new Hashtable();
 			ServerNode node;
-	//C# TO JAVA CONVERTER TODO TASK: There is no preprocessor in Java:
 			int j = 0;
 			while (tok.HasMoreTokens())
 			{
 				try
 				{
 					t = tok.NextToken();
-	//C# TO JAVA CONVERTER TODO TASK: There is no preprocessor in Java:
 					string host = t.Substring(0, (t.IndexOf((char) '[')) - (0));
 					host = host.Trim();
 					port = Convert.ToInt32(t.Substring(t.IndexOf((char) '[') + 1, (t.IndexOf((char) ']')) - (t.IndexOf((char) '[') + 1)));
 					node = new ServerNode(host);
-					
-
 					retval.Add(node);
-	//C# TO JAVA CONVERTER TODO TASK: There is no preprocessor in Java:
 					j++;
 
 				}
@@ -404,7 +408,7 @@ namespace Alachisoft.NCache.Config.NewDom
 			return retval;
 
 		 }
-#endif
+
         private static string createInitialHosts(ArrayList nodes, int port)
 		{
 			string initialhost = "";

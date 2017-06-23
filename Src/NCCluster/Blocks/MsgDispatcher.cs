@@ -10,6 +10,7 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 // $Id: MessageDispatcher.java,v 1.30 2004/09/02 14:00:40 belaban Exp $
+
 using System;
 using System.Collections;
 using System.Threading;
@@ -173,7 +174,7 @@ namespace Alachisoft.NGroups.Blocks
                     }
                     catch (Exception e)
                     {
-                         NCacheLog.CriticalInfo("MsgDispatcher.passUP", "An error occured while getting new hashmap. Error: " + e.ToString());
+                         NCacheLog.CriticalInfo("MsgDispatcher.passUP", "An error occurred while getting new hashmap. Error: " + e.ToString());
                     }
                     Event evnt = new Event();
                     evnt.Type = Event.HASHMAP_RESP;

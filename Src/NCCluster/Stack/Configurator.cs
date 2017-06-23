@@ -10,6 +10,7 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 // $Id: Configurator.java,v 1.6 2004/08/12 15:43:11 belaban Exp $
+
 using System;
 using System.Runtime.Remoting;
 

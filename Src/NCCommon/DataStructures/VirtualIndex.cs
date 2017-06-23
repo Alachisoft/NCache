@@ -1,4 +1,4 @@
-// Copyright (c) 2015 Alachisoft
+// Copyright (c) 2017 Alachisoft
 // 
 // Licensed under the Apache License, Version 2.0 (the "License");
 // you may not use this file except in compliance with the License.
@@ -11,13 +11,14 @@
 // WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
 // See the License for the specific language governing permissions and
 // limitations under the License.
+
 using System;
 
 namespace Alachisoft.NCache.Common.DataStructures
 {
     public class VirtualIndex :IComparable
     {
-        const int maxSize = 79 * 1024;
+        int maxSize = 79 * 1024;
         int x, y;
 
         public VirtualIndex() { }
@@ -26,6 +27,13 @@ namespace Alachisoft.NCache.Common.DataStructures
         {
             IncrementBy(index);
         }
+
+        public VirtualIndex(int maxSize, int index)
+        {
+            this.maxSize = maxSize;
+            IncrementBy(index);
+        }
+
         public void Increment()
         {
             x++;

@@ -10,6 +10,7 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 // $Id: TOTAL.java,v 1.6 2004/07/05 14:17:16 belaban Exp $
+
 using System;
 using System.Collections;
 using System.Net;
@@ -84,15 +85,11 @@ namespace Alachisoft.NGroups.Protocols
         private Address local_addr = null;
         private string group_addr = null;
         private string subGroup_addr = null;
-        //These should be fetch from the current worker role instance @UH incase of AZURE
+        //These should be fetch from the current worker role instance  incase of AZURE
         private System.Net.IPAddress bind_addr1 = null; // local IP address to bind srv sock to (m-homed systems)
         private System.Net.IPAddress bind_addr2 = null; // local IP address to bind srv sock to (m-homed systems)
 
         private int start_port = 7800; // find first available port starting at this port
-
-
-        //muds: 24-06-08
-        //as per iqbal sb. decision changing the default port-range to '1'
         private System.Collections.ArrayList members = System.Collections.ArrayList.Synchronized(new System.Collections.ArrayList(11));
 
         private int port_range = 1;
@@ -163,6 +160,7 @@ namespace Alachisoft.NGroups.Protocols
         HPTimeStats _multicastSendTimeStats;
         HPTimeStats _totalToTcpDownStats;
         private bool _leaving;
+        private string versionType;
 
         public TCP()
         {
@@ -1016,6 +1014,7 @@ namespace Alachisoft.NGroups.Protocols
                 if (port_range <= 0) port_range = 1;
                 props.Remove("port_range");
             }
+           
             if (props.Contains("heart_beat_interval"))
             {
                 
@@ -1044,14 +1043,14 @@ namespace Alachisoft.NGroups.Protocols
             
             // It is supposed that bind_addr will be provided only through props.
 
-                string ip = ConfigurationSettings.AppSettings["NCacheServer.BindToIP"];
-
-
-            if (ip != null && ip != string.Empty)
+                IPAddress ip = ServiceConfiguration.BindToIP;
+             
+            if (ip != null)
             {
                 try
                 {
-                    bind_addr1 = IPAddress.Parse(ip);
+                    bind_addr1 = ip;
+                    Stack.NCacheLog.CriticalInfo("TCP.setProperties()", "bind_addr1 :  " + bind_addr1);
                 }
                 catch (Exception)
                 {
@@ -1256,7 +1255,7 @@ namespace Alachisoft.NGroups.Protocols
             }
             catch (ThreadAbortException) { }
             catch (ThreadInterruptedException) { }
-            catch (System.Exception e)//Taimoor's code
+            catch (System.Exception e)
             {
                 stack.NCacheLog.Error("TCP.sendUnicastMessage()", e.ToString());
             }

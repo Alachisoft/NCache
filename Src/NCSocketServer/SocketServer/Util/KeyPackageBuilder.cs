@@ -1,4 +1,4 @@
-// Copyright (c) 2015 Alachisoft
+// Copyright (c) 2017 Alachisoft
 // 
 // Licensed under the Apache License, Version 2.0 (the "License");
 // you may not use this file except in compliance with the License.
@@ -11,12 +11,13 @@
 // WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
 // See the License for the specific language governing permissions and
 // limitations under the License.
+
 using System;
-using System.IO;
 using System.Text;
 using System.Collections;
 using Alachisoft.NCache.Caching;
 using System.Collections.Generic;
+using Alachisoft.NCache.Common.Util;
 
 namespace Alachisoft.NCache.SocketServer.Util
 {
@@ -97,7 +98,7 @@ namespace Alachisoft.NCache.SocketServer.Util
         /// <param name="keys">Contains packaged keys after execution</param>
         /// <param name="data">Contains packaged data after execution</param>
         /// <param name="currentContext">Current cache</param>
-        internal static List<Alachisoft.NCache.Common.Protobuf.KeyValuePackageResponse> PackageKeysValues(Hashtable dic)
+        internal static List<Alachisoft.NCache.Common.Protobuf.KeyValuePackageResponse> PackageKeysValues(IDictionary dic)
         {
             int estimatedSize = 0;
             List<Alachisoft.NCache.Common.Protobuf.KeyValuePackageResponse> ListOfKeyPackageResponse = new List<Alachisoft.NCache.Common.Protobuf.KeyValuePackageResponse>();
@@ -118,7 +119,7 @@ namespace Alachisoft.NCache.SocketServer.Util
 
                     estimatedSize = estimatedSize + ubObject.Size;
 
-                    if (estimatedSize >= SocketServer.CHUNK_SIZE_FOR_OBJECT) //If size is greater than specified size then add it and create new chunck
+                    if (estimatedSize >= ServiceConfiguration.ResponseDataSize) //If size is greater than specified size then add it and create new chunck
                     {
                         ListOfKeyPackageResponse.Add(keyPackageResponse);
                         keyPackageResponse = new Alachisoft.NCache.Common.Protobuf.KeyValuePackageResponse();
@@ -147,7 +148,7 @@ namespace Alachisoft.NCache.SocketServer.Util
         /// <param name="keys">Contains packaged keys after execution</param>
         /// <param name="data">Contains packaged data after execution</param>
         /// <param name="currentContext">Current cache</param>
-        internal static Alachisoft.NCache.Common.Protobuf.KeyValuePackageResponse PackageKeysValues(Hashtable dic, Alachisoft.NCache.Common.Protobuf.KeyValuePackageResponse keyPackageResponse)
+        internal static Alachisoft.NCache.Common.Protobuf.KeyValuePackageResponse PackageKeysValues(IDictionary dic, Alachisoft.NCache.Common.Protobuf.KeyValuePackageResponse keyPackageResponse)
         {
             if (dic != null && dic.Count > 0) 
             {

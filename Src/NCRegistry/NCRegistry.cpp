@@ -1,3 +1,6 @@
+// StubDll.cpp : Defines the entry point for the DLL application.
+//
+
 #include "stdafx.h"
 #include "regcommon.h"
 #include "resource.h"
@@ -16,6 +19,8 @@ BOOL APIENTRY DllMain( HANDLE hModule,
 	g_hModule = hModule;
     return (int)1;
 }
+
+//extern unsigned int g_DataOffset;
 
 
 

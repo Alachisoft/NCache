@@ -1,4 +1,4 @@
-// Copyright (c) 2015 Alachisoft
+// Copyright (c) 2017 Alachisoft
 // 
 // Licensed under the Apache License, Version 2.0 (the "License");
 // you may not use this file except in compliance with the License.
@@ -11,6 +11,7 @@
 // WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
 // See the License for the specific language governing permissions and
 // limitations under the License.
+
 using System;
 using System.Collections.Generic;
 using System.Text;
@@ -111,17 +112,19 @@ namespace Alachisoft.NCache.Common.Communication
         {
             if (message == null)
                 throw new ArgumentNullException("message");
-
+           
             //first serialize the message using channel formatter
             byte[] serailizedMessage = _formatter.Serialize(message);
 
             byte[] msgLength = UTF8Encoding.UTF8.GetBytes(serailizedMessage.Length.ToString());
-
+            
             //message is written in a specific order as expected by Socket server
             MemoryStream stream = new MemoryStream();
-            stream.Position = 20;//skip discarding buffer
-            stream.Write(msgLength,0,msgLength.Length);
+
+            stream.Position = 20; //skip discarding buffer
+            stream.Write(msgLength, 0, msgLength.Length);
             stream.Position = 30;
+
             stream.Write(serailizedMessage,0,serailizedMessage.Length);
 
             byte[] finalBuffer = stream.ToArray();
@@ -210,6 +213,8 @@ namespace Alachisoft.NCache.Common.Communication
                         _connection.Receive(_sizeBuffer, DATA_SIZE_BUFFER_LENGTH);
 
                         int rspLength = Convert.ToInt32(UTF8Encoding.UTF8.GetString(_sizeBuffer, 0, _sizeBuffer.Length));
+
+
 
                         if (rspLength > 0)
                         {

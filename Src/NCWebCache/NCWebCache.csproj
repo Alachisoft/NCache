@@ -167,6 +167,7 @@
     <Compile Include="Web\Caching\CacheCollection.cs" />
     <Compile Include="Web\Caching\CacheCollectionEnumerator.cs" />
     <Compile Include="Web\Caching\CacheDataNotificationCallback.cs" />
+    <Compile Include="Web\Caching\CacheDataReader.cs" />
     <Compile Include="Web\Caching\CacheImplBase.cs" />
     <Compile Include="Web\Caching\CacheInitParams.cs" />
     <Compile Include="Web\Caching\CacheItem.cs">
@@ -180,6 +181,7 @@
     </Compile>
     <Compile Include="Web\Caching\CacheServerInfo.cs" />
     <Compile Include="Web\Caching\CacheStoppedCallback.cs" />
+    <Compile Include="Web\Caching\ICacheReader.cs" />
     <Compile Include="Web\Caching\InprocCache.cs" />
     <Compile Include="Web\Caching\LockHandle.cs" />
     <Compile Include="Web\Caching\NCache.cs">
@@ -213,11 +215,15 @@
     <Compile Include="Web\RemoteClient\Command\CommandType.cs" />
     <Compile Include="Web\RemoteClient\Command\ContainsCommand.cs" />
     <Compile Include="Web\RemoteClient\Command\DeleteCommand.cs" />
+    <Compile Include="Web\RemoteClient\Command\DisposeReader.cs" />
+    <Compile Include="Web\RemoteClient\Command\ExecuteReader.cs" />
+    <Compile Include="Web\RemoteClient\Command\GetCacheBinding.cs" />
     <Compile Include="Web\RemoteClient\Command\GetHashmapCommand.cs" />
     <Compile Include="Web\RemoteClient\Command\GetLogginInfoCommand.cs" />
     <Compile Include="Web\RemoteClient\Command\GetNextChunkCommand.cs" />
     <Compile Include="Web\RemoteClient\Command\GetOptimalServerCommand.cs" />
     <Compile Include="Web\RemoteClient\Command\GetProductVersionCommand.cs" />
+    <Compile Include="Web\RemoteClient\Command\GetRecordSetNextChunk.cs" />
     <Compile Include="Web\RemoteClient\Command\GetRunningServersCommand.cs" />
     <Compile Include="Web\RemoteClient\Command\GetServerMappingCommand.cs" />
     <Compile Include="Web\RemoteClient\Command\GetThresholdCommand.cs" />
@@ -252,6 +258,7 @@
     <Compile Include="Web\RemoteClient\Communication\Request.cs" />
     <Compile Include="Web\RemoteClient\Communication\ResponseIntegrator.cs" />
     <Compile Include="Web\RemoteClient\Communication\ResponseList.cs" />
+    <Compile Include="Web\RemoteClient\Communication\SendContextClient.cs" />
     <Compile Include="Web\RemoteClient\Config\ClientConfiguration.cs" />
     <Compile Include="Web\RemoteClient\Config\RemoteServer.cs" />
   </ItemGroup>

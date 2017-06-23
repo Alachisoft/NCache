@@ -1,4 +1,4 @@
-// Copyright (c) 2015 Alachisoft
+// Copyright (c) 2017 Alachisoft
 // 
 // Licensed under the Apache License, Version 2.0 (the "License");
 // you may not use this file except in compliance with the License.
@@ -11,6 +11,7 @@
 // WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
 // See the License for the specific language governing permissions and
 // limitations under the License.
+
 using System;
 using System.Text;
 using System.Collections;
@@ -43,9 +44,7 @@ namespace Alachisoft.NCache.Caching.Topologies.Clustered
 
         internal AsyncItemReplicator(CacheRuntimeContext context, TimeSpan interval)
         {
-                        if (System.Configuration.ConfigurationSettings.AppSettings["NCacheServer.BulkItemsToReplicate"] != null)
-            { _bulkKeysToReplicate = Convert.ToInt32(System.Configuration.ConfigurationSettings.AppSettings["NCacheServer.BulkItemsToReplicate"]); }
-
+            _bulkKeysToReplicate = ServiceConfiguration.BulkItemsToReplicate;
             this._context = context;
             this._interval = interval;
         }
@@ -118,7 +117,6 @@ namespace Alachisoft.NCache.Caching.Topologies.Clustered
         /// </summary>
         public void Clear()
         {
-            //keysQue.Clear();
             _queue.Clear();
             _context.PerfStatsColl.IncrementMirrorQueueSizeStats(_queue.Count);
         }
@@ -128,7 +126,6 @@ namespace Alachisoft.NCache.Caching.Topologies.Clustered
         /// </summary>
         internal void EnqueueClear(ReplicationOperation operation)
         {
-            //keysQue.Clear();
             _queue.Clear();
             this.EnqueueOperation("NcAcHe$Cl@Ea%R", operation);
         }
@@ -168,6 +165,8 @@ namespace Alachisoft.NCache.Caching.Topologies.Clustered
         /// </summary>
         public void Run()
         {
+            //reload threashold value from service config, consider the probability that values would have been changed by user
+            _bulkKeysToReplicate = ServiceConfiguration.BulkItemsToReplicate;
 
             ArrayList opCodesToBeReplicated = new ArrayList(_bulkKeysToReplicate);
             ArrayList infoToBeReplicated = new ArrayList(_bulkKeysToReplicate);
@@ -235,7 +234,7 @@ namespace Alachisoft.NCache.Caching.Topologies.Clustered
                             }
                             catch (Exception ex)
                             {
-                                if (_context.NCacheLog.IsErrorEnabled) _context.NCacheLog.Error( "AsyncReplicator.RUN", "Error occured while retrying operation. " + ex.ToString());
+                                if (_context.NCacheLog.IsErrorEnabled) _context.NCacheLog.Error( "AsyncReplicator.RUN", "Error occurred while retrying operation. " + ex.ToString());
                             }
                         }
                         else
@@ -330,50 +329,5 @@ namespace Alachisoft.NCache.Caching.Topologies.Clustered
         #endregion
     }
     #endregion
-
-    /*
-    // Summary:
-    //     Defines a ReplicationEntry with OperationCode and information that can be set or retrieved.
-    public struct ReplicationEntry
-    {
-        private int _opCode;
-        private object _info;
-
-        //
-        // Summary:
-        //     Initializes an instance of the Alachisoft.NCache.Caching.Topologies.Clustered.ReplicationEntry type with
-        //     the specified opCode and Inforamtion.
-        //
-        // Parameters:
-        //   Information:
-        //     The Information associated with key.
-        //
-        //   opcode:
-        //     The operation code for the type of operation to perform on the key.
-        //
-        // Exceptions:
-        //   System.ArgumentNullException:
-        //     opCode is null and the .NET Framework version is 1.0 or 1.1.
-        public ReplicationEntry(int opCode, object info)
-        {
-            _opCode = opCode;
-            _info = info;
-        }
-
-        //
-        // Summary:
-        //     Gets or sets the value in the ReplicationEntry.
-        //
-        // Returns:
-        //     The Information in the ReplicationEntry.
-        public object Info { get { return _info; } set { _info = value; } }
-        //
-        // Summary:
-        //     Gets or sets the Operation Code in the inforamtion box.
-        //
-        // Returns:
-        //     The operation code for this key.
-        public int OpCode { get { return _opCode; } set { _opCode = value; } }
-    }
-     */
+  
 }

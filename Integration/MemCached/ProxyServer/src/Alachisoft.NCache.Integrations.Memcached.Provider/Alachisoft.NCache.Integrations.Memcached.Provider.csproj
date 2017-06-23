@@ -45,29 +45,9 @@
     <SignAssembly>true</SignAssembly>
   </PropertyGroup>
   <PropertyGroup>
-    <AssemblyOriginatorKeyFile>ncache.snk</AssemblyOriginatorKeyFile>
-  </PropertyGroup>
-  <PropertyGroup Condition="'$(Configuration)|$(Platform)' == 'Release20|AnyCPU'">
-    <OutputPath>bin\Release20\</OutputPath>
-    <TargetFrameworkVersion>v3.5</TargetFrameworkVersion>
-    <PlatformTarget>AnyCPU</PlatformTarget>
-    <DefineConstants>TRACE</DefineConstants>
-    <Optimize>true</Optimize>
-    <PlatformTarget>AnyCPU</PlatformTarget>
-    <CodeAnalysisLogFile>bin\Release\Alachisoft.NCache.Integrations.Memcached.Provider.dll.CodeAnalysisLog.xml</CodeAnalysisLogFile>
-    <CodeAnalysisUseTypeNameInSuppression>true</CodeAnalysisUseTypeNameInSuppression>
-    <CodeAnalysisModuleSuppressionsFile>GlobalSuppressions.cs</CodeAnalysisModuleSuppressionsFile>
-    <ErrorReport>prompt</ErrorReport>
-    <CodeAnalysisRuleSet>MinimumRecommendedRules.ruleset</CodeAnalysisRuleSet>
-    <CodeAnalysisRuleSetDirectories>;C:\Program Files (x86)\Microsoft Visual Studio 10.0\Team Tools\Static Analysis Tools\\Rule Sets</CodeAnalysisRuleSetDirectories>
-    <CodeAnalysisIgnoreBuiltInRuleSets>true</CodeAnalysisIgnoreBuiltInRuleSets>
-    <CodeAnalysisRuleDirectories>;C:\Program Files (x86)\Microsoft Visual Studio 10.0\Team Tools\Static Analysis Tools\FxCop\\Rules</CodeAnalysisRuleDirectories>
-    <CodeAnalysisIgnoreBuiltInRules>false</CodeAnalysisIgnoreBuiltInRules>
+    <AssemblyOriginatorKeyFile>..\..\..\..\..\Resources\ncache.snk</AssemblyOriginatorKeyFile>
   </PropertyGroup>
   <ItemGroup Condition="'$(Configuration)|$(Platform)' == 'Release|AnyCPU'">
-    <Reference Include="System.Core" />
-  </ItemGroup>
-  <ItemGroup Condition="'$(Configuration)|$(Platform)' == 'Release20|AnyCPU'">
     <Reference Include="System.Core" />
   </ItemGroup>
   <ItemGroup>
@@ -84,40 +64,22 @@
     <Compile Include="OperationResult.cs" />
   </ItemGroup>
   <ItemGroup>
-    <None Include="ncache.snk" />
-  </ItemGroup>
-  <ItemGroup>
-    <Reference Include="Alachisoft.NCache.Common" Condition="'$(Configuration)|$(Platform)' == 'Release20|AnyCPU'">
-      <SpecificVersion>False</SpecificVersion>
-      <HintPath>..\..\..\..\..\Src\build\Server\2x\Alachisoft.NCache.Common.dll</HintPath>
+    <Reference Include="Alachisoft.NCache.Cache">
+      <HintPath>..\..\..\..\..\Src\build\Server\4x\Alachisoft.NCache.Cache.dll</HintPath>
     </Reference>
-    <Reference Include="Alachisoft.NCache.Common, Version=4.4.0.0, Culture=neutral, PublicKeyToken=1448e8d1123e9096, processorArchitecture=MSIL">
-      <SpecificVersion>False</SpecificVersion>
-      <HintPath>..\..\..\..\..\Src\build\Server\2x\Alachisoft.NCache.Common.dll</HintPath>
+    <Reference Include="Alachisoft.NCache.Common">
+      <HintPath>..\..\..\..\..\Src\build\Server\4x\Alachisoft.NCache.Common.dll</HintPath>
     </Reference>
-    <Reference Include="Alachisoft.NCache.Runtime" Condition="'$(Configuration)|$(Platform)' == 'Release20|AnyCPU'">
-      <SpecificVersion>False</SpecificVersion>
-      <HintPath>..\..\..\..\..\Src\build\Server\2x\Alachisoft.NCache.Runtime.dll</HintPath>
+    <Reference Include="Alachisoft.NCache.Runtime">
+      <HintPath>..\..\..\..\..\Src\build\Server\4x\Alachisoft.NCache.Runtime.dll</HintPath>
     </Reference>
-    <Reference Include="Alachisoft.NCache.Runtime, Version=4.4.0.0, Culture=neutral, PublicKeyToken=1448e8d1123e9096, processorArchitecture=MSIL">
-      <SpecificVersion>False</SpecificVersion>
-      <HintPath>..\..\..\..\..\Src\build\Server\2x\Alachisoft.NCache.Runtime.dll</HintPath>
-    </Reference>
-    <Reference Include="Alachisoft.NCache.Web" Condition="'$(Configuration)|$(Platform)' == 'Release20|AnyCPU'">
-      <SpecificVersion>False</SpecificVersion>
-      <HintPath>..\..\..\..\..\Src\build\Server\2x\Alachisoft.NCache.Web.dll</HintPath>
-    </Reference>
-    <Reference Include="Alachisoft.NCache.Web, Version=4.4.0.0, Culture=neutral, PublicKeyToken=1448e8d1123e9096, processorArchitecture=MSIL">
-      <SpecificVersion>False</SpecificVersion>
-      <HintPath>..\..\..\..\..\Src\build\Server\2x\Alachisoft.NCache.Web.dll</HintPath>
+    <Reference Include="Alachisoft.NCache.Web">
+      <HintPath>..\..\..\..\..\Src\build\Server\4x\Alachisoft.NCache.Web.dll</HintPath>
     </Reference>
   </ItemGroup>
   <Import Project="$(MSBuildToolsPath)\Microsoft.CSharp.targets" />
   <PropertyGroup Condition=" '$(Configuration)|$(Platform)' == 'Release|AnyCPU'">
-    <PostBuildEvent>xcopy /Y "$(TargetPath)" "$(SolutionDir)\..\..\..\build\Memcached\4x\"</PostBuildEvent>
-  </PropertyGroup>
-  <PropertyGroup Condition=" '$(Configuration)|$(Platform)' == 'Release20|AnyCPU'">
-    <PostBuildEvent>xcopy /Y "$(TargetPath)" "$(SolutionDir)\..\..\..\build\Memcached\2x\"</PostBuildEvent>
+    <PostBuildEvent>xcopy /Y "$(TargetPath)" "$(SolutionDir)\..\..\..\build\Memcached\Gateway\"</PostBuildEvent>
   </PropertyGroup>
   <!-- To modify your build process, add your task inside one of the targets below and uncomment it. 
        Other similar extension points exist, see Microsoft.Common.targets.

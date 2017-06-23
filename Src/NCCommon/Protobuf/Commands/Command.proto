@@ -35,6 +35,10 @@ import "GetProductVersionCommand.proto";
 import "GetServerMappingCommand.proto";
 import "GetOptimalServerCommand.proto";
 import "GetRunningServersCommand.proto";
+import "GetCacheBindingCommand.proto";
+import "ExecuteReaderCommand.proto";
+import "GetReaderNextChunkCommand.proto";
+import "DisposeReaderCommand.proto";
 
 option java_outer_classname="CommandProtocol";
 package Alachisoft.NCache.Common.Protobuf;
@@ -80,6 +84,10 @@ message Command
 		GET_SERVER_MAPPING = 35;
 		GET_OPTIMAL_SERVER = 36;
 		GET_RUNNING_SERVERS = 37;
+		GET_CACHE_BINDING = 38;
+        EXECUTE_READER = 39;
+        GET_READER_CHUNK = 40;
+        DISPOSE_READER = 41;
 	}
 	
 	optional Type type = 1;
@@ -125,6 +133,9 @@ message Command
 	optional GetServerMappingCommand getServerMappingCommand = 41;
 	optional GetOptimalServerCommand getOptimalServerCommand = 42;
 	optional GetRunningServersCommand getRunningServersCommand = 43;
-
+	optional GetCacheBindingCommand getCacheBindingCommand = 44;
+    optional ExecuteReaderCommand executeReaderCommand = 45;
+    optional GetReaderNextChunkCommand getReaderNextChunkCommand = 46;
+    optional DisposeReaderCommand disposeReaderCommand = 47;
 
 	}

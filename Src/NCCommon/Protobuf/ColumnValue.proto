@@ -1,0 +1,9 @@
+import "AverageResult.proto";
+
+package Alachisoft.NCache.Common.Protobuf;
+
+message ColumnValue
+{
+	optional string stringValue = 1;
+	optional AverageResult avgResult = 2;
+}

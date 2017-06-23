@@ -1,4 +1,4 @@
-// Copyright (c) 2015 Alachisoft
+// Copyright (c) 2017 Alachisoft
 // 
 // Licensed under the Apache License, Version 2.0 (the "License");
 // you may not use this file except in compliance with the License.
@@ -11,6 +11,7 @@
 // WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
 // See the License for the specific language governing permissions and
 // limitations under the License.
+
 using System;
 using System.Collections;
 using Alachisoft.NCache.Caching.Topologies;
@@ -20,6 +21,7 @@ using Alachisoft.NCache.Caching.Topologies;
 using Alachisoft.NCache.Runtime;
 using Alachisoft.NCache.Common.Util;
 using Alachisoft.NCache.Common.Logger;
+using Alachisoft.NCache.Common.DataStructures.Clustered;
 
 
 namespace Alachisoft.NCache.Caching.EvictionPolicies
@@ -33,8 +35,7 @@ namespace Alachisoft.NCache.Caching.EvictionPolicies
 
 		/// <summary> default priority </summary>
 		private CacheItemPriority _priority = CacheItemPriority.Normal;
-        private Hashtable[] _index;
-        private int[] _evictionIndexMaxCounts;
+        private HashVector[] _index;
         private float _ratio = 0.25F;
 
         ///It is the interval between two consecutive removal of items from the cluster so that user operation is not affected
@@ -68,8 +69,8 @@ namespace Alachisoft.NCache.Caching.EvictionPolicies
 					_priority = GetPriorityValue(defaultValue);
 				}
 			}
-            _sleepInterval = Convert.ToInt32(ServiceConfiguration.EvictionBulkRemoveDelay);
-            _removeThreshhold = Convert.ToInt32(ServiceConfiguration.EvictionBulkRemoveSize);
+            _sleepInterval = ServiceConfiguration.EvictionBulkRemoveDelay;
+            _removeThreshhold = ServiceConfiguration.EvictionBulkRemoveSize;
             _ratio = ratio / 100f;
 			Initialize();
 		}
@@ -80,8 +81,7 @@ namespace Alachisoft.NCache.Caching.EvictionPolicies
 		/// </summary>
 		private void Initialize()
 		{
-            _index = new Hashtable[5];
-            _evictionIndexMaxCounts = new int[5];
+            _index = new HashVector[5];
 		}
 
 
@@ -128,7 +128,6 @@ namespace Alachisoft.NCache.Caching.EvictionPolicies
 
         void IEvictionPolicy.Notify(object key, EvictionHint oldhint, EvictionHint newHint)
         {
-            
             //always use the new priority eviction hint.
             EvictionHint hint = newHint;
             if (hint != null)
@@ -157,61 +156,52 @@ namespace Alachisoft.NCache.Caching.EvictionPolicies
 
                 lock (_index.SyncRoot)
                 {
-                    int changedIndex = -1;
                     switch (hintPriority)
                     {
                         case CacheItemPriority.Low:
                             if (_index[0] == null)
-                                _index[0] = new Hashtable(25000, 0.7f);
+                                _index[0] = new HashVector();
                             _index[0][key] = hint;
-                            changedIndex = 0;
                             break;
 						case CacheItemPriority.BelowNormal:
                             if (_index[1] == null)
-                                _index[1] = new Hashtable(25000, 0.7f);
+                                _index[1] = new HashVector();
                             _index[1][key] = hint;
-                            changedIndex = 1;
                             break;
 						case CacheItemPriority.Normal:
                             if (_index[2] == null)
-                                _index[2] = new Hashtable(25000, 0.7f);
+                                _index[2] = new HashVector();
                             _index[2][key] = hint;
-                            changedIndex = 2;
                             break;
 						case CacheItemPriority.AboveNormal:
                             if (_index[3] == null)
-                                _index[3] = new Hashtable(25000, 0.7f);
+                                _index[3] = new HashVector();
                             _index[3][key] = hint;
-                            changedIndex = 3;
                             break;
 						case CacheItemPriority.High:
                             if (_index[4] == null)
-                                _index[4] = new Hashtable(25000, 0.7f);
+                                _index[4] = new HashVector();
                             _index[4][key] = hint;
-                            changedIndex = 4;
                             break;
-                    }
-
-                    if (changedIndex > -1 && _index[changedIndex].Count > _evictionIndexMaxCounts[changedIndex])
-                    {
-                        _evictionIndexMaxCounts[changedIndex] = _index[changedIndex].Count;
-                    }
+                    }                   
                 }
             }
         }
 
         void IEvictionPolicy.Execute(CacheBase cache, CacheRuntimeContext context, long evictSize)
         {
-          
+            //notification is sent for a max of 100k data if multiple items...
+            //otherwise if a single item is greater than 100k then notification is sent for
+            //that item only...
             ILogger NCacheLog = cache.Context.NCacheLog;
             
             if (NCacheLog.IsInfoEnabled) NCacheLog.Info("LocalCache.Evict()", "Cache Size: {0}" + cache.Count.ToString());
 
-             //if user has updated the values in configuration file then new values will be reloaded.
-            _sleepInterval = Convert.ToInt32(ServiceConfiguration.EvictionBulkRemoveDelay);
-            _removeThreshhold = Convert.ToInt32(ServiceConfiguration.EvictionBulkRemoveSize);
+            //if user has updated the values in configuration file then new values will be reloaded.
+            _sleepInterval = ServiceConfiguration.EvictionBulkRemoveDelay;
+            _removeThreshhold = ServiceConfiguration.EvictionBulkRemoveSize;
             DateTime startTime = DateTime.Now;
-            ArrayList selectedKeys = this.GetSelectedKeys(cache, (long)Math.Ceiling(evictSize * _ratio));
+            IList selectedKeys = this.GetSelectedKeys(cache, (long)Math.Ceiling(evictSize * _ratio));
             DateTime endTime = DateTime.Now;
 
             if (NCacheLog.IsInfoEnabled) NCacheLog.Info("LocalCache.Evict()", String.Format("Time Span for {0} Items: " + (endTime - startTime), selectedKeys.Count));
@@ -220,9 +210,9 @@ namespace Alachisoft.NCache.Caching.EvictionPolicies
 
             Cache rootCache = context.CacheRoot;
 
-            ArrayList keysTobeRemoved = new ArrayList();
-            ArrayList dependentItems = new ArrayList();
-            ArrayList removedItems = null;
+            ClusteredArrayList keysTobeRemoved = new ClusteredArrayList();
+            ClusteredArrayList dependentItems = new ClusteredArrayList();
+            IList removedItems = null;
 
             IEnumerator e = selectedKeys.GetEnumerator();
 
@@ -247,7 +237,7 @@ namespace Alachisoft.NCache.Caching.EvictionPolicies
                     }
                     catch (Exception ex)
                     {
-                        NCacheLog.Error("PriorityEvictionPolicy.Execute", "an error occured while removing items. Error " + ex.ToString());
+                        NCacheLog.Error("PriorityEvictionPolicy.Execute", "an error occurred while removing items. Error " + ex.ToString());
                     }
                     keysTobeRemoved.Clear();
                     if (removedItems != null && removedItems.Count > 0)
@@ -281,7 +271,7 @@ namespace Alachisoft.NCache.Caching.EvictionPolicies
                 }
                 catch (Exception ex)
                 {
-                    NCacheLog.Error("PriorityEvictionPolicy.Execute", "an error occured while removing items. Error " + ex.ToString());
+                    NCacheLog.Error("PriorityEvictionPolicy.Execute", "an error occurred while removing items. Error " + ex.ToString());
                 }
             }
 
@@ -300,13 +290,13 @@ namespace Alachisoft.NCache.Caching.EvictionPolicies
                             {
                                 OperationContext priorityEvictionOperationContext = new OperationContext();
                                 priorityEvictionOperationContext.Add(OperationContextFieldName.OperationType, OperationContextOperationType.CacheOperation);
-                                rootCache.CascadedRemove(removableList.ToArray(), ItemRemoveReason.Underused, true, priorityEvictionOperationContext);
+                                rootCache.CascadedRemove(removableList, ItemRemoveReason.Underused, true, priorityEvictionOperationContext);
 
                                 context.PerfStatsColl.IncrementEvictPerSecStatsBy(removableList.Count);
                             }
                             catch (Exception exc)
                             {
-                                NCacheLog.Error("PriorityEvictionPolicy.Execute", "an error occured while removing dependent items. Error " + exc.ToString());
+                                NCacheLog.Error("PriorityEvictionPolicy.Execute", "an error occurred while removing dependent items. Error " + exc.ToString());
 
                             }
                             removableList.Clear();
@@ -319,13 +309,13 @@ namespace Alachisoft.NCache.Caching.EvictionPolicies
                         {
                             OperationContext priorityEvictionOperationContext = new OperationContext();
                             priorityEvictionOperationContext.Add(OperationContextFieldName.OperationType, OperationContextOperationType.CacheOperation);
-                            rootCache.CascadedRemove(removableList.ToArray(), ItemRemoveReason.Underused, true, priorityEvictionOperationContext);
+                            rootCache.CascadedRemove(removableList, ItemRemoveReason.Underused, true, priorityEvictionOperationContext);
 
                             context.PerfStatsColl.IncrementEvictPerSecStatsBy(removableList.Count);
                         }
                         catch (Exception exc)
                         {
-                            NCacheLog.Error("PriorityEvictionPolicy.Execute", "an error occured while removing dependent items. Error " + exc.ToString());
+                            NCacheLog.Error("PriorityEvictionPolicy.Execute", "an error occurred while removing dependent items. Error " + exc.ToString());
 
                         }
                         removableList.Clear();
@@ -342,9 +332,9 @@ namespace Alachisoft.NCache.Caching.EvictionPolicies
         /// <param name="cache"></param>
         /// <param name="evictSize"></param>
         /// <returns></returns>
-        private ArrayList GetSelectedKeys(CacheBase cache, long evictSize)
+        private IList GetSelectedKeys(CacheBase cache, long evictSize)
         {
-            ArrayList selectedKeys = new ArrayList(100);
+            ClusteredArrayList selectedKeys = new ClusteredArrayList(100);
 
             long sizeCount = 0;
             int prvsSize = 0;
@@ -357,7 +347,7 @@ namespace Alachisoft.NCache.Caching.EvictionPolicies
                 {
                     if (!selectionComplete)
                     {
-                        Hashtable currentIndex = this._index[i];
+                        HashVector currentIndex = this._index[i];
                         if (currentIndex != null)
                         {
                             IDictionaryEnumerator ide = currentIndex.GetEnumerator();
@@ -410,7 +400,6 @@ namespace Alachisoft.NCache.Caching.EvictionPolicies
                                 if (_index[i].Count == 0)
                                 {
                                     _index[i] = null;
-                                    _evictionIndexMaxCounts[i] = 0;
                                 }
                             }
                     }
@@ -425,8 +414,7 @@ namespace Alachisoft.NCache.Caching.EvictionPolicies
                     for (int i = 0; i < 5; i++)
                         if (_index[i] != null)
                         {
-                            _index[i] = new Hashtable(25000, 0.7f);
-                            _evictionIndexMaxCounts[i] = 0;
+                            _index[i] = new HashVector();
                         }
             }
         }
@@ -448,8 +436,10 @@ namespace Alachisoft.NCache.Caching.EvictionPolicies
                     for (int i = 0; i < 5; i++)
                     {
                         if (_index[i] != null)
+                        {
                             keysCount += _index[i].Count;
-                        evictionIndexMaxCounts += _evictionIndexMaxCounts[i];
+                            evictionIndexMaxCounts += _index[i].BucketCount;
+                        }
                     }
                 }
                 temp += keysCount * PriorityEvictionHint.InMemorySize;

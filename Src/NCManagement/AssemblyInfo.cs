@@ -1,4 +1,4 @@
-// Copyright (c) 2015 Alachisoft
+// Copyright (c) 2017 Alachisoft
 // 
 // Licensed under the Apache License, Version 2.0 (the "License");
 // you may not use this file except in compliance with the License.
@@ -27,15 +27,11 @@ using System.Runtime.InteropServices;
 [assembly: ComVisible(false)]
 
 [assembly: AssemblyTitle("Alachisoft.NCache.Management")]
-
 [assembly: AssemblyConfiguration("")]
 [assembly: AssemblyCompany("Alachisoft")]
-
 [assembly: AssemblyProduct("Alachisoft® NCache Open Source")]
-
 [assembly: AssemblyTrademark("NCache ™ is a registered trademark of Alachisoft.")]
-
-[assembly: AssemblyCopyright("Copyright © 2005-2015 Alachisoft")]
+[assembly: AssemblyCopyright("Copyright © 2005-2017 Alachisoft")]
 [assembly: AssemblyCulture("")]		
 
 //
@@ -49,7 +45,7 @@ using System.Runtime.InteropServices;
 // You can specify all the values or you can default the Revision and Build Numbers 
 // by using the '*' as shown below:
 
-[assembly: AssemblyVersion("4.4.0.0")]
+[assembly: AssemblyVersion("4.6.0.0")]
 
 //
 // In order to sign your assembly you must specify a key to use. Refer to the 
@@ -81,6 +77,5 @@ using System.Runtime.InteropServices;
 
 [assembly: AssemblyKeyFile("..\\..\\..\\..\\Resources\\ncache.snk")]
 
-[assembly:  AssemblyFileVersionAttribute("4.4.0.11")]
-[assembly: AssemblyDescriptionAttribute("Management Classes")]
-[assembly: AssemblyInformationalVersion("4.4.0")]
+[assembly: AssemblyFileVersionAttribute("4.6.3.0")]
+[assembly: AssemblyInformationalVersion("4.6.0")]

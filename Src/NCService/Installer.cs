@@ -1,4 +1,4 @@
-// Copyright (c) 2015 Alachisoft
+// Copyright (c) 2017 Alachisoft
 // 
 // Licensed under the Apache License, Version 2.0 (the "License");
 // you may not use this file except in compliance with the License.
@@ -120,21 +120,13 @@ namespace Alachisoft.NCache.Service
 		/// associated with the installation.</param>
 		public override void Install(IDictionary stateSaver)
 		{
-			//HKEY_LOCAL_MACHINE\Services\CurrentControlSet
 			base.Install(stateSaver);
 			try
 			{
 				RegistryKey services = Registry.LocalMachine.OpenSubKey(@"System\CurrentControlSet\Services");
 				RegistryKey service = services.OpenSubKey(serviceInstaller.ServiceName, true);
 
-                service.SetValue("Description", "Provides out-proc caching and clustering. Allows local and remote management of NCache Express configuration.");
-
-                //(Optional) Add some custom information your service will use...
-				//config = service.CreateSubKey("Parameters");
-
-
-				//config.SetValue("Path", loc);
-
+                service.SetValue("Description", "Provides out-proc caching and clustering. Allows local and remote management of NCache configuration.");
 			}
 			catch(Exception e)
 			{

@@ -1,0 +1,11 @@
+option java_outer_classname="OrderByArgumentProtocol";
+
+import "Order.proto";
+
+package Alachisoft.NCache.Common.Protobuf;
+
+message OrderByArgument
+{
+	optional string attributeName = 1;
+	optional Order order = 2 [default = ASC];
+}

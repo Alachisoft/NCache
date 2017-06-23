@@ -10,6 +10,7 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 // $Id: RequestCorrelator.java,v 1.12 2004/09/05 04:54:21 ovidiuf Exp $
+
 using System;
 using System.IO;
 using Alachisoft.NGroups;
@@ -487,7 +488,7 @@ namespace Alachisoft.NGroups.Blocks
 			stopScheduler();
 			started = false;
 
-            if (_statusCleanerThread != null && _statusCleanerThread.IsAlive)
+            if (_statusCleanerThread != null)
             {
                 try
                 {
@@ -682,7 +683,7 @@ namespace Alachisoft.NGroups.Blocks
                 }
                 catch (Exception e)
                 {
-                    if(NCacheLog.IsErrorEnabled) NCacheLog.Error("RequestCorrelator.RequestCleaner", "An error occured while cleaning request_status. " + e.ToString());
+                    if(NCacheLog.IsErrorEnabled) NCacheLog.Error("RequestCorrelator.RequestCleaner", "An error occurred while cleaning request_status. " + e.ToString());
                 }
             }
         }
@@ -1236,7 +1237,15 @@ namespace Alachisoft.NGroups.Blocks
 			{
                 if (retval is OperationResponse)
                 {
-                    rsp_buf = (byte[]) ((OperationResponse)retval).SerializablePayload;
+                    if (((OperationResponse)retval).SerilizationStream != null)
+                    {
+                        rsp.SerlizationStream = ((OperationResponse)retval).SerilizationStream;
+                        //MemoryStream stream=((MemoryStream)((OperationResponse)retval).SerilizationStream);
+                        //rsp_buf = stream.ToArray();
+                        //stream.Seek(0, SeekOrigin.Begin);
+                    }
+                    else
+                        rsp_buf = (byte[])((OperationResponse)retval).SerializablePayload;
                     rsp.Payload = ((OperationResponse)retval).UserPayload;
                     rsp.responseExpected = true;
                 }

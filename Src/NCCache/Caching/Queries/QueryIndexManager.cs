@@ -1,4 +1,4 @@
-// Copyright (c) 2015 Alachisoft
+// Copyright (c) 2017 Alachisoft
 // 
 // Licensed under the Apache License, Version 2.0 (the "License");
 // you may not use this file except in compliance with the License.
@@ -11,6 +11,7 @@
 // WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
 // See the License for the specific language governing permissions and
 // limitations under the License.
+
 using System;
 using System.Text;
 using System.Collections;
@@ -49,17 +50,19 @@ namespace Alachisoft.NCache.Caching.Queries
             private object _key;
             private CacheEntry _entry;
             private QueryIndexManager _indexManager;
+            private OperationContext _operationContext;
 
-            public IndexAddTask(QueryIndexManager indexManager, object key, CacheEntry value)
+            public IndexAddTask(QueryIndexManager indexManager, object key, CacheEntry value, OperationContext operationContext)
             {
                 _key = key;
                 _entry = value;
                 _indexManager = indexManager;
+                _operationContext = operationContext;
             }
 
             void AsyncProcessor.IAsyncTask.Process()
             {
-                _indexManager.AddToIndex(_key, _entry);
+                _indexManager.AddToIndex(_key, _entry, _operationContext);
             }
         }
 
@@ -78,7 +81,7 @@ namespace Alachisoft.NCache.Caching.Queries
 
             void AsyncProcessor.IAsyncTask.Process()
             {
-                _indexManager.RemoveFromIndex(_key, _entry.ObjectType);
+                _indexManager.RemoveFromIndex(_key, _entry);
             }
         }
 
@@ -86,7 +89,6 @@ namespace Alachisoft.NCache.Caching.Queries
         private bool _indexForAll;
         private Topologies.Local.IndexedLocalCache _cache;
         private IDictionary _props;
-      
         protected string _cacheName;
 
         protected TypeInfoMap _typeMap;
@@ -175,7 +177,9 @@ namespace Alachisoft.NCache.Caching.Queries
                                 _indexMap[typename] = new TypeIndex(typename, _indexForAll);
                             indexedDefined = true;
                         }
+
                     }
+
                 }
             }
             else
@@ -203,10 +207,9 @@ namespace Alachisoft.NCache.Caching.Queries
                 _indexMap = null;
             }
             _cache = null;
-            
         }
 
-        public virtual void AddToIndex(object key, object value)
+        public virtual void AddToIndex(object key, object value, OperationContext operationContext)
         {
             CacheEntry entry = (CacheEntry)value;
             if(entry==null ) return;
@@ -235,7 +238,7 @@ namespace Alachisoft.NCache.Caching.Queries
                         {
                             string attribute = attribList[i].ToString();
                             string val = _typeMap.GetAttributes(handleId)[attribList[i]] as string;
-                         
+                           
                             Type t1 =Type.GetType(val, true, true);
 
                             object obj = null;
@@ -267,106 +270,41 @@ namespace Alachisoft.NCache.Caching.Queries
                             metaInfoAttribs.Add(attribute, obj);
                         }
 
+                        
+
                         entry.ObjectType = _typeMap.GetTypeName(handleId);
                         IQueryIndex index = (IQueryIndex)_indexMap[type];
                         
                         long prevSize = index.IndexInMemorySize;
-                        index.AddToIndex(key, indexAttribs);
+                        index.AddToIndex(key, new QueryItemContainer(entry, indexAttribs));
                         this._queryIndexMemorySize += index.IndexInMemorySize - prevSize;
                     }
                 }
             }
 
 
-        }   
+        }
 
-        public void AsyncAddToIndex(object key, CacheEntry value)
+        public void AsyncAddToIndex(object key, CacheEntry value, OperationContext operationContext)
         {
             lock (_asyncProcessor)
             {
-                _asyncProcessor.Enqueue(new IndexAddTask(this, key, value));
-            }
-        }
-
-        public virtual void RemoveFromIndex(object key, string value)
-        {
-            if (value == null)
-            {
-                return;
-            }
-            lock (_indexMap.SyncRoot)
-            {
-                string type = value.ToString();
-                if (_indexMap.Contains(type))
-                {
-                    IQueryIndex index = (IQueryIndex)_indexMap[type];
-                    long prevSize = index.IndexInMemorySize;
-                    index.RemoveFromIndex(key);
-                    this._queryIndexMemorySize += index.IndexInMemorySize - prevSize;
-                }
+                _asyncProcessor.Enqueue(new IndexAddTask(this, key, value, operationContext));
             }
         }
 
         public virtual void RemoveFromIndex(object key, object value)
         {
-            if (value != null && ((Hashtable) value).Contains("query-info"))
-            {
-                value = ((Hashtable) value)["query-info"];
-            }
-            else return;
-
+            if (value == null)
+                return;
+            CacheEntry entry = (CacheEntry)value;
+            string type = entry.ObjectType;
             lock (_indexMap.SyncRoot)
             {
-                IDictionaryEnumerator queryInfoDic = ((Hashtable)value).GetEnumerator();
-                while (queryInfoDic.MoveNext())
-                {
-                    int handleId = (int)queryInfoDic.Key;
-                    string type = _typeMap.GetTypeName(handleId);
-                    if (_indexMap.Contains(type))
-                    {
-                        Hashtable attribs = new Hashtable();
-                        ArrayList values = (ArrayList)queryInfoDic.Value;
-
-                        ArrayList attribList = _typeMap.GetAttribList(handleId);
-
-                        for (int i = 0; i < attribList.Count; i++)
-                        {
-                            string val = _typeMap.GetAttributes(handleId)[attribList[i]] as string;
-                            Type t1 = Type.GetType(val, true, true);
-                            object obj = null;
-                            if (values[i] != null)
-                            {
-                                try
-                                {
-                                    if (t1 == typeof(System.DateTime))
-                                    {
-                                        obj = new DateTime(Convert.ToInt64(values[i]));
-                                    }
-                                    else
-                                    {
-                                        obj = Convert.ChangeType(values[i], t1);
-                                    }
-                                }
-                                catch (Exception)
-                                {
-                                    throw new System.FormatException("Cannot convert '" + values[i] + "' to " + t1.ToString());
-                                }
-
-                                string attribute = attribList[i].ToString();
-
-                                if (obj != null && obj is string)
-                                    attribs.Add(attribute, ((string)obj).ToLower());
-                                else
-                                    attribs.Add(attribute, obj);
-                            }
-                        }
-
-                        IQueryIndex index = (IQueryIndex)_indexMap[type];
-                        long prevSize = index.IndexInMemorySize;
-                        index.RemoveFromIndex(key, attribs);
-                        this._queryIndexMemorySize += index.IndexInMemorySize - prevSize;
-                    }
-                }
+                IQueryIndex index = (IQueryIndex)_indexMap[type];
+                long prevSize = index.IndexInMemorySize;
+                index.RemoveFromIndex(key, value);
+                this._queryIndexMemorySize += index.IndexInMemorySize - prevSize;
             }
         }
 
@@ -403,50 +341,53 @@ namespace Alachisoft.NCache.Caching.Queries
             if (entry.ObjectType == null)
                 return queryInfo;
             IQueryIndex index = (IQueryIndex)_indexMap[entry.ObjectType];
-            IndexInformation indexInformation = index.GetIndexInformation(key);
-            if (_typeMap != null)
+            IndexInformation indexInformation = _cache.GetInternal(key).IndexInfo;
+            lock (_indexMap.SyncRoot)
             {
-                int handleId = _typeMap.GetHandleId(entry.ObjectType);
-                if (handleId > -1)
+                if (_typeMap != null && indexInformation != null)
                 {
-                    ArrayList attributes = _typeMap.GetAttribList(handleId);
-
-                    ArrayList attributeValues = new ArrayList();
-
-                    for (int i = 0; i < attributes.Count; i++)
+                    int handleId = _typeMap.GetHandleId(entry.ObjectType);
+                    if (handleId > -1)
                     {
-                        foreach (IndexStoreInformation indexStoreInfo in indexInformation.IndexStoreInformations)
+                        ArrayList attributes = _typeMap.GetAttribList(handleId);
+
+                        ArrayList attributeValues = new ArrayList();
+
+                        for (int i = 0; i < attributes.Count; i++)
                         {
-
-                            if (attributes[i].ToString() == indexStoreInfo.StoreName)
+                            foreach (IndexStoreInformation indexStoreInfo in indexInformation.IndexStoreInformations)
                             {
-                                if (indexStoreInfo.IndexPosition == null)
-                                    attributeValues.Add(null);
-                                else
+
+                                if (attributes[i].ToString() == indexStoreInfo.StoreName)
                                 {
-                                    object val = indexStoreInfo.IndexPosition.RBReference.Key;
-
-                                    string objValue = null;
-
-                                    if (val is DateTime)
-                                    {
-                                        objValue = ((DateTime)val).Ticks.ToString();
-                                    }
+                                    if (indexStoreInfo.IndexPosition == null)
+                                        attributeValues.Add(null);
                                     else
                                     {
-                                        objValue = val.ToString();
+                                        object val = indexStoreInfo.IndexPosition.GetKey();
+
+                                        string objValue = null;
+
+                                        if (val is DateTime)
+                                        {
+                                            objValue = ((DateTime)val).Ticks.ToString();
+                                        }
+                                        else
+                                        {
+                                            objValue = val.ToString();
+                                        }
+
+                                        attributeValues.Add(objValue);
                                     }
-
-                                    attributeValues.Add(objValue);
+                                    break;
                                 }
-                                break;
                             }
-                        }
 
+                        }
+                        queryIndex.Add(handleId, attributeValues);
+                        queryInfo["query-info"] = queryIndex;
                     }
-                    queryIndex.Add(handleId, attributeValues);
-                    queryInfo["query-info"] = queryIndex;
-                }
+                } 
             }
             return queryInfo;
         }

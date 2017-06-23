@@ -1,4 +1,4 @@
-// Copyright (c) 2015 Alachisoft
+// Copyright (c) 2017 Alachisoft
 // 
 // Licensed under the Apache License, Version 2.0 (the "License");
 // you may not use this file except in compliance with the License.
@@ -29,10 +29,16 @@ namespace Alachisoft.NCache.Integrations.Memcached.ProxyServer.Commands
             set { _delay = value; }
         }
 
-        public FlushCommand(Opcode type, int delay=0)
+        public FlushCommand(Opcode type, int delay)
             : base(type)
         {
             _delay = delay;
+        }
+
+        public FlushCommand(Opcode type)
+            : base(type)
+        {
+            _delay = 0;
         }
 
         public override void Execute(IMemcachedProvider cacheProvider)

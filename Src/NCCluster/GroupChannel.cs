@@ -10,6 +10,7 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 // $Id: GroupChannel.java,v 1.25 2004/08/29 19:35:03 belaban Exp $
+
 using System;
 
 using ProtocolStack = Alachisoft.NGroups.Stack.ProtocolStack;
@@ -578,7 +579,7 @@ namespace Alachisoft.NGroups
 		/// </summary>
 		/// <param name="timeout">the number of milliseconds to wait if the receive queue is empty. 0 means wait forever
 		/// </param>
-		/// <exception cref=""> TimeoutException if a timeout occured prior to a new message was received
+		/// <exception cref=""> TimeoutException if a timeout occurred prior to a new message was received
 		/// </exception>
 		/// <exception cref=""> ChannelNotConnectedException
 		/// </exception>

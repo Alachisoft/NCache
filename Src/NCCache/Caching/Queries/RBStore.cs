@@ -1,4 +1,4 @@
-// Copyright (c) 2015 Alachisoft
+// Copyright (c) 2017 Alachisoft
 // 
 // Licensed under the Apache License, Version 2.0 (the "License");
 // you may not use this file except in compliance with the License.
@@ -11,32 +11,45 @@
 // WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
 // See the License for the specific language governing permissions and
 // limitations under the License.
+
 using System;
 using System.Collections;
 using Alachisoft.NCache.Common.DataStructures;
+using Alachisoft.NCache.Common.Queries;
+using Alachisoft.NCache.Common.Enum;
 
 namespace Alachisoft.NCache.Caching.Queries
 {
-    public class RBStore : IIndexStore
+    public class RBStore<T> : IIndexStore where T:IComparable
     {
-        private RedBlack _rbTree;
+        private RedBlack<T> _rbTree;
         private String _storeDataType = String.Empty;
+
+        private string storeName;
+
+        public string Name
+        {
+            get { return storeName; }
+        }
+
+
         public String StoreDataType
         {
             get { return _storeDataType; }
         }
 
-        public RBStore(string cacheName, string storeDataType)
+        public RBStore(string cacheName, string storeDataType,string name)
         {
             this._storeDataType = storeDataType;
-            _rbTree = new RedBlack(cacheName, Common.MemoryUtil.GetAttributeTypeSize(storeDataType));
+            storeName = name;
+            _rbTree = new RedBlack<T>(cacheName, Common.MemoryUtil.GetAttributeTypeSize(storeDataType));
         }
 
         public object Add(object key, object value)
         {
             object node = new object();
             if (_rbTree != null)
-                node = _rbTree.Add(key as IComparable, value);
+                node = _rbTree.Add((T)key, value);
             return node;
         }
 
@@ -62,52 +75,52 @@ namespace Alachisoft.NCache.Caching.Queries
             return new RedBlackEnumerator();
         }
 
-        public ArrayList GetData(object key, ComparisonType comparisonType)
+        public void GetData(object key, ComparisonType comparisonType, IQueryResult result, CollectionOperation mergeType)
         {
-            RedBlack.COMPARE compare = RedBlack.COMPARE.EQ;
-            ArrayList result = new ArrayList();
+            RedBlack<T>.COMPARE compare = RedBlack<T>.COMPARE.EQ;
 
             if (_rbTree != null)
             {
                 switch (comparisonType)
                 {
                     case ComparisonType.EQUALS:
-                        compare = RedBlack.COMPARE.EQ;
+                        compare = RedBlack<T>.COMPARE.EQ;
                         break;
 
                     case ComparisonType.NOT_EQUALS:
-                        compare = RedBlack.COMPARE.NE;
+                        compare = RedBlack<T>.COMPARE.NE;
                         break;
 
                     case ComparisonType.LESS_THAN:
-                        compare = RedBlack.COMPARE.LT;
+                        compare = RedBlack<T>.COMPARE.LT;
                         break;
 
                     case ComparisonType.GREATER_THAN:
-                        compare = RedBlack.COMPARE.GT;
+                        compare = RedBlack<T>.COMPARE.GT;
                         break;
 
                     case ComparisonType.LESS_THAN_EQUALS:
-                        compare = RedBlack.COMPARE.LTEQ;
+                        compare = RedBlack<T>.COMPARE.LTEQ;
                         break;
 
                     case ComparisonType.GREATER_THAN_EQUALS:
-                        compare = RedBlack.COMPARE.GTEQ;
+                        compare = RedBlack<T>.COMPARE.GTEQ;
                         break;
 
                     case ComparisonType.LIKE:
-                        compare = RedBlack.COMPARE.REGEX;
+                        compare = RedBlack<T>.COMPARE.REGEX;
                         break;
 
                     case ComparisonType.NOT_LIKE:
-                        compare = RedBlack.COMPARE.IREGEX;
+                        compare = RedBlack<T>.COMPARE.IREGEX;
                         break;
                 }
-
-                result = _rbTree.GetData(key as IComparable, compare) as ArrayList;
+                if (key is T)
+                    _rbTree.GetData((T)key, compare, result, mergeType);
+                else 
+                    throw new InvalidCastException("Object must be of type " + typeof(T).Name);
             }
 
-            return result;
         }
 
         public int Count

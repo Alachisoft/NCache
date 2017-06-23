@@ -1,4 +1,4 @@
-// Copyright (c) 2015 Alachisoft
+// Copyright (c) 2017 Alachisoft
 // 
 // Licensed under the Apache License, Version 2.0 (the "License");
 // you may not use this file except in compliance with the License.
@@ -29,7 +29,7 @@ namespace Alachisoft.NCache.Caching.EvictionPolicies
 	/// need such kind of associations.
 	/// </summary>    
     [Serializable]
-	public abstract class EvictionHint : ICompactSerializable
+	public abstract class EvictionHint : ICompactSerializable//: IComparable
 	{
 
         /// <summary>

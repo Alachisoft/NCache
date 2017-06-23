@@ -1,4 +1,4 @@
-// Copyright (c) 2015 Alachisoft
+// Copyright (c) 2017 Alachisoft
 // 
 // Licensed under the Apache License, Version 2.0 (the "License");
 // you may not use this file except in compliance with the License.
@@ -11,27 +11,33 @@
 // WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
 // See the License for the specific language governing permissions and
 // limitations under the License.
+
 using System;
+using System.Collections;
 using System.Net;
 using System.Net.Sockets;
-using System.Threading;
+using Alachisoft.NCache.Common;
+using Alachisoft.NCache.Common.DataStructures.Clustered;
+using Alachisoft.NCache.Common.Enum;
+using Alachisoft.NCache.Common.Protobuf;
+using Alachisoft.NCache.Common.Sockets;
 using Alachisoft.NCache.Common.Threading;
-using Alachisoft.NCache.Common.DataStructures;
 using Alachisoft.NCache.Web.Caching.Util;
 using Alachisoft.NCache.Web.Statistics;
 using System.IO;
 using Alachisoft.NCache.Runtime.Exceptions;
 using Alachisoft.NCache.Web.Util;
 using Alachisoft.NCache.Web.Command;
-using Alachisoft.NCache.Web.RemoteClient.Config;
-using Alachisoft.NCache.Common.Util;
-using Alachisoft.NCache.Web.Communication;
 using Alachisoft.NCache.Common.Net;
+using Exception = System.Exception;
+using Alachisoft.NCache.Web.RemoteClient.Communication;
+using System.Collections.Concurrent;
+using System.Threading;
 
 namespace Alachisoft.NCache.Web.Communication
 {
-	internal sealed class Connection
-	{
+    internal sealed class Connection
+    {
         #region --------Constants--------
         internal const int CmdSizeHolderBytesCount = 10;
         internal const int ValSizeHolderBytesCount = 10;
@@ -41,7 +47,7 @@ namespace Alachisoft.NCache.Web.Communication
         private OnCommandRecieved _commandRecieved = null;
         private OnServerLost _serverLost = null;
         private bool _isConnected = true;
-		private Socket _primaryClient = null;
+        private Socket _primaryClient = null;
         private Socket _secondaryClient = null;
         private IPAddress _address;
         private string _ipAddress = string.Empty;
@@ -52,13 +58,10 @@ namespace Alachisoft.NCache.Web.Communication
         public static long s_receiveBufferSize = 2048000;
         private int _processID = System.Diagnostics.Process.GetCurrentProcess().Id;
         private string _cacheId;
-       
-        private Thread _primaryReceiveThread = null;
-        private Thread _secondaryReceiveThread = null;
+
         private bool _notificationsRegistered = false;
         private bool _isReconnecting = false;
-       
-        
+
         private bool _forcedDisconnect = false;
 
         private bool _nagglingEnabled = false;
@@ -74,16 +77,21 @@ namespace Alachisoft.NCache.Web.Communication
         private Address _serverAddress;
 
         private PerfStatsCollector _perfStatsColl = null;
+        private Broker _container = null;
+        private Thread _primaryReceiveThread = null;
+        private Thread _secondaryReceiveThread = null;
 
-
-            private object _socketSelectionMutex = new object();
+        private object _socketSelectionMutex = new object();
         private bool _usePrimary = true;
+        //10 bytes for the message size...
+        private const int MessageHeader = 10;
 
+        //Threshold for maximum number of commands in a request.
+        private const int MaxCmdsThreshold = 100;
 
         // function that sets string provided to bindIP
         internal void SetBindIP(string value)
         {
-            
             if (value != null && value != string.Empty)
             {
                 try
@@ -92,7 +100,6 @@ namespace Alachisoft.NCache.Web.Communication
                 }
                 catch (Exception) { }
             }
-           
         }
 
         public string GetClientLocalIP()
@@ -100,7 +107,7 @@ namespace Alachisoft.NCache.Web.Communication
             string ip = string.Empty;
             if (PrimaryClientSocket != null)
             {
-                if (this.IsConnected)
+                if (PrimaryClientSocket.Connected)
                 {
                     IPEndPoint add = (IPEndPoint)PrimaryClientSocket.LocalEndPoint;
                     ip = add.Address.ToString();
@@ -109,13 +116,14 @@ namespace Alachisoft.NCache.Web.Communication
             return ip;
         }
 
-        internal Connection(OnCommandRecieved commandRecieved, OnServerLost serverLost, Logs logs, PerfStatsCollector perfStatsCollector,ResponseIntegrator rspIntegraotr, string bindIP)
+        internal Connection(Broker container, OnCommandRecieved commandRecieved, OnServerLost serverLost, Logs logs, PerfStatsCollector perfStatsCollector, ResponseIntegrator rspIntegraotr, string bindIP, string cacheName)
         {
+            _container = container;
             _commandRecieved = commandRecieved;
             _serverLost = serverLost;
             _logger = logs;
             _responseIntegrator = rspIntegraotr;
-
+            _cacheId = cacheName;
             _perfStatsColl = perfStatsCollector;
 
             SetBindIP(bindIP);
@@ -128,13 +136,13 @@ namespace Alachisoft.NCache.Web.Communication
 
             if (System.Configuration.ConfigurationSettings.AppSettings["EnableDualSockets"] != null)
                 _supportDualSocket = Convert.ToBoolean(System.Configuration.ConfigurationSettings.AppSettings["EnableDualSockets"]);
-            
-        }
+
+                  }
 
         internal bool Connect(string hostName, int port)
         {
 
-            return Connect(((IPAddress[])Dns.GetHostByName(hostName).AddressList)[0], port);
+            return Connect(Dns.GetHostByName(hostName).AddressList[0], port);
         }
 
         private bool DoNaggling
@@ -146,7 +154,7 @@ namespace Alachisoft.NCache.Web.Communication
         {
             get { return _supportDualSocket; }
         }
-       
+
         public Socket PrimaryClientSocket
         {
             get { return _primaryClient; }
@@ -182,8 +190,8 @@ namespace Alachisoft.NCache.Web.Communication
 
         internal bool Connect(IPAddress ipAddress, int port)
         {
-           
-
+            int retry = 0;
+         
             this._ipAddress = ipAddress.ToString();
             this._address = ipAddress;
             this._port = port;
@@ -194,36 +202,136 @@ namespace Alachisoft.NCache.Web.Communication
 
                 IPEndPoint endPoint = new IPEndPoint(ipAddress, port);
 
-                try
+                while (retry < 3)
                 {
-                    _primaryClient.Connect(endPoint);
-                }
-                catch (Exception e)
-                {
-                    if(_logger.IsErrorLogsEnabled) _logger.NCacheLog.Error( "Connection.Connect", " can not connect to " + ipAddress + ":" + port + ". error: " + e.ToString());
-                    return false;
-                }
+                    try
+                    {
+                        _primaryClient.Connect(endPoint);
+                        return true;
+                    }
+                    catch (Exception e)
+                    {
+                        if (_logger.IsErrorLogsEnabled) _logger.NCacheLog.Error("Connection.Connect", " can not connect to " + ipAddress + ":" + port + ". error: " + e.ToString());
+                        if (e.Message.Contains("A connection attempt failed because the connected party did not properly respond after a period of time"))
+                        {
+                            retry++;
+                        }
+                        else
+                        {
+                            return false;
+                        }
+                    }
+                } 
             }
             return true;
         }
 
         public void Init()
         {
-            if (_nagglingEnabled)
-            {
-                _msgQueue = new Alachisoft.NCache.Common.DataStructures.Queue();
-                _priNagglingMgr = new NagglingManager(this, this.PrimaryClientSocket, _msgQueue, _nagglingSize, _syncLock);
-                _priNagglingMgr.Start();
-
-                if (SupportDualSocket)
-                {
-                    _secNagglingMgr = new NagglingManager(this, this.SecondaryClientSocket, _msgQueue, _nagglingSize, _syncLock);
-                    _secNagglingMgr.Start();
-                }
-            }
-
             StartThread();
         }
+
+        internal void StartThread()
+        {
+            _primaryReceiveThread = new Thread(new ParameterizedThreadStart(RecieveThread));
+            _primaryReceiveThread.Priority = ThreadPriority.AboveNormal;
+            _primaryReceiveThread.IsBackground = true;  //Now application can exit without calling dispose()
+            _primaryReceiveThread.Start(_primaryClient);
+
+            if (SupportDualSocket)
+            {
+                _secondaryReceiveThread = new Thread(new ParameterizedThreadStart(RecieveThread));
+                _secondaryReceiveThread.Priority = ThreadPriority.AboveNormal;
+                _secondaryReceiveThread.IsBackground = true;  //Now application can exit without calling dispose()
+                _secondaryReceiveThread.Start(_secondaryClient);
+            }
+        }
+
+        private void RecieveThread(object clientSocket)
+        {
+            while (true)
+            {
+                try
+                {
+                    byte[] cmdBytes;
+                    Socket client = null;
+                    if (clientSocket != null && clientSocket is Socket)
+                    {
+                        client = clientSocket as Socket;
+                    }
+                    cmdBytes = AssureRecieve(client);
+                    ProcessResponse(cmdBytes);
+                }
+                catch (SocketException se)
+                {
+                    OnConnectionBroken(se, ExType.Socket);
+                    break;
+                }
+                catch (ConnectionException ce)
+                {
+                    OnConnectionBroken(ce, ExType.Connection);
+                    break;
+                }
+                catch (ThreadAbortException te)
+                {
+                    OnConnectionBroken(te, ExType.Abort);
+                    break;
+                }
+                catch (ThreadInterruptedException tae)
+                {
+                    OnConnectionBroken(tae, ExType.Interrupt);
+                    break;
+                }
+                catch (Exception e)
+                {
+                    OnConnectionBroken(e, ExType.General);
+                }
+            }
+        }
+
+        private void OnConnectionBroken(Exception e, ExType exType)
+        {
+            switch (exType)
+            {
+                case ExType.Socket:
+                case ExType.Connection:
+                    if (_forcedDisconnect)
+                    {
+                        if (_logger.IsErrorLogsEnabled) _logger.NCacheLog.Error("Connection.ReceivedThread", "Connection with server lost gracefully");
+                    }
+                    else
+                        if (_logger.IsErrorLogsEnabled) _logger.NCacheLog.Error("Connection.ReceivedThread", "An established connection with the server " + _serverAddress + " is lost. Error:" + e.ToString());
+
+                    if (!_forcedDisconnect) _connectionStatusLatch.SetStatusBit(ConnectionStatus.Disconnected, ConnectionStatus.Connected);
+                    _primaryReceiveThread = null;
+                    _serverLost(_serverAddress, _forcedDisconnect);
+                    break;
+                case ExType.Interrupt:
+                case ExType.Abort:
+                    if (AppDomain.CurrentDomain.IsFinalizingForUnload()) return;
+                    if (_forcedDisconnect)
+                    {
+                        if (_logger.IsErrorLogsEnabled)
+                        {
+                            _logger.NCacheLog.Error("Connection.ReceivedThread", "Connection with server lost gracefully");
+                            _logger.NCacheLog.Flush();
+                        }
+                    }
+                    if (!_forcedDisconnect) _connectionStatusLatch.SetStatusBit(ConnectionStatus.Disconnected, ConnectionStatus.Connected);
+                    _serverLost(_serverAddress, _forcedDisconnect);
+                    break;
+                case ExType.General:
+                    if (_logger.IsErrorLogsEnabled)
+                    {
+                        _logger.NCacheLog.Error("Connection.ReceivedThread", e.ToString());
+                        _logger.NCacheLog.Flush();
+                    }
+                    if (!_forcedDisconnect) _connectionStatusLatch.SetStatusBit(ConnectionStatus.Disconnected, ConnectionStatus.Connected);
+                    _serverLost(_serverAddress, _forcedDisconnect);
+                    break;
+            }
+        }
+
 
         internal Latch StatusLatch
         {
@@ -233,16 +341,17 @@ namespace Alachisoft.NCache.Web.Communication
         private Socket PrepareToConnect(Socket client)
         {
             client = new Socket(AddressFamily.InterNetwork, SocketType.Stream, ProtocolType.Tcp);
+            client.SetSocketOption(SocketOptionLevel.Socket, SocketOptionName.SendBuffer, 1024 * 1024);
             client.SetSocketOption(SocketOptionLevel.Socket, SocketOptionName.ReceiveBuffer, 131072);
             client.SetSocketOption(SocketOptionLevel.Tcp, SocketOptionName.NoDelay, 1);
 
-            if (_bindIP != null) 
-                try 
-                { 
-                    client.Bind(_bindIP); 
+            if (_bindIP != null)
+                try
+                {
+                    client.Bind(_bindIP);
                 }
                 catch (Exception) { throw new Exception("Invalid bind-ip-address specified in client configuration"); }
-            
+
             _forcedDisconnect = false;
             return client;
         }
@@ -257,7 +366,7 @@ namespace Alachisoft.NCache.Web.Communication
             }
             catch (Exception e)
             {
-                if(_logger.IsErrorLogsEnabled) _logger.NCacheLog.Error( "Connection.Connect", " can not connect to " + address + ":" + port + ". error: " + e.ToString());
+                if (_logger.IsErrorLogsEnabled) _logger.NCacheLog.Error("Connection.Connect", " can not connect to " + address + ":" + port + ". error: " + e.ToString());
             }
         }
 
@@ -309,39 +418,18 @@ namespace Alachisoft.NCache.Web.Communication
             set { this._isReconnecting = value; }
         }
 
-        internal void StartThread()
-        {
-
-            _primaryReceiveThread = new Thread(new ParameterizedThreadStart(RecieveThread));
-            _primaryReceiveThread.Priority = ThreadPriority.AboveNormal;
-            _primaryReceiveThread.IsBackground = true;  //Now application can exit without calling dispose()
-            _primaryReceiveThread.Start(_primaryClient);
-
-            if (SupportDualSocket)
-            {
-                _secondaryReceiveThread = new Thread(new ParameterizedThreadStart(RecieveThread));
-                _secondaryReceiveThread.Priority = ThreadPriority.AboveNormal;
-                _secondaryReceiveThread.IsBackground = true;  //Now application can exit without calling dispose()
-                _secondaryReceiveThread.Start(_secondaryClient);
-				
-            }
-
-        }
 
         internal void Disconnect()
-        { 
+        {
             _forcedDisconnect = true;
-
-           
             if (_primaryReceiveThread != null && _primaryReceiveThread.ThreadState != ThreadState.Aborted && _primaryReceiveThread.ThreadState != ThreadState.AbortRequested)
             {
                 try
                 {
-                    if(_logger.NCacheLog != null) _logger.NCacheLog.Flush();
+                    if (_logger.NCacheLog != null) _logger.NCacheLog.Flush();
                     _primaryReceiveThread.Abort();
                 }
-                catch (System.Threading.ThreadAbortException){ }
-               
+                catch (System.Threading.ThreadAbortException) { }
                 _primaryReceiveThread = null;
             }
 
@@ -354,20 +442,6 @@ namespace Alachisoft.NCache.Web.Communication
                 catch (SocketException) { }
                 catch (ObjectDisposedException) { }
                 _primaryClient.Close();
-                _primaryClient = null;
-            }
-           
-           
-            //dispose the secondary socket
-            if (_secondaryReceiveThread != null && _secondaryReceiveThread.ThreadState != ThreadState.Aborted && _secondaryReceiveThread.ThreadState != ThreadState.AbortRequested)
-            {
-                try
-                {
-                    if (_logger.NCacheLog != null)  _logger.NCacheLog.Flush();
-                    _secondaryReceiveThread.Abort();
-                }
-                catch (System.Threading.ThreadAbortException) { }
-                _secondaryReceiveThread = null;
             }
 
             if (_secondaryClient != null && _secondaryClient.Connected)
@@ -382,112 +456,38 @@ namespace Alachisoft.NCache.Web.Communication
                 _secondaryClient = null;
             }
 
-           
             this._connectionStatusLatch.SetStatusBit(ConnectionStatus.Disconnected, ConnectionStatus.Connected);
 
-     
+
         }
 
-        private void RecieveThread(object clientSocket)
 
+        private void OnServerLost()
         {
-            while (true)
+            if (_forcedDisconnect)
             {
-                try
-                {
-                    CommandResponse response = null;
-                    Socket client = null;
-
-
-                    if (clientSocket != null && clientSocket is Socket )
-                    {
-                        client = clientSocket as Socket;
-                    }
-
-                    response = RecieveCommandResponse(client);
-
-                    if (_perfStatsColl.IsEnabled)
-                        _perfStatsColl.IncrementClientResponsesPerSecStats(1);
-
-                    string serverAddress = ((IPEndPoint)client.RemoteEndPoint).Address.ToString();
-
-                    if(response != null)
-                        _commandRecieved(response, _serverAddress);
-                }
-                catch (ConnectionException ce)
-                {
-                    if (_forcedDisconnect)
-                    {
-                        if(_logger.IsErrorLogsEnabled) _logger.NCacheLog.Error( "Connection.ReceivedThread", "Connection with server lost gracefully");
-                    }
-                    else
-                        if(_logger.IsErrorLogsEnabled) _logger.NCacheLog.Error( "Connection.ReceivedThread", "An established connection with the server is lost. Error:" + ce.ToString());
-
-                    if(!_forcedDisconnect) _connectionStatusLatch.SetStatusBit(ConnectionStatus.Disconnected, ConnectionStatus.Connected);
-                    _primaryReceiveThread = null;
-                    _serverLost(_serverAddress, _forcedDisconnect);
-                    break;
-                }
-                catch (ThreadAbortException te)
-                {
-                    if (AppDomain.CurrentDomain.IsFinalizingForUnload()) return;
-                    if (_forcedDisconnect)
-                    {
-                        if (_logger.IsErrorLogsEnabled)
-                        {
-                            _logger.NCacheLog.Error("Connection.ReceivedThread", "Connection with server lost gracefully");
-                            _logger.NCacheLog.Flush();
-                        }
-                    }
-                    if (!_forcedDisconnect) _connectionStatusLatch.SetStatusBit(ConnectionStatus.Disconnected, ConnectionStatus.Connected);
-                    _serverLost(_serverAddress, _forcedDisconnect);
-                    break;
-
-                }
-                catch (ThreadInterruptedException tae)
-                {
-                    if (AppDomain.CurrentDomain.IsFinalizingForUnload()) return;
-                    if (_forcedDisconnect)
-                    {
-                        if (_logger.IsErrorLogsEnabled)
-                        {
-                            _logger.NCacheLog.Error("Connection.ReceivedThread", "Connection with server lost gracefully");
-                            _logger.NCacheLog.Flush();
-                        }
-                    }
-                    if (!_forcedDisconnect) _connectionStatusLatch.SetStatusBit(ConnectionStatus.Disconnected, ConnectionStatus.Connected);
-                    _primaryReceiveThread = null;
-                    _serverLost(_serverAddress, _forcedDisconnect);
-                    break;
-                }
-                catch (Exception e)
-                {
-                    if (_logger.IsErrorLogsEnabled)
-                    {
-                        _logger.NCacheLog.Error("Connection.ReceivedThread", e.ToString());
-                        _logger.NCacheLog.Flush();
-                    }
-                    if (!_forcedDisconnect) _connectionStatusLatch.SetStatusBit(ConnectionStatus.Disconnected, ConnectionStatus.Connected);
-                    _serverLost(_serverAddress, _forcedDisconnect);
-                }
+                if (_logger.IsErrorLogsEnabled) _logger.NCacheLog.Error("Connection.ReceivedThread", "Connection with server lost gracefully");
             }
+            else
+                if (_logger.IsErrorLogsEnabled) _logger.NCacheLog.Error("Connection.ReceivedThread", "An established connection with the server " + _serverAddress + " is lost.");
+
+            if (!_forcedDisconnect) _connectionStatusLatch.SetStatusBit(ConnectionStatus.Disconnected, ConnectionStatus.Connected);
+            _serverLost(_serverAddress, _forcedDisconnect);
         }
+
 
         public CommandResponse RecieveCommandResponse()
         {
             return RecieveCommandResponse(_primaryClient);
         }
 
-		public CommandResponse RecieveCommandResponse(Socket client)
-		{
-            //string result = null;
+        public CommandResponse RecieveCommandResponse(Socket client)
+        {
             byte[] value = null;
             CommandResponse cmdRespose = null;
             try
             {
                 value = AssureRecieve(client);
-
-                
 
                 ///Deserialize the response
                 Alachisoft.NCache.Common.Protobuf.Response response = null;
@@ -499,23 +499,24 @@ namespace Alachisoft.NCache.Web.Communication
 
                 if (response != null && response.responseType == Alachisoft.NCache.Common.Protobuf.Response.Type.RESPONSE_FRAGMENT)
                 {
-                    response = _responseIntegrator.AddResponseFragment(this._serverAddress,response.getResponseFragment);
+                    response = _responseIntegrator.AddResponseFragment(this._serverAddress, response.getResponseFragment);
                 }
 
                 if (response != null)
                 {
                     cmdRespose = new CommandResponse(false, new Address());
-                    cmdRespose.Result = response;                    
+                    cmdRespose.CacheId = this._cacheId;
+                    cmdRespose.Result = response;
                 }
             }
             catch (SocketException e)
             {
-                throw new ConnectionException(e.Message);
+                throw new ConnectionException(e.Message, this._serverAddress.IpAddress, this._serverAddress.Port);
             }
             return cmdRespose;
-		}
+        }
 
-        internal void AssureSend(byte[] buffer, Socket client, bool checkConnected )
+        internal void AssureSend(byte[] buffer, Socket client, bool checkConnected)
         {
             int dataSent = 0, dataLeft = buffer.Length;
             lock (_connectionMutex)
@@ -523,7 +524,7 @@ namespace Alachisoft.NCache.Web.Communication
 
                 if (checkConnected && _connectionStatusLatch.IsAnyBitsSet(ConnectionStatus.Disconnected | ConnectionStatus.Connecting))
                 {
-                    throw new ConnectionException();
+                    throw new ConnectionException(this._serverAddress.IpAddress, this._serverAddress.Port);
                 }
 
                 while (dataSent < buffer.Length)
@@ -536,16 +537,20 @@ namespace Alachisoft.NCache.Web.Communication
                     }
                     catch (SocketException se)
                     {
-
-                        if (se.SocketErrorCode == SocketError.NoBufferSpaceAvailable)
+                        if (se.SocketErrorCode != SocketError.NoBufferSpaceAvailable)
                         {
+                            if (_logger.IsErrorLogsEnabled) _logger.NCacheLog.Error("Connection.AssureSend", se.ToString());
+                            if (_connectionStatusLatch.IsAnyBitsSet(ConnectionStatus.Connected))
+                                _connectionStatusLatch.SetStatusBit(ConnectionStatus.Disconnected, ConnectionStatus.Connected);
+                            throw new ConnectionException(this._serverAddress.IpAddress, this._serverAddress.Port);
                         }
-                        else
-                        {
-                            if(_logger.IsErrorLogsEnabled) _logger.NCacheLog.Error( "Connection.AssureSend", se.ToString());
+                    }
+                    catch (ObjectDisposedException)
+                    {
+                        if (_logger.IsErrorLogsEnabled) _logger.NCacheLog.Error("Connection.AssureSend", "socket is already closed");
+                        if (_connectionStatusLatch.IsAnyBitsSet(ConnectionStatus.Connected))
                             _connectionStatusLatch.SetStatusBit(ConnectionStatus.Disconnected, ConnectionStatus.Connected);
-                            throw new ConnectionException();
-                        }
+                        throw new ConnectionException(this._serverAddress.IpAddress, this._serverAddress.Port);
                     }
                 }
             }
@@ -568,7 +573,7 @@ namespace Alachisoft.NCache.Web.Communication
 
                 if (checkConnected && _connectionStatusLatch.IsAnyBitsSet(ConnectionStatus.Disconnected | ConnectionStatus.Connecting))
                 {
-                    throw new ConnectionException();
+                    throw new ConnectionException(this._serverAddress.IpAddress, this._serverAddress.Port);
                 }
 
                 while (dataSent < bytesToSent)
@@ -586,9 +591,9 @@ namespace Alachisoft.NCache.Web.Communication
                         }
                         else
                         {
-                            if(_logger.IsErrorLogsEnabled) _logger.NCacheLog.Error( "Connection.AssureSend", se.ToString());
+                            if (_logger.IsErrorLogsEnabled) _logger.NCacheLog.Error("Connection.AssureSend", se.ToString());
                             _connectionStatusLatch.SetStatusBit(ConnectionStatus.Disconnected, ConnectionStatus.Connected);
-                            throw new ConnectionException();
+                            throw new ConnectionException(this._serverAddress.IpAddress, this._serverAddress.Port);
                         }
                     }
                 }
@@ -597,34 +602,30 @@ namespace Alachisoft.NCache.Web.Communication
 
         private byte[] AssureRecieve(Socket client)
         {
-            
+
             byte[] buffer = new byte[CmdSizeHolderBytesCount];
             AssureRecieve(ref buffer, client);
             int commandSize = 0;
-        
+
             try
             {
-                commandSize = HelperFxn.ToInt32(buffer, 0, CmdSizeHolderBytesCount);
-               
+                commandSize = HelperFxn.ToInt32(buffer, 0 , CmdSizeHolderBytesCount);
+
             }
             catch (InvalidCastException)
             {
                 string str = System.Text.UTF8Encoding.UTF8.GetString(buffer);
-                if(_logger.IsErrorLogsEnabled) _logger.NCacheLog.Error( "AssureReceive", str);
+                if (_logger.IsErrorLogsEnabled) _logger.NCacheLog.Error("AssureReceive", str);
                 throw;
             }
-            if (commandSize == 0/* + dataSize == 0*/)
+            if (commandSize == 0)
             {
-               
                 return new byte[0];
             }
 
-            buffer = new byte[commandSize/* + dataSize*/];
+            buffer = new byte[commandSize];
             AssureRecieve(ref buffer, client);
-
             return buffer;
-            
-           
         }
 
 
@@ -632,59 +633,20 @@ namespace Alachisoft.NCache.Web.Communication
         private void AssureRecieve(ref byte[] buffer, Socket client)
         {
             int totalBytesRecieved = 0;
-            int bytesRecieved =0;
-           
-
+            int bytesRecieved = 0;
             do
             {
                 try
                 {
                     bytesRecieved = client.Receive(buffer, totalBytesRecieved, buffer.Length - totalBytesRecieved, SocketFlags.None);
-
-
                     if (bytesRecieved == 0) throw new SocketException((int)SocketError.ConnectionReset);
-
-
                     totalBytesRecieved += bytesRecieved;
                 }
                 catch (SocketException se)
                 {
-
                     if (se.SocketErrorCode != SocketError.NoBufferSpaceAvailable) throw;
-
                 }
             } while (totalBytesRecieved < buffer.Length);
-
-           
-        }
-
-        internal void SendCommand(byte[] commandBytes, bool checkConnected)
-        {
-
-            if (_perfStatsColl.IsEnabled)
-                _perfStatsColl.IncrementClientRequestsPerSecStats(1);
-
-            if (DoNaggling)
-                _msgQueue.add(commandBytes);
-            else
-            {
-                if (SupportDualSocket)
-                {
-                    Socket selectedSocket = _primaryClient;
-                    
-                    lock (_socketSelectionMutex)
-                    {
-                        if (!_usePrimary) selectedSocket = _secondaryClient;
-                        _usePrimary = !_usePrimary;
-                    }
-
-                    AssureSend(commandBytes, selectedSocket, checkConnected);
-                }
-                else
-                {
-                    AssureSend(commandBytes, _primaryClient, checkConnected);
-                }
-            }
         }
 
         private string ShowBufferContents(byte[] buffer, int offset, int count)
@@ -706,10 +668,74 @@ namespace Alachisoft.NCache.Web.Communication
             return sb.ToString();
         }
 
+
+
+        /// <summary>
+        /// Reads a single single response from the stream and processes it.
+        /// </summary>
+        /// <param name="stream"></param>
+        private void ProcessResponse(byte[] cmdBytes)
+        {
+            Response response;
+            using (Stream tempStream = new ClusteredMemoryStream(cmdBytes))
+            {
+                response = ProtoBuf.Serializer.Deserialize<Response>(tempStream);
+            }
+
+            CommandResponse cmdRespose = null;
+            if (response != null)
+            {
+                cmdRespose = new CommandResponse(false, new Address());
+                cmdRespose.CacheId = _cacheId;
+                cmdRespose.Result = response;
+            }
+
+            if (_perfStatsColl.IsEnabled)
+            {
+                _perfStatsColl.IncrementClientResponsesPerSecStats(1);
+            }
+
+            if (cmdRespose != null)
+            {
+                _container.ProcessResponse(cmdRespose, _serverAddress);
+            }
+        }
+
+        /// <summary>
+        /// Gets the prefered communication socket.
+        /// </summary>
+        private Socket CommunicationSocket
+        {
+            get
+            {
+                Socket selectedSocket = _primaryClient;
+                if (SupportDualSocket)
+                {
+                    selectedSocket = _primaryClient;
+                    lock (_socketSelectionMutex)
+                    {
+                        if (!_usePrimary) selectedSocket = _secondaryClient;
+                        _usePrimary = !_usePrimary;
+                    }
+                }
+                return selectedSocket;
+            }
+        }
+
+
         public override bool Equals(object obj)
         {
             Connection connection = obj as Connection;
             return (connection != null && this.IpAddress == connection.IpAddress);
         }
+    }
+
+    internal enum ExType
+    {
+        Socket = 0,
+        Connection,
+        Abort,
+        Interrupt,
+        General
     }
 }

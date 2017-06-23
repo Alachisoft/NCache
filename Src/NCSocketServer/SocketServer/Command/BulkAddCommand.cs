@@ -1,4 +1,4 @@
-// Copyright (c) 2015 Alachisoft
+// Copyright (c) 2017 Alachisoft
 // 
 // Licensed under the Apache License, Version 2.0 (the "License");
 // you may not use this file except in compliance with the License.
@@ -11,6 +11,7 @@
 // WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
 // See the License for the specific language governing permissions and
 // limitations under the License.
+
 using System;
 using System.Collections;
 using System.Text;
@@ -64,8 +65,8 @@ namespace Alachisoft.NCache.SocketServer.Command
 
                 if (!string.IsNullOrEmpty(cmdInfo.IntendedRecipient))
                     operationContext.Add(OperationContextFieldName.IntendedRecipient, cmdInfo.IntendedRecipient);
-                
-                Hashtable addResult = (Hashtable)nCache.Cache.Add(cmdInfo.Keys, cmdInfo.Values, cmdInfo.CallbackEnteries, cmdInfo.ExpirationHint, cmdInfo.EvictionHint, cmdInfo.QueryInfo, cmdInfo.Flags, operationContext);
+
+                Hashtable addResult = (Hashtable)nCache.Cache.Add(cmdInfo.Keys, cmdInfo.Entries, operationContext);
                 Alachisoft.NCache.Common.Protobuf.Response response = new Alachisoft.NCache.Common.Protobuf.Response();
                 Alachisoft.NCache.Common.Protobuf.BulkAddResponse bulkAddResponse = new Alachisoft.NCache.Common.Protobuf.BulkAddResponse();
 				response.requestId = Convert.ToInt64(cmdInfo.RequestId);
@@ -87,6 +88,14 @@ namespace Alachisoft.NCache.SocketServer.Command
             }
             if (ServerMonitor.MonitorActivity) ServerMonitor.LogClientActivity("BulkAddCmd.Exec", "cmd executed on cache");
 
+        }
+
+        public override void IncrementCounter(Alachisoft.NCache.SocketServer.Statistics.PerfStatsCollector collector, long value)
+        {
+            if (collector != null)
+            {
+                collector.IncrementMsecPerAddBulkAvg(value);
+            }
         }
     }
 }

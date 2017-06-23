@@ -1,4 +1,4 @@
-// Copyright (c) 2015 Alachisoft
+// Copyright (c) 2017 Alachisoft
 // 
 // Licensed under the Apache License, Version 2.0 (the "License");
 // you may not use this file except in compliance with the License.
@@ -11,12 +11,10 @@
 // WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
 // See the License for the specific language governing permissions and
 // limitations under the License.
-using System;
-using System.Collections.Generic;
-using System.Text;
-using System.Collections;
 
-using Runtime = Alachisoft.NCache.Runtime;
+using System.Collections.Generic;
+using System.Collections;
+using Alachisoft.NCache.Common.DataStructures.Clustered;
 
 namespace Alachisoft.NCache.Common.Util
 {
@@ -70,9 +68,37 @@ namespace Alachisoft.NCache.Common.Util
         /// <summary>
         /// 
         /// </summary>
+        /// <typeparam name="K"></typeparam>
+        /// <typeparam name="V"></typeparam>
+        /// <param name="dictionary"></param>
+        /// <param name="writer"></param>
+        public static void SerializeDictionary<K, V>(IDictionary<K, V> dictionary, Runtime.Serialization.IO.CompactWriter writer)
+        {
+
+            if (dictionary == null)
+            {
+                writer.Write(false);
+                return;
+            }
+            else
+            {
+                writer.Write(true);
+                writer.Write(dictionary.Count);
+                for (IEnumerator<KeyValuePair<K, V>> i = dictionary.GetEnumerator(); i.MoveNext(); )
+                {
+                    writer.WriteObject(i.Current.Key);
+                    writer.WriteObject(i.Current.Value);
+                }
+
+            }
+        }
+
+        /// <summary>
+        /// 
+        /// </summary>
         /// <param name="reader"></param>
         /// <returns></returns>
-        public static Dictionary<T, V> DeserializeDictionary<T,V>(Runtime.Serialization.IO.CompactReader reader)
+        public static IDictionary<T, V> DeserializeDictionary<T, V>(Runtime.Serialization.IO.CompactReader reader)
         {
             T key;
             V val;
@@ -80,7 +106,7 @@ namespace Alachisoft.NCache.Common.Util
 
             if (flag)
             {
-                Dictionary<T, V> dictionary = new Dictionary<T, V>();
+                IDictionary<T, V> dictionary = new HashVector<T, V>();
                 int Length = reader.ReadInt32();
                 for (int i = 0; i < Length; i++)
                 {
@@ -135,6 +161,44 @@ namespace Alachisoft.NCache.Common.Util
              }
              else
                  return null;
+        }
+
+        public static void SerializeClusteredList<T>(ClusteredList<T> list, Runtime.Serialization.IO.CompactWriter writer)
+        {
+            if (list == null)
+            {
+                writer.Write(false);
+                return;
+            }
+            else
+            {
+                writer.Write(true);
+                writer.Write(list.Count);
+                for (int i = 0; i < list.Count; i++)
+                {
+                    writer.WriteObject(list[i]);
+
+                }
+            }
+        }
+
+
+        public static ClusteredList<T> DeserializeClusteredList<T>(Runtime.Serialization.IO.CompactReader reader)
+        {
+            bool flag = reader.ReadBoolean();
+
+            if (flag)
+            {
+                int length = reader.ReadInt32();
+                ClusteredList<T> list = new ClusteredList<T>();
+
+                for (int i = 0; i < length; i++)
+                    list.Add((T)reader.ReadObject());
+
+                return list;
+            }
+            else
+                return null;
         }
     }
 }

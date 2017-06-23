@@ -1,4 +1,4 @@
-// Copyright (c) 2015 Alachisoft
+// Copyright (c) 2017 Alachisoft
 // 
 // Licensed under the Apache License, Version 2.0 (the "License");
 // you may not use this file except in compliance with the License.
@@ -11,40 +11,23 @@
 // WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
 // See the License for the specific language governing permissions and
 // limitations under the License.
+
 using System;
-using System.Collections;
-using System.ComponentModel;
-using System.Data;
 using System.Diagnostics;
 using System.ServiceProcess;
 using System.Configuration;
-using System.Reflection;
-using System.Security.Permissions;
-using System.Security;
 using System.Net;
-
-using System.Runtime.Remoting;
-using System.Runtime.Remoting.Channels;
-using System.Runtime.Remoting.Channels.Http;
-using System.Runtime.Remoting.Channels.Tcp;
-using System.Runtime.Serialization.Formatters;
 using Alachisoft.NCache.Management;
 using Alachisoft.NCache.SocketServer;
-using System.Runtime.InteropServices;
 using System.Threading;
 using Alachisoft.NCache.Common;
 using System.Timers;
-using Alachisoft.NCache.Config.Dom;
-//using Alachisoft.NCache.CloudLicensing.UsageLogging.Tasks;
-using Alachisoft.NCache.Common.Threading;
-//using Alachisoft.NCache.CloudLicensing.UsageLogging.LogReports.Dom;
-using System.Collections.Generic;
-//using Alachisoft.NCache.CloudLicensing.UsageLogging.Delegates;
+using Alachisoft.NCache.Common.Util;
 
 namespace Alachisoft.NCache.Service
 {
 
-    class Service : System.ServiceProcess.ServiceBase
+    class Service : ServiceBase
     {
         private const string TCP_CHANNEL_NAME = "NCache-stcp";
         private const string HTTP_CHANNEL_NAME = "NCache-shttp";
@@ -62,12 +45,12 @@ namespace Alachisoft.NCache.Service
         /// </summary>
         private System.ComponentModel.Container components;
 
-        private CacheHost _nchost;
+        private ServerHost _nchost = new ServerHost();
         private SocketServer.SocketServer _socketServer;
-        private Management.NCacheSniffer _ncacheSniffer;
+        private NCacheSniffer _ncacheSniffer;
         private System.Timers.Timer _evalWarningTask;
+        private System.Timers.Timer _reactWarningTask;
         private SocketServer.SocketServer _managementSocketServer;
-        //ReportingTasksHandler _reportingTaskHandler;
 
         internal CacheServer CacheServer
         {
@@ -82,22 +65,22 @@ namespace Alachisoft.NCache.Service
 
         static void CurrentDomain_UnhandledException(object sender, UnhandledExceptionEventArgs e)
         {
-            AppUtil.LogEvent(_cacheserver, ((Exception)e.ExceptionObject).ToString(), EventLogEntryType.Error, EventCategories.Error, EventID.UnhandledException);            
+            AppUtil.LogEvent("NCache", ((Exception)e.ExceptionObject).ToString(), EventLogEntryType.Error, EventCategories.Error, EventID.UnhandledException);            
         }
 
         // The main entry point for the process
         static void Main()
         {
             AppDomain.CurrentDomain.UnhandledException += new UnhandledExceptionEventHandler(CurrentDomain_UnhandledException);
-            System.ServiceProcess.ServiceBase[] ServicesToRun;
+           ServiceBase[] ServicesToRun;
 
             // More than one user Service may run within the same process. To add
             // another service to this process, change the following line to
             // create a second service object. For example,
             
-            ServicesToRun = new System.ServiceProcess.ServiceBase[] { new Service() };
+            ServicesToRun = new ServiceBase[] { new Service() };
 
-            System.ServiceProcess.ServiceBase.Run(ServicesToRun);
+            ServiceBase.Run(ServicesToRun);
         }
 
         /// <summary> 
@@ -106,22 +89,17 @@ namespace Alachisoft.NCache.Service
         /// </summary>
         private void InitializeComponent()
         {
-            // 
-            // ServiceHost
-            // 
+            ServiceName = "NCacheSvc";
 
-            this.ServiceName = "NCacheSvc";
-
-           
             try
             {
-
                 string ip = ConfigurationSettings.AppSettings["NCacheServer.BindToIP"];
 
                 if (ip.Length > 0)
                 {
                     _clusterIp = Convert.ToString(ip);
                 }
+
                 string cacheStartDelay = ConfigurationSettings.AppSettings["NCacheServer.CacheStartDelay"];
                 if (cacheStartDelay != null && cacheStartDelay.Length > 0)
                 {
@@ -170,44 +148,24 @@ namespace Alachisoft.NCache.Service
                 int receiveBuffer = SocketServer.SocketServer.DEFAULT_SOCK_BUFFER_SIZE;
                 int managementServerPort = SocketServer.SocketServer.DEFAULT_MANAGEMENT_PORT;
 
-                //Numan Hanif: in case of compact serilization plus DS Provider in same dll we search in deploy dir brute forcely
+                //in case of compact serilization plus DS Provider in same dll we search in deploy dir brute forcely
                 AppDomain.CurrentDomain.AssemblyResolve += new ResolveEventHandler(Common.Util.AssemblyResolveEventHandler.DeployAssemblyHandler);
                 try
                 {
 
-                    string configPort = ConfigurationSettings.AppSettings["NCacheServer.Port"];
 
-                    if (configPort.Length > 0)
-                    {
-                        serverPort = Convert.ToInt32(configPort);
-                    }
+                    serverPort = ServiceConfiguration.Port;
+                    managementServerPort = ServiceConfiguration.ManagementPort;
 
-                    string managePort = ConfigurationSettings.AppSettings["NCacheServer.ManagementPort"];
+                    if (ServiceConfiguration.SendBufferSize > 0)
+                        sendBuffer = ServiceConfiguration.SendBufferSize;
 
-                    if (managePort.Length > 0)
-                    {
-                        managementServerPort = Convert.ToInt32(managePort);
-                    }
-
-                    string configSendBuffer = ConfigurationSettings.AppSettings["NCacheServer.SendBufferSize"];
-
-                    if (configSendBuffer.Length > 0)
-                    {
-                        sendBuffer = Convert.ToInt32(configSendBuffer);
-                    }
-
-                    string configReceiveBuffer = ConfigurationSettings.AppSettings["NCacheServer.ReceiveBufferSize"];
-
-                    if (configReceiveBuffer.Length > 0)
-                    {
-                        receiveBuffer = Convert.ToInt32(configReceiveBuffer);
-                    }
+                    if (ServiceConfiguration.ReceiveBufferSize > 0)
+                        receiveBuffer = ServiceConfiguration.ReceiveBufferSize;
                 }
                 catch (Exception)
                 {
                 }
-
-                _nchost = new CacheHost();
 
                 _socketServer = new SocketServer.SocketServer(serverPort, sendBuffer, receiveBuffer);
 
@@ -224,39 +182,30 @@ namespace Alachisoft.NCache.Service
                 catch (Exception)
                 { }
 
-                
+
                 IPAddress clusterIp = null;
-                if (_clusterIp != null && _clusterIp != string.Empty)
-                {
-                    try
-                    {
-                        clusterIp = IPAddress.Parse(_clusterIp);
-                    }
-                    catch (Exception)
-                    {
-                        throw new Exception("Invalid BindToIP address specified");
-                    }
-                }
+                clusterIp = ServiceConfiguration.BindToIP;
 
                 ValidateMapAddress("NCacheServer.MgmtEndPoint");
                 ValidateMapAddress("NCacheServer.ServerEndPoint");
-                
-               
-
-                _nchost.RegisterMonitorServer();
-                //muds:
                 //start the socket server separately.
                 //Start the NCache Management socket server seperately
                 _managementSocketServer = new SocketServer.SocketServer(managementServerPort, sendBuffer, receiveBuffer);
 
-                _managementSocketServer.Start(clusterIp, Alachisoft.NCache.Common.Logger.LoggerNames.CacheManagementSocketServer, "NManagement Service", CommandManagerType.NCacheManagement);
-                _socketServer.Start(clusterIp, Alachisoft.NCache.Common.Logger.LoggerNames.SocketServerLogs, "NCache Service", CommandManagerType.NCacheClient);
+                _managementSocketServer.Start(clusterIp, Common.Logger.LoggerNames.CacheManagementSocketServer, "NManagement Service", CommandManagerType.NCacheManagement, ConnectionManagerType.Management);
+                _socketServer.Start(clusterIp, Common.Logger.LoggerNames.SocketServerLogs, "NCache Service", CommandManagerType.NCacheService, ConnectionManagerType.ServiceClient);
 
                 CacheServer.SocketServerPort = managementServerPort;
                 _nchost.CacheServer.SynchronizeClientConfig();
-                _nchost.CacheServer.ClusterIP = _clusterIp;
+                _nchost.CacheServer.ClusterIP = clusterIp.ToString();
                 _nchost.CacheServer.Renderer = _socketServer;
-                Alachisoft.NCache.SocketServer.CacheProvider.Provider = _nchost.CacheServer;
+                _nchost.CacheServer.Renderer.ManagementIPAddress = clusterIp.ToString();
+                _nchost.CacheServer.Renderer.ManagementPort = managementServerPort;
+                CacheProvider.Provider = _nchost.CacheServer;
+
+                // Load configuration is separate thread to boost performance
+                ThreadPool.QueueUserWorkItem(new WaitCallback(GetRunningCaches));
+                
             }
             catch (Exception ex)
             {
@@ -265,11 +214,23 @@ namespace Alachisoft.NCache.Service
             }
         }
 
+        private void GetRunningCaches(object info)
+        {
+            try
+            {
+                _nchost.CacheServer.LoadConfiguration();
+            }
+            catch (Exception ex)
+            {
+                AppUtil.LogEvent(_cacheserver, "An error occurred while loading running caches. " + ex.ToString(), EventLogEntryType.Error, EventCategories.Error, EventID.ConfigurationError);
+            }
+        }
+
         private void ValidateMapAddress(string configKey)
         {
             try
             {
-                string mappingString = System.Configuration.ConfigurationSettings.AppSettings[configKey];
+                string mappingString = ConfigurationSettings.AppSettings[configKey];
                 if (!String.IsNullOrEmpty(mappingString))
                 {
                     string[] mappingAddress = mappingString.Split(':');
@@ -301,7 +262,7 @@ namespace Alachisoft.NCache.Service
             catch (Exception)
             { }
         }
-
+            
         /// <summary>
         /// Stop this service.
         /// </summary>
@@ -339,21 +300,13 @@ namespace Alachisoft.NCache.Service
                 if (_managementSocketServer != null)
                     _managementSocketServer.StopListening();
                 
-
-                if (_nchost != null)
-                {
-                    _nchost.StopHosting();
-                    _nchost.Dispose();
-                }
-
+                             
                 if (_socketServer != null)
                     _socketServer.Stop();
 
                 if (_managementSocketServer != null)
                     _managementSocketServer.Stop();
-
-
-
+                
                 if (_evalWarningTask != null)
                 {
                     _evalWarningTask.Close();
@@ -389,5 +342,7 @@ namespace Alachisoft.NCache.Service
                 sc.Stop();
             
         }
+
     }
+
 }

@@ -1,4 +1,4 @@
-// Copyright (c) 2015 Alachisoft
+// Copyright (c) 2017 Alachisoft
 // 
 // Licensed under the Apache License, Version 2.0 (the "License");
 // you may not use this file except in compliance with the License.
@@ -11,17 +11,11 @@
 // WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
 // See the License for the specific language governing permissions and
 // limitations under the License.
-using System;
-using System.Net.Sockets;
-using Alachisoft.NCache.Caching;
+
 using Alachisoft.NCache.SocketServer.Command;
 using Alachisoft.NCache.Common.Stats;
 using Alachisoft.NCache.Common.Monitoring;
-using Alachisoft.NCache.Serialization;
 using System.IO;
-using Alachisoft.NCache.Config.Dom;
-using Alachisoft.NCache.Caching.Statistics;
-using Alachisoft.NCache.Management.ClientConfiguration.Dom;
 
 namespace Alachisoft.NCache.SocketServer
 {
@@ -31,18 +25,15 @@ namespace Alachisoft.NCache.SocketServer
         {
         }
 
-        public object Deserialize(byte[] buffer, long commandSize)
+        public object Deserialize(Stream buffer)
         {
             Alachisoft.NCache.Common.Protobuf.ManagementCommand command = null;
-            using (MemoryStream stream = new MemoryStream(buffer, 0, (int)commandSize))
-            {
-                command = ProtoBuf.Serializer.Deserialize<Alachisoft.NCache.Common.Protobuf.ManagementCommand>(stream);
-                stream.Close();
-            }
+            command = ProtoBuf.Serializer.Deserialize<Alachisoft.NCache.Common.Protobuf.ManagementCommand>(buffer);
+            buffer.Close();
             return command;
         }
 
-        public void ProcessCommand(ClientManager clientManager, object command)
+        public void ProcessCommand(ClientManager clientManager, object command, long acknowledgementId, UsageStats stats)
         {
             Alachisoft.NCache.Common.Protobuf.ManagementCommand cmd = command as Alachisoft.NCache.Common.Protobuf.ManagementCommand;
 
@@ -53,9 +44,6 @@ namespace Alachisoft.NCache.SocketServer
             NCManagementCommandBase incommingCmd = null;
             incommingCmd = new ManagementCommand();
 
-            //PROTOBUF
-            /*****************************************************************/
-            /**/
             incommingCmd.ExecuteCommand(clientManager, cmd);/**/
             /*****************************************************************/
             if (SocketServer.Logger.IsDetailedLogsEnabled) SocketServer.Logger.NCacheLog.Info("ConnectionManager.ReceiveCallback", clientManager.ToString() + " after executing COMMAND : " + "Management Command" + " RequestId :" + cmd.requestId);
@@ -64,12 +52,12 @@ namespace Alachisoft.NCache.SocketServer
             {
                 foreach (byte[] reponse in incommingCmd.SerializedResponsePackets)
                 {
-                    ConnectionManager.AssureSend(clientManager, reponse,Common.Enum.Priority.Normal);
+                    ConnectionManager.AssureSend(clientManager, reponse, Common.Enum.Priority.Normal);
                 }
-
             }
             if (ServerMonitor.MonitorActivity) ServerMonitor.LogClientActivity("CmdMgr.PrsCmd", "exit");
 
         }
+
     }
 }

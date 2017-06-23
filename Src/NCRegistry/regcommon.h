@@ -55,16 +55,16 @@ namespace RegUtil
 
 	bool		KeyExists(HKEY hRootKey, LPCTSTR subKey);
 	
-	string		QueryKey(HKEY hKey); 
+	string		QueryKey(HKEY hKey); //Added by [Asif Imam] Aug 08,08
 
 	bool		SetRegValue(HKEY hRootKey, LPCTSTR subKey, LPCTSTR keyName, LPCTSTR keyValue,short prodId);
 	bool		SetRegValue(HKEY hRootKey, LPCTSTR subKey, LPCTSTR keyName, DWORD keyValue,short prodId);
 	bool		GetRegValue(HKEY root, LPCTSTR keyPath, LPCTSTR keyName, string& val,short prodId);
-	bool		GetRegKeys(HKEY root, LPCTSTR keyPath, LPCTSTR keyName, string& val,short prodId); 
+	bool		GetRegKeys(HKEY root, LPCTSTR keyPath, LPCTSTR keyName, string& val,short prodId); //Added by [Asif Imam] Aug 08,08
 
 	// Uses AppHive
 	string		GetString (LPCTSTR szSection, LPCTSTR szKey,LPCTSTR szDefault = _T(""),short prodId=0);
-	string		GetKeys (LPCTSTR szSection, LPCTSTR szKey,LPCTSTR szDefault = _T(""),short prodId=0); 
+	string		GetKeys (LPCTSTR szSection, LPCTSTR szKey,LPCTSTR szDefault = _T(""),short prodId=0); //Added by [Asif Imam] Aug 08,08
 	bool		SetString (LPCTSTR szSection, LPCTSTR szKey,LPCTSTR szValue,short prodId);
 	long		GetInt (LPCTSTR szSection, LPCTSTR szKey,long nDefault = 0,short prodId=0);
 	bool		SetInt (LPCTSTR szSection, LPCTSTR szKey,long nValue,short prodId);

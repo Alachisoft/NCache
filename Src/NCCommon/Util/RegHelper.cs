@@ -1,4 +1,4 @@
-// Copyright (c) 2015 Alachisoft
+// Copyright (c) 2017 Alachisoft
 // 
 // Licensed under the Apache License, Version 2.0 (the "License");
 // you may not use this file except in compliance with the License.
@@ -11,6 +11,7 @@
 // WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
 // See the License for the specific language governing permissions and
 // limitations under the License.
+
 using System;
 using System.Collections;
 using System.Diagnostics;
@@ -27,9 +28,9 @@ namespace Alachisoft.NCache.Common
     {
         
         public static string  ROOT_KEY = @"Software\Alachisoft\NCache";
-        public static string  APPBASE_KEY = @"\NCache Manager";
-        public static string MANAGER_OPTIONS = APPBASE_KEY + @"\Options";
-        public static string MONITOR_ROWS_BASE = ROOT_KEY+ @"\NCache Manager\Options";
+
+
+
         static RegHelper()
         {
         }
@@ -57,6 +58,92 @@ namespace Alachisoft.NCache.Common
                 return null;
             }
         }
+
+        public static RegistryKey NewUserKey(string keyPath)
+        {
+            return Registry.CurrentUser.CreateSubKey(keyPath);
+        }
+
+        static public int GetRegValuesFromCurrentUser(string keypath, Hashtable ht, short prodId)
+        {
+            RegistryKey root;
+            if (AppUtil.IsRunningAsWow64)
+            {
+                GetRegValuesInternalWow64(keypath, ht, prodId);
+                return ht.Count;
+            }
+
+            try
+            {
+                root = Registry.CurrentUser.OpenSubKey(keypath);
+                if (root != null)
+                {
+                    string[] keys = root.GetValueNames();
+                    for (int i = 0; i < keys.Length; i++)
+                        ht[keys[i]] = GetRegValue(keypath, keys[i], prodId);
+                }
+            }
+            catch (Exception)
+            {
+            }
+            return ht.Count;
+        }
+
+        static public int GetBooleanRegValuesFromCurrentUser(string keypath, Hashtable ht, short prodId)
+        {
+            RegistryKey root;
+            try
+            {
+                root = Registry.CurrentUser.OpenSubKey(keypath);
+                if (root != null)
+                {
+                    string[] keys = root.GetValueNames();
+                    for (int i = 0; i < keys.Length; i++)
+                        ht[keys[i]] = Convert.ToBoolean(GetRegValueFromCurrentUser(keypath, keys[i], prodId));
+                }
+            }
+            catch (Exception)
+            {
+            }
+            return ht.Count;
+        }
+
+
+        static public bool IsCurrentUserRegKeyExist(string keypath)
+        {
+            try
+            {
+                RegistryKey root = Registry.CurrentUser.OpenSubKey(keypath, true);
+                if (root != null)
+                {
+                    return true;
+                }
+                else
+                {
+                    return false;
+                }
+            }
+            catch (Exception)
+            {
+                return false;
+            }
+        }
+
+        static public void SetRegValuesInCurrentUser(string keypath, Hashtable val, short prodId)
+        {
+            try
+            {
+                IDictionaryEnumerator ie = val.GetEnumerator();
+                while (ie.MoveNext())
+                {
+                    SetRegValueInCurrentUser(keypath, Convert.ToString(ie.Key), ie.Value, prodId);
+                }
+            }
+            catch (Exception)
+            {
+            }
+        }
+
 
         /// <summary>
         /// Save a registry value.

@@ -1,6 +1,4 @@
-// Copyright (c) 2015 Alachisoft
-// 
-// Licensed under the Apache License, Version 2.0 (the "License");
+﻿// Licensed under the Apache License, Version 2.0 (the "License");
 // you may not use this file except in compliance with the License.
 // You may obtain a copy of the License at
 // 
@@ -11,9 +9,9 @@
 // WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
 // See the License for the specific language governing permissions and
 // limitations under the License.
+
+
 using System;
-using System.Collections.Generic;
-using System.Text;
 using System.Reflection;
 using System.IO;
 
@@ -21,7 +19,8 @@ namespace Alachisoft.NCache.Common.Util
 {
     public class AssemblyResolveEventHandler
     {
-        
+        public static string CacheName = "";
+
         public static System.Reflection.Assembly DeployAssemblyHandler(object sender,ResolveEventArgs args)
         {            
             Assembly asm = null;
@@ -30,20 +29,33 @@ namespace Alachisoft.NCache.Common.Util
             {
                 asmName += ".dll";
             }
-            
-            string deployAssemblyDirPath = AppUtil.DeployedAssemblyDir;
-            
-            string[] deployDirectories = Directory.GetDirectories(deployAssemblyDirPath);            
-            
-            foreach(string deploy in deployDirectories)
+
+            string deployAssemblyDirPath = string.Empty;
+            if (!(string.IsNullOrEmpty(CacheName)))
             {
                 try
                 {
-                    asm = Assembly.LoadFrom(deploy + "\\" + asmName);
-                    break;
+                    deployAssemblyDirPath = Path.Combine(AppUtil.DeployedAssemblyDir, CacheName);
+                    asm = Assembly.LoadFrom(deployAssemblyDirPath + "\\" + asmName);
+                    return asm;
                 }
                 catch (Exception ex) { }
-            }                   
+            }
+            else
+            {
+                deployAssemblyDirPath = AppUtil.DeployedAssemblyDir;
+                string[] deployDirectories = Directory.GetDirectories(deployAssemblyDirPath);
+
+                foreach (string deploy in deployDirectories)
+                {
+                    try
+                    {
+                        asm = Assembly.LoadFrom(deploy + "\\" + asmName);
+                        break;
+                    }
+                    catch (Exception ex) { }
+                }
+            }
             return asm;
         }
     }

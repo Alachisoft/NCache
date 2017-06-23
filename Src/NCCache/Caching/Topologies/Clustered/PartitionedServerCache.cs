@@ -1,4 +1,4 @@
-// Copyright (c) 2015 Alachisoft
+// Copyright (c) 2017 Alachisoft
 // 
 // Licensed under the Apache License, Version 2.0 (the "License");
 // you may not use this file except in compliance with the License.
@@ -11,6 +11,7 @@
 // WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
 // See the License for the specific language governing permissions and
 // limitations under the License.
+
 using System;
 using System.Collections;
 using System.Threading;
@@ -78,6 +79,22 @@ namespace Alachisoft.NCache.Caching.Topologies.Clustered
 
         protected IPAddress _srvrJustLeft = null;
 
+        /// <summary> 
+        /// Returns the cache local to the node, i.e., internal cache.
+        /// </summary>
+        protected internal override CacheBase InternalCache
+        {
+            get { return _internalCache; }
+        }
+
+        public DistributionManager DistributionMgr
+        {
+            get { return _distributionMgr; }
+            set { _distributionMgr = value; }
+        }
+       
+        #region /                 --- Constructor ---           /
+
         /// <summary>
         /// Constructor.
         /// </summary>
@@ -104,7 +121,9 @@ namespace Alachisoft.NCache.Caching.Topologies.Clustered
         {
             _stats.ClassName = "partitioned-server";
         }
-
+        
+        #endregion
+        
         #region	/                 --- IDisposable ---           /
 
         /// <summary>
@@ -141,20 +160,6 @@ namespace Alachisoft.NCache.Caching.Topologies.Clustered
         }
 
         #endregion
-
-        /// <summary> 
-        /// Returns the cache local to the node, i.e., internal cache.
-        /// </summary>
-        protected internal override CacheBase InternalCache
-        {
-            get { return _internalCache; }
-        }
-
-        public DistributionManager DistributionMgr
-        {
-            get { return _distributionMgr; }
-            set { _distributionMgr = value; }
-        }
 
         #region	/                 --- Initialization ---           /
 
@@ -268,6 +273,11 @@ namespace Alachisoft.NCache.Caching.Topologies.Clustered
             return bucketId;
         }
 
+        public override bool IsRetryOnSuspected
+        {
+            get { return true; }
+        }
+       
         #region	/                 --- Overrides for ClusteredCache ---           /
 
         /// <summary>
@@ -276,8 +286,6 @@ namespace Alachisoft.NCache.Caching.Topologies.Clustered
         /// </summary>
         public override void OnAfterMembershipChange()
         {
-            //Ata
-            //nTrace.error("PartitionedCache.OnAfterMembershipChanged", "membership changed");
             try
             {
                 NotifyHashmapChanged(Cluster.LastViewID, _distributionMgr.GetOwnerHashMapTable(Cluster.Renderers), GetClientMappedServers(Cluster.Servers.Clone() as ArrayList),true, true);
@@ -296,21 +304,6 @@ namespace Alachisoft.NCache.Caching.Topologies.Clustered
 
                 //Set joining completion status.
                 _initialJoiningStatusLatch.SetStatusBit(NodeStatus.Running, NodeStatus.Initializing);
-            }
-
-            //muds:
-            //coordinator is responsible for carrying out the automatic load
-            //balancing...
-            if (Cluster.IsCoordinator)
-            {
-                if (_isAutoBalancingEnabled)
-                {
-                    if (_autoBalancingTask == null)
-                    {
-                        _autoBalancingTask = new AutomaticDataLoadBalancer(this, _autoBalancingInterval);
-                        _context.TimeSched.AddTask(_autoBalancingTask);
-                    }
-                }
             }
 
            StartStateTransfer(false);
@@ -340,7 +333,6 @@ namespace Alachisoft.NCache.Caching.Topologies.Clustered
 
             if (LocalAddress.CompareTo(address) == 0)
             {
-                
                 UpdateLocalBuckets();
 
                 _stats.LocalNode = info;
@@ -358,7 +350,6 @@ namespace Alachisoft.NCache.Caching.Topologies.Clustered
                                 _stats.ClusterDataAffinity.Add(ie.Current);
                             }
 
-                           
                             if (_stats.PartitionsHavingDatagroup.Contains(ie.Current))
                             {
                                 ArrayList nodeList = (ArrayList) _stats.PartitionsHavingDatagroup[ie.Current];
@@ -375,7 +366,6 @@ namespace Alachisoft.NCache.Caching.Topologies.Clustered
                             }
                         }
 
-                       
                         if (!_stats.DatagroupsAtPartition.Contains(address))
                         {
                             _stats.DatagroupsAtPartition[address] = da.Groups;
@@ -408,9 +398,6 @@ namespace Alachisoft.NCache.Caching.Topologies.Clustered
             _stats.Nodes.Remove(info);
             _distributionMgr.OnMemberLeft(address, identity);
 
-
-
-            //muds:
             if (_stats.DatagroupsAtPartition.Contains(address))
             {
                 ArrayList datagroups = (ArrayList) _stats.DatagroupsAtPartition[address];
@@ -433,7 +420,6 @@ namespace Alachisoft.NCache.Caching.Topologies.Clustered
                 _stats.DatagroupsAtPartition.Remove(address);
             }
 
-            //muds:
             UpdateLocalBuckets();
 
             if (_corresponders != null)
@@ -563,7 +549,7 @@ namespace Alachisoft.NCache.Caching.Topologies.Clustered
                     }
                 }
             }
-                
+                ///This is Madness..
                 ///No .. this was previously maintained as it is i.e. using exception as flow control
                 ///Null can be rooted down to MirrorManager.GetGroupInfo where null is intentionally thrown and here instead of providing a check ...
                 ///This flow can be found in every DetermineCluster function of every topology
@@ -620,7 +606,6 @@ namespace Alachisoft.NCache.Caching.Topologies.Clustered
                                 _stats.ClusterDataAffinity.Add(ie.Current);
                             }
 
-                           
                             if (_stats.PartitionsHavingDatagroup.Contains(ie.Current))
                             {
                                 ArrayList nodeList = (ArrayList) _stats.PartitionsHavingDatagroup[ie.Current];
@@ -636,7 +621,6 @@ namespace Alachisoft.NCache.Caching.Topologies.Clustered
                                 _stats.PartitionsHavingDatagroup[ie.Current] = nodeList;
                             }
                         }
-                        
                         if (!_stats.DatagroupsAtPartition.Contains(sender))
                         {
                             _stats.DatagroupsAtPartition[sender] = other.DataAffinity.Groups;
@@ -688,6 +672,7 @@ namespace Alachisoft.NCache.Caching.Topologies.Clustered
         {
             base.ClientConnected(client, isInproc);
             PublishStats(false);
+            if (_context.ClientDeathDetection != null) UpdateClientStatus(client, true);
             _statusLatch.WaitForAny(NodeStatus.Initializing | NodeStatus.Running);
         }
 
@@ -700,6 +685,7 @@ namespace Alachisoft.NCache.Caching.Topologies.Clustered
         {
             base.ClientDisconnected(client, isInproc);
             PublishStats(false);
+            if (_context.ClientDeathDetection != null) UpdateClientStatus(client, true);
         }
 
         public override CacheStatistics Statistics
@@ -876,12 +862,10 @@ namespace Alachisoft.NCache.Caching.Topologies.Clustered
             corresponder.IsBalanceDataLoad = isBalanceDataLoad;
             //ask the corresponder to transfer data for the bucket(s).
 
-            Alachisoft.NCache.Caching.Topologies.Clustered.StateTxfrInfo transferInfo =
-                corresponder.TransferBucket(bucketIds, sparsedBuckets, expectedTxfrId);
+            Alachisoft.NCache.Caching.Topologies.Clustered.StateTxfrInfo transferInfo = corresponder.TransferBucket(bucketIds, sparsedBuckets, expectedTxfrId);
             OperationResponse rsp = new OperationResponse();
             rsp.SerializablePayload = transferInfo;
-            if (transferInfo.PayLoad != null)
-                rsp.UserPayload = transferInfo.PayLoad.ToArray();
+            rsp.SerilizationStream = transferInfo.SerlizationStream;
             return rsp;
         }
 
@@ -907,14 +891,12 @@ namespace Alachisoft.NCache.Caching.Topologies.Clustered
 
         private void handleAckStateTxfr(object info, Address client)
         {
-            object[] keys = null;
             try
             {
                 ArrayList bucketIds = (ArrayList) info;
                 IEnumerator ie = bucketIds.GetEnumerator();
                 while (ie.MoveNext())
                 {
-                    //muds:
                     //remove this bucket from the local buckets.
                     //this bucket has been transfered to some other node.
                     InternalCache.RemoveBucket((int) ie.Current);
@@ -1922,8 +1904,6 @@ namespace Alachisoft.NCache.Caching.Topologies.Clustered
                 try
                 {
                     targetNode = GetNextNode(key as string);
-
-                    
                     //possible in case of strict affinity...
                     if (targetNode == null)
                     {
@@ -2931,10 +2911,6 @@ namespace Alachisoft.NCache.Caching.Topologies.Clustered
                 ArrayList keysOfRemoveNotification = new ArrayList();
                 ArrayList entriesOfRemoveNotification = new ArrayList();
                 List<EventContext> eventContexts = new List<EventContext>();
-                int sizeThreshhold = 30*1024;
-                int countThreshhold = 50;
-                int size = 0;
-
                 ide = totalRemovedItems.GetEnumerator();
 
                 while (ide.MoveNext())
@@ -3052,9 +3028,6 @@ namespace Alachisoft.NCache.Caching.Topologies.Clustered
                         {
                             entry = Clustered_Remove(targetNode, actualKey, ir, cbEntry, notify, lockId, accessType, operationContext);
                         }
-
-
-
                     }
                     break;
 
@@ -3117,7 +3090,7 @@ namespace Alachisoft.NCache.Caching.Topologies.Clustered
         /// <see cref="OnItemsRemoved"/> handler.
         /// </para>
         /// </remarks>
-        public override Hashtable Remove(object[] keys, ItemRemoveReason ir, bool notify, OperationContext operationContext)
+        public override Hashtable Remove(IList keys, ItemRemoveReason ir, bool notify, OperationContext operationContext)
         {
             if (ServerMonitor.MonitorActivity) ServerMonitor.LogClientActivity("PoRCache.Remove", "");
             /// Wait until the object enters any running status
@@ -3128,7 +3101,7 @@ namespace Alachisoft.NCache.Caching.Topologies.Clustered
 
             Hashtable result = new Hashtable();
 
-            if (keys != null && keys.Length > 0)
+            if (keys != null && keys.Count > 0)
             {
                 if (_internalCache == null) throw new InvalidOperationException();
                 
@@ -3146,7 +3119,7 @@ namespace Alachisoft.NCache.Caching.Topologies.Clustered
             return result;
         }
 
-        private Hashtable ClusteredRemove(object[] keys, ItemRemoveReason ir, CallbackEntry cbEntry, bool notify, OperationContext operationContext)
+        private Hashtable ClusteredRemove(IList keys, ItemRemoveReason ir, CallbackEntry cbEntry, bool notify, OperationContext operationContext)
         {
             if (ServerMonitor.MonitorActivity) ServerMonitor.LogClientActivity("PoRCache.RemoveBlk", "");
 
@@ -3254,7 +3227,7 @@ namespace Alachisoft.NCache.Caching.Topologies.Clustered
             return result;
         }
 
-        private Hashtable OptimizedRemove(object[] keys, ItemRemoveReason ir, CallbackEntry cbEntry, bool notify, OperationContext operationContext)
+        private Hashtable OptimizedRemove(IList keys, ItemRemoveReason ir, CallbackEntry cbEntry, bool notify, OperationContext operationContext)
         {
             if (ServerMonitor.MonitorActivity) ServerMonitor.LogClientActivity("PoRCache.RemoveBlk", "");
 
@@ -3269,7 +3242,7 @@ namespace Alachisoft.NCache.Caching.Topologies.Clustered
             }
             catch (Exception ex)
             {
-                for (int i = 0; i < keys.Length; i++)
+                for (int i = 0; i < keys.Count; i++)
                 {
                     result[keys[i]] = new OperationFailedException(ex.Message, ex);
                 }
@@ -3337,7 +3310,7 @@ namespace Alachisoft.NCache.Caching.Topologies.Clustered
         /// <param name="notify"></param>
         /// <param name="operationContext"></param>
         /// <returns>list of removed keys.</returns>
-        private Hashtable Local_Remove(object[] keys, ItemRemoveReason ir, Address src, CallbackEntry cbEntry, bool notify, OperationContext operationContext)
+        private Hashtable Local_Remove(IList keys, ItemRemoveReason ir, Address src, CallbackEntry cbEntry, bool notify, OperationContext operationContext)
         {
             Hashtable removedKeys = null;
 
@@ -3534,7 +3507,6 @@ namespace Alachisoft.NCache.Caching.Topologies.Clustered
             OperationContext operationContext, EventContext eventContext)
         {
             bool notifyRemove = false;
-            //[Khurram] : change made after discussion with Mudassir 20-04-2011 (fix for two notification on single key removel)
             // do not notify if explicitly removed by Remove()
             object notifyRemoval = operationContext.GetValueByField(OperationContextFieldName.NotifyRemove);
 
@@ -3745,7 +3717,6 @@ namespace Alachisoft.NCache.Caching.Topologies.Clustered
         {
             InternalCache.RemoveBucketData(bucketId);
 
-            
             //Announce all the members that i am the new owner of this bucket....
             ArrayList bucketIds = new ArrayList(1);
             bucketIds.Add(bucketId);
@@ -3781,7 +3752,6 @@ namespace Alachisoft.NCache.Caching.Topologies.Clustered
         public override void InstallHashMap(DistributionMaps distributionMaps, ArrayList leftMbrs)
         {
             _distributionMgr.InstallHashMap(distributionMaps, leftMbrs);
-            
         }
 
         protected override DistributionMaps GetMaps(DistributionInfoData info)
@@ -3912,7 +3882,6 @@ namespace Alachisoft.NCache.Caching.Topologies.Clustered
                     _distributionMgr.Wait(key);
                 }
             }
-            return lockInfo;
         }
 
         public override void UnLock(object key, object lockId, bool isPreemptive, OperationContext operationContext)
@@ -4081,13 +4050,9 @@ namespace Alachisoft.NCache.Caching.Topologies.Clustered
                     _distributionMgr.Wait(key);
                 }
             }
-            return lockInfo;
         }
 
-
-
         #endregion
-
 
         private EnumerationDataChunk Clustered_GetNextChunk(Address address, EnumerationPointer pointer,
             OperationContext operationContext)
@@ -4126,16 +4091,6 @@ namespace Alachisoft.NCache.Caching.Topologies.Clustered
             EnumerationDataChunk nextChunk = InternalCache.GetNextChunk(pointer, operationContext);
             return nextChunk;
         }
-
-
-
-
-
-
-
-
-
-
 
     }
 }

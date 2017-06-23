@@ -1,4 +1,4 @@
-// Copyright (c) 2015 Alachisoft
+// Copyright (c) 2017 Alachisoft
 // 
 // Licensed under the Apache License, Version 2.0 (the "License");
 // you may not use this file except in compliance with the License.
@@ -11,6 +11,7 @@
 // WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
 // See the License for the specific language governing permissions and
 // limitations under the License.
+
 using System;
 using System.Collections;
 using Alachisoft.NCache.Common.DataStructures;
@@ -21,9 +22,6 @@ namespace Alachisoft.NCache.Caching.Topologies.Clustered
     {
         public DistributionCore()
         {
-            //
-            // TODO: Add constructor logic here
-            //
         }
 
         public enum BalanceAction
@@ -78,45 +76,6 @@ namespace Alachisoft.NCache.Caching.Topologies.Clustered
         {
             return null;
         }
-
-     /*   public static ArrayList CandidateSelection(ArrayList sortedBucketsForNode, int nodesToSacrifice, int weightToSacrifice)
-        {
-            int _matrixWidth = nodesToSacrifice;
-            double _matrixHeightDbl = sortedBucketsForNode.Count / nodesToSacrifice;
-            int _matrixHeight = Convert.ToInt32(Math.Ceiling(_matrixHeightDbl));
-            int _matrixItemsCount = _matrixHeight * _matrixWidth;
-            int _ignoreItems = _matrixItemsCount - sortedBucketsForNode.Count;
-            BucketMatrix _bMatrix = GetMatrix(_matrixHeight, _matrixWidth, sortedBucketsForNode, weightToSacrifice);
-
-            CompareAndSelect(_bMatrix);
-            return null;
-
-        }*/
-
-     /*   private static BucketMatrix GetMatrix(int matrixH, int matrixW, ArrayList sortedBucketsForNode, int weightToSacrifice)
-        {
-            int[,] bucketMatrix = new int[matrixH, matrixW];
-            int indexCount = 0;
-            int itemsCount = sortedBucketsForNode.Count;
-
-            //Fill up the Matrix with buckets for THIS node.
-            for (int width = 0; width < matrixW; width++)
-            {
-                for (int height = 0; height < matrixH; height++)
-                {
-                    if (indexCount < itemsCount)
-                        bucketMatrix[width, height] = Convert.ToInt32(sortedBucketsForNode[indexCount++]);
-                    else
-                    {
-                        bucketMatrix[width, height] = -1;
-                        indexCount++;
-                    }
-                }
-            }
-            BucketMatrix bMatrix = new BucketMatrix(bucketMatrix, matrixH, matrixW, weightToSacrifice);
-            return bMatrix;
-
-        }*/
 
         //We have the matrix. We need no weight balancing, but we need shuffled indexes to be selected. Here comes the routine and algo.
         // Shuffle works the way of moving diagonally within a matrix. If we reach end column, move to first row but extended column.
@@ -206,44 +165,6 @@ namespace Alachisoft.NCache.Caching.Topologies.Clustered
             }
             return -1; //We got no single row that can be selected under required criteria
         }
-
-        /*  public static RowsBalanceResult BucketSelectionFromTuples(ArrayList allTuples,DistributionMatrix bMatrix)
-          {
-              int primaryRow; //This row would be modified to acomodae required weight.
-              int secondaryRow; //This row would be consulted to make primaryRow workable
-              for (int i = 0; i < allTuples.Count; i++)
-              {
-                  Tuple tempTuple = allTuples[i];
-                  int firstWeight = bMatrix.WeightMatrix[tempTuple.First][0];
-                  int secondWeight = bMatrix.WeightMatrix[tempTuple.second][0];
-            
-                  // Calculate which Move is cost-effective, Moving data from first to second or moving from second to first
-                  if (CalcMoveCost(firstWeight, bMatrix.PercentWeightToSacrifice) <= CalcMoveCost(secondWeight, bMatrix.PercentWeightToSacrifice))
-                  {
-                      primaryRow = tempTuple.First;
-                      secondarayRow = tempTuple.Second;
-                  }
-                  else
-                  {
-                      primaryRow = tempTuple.Second;
-                      secondarayRow = tempTuple.First;
-                  }
-              }    
-          }    */
-
-
-        /*// Calculates cost to make sourceweight to be equal to desired weight. This can be in + and -. We take absolute value though.
-        public static int CalcMoveCost(int sourceWeight,int toMoveWeight)
-        {
-            if (sourceWeight < toMoveWeight) //
-                return (toMoveWeight - sourceWeight);
-
-            if (sourceWeight > toMoveWeight)
-                return (sourceWeight - toMoveWeight);
-
-            if (sourceWeight == toMoveWeight)
-                return 0;
-        }*/
 
         //Backbone to be written now.//Two arrays ....both need to give a right combination against required weight.
         private static RowsBalanceResult BalanceWeight(Tuple rowPair, DistributionMatrix bMatrix)

@@ -1,4 +1,4 @@
-// Copyright (c) 2015 Alachisoft
+// Copyright (c) 2017 Alachisoft
 // 
 // Licensed under the Apache License, Version 2.0 (the "License");
 // you may not use this file except in compliance with the License.
@@ -11,14 +11,12 @@
 // WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
 // See the License for the specific language governing permissions and
 // limitations under the License.
-using System;
-using System.Collections;
 
-using Alachisoft.NCache.Serialization.Formatters;
+using System;
+
 using Alachisoft.NCache.SocketServer.Util;
 using Alachisoft.NCache.Web.Util;
 using Alachisoft.NCache.Common.DataStructures;
-using Alachisoft.NCache.Common.Util;
 using System.Text;
 
 namespace Alachisoft.NCache.SocketServer.EventTask
@@ -28,12 +26,14 @@ namespace Alachisoft.NCache.SocketServer.EventTask
         private string _cacheId;
         private string _clientId;
         private NewHashmap _newmap;
+        private bool _isDotNetClient;
 
-        public HashmapChangedEvent(string cacheId, string clientId, NewHashmap newHashmap)
+        public HashmapChangedEvent(string cacheId, string clientId, NewHashmap newHashmap, bool isDotNetClient)
         {
             this._cacheId = cacheId;
             this._clientId = clientId;
             this._newmap = newHashmap;
+            this._isDotNetClient = isDotNetClient;
         }
 
         public void Process()
@@ -45,6 +45,8 @@ namespace Alachisoft.NCache.SocketServer.EventTask
                 if (clientManager != null)
                 {
                     byte[] table = new byte[0];
+                    if (this._isDotNetClient)
+                    {
                         if (_newmap != null)
                         {
                             if (this._newmap.Buffer == null)
@@ -53,6 +55,26 @@ namespace Alachisoft.NCache.SocketServer.EventTask
                             }
                             table = this._newmap.Buffer; 
                         }
+                    }
+                    else
+                    {
+                        if (_newmap != null) 
+                        {
+                            String map = HashtableUtil.ToString(this._newmap.Map);
+                            String members = HashtableUtil.ToString(this._newmap.Members);
+                            String lastViewId = this._newmap.LastViewId.ToString();
+                            StringBuilder toStr = new StringBuilder();
+                            toStr.Append(map);
+                            toStr.Append("\t");
+                            toStr.Append(members);
+                            toStr.Append("\t");
+                            toStr.Append(lastViewId);
+                            toStr.Append("\t");
+                            toStr.Append(this._newmap.UpdateMap);
+
+                            table = HelperFxn.ToBytes(toStr.ToString());
+                        }
+                    }
 
                     Alachisoft.NCache.Common.Protobuf.Response response = new Alachisoft.NCache.Common.Protobuf.Response();
                     Alachisoft.NCache.Common.Protobuf.HashmapChangedEventResponse hashmapChangedResponse = new Alachisoft.NCache.Common.Protobuf.HashmapChangedEventResponse();

@@ -148,6 +148,8 @@ namespace Alachisoft.NCache.Caching.Topologies.Clustered
             CacheEntry retVal = null;
             try
             {
+                if (operationContext.Contains(OperationContextFieldName.IsClusteredOperation))
+                    throw new InvalidReaderException("Reader state has been lost due to state transfer.");
                 if (ServerMonitor.MonitorActivity) ServerMonitor.LogClientActivity("RepCacheBase.Get", "enter");
                 Function func = new Function((int)OpCodes.Get, new object[] { key, operationContext });
                 object result = Cluster.SendMessage(address, func, GroupRequest.GET_FIRST, false);
@@ -476,7 +478,6 @@ namespace Alachisoft.NCache.Caching.Topologies.Clustered
 
             pEntries = Get(keys, operationContext); //dont remove
 
-            Hashtable existingItems;
             Hashtable jointTable = new Hashtable();
             Hashtable failedTable = new Hashtable();
             Hashtable insertable = new Hashtable();
@@ -750,7 +751,7 @@ namespace Alachisoft.NCache.Caching.Topologies.Clustered
         /// <remarks>
         /// This method invokes <see cref="handleRemove"/> on every server node in the cluster.
         /// </remarks>
-        protected Hashtable Clustered_Remove(object[] keys, ItemRemoveReason ir, CallbackEntry cbEntry,  bool notify, OperationContext operationContext)
+        protected Hashtable Clustered_Remove(IList keys, ItemRemoveReason ir, CallbackEntry cbEntry,  bool notify, OperationContext operationContext)
         {
             Hashtable removedEntries = new Hashtable();
             try
@@ -808,7 +809,7 @@ namespace Alachisoft.NCache.Caching.Topologies.Clustered
         /// <remarks>
         /// This method invokes <see cref="handleRemoveRange"/> on every server node in the cluster.
         /// </remarks>
-        protected bool Clustered_Remove(object[] keys, ItemRemoveReason reason, OperationContext operationContext)
+        protected bool Clustered_Remove(IList keys, ItemRemoveReason reason, OperationContext operationContext)
         {
             try
             {
@@ -823,7 +824,7 @@ namespace Alachisoft.NCache.Caching.Topologies.Clustered
                         
                         if (!rsp1.wasReceived())
                         {
-                            Context.NCacheLog.Error("ReplicatedBase.Remove[]", "timeout_failure :" + rsp1.Sender + " Keys :" + keys.Length);
+                            Context.NCacheLog.Error("ReplicatedBase.Remove[]", "timeout_failure :" + rsp1.Sender + " Keys :" + keys.Count);
                             continue;
                         }
                     }

@@ -1,4 +1,4 @@
-// Copyright (c) 2015 Alachisoft
+// Copyright (c) 2017 Alachisoft
 // 
 // Licensed under the Apache License, Version 2.0 (the "License");
 // you may not use this file except in compliance with the License.
@@ -32,7 +32,13 @@ namespace Alachisoft.NCache.Integrations.Memcached.ProxyServer.Commands
             set { _stats = value; }
         }
 
-        public StatsCommand(string argument=null)
+        public StatsCommand()
+            : base(Opcode.Stat)
+        {
+            _argument = null;
+        }
+
+        public StatsCommand(string argument)
             : base(Opcode.Stat)
         {
             _argument = argument;

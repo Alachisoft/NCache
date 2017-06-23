@@ -1,4 +1,4 @@
-// Copyright (c) 2015 Alachisoft
+// Copyright (c) 2017 Alachisoft
 // 
 // Licensed under the Apache License, Version 2.0 (the "License");
 // you may not use this file except in compliance with the License.
@@ -11,6 +11,7 @@
 // WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
 // See the License for the specific language governing permissions and
 // limitations under the License.
+
 using System;
 using System.Configuration;
 using System.Xml;
@@ -51,7 +52,7 @@ namespace Alachisoft.NCache.Web.SessionStateManagement
                     NCacheSessionStateSettings sessionStateSettings = new NCacheSessionStateSettings();
                     XmlNode sessionLocation = ncacheSection.SelectSingleNode("sessionLocation");
 
-                    //muds:
+                   
                     if (sessionLocation.Attributes["secondary-connection-recycle-interval"] != null)
                     {
                         sessionStateSettings.RecycleInterval = Convert.ToInt32(sessionLocation.Attributes["secondary-connection-recycle-interval"].Value);

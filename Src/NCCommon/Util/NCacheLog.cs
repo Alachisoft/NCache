@@ -1,4 +1,4 @@
-// Copyright (c) 2015 Alachisoft
+// Copyright (c) 2017 Alachisoft
 // 
 // Licensed under the Apache License, Version 2.0 (the "License");
 // you may not use this file except in compliance with the License.
@@ -11,9 +11,9 @@
 // WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
 // See the License for the specific language governing permissions and
 // limitations under the License.
+
 using System;
 using System.IO;
-using System.Reflection;
 using log4net.Appender;
 
 namespace Alachisoft.NCache.Common.Util
@@ -29,32 +29,6 @@ namespace Alachisoft.NCache.Common.Util
         static NCacheLog()
         {
 
-            s_config = AppUtil.InstallDir;
-
-            try
-            {
-                s_config = System.IO.Path.Combine(s_config, DIRNAME);
-            }
-            catch { }
-
-            if (s_config == null && s_config.Length > 0)
-            {
-                s_config = new FileInfo(Assembly.GetExecutingAssembly().Location).DirectoryName;
-                s_config = System.IO.Path.Combine(s_config, DIRNAME);
-            }
-
-            string serverconfig="Alachisoft.NCache.Service.exe.config";
-
-            if (File.Exists(Directory.GetCurrentDirectory() + "\\" + serverconfig))
-            {
-                FileSystemWatcher fs = new FileSystemWatcher();
-                fs.Path = s_config;
-                fs.Filter = serverconfig;
-                fs.IncludeSubdirectories = false;
-                fs.EnableRaisingEvents = true;
-                fs.NotifyFilter = NotifyFilters.LastWrite;
-                fs.Changed += new FileSystemEventHandler(OnChange);
-            }
         }
 
         public static void SetLevel(string cacheName, Level level)
@@ -548,6 +522,7 @@ namespace Alachisoft.NCache.Common.Util
             Warn(name, message);
         }
 
+        //------------------------------------------------------------------------------------------------
         public static void Error(NCacheLog.LoggerNames loggerName, String module, String message)
         {
             string name = loggerName.ToString(); ;
@@ -715,7 +690,7 @@ namespace Alachisoft.NCache.Common.Util
         }
 
 
-        public static void OnChange(object _o, FileSystemEventArgs _a)
+        public static void OnChange()
         {
             bool[] logLevel = new bool[2];
             int bufferSize = bufferDefaultSize;
@@ -800,7 +775,7 @@ namespace Alachisoft.NCache.Common.Util
             {
                 bufferAppender = bufferDefaultSize;
                 return new bool[2] { false, false };
-                NCacheLog.LogLoggingError(ex.Message);
+                LogLoggingError(ex.Message);
             }
 
         }
@@ -826,13 +801,13 @@ namespace Alachisoft.NCache.Common.Util
 
             foreach (string loggerName in LoggingInformation.cacheLogger.Values)
             {
-                NCacheLog.SetLevel(loggerName, logLevel[1] == true ? NCacheLog.Level.ALL : logLevel[0] == true ? NCacheLog.Level.INFO : NCacheLog.Level.OFF);
+                SetLevel(loggerName, logLevel[1] == true ? Level.ALL : logLevel[0] == true ? Level.INFO : NCacheLog.Level.OFF);
             }
 
             if (bufferSize < 1)
                 bufferSize = bufferDefaultSize;
 
-            NCacheLog.SetBufferSize(bufferSize);
+            SetBufferSize(bufferSize);
 
         }
 
@@ -880,7 +855,7 @@ namespace Alachisoft.NCache.Common.Util
             {
                 bufferAppender = bufferDefaultSize;
                 return new bool[2] { false, false };
-                NCacheLog.LogLoggingError(ex.Message);
+                LogLoggingError(ex.Message);
             }
 
         }

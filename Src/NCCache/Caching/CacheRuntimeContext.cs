@@ -1,4 +1,4 @@
-// Copyright (c) 2015 Alachisoft
+// Copyright (c) 2017 Alachisoft
 // 
 // Licensed under the Apache License, Version 2.0 (the "License");
 // you may not use this file except in compliance with the License.
@@ -11,6 +11,7 @@
 // WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
 // See the License for the specific language governing permissions and
 // limitations under the License.
+
 using System;
 using Alachisoft.NCache.Caching.AutoExpiration;
 using Alachisoft.NCache.Caching.Statistics;
@@ -44,6 +45,7 @@ namespace Alachisoft.NCache.Caching
         /// <summary> Renders the cache to its client. </summary>
         private CacheRenderer _renderer;
 
+        public ClientDeathDetectionMgr ClientDeathDetection;
   
         private bool _isStartedAsMirror = false;
 
@@ -107,13 +109,12 @@ namespace Alachisoft.NCache.Caching
             set { _logger = value; }
         }
 
-#if !CLIENT
+
         /// <summary> The one and only manager of the whole cache sytem. </summary>
         public bool IsClusteredImpl
         {
             get { return Util.CacheHelper.IsClusteredCache(CacheImpl); }
         }
-#endif
 
    
         #region	/                 --- IDisposable ---           /
@@ -173,5 +174,7 @@ namespace Alachisoft.NCache.Caching
         }
 
         #endregion
+
+        public bool InProc { get; set; }
     }
 }

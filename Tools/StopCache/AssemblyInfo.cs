@@ -1,4 +1,4 @@
-// Copyright (c) 2015 Alachisoft
+// Copyright (c) 2017 Alachisoft
 // 
 // Licensed under the Apache License, Version 2.0 (the "License");
 // you may not use this file except in compliance with the License.
@@ -29,10 +29,10 @@ using Alachisoft.NCache.Management;
 [assembly: AssemblyConfiguration("")]
 [assembly: AssemblyCompany("Alachisoft")]
 [assembly: AssemblyProduct("Alachisoft® NCache Open Source")]
-[assembly: AssemblyCopyright("Copyright © 2015 Alachisoft")]
+[assembly: AssemblyCopyright("Copyright © Alachisoft 2017")]
 [assembly: AssemblyTrademark("NCache ™ is a registered trademark of Alachisoft.")]
 [assembly: AssemblyCulture("")]
-[assembly: AssemblyVersion("4.4.0.0")]
+[assembly: AssemblyVersion("4.6.0.0")]
 [assembly: AssemblyDelaySign(false)]
 [assembly: AssemblyKeyName("")]
 
@@ -49,10 +49,10 @@ namespace Alachisoft.NCache.Tools.StopCache
         /// <param name="printlogo">specifies whether to print logo or not</param>
         public static void PrintLogo(bool printlogo)
         {
-            Assembly assembly = Assembly.GetExecutingAssembly();
-            string logo = @"Alachisoft (R) NCache Utility StopCache. Version " + assembly.GetName().Version +
+           
+            string logo = @"Alachisoft (R) NCache Utility StopCache. Version " + Common.ProductVersion.GetVersion() +
                 @"
-Copyright (C) Alachisoft 2015. All rights reserved.";
+Copyright (C) Alachisoft 2017. All rights reserved.";
 
 			if (printlogo)
 			{
@@ -68,13 +68,12 @@ Copyright (C) Alachisoft 2015. All rights reserved.";
 		{
 
             string usage = @"Usage: stopcache cache-name(s) [option[...]].
-
 Argument:
  cache-name(s)
-    Specifies one or more name(s) of caches separated by space registered on
-    the server. The cache(s) with this/these name(s) is/are started on the
-    server. Note: Space-separated cache names are to be specified in case of
-    multiple caches.
+    Specifies one or more name(s) of caches separated by space registered on the server.
+    The cache(s) with this/these name(s) is/are started on the server. 
+    Note: Space-separated cache names are to be specified in case of multiple
+    caches.
 
 Option:
  /s server-name

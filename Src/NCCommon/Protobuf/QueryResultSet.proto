@@ -3,6 +3,7 @@ import "KeyValuePair.proto";
 import "QueryType.proto";
 import "DictionaryItem.proto";
 import "AggregateFunctionType.proto";
+import "RecordSet.proto";
 
 option java_outer_classname="QueryResultSetProtocol";
 
@@ -14,4 +15,5 @@ message QueryResultSet {
 	optional DictionaryItem aggregateFunctionResult = 3;
 	optional QueryType queryType = 4 [default = SEARCH_KEYS];
 	optional AggregateFunctionType aggregateFunctionType = 5 [default = NOTAPPLICABLE];
+	optional RecordSet groupByAggregateFunctionResult = 6;
 }

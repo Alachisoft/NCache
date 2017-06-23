@@ -1,4 +1,4 @@
-// Copyright (c) 2015 Alachisoft
+// Copyright (c) 2017 Alachisoft
 // 
 // Licensed under the Apache License, Version 2.0 (the "License");
 // you may not use this file except in compliance with the License.
@@ -11,27 +11,17 @@
 // WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
 // See the License for the specific language governing permissions and
 // limitations under the License.
+
 using System;
 using System.Collections;
-using System.Configuration;
-using System.Net.Sockets;
 using System.Threading;
 using Alachisoft.NCache.Common;
 using Alachisoft.NCache.Caching;
-using Alachisoft.NCache.SocketServer.Command;
 using Alachisoft.NCache.SocketServer.CallbackTasks;
 using Alachisoft.NCache.SocketServer.EventTask;
-using Alachisoft.NCache.Runtime.Exceptions;
 using Alachisoft.NCache.SocketServer.Util;
 using Alachisoft.NCache.Caching.Util;
 using Alachisoft.NCache.Common.DataStructures;
-using System.Net;
-using Alachisoft.NCache.Common.Net;
-using Alachisoft.NCache.Caching.Queries;
-using System.Collections.Generic;
-using Alachisoft.NCache.Common.Util;
-using Alachisoft.NCache.Serialization.Formatters;
-using Alachisoft.NCache.Runtime.Events;
 
 namespace Alachisoft.NCache.SocketServer
 {
@@ -39,10 +29,12 @@ namespace Alachisoft.NCache.SocketServer
     {
         string _cacheserver="NCache";
         private ClientManager _client;
+        private bool _isDotNetClient;
        
 
         private Cache _cache = null;
         private string _cacheId = null;
+        private string _licenceCode = string.Empty;
 
         private CustomUpdateCallback _onItemUpdatedCallback = null;
         private CustomRemoveCallback _onItemRemoveCallback = null;
@@ -59,13 +51,20 @@ namespace Alachisoft.NCache.SocketServer
         /// used to dispose client too.</summary>
         private bool _cacheStoppedEventRegistered = false;
 
+        internal NCache(string cacheId, bool isDonNetClient, ClientManager client)
+            : this(cacheId, isDonNetClient, client, string.Empty)
+        {
+		}
+
         /// <summary>
         /// Initialize the cache instance.
         /// </summary>
-        internal NCache(string cacheId, ClientManager client)
+        internal NCache(string cacheId, bool isDotNetClient, ClientManager client, string licenceInfo)
         {
             this._cacheId = cacheId;
+            this._isDotNetClient = isDotNetClient;
             this._client = client;
+            this._licenceCode = licenceInfo;
            
 
             try
@@ -131,6 +130,14 @@ namespace Alachisoft.NCache.SocketServer
         }
 
         /// <summary>
+        /// Determine whether the client connected is a .net client
+        /// </summary>
+        internal bool IsDotnetClient
+        {
+            get { return this._isDotNetClient; }
+        }
+
+        /// <summary>
         /// This function is called by CacheStoppedCallback
         /// </summary>
         public void OnCacheStopped(string cacheId, EventContext eventContext)
@@ -185,11 +192,12 @@ namespace Alachisoft.NCache.SocketServer
                 _cache.CacheStopped -= _cacheStopped;
                 _cacheStopped = null;
             }
-            if (this._hashmapChanged != null)
+            if (_hashmapChanged != null)
             {
                 this._cache.HashmapChanged -= this._hashmapChanged;
                 _hashmapChanged = null;
             }
+
             if (_nodeJoined != null)
             {
                 _cache.MemberJoined -= _nodeJoined;
@@ -200,8 +208,6 @@ namespace Alachisoft.NCache.SocketServer
                 _cache.MemberLeft -= _nodeLeft;
                 _nodeLeft = null;
             }
-
-
   }
         /// <summary>
         /// Called when item is updated
@@ -216,7 +222,7 @@ namespace Alachisoft.NCache.SocketServer
                 if (cbInfo != null && cbInfo.Client == _client.ClientID)
                 {
                     //client older then 4.1 sp2 private patch 4 does not support bulk Events
-                    if (_client.ClientVersion > 4124)
+                    if (_client.ClientVersion >= 4124)
                     {
                         Alachisoft.NCache.Common.Protobuf.BulkEventItemResponse eventitem = new Common.Protobuf.BulkEventItemResponse();
                         eventitem.eventType = Common.Protobuf.BulkEventItemResponse.EventType.ITEM_UPDATED_CALLBACK;
@@ -337,7 +343,7 @@ namespace Alachisoft.NCache.SocketServer
             {
                 if (_client != null)
                 {
-                    ConnectionManager.CallbackQueue.Enqueue(new HashmapChangedEvent(_cacheId, _client.ClientID, newmap));
+                    ConnectionManager.CallbackQueue.Enqueue(new HashmapChangedEvent(_cacheId, _client.ClientID, newmap, this._isDotNetClient));
                     Monitor.Pulse(ConnectionManager.CallbackQueue);
                 }
             }
@@ -392,10 +398,7 @@ namespace Alachisoft.NCache.SocketServer
             if (_cache != null) _cache.OnClientForceFullyDisconnected(clientId);
         }
 
-        public void UpdateSocketServerStats(SocketServerStats stats)
-        {
-            if (_cache != null) _cache.UpdateSocketServerStats(stats);
-        }
+       
 
         public bool IsCoordinator(string srcCacheID)
         {

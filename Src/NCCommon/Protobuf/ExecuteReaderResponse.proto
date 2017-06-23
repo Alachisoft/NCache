@@ -1,0 +1,8 @@
+import "ReaderResultSet.proto";
+
+
+option java_outer_classname="ExecuteReaderResponseProtocol";
+package Alachisoft.NCache.Common.Protobuf;
+message ExecuteReaderResponse {
+	repeated ReaderResultSet readerResultSets = 1;
+}

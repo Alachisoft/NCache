@@ -1,4 +1,4 @@
-// Copyright (c) 2015 Alachisoft
+// Copyright (c) 2017 Alachisoft
 // 
 // Licensed under the Apache License, Version 2.0 (the "License");
 // you may not use this file except in compliance with the License.
@@ -27,10 +27,10 @@ using System.Runtime.InteropServices;
 [assembly: AssemblyConfiguration("")]
 [assembly: AssemblyCompany("Alachisoft")]
 [assembly: AssemblyProduct("Alachisoft® NCache")]
-[assembly: AssemblyCopyright("Copyright© 2015 Alachisoft")]
+[assembly: AssemblyCopyright("Copyright© Alachisoft 2017")]
 [assembly: AssemblyTrademark("NCache™ is a registered trademark of Alachisoft.")]
 [assembly: AssemblyCulture("")]
-[assembly: AssemblyVersion("4.4.0.0")]
+[assembly: AssemblyVersion("4.6.0.0")]
 [assembly: AssemblyDelaySign(false)]
 [assembly: AssemblyKeyName("")]
 
@@ -47,10 +47,10 @@ namespace Alachisoft.NCache.Tools.GetCacheConfiguration
         /// <param name="printlogo">Specifies whether to print logo or not</param>
         public static void PrintLogo(bool printlogo)
         {
-            Assembly assembly = Assembly.GetExecutingAssembly();
-            string logo = @"Alachisoft (R) NCache Utility GetCacheConfiguration. Version " + assembly.GetName().Version +
+          
+            string logo = @"Alachisoft (R) NCache Utility GetCacheConfiguration. Version " + Common.ProductVersion.GetVersion() +
                 @"
-Copyright (C) Alachisoft 2015. All rights reserved.";
+Copyright (C) Alachisoft 2017. All rights reserved.";
 
             if (printlogo)
             {
@@ -69,8 +69,7 @@ Copyright (C) Alachisoft 2015. All rights reserved.";
             string usage = @"Usage: getcacheconfiguration [option[...]].
 
  cache-id
-    Specifies the id/name of the cache for which cache configuration will be
-    generated. 
+    Specifies the id/name of the cache for which cache configuration will be generated. 
 
  /s /server
     Specifies the NCache server name/ip.

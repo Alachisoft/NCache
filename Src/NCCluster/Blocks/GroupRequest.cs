@@ -10,6 +10,7 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 // $Id: GroupRequest.java,v 1.8 2004/09/05 04:54:22 ovidiuf Exp $
+
 using System;
 using System.Collections;
 using Alachisoft.NGroups;
@@ -316,43 +317,11 @@ namespace Alachisoft.NGroups.Blocks
             get { return _ncacheLog; }
         }
 
-        private static bool s_allowRequestEnquiry;
-        private static int s_requestEnquiryInterval = 20;
-        private static int s_requestEnquiryRetries = 1;
-
         private bool _seqReset;
         private int _retriesAfteSeqReset;
 
         static GroupRequest()
         {
-
-            string str = ConfigurationSettings.AppSettings["NCacheServer.AllowRequestEnquiry"];
-
-            if (!string.IsNullOrEmpty(str))
-            {
-                s_allowRequestEnquiry = Convert.ToBoolean(str);
-            }
-            if (s_allowRequestEnquiry)
-            {
-
-                str = ConfigurationSettings.AppSettings["NCacheServer.RequestEnquiryInterval"];
-
-                if (!string.IsNullOrEmpty(str))
-                {
-                    s_requestEnquiryInterval = Convert.ToInt32(str);
-                }
-
-                str = ConfigurationSettings.AppSettings["NCacheServer.RequestEnquiryRetries"];
-
-                if (!string.IsNullOrEmpty(str))
-                {
-                    s_requestEnquiryRetries = Convert.ToInt32(str);
-                    if (s_requestEnquiryRetries <= 0)
-                    {
-                        s_requestEnquiryRetries = 1;
-                    }
-                }
-            }
         }
 
         /// <param name="m">The message to be sent
@@ -956,12 +925,12 @@ namespace Alachisoft.NGroups.Blocks
             {
                 start_time = (System.DateTime.Now.Ticks - 621355968000000000) / 10000;
                 long wakeuptime = timeout;
-                int retries = s_requestEnquiryRetries;
+                int retries = ServiceConfiguration.RequestEnquiryInterval;
                 int enquiryFailure = 0;
 
-                if (s_allowRequestEnquiry)
+                if (ServiceConfiguration.AllowRequestEnquiry)
                 {
-                    wakeuptime = s_requestEnquiryInterval * 1000;
+                    wakeuptime = ServiceConfiguration.RequestEnquiryInterval * 1000;
                 }
 
                 while (timeout > 0)
@@ -978,7 +947,7 @@ namespace Alachisoft.NGroups.Blocks
                     }
                     timeout = orig_timeout - ((System.DateTime.Now.Ticks - 621355968000000000) / 10000 - start_time);
 
-                    if (s_allowRequestEnquiry)
+                    if (ServiceConfiguration.AllowRequestEnquiry)
                     {
                         if (wakeuptime > timeout)
                             wakeuptime = timeout;
@@ -996,7 +965,7 @@ namespace Alachisoft.NGroups.Blocks
 
                            bool reacquired = System.Threading.Monitor.Wait(rsp_mutex, TimeSpan.FromMilliseconds(wakeuptime));
 
-                           if ((!reacquired || _seqReset) && s_allowRequestEnquiry)
+                           if ((!reacquired || _seqReset) && ServiceConfiguration.AllowRequestEnquiry)
                            {
                                
                                if (Responses)

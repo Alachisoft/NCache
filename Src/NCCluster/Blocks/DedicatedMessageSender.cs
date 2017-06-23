@@ -9,12 +9,15 @@
 // WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
 // See the License for the specific language governing permissions and
 // limitations under the License.
+
 using System;
 using System.Collections;
 using System.Threading;
 using Alachisoft.NGroups.Stack;
 using Alachisoft.NGroups.Util;
 using Alachisoft.NCache.Common.Logger;
+using Alachisoft.NCache.Common;
+using Alachisoft.NCache.Common.Util;
 
 namespace Alachisoft.NGroups.Blocks
 {
@@ -36,13 +39,11 @@ namespace Alachisoft.NGroups.Blocks
         int sendBufferSize = 1024 * 1024;
         byte[] sendBuffer;
         long waitTimeout = 0;
-        bool isNagglingEnabled = true;
-        int nagglingSize = 500 * 1024;
-
+        
         PerfStatsCollector perfStatsCollector;
 
 
-        public DedicatedMessageSender(Alachisoft.NCache.Common.DataStructures.Queue mq, ConnectionTable.Connection connection, object syncLockObj, ILogger NCacheLog, bool onPrimaryNIC, bool doNaggling, int naglingSize)
+        public DedicatedMessageSender(Alachisoft.NCache.Common.DataStructures.Queue mq, ConnectionTable.Connection connection, object syncLockObj, ILogger NCacheLog, bool onPrimaryNIC)
 
         {
             this.mq = mq;
@@ -60,9 +61,8 @@ namespace Alachisoft.NGroups.Blocks
             IsBackground = true;
             sync_lock = syncLockObj;
             _ncacheLog = NCacheLog;
-            isNagglingEnabled = doNaggling;
-            nagglingSize = naglingSize;
-            if (nagglingSize + 8 > sendBufferSize) sendBufferSize = nagglingSize + 8;
+
+            if (ServiceConfiguration.NaglingSize + 8 > sendBufferSize) sendBufferSize = ServiceConfiguration.NaglingSize + 8;
             sendBuffer = new byte[sendBufferSize];
         }
 
@@ -121,9 +121,9 @@ namespace Alachisoft.NGroups.Blocks
 
                                     if (totalMsgSize + 8 > sendBuffer.Length)
                                     {
-                                        sendBuffer = new byte[totalMsgSize + 8];
-                                        Buffer.BlockCopy(tmpBuffer, 0, sendBuffer, 0, totalMsgSize - bMsg.Size);
-                                        tmpBuffer = sendBuffer;
+                                        byte[] bigbuffer = new byte[totalMsgSize + 8];
+                                        Buffer.BlockCopy(tmpBuffer, 0, bigbuffer, 0, totalMsgSize - bMsg.Size);
+                                        tmpBuffer = bigbuffer;
                                     }
 
                                     Buffer.BlockCopy(bMsg.Buffer, 0, tmpBuffer, offset, bMsg.Buffer.Length);
@@ -142,7 +142,7 @@ namespace Alachisoft.NGroups.Blocks
                                 bMsg = null;
                                 bool success;
                                 bMsg = mq.peek(waitTimeout, out success) as BinaryMessage;
-                                if ((!isNagglingEnabled || bMsg == null || ((bMsg.Size + totalMsgSize + 8) > nagglingSize))) break;
+                                if ((!ServiceConfiguration.EnableNagling || bMsg == null || ((bMsg.Size + totalMsgSize + 8) > ServiceConfiguration.NaglingSize))) break;
 
                             }
                         }
@@ -202,7 +202,7 @@ namespace Alachisoft.NGroups.Blocks
                                     }
                                     catch (Exception ex)
                                     {
-                                        NCacheLog.Error("DmSender.Run",   "an error occured while requing the messages. " + ex.ToString());
+                                        NCacheLog.Error("DmSender.Run",   "an error occurred while requing the messages. " + ex.ToString());
                                     }
                                 }
                             }
@@ -218,10 +218,9 @@ namespace Alachisoft.NGroups.Blocks
                     }
                     catch (ThreadInterruptedException e)
                     {
-                       
                         break;
                     }
-                    catch (ThreadAbortException) {  }
+                    catch (ThreadAbortException) { break; }
                     catch (System.Exception e)
                     {
                         
@@ -231,10 +230,8 @@ namespace Alachisoft.NGroups.Blocks
             }
             catch (ThreadInterruptedException)
             {
-               
             }
-
-            catch (ThreadAbortException) {  }
+            catch (ThreadAbortException) { }
 
             catch (Exception ex)
             {

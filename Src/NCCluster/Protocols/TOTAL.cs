@@ -10,6 +10,7 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 // $Id: TOTAL.java,v 1.6 2004/07/05 14:17:16 belaban Exp $
+
 using System;
 using System.IO;
 using System.Threading;
@@ -916,7 +917,7 @@ namespace Alachisoft.NGroups.Protocols
             // i. Store away the message while waiting for the sequencer's reply
             // ii. Send a bcast request immediatelly and also schedule a
             // retransmission
-            msg.Dest = null;  //Taimoor:FIX: To make sure that this message will be broadcasted.
+            msg.Dest = null;  
             if (addr.CompareTo(this.sequencerAddr) == 0)
             {
                 long seqid = NextSequenceID;
@@ -1200,8 +1201,6 @@ namespace Alachisoft.NGroups.Protocols
                 }
                 _mcastUpTbl[(long)header.seqID] = msg;
             }
-
-            if (Stack.NCacheLog.IsInfoEnabled) Stack.NCacheLog.Info("muds: delivering mcast a message with seq : " + header.seqID);
             _deliverMcast();
         }
 
@@ -1634,7 +1633,6 @@ namespace Alachisoft.NGroups.Protocols
                                 return (false);
 
                             case HDR.MCAST:
-                                if (Stack.NCacheLog.IsInfoEnabled) Stack.NCacheLog.Info("muds: a command for mcast from " + msg.Src + " to me[" + addr + "],  local-seq : " + header.localSeqID + " seq : " + header.seqID);
                                 _recvMcast(msg);
                                 return (false);
 
@@ -1649,7 +1647,6 @@ namespace Alachisoft.NGroups.Protocols
                                 return (false);
 
                             case HDR.REQMCAST:
-                                if (Stack.NCacheLog.IsInfoEnabled) Stack.NCacheLog.Info("muds: recieved mcast request " + " local-seq : " + header.localSeqID + " seq : " + header.seqID);
                                 _recvMcastRequest(msg);
                                 return (false);
 

@@ -1,4 +1,4 @@
-// Copyright (c) 2015 Alachisoft
+// Copyright (c) 2017 Alachisoft
 // 
 // Licensed under the Apache License, Version 2.0 (the "License");
 // you may not use this file except in compliance with the License.
@@ -11,6 +11,7 @@
 // WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
 // See the License for the specific language governing permissions and
 // limitations under the License.
+
 using System;
 using System.Collections;
 using System.Collections.Generic;
@@ -61,12 +62,6 @@ namespace Alachisoft.NCache.Caching
                 break;
             }
             return binaryObject;
-        }
-
-        public override int Length
-        {
-            get { return _data.Length; }
-            set { }
         }
 
         public override Array Data
@@ -140,6 +135,13 @@ namespace Alachisoft.NCache.Caching
 
         #endregion
 
-       
+        public override int Length
+        {
+            get
+            {
+                return _data.Length;
+            }
+        }
+
     }
 }

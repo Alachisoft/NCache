@@ -1,4 +1,4 @@
-// Copyright (c) 2015 Alachisoft
+// Copyright (c) 2017 Alachisoft
 // 
 // Licensed under the Apache License, Version 2.0 (the "License");
 // you may not use this file except in compliance with the License.
@@ -11,6 +11,7 @@
 // WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
 // See the License for the specific language governing permissions and
 // limitations under the License.
+
 using System;
 using System.Collections;
 using Alachisoft.NCache.Caching;
@@ -30,6 +31,7 @@ using Alachisoft.NCache.Common.DataStructures;
 using Alachisoft.NCache.Caching.Queries;
 using System.Collections.Generic;
 using Alachisoft.NCache.Runtime.Events;
+using Alachisoft.NCache.Common.DataReader;
 
 namespace Alachisoft.NCache.Web.Caching
 
@@ -44,7 +46,7 @@ namespace Alachisoft.NCache.Web.Caching
     /// </remarks>
     /// <requirements>
     /// </requirements>
-    internal sealed class RemoteCache : CacheImplBase
+    internal sealed class RemoteCache : CacheImplBase, IRecordSetLoader
     {
         private Broker _broker = null;
         internal Cache _parent;
@@ -56,7 +58,9 @@ namespace Alachisoft.NCache.Web.Caching
         private CacheEventsListener _eventListener;
         PerfStatsCollector2 _perfStatsCollector;
         private TypeInfoMap _typeMap;
-     
+
+        private Dictionary<string, ArrayList> inValidReaders = new Dictionary<string, ArrayList>();
+        private object _syncObj = new object();
        
         #region ---------------------- Properties ----------------------
 
@@ -901,7 +905,7 @@ namespace Alachisoft.NCache.Web.Caching
                 if (!_broker.PoolFullyConnected)
                 {
                     BulkDeleteCommand command = new BulkDeleteCommand(keys, flagMap);
-                    command.ClientLastViewId = _broker.ForcedViewId;
+                    command.ClientLastViewId = Broker.ForcedViewId;
                     Connection conn = _broker.GetAnyConnection();
                     if (conn != null)
                     {
@@ -1057,7 +1061,63 @@ namespace Alachisoft.NCache.Web.Caching
         }
         #endregion
 
-  
+        #region ---------------------- Cache Data Reader ----------------------
+        /// <summary>
+        /// Provide data reader on <see cref="Cache"/> based on the query specified.
+        /// </example>
+        public override IRecordSetEnumerator ExecuteReader(string query, IDictionary values, bool getData, int chunkSize)
+        {
+            ExecuteReader command = new ExecuteReader(query, values, getData, chunkSize);
+            CommandResponse res = null;
+            
+            res = ExecuteCacheRequest(command, false);
+            try
+            {
+                res.ParseResponse();
+            }
+            catch (StateTransferInProgressException ex)
+            {
+                command = new ExecuteReader(query, values, getData, chunkSize);
+                res = ExecuteCacheRequest(command, true);
+                res.ParseResponse();
+            }
+            
+            List<ReaderResultSet> readerResultSets = null;
+            readerResultSets = res.ReaderResultSets;
+            List<IRecordSetEnumerator> prsEnum = new System.Collections.Generic.List<IRecordSetEnumerator>();
+            foreach (ReaderResultSet resultSet in readerResultSets)
+            {
+                if (resultSet.RecordSet != null)
+                {
+                    IRecordSetEnumerator rse = resultSet.RecordSet.GetEnumerator();
+                    PartitionRSEnumerator partitionRS = new PartitionRSEnumerator(rse, resultSet.ReaderID, resultSet.NodeAddress, resultSet.NextIndex, this);
+                    prsEnum.Add(partitionRS);
+                    UpdateOpenReaders(resultSet.NodeAddress, partitionRS);
+                }
+            }
+            DistributedRSEnumerator drsEnum = null;
+            if (readerResultSets.Count > 0)
+            {
+               drsEnum = new DistributedRSEnumerator(prsEnum);
+            }
+            return drsEnum;
+        }
+
+        internal void InvalidateReaders(string serverAddress)
+        {
+            ArrayList readers = null;
+            if (inValidReaders.ContainsKey(serverAddress))
+            {
+                inValidReaders.TryGetValue(serverAddress, out readers);
+                if (readers != null)
+                {
+                    foreach (PartitionRSEnumerator partition in readers)
+                        partition.IsValid = false;
+                }
+                lock (_syncObj) inValidReaders.Remove(serverAddress);
+            }
+        }
+        #endregion
         #endregion
 
         #region ---------------------- Serialize----------------------
@@ -1330,10 +1390,10 @@ namespace Alachisoft.NCache.Web.Caching
         #endregion
 
         #region ----------------Key base notification registration ----------------
-
-        public override void RegisterKeyNotificationCallback(string key, short updateCallbackid, short removeCallbackid, bool notifyOnitemExpiration)
+  
+        public override void RegisterKeyNotificationCallback(string key, short update, short remove, EventDataFilter datafilter, bool notifyOnItemExpiration)
         {
-            CommandBase command = new RegisterKeyNotificationCommand(key, updateCallbackid, removeCallbackid,notifyOnitemExpiration);
+            CommandBase command = new RegisterKeyNotificationCommand(key, update, remove, datafilter, notifyOnItemExpiration);
 
             Request request = _broker.CreateRequest(command);
             _broker.ExecuteRequest(request);
@@ -1353,9 +1413,10 @@ namespace Alachisoft.NCache.Web.Caching
             res.ParseResponse();
         }
 
-        public override void RegisterKeyNotificationCallback(string key, short update, short remove, EventDataFilter datafilter, bool notifyOnItemExpiration)
+
+        public override void RegisterKeyNotificationCallback(string[] keys, short update, short remove, EventDataFilter datafilter, bool notifyOnItemExpiration)
         {
-            CommandBase command = new RegisterKeyNotificationCommand(key, update, remove, datafilter, notifyOnItemExpiration);
+            CommandBase command = new RegisterBulkKeyNotificationCommand(keys, update, remove, datafilter, notifyOnItemExpiration);
 
             Request request = _broker.CreateRequest(command);
             _broker.ExecuteRequest(request);
@@ -1364,9 +1425,9 @@ namespace Alachisoft.NCache.Web.Caching
             res.ParseResponse();
         }
 
-        public override void UnRegisterKeyNotificationCallback(string key, short update,short remove, EventType eventType)
+        public override void UnRegisterKeyNotificationCallback(string[] keys, short updateCallbackid, short removeCallbackid)
         {
-            CommandBase command = new UnRegisterKeyNotificationCommand(key, update, remove);
+            CommandBase command = new UnRegisterBulkKeyNotificationCommand(keys, updateCallbackid, removeCallbackid);
 
             Request request = _broker.CreateRequest(command);
             _broker.ExecuteRequest(request);
@@ -1447,5 +1508,104 @@ namespace Alachisoft.NCache.Web.Caching
         #endregion
 
 
+
+        #region ---------------------- IRecordSetLoader ----------------------
+        public ReaderResultSet GetRecordSet(string readerID, string nodeIP, int nextIndex)
+        {
+            GetRecordSetNextChunk command = new GetRecordSetNextChunk(readerID, nodeIP, nextIndex);
+            Request request;
+            if (_broker.ImportHashmap)
+            {
+                request = new Request(true, _broker.OperationTimeOut);
+                request.AddCommand(new Address(nodeIP, _broker._clientConfig.ServerPort), command);
+            }
+            else
+            {
+                request = _broker.CreateRequest(command);
+            }
+            CommandResponse res = null;
+            try
+            {
+                _broker.ExecuteRequest(request);
+                res = request.Response;
+            }
+            catch (Exception ex)
+            {
+                command = new GetRecordSetNextChunk(readerID, nodeIP, nextIndex);// retry request
+                res = ExecuteCacheRequest(command, false);
+            }
+            try
+            {
+                res.ParseResponse();
+            }
+            catch (StateTransferInProgressException ex)
+            {
+                command = new GetRecordSetNextChunk(readerID, nodeIP, nextIndex);// retry request
+                res = ExecuteCacheRequest(command, false);
+                res.ParseResponse();
+            }
+            return res.ReaderNextChunk;
+        }
+        /// <summary>
+        /// Dispose reader resources on node specified
+        /// </example>
+        public void DisposeReader(string readerId, string nodeIp)
+        {
+            DisposeReaderCommand command = new DisposeReaderCommand(readerId, nodeIp);
+            Request request;
+            if (_broker.ImportHashmap)
+            {
+                request = new Request(true, _broker.OperationTimeOut);
+                request.AddCommand(new Address(nodeIp, _broker._clientConfig.ServerPort), command);
+            }
+            else
+            {
+                request = _broker.CreateRequest(command);
+            }
+            CommandResponse res = null;
+
+            try
+            {
+                _broker.ExecuteRequest(request);
+                res = request.Response;
+            }
+            catch (Exception ex)
+            {
+                command = new DisposeReaderCommand(readerId, nodeIp);
+                res = ExecuteCacheRequest(command, false);// retry request
+            }
+
+            try
+            {
+                res.ParseResponse();
+            }
+            catch (StateTransferInProgressException ex)
+            {
+                command = new DisposeReaderCommand(readerId, nodeIp);
+                res = ExecuteCacheRequest(command, false);// retry request
+                res.ParseResponse();
+            }
+        }
+
+        private void UpdateOpenReaders(string address, PartitionRSEnumerator partition)
+        {
+            ArrayList readers = null;
+            lock (_syncObj)
+            {
+                if (inValidReaders.ContainsKey(address))
+                {
+                    inValidReaders.TryGetValue(address, out readers);
+                    if (readers != null) readers.Add(partition);
+                }
+                else
+                {
+                    readers = new ArrayList();
+                    readers.Add(partition);
+                }
+                inValidReaders[address] = readers;
+            }
+        }
+
+        #endregion
     }
 }

@@ -1,4 +1,4 @@
-// Copyright (c) 2015 Alachisoft
+// Copyright (c) 2017 Alachisoft
 // 
 // Licensed under the Apache License, Version 2.0 (the "License");
 // you may not use this file except in compliance with the License.
@@ -11,6 +11,7 @@
 // WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
 // See the License for the specific language governing permissions and
 // limitations under the License.
+
 using System;
 using System.Diagnostics;
 
@@ -59,6 +60,19 @@ namespace Alachisoft.NCache.SocketServer.Statistics
         ///<summary> stats for event queue count</summary>
         private PerformanceCounter _pcEventQueueCount = null;
 
+
+
+        //Bulk Counters
+        private PerformanceCounter _pcMsecPerAddBulkAvg = null;
+        private PerformanceCounter _pcMsecPerAddBulkBase = null;
+        private PerformanceCounter _pcMsecPerGetBulkAvg = null;
+        private PerformanceCounter _pcMsecPerGetBulkBase = null;
+        private PerformanceCounter _pcMsecPerUpdBulkAvg = null;
+        private PerformanceCounter _pcMsecPerUpdBulkBase = null;
+        private PerformanceCounter _pcMsecPerDelBulkAvg = null;
+        private PerformanceCounter _pcMsecPerDelBulkBase = null;
+
+
 		/// <summary> Category name of counter performance data.</summary>
         /// 
 
@@ -74,7 +88,7 @@ namespace Alachisoft.NCache.SocketServer.Statistics
         public PerfStatsCollector(string instanceName, int port)
         {
             _port = ":" + port.ToString();
-            _instanceName = GetInstanceName(instanceName);
+            _instanceName = instanceName;
         }
 
 		/// <summary>
@@ -86,25 +100,6 @@ namespace Alachisoft.NCache.SocketServer.Statistics
 			get { return _instanceName; }
 			set { _instanceName = value; }
 		}
-
-
-	    /// <summary>
-	    /// Creates Instancename 
-	    /// For outproc instanceName = CacheID
-	    /// For inProc instanceNAme = CacheID +"-" + ProcessID + ":" +port
-	    /// </summary>
-	    /// <param name="name"></param>
-	    /// <param name="port"></param>
-	    /// <param name="inProc"></param>
-	    /// <param name="instanceName"></param>
-	    /// <returns></returns>
-	    public string GetInstanceName(string instanceName)
-        {
-            if (System.Configuration.ConfigurationSettings.AppSettings["InstanceNameText"] != null)
-                instanceName = System.Configuration.ConfigurationSettings.AppSettings["InstanceNameText"] + "_" + instanceName;
-
-            return instanceName;
-        }
 
 
 		/// <summary>
@@ -214,6 +209,56 @@ namespace Alachisoft.NCache.SocketServer.Statistics
                     _pcEventQueueCount = null;
                 }
 
+                //Bulk counters
+                 if (_pcMsecPerAddBulkAvg != null)
+                 {
+                     _pcMsecPerAddBulkAvg.RemoveInstance();
+                     _pcMsecPerAddBulkAvg.Dispose();
+                     _pcMsecPerAddBulkAvg = null;
+                 }
+                 if (_pcMsecPerAddBulkBase != null)
+                 {
+                     _pcMsecPerAddBulkBase.RemoveInstance();
+                     _pcMsecPerAddBulkBase.Dispose();
+                     _pcMsecPerAddBulkBase = null;
+                 }
+                 if (_pcMsecPerGetBulkAvg != null)
+                 {
+                     _pcMsecPerGetBulkAvg.RemoveInstance();
+                     _pcMsecPerGetBulkAvg.Dispose();
+                     _pcMsecPerGetBulkAvg = null;
+                 }
+                 if (_pcMsecPerUpdBulkAvg != null)
+                 {
+                     _pcMsecPerUpdBulkAvg.RemoveInstance();
+                     _pcMsecPerUpdBulkAvg.Dispose();
+                     _pcMsecPerUpdBulkAvg = null;
+                 }
+                 if (_pcMsecPerDelBulkAvg != null)
+                 {
+                     _pcMsecPerDelBulkAvg.RemoveInstance();
+                     _pcMsecPerDelBulkAvg.Dispose();
+                     _pcMsecPerDelBulkAvg = null;
+                 }
+                 if (_pcMsecPerGetBulkBase != null)
+                 {
+                     _pcMsecPerGetBulkBase.RemoveInstance();
+                     _pcMsecPerGetBulkBase.Dispose();
+                     _pcMsecPerGetBulkBase = null;
+                 }
+                 if (_pcMsecPerUpdBulkBase != null)
+                 {
+                     _pcMsecPerUpdBulkBase.RemoveInstance();
+                     _pcMsecPerUpdBulkBase.Dispose();
+                     _pcMsecPerUpdBulkBase = null;
+                 }
+                 if (_pcMsecPerDelBulkBase != null)
+                 {
+                     _pcMsecPerDelBulkBase.RemoveInstance();
+                     _pcMsecPerDelBulkBase.Dispose();
+                     _pcMsecPerDelBulkBase = null;
+                 }
+
             }
 		}
 
@@ -239,8 +284,8 @@ namespace Alachisoft.NCache.SocketServer.Statistics
                     _pcClientBytesSentPerSec = new PerformanceCounter(PC_CATEGORY, "Client bytes sent/sec", _instanceName, false);
                     _pcClientBytesReceiedPerSec = new PerformanceCounter(PC_CATEGORY, "Client bytes received/sec", _instanceName, false);
 
-                    _pcMsecPerCacheOperation = new PerformanceCounter(PC_CATEGORY, "Average �s/cache operation", _instanceName, false);
-                    _pcMsecPerCacheOperationBase = new PerformanceCounter(PC_CATEGORY, "Average �s/cache operation base", _instanceName, false);
+                    _pcMsecPerCacheOperation = new PerformanceCounter(PC_CATEGORY, "Average us/cache operation", _instanceName, false);
+                    _pcMsecPerCacheOperationBase = new PerformanceCounter(PC_CATEGORY, "Average us/cache operation base", _instanceName, false);
 
                     _usMsecPerCacheOperation = new UsageStats();
                     _nsMsecPerCacheOperation = new NanoSecTimeStats();
@@ -250,11 +295,22 @@ namespace Alachisoft.NCache.SocketServer.Statistics
                     _pcResponseQueueSize = new PerformanceCounter(PC_CATEGORY, "Response Queue Size", _instanceName, false);
                     _pcEventQueueCount = new PerformanceCounter(PC_CATEGORY, "Event Queue Count", _instanceName, false);
 
+
+                    //Bulk Counters
+                    _pcMsecPerAddBulkAvg = new PerformanceCounter(PC_CATEGORY, "Average us/addbulk", _instanceName, false);
+                    _pcMsecPerGetBulkAvg = new PerformanceCounter(PC_CATEGORY, "Average us/fetchbulk", _instanceName, false);
+                    _pcMsecPerUpdBulkAvg = new PerformanceCounter(PC_CATEGORY, "Average us/insertbulk", _instanceName, false);
+                    _pcMsecPerDelBulkAvg = new PerformanceCounter(PC_CATEGORY, "Average us/removebulk", _instanceName, false);
+                    _pcMsecPerAddBulkBase = new PerformanceCounter(PC_CATEGORY, "Average us/addbulk base", _instanceName, false);
+                    _pcMsecPerGetBulkBase = new PerformanceCounter(PC_CATEGORY, "Average us/fetchbulk base", _instanceName, false);
+                    _pcMsecPerUpdBulkBase = new PerformanceCounter(PC_CATEGORY, "Average us/insertbulk base", _instanceName, false);
+                    _pcMsecPerDelBulkBase = new PerformanceCounter(PC_CATEGORY, "Average us/removebulk base", _instanceName, false);
+
                 }
             }
             catch (Exception e)
             {
-                AppUtil.LogEvent("NCache", "An error occured while initializing counters for NCache Server. " + e.ToString(), EventLogEntryType.Error, EventCategories.Error, EventID.GeneralError);
+                AppUtil.LogEvent("NCache", "An error occurred while initializing counters for NCache Server. " + e.ToString(), EventLogEntryType.Error, EventCategories.Error, EventID.GeneralError);
             }
 
 		}
@@ -441,5 +497,52 @@ namespace Alachisoft.NCache.SocketServer.Statistics
                 }
             }
         }
+        
+        //Bulk Counters
+        public void IncrementMsecPerAddBulkAvg(long value)
+        {
+            if (_pcMsecPerAddBulkAvg != null)
+            {
+                lock (_pcMsecPerAddBulkAvg)
+                {
+                    _pcMsecPerAddBulkAvg.IncrementBy(value * 1000000);
+                    _pcMsecPerAddBulkBase.Increment();
+                }
+            }
+        }
+        public void IncrementMsecPerGetBulkAvg(long value)
+        {
+            if (_pcMsecPerGetBulkAvg != null)
+            {
+                lock (_pcMsecPerGetBulkAvg)
+                {
+                    _pcMsecPerGetBulkAvg.IncrementBy(value * 1000000);
+                    _pcMsecPerGetBulkBase.Increment();
+                }
+            }
+        }
+        public void IncrementMsecPerUpdBulkAvg(long value)
+        {
+            if (_pcMsecPerUpdBulkAvg != null)
+            {
+                lock (_pcMsecPerUpdBulkAvg)
+                {
+                    _pcMsecPerUpdBulkAvg.IncrementBy(value * 1000000);
+                    _pcMsecPerUpdBulkBase.Increment();
+                }
+            }
+        }
+        public void IncrementMsecPerDelBulkAvg(long value)
+        {
+            if (_pcMsecPerDelBulkAvg != null)
+            {
+                lock (_pcMsecPerDelBulkAvg)
+                {
+                    _pcMsecPerDelBulkAvg.IncrementBy(value * 1000000);
+                    _pcMsecPerDelBulkBase.Increment();
+                }
+            }
+        }
+
 	}
 }

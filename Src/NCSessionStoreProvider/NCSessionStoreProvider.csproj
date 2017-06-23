@@ -118,9 +118,15 @@
   </Target>
   -->
   <ItemGroup>
+    <Compile Include="ASPEnvironmentContext.cs" />
     <Compile Include="AssemblyInfo.cs" />
+    <Compile Include="IAspEnvironmentContext.cs" />
+    <Compile Include="LegacyProvider.cs" />
     <Compile Include="NSessionStoreProvider.cs" />
+    <Compile Include="SessionHelper.cs" />
     <Compile Include="SessionSerializationUtil.cs" />
+    <Compile Include="SessionStore.cs" />
+    <Compile Include="SessionStoreBase.cs" />
   </ItemGroup>
   <ItemGroup>
     <Reference Include="System" />
@@ -175,6 +181,9 @@
       <ProductName>Windows Installer 3.1</ProductName>
       <Install>true</Install>
     </BootstrapperPackage>
+  </ItemGroup>
+  <ItemGroup>
+    <Folder Include="Properties\" />
   </ItemGroup>
   <PropertyGroup Condition="'$(Configuration)|$(Platform)' == 'Release|AnyCPU' OR '$(Configuration)|$(Platform)' == 'Debug|AnyCPU'">
     <PreBuildEvent>

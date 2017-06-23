@@ -1,4 +1,4 @@
-// Copyright (c) 2015 Alachisoft
+// Copyright (c) 2017 Alachisoft
 // 
 // Licensed under the Apache License, Version 2.0 (the "License");
 // you may not use this file except in compliance with the License.
@@ -11,6 +11,7 @@
 // WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
 // See the License for the specific language governing permissions and
 // limitations under the License.
+
 using System;
 using System.Threading;
 
@@ -18,6 +19,7 @@ using Alachisoft.NCache.Runtime.Serialization.IO;
 using Alachisoft.NCache.Runtime.Serialization;
 using System.Collections;
 using System.Globalization;
+using Alachisoft.NCache.Common.DataStructures.Clustered;
 
 namespace Alachisoft.NCache.Caching.Statistics
 {
@@ -62,12 +64,14 @@ namespace Alachisoft.NCache.Caching.Statistics
 		private string			_perfInst = String.Empty;
 
         /// <summary> A map of local buckets maintained at each node. </summary>
-        private System.Collections.Hashtable _localBuckets;
+        private HashVector _localBuckets;
 
-        //muds:
+
+        /// <summary> Connected Clients for local Cache. </summary>
+        private ArrayList _connectedClients = new ArrayList();
+
         //maximum of 4 unique clients can connect to the cache in Express Edition.        
         private Hashtable _clientsList = Hashtable.Synchronized(new Hashtable(4));
-        //ata:
         //In express only client within the cluster can connect with the cache.
         //Currently we have limitation of 2 nodes cluster, therefore there can
         //be maximum 2 client (nodes).
@@ -106,7 +110,9 @@ namespace Alachisoft.NCache.Caching.Statistics
                 this._maxSize = stat._maxSize;
 				this._hitCount = stat._hitCount;
 				this._missCount = stat._missCount;
-                this._localBuckets = stat._localBuckets != null ? stat._localBuckets.Clone() as System.Collections.Hashtable : null;
+                this._sessionCount = stat._sessionCount;
+                this._clientsList = stat._clientsList != null ? stat._clientsList.Clone() as Hashtable : null;
+                this._localBuckets = stat._localBuckets != null ? stat._localBuckets.Clone() as HashVector : null;
 			}
 		}
 
@@ -160,6 +166,12 @@ namespace Alachisoft.NCache.Caching.Statistics
             set { _clientsList = value; }
         }
 
+        public ArrayList ConnectedClients
+        {
+            get { return _connectedClients; }
+            set { _connectedClients = value; }
+        }
+
 		/// <summary>
 		/// The highest number of objects contained by the cache at any time.
 		/// </summary>
@@ -205,7 +217,7 @@ namespace Alachisoft.NCache.Caching.Statistics
 			set { _missCount = value; }
 		}
 
-        public System.Collections.Hashtable LocalBuckets
+        public HashVector LocalBuckets
         {
             get { return _localBuckets; }
             set { _localBuckets = value; }
@@ -316,8 +328,7 @@ namespace Alachisoft.NCache.Caching.Statistics
             _missCount = reader.ReadInt64();
             _clientsList = reader.ReadObject() as Hashtable;
 
-            //muds:
-            _localBuckets = new Hashtable();
+            _localBuckets = new HashVector();
             int count = reader.ReadInt32();
             for (int i = 0; i < count; i++)
             {
@@ -340,7 +351,6 @@ namespace Alachisoft.NCache.Caching.Statistics
             writer.Write(_hitCount);
             writer.Write(_missCount);
             writer.WriteObject(_clientsList);
-            //muds:
             int count = _localBuckets != null ? _localBuckets.Count : 0;
             writer.Write(count);
             if (_localBuckets != null)

@@ -1,4 +1,4 @@
-// Copyright (c) 2015 Alachisoft
+// Copyright (c) 2017 Alachisoft
 // 
 // Licensed under the Apache License, Version 2.0 (the "License");
 // you may not use this file except in compliance with the License.
@@ -11,9 +11,11 @@
 // WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
 // See the License for the specific language governing permissions and
 // limitations under the License.
+
 using System;
 using System.Collections;
 using Alachisoft.NCache.Common.Enum;
+using Alachisoft.NCache.Common.Queries;
 
 namespace Alachisoft.NCache.Caching.Queries.Filters
 {
@@ -29,16 +31,17 @@ namespace Alachisoft.NCache.Caching.Queries.Filters
             if(ChildPredicate!=null)
                 ChildPredicate.Execute(queryContext, nextPredicate);
 
-            queryContext.Tree.Reduce();
             CacheEntry entry = null;
 
             decimal sum = 0;
 
-            if (queryContext.Tree.LeftList.Count > 0)
+            if (queryContext.InternalQueryResult.Count > 0)
             {
-                foreach (string key in queryContext.Tree.LeftList)
+                foreach (string key in queryContext.InternalQueryResult)
                 {
-                    object attribValue = queryContext.Index.GetAttributeValue(key, AttributeName);
+                    CacheEntry cacheentry = queryContext.Cache.GetEntryInternal(key, false);
+                    object attribValue = queryContext.Index.GetAttributeValue(key, AttributeName, cacheentry.IndexInfo);
+
                     if (attribValue != null)
                     {
                         Type type = attribValue.GetType();
@@ -57,7 +60,7 @@ namespace Alachisoft.NCache.Caching.Queries.Filters
             }
         }
 
-        internal override void ExecuteInternal(QueryContext queryContext, ref SortedList list)
+        internal override void ExecuteInternal(QueryContext queryContext, CollectionOperation mergeType)
         {
         }
 

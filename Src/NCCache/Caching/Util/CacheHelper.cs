@@ -1,4 +1,4 @@
-// Copyright (c) 2015 Alachisoft
+// Copyright (c) 2017 Alachisoft
 // 
 // Licensed under the Apache License, Version 2.0 (the "License");
 // you may not use this file except in compliance with the License.
@@ -11,6 +11,7 @@
 // WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
 // See the License for the specific language governing permissions and
 // limitations under the License.
+
 using System;
 using System.Collections;
 using System.Threading;
@@ -27,9 +28,7 @@ using Alachisoft.NCache.Util;
 using Alachisoft.NCache.Runtime.Events;
 using Alachisoft.NCache.Common.Util;
 using Alachisoft.NCache.Runtime.Events;
-#if !CLIENT
 using Alachisoft.NCache.Caching.Topologies.Clustered;
-#endif
 
 namespace Alachisoft.NCache.Caching.Util
 {
@@ -55,7 +54,6 @@ namespace Alachisoft.NCache.Caching.Util
 		/// </summary>
 		/// <param name="cache"></param>
 		/// <returns></returns>
-#if !CLIENT
         public static bool IsClusteredCache(CacheBase cache)
 		{
             if (cache == null)
@@ -63,7 +61,6 @@ namespace Alachisoft.NCache.Caching.Util
             else
 			    return cache.GetType().IsSubclassOf(typeof(ClusterCacheBase));
         }
-#endif
         /// <summary>
         /// Merge the first entry i.e. c1 into c2
         /// </summary>

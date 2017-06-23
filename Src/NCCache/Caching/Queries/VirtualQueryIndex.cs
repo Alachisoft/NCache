@@ -1,4 +1,4 @@
-// Copyright (c) 2015 Alachisoft
+// Copyright (c) 2017 Alachisoft
 // 
 // Licensed under the Apache License, Version 2.0 (the "License");
 // you may not use this file except in compliance with the License.
@@ -11,6 +11,7 @@
 // WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
 // See the License for the specific language governing permissions and
 // limitations under the License.
+
 using System.Collections;
 using System;
 
@@ -19,7 +20,7 @@ namespace Alachisoft.NCache.Caching.Queries
     internal class VirtualQueryIndex : IQueryIndex
     {
         private Topologies.Local.LocalCacheBase _cache;
-
+        private readonly object _mutex = new object();
         public VirtualQueryIndex(Topologies.Local.LocalCacheBase cache)
         {
             _cache = cache;
@@ -40,32 +41,37 @@ namespace Alachisoft.NCache.Caching.Queries
             if (_cache == null)
                 return null;
 
-            //if (typeName == null)
-            if (typeName == "*")
-                return GetEnumerator();
-            else
+            lock (_mutex)
             {
-                IDictionaryEnumerator en = _cache.GetEnumerator() as IDictionaryEnumerator;
-                Hashtable tbl = new Hashtable();
-
-                while (en.MoveNext())
+                if (typeName == "*")
+                    return GetEnumerator();
+                else
                 {
-                    object obj = ((CacheEntry)en.Value).DeflattedValue(_cache.Context.CacheImpl.Name);
+                    IDictionaryEnumerator en = _cache.GetEnumerator() as IDictionaryEnumerator;
+                    Hashtable tbl = new Hashtable();
 
-                    if (obj.GetType().FullName == typeName)
+                    while (en.MoveNext())
                     {
-                        tbl[en.Key] = en.Value;
-                    }
-                }
+                        object obj = ((CacheEntry)en.Value).DeflattedValue(_cache.Context.CacheImpl.Name);
 
-                return tbl.GetEnumerator();
+                        if (obj.GetType().FullName == typeName)
+                        {
+                            tbl[en.Key] = en.Value;
+                        }
+                    }
+
+                    return tbl.GetEnumerator();
+                } 
             }
         }
 
         private IDictionaryEnumerator GetEnumerator()
         {
-            if (_cache != null)
-                return _cache.GetEnumerator() as IDictionaryEnumerator;
+            lock (_mutex)
+            {
+                if (_cache != null)
+                    return _cache.GetEnumerator() as IDictionaryEnumerator; 
+            }
             return null;
         }
 

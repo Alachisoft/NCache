@@ -1,4 +1,4 @@
-// Copyright (c) 2015 Alachisoft
+// Copyright (c) 2017 Alachisoft
 // 
 // Licensed under the Apache License, Version 2.0 (the "License");
 // you may not use this file except in compliance with the License.
@@ -11,8 +11,9 @@
 // WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
 // See the License for the specific language governing permissions and
 // limitations under the License.
+
 using System;
-using System.Collections.Generic;
+
 
 namespace Alachisoft.NCache.SocketServer.Command
 {
@@ -22,9 +23,12 @@ namespace Alachisoft.NCache.SocketServer.Command
         {
             public string RequestId;
             public string CacheId;
+            public bool IsDotNetClient;
             public string ClientID;
+            public string LicenceCode;
             public int clientVersion;
             public string clientIP;
+            public bool isAzureClient;
         }
 
         //PROTOBUF
@@ -37,6 +41,14 @@ namespace Alachisoft.NCache.SocketServer.Command
             {
                 cmdInfo = ParseCommand(command, clientManager);
             }
+            catch (Runtime.Exceptions.OperationNotSupportedException ex)
+            {
+                if (SocketServer.Logger.IsErrorLogsEnabled) SocketServer.Logger.NCacheLog.Error("InitializeCommand.Execute", clientManager.ClientSocket.RemoteEndPoint.ToString() + " " + ex.ToString());
+             
+                //PROTOBUF:RESPONSE
+                _serializedResponsePackets.Add(Alachisoft.NCache.Common.Util.ResponseHelper.SerializeExceptionResponse(ex, command.requestID));                
+                return;
+            }
             catch (Exception exc)
             {
                 if (SocketServer.Logger.IsErrorLogsEnabled) SocketServer.Logger.NCacheLog.Error("InitializeCommand.Execute", clientManager.ClientSocket.RemoteEndPoint.ToString() + " parsing error " + exc.ToString());
@@ -48,12 +60,16 @@ namespace Alachisoft.NCache.SocketServer.Command
                 }
                 return;
             }
+            
 
             try
             {
-                clientManager.ClientID = cmdInfo.ClientID;                   
+                clientManager.ClientID = cmdInfo.ClientID;
+                clientManager.IsDotNetClient = cmdInfo.IsDotNetClient;
+                clientManager.ClientVersion = cmdInfo.clientVersion;
 
-                clientManager.CmdExecuter = new NCache(cmdInfo.CacheId, clientManager);
+
+                clientManager.CmdExecuter = new NCache(cmdInfo.CacheId, cmdInfo.IsDotNetClient, clientManager, cmdInfo.LicenceCode);
 
                 ClientManager cmgr = null;
                 lock (ConnectionManager.ConnectionTable)
@@ -78,13 +94,12 @@ namespace Alachisoft.NCache.SocketServer.Command
                 }
                 catch (Exception e)
                 {
-                    if (SocketServer.Logger.IsErrorLogsEnabled) SocketServer.Logger.NCacheLog.Error("InitializeCommand.Execute", " an error occured while forcefully disposing a client. " + e.ToString());
+                    if (SocketServer.Logger.IsErrorLogsEnabled) SocketServer.Logger.NCacheLog.Error("InitializeCommand.Execute", " an error occurred while forcefully disposing a client. " + e.ToString());
                 }
 
-                clientManager.EventQueue = new EventsQueue(ClientManager.EventBulkCount);
+                clientManager.EventQueue = new EventsQueue();
                 clientManager.SlaveId = clientManager.ConnectionManager.EventsAndCallbackQueue.RegisterSlaveQueue(clientManager.EventQueue, clientManager.ClientID); // register queue with distributed queue.   
 
-                clientManager.ClientVersion = cmdInfo.clientVersion;
                 if (SocketServer.Logger.IsErrorLogsEnabled) SocketServer.Logger.NCacheLog.Error("InitializeCommand.Execute", clientManager.ClientID + " is connected to " + cmdInfo.CacheId);
 
                 //PROTOBUF:RESPONSE
@@ -113,14 +128,21 @@ namespace Alachisoft.NCache.SocketServer.Command
         {
             CommandInfo cmdInfo = new CommandInfo();
 
-            Alachisoft.NCache.Common.Protobuf.InitCommand initCommand = command.initCommand;
-
+           Common.Protobuf.InitCommand initCommand = command.initCommand;
+            
             cmdInfo.CacheId = initCommand.cacheId;
             cmdInfo.ClientID = initCommand.clientId;
+          
+            cmdInfo.IsDotNetClient = initCommand.isDotnetClient;
+            cmdInfo.LicenceCode = initCommand.licenceCode;
+
             cmdInfo.RequestId = initCommand.requestId.ToString();
             cmdInfo.clientVersion = initCommand.clientVersion;
             cmdInfo.clientIP = initCommand.clientIP;
+            cmdInfo.isAzureClient = initCommand.isAzureClient;
             clientManager.ClientIP = initCommand.clientIP;
+            clientManager.IsAzureClient = initCommand.isAzureClient;
+
             return cmdInfo;
         }
     }

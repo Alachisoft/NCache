@@ -1,4 +1,4 @@
-// Copyright (c) 2015 Alachisoft
+// Copyright (c) 2017 Alachisoft
 // 
 // Licensed under the Apache License, Version 2.0 (the "License");
 // you may not use this file except in compliance with the License.
@@ -11,6 +11,7 @@
 // WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
 // See the License for the specific language governing permissions and
 // limitations under the License.
+
 using System;
 using System.Collections;
 using Alachisoft.NCache.Web.RemoteClient.Config;
@@ -26,7 +27,7 @@ namespace Alachisoft.NCache.Web.Caching
 
         /* no user choice should be given for client optimization i-e multiPartitionConnection will be true by defult */
         private bool                _multiPartitionConnection = true;
-        private bool                _balanceNodes= true ;
+        private bool                _balanceNodes= true;
        
         internal int                _opTimeout = 90 * 1000;  //90 sec
         internal int                _connectionTimeout = 5 * 1000;  //5 sec
@@ -46,7 +47,7 @@ namespace Alachisoft.NCache.Web.Caching
         internal const string LOADBALANCE = "balanceNodes";
         internal const string PORT = "port";
        
-        internal const string RETRYCONNECTIONDELAY = "retryConnectionDelay"; //[KS: for connection retry delay]
+        internal const string RETRYCONNECTIONDELAY = "retryConnectionDelay"; 
         internal const string SERVERLIST = "serverlist";
         internal const string BINDIP = "bindIP";
         private string _bindIP = string.Empty;
@@ -107,10 +108,7 @@ namespace Alachisoft.NCache.Web.Caching
             }
         }
 
-       
-       
-
-        
+//_________________________End of new additions_______________________________________________
 
         /// <summary>
         /// Gets/Sets the cache mode (inproc/outproc)
@@ -120,10 +118,6 @@ namespace Alachisoft.NCache.Web.Caching
             get { return _mode; }
             set { _mode = value; }
         }
-
-    
-
-      
 
         /// <summary>
         /// When this flag is set, client tries to connect to the optimum server in terms of number of connected clients.
@@ -139,7 +133,12 @@ namespace Alachisoft.NCache.Web.Caching
                 _dirtyFlags[LOADBALANCE] = true;
             }
         }
-     
+
+        /// <summary>
+        /// Gets/Sets the port on which the clients will connect to a server.
+        /// </summary>
+   
+
         /// <summary>
         /// Clients operation timeout specified in seconds.
         /// Clients wait for the response from the server for this time. 
@@ -254,7 +253,7 @@ namespace Alachisoft.NCache.Web.Caching
                 _cloneParam.LoadBalance = this.LoadBalance;
                 _cloneParam.Mode = this.Mode;
                 
-                _cloneParam.RetryConnectionDelay = this.RetryConnectionDelay;
+                _cloneParam._retryConnectionDelay = this._retryConnectionDelay;
                 _cloneParam.RetryInterval = this.RetryInterval;
                
                 _cloneParam.BindIP = this.BindIP;
@@ -296,7 +295,7 @@ namespace Alachisoft.NCache.Web.Caching
                 if (!IsSet(CONNECTIONTIMEOUT)) this._connectionTimeout = config.ConnectionTimeout;
                 if (!IsSet(CONNECTIONRETRIES)) this._connectionRetries = config.ConnectionRetries;
                 if (!IsSet(RETRYINTERVAL)) this._retryInterval = config.RetryInterval;
-                if (!IsSet(RETRYCONNECTIONDELAY)) this._retryConnectionDelay = config.RetryConnectionDelay; //[KS]
+                if (!IsSet(RETRYCONNECTIONDELAY)) this._retryConnectionDelay = config.RetryConnectionDelay; 
                 if (!IsSet(BINDIP)) this._bindIP =config.BindIP;
                 if (!IsSet(PORT)) this._port = config.ServerPort;
                 if (!IsSet(LOADBALANCE)) this._balanceNodes = config.BalanceNodes;

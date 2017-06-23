@@ -1,4 +1,4 @@
-// Copyright (c) 2015 Alachisoft
+// Copyright (c) 2017 Alachisoft
 // 
 // Licensed under the Apache License, Version 2.0 (the "License");
 // you may not use this file except in compliance with the License.
@@ -39,20 +39,20 @@ namespace Alachisoft.NCache.Tools.VerifyNCacheLicence
             }
             catch (Exception e)
             {
-                Console.WriteLine(e);           
+                Console.WriteLine(e);
             }
         }
     }
 
-    public class VerifyNCacheLicenceParam:Alachisoft.NCache.Tools.Common.CommandLineParamsBase
+    public class VerifyNCacheLicenceParam : Alachisoft.NCache.Tools.Common.CommandLineParamsBase
     {
         public VerifyNCacheLicenceParam()
         {
         }
         private bool _logo = false;
 
-        [ArgumentAttribute(@"/G", @"/logo",false)]
-        public  bool Logo
+        [ArgumentAttribute(@"/G", @"/logo", false)]
+        public bool Logo
         {
             get { return _logo; }
             set { _logo = value; }
@@ -62,8 +62,8 @@ namespace Alachisoft.NCache.Tools.VerifyNCacheLicence
     public class VerifyNCacheLicenceTool
     {
         static private VerifyNCacheLicenceParam cParam = new VerifyNCacheLicenceParam();
-       
-        static public void Run(string []args)
+
+        static public void Run(string[] args)
         {
             try
             {
@@ -71,9 +71,9 @@ namespace Alachisoft.NCache.Tools.VerifyNCacheLicence
                 CommandLineArgumentParser.CommandLineParser(ref param, args);
                 cParam = (VerifyNCacheLicenceParam)param;
 
-                if(!cParam.Logo)
+                if (!cParam.Logo)
                 {
-                  AssemblyUsage.PrintLogo(cParam.IsLogo);
+                    AssemblyUsage.PrintLogo(cParam.IsLogo);
                 }
                 if (cParam.IsUsage)
                 {
@@ -84,9 +84,9 @@ namespace Alachisoft.NCache.Tools.VerifyNCacheLicence
 
                 PrintUserInfo();
                 Console.WriteLine();
-                
-                Console.WriteLine("Edition Installed: NCache 4.4 OpenSouce Edition.\n");
-                
+
+                Console.WriteLine("Edition Installed: NCache 4.6 OpenSouce Edition.\n");
+
             }
             catch (Exception ex)
             {
@@ -103,8 +103,8 @@ namespace Alachisoft.NCache.Tools.VerifyNCacheLicence
             string lastName = (string)RegHelper.GetRegValue(USER_KEY, "lastname", 0);
             string company = (string)RegHelper.GetRegValue(USER_KEY, "company", 0);
             string email = (string)RegHelper.GetRegValue(USER_KEY, "email", 0);
-            
-            Console.WriteLine("This product is registered to \nUser\t:\t"+firstName+" "+lastName+"\nEmail\t:\t"+email+"\nCompany\t:\t"+company);
+
+            Console.WriteLine("This product is registered to \nUser\t:\t" + firstName + " " + lastName + "\nEmail\t:\t" + email + "\nCompany\t:\t" + company);
 
         }
     }

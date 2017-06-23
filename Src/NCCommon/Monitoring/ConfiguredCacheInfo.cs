@@ -1,4 +1,4 @@
-// Copyright (c) 2015 Alachisoft
+// Copyright (c) 2017 Alachisoft
 // 
 // Licensed under the Apache License, Version 2.0 (the "License");
 // you may not use this file except in compliance with the License.
@@ -11,6 +11,7 @@
 // WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
 // See the License for the specific language governing permissions and
 // limitations under the License.
+
 using System;
 using System.Collections.Generic;
 using System.Text;
@@ -30,7 +31,20 @@ namespace Alachisoft.NCache.Common.Monitoring
         private long _dataCapacity;
         private string _cachePropString;
         private string _partId;
+        private int _pid;
+        private int _managementPort;
 
+        public int ManagementPort
+        {
+            get { return _managementPort; }
+            set { _managementPort = value; }
+        }
+
+        public int ProcessID
+        {
+            get { return _pid; }
+            set { _pid = value; }
+        }
         /// <summary>
         /// Gets the cache id
         /// </summary>

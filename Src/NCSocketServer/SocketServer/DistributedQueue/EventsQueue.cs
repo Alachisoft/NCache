@@ -1,4 +1,4 @@
-// Copyright (c) 2015 Alachisoft
+// Copyright (c) 2017 Alachisoft
 // 
 // Licensed under the Apache License, Version 2.0 (the "License");
 // you may not use this file except in compliance with the License.
@@ -11,22 +11,19 @@
 // WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
 // See the License for the specific language governing permissions and
 // limitations under the License.
-using System;
-using System.Collections.Generic;
-//using System.Linq;
-using System.Text;
-using System.Collections;
+
+using Alachisoft.NCache.Common.DataStructures.Clustered;
+using Alachisoft.NCache.Common.Util;
 
 namespace Alachisoft.NCache.SocketServer
 {
-    class EventsQueue : IQueue
+    public class EventsQueue : IQueue
     {
-        private Queue _queue = new Queue();
-        private int _eventBulkCount;
+        private ClusteredQueue<object> _queue = new ClusteredQueue<object>();
 
-        public EventsQueue(int eventBulkCount)
+        public EventsQueue()
         {
-            _eventBulkCount = eventBulkCount;
+            
         }
 
         public void Enqueue(object item)
@@ -48,7 +45,7 @@ namespace Alachisoft.NCache.SocketServer
             lock (this)
             {
                 item = new QueuedItem();
-                for (int i = 1; i <= _eventBulkCount && _queue.Count>0 ; i++)
+                for (int i = 1; i <= ServiceConfiguration.EventBulkCount && _queue.Count > 0; i++)
                 {
                     eventItem = null;
                     {

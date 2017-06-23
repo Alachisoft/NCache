@@ -1,4 +1,4 @@
-// Copyright (c) 2015 Alachisoft
+// Copyright (c) 2017 Alachisoft
 // 
 // Licensed under the Apache License, Version 2.0 (the "License");
 // you may not use this file except in compliance with the License.
@@ -11,26 +11,20 @@
 // WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
 // See the License for the specific language governing permissions and
 // limitations under the License.
+
 using System;
 using System.Collections;
-using System.IO;
-using System.Net;
-using System.Security.Cryptography;
-using System.Text;
 using Alachisoft.NCache.ServiceControl;
-using Alachisoft.NCache.Caching;
-using Alachisoft.NCache.Common;
 using Alachisoft.NCache.Config.Dom;
-
 using Alachisoft.NCache.Management.ServiceControl;
-using Alachisoft.NCache.Common.Logger;
-using Alachisoft.NCache.Management.Management;
 
 namespace Alachisoft.NCache.Management
 {
     public class CacheServiceClient
     {
         /// <summary> CacheServer object running on other nodes. </summary>
+        /// 
+
        
         protected ICacheServer _server = null;
 
@@ -51,7 +45,7 @@ namespace Alachisoft.NCache.Management
         /// </summary>
         /// <param name="address"></param>
         public CacheServiceClient(string address)
-            : this(address, RuntimeContext.CurrentContext == RtContextValue.JVCACHE ? CacheConfigManager.JvCacheTcpPort : CacheConfigManager.NCacheTcpPort)
+            : this(address,  CacheConfigManager.NCacheTcpPort)
         {
         }
 
@@ -77,17 +71,28 @@ namespace Alachisoft.NCache.Management
         /// </summary>
         protected virtual void Initialize()
         {
+
             CacheService cacheService = null;
             cacheService = new NCacheRPCService(_address, _port);
+            
+
             try
             {
                 _server = cacheService.GetCacheServer(TimeSpan.FromSeconds(7));
+               
+            }
+           
+            catch (Exception)
+            {
+                throw;
             }
             finally
             {
                 cacheService.Dispose();
             }
         }
+
+        
 
         protected ICacheServer CacheServer
         {
@@ -114,6 +119,9 @@ namespace Alachisoft.NCache.Management
             try
             {
                 Hashtable cacheList = new Hashtable();
+
+               
+
                 IDictionary coll = _server.GetCacheProps();
 
                 IDictionaryEnumerator ie = coll.GetEnumerator();
@@ -142,5 +150,8 @@ namespace Alachisoft.NCache.Management
                 throw e;
             }
         }
+
+
+
     }
 }

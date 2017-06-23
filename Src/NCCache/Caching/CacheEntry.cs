@@ -1,4 +1,4 @@
-// Copyright (c) 2015 Alachisoft
+// Copyright (c) 2017 Alachisoft
 // 
 // Licensed under the Apache License, Version 2.0 (the "License");
 // you may not use this file except in compliance with the License.
@@ -11,6 +11,7 @@
 // WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
 // See the License for the specific language governing permissions and
 // limitations under the License.
+
 using System;
 using System.Collections;
 using Alachisoft.NCache.Util;
@@ -27,6 +28,8 @@ using Alachisoft.NCache.Common.Stats;
 using Alachisoft.NCache.Common.Locking;
 using Alachisoft.NCache.Common.Util;
 using Runtime = Alachisoft.NCache.Runtime;
+using Alachisoft.NCache.Common.DataStructures.Clustered;
+using Alachisoft.NCache.Caching.Queries;
 
 namespace Alachisoft.NCache.Caching
 {
@@ -58,8 +61,13 @@ namespace Alachisoft.NCache.Caching
 
         private LockMetaInfo lockMetaInfo = null;
 
-        
+        private IndexInformation _indexInfo;
 
+        public IndexInformation IndexInfo
+        {
+            get { return _indexInfo; }
+            set { _indexInfo = value; }
+        }
        
         private string _type = null;
 
@@ -71,7 +79,7 @@ namespace Alachisoft.NCache.Caching
         /// <param name="val">the object to be added to the cache</param>
         /// <param name="expiryHint">expiration hint for the object</param>
         /// <param name="evictionHint">eviction hint for the object</param>
-        internal CacheEntry(object val, ExpirationHint expiryHint, EvictionHint evictionHint)
+        public CacheEntry(object val, ExpirationHint expiryHint, EvictionHint evictionHint)
             : base(val)
         {
             _exh = expiryHint;
@@ -106,8 +114,14 @@ namespace Alachisoft.NCache.Caching
 
         public string ObjectType
         {
-            get { return _type; }
-            set { _type = value; }
+            get
+            {
+                return this._type;
+            }
+            set
+            {
+                this._type = Common.Util.StringPool.PoolString(value);
+            }
         }
 
         public bool HasQueryInfo
@@ -609,6 +623,7 @@ namespace Alachisoft.NCache.Caching
                 e._lastModifiedTime = this._lastModifiedTime;
 
                 e._type = this._type;
+                e.IndexInfo = this.IndexInfo;
             }
             return e;
         }
@@ -690,7 +705,6 @@ namespace Alachisoft.NCache.Caching
         }
 
         /// <summary>
-        /// muds:
         /// in case of local inproc caches, first time the object is 
         /// accessed we keep the deserialized user object. This way 
         /// on the upcoming get requests, we save the cost of deserialization
@@ -805,8 +819,22 @@ namespace Alachisoft.NCache.Caching
                     else if (Value is CallbackEntry)
                     {
                         CallbackEntry entry = (CallbackEntry)Value;
-                        if (entry.Value != null && entry.Value is UserBinaryObject)
-                            size = ((UserBinaryObject)(entry.Value)).InMemorySize;
+                        if (entry.Value != null)
+                        {
+                            if (entry.Value is UserBinaryObject)
+                                size = ((UserBinaryObject)(entry.Value)).InMemorySize;
+                            else if (entry.Value is byte[])
+                                size = ((byte[])entry.Value).Length;
+                            else
+                            {
+                                Type type = entry.Value.GetType();
+                                if (type is ValueType)
+                                    size = System.Runtime.InteropServices.Marshal.SizeOf(type);
+                                else
+                                    size = IntPtr.Size;
+                            }
+                        }
+                        size += entry.InMemorySize;
                     }
                 }             
 

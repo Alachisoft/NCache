@@ -1,4 +1,4 @@
-// Copyright (c) 2015 Alachisoft
+// Copyright (c) 2017 Alachisoft
 // 
 // Licensed under the Apache License, Version 2.0 (the "License");
 // you may not use this file except in compliance with the License.
@@ -11,16 +11,13 @@
 // WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
 // See the License for the specific language governing permissions and
 // limitations under the License.
-using System;
-using System.Net.Sockets;
-using Alachisoft.NCache.Caching;
+
 using Alachisoft.NCache.SocketServer.Command;
 using Alachisoft.NCache.Common.Stats;
 using Alachisoft.NCache.Common.Monitoring;
 using Alachisoft.NCache.Serialization;
 using System.IO;
 using Alachisoft.NCache.SocketServer.Statistics;
-using Web = Alachisoft.NCache.Web;
 
 namespace Alachisoft.NCache.SocketServer
 {
@@ -30,6 +27,10 @@ namespace Alachisoft.NCache.SocketServer
     class CommandManager : ICommandManager
     {
         private PerfStatsCollector _perfStatsCollector;
+        public PerfStatsCollector PerfStatsCollector
+        {
+            get { return _perfStatsCollector; }
+        }
 
         public CommandManager(PerfStatsCollector perfStatsCollector)
         {
@@ -43,18 +44,15 @@ namespace Alachisoft.NCache.SocketServer
 
         }
 
-        public object Deserialize(byte[] buffer, long commandSize)
+        public object Deserialize(Stream buffer)
         {
             Alachisoft.NCache.Common.Protobuf.Command command = null;
-            using (MemoryStream stream = new MemoryStream(buffer, 0, (int)commandSize))
-            {
-                command = ProtoBuf.Serializer.Deserialize<Alachisoft.NCache.Common.Protobuf.Command>(stream);
-                stream.Close();
-            }
+            command = ProtoBuf.Serializer.Deserialize<Alachisoft.NCache.Common.Protobuf.Command>(buffer);
+            buffer.Close();
             return command;
         }
 
-        public void ProcessCommand(ClientManager clientManager, object cmd)
+        public virtual void ProcessCommand(ClientManager clientManager, object cmd, long acknowledgementId, UsageStats stats)
         {
             Alachisoft.NCache.Common.Protobuf.Command command = cmd as Alachisoft.NCache.Common.Protobuf.Command;
             if (ServerMonitor.MonitorActivity) ServerMonitor.LogClientActivity("CmdMgr.PrsCmd", "enter");
@@ -71,8 +69,25 @@ namespace Alachisoft.NCache.SocketServer
                 case Alachisoft.NCache.Common.Protobuf.Command.Type.INIT:
                     Alachisoft.NCache.Common.Protobuf.InitCommand initCommand = command.initCommand;
                     initCommand.requestId = command.requestID;
-                    if (SocketServer.Logger.IsDetailedLogsEnabled) SocketServer.Logger.NCacheLog.Info("ConnectionManager.ReceiveCallback", clientManager.ToString() + " RequestId :" + command.requestID);
                     incommingCmd = new InitializeCommand();
+                   
+                    break;
+                case Alachisoft.NCache.Common.Protobuf.Command.Type.EXECUTE_READER:
+                    Alachisoft.NCache.Common.Protobuf.ExecuteReaderCommand executeReaderCommand = command.executeReaderCommand;
+                    executeReaderCommand.requestId = command.requestID;
+                    incommingCmd = new ExecuteReaderCommand();
+                    break;
+
+                case Alachisoft.NCache.Common.Protobuf.Command.Type.GET_READER_CHUNK:
+                    Alachisoft.NCache.Common.Protobuf.GetReaderNextChunkCommand getReaderChunkCommand = command.getReaderNextChunkCommand;
+                    getReaderChunkCommand.requestId = command.requestID;
+                    incommingCmd = new GetReaderChunkCommand();
+                    break;
+
+                case Alachisoft.NCache.Common.Protobuf.Command.Type.DISPOSE_READER:
+                    Alachisoft.NCache.Common.Protobuf.DisposeReaderCommand disposeReaderCommand = command.disposeReaderCommand;
+                    disposeReaderCommand.requestId = command.requestID;
+                    incommingCmd = new DisposeReaderCommand();
                     break;
                     // added in server to cater getProductVersion request from client
                 case Common.Protobuf.Command.Type.GET_PRODUCT_VERSION:
@@ -125,6 +140,11 @@ namespace Alachisoft.NCache.SocketServer
                 case Alachisoft.NCache.Common.Protobuf.Command.Type.GET_CACHE_ITEM:
                     command.getCacheItemCommand.requestId = command.requestID;
                     incommingCmd = new GetCacheItemCommand();
+                    break;
+
+                case Alachisoft.NCache.Common.Protobuf.Command.Type.GET_CACHE_BINDING:
+                    command.getCacheBindingCommand.requestId = command.requestID;
+                    incommingCmd = new GetCacheBindingCommand();
                     break;
 
                 case Alachisoft.NCache.Common.Protobuf.Command.Type.GET_ENUMERATOR:
@@ -243,17 +263,18 @@ namespace Alachisoft.NCache.SocketServer
                     incommingCmd = new AddAttributeCommand();
                     break;
 
+                case Alachisoft.NCache.Common.Protobuf.Command.Type.REGISTER_BULK_KEY_NOTIF:
+                    command.registerBulkKeyNotifCommand.requestId = command.requestID;
+                    incommingCmd = new RegisterBulkKeyNotifcationCommand();
+                    break;
+
             }
             if (SocketServer.IsServerCounterEnabled) _perfStatsCollector.MsecPerCacheOperationBeginSample();
-            ///*****************************************************************/
-            ///**/incommingCmd.ExecuteCommand(clientManager, command, value);/**/
-            ///*****************************************************************/
-            //PROTOBUF
-            /*****************************************************************/
-            /**/
+       
             incommingCmd.ExecuteCommand(clientManager, command);/**/
-            /*****************************************************************/
+           
             if (SocketServer.Logger.IsDetailedLogsEnabled) SocketServer.Logger.NCacheLog.Info("ConnectionManager.ReceiveCallback", clientManager.ToString() + " after executing COMMAND : " + command.type.ToString() + " RequestId :" + command.requestID);
+
 
             if (SocketServer.IsServerCounterEnabled) _perfStatsCollector.MsecPerCacheOperationEndSample();
 
@@ -267,9 +288,17 @@ namespace Alachisoft.NCache.SocketServer
                 }
             }
             
+            if (stats != null)
+            {
+                stats.EndSample();
+                if (incommingCmd != null)
+                {
+                    incommingCmd.IncrementCounter(_perfStatsCollector, stats.Current);
+                }
+            }
+
             if (ServerMonitor.MonitorActivity) ServerMonitor.LogClientActivity("CmdMgr.PrsCmd", "exit");
         }
-     
-        
+      
     }
 }

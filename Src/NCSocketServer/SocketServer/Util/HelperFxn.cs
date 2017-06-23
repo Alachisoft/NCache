@@ -1,4 +1,4 @@
-// Copyright (c) 2015 Alachisoft
+// Copyright (c) 2017 Alachisoft
 // 
 // Licensed under the Apache License, Version 2.0 (the "License");
 // you may not use this file except in compliance with the License.
@@ -11,6 +11,7 @@
 // WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
 // See the License for the specific language governing permissions and
 // limitations under the License.
+
 using System;
 using System.Text;
 using System.IO;
@@ -116,6 +117,13 @@ namespace Alachisoft.NCache.SocketServer.Util
                 throw;
             }
 
+            return cInt;
+        }
+
+        public static long ToInt64(byte[] buffer, int offset, int size)
+        {
+            long cInt = 0;
+            cInt = Convert.ToInt64(UTF8Encoding.UTF8.GetString(buffer, offset, size));
             return cInt;
         }
 

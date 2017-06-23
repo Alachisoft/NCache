@@ -1,4 +1,4 @@
-// Copyright (c) 2015 Alachisoft
+// Copyright (c) 2017 Alachisoft
 // 
 // Licensed under the Apache License, Version 2.0 (the "License");
 // you may not use this file except in compliance with the License.
@@ -11,9 +11,11 @@
 // WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
 // See the License for the specific language governing permissions and
 // limitations under the License.
+
 using System.Collections;
 using Alachisoft.NCache.Common.DataStructures;
 using Alachisoft.NCache.Common.Stats;
+using Alachisoft.NCache.Common.DataStructures.Clustered;
 
 namespace Alachisoft.NCache.Caching.Topologies.Local
 {
@@ -26,12 +28,12 @@ namespace Alachisoft.NCache.Caching.Topologies.Local
         private int _bucketId;
         private Hashtable _logTbl;
         private bool _bucketTransfered = false;
-        private RedBlack _opIndex;
+        private RedBlack<HPTime> _opIndex;
 
         public OperationLogger(int bucketId, LogMode loggingMode)
         {
             _bucketId = bucketId;
-            _opIndex = new RedBlack();
+            _opIndex = new RedBlack<HPTime>();
             _loggingMode = loggingMode;
         }
 
@@ -69,7 +71,7 @@ namespace Alachisoft.NCache.Caching.Topologies.Local
                 IDictionaryEnumerator rbe = _opIndex.GetEnumerator();
                 while (rbe.MoveNext())
                 {
-                    Hashtable tbl = rbe.Value as Hashtable;
+                    HashVector tbl = rbe.Value as HashVector;
                     OperationInfo info = null;
 
                     if (tbl != null)
@@ -126,7 +128,7 @@ namespace Alachisoft.NCache.Caching.Topologies.Local
                 IDictionaryEnumerator rbe = _opIndex.GetEnumerator();
                 while (rbe.MoveNext())
                 {
-                    Hashtable tbl = rbe.Value as Hashtable;
+                    HashVector tbl = rbe.Value as HashVector;
                     OperationInfo info = null;
 
                     if (tbl != null)

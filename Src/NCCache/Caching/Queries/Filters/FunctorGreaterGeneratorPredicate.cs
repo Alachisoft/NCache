@@ -1,4 +1,4 @@
-// Copyright (c) 2015 Alachisoft
+// Copyright (c) 2017 Alachisoft
 // 
 // Licensed under the Apache License, Version 2.0 (the "License");
 // you may not use this file except in compliance with the License.
@@ -11,10 +11,13 @@
 // WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
 // See the License for the specific language governing permissions and
 // limitations under the License.
+
 using System;
 using System.Collections;
 using Alachisoft.NCache.Parser;
-
+using Alachisoft.NCache.Common.Queries;
+using Alachisoft.NCache.Common.DataStructures.Clustered;
+using Alachisoft.NCache.Common.Enum;
 namespace Alachisoft.NCache.Caching.Queries.Filters
 {
     public class FunctorGreaterGeneratorPredicate : Predicate, IComparable
@@ -36,22 +39,23 @@ namespace Alachisoft.NCache.Caching.Queries.Filters
             return Comparer.Default.Compare(lhs, generator.Evaluate()) > 0;
         }
 
-        internal override void ExecuteInternal(QueryContext queryContext, ref SortedList list)
+        internal override void ExecuteInternal(QueryContext queryContext, CollectionOperation mergeType)
         {
             AttributeIndex index = queryContext.Index;
             IIndexStore store = ((MemberFunction)functor).GetStore(index);
 
             if (store != null)
             {
-                ArrayList keyList = null;
+                ClusteredArrayList keyList = null;
 
                 if (Inverse)
-                    keyList = store.GetData(generator.Evaluate(((MemberFunction)functor).MemberName, queryContext.AttributeValues), ComparisonType.LESS_THAN_EQUALS);
+                    store.GetData(
+                        generator.Evaluate(((MemberFunction) functor).MemberName, queryContext.AttributeValues),
+                        ComparisonType.LESS_THAN_EQUALS, queryContext.InternalQueryResult, mergeType);
                 else
-                    keyList = store.GetData(generator.Evaluate(((MemberFunction)functor).MemberName, queryContext.AttributeValues), ComparisonType.GREATER_THAN);
-
-                if (keyList != null)
-                    list.Add(keyList.Count, keyList);
+                    store.GetData(
+                        generator.Evaluate(((MemberFunction) functor).MemberName, queryContext.AttributeValues),
+                        ComparisonType.GREATER_THAN, queryContext.InternalQueryResult, mergeType);
             }
             else
             {
@@ -66,36 +70,21 @@ namespace Alachisoft.NCache.Caching.Queries.Filters
 
             if (store != null)
             {
-                ArrayList keyList = null;
+                ClusteredArrayList keyList = null;
 
                 if (Inverse)
-                    keyList = store.GetData(generator.Evaluate(((MemberFunction)functor).MemberName, queryContext.AttributeValues), ComparisonType.LESS_THAN_EQUALS);
+                    store.GetData(
+                        generator.Evaluate(((MemberFunction) functor).MemberName, queryContext.AttributeValues),
+                        ComparisonType.LESS_THAN_EQUALS, queryContext.InternalQueryResult, CollectionOperation.Union);
                 else
-                    keyList = store.GetData(generator.Evaluate(((MemberFunction)functor).MemberName, queryContext.AttributeValues), ComparisonType.GREATER_THAN);
-
-                if (keyList != null && keyList.Count > 0)
-                {
-                    IEnumerator keyListEnum = keyList.GetEnumerator();
-
-                    if (queryContext.PopulateTree)
-                    {
-                        queryContext.Tree.RightList = keyList;
-
-                        queryContext.PopulateTree = false;
-                    }
-                    else
-                    {
-                        while (keyListEnum.MoveNext())
-                        {
-                            if (queryContext.Tree.LeftList.Contains(keyListEnum.Current))
-                                queryContext.Tree.Shift(keyListEnum.Current);
-                        }
-                    }
-                }
+                    store.GetData(
+                        generator.Evaluate(((MemberFunction) functor).MemberName, queryContext.AttributeValues),
+                        ComparisonType.GREATER_THAN, queryContext.InternalQueryResult, CollectionOperation.Union);
             }
-            else //straight-forward. no index.
+            else 
             {
-                throw new AttributeIndexNotDefined("Index is not defined for attribute '" + ((MemberFunction)functor).MemberName + "'");
+                throw new AttributeIndexNotDefined("Index is not defined for attribute '" +
+                                                   ((MemberFunction) functor).MemberName + "'");
             }
         }
 

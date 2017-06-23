@@ -1,4 +1,4 @@
-// Copyright (c) 2015 Alachisoft
+// Copyright (c) 2017 Alachisoft
 // 
 // Licensed under the Apache License, Version 2.0 (the "License");
 // you may not use this file except in compliance with the License.
@@ -11,15 +11,17 @@
 // WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
 // See the License for the specific language governing permissions and
 // limitations under the License.
+
 using System;
 using Alachisoft.NCache.Runtime.Events;
 using Alachisoft.NCache.Runtime.Serialization;
 using Alachisoft.NCache.Runtime.Serialization.IO;
+using Alachisoft.NCache.Common;
 
 namespace Alachisoft.NCache.Caching
 {
     [Serializable]
-    public class CallbackInfo : ICompactSerializable
+    public class CallbackInfo : ICompactSerializable, ISizable
     {
         protected string theClient;
         protected object theCallback;
@@ -114,6 +116,30 @@ namespace Alachisoft.NCache.Caching
             string dataFilter = _dataFilter.ToString();
             return cnt + ":" + cback + ":" + dataFilter;
         }
+
+        public int Size
+        {
+            get { return CallbackInfoSize; }
+        }
+
+        public int InMemorySize
+        {
+            get { return Common.MemoryUtil.GetInMemoryInstanceSize(this.Size); }
+        }
+
+        private int CallbackInfoSize
+        {
+            get
+            {
+                int temp = 0;
+                temp += Common.MemoryUtil.GetStringSize(theClient); // for theClient
+                temp += Common.MemoryUtil.NetReferenceSize; // for theCallback
+                temp += Common.MemoryUtil.NetByteSize; // for notifyOnItemExpiration
+                temp += Common.MemoryUtil.NetEnumSize;  //for _dataFilter
+                return temp;
+            }
+        }
+
         
         #region ICompactSerializable Members
 

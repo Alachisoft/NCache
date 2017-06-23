@@ -1,4 +1,4 @@
-// Copyright (c) 2015 Alachisoft
+// Copyright (c) 2017 Alachisoft
 // 
 // Licensed under the Apache License, Version 2.0 (the "License");
 // you may not use this file except in compliance with the License.
@@ -11,6 +11,7 @@
 // WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
 // See the License for the specific language governing permissions and
 // limitations under the License.
+
 using System;
 using System.Collections;
 using System.Web.SessionState;
@@ -69,7 +70,11 @@ namespace Alachisoft.NCache.Serialization
             else if (graph is Hashtable)
                 type = typeof(Hashtable);
             else if (graph is SortedList)
-                type = typeof(SortedList);            
+                type = typeof(SortedList);
+            else if (graph is Common.DataStructures.Clustered.HashVector)
+                type = typeof(Common.DataStructures.Clustered.HashVector);
+            else if (graph is Common.DataStructures.Clustered.ClusteredArrayList)
+                type = typeof(Common.DataStructures.Clustered.ClusteredArrayList);
             else if (graph.GetType().IsGenericType && typeof(List<>).Equals(graph.GetType().GetGenericTypeDefinition()) && graph.GetType().FullName.Contains("System.Collections.Generic"))
                 ///Its IList<> but see if it is a user defined type that derived from IList<>
                 type = typeof(IList<>);
@@ -224,6 +229,9 @@ namespace Alachisoft.NCache.Serialization
             RegisterTypeSurrogate(new NullableArraySerializationSurrogate<UInt16>());
             RegisterTypeSurrogate(new NullableArraySerializationSurrogate<UInt32>());
             RegisterTypeSurrogate(new NullableArraySerializationSurrogate<UInt64>());
+            RegisterTypeSurrogate(new IListSerializationSurrogate(typeof(Common.DataStructures.Clustered.ClusteredArrayList)));
+            RegisterTypeSurrogate(new IDictionarySerializationSurrogate(typeof(Common.DataStructures.Clustered.HashVector)));
+
         }
 
         /// <summary>

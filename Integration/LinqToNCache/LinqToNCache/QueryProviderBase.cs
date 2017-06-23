@@ -1,4 +1,4 @@
-// Copyright (c) 2015 Alachisoft
+// Copyright (c) 2017 Alachisoft
 // 
 // Licensed under the Apache License, Version 2.0 (the "License");
 // you may not use this file except in compliance with the License.
@@ -18,12 +18,7 @@ using System.Text;
 using System.Linq.Expressions;
 using System.Reflection;
 
-#if JAVA
-namespace Alachisoft.TayzGrid.Linq
-#else
 namespace Alachisoft.NCache.Linq
-#endif
-
 {
     public abstract class QueryProviderBase : IQueryProvider
     {
@@ -37,11 +32,7 @@ namespace Alachisoft.NCache.Linq
         {
             try
             {
-#if JAVA
-                return new TayzGridQuery<TElement>(this, expression);
-#else
                 return new NCacheQuery<TElement>(this, expression);
-#endif
             }
             catch (InvalidCastException)
             {

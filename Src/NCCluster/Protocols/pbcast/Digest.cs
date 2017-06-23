@@ -10,6 +10,7 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 // $Id: Digest.java,v 1.6 2004/07/05 05:49:41 belaban Exp $
+
 using System;
 
 using Alachisoft.NGroups;
@@ -149,6 +150,7 @@ namespace Alachisoft.NGroups.Protocols.pbcast
 			long my_low_seqno, my_high_seqno, my_high_seqno_seen;
 			if (sender == null)
 			{
+                //Trace.error("Digest", "sender == null");
 				return ;
 			}
 			index = getIndex(sender);

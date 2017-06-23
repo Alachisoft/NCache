@@ -1,4 +1,4 @@
-// Copyright (c) 2015 Alachisoft
+// Copyright (c) 2017 Alachisoft
 // 
 // Licensed under the Apache License, Version 2.0 (the "License");
 // you may not use this file except in compliance with the License.
@@ -11,8 +11,10 @@
 // WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
 // See the License for the specific language governing permissions and
 // limitations under the License.
+
 using System;
 using Alachisoft.NCache.Parser;
+using Alachisoft.NCache.Common.Queries;
 
 namespace Alachisoft.NCache.Caching.Queries.Filters
 {
@@ -51,6 +53,9 @@ namespace Alachisoft.NCache.Caching.Queries.Filters
 
             if (queryContext.Index == null) //try to get virtual index
             {
+                //we are not allowing queries 
+                //with out attribute-level indexes right now.
+
                 //in case of DisableException is true, exception will not be thrown, and return new attribute index.
                 if (QueryIndexManager.DisableException)
                 {
@@ -62,14 +67,19 @@ namespace Alachisoft.NCache.Caching.Queries.Filters
             }
             else
             {
-                
+            
                 //populate the tree for normal queries...
                 if (nextPredicate == null && queryContext.PopulateTree)
                 {
-                    queryContext.Tree.Populate(queryContext.Index.GetEnumerator(typename));
+                    queryContext.InternalQueryResult = new ListQueryResult();
+                    queryContext.InternalQueryResult.Populate(queryContext.Index.GetEnumerator(typename));
                 }
                 else
                 {
+                    if (nextPredicate is LogicalAndPredicate)
+                        queryContext.InternalQueryResult = new HashedQueryResult();
+                    else
+                        queryContext.InternalQueryResult = new ListQueryResult();
                     nextPredicate.Execute(queryContext, null);
                 }
             }

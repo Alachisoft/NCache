@@ -67,5 +67,38 @@ namespace Alachisoft.NCache.Web.Command
             base._command.type = Alachisoft.NCache.Common.Protobuf.Command.Type.GET_OPTIMAL_SERVER;
 
         }
+
+        public override byte[] ToByte()
+        {
+            if (_commandBytes == null)
+            {
+                this.CreateCommand();
+                this.SerializeCommand();
+            }
+            return _commandBytes;
+        }
+
+        public override void SerializeCommand()
+        {
+            using (MemoryStream stream = new MemoryStream())
+            {
+                ///Write discarding buffer that socketserver reads
+                byte[] discardingBuffer = new byte[20];
+                stream.Write(discardingBuffer, 0, discardingBuffer.Length);
+
+                byte[] size = new byte[Connection.CmdSizeHolderBytesCount];
+                stream.Write(size, 0, size.Length);
+
+                ProtoBuf.Serializer.Serialize<Alachisoft.NCache.Common.Protobuf.Command>(stream, this._command);
+                int messageLen = (int)stream.Length - (size.Length + discardingBuffer.Length);
+
+                size = HelperFxn.ToBytes(messageLen.ToString());
+                stream.Position = discardingBuffer.Length;
+                stream.Write(size, 0, size.Length);
+
+                this._commandBytes = stream.ToArray();
+                stream.Close();
+            }
+        }
     }
 }

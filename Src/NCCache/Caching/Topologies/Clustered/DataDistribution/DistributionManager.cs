@@ -1,4 +1,4 @@
-// Copyright (c) 2015 Alachisoft
+// Copyright (c) 2017 Alachisoft
 // 
 // Licensed under the Apache License, Version 2.0 (the "License");
 // you may not use this file except in compliance with the License.
@@ -11,8 +11,10 @@
 // WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
 // See the License for the specific language governing permissions and
 // limitations under the License.
+
 using System;
 using System.Collections;
+using System.Collections.Generic;
 using System.Threading;
 
 using Alachisoft.NCache.Common.Net;
@@ -24,6 +26,7 @@ using System.Net;
 using Alachisoft.NCache.Common;
 using Alachisoft.NCache.Common.Util;
 using Alachisoft.NCache.Common.Logger;
+using Alachisoft.NCache.Common.DataStructures.Clustered;
 
 namespace Alachisoft.NCache.Caching.Topologies.Clustered
 {
@@ -87,6 +90,8 @@ namespace Alachisoft.NCache.Caching.Topologies.Clustered
         protected ReaderWriterLock _sync = new ReaderWriterLock();
         protected Address _localAddrss;
         protected int _autoBalancingThreshold;
+
+        protected IDictionary<Address, IDictionary<HashMapBucket, int>> _BucketOwnershipMapDictionary; 
         public static int TotalBuckets = 1000;
 
         private ILogger _ncacheLog;
@@ -287,7 +292,11 @@ namespace Alachisoft.NCache.Caching.Topologies.Clustered
         public Hashtable BucketsOwnershipMap
         {
             get { return _bucketsOwnershipMap; }
-            set { _bucketsOwnershipMap = value; }
+            set
+            {
+                _bucketsOwnershipMap = value;
+                _BucketOwnershipMapDictionary = GetHashMapBucketIndex(_bucketsOwnershipMap);
+            }
         }
 
         /// <summary>
@@ -300,7 +309,6 @@ namespace Alachisoft.NCache.Caching.Topologies.Clustered
         {
             long cent = difference * 100;
             long percent = cent / AvgDataSize;
-            //return (int)((difference * 100) / AvgDataSize);
             return (int)percent;
         }
 
@@ -368,25 +376,23 @@ namespace Alachisoft.NCache.Caching.Topologies.Clustered
                     HashMapBucket bucket = _installedHashMap[index] as HashMapBucket;
                     if (bucket != null)
                     {
-                        //if (bucket.Status != BucketStatus.Functional)
+                        /// This is special case that handles operations during stateTransfer.
+                        /// If a bucket is not yet transfered to the new coordinator from the replica. then
+                        /// the replica's address is returned.
+                        Address coordinatorNodeAddress = bucket.TempAddress; // this should be the sub-coordinator addres
+                        ArrayList ownershipMap = _bucketsOwnershipMap[coordinatorNodeAddress] as ArrayList;
+                        if (ownershipMap == null)
                         {
-                            /// This is special case that handles operations during stateTransfer.
-                            /// If a bucket is not yet transfered to the new coordinator from the replica. then
-                            /// the replica's address is returned.
-                            Address coordinatorNodeAddress = bucket.TempAddress; // this should be the sub-coordinator addres
-                            ArrayList ownershipMap = _bucketsOwnershipMap[coordinatorNodeAddress] as ArrayList;
-                            if (ownershipMap == null)
-                            {
-                                NCacheLog.Warn("DistributionManager.SelectNodeInternal()", "ownershipMap is null. Returning permanent address of bucket.");
-                                return bucket.PermanentAddress;
-                            }
-                                int indexOfOwnedBucket = ownershipMap.IndexOf(bucket);
+                            NCacheLog.Warn("DistributionManager.SelectNodeInternal()", "ownershipMap is null. Returning permanent address of bucket.");
+                            return bucket.PermanentAddress;
+                        }
+                        int indexOfOwnedBucket = -1;
+                        _BucketOwnershipMapDictionary[coordinatorNodeAddress].TryGetValue(bucket, out indexOfOwnedBucket);
 
-                                if (indexOfOwnedBucket != -1)
-                                {
-                                    HashMapBucket ownedBucket = ownershipMap[indexOfOwnedBucket] as HashMapBucket;
-                                    return ownedBucket.PermanentAddress;
-                                }
+                        if (indexOfOwnedBucket != -1)
+                        {
+                            HashMapBucket ownedBucket = ownershipMap[indexOfOwnedBucket] as HashMapBucket;
+                            return ownedBucket.PermanentAddress;
                         }
                         return bucket.PermanentAddress;
                     }
@@ -684,13 +690,12 @@ namespace Alachisoft.NCache.Caching.Topologies.Clustered
 
                 if (localNode.Statistics != null && localNode.Statistics.LocalBuckets != null)
                 {
-                    Hashtable bucketStats = localNode.Statistics.LocalBuckets.Clone() as Hashtable;
+                    IDictionary bucketStats = localNode.Statistics.LocalBuckets.Clone() as IDictionary;
                     if (bucketStats != null)
                     {
                         IDictionaryEnumerator ide = bucketStats.GetEnumerator();
                         while (ide.MoveNext())
                         {
-                            //muds:
                             //see if this node is the permanent owner of the bucket
                             //otherwise its quite possible that we override the 
                             //stats of the bucket from the temporary owner.
@@ -961,7 +966,6 @@ namespace Alachisoft.NCache.Caching.Topologies.Clustered
                                     //has sent request to release after he has transfered the bucket completely.
                                     bucket.PermanentAddress = bucket.TempAddress;
                                 }
-                                //NCacheLog.Error("DistributionMgr.ReleaseBuckets", " Released bucket from InstalledHashMap " + bucket.ToString() + ". Requested by " + requestingNode);
                             }
                         }
                     }
@@ -1006,7 +1010,6 @@ namespace Alachisoft.NCache.Caching.Topologies.Clustered
             }
             catch (NullReferenceException e)
             {
-                //Null is expected at start of cache
             }
             catch (Exception e)
             {
@@ -1136,6 +1139,7 @@ namespace Alachisoft.NCache.Caching.Topologies.Clustered
                     _installedHashMap = newMap;
                 }
                 _bucketsOwnershipMap = newBucketsOwnershipMap;
+                _BucketOwnershipMapDictionary = GetHashMapBucketIndex(newBucketsOwnershipMap);
 
                 NotifyBucketUpdate();
             }
@@ -1195,17 +1199,20 @@ namespace Alachisoft.NCache.Caching.Topologies.Clustered
             {
                 foreach (Address server in activePartitions)
                 {
-                    foreach (HashMapBucket bucket in _bucketsOwnershipMap[server] as ArrayList)
+                    if (_bucketsOwnershipMap.ContainsKey(server))
                     {
-                        Address address = bucket.PermanentAddress;
-                        if (!list.Contains(address))
+                        foreach (HashMapBucket bucket in _bucketsOwnershipMap[server] as ArrayList)
                         {
-                            list.Add(address.Clone());
+                            Address address = bucket.PermanentAddress;
+                            if (!list.Contains(address))
+                            {
+                                list.Add(address.Clone());
+                            }
                         }
-                    }
-                    if (!list.Contains(server))
-                    {
-                        list.Add(server.Clone());
+                        if (!list.Contains(server))
+                        {
+                            list.Add(server.Clone());
+                        }
                     }
                 }
             }
@@ -1234,6 +1241,45 @@ namespace Alachisoft.NCache.Caching.Topologies.Clustered
                 _sync.ReleaseReaderLock();
             }
             return false;
+        }
+
+        internal IDictionary<Address, IDictionary<HashMapBucket, int>> GetHashMapBucketIndex(Hashtable bucketOwnerMap)
+        {
+            IDictionary<Address, IDictionary<HashMapBucket, int>> dictionary =
+                new Dictionary<Address, IDictionary<HashMapBucket, int>>();
+            foreach (DictionaryEntry entry in bucketOwnerMap)
+            {
+                Address address = entry.Key as Address;
+                ArrayList arrayList = entry.Value as ArrayList;
+                if (dictionary.ContainsKey(address))
+                {
+                    IDictionary<HashMapBucket, int> hashDictionary = dictionary[address];
+                    if (arrayList != null)
+                    {
+                        int lenght = hashDictionary.Count;
+                        for (int i = 0; i < arrayList.Count; i++)
+                        {
+                            if (!hashDictionary.ContainsKey((HashMapBucket)arrayList[i]))
+                                hashDictionary.Add((HashMapBucket)arrayList[i], lenght + i);
+                        }
+                    }
+                }
+                else
+                {
+                    IDictionary<HashMapBucket, int> hashDictionary = new Dictionary<HashMapBucket, int>();
+                    if (arrayList != null)
+                    {
+                        for (int i = 0; i < arrayList.Count; i++)
+                        {
+                            if (!hashDictionary.ContainsKey((HashMapBucket)arrayList[i]))
+                                hashDictionary.Add((HashMapBucket)arrayList[i], i);
+                        }
+                    }
+                    dictionary.Add(address, hashDictionary);
+                }
+            }
+
+            return dictionary;
         }
     }
 }

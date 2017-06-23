@@ -1,4 +1,4 @@
-// Copyright (c) 2015 Alachisoft
+// Copyright (c) 2017 Alachisoft
 // 
 // Licensed under the Apache License, Version 2.0 (the "License");
 // you may not use this file except in compliance with the License.
@@ -11,6 +11,7 @@
 // WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
 // See the License for the specific language governing permissions and
 // limitations under the License.
+
 using System;
 using System.Collections;
 using System.Data;
@@ -18,6 +19,8 @@ using System.Data;
 using Alachisoft.NCache.Common;
 using Alachisoft.NCache.Common.Monitoring;
 using Alachisoft.NCache.Common.Logger;
+using Alachisoft.NCache.Common.DataStructures.Clustered;
+using Alachisoft.NCache.Common.Util;
 
 namespace Alachisoft.NCache.Storage
 {
@@ -27,14 +30,14 @@ namespace Alachisoft.NCache.Storage
     class ClrHeapStorageProvider : StorageProviderBase
     {
         /// <summary> Storage Map </summary>
-        protected Hashtable _itemDict;    
+        protected HashVector _itemDict;    
 
         /// <summary>
         /// Default constructor.
         /// </summary>
         public ClrHeapStorageProvider()
         {
-            _itemDict = Hashtable.Synchronized(new Hashtable(DEFAULT_CAPACITY, 0.7f));
+            _itemDict = new HashVector(DEFAULT_CAPACITY, 0.7f);
         }
 
         /// <summary>
@@ -45,7 +48,7 @@ namespace Alachisoft.NCache.Storage
         public ClrHeapStorageProvider(long maxDataSize)
             : base(maxDataSize)
         {
-            _itemDict = new Hashtable(DEFAULT_CAPACITY, 0.7f);
+            _itemDict = new HashVector(DEFAULT_CAPACITY, 0.7f);
         }
 
         /// <summary>
@@ -55,7 +58,7 @@ namespace Alachisoft.NCache.Storage
         public ClrHeapStorageProvider(IDictionary properties, bool evictionEnabled, ILogger NCacheLog)
             : base(properties, evictionEnabled, NCacheLog)
         {
-            _itemDict = new Hashtable(DEFAULT_CAPACITY, 0.7f);
+            _itemDict = new HashVector(DEFAULT_CAPACITY, 0.7f);
         }
 
         #region	/                 --- IDisposable ---           /
@@ -164,6 +167,8 @@ namespace Alachisoft.NCache.Storage
                     return StoreAddResult.KeyExists;
                 }
                 StoreStatus status = HasSpace((ISizable)item,Common.MemoryUtil.GetStringSize(key),allowExtendedSize);
+                
+                if (ServiceConfiguration.CacheSizeThreshold > 0) _reportCacheNearEviction = true;
                 if (_reportCacheNearEviction) CheckForStoreNearEviction();
                 if (status == StoreStatus.HasNotEnoughSpace)
                 {
@@ -207,6 +212,8 @@ namespace Alachisoft.NCache.Storage
                 object oldItem = _itemDict[key];
 
                 StoreStatus status = HasSpace(oldItem as ISizable, (ISizable)item, Common.MemoryUtil.GetStringSize(key), allowExtendedSize);
+
+                if (ServiceConfiguration.CacheSizeThreshold > 0) _reportCacheNearEviction = true;
                 if (_reportCacheNearEviction) CheckForStoreNearEviction();
 
                 if (status == StoreStatus.HasNotEnoughSpace)

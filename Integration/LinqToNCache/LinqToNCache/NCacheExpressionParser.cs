@@ -1,4 +1,4 @@
-// Copyright (c) 2015 Alachisoft
+// Copyright (c) 2017 Alachisoft
 // 
 // Licensed under the Apache License, Version 2.0 (the "License");
 // you may not use this file except in compliance with the License.
@@ -20,20 +20,10 @@ using System.Diagnostics;
 using System.Collections.ObjectModel;
 using System.Reflection;
 using System.Data.Common;
-#if JAVA
-using Alachisoft.TayzGrid.Web.Caching;
-#else
 using Alachisoft.NCache.Web.Caching;
-#endif
-
 using System.Collections;
 
-#if JAVA
-namespace Alachisoft.TayzGrid.Linq
-#else
 namespace Alachisoft.NCache.Linq
-#endif
-
 {
     internal class NCacheExpressionParser : ExpressionVisitor
     {
@@ -446,8 +436,7 @@ namespace Alachisoft.NCache.Linq
             }
 
             Type returnType = GetReturnType();
-            //@UH
-            if (returnType == null)
+                       if (returnType == null)
             {
                 throw new InvalidOperationException("Cannot translate statement");
             }
@@ -2445,30 +2434,11 @@ namespace Alachisoft.NCache.Linq
                 string CommandText = NCacheExpressionParser.GetNQLStatement();
                 if (_queryValues == null)
                     _queryValues = new Hashtable();
-#if JAVA
-                Hashtable _updatedQueryValues = new Hashtable();
-                IDictionaryEnumerator de = _queryValues.GetEnumerator();
-                while (de.MoveNext())
-                {
-                    if (de.Value is String)
-                    {
-                        _updatedQueryValues.Add(de.Key, de.Value.ToString().Replace("*", "%"));
-                    }
-                    else
-                    {
-                        _updatedQueryValues.Add(de.Key, de.Value);
-                    }
-                }
-                _queryValues = _updatedQueryValues;
-#endif
                 returnValues = _cache.SearchEntries(CommandText, _queryValues);
                 IDictionaryEnumerator ie = returnValues.GetEnumerator();
 
                 while (ie.MoveNext())
                 {
-                    
-                    
-
                     if (_classType.IsAssignableFrom(typeof(T)))
                         result.Add((T)(ie.Value));
                     else
@@ -2566,22 +2536,6 @@ namespace Alachisoft.NCache.Linq
                 string CommandText = NCacheExpressionParser.GetNQLStatement();
                 if (_queryValues == null)
                     _queryValues = new Hashtable();
-#if JAVA
-                Hashtable _updatedQueryValues = new Hashtable();
-                IDictionaryEnumerator de = _queryValues.GetEnumerator();
-                while (de.MoveNext())
-                {
-                    if (de.Value is String)
-                    {
-                        _updatedQueryValues.Add(de.Key, de.Value.ToString().Replace("*", "%"));
-                    }
-                    else
-                    {
-                        _updatedQueryValues.Add(de.Key, de.Value);
-                    }
-                }
-                _queryValues = _updatedQueryValues;
-#endif
                 returnVal = _cache.Search(CommandText, _queryValues);
                 if (returnVal.Count > 0)
                 {

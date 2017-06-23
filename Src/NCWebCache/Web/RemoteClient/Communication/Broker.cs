@@ -1,4 +1,4 @@
-// Copyright (c) 2015 Alachisoft
+// Copyright (c) 2017 Alachisoft
 // 
 // Licensed under the Apache License, Version 2.0 (the "License");
 // you may not use this file except in compliance with the License.
@@ -16,8 +16,6 @@ using System;
 using System.Net;
 using System.Threading;
 using System.Collections;
-using System.Xml;
-using System.IO;
 using Alachisoft.NCache.Common.Threading;
 using Alachisoft.NCache.Common;
 using Alachisoft.NCache.Common.Net;
@@ -27,22 +25,14 @@ using Alachisoft.NCache.Web.Util;
 using Alachisoft.NCache.Runtime.Exceptions;
 using Alachisoft.NCache.Web.Command;
 using Alachisoft.NCache.Web.RemoteClient.Config;
-using Alachisoft.NCache.Common.Stats;
 using Alachisoft.NCache.Web.Statistics;
 using Alachisoft.NCache.Common.Util;
 using System.Collections.Generic;
 using Alachisoft.NCache.Common.Logger;
-using System.Diagnostics;
-using System.Text;
-using Alachisoft.NCache.Web.Caching.Util;
-using Alachisoft.NCache.Web.Communication;
 using Alachisoft.NCache.Caching;
 using Alachisoft.NCache.Web.AsyncTask;
-using Alachisoft.NCache.Web.Caching;
 using Alachisoft.NCache.Runtime.Events;
-
-using Common = Alachisoft.NCache.Common;
-using Runtime = Alachisoft.NCache.Runtime;
+using Alachisoft.NCache.Common.DataStructures.Clustered;
 
 namespace Alachisoft.NCache.Web.Communication
 {
@@ -52,58 +42,34 @@ namespace Alachisoft.NCache.Web.Communication
         internal ClientConfiguration _clientConfig;
         private OnCommandRecieved _commandReieved = null;
         private OnServerLost _serverLost = null;
-
         private delegate void OnNewHashmapRecieved(NewHashmap newHashmap, int bucketSize);
-
         private OnNewHashmapRecieved _onNewHashmapRecieved = null;
-
         private delegate void OnNewSerializedMap(byte[] buffer);
-
-
         private OnNewSerializedMap _onNewSerializedMap = null;
-
         /// <summary> Object</summary>
         private byte[] _value;
-
         private ConnectionPool _pool = null;
         private Connection _connection = null;
         private long _requestId = -1;
-        private const int forcedViewId = -5;
-        private Hashtable _requestTable = null;
+        private static int forcedViewId = -5;
+        private HashVector _requestTable = null;
         internal Hashtable serverMap = null;
         private object _connectionMutex = new object();
         private ReaderWriterLock _lock = new ReaderWriterLock();
         private int _connectionMutexTimeout = Timeout.Infinite;
         private int _connectionRetries = 5;
         private int _retryInterval = 1;
-
-        internal int RetryInterval
-        {
-            get { return _retryInterval; }
-        }
-
         private int _connectionTimeout = 5000;
         private int _processID = System.Diagnostics.Process.GetCurrentProcess().Id;
-
-        private int _retryConnnectionDelay = 600000;
         private bool _retryConnection = true;
         private DateTime _retryConnectionStartTime = DateTime.Now;
-        private double _retryConnectionDelayInMinutes = 10;
-
         private string _cacheId;
         private Address _serverIP;
         private int _port;
         private int _priority = 1;
         private int _itemSizeThreshHold = 0;
-
         private int _operationTimeout = 90000; //default 90 sec.
         private Logs _logger = new Logs();
-
-        public Logs Logger
-        {
-            get { return _logger; }
-        }
-
         private bool _balanceNode;
         private bool _importHashmap = true;
         private IPAddress _nodeIP;
@@ -115,23 +81,27 @@ namespace Alachisoft.NCache.Web.Communication
         private AsyncProcessor _eventProcessor = null;
         private int _asyncProccesorThreadCount = 1;
         private bool _notifyAsync = true;
-
         private PerfStatsCollector _perfStatsColl = null;
         internal PerfStatsCollector2 _perfStatsColl2;
-
         public bool _perfStatsEnabled = false;
-
         private bool _isDisposing = false;
         private bool _connectingFirstTime = true;
         private WaitCallback _bulkEventCallback;
-
         private object _hashmapUpdateMutex = new object();
-
         private bool _isPersistEnabled = false;
         private int _persistenceInterval;
+        Latch _hashMapStatus = new Latch(HashMapStatus.UNINITIALIZE);
 
 
+        internal int RetryInterval
+        {
+            get { return _retryInterval; }
+        }
 
+        public Logs Logger
+        {
+            get { return _logger; }
+        }
 
         public bool IsPersistenceEnabled
         {
@@ -153,24 +123,19 @@ namespace Alachisoft.NCache.Web.Communication
             get { return Interlocked.Increment(ref _requestId); }
         }
 
-        public int ForcedViewId
+        public static int ForcedViewId
         {
             get { return forcedViewId; }
         }
 
         internal long ClientLastViewId
         {
-            get { return this._pool.LastViewId; }
+            get { return  this._pool.LastViewId; }
         }
 
         public int OperationTimeOut
         {
             get { return _operationTimeout; }
-        }
-
-        internal Broker(RemoteCache cache, CacheInitParams initParams, PerfStatsCollector2 statsCol)
-            : this(cache, true, statsCol, initParams)
-        {
         }
 
         public IPAddress NodeIP
@@ -185,29 +150,27 @@ namespace Alachisoft.NCache.Web.Communication
             set { _newServerPort = value; }
         }
 
-
-
-
+        internal Broker(RemoteCache cache, CacheInitParams initParams, PerfStatsCollector2 statsCol)
+            : this(cache, true, statsCol, initParams)
+        {
+        }
 
         private Broker(RemoteCache cache, bool importHashMap, PerfStatsCollector2 perfStatsColl,
             CacheInitParams initParams)
         {
             _bulkEventCallback = new WaitCallback(RaiseBulkEvent);
-            this._clientConfig = new ClientConfiguration(cache.CacheId, initParams);
-            this._cache = cache;
-            this._balanceNode = _clientConfig.BalanceNodes;
-            this._importHashmap = _clientConfig.ImportHashmap; 
-            
-            this._operationTimeout = _clientConfig.Timeout;
-            this._connectionTimeout = _clientConfig.ConnectionTimeout;
-            this._connectionRetries = _clientConfig.ConnectionRetries;
-            this._retryInterval = _clientConfig.RetryInterval;
+            _clientConfig = new ClientConfiguration(cache.CacheId, initParams);
+            _cache = cache;
+           
+            _balanceNode = _clientConfig.BalanceNodes;
+            _importHashmap = _clientConfig.ImportHashmap;
 
-            this._retryConnnectionDelay = _clientConfig.RetryConnectionDelay;
-            this._retryConnectionDelayInMinutes = Convert.ToDouble(_retryConnnectionDelay)/60000;
-                //Conversion to minutes from milliseconds;
+            _operationTimeout = _clientConfig.Timeout;
+            _connectionTimeout = _clientConfig.ConnectionTimeout;
+            _connectionRetries = _clientConfig.ConnectionRetries;
+            _retryInterval = _clientConfig.RetryInterval;
+
             _perfStatsColl2 = perfStatsColl;
-
 
             int pid = System.Diagnostics.Process.GetCurrentProcess().Id;
             string instanceName = "Client." + cache.CacheId + "." + pid;
@@ -216,12 +179,11 @@ namespace Alachisoft.NCache.Web.Communication
             {
                 _perfStatsColl = new PerfStatsCollector(instanceName, 0);
             }
+            _commandReieved = new OnCommandRecieved(CommandReceived);
+            _serverLost = new OnServerLost(ServerLost);
 
-
-            this._commandReieved = new OnCommandRecieved(CommandReceived);
-            this._serverLost = new OnServerLost(ServerLost);
-            this._requestTable = Hashtable.Synchronized(new Hashtable(10000, 0.75f));
-            this._pool = new ConnectionPool();
+            _requestTable = HashVector.Synchronized(new HashVector(10000, 0.75f));
+            _pool = new ConnectionPool();
         }
 
         // function to return the initial server and port to connect with
@@ -233,30 +195,19 @@ namespace Alachisoft.NCache.Web.Communication
                 serverInfo = _clientConfig.initParam.ServerList[0].ServerInfo;
                 return serverInfo;
             }
-            else if (_clientConfig.initParam.ServerList != null && _clientConfig.initParam.ServerList.Length > 0)
-            {
-                serverInfo = new RemoteServer(_clientConfig.initParam.ServerList[0].Name, _clientConfig.initParam.ServerList[0].Port);
-                return serverInfo;
-            }
             return serverInfo;
 
         }
 
         internal void StartServices(string cacheId, string server, int port)
         {
-            this._cacheId = cacheId;
+            _cacheId = cacheId;
 
-            if (
-                !string.IsNullOrEmpty(
-                    System.Configuration.ConfigurationSettings.AppSettings.Get(
-                        "NCacheClient.AsynchronousEventNotification")))
+            if (!string.IsNullOrEmpty(System.Configuration.ConfigurationSettings.AppSettings.Get("NCacheClient.AsynchronousEventNotification")))
             {
                 try
                 {
-                    _notifyAsync =
-                        Convert.ToBoolean(
-                            System.Configuration.ConfigurationSettings.AppSettings.Get(
-                                "NCacheClient.AsynchronousEventNotification"));
+                    _notifyAsync =Convert.ToBoolean(System.Configuration.ConfigurationSettings.AppSettings.Get("NCacheClient.AsynchronousEventNotification"));
                 }
                 catch (Exception ex)
                 {
@@ -265,22 +216,15 @@ namespace Alachisoft.NCache.Web.Communication
 
                 if (!_notifyAsync)
                 {
-                    if (
-                        !string.IsNullOrEmpty(
-                            System.Configuration.ConfigurationSettings.AppSettings.Get(
-                                "NCacheClient.NumberofEventProccesingThreads")))
+                    if (!string.IsNullOrEmpty(System.Configuration.ConfigurationSettings.AppSettings.Get("NCacheClient.NumberofEventProccesingThreads")))
                     {
                         try
                         {
-                            _asyncProccesorThreadCount =
-                                Convert.ToInt32(
-                                    System.Configuration.ConfigurationSettings.AppSettings.Get(
-                                        "NCacheClient.NumberofEventProccesingThreads"));
+                            _asyncProccesorThreadCount =Convert.ToInt32(System.Configuration.ConfigurationSettings.AppSettings.Get("NCacheClient.NumberofEventProccesingThreads"));
                         }
                         catch (Exception e)
                         {
-                            throw new Exception(
-                                "Invalid value specified for NCacheClient.NumberofEventProccesingThreads.");
+                            throw new Exception("Invalid value specified for NCacheClient.NumberofEventProccesingThreads.");
                         }
                     }
 
@@ -341,8 +285,7 @@ namespace Alachisoft.NCache.Web.Communication
             if (conTimeout > 0) _connectionMutexTimeout = conTimeout;
             if (_operationTimeout < 60000) _operationTimeout = 60000; //minimum timeout is 60 seconds.
 
-            _connection = new Connection(_commandReieved, _serverLost, _logger, _perfStatsColl, _responseIntegrator,
-                _clientConfig.BindIP);
+            _connection = new Connection(this, _commandReieved, _serverLost, _logger, _perfStatsColl, _responseIntegrator, _clientConfig.BindIP, this._cacheId);
 
             RemoteServer remoteServer = new RemoteServer(server, port);
 
@@ -354,6 +297,9 @@ namespace Alachisoft.NCache.Web.Communication
             if (remoteServer.IP != null)
             {
                 remoteServer.IsUserProvided = true;
+
+
+                _clientConfig.AddServer(remoteServer);
 
                 try
                 {
@@ -384,12 +330,12 @@ namespace Alachisoft.NCache.Web.Communication
 
         private void InitializeLogs(bool enable_logs, bool detailed_logs)
         {
-
-            if (enable_logs || detailed_logs)
+            if (enable_logs)
             {
                 Logs localLogger = new Logs();
-                localLogger.IsDetailedLogsEnabled = detailed_logs;
                 localLogger.IsErrorLogsEnabled = enable_logs;
+                if(localLogger.IsErrorLogsEnabled)
+                    localLogger.IsDetailedLogsEnabled = detailed_logs;
 
                 int pid = System.Diagnostics.Process.GetCurrentProcess().Id;
                 localLogger.NCacheLog = new NCacheLogger();
@@ -398,7 +344,7 @@ namespace Alachisoft.NCache.Web.Communication
                     localLogger.NCacheLog.SetLevel("all");
                 else
                 {
-                    localLogger.NCacheLog.SetLevel("info");
+                    localLogger.NCacheLog.SetLevel("criticalinfo");
                 }
 
                 localLogger.NCacheLog.Info("Broker.InitializeLogs", "PID :" + pid + " ClientID : " + _cache.ClientID);
@@ -415,46 +361,46 @@ namespace Alachisoft.NCache.Web.Communication
         }
 
 
-        private Alachisoft.NCache.Persistence.EventType ConvertEventType(
-            Alachisoft.NCache.Common.Protobuf.EventInfo.EventType protoEventType)
+        private Persistence.EventType ConvertEventType( Common.Protobuf.EventInfo.EventType protoEventType)
         {
             switch (protoEventType)
             {
 
                 case Common.Protobuf.EventInfo.EventType.CQ_CALLBACK:
-                    return Alachisoft.NCache.Persistence.EventType.CQ_CALLBACK;
+                    return Persistence.EventType.CQ_CALLBACK;
 
                 case Common.Protobuf.EventInfo.EventType.ITEM_REMOVED_CALLBACK:
-                    return Alachisoft.NCache.Persistence.EventType.ITEM_REMOVED_CALLBACK;
+                    return Persistence.EventType.ITEM_REMOVED_CALLBACK;
 
                 case Common.Protobuf.EventInfo.EventType.ITEM_UPDATED_CALLBACK:
-                    return Alachisoft.NCache.Persistence.EventType.ITEM_UPDATED_CALLBACK;
+                    return Persistence.EventType.ITEM_UPDATED_CALLBACK;
 
             }
-            return Alachisoft.NCache.Persistence.EventType.ITEM_UPDATED_CALLBACK;
+            return Persistence.EventType.ITEM_UPDATED_CALLBACK;
         }
 
         internal void InitializeCache(Connection connection, IPAddress address, int port, bool balanceNodes)
         {
-
            
-            InitCommand command = new InitCommand(_cache.ClientID, _cacheId, connection.GetClientLocalIP());
+            InitCommand command = new InitCommand(_cache.ClientID, _cacheId);
+           
             Request request = new Request(false, _operationTimeout);
             request.AddCommand(connection.ServerAddress, command);
             ExecuteRequest(request, connection, false, false);
-            CommandResponse res = connection.RecieveCommandResponse();
+           
+            CommandResponse res = connection.RecieveCommandResponse();                       
 
             switch (res.CacheType)
             {
                 case "partitioned-server":
-                    this._balanceNode = false;
+                    _balanceNode = false;
                     break;
                 case "local-cache":
-                    this._balanceNode = false;
-                    this._importHashmap = false;
+                    _balanceNode = false;
+                    _importHashmap = false;
                     break;
                 case "replicated-server":
-                    this._importHashmap = false;
+                    _importHashmap = false;
                     break;
             }
             lock (_requestTable.SyncRoot)
@@ -477,10 +423,7 @@ namespace Alachisoft.NCache.Web.Communication
             request.AddCommand(ipAddress, command);
 
             ExecuteRequest(request, connection, true, true);
-
-          
             CommandResponse res = request.Response;
-
             InitializeLogs(res.EnableErrorLogs, res.EnableDetailedLogs);
         }
 
@@ -490,14 +433,6 @@ namespace Alachisoft.NCache.Web.Communication
             InitSecondarySocketCommand command = new InitSecondarySocketCommand(_cache.ClientID);
             DoSendCommand(connection, command, false);
             CommandResponse res = connection.RecieveCommandResponse(connection.SecondaryClientSocket);
-            lock (_requestTable.SyncRoot)
-            {
-                _requestTable.Remove(command.RequestId);
-            }
-
-            if (_perfStatsColl2 != null) _perfStatsColl2.DecrementRequestQueueSizeStats();
-
-
             if (res != null) res.ParseResponse();
         }
 
@@ -508,7 +443,6 @@ namespace Alachisoft.NCache.Web.Communication
 
         internal void GetHashmap(Connection connection)
         {
-
             GetHashmapCommand command = new GetHashmapCommand();
             Request request = new Request(false, _operationTimeout);
             Address ipAddress = connection == null ? _connection.ServerAddress : connection.ServerAddress;
@@ -529,19 +463,17 @@ namespace Alachisoft.NCache.Web.Communication
 
                 try
                 {
-                    if (this._processor != null) this._processor.Stop();
+                    if (_processor != null) _processor.Stop();
                 }
                 catch (ThreadAbortException)
                 {
                 }
-
-                this._importHashmap = false;
+                _importHashmap = false;
                 return;
             }
-            if (this._onNewHashmapRecieved == null)
-                this._onNewHashmapRecieved = new OnNewHashmapRecieved(NewHashmapRecieved);
-            this._onNewHashmapRecieved.BeginInvoke(hashmap, res.BucketSize,
-                new AsyncCallback(NewHashmapRecievedCompleted), null);
+            if (_onNewHashmapRecieved == null)
+                _onNewHashmapRecieved = new OnNewHashmapRecieved(NewHashmapRecieved);
+            _onNewHashmapRecieved.BeginInvoke(hashmap, res.BucketSize, new AsyncCallback(NewHashmapRecievedCompleted), null);
 
         }
 
@@ -572,10 +504,33 @@ namespace Alachisoft.NCache.Web.Communication
             {
                 lock (_hashmapUpdateMutex)
                 {
-                    return _pool.FullyDisConnnected;
+                    if (_pool.FullyDisConnnected)
+                    {
+                        if (_pool.Connections != null)
+                        {
+                            try
+                            {
+                                //as pool is fully disconnected,let's start reconnection task
+                                foreach (Connection connection in _pool.Connections.Values)
+                                {
+                                    if (connection != null && !connection.IsReconnecting)
+                                    {
+                                        this._processor.Enqueue(new ReconnectTask(this, connection));
+                                    }
+                                }
+                            }
+                            catch (Exception)
+                            {
+                                //enumeration exception can occur
+                            }
+                        }
+                        return true;
+                    }
                 }
+                return false;
             }
         }
+
 
         internal bool ImportHashmap
         {
@@ -614,21 +569,19 @@ namespace Alachisoft.NCache.Web.Communication
             ProcessResponse(result, serverAddress);
         }
 
-        private void ProcessResponse(CommandResponse response, Address remoteServerAddress)
+        internal void ProcessResponse(CommandResponse response, Address remoteServerAddress)
         {
             CommandBase command = null;
             Request request = null;
-
             lock (_requestTable.SyncRoot)
             {
                 request = (Request) _requestTable[response.RequestId];
                 if (request != null)
                 {
-                    //The async Add/Insert/Remove complete events need to verify the command type to raise events specific to a commmand
                     try
                     {
                         if (request.Commands.Count > 0)
-                            command = (CommandBase) request.Commands[remoteServerAddress];
+                            command = request.Commands[remoteServerAddress];
                     }
                     catch (Exception ex)
                     {
@@ -641,41 +594,44 @@ namespace Alachisoft.NCache.Web.Communication
 
             switch (response.Type)
             {
-                case Alachisoft.NCache.Common.Protobuf.Response.Type.INIT:
-                case Alachisoft.NCache.Common.Protobuf.Response.Type.ADD:
-                case Alachisoft.NCache.Common.Protobuf.Response.Type.REMOVE:
-                case Alachisoft.NCache.Common.Protobuf.Response.Type.GET:
-                case Alachisoft.NCache.Common.Protobuf.Response.Type.INSERT:
-                case Alachisoft.NCache.Common.Protobuf.Response.Type.CLEAR:
-                case Alachisoft.NCache.Common.Protobuf.Response.Type.COUNT:
-                case Alachisoft.NCache.Common.Protobuf.Response.Type.REGISTER_NOTIF:
-                case Alachisoft.NCache.Common.Protobuf.Response.Type.GET_ENUMERATOR:
-                case Alachisoft.NCache.Common.Protobuf.Response.Type.ADD_BULK:
-                case Alachisoft.NCache.Common.Protobuf.Response.Type.INSERT_BULK:
-                case Alachisoft.NCache.Common.Protobuf.Response.Type.GET_OPTIMAL_SERVER:
-                case Alachisoft.NCache.Common.Protobuf.Response.Type.GET_BULK:
-                case Alachisoft.NCache.Common.Protobuf.Response.Type.REMOVE_BULK:
-                case Alachisoft.NCache.Common.Protobuf.Response.Type.CONTAINS:
-                case Alachisoft.NCache.Common.Protobuf.Response.Type.GET_CACHE_ITEM:
-                case Alachisoft.NCache.Common.Protobuf.Response.Type.SEARCH:
-                case Alachisoft.NCache.Common.Protobuf.Response.Type.SEARCH_ENTRIES:
-                case Alachisoft.NCache.Common.Protobuf.Response.Type.REGISTER_KEY_NOTIF:
-                case Alachisoft.NCache.Common.Protobuf.Response.Type.REGISTER_BULK_KEY_NOTIF:
-                case Alachisoft.NCache.Common.Protobuf.Response.Type.UNREGISTER_KEY_NOTIF:
-                case Alachisoft.NCache.Common.Protobuf.Response.Type.UNREGISTER_BULK_KEY_NOTIF:
-                case Alachisoft.NCache.Common.Protobuf.Response.Type.GET_TYPEINFO_MAP:
-                case Alachisoft.NCache.Common.Protobuf.Response.Type.GET_HASHMAP:
-                case Alachisoft.NCache.Common.Protobuf.Response.Type.UNLOCK:
-                case Alachisoft.NCache.Common.Protobuf.Response.Type.LOCK:
-                case Alachisoft.NCache.Common.Protobuf.Response.Type.ISLOCKED:
-                case Alachisoft.NCache.Common.Protobuf.Response.Type.GET_LOGGING_INFO:
-                case Alachisoft.NCache.Common.Protobuf.Response.Type.DISPOSE:
-                case Alachisoft.NCache.Common.Protobuf.Response.Type.DELETE:
-                case Alachisoft.NCache.Common.Protobuf.Response.Type.DELETE_BULK:
-                case Alachisoft.NCache.Common.Protobuf.Response.Type.EXCEPTION:
-                case Alachisoft.NCache.Common.Protobuf.Response.Type.GET_NEXT_CHUNK:
-                case Alachisoft.NCache.Common.Protobuf.Response.Type.ADD_ATTRIBUTE:
-                case Alachisoft.NCache.Common.Protobuf.Response.Type.GET_SERVER_MAPPING:
+                case Common.Protobuf.Response.Type.INIT:
+                case Common.Protobuf.Response.Type.ADD:
+                case Common.Protobuf.Response.Type.REMOVE:
+                case Common.Protobuf.Response.Type.GET:
+                case Common.Protobuf.Response.Type.INSERT:
+                case Common.Protobuf.Response.Type.CLEAR:
+                case Common.Protobuf.Response.Type.COUNT:
+                case Common.Protobuf.Response.Type.REGISTER_NOTIF:
+                case Common.Protobuf.Response.Type.GET_ENUMERATOR:
+                case Common.Protobuf.Response.Type.ADD_BULK:
+                case Common.Protobuf.Response.Type.INSERT_BULK:
+                case Common.Protobuf.Response.Type.GET_OPTIMAL_SERVER:
+                case Common.Protobuf.Response.Type.GET_BULK:
+                case Common.Protobuf.Response.Type.REMOVE_BULK:
+                case Common.Protobuf.Response.Type.CONTAINS:
+                case Common.Protobuf.Response.Type.GET_CACHE_ITEM:
+                case Common.Protobuf.Response.Type.SEARCH:
+                case Common.Protobuf.Response.Type.SEARCH_ENTRIES:
+                case Common.Protobuf.Response.Type.REGISTER_KEY_NOTIF:
+                case Common.Protobuf.Response.Type.REGISTER_BULK_KEY_NOTIF:
+                case Common.Protobuf.Response.Type.UNREGISTER_KEY_NOTIF:
+                case Common.Protobuf.Response.Type.UNREGISTER_BULK_KEY_NOTIF:
+                case Common.Protobuf.Response.Type.GET_TYPEINFO_MAP:
+                case Common.Protobuf.Response.Type.GET_HASHMAP:
+                case Common.Protobuf.Response.Type.UNLOCK:
+                case Common.Protobuf.Response.Type.LOCK:
+                case Common.Protobuf.Response.Type.ISLOCKED:
+                case Common.Protobuf.Response.Type.GET_LOGGING_INFO:
+                case Common.Protobuf.Response.Type.DISPOSE:
+                case Common.Protobuf.Response.Type.DELETE:
+                case Common.Protobuf.Response.Type.DELETE_BULK:
+                case Common.Protobuf.Response.Type.EXCEPTION:
+                case Common.Protobuf.Response.Type.GET_NEXT_CHUNK:
+                case Common.Protobuf.Response.Type.ADD_ATTRIBUTE:
+                case Common.Protobuf.Response.Type.GET_SERVER_MAPPING:
+                case Common.Protobuf.Response.Type.EXECUTE_READER:
+                case Common.Protobuf.Response.Type.DISPOSE_READER:
+                case Common.Protobuf.Response.Type.GET_READER_CHUNK:
                     
                     if (request == null)
                         return;
@@ -686,28 +642,25 @@ namespace Alachisoft.NCache.Web.Communication
                         Monitor.PulseAll(request);
                     }
                     if (_logger.IsDetailedLogsEnabled)
-                        _logger.NCacheLog.Debug("Broker.ProcessResponse",
-                            "RequestID : " + request.RequestId + " " + request.Name + " received response from server " +
-                            remoteServerAddress + ". Seq # " + response.SequenceId);
+                        _logger.NCacheLog.Debug("Broker.ProcessResponse", "RequestID : " + request.RequestId + " " + request.Name + " received response from server " + remoteServerAddress + ". Seq # " + response.SequenceId);
                     break;
 
-                case Alachisoft.NCache.Common.Protobuf.Response.Type.ITEM_REMOVED_CALLBACK:
+                case Common.Protobuf.Response.Type.ITEM_REMOVED_CALLBACK:
                     if (_cache != null && _cache.AsyncEventHandler != null)
                     {
-                        _cache.EventListener.OnCustomRemoveCallback(response.CallbackId, response.Key, response.Value,
-                            response.Reason, response.FlagValueEntry.Flag, true, null, response.DataFilter);
+                        _cache.EventListener.OnCustomRemoveCallback(response.CallbackId, response.Key, response.Value, response.Reason, response.FlagValueEntry.Flag, true, null, response.DataFilter);
                     }
                     break;
 
-                case Alachisoft.NCache.Common.Protobuf.Response.Type.NODE_JOINED_EVENT:
+                case Common.Protobuf.Response.Type.NODE_JOINED_EVENT:
                     ThreadPool.QueueUserWorkItem(new WaitCallback(StartBalancingClients), response);
                     break;
 
-                case Alachisoft.NCache.Common.Protobuf.Response.Type.HASHMAP_CHANGED_EVENT:
+                case Common.Protobuf.Response.Type.HASHMAP_CHANGED_EVENT:
                     ThreadPool.QueueUserWorkItem(new WaitCallback(UpdateHashmapAsync), response.Value);
                     break;
 
-                case Alachisoft.NCache.Common.Protobuf.Response.Type.NODE_LEFT_EVENT:
+                case Common.Protobuf.Response.Type.NODE_LEFT_EVENT:
                     RemoteServer serverLeft = new RemoteServer();
 
                     if (response.ServerPort > 0)
@@ -717,16 +670,18 @@ namespace Alachisoft.NCache.Web.Communication
                         serverLeft = rm;
                         _clientConfig.RemoveServer(serverLeft);
                     }
+                    if (_importHashmap)
+                        _cache.InvalidateReaders(response.ServerIPAddress.ToString());
                     break;
 
-                case Alachisoft.NCache.Common.Protobuf.Response.Type.ITEM_UPDATED_CALLBACK:
+                case Common.Protobuf.Response.Type.ITEM_UPDATED_CALLBACK:
                     if (_cache != null && _cache.AsyncEventHandler != null)
                     {
                         _cache.EventListener.OnCustomUpdateCallback(response.CallbackId, response.Key, true, null, null, null, response.DataFilter);
                     }
                     break;
 
-                case Alachisoft.NCache.Common.Protobuf.Response.Type.BULK_EVENT:
+                case Common.Protobuf.Response.Type.BULK_EVENT:
                     if (response.EventList.Count > 0)
                     {
                         ThreadPool.QueueUserWorkItem(_bulkEventCallback, new object[] {remoteServerAddress, response.EventList});
@@ -746,16 +701,15 @@ namespace Alachisoft.NCache.Web.Communication
         {
             try
             {
-                Alachisoft.NCache.Caching.EventId eventId;
+                EventId eventId;
                 Address remoteServerAddress = null;
                 if (arg == null || ((object[]) arg).Length != 2) return;
                 remoteServerAddress = ((object[]) arg)[0] as Address;
-                List<Alachisoft.NCache.Common.Protobuf.BulkEventItemResponse> bulkEvents =
-                    ((object[]) arg)[1] as List<Alachisoft.NCache.Common.Protobuf.BulkEventItemResponse>;
+                List<Common.Protobuf.BulkEventItemResponse> bulkEvents = ((object[]) arg)[1] as List<Common.Protobuf.BulkEventItemResponse>;
 
                 if (bulkEvents == null) return;
 
-                foreach (Alachisoft.NCache.Common.Protobuf.BulkEventItemResponse eventItem in bulkEvents)
+                foreach (Common.Protobuf.BulkEventItemResponse eventItem in bulkEvents)
                 {
                     try
                     {
@@ -764,12 +718,10 @@ namespace Alachisoft.NCache.Web.Communication
                             _perfStatsColl2.IncrementEventsTriggeredPerSeconds();
                         }
 
-                        eventId = new Alachisoft.NCache.Caching.EventId();
+                        eventId = new EventId();
 
                         switch (eventItem.eventType)
                         {
-
-
 
                             case Common.Protobuf.BulkEventItemResponse.EventType.ITEM_UPDATED_CALLBACK:
                             {
@@ -780,73 +732,51 @@ namespace Alachisoft.NCache.Web.Communication
 
                                 BitSet flag = new BitSet((byte) eventItem.ItemUpdatedCallback.flag);
 
-                                EventCacheItem item =
-                                    EventUtil.ConvertToEventEntry(eventItem.ItemUpdatedCallback.eventId.item);
-                                EventCacheItem oldItem =
-                                    EventUtil.ConvertToEventEntry(eventItem.ItemUpdatedCallback.eventId.oldItem);
+                                    EventCacheItem item = EventUtil.ConvertToEventEntry(eventItem.ItemUpdatedCallback.eventId.item);
+                                    EventCacheItem oldItem = EventUtil.ConvertToEventEntry(eventItem.ItemUpdatedCallback.eventId.oldItem);
 
-                                if (_notifyAsync)
-                                {
-                                    if (_cache != null && _cache.AsyncEventHandler != null)
+                                    if (_notifyAsync)
                                     {
-                                        _cache.EventListener.OnCustomUpdateCallback(
-                                            (Int16) eventItem.ItemUpdatedCallback.callbackId,
-                                            eventItem.ItemUpdatedCallback.key, _notifyAsync, item, oldItem, flag,
-                                            (EventDataFilter) eventItem.ItemUpdatedCallback.dataFilter);
+                                        if (_cache != null && _cache.AsyncEventHandler != null)
+                                        {
+                                            _cache.EventListener.OnCustomUpdateCallback((Int16)eventItem.ItemUpdatedCallback.callbackId, eventItem.ItemUpdatedCallback.key, _notifyAsync, item, oldItem, flag, (EventDataFilter)eventItem.ItemUpdatedCallback.dataFilter);
+                                        }
                                     }
+                                    else
+                                        _eventProcessor.Enqueue(new ItemUpdateCallbackTask(this, eventItem.ItemUpdatedCallback.key, (Int16)eventItem.ItemUpdatedCallback.callbackId, _notifyAsync, item, oldItem, flag, (EventDataFilter)eventItem.ItemUpdatedCallback.dataFilter));
                                 }
-                                else
-                                    _eventProcessor.Enqueue(new ItemUpdateCallbackTask(this,
-                                        eventItem.ItemUpdatedCallback.key,
-                                        (Int16) eventItem.ItemUpdatedCallback.callbackId, _notifyAsync, item, oldItem,
-                                        flag, (EventDataFilter) eventItem.ItemUpdatedCallback.dataFilter));
-                            }
                                 break;
 
                             case Common.Protobuf.BulkEventItemResponse.EventType.ITEM_REMOVED_CALLBACK:
-                            {
-                                CompressedValueEntry flagValueEntry = new CompressedValueEntry();
-                                flagValueEntry.Flag = new BitSet((byte) eventItem.itemRemoveCallback.flag);
-
-                                EventCacheItem item =
-                                    EventUtil.ConvertToEventEntry(eventItem.itemRemoveCallback.eventId.item);
-                                byte[] value = null;
-                                if (item != null && eventItem.itemRemoveCallback.value != null &&
-                                    eventItem.itemRemoveCallback.value.Count > 0)
                                 {
-                                    UserBinaryObject ubObject =
-                                        UserBinaryObject.CreateUserBinaryObject(
-                                            eventItem.itemRemoveCallback.value.ToArray());
-                                    value = ubObject.GetFullObject();
-                                    if (item != null)
+                                    CompressedValueEntry flagValueEntry = new CompressedValueEntry();
+                                    flagValueEntry.Flag = new BitSet((byte)eventItem.itemRemoveCallback.flag);
+
+                                    EventCacheItem item = EventUtil.ConvertToEventEntry(eventItem.itemRemoveCallback.eventId.item);
+                                    byte[] value = null;
+                                    if (item != null && eventItem.itemRemoveCallback.value != null && eventItem.itemRemoveCallback.value.Count > 0)
                                     {
-                                        item.Value = value;
+                                        UserBinaryObject ubObject = UserBinaryObject.CreateUserBinaryObject(eventItem.itemRemoveCallback.value.ToArray());
+                                        value = ubObject.GetFullObject();
+                                        if (item != null)
+                                        {
+                                            item.Value = value;
+                                        }
                                     }
-                                }
 
-                                eventId.EventUniqueID = eventItem.itemRemoveCallback.eventId.eventUniqueId;
-                                eventId.EventCounter = eventItem.itemRemoveCallback.eventId.eventCounter;
-                                eventId.OperationCounter = eventItem.itemRemoveCallback.eventId.operationCounter;
-                                eventId.EventType = NCache.Persistence.EventType.ITEM_REMOVED_CALLBACK;
+                                    eventId.EventUniqueID = eventItem.itemRemoveCallback.eventId.eventUniqueId;
+                                    eventId.EventCounter = eventItem.itemRemoveCallback.eventId.eventCounter;
+                                    eventId.OperationCounter = eventItem.itemRemoveCallback.eventId.operationCounter;
+                                    eventId.EventType = NCache.Persistence.EventType.ITEM_REMOVED_CALLBACK;
 
-                                if (_notifyAsync)
-                                {
-                                    if (_cache != null && _cache.AsyncEventHandler != null)
-                                        _cache.EventListener.OnCustomRemoveCallback(
-                                            (Int16) eventItem.itemRemoveCallback.callbackId,
-                                            eventItem.itemRemoveCallback.key, value,
-                                            (CacheItemRemovedReason) eventItem.itemRemoveCallback.itemRemoveReason,
-                                            flagValueEntry.Flag, _notifyAsync, item,
-                                            (EventDataFilter) eventItem.itemRemoveCallback.dataFilter);
+                                    if (_notifyAsync)
+                                    {
+                                        if (_cache != null && _cache.AsyncEventHandler != null)
+                                            _cache.EventListener.OnCustomRemoveCallback((Int16)eventItem.itemRemoveCallback.callbackId, eventItem.itemRemoveCallback.key, value, (CacheItemRemovedReason)eventItem.itemRemoveCallback.itemRemoveReason, flagValueEntry.Flag, _notifyAsync, item, (EventDataFilter)eventItem.itemRemoveCallback.dataFilter);
+                                    }
+                                    else
+                                        _eventProcessor.Enqueue(new ItemRemoveCallBackTask(this, eventItem.itemRemoveCallback.key, (Int16)eventItem.itemRemoveCallback.callbackId, value, (CacheItemRemovedReason)eventItem.itemRemoveCallback.itemRemoveReason, flagValueEntry.Flag, _notifyAsync, item, (EventDataFilter)eventItem.itemRemoveCallback.dataFilter));
                                 }
-                                else
-                                    _eventProcessor.Enqueue(new ItemRemoveCallBackTask(this,
-                                        eventItem.itemRemoveCallback.key,
-                                        (Int16) eventItem.itemRemoveCallback.callbackId, value,
-                                        (CacheItemRemovedReason) eventItem.itemRemoveCallback.itemRemoveReason,
-                                        flagValueEntry.Flag, _notifyAsync, item,
-                                        (EventDataFilter) eventItem.itemRemoveCallback.dataFilter));
-                            }
                                 break;
 
                         }
@@ -854,9 +784,7 @@ namespace Alachisoft.NCache.Web.Communication
                     catch (Exception ex)
                     {
                         if (_logger.IsErrorLogsEnabled)
-                            _logger.NCacheLog.Error("Broker.RaiseBulkEvent",
-                                "An error occured while raising bulk event of type : " + eventItem.eventType +
-                                ". Error :" + ex.ToString());
+                            _logger.NCacheLog.Error("Broker.RaiseBulkEvent", "An error occurred while raising bulk event of type : " + eventItem.eventType + ". Error :" + ex.ToString());
                     }
                 }
             }
@@ -870,13 +798,9 @@ namespace Alachisoft.NCache.Web.Communication
             byte[] serializedMap = state as byte[];
             try
             {
-
                 if (serializedMap != null)
                 {
-
                     NewHashmap map = NewHashmap.Deserialize(serializedMap, this._cacheId);
-
-                   
                     NewHashmapRecieved(map);
                 }
 
@@ -886,8 +810,7 @@ namespace Alachisoft.NCache.Web.Communication
                 try
                 {
                     if (_logger.IsErrorLogsEnabled)
-                        _logger.NCacheLog.Error("Broker.UpdateHashmapAsync",
-                            "An error occured while installing updated hashmap. Error :" + e.ToString());
+                        _logger.NCacheLog.Error("Broker.UpdateHashmapAsync", "An error occurred while installing updated hashmap. Error :" + e.ToString());
                 }
                 catch (Exception)
                 {
@@ -917,12 +840,9 @@ namespace Alachisoft.NCache.Web.Communication
         {
             try
             {
-               
-
+                Address clusterAddress = null;
+                Address serverAddress = null;
                 CommandResponse response = (CommandResponse)state;
-                
-                //Copied entire logic from ProcessResponse->Node_Joined_Event to this method because of Azure Common Client.
-                                
                 RemoteServer newServerJoined = new RemoteServer();
 
                 if (response.ServerPort > 0)
@@ -942,17 +862,21 @@ namespace Alachisoft.NCache.Web.Communication
                     _clientConfig.AddServer(newServerJoined);
                 }
 
+                clusterAddress = new Address(newServerJoined.IP, newServerJoined.Port);
+                serverAddress = new Address(newServerJoined.IP, newServerJoined.Port);
+                NodeIP = serverAddress.IpAddress;
+                NewServerPort = serverAddress.Port;
+
                 if (response.ReconnectClients && _clientConfig.BalanceNodes)
                 {
                     bool isReleaseLock = false;
                     try
                     {
-                        
                         this._lock.AcquireWriterLock(Timeout.Infinite);
                         isReleaseLock = true;
 
                         this._connection.StatusLatch.SetStatusBit(ConnectionStatus.Connecting | ConnectionStatus.LoadBalance, ConnectionStatus.Connected | ConnectionStatus.Disconnected);
-                        int totalTimeToWait = _operationTimeout; //_clientConfig.ResponseWaitTime;
+                        int totalTimeToWait = _operationTimeout; 
                         int timeSlice = 2000;
                         int nextInterval = NextWaitInterval(ref totalTimeToWait, timeSlice);
 
@@ -1008,10 +932,7 @@ namespace Alachisoft.NCache.Web.Communication
         /// <param name="buffer"></param>
         private void NewSerializedMapRecieved(byte[] buffer)
         {
-
-
             this.NewHashmapRecieved(NewHashmap.Deserialize(buffer, this._cacheId));
-
         }
 
         /// <summary>
@@ -1040,7 +961,7 @@ namespace Alachisoft.NCache.Web.Communication
         {
             if (newHashmap == null)
             {
-                _logger.NCacheLog.CriticalInfo("Broker.NewHashmapReceived", "Hashmap is null... returning");
+                if (_logger.IsErrorLogsEnabled) _logger.NCacheLog.CriticalInfo("Broker.NewHashmapReceived", "Hashmap is null... returning");
                 return;
             }
 
@@ -1048,7 +969,6 @@ namespace Alachisoft.NCache.Web.Communication
             {
                 try
                 {
-
                     if (_logger.IsDetailedLogsEnabled)
                     {
                         _logger.NCacheLog.Debug("Broker.NewHashmapReceived", "Hashmap " + newHashmap.ToString());
@@ -1058,9 +978,8 @@ namespace Alachisoft.NCache.Web.Communication
 
                     if (newHashmap.LastViewId == this._pool.LastViewId)
                     {
-                        _logger.NCacheLog.CriticalInfo("Broker.NewHashmapReceived",
-                            "Hashmap is same as current pool. Pool " + this._pool.ToString() + " New Hashmap " +
-                            newHashmap.ToString() + " ... returning");
+                        if (_logger != null && _logger.NCacheLog != null)
+                            _logger.NCacheLog.CriticalInfo("Broker.NewHashmapReceived", "Hashmap is same as current pool. Pool " + this._pool.ToString() + " New Hashmap " + newHashmap.ToString() + " ... returning");
                         return;
                     }
 
@@ -1074,7 +993,7 @@ namespace Alachisoft.NCache.Web.Communication
 
                         int serverPort = this._port;
 
-                       
+                        // Azure remote client task
                         if (_clientConfig.IPMappingConfigured)
                         {
                             RemoteServer server = _clientConfig.GetMappedServer(ip, serverPort);
@@ -1082,7 +1001,6 @@ namespace Alachisoft.NCache.Web.Communication
                             serverPort = server.Port;
                             newHashmap.Members[i] = ip + ":" + serverPort.ToString();
                         }
-
 
                         Address addr = new Address(ip, serverPort);
 
@@ -1092,9 +1010,8 @@ namespace Alachisoft.NCache.Web.Communication
                             {
                                 IPAddress address = IPAddress.Parse(ip);
 
-                                Connection connection = new Connection(this._commandReieved, this._serverLost,
-                                    this._logger, _perfStatsColl, _responseIntegrator, _clientConfig.BindIP);
-
+                                Connection connection = new Connection(this, this._commandReieved, this._serverLost, this._logger, _perfStatsColl, _responseIntegrator, _clientConfig.BindIP, _cacheId);
+                                
                                 Exception exception = null;
 
                                 if (ConnectRemoteServer(connection, address, serverPort, false, false, false, ref exception))
@@ -1102,15 +1019,13 @@ namespace Alachisoft.NCache.Web.Communication
                                     this._pool.Add(addr, connection);
                                     this._clientConfig.AddServer(new RemoteServer(address, serverPort));
                                     if (_logger.IsDetailedLogsEnabled)
-                                        _logger.NCacheLog.Debug("Broker.NewHashmapRecieved",
-                                            "Connection made to " + ip + ", and added to pool");
+                                        _logger.NCacheLog.Debug("Broker.NewHashmapRecieved", "Connection made to " + ip + ", and added to pool");
                                 }
                                 else
                                 {
                                     if (exception != null && _logger.IsErrorLogsEnabled)
                                     {
-                                        _logger.NCacheLog.Error("Broker.NewHashmapRecieved",
-                                            "Could not connect to " + ip + ". " + exception.ToString());
+                                        _logger.NCacheLog.Error("Broker.NewHashmapRecieved", "Could not connect to " + ip + ". " + exception.ToString());
                                     }
                                 }
                             }
@@ -1129,8 +1044,7 @@ namespace Alachisoft.NCache.Web.Communication
                             {
                                 if (_logger.IsDetailedLogsEnabled)
                                 {
-                                    _logger.NCacheLog.Debug("Broker.NewHashmapRecieved",
-                                        "Not connected to " + ip + " in the pool");
+                                    _logger.NCacheLog.Debug("Broker.NewHashmapRecieved", "Not connected to " + ip + " in the pool");
                                 }
                                 try
                                 {
@@ -1164,9 +1078,7 @@ namespace Alachisoft.NCache.Web.Communication
 
                             if (_clientConfig.IPMappingConfigured)
                             {
-                                if (
-                                    !newHashmap.Members.Contains(ipAddress.IpAddress.ToString() + ":" +
-                                                                 ipAddress.Port.ToString()))
+                                if (!newHashmap.Members.Contains(ipAddress.IpAddress.ToString() + ":" +ipAddress.Port.ToString()))
                                 {
                                     invalidIPConnection.Add(ipAddress);
                                 }
@@ -1186,44 +1098,33 @@ namespace Alachisoft.NCache.Web.Communication
                             this._pool.Remove(ip);
                             if (_logger.IsDetailedLogsEnabled)
                             {
-                                _logger.NCacheLog.Debug("Broker.NewHashmapRecieved",
-                                    "Disconnected from " + ip + ", and removed from pool");
+                                _logger.NCacheLog.Debug("Broker.NewHashmapRecieved", "Disconnected from " + ip + ", and removed from pool");
                             }
                         }
                     }
-
-
-
                     RemoteServer srvr = new RemoteServer();
                     string add = null;
                     for (int key = 0; key < newHashmap.Map.Count; key++)
                     {
                         add = (string) newHashmap.Map[key];
-
-
                         srvr = _clientConfig.GetMappedServer(add, this._port);
                         newHashmap.Map[key] = new Address(srvr.Name, srvr.Port);
 
                     }
 
-
                     this._pool.SetHashmap(newHashmap);
 
                     if (_logger.IsDetailedLogsEnabled)
                     {
-                        _logger.NCacheLog.Debug("Broker.NewHashmapReceived",
-                            "Hashmap applied " + newHashmap.ToString() + " Pool " + this._pool.ToString());
+                        _logger.NCacheLog.Debug("Broker.NewHashmapReceived", "Hashmap applied " + newHashmap.ToString() + " Pool " + this._pool.ToString());
                     }
-
-
                 }
                 catch (Exception exc)
                 {
                     if (_logger.IsErrorLogsEnabled) _logger.NCacheLog.Error("Broker.NewHashmapRecieved", exc.Message);
                 }
+                _hashMapStatus.SetStatusBit(HashMapStatus.INITIALIZE, HashMapStatus.UNINITIALIZE);
             }
-
-
         }
 
         /// <summary>
@@ -1261,57 +1162,43 @@ namespace Alachisoft.NCache.Web.Communication
             }
         }
 
-
-
-        internal bool GetKeysDistributionMap(string[] keys, CacheItem[] items,
-            ref Dictionary<Address, KeyValuePair<string[], CacheItem[]>> keysDistributionMap)
+        internal bool GetKeysDistributionMap(string[] keys, CacheItem[] items,ref Dictionary<Address, KeyValuePair<string[], CacheItem[]>> keysDistributionMap)
         {
-            bool itemNull = false;
-            bool AddNull = false;
-            bool pairKey = false;
-            bool pairvalue = false;
-            bool result = _importHashmap;
+            bool result = false;
             bool itemsAvailable = items != null;
-            try
+
+            if (_importHashmap)
             {
-                if (result)
+                Dictionary<Address, Hashtable> keysDistributionList = new Dictionary<Address, Hashtable>();
+                Hashtable keysAndItems = null;
+                string key = String.Empty;
+                CacheItem item = null;
+
+                for (int i = 0; i < keys.Length; i++)
                 {
-                    Dictionary<Address, Hashtable> keysDistributionList = new Dictionary<Address, Hashtable>();
-                    Hashtable keysAndItems = null;
-                    string key = String.Empty;
-                    CacheItem item = null;
+                    key = keys[i];
+                    if (itemsAvailable)
+                        item = items[i];
 
-                    for (int i = 0; i < keys.Length; i++)
+                    Address address;
+                    _hashMapStatus.WaitForAny(HashMapStatus.INITIALIZE);
+                    lock (_hashmapUpdateMutex)
                     {
-                        key = keys[i];
-                        if (itemsAvailable)
-                            item = items[i];
-
-                        if (item == null)
-                            itemNull = true;
-
-
-                        Address address;
-                        lock (_hashmapUpdateMutex)
-                        {
-                            address = _pool.GetIp(key);
-
-                            if (address == null)
-                                AddNull = true;
-                        }
-
-                        if (keysDistributionList.ContainsKey(address))
-                        {
-                            keysAndItems = keysDistributionList[address];
-                            keysAndItems[key] = item;
-                        }
-                        else
-                        {
-                            keysAndItems = new Hashtable();
-                            keysAndItems[key] = item;
-                            keysDistributionList[address] = keysAndItems;
-                        }
+                        address = _pool.GetIp(key);
                     }
+
+                    if (keysDistributionList.ContainsKey(address))
+                    {
+                        keysAndItems = keysDistributionList[address];
+                        keysAndItems[key] = item;
+                    }
+                    else
+                    {
+                        keysAndItems = new Hashtable();
+                        keysAndItems[key] = item;
+                        keysDistributionList[address] = keysAndItems;
+                    }
+                }
 
                     KeyValuePair<string[], CacheItem[]> tmp;
                     Address serverAddress; 
@@ -1319,11 +1206,6 @@ namespace Alachisoft.NCache.Web.Communication
                     foreach (KeyValuePair<Address, Hashtable> pair in keysDistributionList)
                     {
                         int index = 0;
-                        if (pair.Key == null)
-                            pairKey = true;
-                        else if (pair.Value == null)
-                            pairvalue = true;
-
                         serverAddress = pair.Key;
                         keysAndItems = pair.Value;
 
@@ -1345,15 +1227,35 @@ namespace Alachisoft.NCache.Web.Communication
                         keysDistributionMap.Add(serverAddress, tmp);
                     }
                 }
-            }
-            catch (Exception e)
-            {
-                throw new Exception(" Custome exception : value null " + pairvalue + " key null : " + pairKey +
-                                    " item null : " + itemNull + "Address null : " + AddNull + " Exception : " +
-                                    e.ToString());
-            }
 
             return result;
+        }
+
+        public KeyValuePair<string[], CacheItem[]> MergeDistributioonMap(KeyValuePair<string[], CacheItem[]> map1, KeyValuePair<string[], CacheItem[]> map2, bool itemsAvailable)
+        {
+
+            string[] distributedKeys = new string[map1.Key.Length + map2.Key.Length];
+            CacheItem[] distributedItems = null;
+            if (itemsAvailable)
+                distributedItems = new CacheItem[map1.Value.Length + map2.Value.Length];
+
+            int size = map1.Key.Length;
+
+            for (int i = 0; i < map1.Key.Length; i++)
+            {
+                distributedKeys[i] = map1.Key[i];
+                if (itemsAvailable)
+                    distributedItems[i] = map1.Value[i];
+            }
+
+            for (int i = 0; i < map2.Key.Length; i++)
+            {
+                distributedKeys[size + i] = map2.Key[i];
+                if (itemsAvailable)
+                    distributedItems[size + i] = map2.Value[i];
+            }
+
+            return new KeyValuePair<string[], Caching.CacheItem[]>(distributedKeys, distributedItems);
         }
 
         internal Request CreateRequest(CommandBase command)
@@ -1364,8 +1266,10 @@ namespace Alachisoft.NCache.Web.Communication
             {
                 case CommandType.SEARCH:
                 case CommandType.GET_NEXT_CHUNK:
+                case CommandType.EXECUTE_READER:
+                case CommandType.DISPOSE_READER:
+                case CommandType.GET_READER_CHUNK:
                
-
                     if (_importHashmap)
                     {
                         if (PoolFullyDisConnected)
@@ -1410,6 +1314,23 @@ namespace Alachisoft.NCache.Web.Communication
             return request;
         }
 
+        internal Request CreateRequestOnServer(string nodeAddress, CommandBase command)
+        {
+            Request request = null;
+            request = new Request(true, this._operationTimeout);
+            Connection conn = null;
+            lock (_hashmapUpdateMutex)
+            {
+                conn = _pool.GetConnection(nodeAddress);
+            }
+            if (conn != null)
+                request.AddCommand(conn.ServerAddress, command);
+            else
+                return CreateDedicatedRequest(command);
+
+            return request;
+        }
+
         internal Request CreateDedicatedRequest(CommandBase command)
         {
             Request request = null;
@@ -1440,7 +1361,6 @@ namespace Alachisoft.NCache.Web.Communication
             return request;
         }
 
-
         internal Connection GetAnyConnection()
         {
             return _pool.GetAnyConnection();
@@ -1453,6 +1373,7 @@ namespace Alachisoft.NCache.Web.Communication
             //1. Add request to request table
 
             AddRequestToRequestTable(request);
+            request.CacheId = _cacheId;
             //2. send each command. This method not only takes care of the specific connection for 
             //sending command, it also intializes the response for the connection.
             if (!request.IsBulk)
@@ -1575,36 +1496,29 @@ namespace Alachisoft.NCache.Web.Communication
             bool reacquiredLock = true;
             int timeout = Convert.ToInt32(request.RequestTimeout);
 
-            long startTime = (System.DateTime.Now.Ticks - 621355968000000000)/10000;
-            bool removeRequest = false;
+            long startTime = (System.DateTime.Now.Ticks - 621355968000000000) / 10000;
             try
             {
                 lock (request)
                 {
                     while (timeout > 0)
                     {
-
-
                         if (request.IsAsync)
                             break;
 
                         if (request.Responses)
                         {
-                            removeRequest = true;
-
                             break;
                         }
 
-                        timeout = Convert.ToInt32(request.RequestTimeout) -
-                                  (int) ((System.DateTime.Now.Ticks - 621355968000000000)/10000 - startTime);
+                        timeout = Convert.ToInt32(request.RequestTimeout) - (int)((System.DateTime.Now.Ticks - 621355968000000000) / 10000 - startTime);
                         reacquiredLock = Monitor.Wait(request, timeout);
 
                         if (!reacquiredLock)
                         {
                             if (request.IsRequestTimeoutReset)
                             {
-                                timeout = (Convert.ToInt32(request.RequestTimeout) -
-                                           (int) ((System.DateTime.Now.Ticks - 621355968000000000)/10000 - startTime));
+                                timeout = (Convert.ToInt32(request.RequestTimeout) - (int)((System.DateTime.Now.Ticks - 621355968000000000) / 10000 - startTime));
                                 if (timeout > 0)
                                 {
                                     reacquiredLock = true;
@@ -1615,9 +1529,6 @@ namespace Alachisoft.NCache.Web.Communication
 
                         if (!reacquiredLock && !request.Responses)
                         {
-                            removeRequest = true;
-
-
                             if (_perfStatsColl2 != null) _perfStatsColl2.DecrementRequestQueueSizeStats();
 
                             if (_logger.IsErrorLogsEnabled)
@@ -1633,7 +1544,6 @@ namespace Alachisoft.NCache.Web.Communication
             {
                 lock (_requestTable.SyncRoot)
                 {
-
                     if (!request.IsAsync && _requestTable.ContainsKey(request.RequestId))
 
                         _requestTable.Remove(request.RequestId);
@@ -1642,9 +1552,6 @@ namespace Alachisoft.NCache.Web.Communication
                 if (_perfStatsColl2 != null) _perfStatsColl2.DecrementRequestQueueSizeStats();
 
             }
-
-
-
         }
 
         internal Address GetConnectionIP(CommandBase command)
@@ -1681,8 +1588,7 @@ namespace Alachisoft.NCache.Web.Communication
 
             if (command.key != null && command.key != string.Empty && this._importHashmap)
             {
-                Address ip; //= String.Empty;
-
+                Address ip; 
 
                 lock (_hashmapUpdateMutex)
                 {
@@ -1704,8 +1610,12 @@ namespace Alachisoft.NCache.Web.Communication
                 connection = _connection = TryPool();
             }
 
-
-
+            //If not POR or Partitioned and connection is not connected, try to get another connection before sending command 
+            if (!this._importHashmap && connection != null && !connection.IsConnected)
+            {
+                TryNextServer();
+                connection = _connection;
+            }
             SendCommand(connection, command, true);
         }
 
@@ -1715,16 +1625,13 @@ namespace Alachisoft.NCache.Web.Communication
             Address ip = connection.ServerAddress;
             if (checkConnected)
             {
-                connection.StatusLatch.WaitForAny(ConnectionStatus.Connected | ConnectionStatus.Disconnected |
-                                                  ConnectionStatus.LoadBalance);
+                connection.StatusLatch.WaitForAny(ConnectionStatus.Connected | ConnectionStatus.Disconnected | ConnectionStatus.LoadBalance);
             }
             try
             {
                 DoSendCommand(connection, command, checkConnected);
                 if (_logger.IsDetailedLogsEnabled)
-                    _logger.NCacheLog.Debug("Broker.SendCommand",
-                        "RequestID : " + command.RequestId + " " + command.CommandName + " sent to server " +
-                        connection.IpAddress);
+                    _logger.NCacheLog.Debug("Broker.SendCommand", "RequestID : " + command.RequestId + " " + command.CommandName + " sent to server " + connection.IpAddress);
             }
             catch (ConnectionException)
             {
@@ -1737,9 +1644,7 @@ namespace Alachisoft.NCache.Web.Communication
                         if (request.RemoveResponse(ip))
                         {
                             _requestTable.Remove(request.RequestId);
-
                             if (_perfStatsColl2 != null) _perfStatsColl2.DecrementRequestQueueSizeStats();
-
                         }
                     }
                     else
@@ -1752,7 +1657,6 @@ namespace Alachisoft.NCache.Web.Communication
                 if (!this._importHashmap)
                 {
                     TryNextServer();
-
                 }
 
                 connection = this._connection;
@@ -1773,41 +1677,30 @@ namespace Alachisoft.NCache.Web.Communication
                 catch (ConnectionException ce)
                 {
                     if (_logger.IsErrorLogsEnabled)
-                        _logger.NCacheLog.Error("Broker.SendCommand",
-                            "RequestID :" + command.RequestId + " " + command.CommandName + " can not sent to server " +
-                            connection.IpAddress);
+                        _logger.NCacheLog.Error("Broker.SendCommand", "RequestID :" + command.RequestId + " " + command.CommandName + " can not sent to server " + connection.IpAddress);
                     if (!this._importHashmap)
-                        throw new OperationFailedException("No server is available to process the request");
+                        throw new OperationFailedException("No server is available to process the request ");
                 }
                 catch (Exception e)
                 {
                     if (_logger.IsErrorLogsEnabled)
-                        _logger.NCacheLog.Error("Broker.SendCommand",
-                            "RequestID :" + command.RequestId + " " + command.CommandName + " can not sent to server " +
-                            connection.IpAddress + " " + e.ToString());
+                        _logger.NCacheLog.Error("Broker.SendCommand", "RequestID :" + command.RequestId + " " + command.CommandName + " can not sent to server " + connection.IpAddress + " " + e.ToString());
                     throw new OperationFailedException(e.Message, e);
                 }
             }
             catch (OperationFailedException e)
             {
                 if (_logger.IsErrorLogsEnabled)
-                    _logger.NCacheLog.Error("Broker.SendCommand",
-                        "RequestID :" + command.RequestId + " " + command.CommandName + " can not sent to server " +
-                        connection.IpAddress + " " + e.ToString());
+                    _logger.NCacheLog.Error("Broker.SendCommand", "RequestID :" + command.RequestId + " " + command.CommandName + " can not sent to server " +connection.IpAddress + " " + e.ToString());
 
                 throw;
             }
             catch (Exception e)
             {
                 if (_logger.IsErrorLogsEnabled)
-                    _logger.NCacheLog.Error("Broker.SendCommand",
-                        "RequestID :" + command.RequestId + " " + command.CommandName + " can not sent to server " +
-                        connection.IpAddress + " " + e.ToString());
+                    _logger.NCacheLog.Error("Broker.SendCommand", "RequestID :" + command.RequestId + " " + command.CommandName + " can not sent to server " + connection.IpAddress + " " + e.ToString());
                 throw new OperationFailedException(e.Message, e);
             }
-
-
-
         }
 
         public void Dispose()
@@ -1839,13 +1732,10 @@ namespace Alachisoft.NCache.Web.Communication
                         DisposeCommand command = new DisposeCommand();
                         Request request = this.CreateRequest(command);
                         this.ExecuteRequest(request, connection, true, false);
-
-
                     }
 
                     connection.Disconnect();
                     this._pool.Remove(connection.ServerAddress);
-
                     try
                     {
                         if (_logger.IsErrorLogsEnabled)
@@ -1855,11 +1745,7 @@ namespace Alachisoft.NCache.Web.Communication
                     {
                     }
                 }
-
-
-
                 _perfStatsColl.Dispose();
-
                 connection.Dispose();
             }
 
@@ -1894,7 +1780,6 @@ namespace Alachisoft.NCache.Web.Communication
                 if (!con.IsConnected)
                 {
                     con = TryPool();
-
                 }
             }
             else
@@ -1908,15 +1793,16 @@ namespace Alachisoft.NCache.Web.Communication
         {
             InitializeResponse(connection, command);
             command._cacheId = _cacheId;
-
             try
             {
-                if (command is InitCommand)
-                    connection.AssureSend(command.ToByte(), connection.PrimaryClientSocket, checkConnected);
-                else if (command is InitSecondarySocketCommand)
+                if (command is InitSecondarySocketCommand)
+                {
                     connection.AssureSend(command.ToByte(), connection.SecondaryClientSocket, checkConnected);
+                }
                 else
-                    connection.SendCommand(command.ToByte(), checkConnected);
+                {
+                    connection.AssureSend(command.ToByte(), connection.PrimaryClientSocket, checkConnected);
+                }
             }
             catch (Exception e)
             {
@@ -1924,11 +1810,8 @@ namespace Alachisoft.NCache.Web.Communication
                 lock (_requestTable.SyncRoot)
                 {
                     _requestTable.Remove(command.RequestId);
-
                 }
-
                 if (_perfStatsColl2 != null) _perfStatsColl2.DecrementRequestQueueSizeStats();
-
 
                 if (e is ConnectionException)
                 {
@@ -1953,6 +1836,18 @@ namespace Alachisoft.NCache.Web.Communication
                     _perfStatsColl2.IncrementRequestQueueSizeStats();
 
             }
+        }
+
+        private void RemoveRequestFromRequestTable(Request request)
+        {
+            bool requestExistedInTable = false;
+            lock (_requestTable.SyncRoot)
+            {
+                requestExistedInTable = _requestTable.ContainsKey(request.RequestId);
+                if (requestExistedInTable)
+                    _requestTable.Remove(request.RequestId);
+            }
+            if (_perfStatsColl2 != null && requestExistedInTable) _perfStatsColl2.DecrementRequestQueueSizeStats();
 
         }
 
@@ -1967,6 +1862,11 @@ namespace Alachisoft.NCache.Web.Communication
             {
                 command.Parent.InitializeResponse(connection.ServerAddress);
             }
+        }
+
+        private void RemoveResponse(Connection connection, /*Request request*/ CommandBase command)
+        {
+            command.Parent.RemoveResponse(connection.ServerAddress);
         }
 
         private void StopServices()
@@ -1987,9 +1887,7 @@ namespace Alachisoft.NCache.Web.Communication
 
         public void ServerLost(Address ip, bool forcedDisconnected)
         {
-            if (_logger.IsDetailedLogsEnabled)
-                _logger.NCacheLog.CriticalInfo("ServerLost",
-                    "Server lost " + ip + "; forcedDisconnected = " + forcedDisconnected);
+            if (_logger.IsDetailedLogsEnabled) _logger.NCacheLog.CriticalInfo("ServerLost", "Server lost " + ip + "; forcedDisconnected = " + forcedDisconnected);
             try
             {
                 if (this._importHashmap)
@@ -2026,7 +1924,6 @@ namespace Alachisoft.NCache.Web.Communication
                     {
                         try
                         {
-
                             TryNextServer();
                         }
                         catch (Exception ex)
@@ -2122,8 +2019,10 @@ namespace Alachisoft.NCache.Web.Communication
         {
 
             bool connected = false;
-            OperationNotSupportedException exceptionThrown = null;
+            RemoteServer startingServer = null;
             int retries = this._connectionRetries;
+            OperationNotSupportedException exceptionThrown = null;
+
             try
             {
                 _lock.AcquireWriterLock(_connectionMutexTimeout);
@@ -2143,9 +2042,7 @@ namespace Alachisoft.NCache.Web.Communication
                 {
                     try
                     {
-                        if (_connection.IsConnected) 
-                            connected = true;
-                        else
+                        if (!this._connection.IsConnected)
                         {
                             this._connection.StatusLatch.SetStatusBit(ConnectionStatus.Connecting, ConnectionStatus.Connected | ConnectionStatus.Disconnected);
 
@@ -2160,18 +2057,17 @@ namespace Alachisoft.NCache.Web.Communication
                                     _clientConfig.LoadConfiguration();
                                     break;
                                 }
-                                catch (IOException)
+                                catch (System.IO.IOException ie)
                                 {
-                                    if (--nretries == 0) throw;
-                                    Thread.Sleep(500);
+                                    if (--nretries == 0) throw ie;
+                                    System.Threading.Thread.Sleep(500);
                                 }
                             }
 
                             if (_clientConfig.ServerCount > 0)
                             {
                                 RemoteServer nextServer = _clientConfig.NextServer;
-                                RemoteServer startingServer = nextServer;
-
+                                startingServer = nextServer;
                                 while (!connected)
                                 {
                                     if (nextServer == null) break;
@@ -2184,7 +2080,7 @@ namespace Alachisoft.NCache.Web.Communication
                                                 if (!connected)
                                                 {
                                                     Exception exception = null;
-                                                    connected = ConnectRemoteServer(this._connection, nextServer.IP, nextServer.Port + i, this._balanceNode, this._importHashmap, true, ref exception);
+                                                    connected = ConnectRemoteServer(this._connection, nextServer.IP, nextServer.Port + i, _clientConfig.BalanceNodes, this._importHashmap, true, ref exception);
                                                 }
                                                 if (connected) break;
                                             }
@@ -2200,17 +2096,20 @@ namespace Alachisoft.NCache.Web.Communication
                                         if (startingServer.Equals(nextServer)) break;
                                     }
                                 }
-                            
                                 //if the connection is established, exit the outer loop.
                                 //otherwise sleep for the sleep interval and retry.
                                 if (connected) break;
-                                Thread.Sleep(_retryInterval);
+                                System.Threading.Thread.Sleep(_retryInterval);
                                 continue;
                             }
                             else
                             {
                                 throw new ConfigurationException("'client.ncconf' not found or does not contain server information");
                             }
+                        }
+                        else{
+                            connected = true;
+                            break;
                         }
                     }
                     catch (Exception)
@@ -2245,10 +2144,9 @@ namespace Alachisoft.NCache.Web.Communication
         private Connection ReconnectServer(Connection connection, RemoteServer nextServer)
         {
             bool connected = false;
-            
             int retries = this._connectionRetries;
             OperationNotSupportedException exceptionThrown = null;
-
+            if (_logger.IsDetailedLogsEnabled) _logger.NCacheLog.CriticalInfo("ReconnectServer", "Trying to reconnect to :" + connection.IpAddress);
             try
             {
                 _lock.AcquireWriterLock(_connectionMutexTimeout);
@@ -2270,8 +2168,7 @@ namespace Alachisoft.NCache.Web.Communication
                     {
                         if (!connection.IsConnected)
                         {
-                            connection.StatusLatch.SetStatusBit(ConnectionStatus.Connecting,
-                                ConnectionStatus.Connected | ConnectionStatus.Disconnected);
+                            connection.StatusLatch.SetStatusBit(ConnectionStatus.Connecting, ConnectionStatus.Connected | ConnectionStatus.Disconnected);
 
                             if (nextServer == null) break;
                             if (nextServer.IP != null)
@@ -2283,7 +2180,6 @@ namespace Alachisoft.NCache.Web.Communication
                                         if (!connected)
                                         {
                                             Exception exception = null;
-
                                             connected = ConnectRemoteServer(connection, nextServer.IP, nextServer.Port + i, this._balanceNode, this._importHashmap, true, ref exception);
                                         }
                                         if (connected)
@@ -2320,10 +2216,7 @@ namespace Alachisoft.NCache.Web.Communication
             finally
             {
                 byte setStatus = connected ? ConnectionStatus.Connected : ConnectionStatus.Disconnected;
-                byte unsetStatus =
-                    (byte)
-                        ((!connected ? ConnectionStatus.Connected : ConnectionStatus.Disconnected) |
-                         ConnectionStatus.Connecting);
+                byte unsetStatus = (byte) ((!connected ? ConnectionStatus.Connected : ConnectionStatus.Disconnected) | ConnectionStatus.Connecting);
                 connection.StatusLatch.SetStatusBit(setStatus, unsetStatus);
 
                 _retryConnection = connected; //[ Connection is up again so we can retry ]
@@ -2356,7 +2249,8 @@ namespace Alachisoft.NCache.Web.Communication
                         this._processor.Enqueue(new ReconnectTask(this, connection));
                     }
                 }
-                else /*if (connection.IsConnected)*/ return connection;
+                else
+                    return connection;
             }
             if (this._importHashmap && !strictMatch)
             {
@@ -2406,7 +2300,7 @@ namespace Alachisoft.NCache.Web.Communication
                     try
                     {
 
-                        CheckRetryConnectionDelay(); //[KS: Checking if retry connection Interval is over or not]
+                        CheckRetryConnectionDelay(); //[ Checking if retry connection Interval is over or not]
                         if (!_retryConnection)
                             return false;
 
@@ -2419,8 +2313,7 @@ namespace Alachisoft.NCache.Web.Communication
                         if (connected)
                         {
                             if (_logger.IsDetailedLogsEnabled)
-                                _logger.NCacheLog.Info("Broker.TryConnecting",
-                                    "Connection established with " + connection.IpAddress);
+                                _logger.NCacheLog.Info("Broker.TryConnecting", "Connection established with " + connection.IpAddress);
                         }
 
                     }
@@ -2502,10 +2395,7 @@ namespace Alachisoft.NCache.Web.Communication
                         }
                         else
                         {
-
-                            connection = new Connection(this._commandReieved, this._serverLost, this._logger,
-                                _perfStatsColl, _responseIntegrator, _clientConfig.BindIP);
-
+                            connection = new Connection(this, this._commandReieved, this._serverLost, this._logger,  _perfStatsColl, _responseIntegrator, _clientConfig.BindIP, _cacheId);
                         }
 
                         if (!connection.IsConnected)
@@ -2564,7 +2454,7 @@ namespace Alachisoft.NCache.Web.Communication
         {
             DateTime currentTime = DateTime.Now;
             TimeSpan span = currentTime.Subtract(_retryConnectionStartTime);
-            if (span.TotalMinutes >= _retryConnectionDelayInMinutes)
+            if (span.TotalMinutes >= _clientConfig.RetryConnectionDelay)
             {
                 _retryConnectionStartTime = DateTime.Now;
                 _retryConnection = true;
@@ -2592,9 +2482,7 @@ namespace Alachisoft.NCache.Web.Communication
             {
                 try
                 {
-
                     Dictionary<string, int> runningServers = null;
-
                     //Populating the server list at initialization time.
                     if (_clientConfig.IPMappingConfigured)
                     {
@@ -2604,27 +2492,20 @@ namespace Alachisoft.NCache.Web.Communication
                     if (balanceNodes)
                     {
                         CommandResponse response = IsOptimalServer(connection, addr, port);
-                        
-                        
-                          RemoteServer rm = _clientConfig.GetMappedServer(response.ServerIPAddress.ToString(), response.ServerPort);
-                          if (response != null && (addr.ToString() == rm.Name || port == rm.Port))
-                          {
-                              connection.Disconnect();
-                              connection.Connect(rm.Name, rm.Port);
-                          }
-                        
+                        RemoteServer rm = _clientConfig.GetMappedServer(response.ServerIPAddress.ToString(), response.ServerPort);
+                        if (response != null && (addr.ToString() != rm.Name || port != rm.Port))
+                        {
+                            connection.Disconnect();
+                            connection.Connect(rm.Name, rm.Port);
+                        }
                     }
                    
                     if (_logger.IsDetailedLogsEnabled)
-                        _logger.NCacheLog.Info("Broker.ConnectRemoteServer",
-                            "[Local : (" + connection.PrimaryClientSocket.LocalEndPoint.ToString() + ") Server : (" +
-                            addr.ToString() + ":" + port + ")] connected successfully");
+                        _logger.NCacheLog.Info("Broker.ConnectRemoteServer",  "[Local : (" + connection.PrimaryClientSocket.LocalEndPoint.ToString() + ") Server : (" + addr.ToString() + ":" + port + ")] connected successfully");
 
                     InitializeCache(connection, addr, port, balanceNodes);
                     if (connection.SupportDualSocket) InitializeSecondarySocket(connection, addr, port);
-
                     runningServers = GetRunningServers(connection, addr, port);
-                    
                     connection.Init();
 
                     if (runningServers != null)
@@ -2635,16 +2516,16 @@ namespace Alachisoft.NCache.Web.Communication
                         {
                             RemoteServer rServer = new RemoteServer();
                             runningServers.TryGetValue(str, out outPort);
+                            rServer.Name = str;
                             rServer.IP = System.Net.IPAddress.Parse(str);
                             rServer.Port = outPort;
+                            rServer.Priority = short.MaxValue;
                             _clientConfig.AddServer(rServer);
                         }
                     }
 
                     if (_logger.IsDetailedLogsEnabled)
-                        _logger.NCacheLog.Info("Broker.ConnectRemoteServer",
-                            "[Local : (" + connection.PrimaryClientSocket.LocalEndPoint.ToString() + ") Server : (" +
-                            addr.ToString() + ":" + port + ")] initialized cache successfully");
+                        _logger.NCacheLog.Info("Broker.ConnectRemoteServer","[Local : (" + connection.PrimaryClientSocket.LocalEndPoint.ToString() + ") Server : (" + addr.ToString() + ":" + port + ")] initialized cache successfully");
                 }
 
                 catch (OperationNotSupportedException ons)
@@ -2657,6 +2538,7 @@ namespace Alachisoft.NCache.Web.Communication
                 }
                 catch (Exception e)
                 {
+               
                     if (_logger.IsErrorLogsEnabled) _logger.NCacheLog.Error("Broker.ConnectRemoteServer", e.ToString());
                     connection.Disconnect();
                     connected = false;
@@ -2667,8 +2549,7 @@ namespace Alachisoft.NCache.Web.Communication
             else
             {
                 if (_logger.IsErrorLogsEnabled)
-                    _logger.NCacheLog.Error("Broker.ConnectRemoteServer",
-                        "Could not connect to server (" + addr.ToString() + ":" + port + ")");
+                    _logger.NCacheLog.Error("Broker.ConnectRemoteServer","Could not connect to server (" + addr.ToString() + ":" + port + ")");
             }
             if (connected)
             {
@@ -2700,7 +2581,24 @@ namespace Alachisoft.NCache.Web.Communication
             }
             return connected;
         }
+        private Dictionary<string, int> GetRunningServers(Connection conn, IPAddress coonectedServerAddress, int port)
+        {
+            GetRunningServersCommand command = new GetRunningServersCommand(_cacheId);
+            Request request = new Request(false, _operationTimeout);
+            request.AddCommand(conn.ServerAddress, command);
 
+            ExecuteRequest(request, conn, false, false);
+            CommandResponse runningServers = conn.RecieveCommandResponse();
+
+            if (runningServers != null)
+            {
+                runningServers.ParseResponse();
+                return runningServers.RunningServer;
+            }
+
+            return null;
+
+        }
         private void GetServerMapping(Connection connection, bool initialRequest)
         {
             GetServerMappingCommand command = new GetServerMappingCommand();
@@ -2711,29 +2609,24 @@ namespace Alachisoft.NCache.Web.Communication
             {
                 if (initialRequest)
                 {
-
                     ExecuteRequest(request, connection, false, false);
                     serverMapRes = connection.RecieveCommandResponse();
                     lock (_requestTable.SyncRoot)
                     {
                         _requestTable.Remove(request.RequestId);
                     }
-
                     if (_perfStatsColl2 != null) _perfStatsColl2.DecrementRequestQueueSizeStats();
-
                 }
                 else
                 {
                     ExecuteRequest(request);
                     serverMapRes = request.Response;
                 }
-
                 if (serverMapRes != null)
                 {
                     serverMapRes.ParseResponse();
                 }
                 _clientConfig.AddMappedServers(serverMapRes.ServerMappingList);
-
             }
             catch (Exception exp)
             {
@@ -2742,40 +2635,13 @@ namespace Alachisoft.NCache.Web.Communication
                     _logger.NCacheLog.Debug(exp.Message);
                 }
             }
-
         }
-
-        private Dictionary<string, int> GetRunningServers(Connection conn, IPAddress coonectedServerAddress, int port)
-        {
-            GetRunningServersCommand command = new GetRunningServersCommand(_cacheId);
-            Request request = new Request(false, _operationTimeout);
-            request.AddCommand(conn.ServerAddress, command);
-
-            ExecuteRequest(request, conn, false, false);
-            CommandResponse runningServers = conn.RecieveCommandResponse();
-
-            lock (_requestTable.SyncRoot)
-            {
-                _requestTable.Remove(request.RequestId);
-            }
-
-            if (_perfStatsColl2 != null) _perfStatsColl2.DecrementRequestQueueSizeStats();
-            
-            if (runningServers != null)
-            {
-                runningServers.ParseResponse();
-                return runningServers.RunningServer;
-            }
-            return null;
-
-        }
-
+        
         private CommandResponse IsOptimalServer(Connection connection, IPAddress connectedServerAddress, int port)
         {
             GetOptimalServerCommand command = new GetOptimalServerCommand(_cacheId);
             Request request = new Request(false, _operationTimeout);
             request.AddCommand(connection.ServerAddress, command);
-
 
             ExecuteRequest(request, connection, false, false);
             CommandResponse balanceNodeRes = connection.RecieveCommandResponse();
@@ -2816,9 +2682,7 @@ namespace Alachisoft.NCache.Web.Communication
                     if (this._connection.IsConnected) return;
                     while (_retries-- > 0)
                     {
-
                         Thread.Sleep(2000); //waite for 2 seconds before retrying
-
                         try
                         {
                             Exception exception = null;
@@ -2836,16 +2700,12 @@ namespace Alachisoft.NCache.Web.Communication
                                         this._parent.GetHashmap(connection);
                                         if (this._parent.Logger.IsErrorLogsEnabled)
                                         {
-                                            this._parent.Logger.NCacheLog.Error("ReconnectTask.Process",
-                                                "Connection [" + this._connection.IpAddress + "] Exception->" +
-                                                exception.ToString());
+                                            this._parent.Logger.NCacheLog.Error("ReconnectTask.Process", "Connection [" + this._connection.IpAddress + "] Exception->" + exception.ToString());
                                         }
                                     }
                                     break;
                                 }
-                                //Cache might be restarted
-                                if (exception.Message.StartsWith("System.Exception: Cache is not running") &&
-                                    _retries == 0) // then wait till the retries
+                                if (exception.Message.StartsWith("System.Exception: Cache is not running") && _retries == 0) // then wait till the retries
                                 {
                                     Connection connection = this._parent.TryPool();
                                     if (connection != null && connection.IsConnected)
@@ -2853,19 +2713,14 @@ namespace Alachisoft.NCache.Web.Communication
                                         this._parent.GetHashmap(connection);
                                         if (this._parent.Logger.IsErrorLogsEnabled)
                                         {
-                                            this._parent.Logger.NCacheLog.Error("ReconnectTask.Process",
-                                                "Connection [" + this._connection.IpAddress + "] Exception->" +
-                                                exception.ToString());
+                                            this._parent.Logger.NCacheLog.Error("ReconnectTask.Process", "Connection [" + this._connection.IpAddress + "] Exception->" + exception.ToString());
                                         }
                                     }
                                     break;
                                 }
-
                                 if (this._parent.Logger.IsErrorLogsEnabled)
                                 {
-                                    this._parent.Logger.NCacheLog.Error("ReconnectTask.Process",
-                                        "Connection [" + this._connection.IpAddress + "] Exception " +
-                                        exception.ToString());
+                                    this._parent.Logger.NCacheLog.Error("ReconnectTask.Process", "Connection [" + this._connection.IpAddress + "] Exception " + exception.ToString());
                                 }
                             }
                         }
@@ -2891,6 +2746,11 @@ namespace Alachisoft.NCache.Web.Communication
             #endregion
         }
 
-
+        private class HashMapStatus
+        {
+            internal const byte INITIALIZE = 1;
+            internal const byte UNINITIALIZE = 2;
+        }
+        
     }
 }

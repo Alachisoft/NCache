@@ -1,4 +1,4 @@
-// Copyright (c) 2015 Alachisoft
+// Copyright (c) 2017 Alachisoft
 // 
 // Licensed under the Apache License, Version 2.0 (the "License");
 // you may not use this file except in compliance with the License.
@@ -11,6 +11,7 @@
 // WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
 // See the License for the specific language governing permissions and
 // limitations under the License.
+
 using System;
 using System.Collections.Generic;
 using System.Text;
@@ -24,7 +25,6 @@ namespace Alachisoft.NCache.Common
     [Serializable]
     public class StatusInfo: ICompactSerializable
     {
-
         private string _info = "";
         /// <summary>Status of the Cache.</summary>
         public CacheStatus Status = CacheStatus.Unavailable;
@@ -60,7 +60,6 @@ namespace Alachisoft.NCache.Common
         {
             switch (Status)
             {
-
                 case CacheStatus.Registered:
                     _info = "Stopped";
                     break;
@@ -91,7 +90,6 @@ namespace Alachisoft.NCache.Common
         public bool IsRunning { get { return Status == CacheStatus.Running; } }
         public bool IsUnavailable { get { return Status == CacheStatus.Unavailable; } }
 
-
         #region ICompactSerializable Members
 
         public void Deserialize(Runtime.Serialization.IO.CompactReader reader)
@@ -111,5 +109,5 @@ namespace Alachisoft.NCache.Common
         }
 
         #endregion
-    };
+    }
 }

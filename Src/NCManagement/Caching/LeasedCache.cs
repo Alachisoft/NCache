@@ -1,4 +1,4 @@
-// Copyright (c) 2015 Alachisoft
+// Copyright (c) 2017 Alachisoft
 // 
 // Licensed under the Apache License, Version 2.0 (the "License");
 // you may not use this file except in compliance with the License.
@@ -11,6 +11,7 @@
 // WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
 // See the License for the specific language governing permissions and
 // limitations under the License.
+
 using System;
 using System.Runtime.Remoting;
 using System.Runtime.Remoting.Lifetime;
@@ -102,22 +103,7 @@ namespace Alachisoft.NCache.Caching
 
 		#endregion
 
-		/// <summary>
-		/// Obtains a lifetime service object to control the lifetime policy for this instance.
-		/// </summary>
-		/// <returns>An object of type ILease used to control the lifetime 
-		/// policy for this instance.</returns>
-		public override object InitializeLifetimeService()
-		{
-			ILease lease = (ILease)base.InitializeLifetimeService();
-
-			if(lease != null)
-			{
-				lease.Register(_sponsor);
-			}
-			return lease;
-		}
-
+		
 		/// <summary>
 		/// Start the cache functionality.
 		/// </summary>

@@ -1,4 +1,4 @@
-// Copyright (c) 2015 Alachisoft
+// Copyright (c) 2017 Alachisoft
 // 
 // Licensed under the Apache License, Version 2.0 (the "License");
 // you may not use this file except in compliance with the License.
@@ -11,6 +11,7 @@
 // WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
 // See the License for the specific language governing permissions and
 // limitations under the License.
+
 namespace Alachisoft.NCache.Web.Command
 {
     enum CommandType
@@ -54,6 +55,10 @@ namespace Alachisoft.NCache.Web.Command
         SYNC_EVENTS = 37,
         GET_PRODUCT_VERSION = 38,
         GET_SERVER_MAPPING = 39,
-        GET_RUNNING_SERVERS = 40
+        GET_RUNNING_SERVERS = 40,
+        GET_CACHE_BINDING = 41,
+        EXECUTE_READER = 42,
+        GET_READER_CHUNK = 43,
+        DISPOSE_READER = 44
     }
 }

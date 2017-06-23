@@ -45,6 +45,10 @@
 // Note: requires additional types generated from: GetServerMappingCommand.proto
 // Note: requires additional types generated from: GetOptimalServerCommand.proto
 // Note: requires additional types generated from: GetRunningServersCommand.proto
+// Note: requires additional types generated from: GetCacheBindingCommand.proto
+// Note: requires additional types generated from: ExecuteReaderCommand.proto
+// Note: requires additional types generated from: GetReaderNextChunkCommand.proto
+// Note: requires additional types generated from: DisposeReaderCommand.proto
 namespace Alachisoft.NCache.Common.Protobuf
 {
   [global::System.Serializable, global::ProtoBuf.ProtoContract(Name=@"Command")]
@@ -439,6 +443,42 @@ namespace Alachisoft.NCache.Common.Protobuf
       get { return _getRunningServersCommand; }
       set { _getRunningServersCommand = value; }
     }
+
+    private Alachisoft.NCache.Common.Protobuf.GetCacheBindingCommand _getCacheBindingCommand = null;
+    [global::ProtoBuf.ProtoMember(44, IsRequired = false, Name=@"getCacheBindingCommand", DataFormat = global::ProtoBuf.DataFormat.Default)]
+    [global::System.ComponentModel.DefaultValue(null)]
+    public Alachisoft.NCache.Common.Protobuf.GetCacheBindingCommand getCacheBindingCommand
+    {
+      get { return _getCacheBindingCommand; }
+      set { _getCacheBindingCommand = value; }
+    }
+
+    private Alachisoft.NCache.Common.Protobuf.ExecuteReaderCommand _executeReaderCommand = null;
+    [global::ProtoBuf.ProtoMember(45, IsRequired = false, Name=@"executeReaderCommand", DataFormat = global::ProtoBuf.DataFormat.Default)]
+    [global::System.ComponentModel.DefaultValue(null)]
+    public Alachisoft.NCache.Common.Protobuf.ExecuteReaderCommand executeReaderCommand
+    {
+      get { return _executeReaderCommand; }
+      set { _executeReaderCommand = value; }
+    }
+
+    private Alachisoft.NCache.Common.Protobuf.GetReaderNextChunkCommand _getReaderNextChunkCommand = null;
+    [global::ProtoBuf.ProtoMember(46, IsRequired = false, Name=@"getReaderNextChunkCommand", DataFormat = global::ProtoBuf.DataFormat.Default)]
+    [global::System.ComponentModel.DefaultValue(null)]
+    public Alachisoft.NCache.Common.Protobuf.GetReaderNextChunkCommand getReaderNextChunkCommand
+    {
+      get { return _getReaderNextChunkCommand; }
+      set { _getReaderNextChunkCommand = value; }
+    }
+
+    private Alachisoft.NCache.Common.Protobuf.DisposeReaderCommand _disposeReaderCommand = null;
+    [global::ProtoBuf.ProtoMember(47, IsRequired = false, Name=@"disposeReaderCommand", DataFormat = global::ProtoBuf.DataFormat.Default)]
+    [global::System.ComponentModel.DefaultValue(null)]
+    public Alachisoft.NCache.Common.Protobuf.DisposeReaderCommand disposeReaderCommand
+    {
+      get { return _disposeReaderCommand; }
+      set { _disposeReaderCommand = value; }
+    }
     [global::ProtoBuf.ProtoContract(Name=@"Type")]
     public enum Type
     {
@@ -552,7 +592,19 @@ namespace Alachisoft.NCache.Common.Protobuf
       GET_OPTIMAL_SERVER = 36,
             
       [global::ProtoBuf.ProtoEnum(Name=@"GET_RUNNING_SERVERS", Value=37)]
-      GET_RUNNING_SERVERS = 37
+      GET_RUNNING_SERVERS = 37,
+            
+      [global::ProtoBuf.ProtoEnum(Name=@"GET_CACHE_BINDING", Value=38)]
+      GET_CACHE_BINDING = 38,
+            
+      [global::ProtoBuf.ProtoEnum(Name=@"EXECUTE_READER", Value=39)]
+      EXECUTE_READER = 39,
+            
+      [global::ProtoBuf.ProtoEnum(Name=@"GET_READER_CHUNK", Value=40)]
+      GET_READER_CHUNK = 40,
+            
+      [global::ProtoBuf.ProtoEnum(Name=@"DISPOSE_READER", Value=41)]
+      DISPOSE_READER = 41
     }
   
     private global::ProtoBuf.IExtension extensionObject;

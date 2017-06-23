@@ -1,4 +1,4 @@
-// Copyright (c) 2015 Alachisoft
+// Copyright (c) 2017 Alachisoft
 // 
 // Licensed under the Apache License, Version 2.0 (the "License");
 // you may not use this file except in compliance with the License.
@@ -11,8 +11,10 @@
 // WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
 // See the License for the specific language governing permissions and
 // limitations under the License.
+
 using System.Collections;
 using Alachisoft.NCache.Common.Enum;
+using Alachisoft.NCache.Common.Queries;
 
 namespace Alachisoft.NCache.Caching.Queries.Filters
 {
@@ -28,12 +30,11 @@ namespace Alachisoft.NCache.Caching.Queries.Filters
             if(ChildPredicate!=null)
                 ChildPredicate.Execute(queryContext, nextPredicate);
 
-            queryContext.Tree.Reduce();
-            decimal count = queryContext.Tree.LeftList.Count;
+            decimal count = queryContext.InternalQueryResult.Count;
             base.SetResult(queryContext, AggregateFunctionType.COUNT, count);
         }
 
-        internal override void ExecuteInternal(QueryContext queryContext, ref SortedList list)
+        internal override void ExecuteInternal(QueryContext queryContext, CollectionOperation mergeType)
         {
         }
 

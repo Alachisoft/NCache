@@ -8,6 +8,7 @@
 // The translation is based on the other engine translations:
 // Delphi engine by Alexandre Rai (riccio@gmx.at)
 // C# engine by Marcus Klimstra (klimstra@home.nl)
+
 using System;
 
 // C# Translation of GoldParser, by Marcus Klimstra <klimstra@home.nl>.

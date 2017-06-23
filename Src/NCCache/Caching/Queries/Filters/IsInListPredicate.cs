@@ -1,4 +1,4 @@
-// Copyright (c) 2015 Alachisoft
+// Copyright (c) 2017 Alachisoft
 // 
 // Licensed under the Apache License, Version 2.0 (the "License");
 // you may not use this file except in compliance with the License.
@@ -11,9 +11,13 @@
 // WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
 // See the License for the specific language governing permissions and
 // limitations under the License.
+
 using System;
 using System.Collections;
 using Alachisoft.NCache.Parser;
+using Alachisoft.NCache.Common.Queries;
+using Alachisoft.NCache.Common.DataStructures.Clustered;
+using Alachisoft.NCache.Common.Enum;
 
 namespace Alachisoft.NCache.Caching.Queries.Filters
 {
@@ -50,12 +54,10 @@ namespace Alachisoft.NCache.Caching.Queries.Filters
             return members.Contains(lhs);
         }
 
-        internal override void ExecuteInternal(QueryContext queryContext, ref SortedList list)
+        internal override void ExecuteInternal(QueryContext queryContext, CollectionOperation mergeType)
         {
             AttributeIndex index = queryContext.Index;
             IIndexStore store = ((MemberFunction)functor).GetStore(index);
-
-            ArrayList keyList = new ArrayList();
 
             if (store != null)
             {
@@ -73,51 +75,37 @@ namespace Alachisoft.NCache.Caching.Queries.Filters
                     }
                 }
 
+                IQueryResult tempResult = queryContext.InternalQueryResult;
+                queryContext.InternalQueryResult = new Common.Queries.HashedQueryResult();
+
+
                 if (!Inverse)
                 {
                     for (int i = 0; i < members.Count; i++)
                     {
-                        ArrayList temp = store.GetData(members[i], ComparisonType.EQUALS);
-                        if (temp != null)
-                            if (temp.Count > 0)
-                                keyList.AddRange(temp);
+                        store.GetData(members[i], ComparisonType.EQUALS, queryContext.InternalQueryResult, CollectionOperation.Union);
                     }
                 }
                 else
                 {
-                    ArrayList temp = store.GetData(members[0], ComparisonType.NOT_EQUALS);
-                    if (temp != null)
+                    store.GetData(members[0], ComparisonType.NOT_EQUALS, queryContext.InternalQueryResult, CollectionOperation.Union);
+                    if (queryContext.InternalQueryResult != null)
                     {
-                        if (temp.Count > 0)
+                        if (queryContext.InternalQueryResult.Count > 0)
                         {
                             for (int i = 1; i < members.Count; i++)
                             {
-                                ArrayList extras = store.GetData(members[i], ComparisonType.EQUALS);
-                                if (extras != null)
-                                {
-                                    IEnumerator ie = extras.GetEnumerator();
-                                    if (ie != null)
-                                    {
-                                        while (ie.MoveNext())
-                                        {
-                                            if (temp.Contains(ie.Current))
-                                                temp.Remove(ie.Current);
-                                        }
-                                    }
-                                }
+                                store.GetData(members[i], ComparisonType.EQUALS, queryContext.InternalQueryResult, CollectionOperation.Subtract);
                             }
-
-                            keyList.AddRange(temp);
                         }
                     }
                 }
-
-                if (keyList != null)
-                    list.Add(keyList.Count, keyList);
+                queryContext.InternalQueryResult.Merge(tempResult, mergeType);
+                
             }
             else
             {
-              throw new AttributeIndexNotDefined("Index is not defined for attribute '" + ((MemberFunction)functor).MemberName + "'");
+                throw new AttributeIndexNotDefined("Index is not defined for attribute '" + ((MemberFunction)functor).MemberName + "'");
             }
         }
 
@@ -143,74 +131,37 @@ namespace Alachisoft.NCache.Caching.Queries.Filters
                     }
                 }
 
-                ArrayList keyList = new ArrayList();
-
+                ClusteredArrayList keyList = new ClusteredArrayList();
                 if (!Inverse)
                 {
-                    ArrayList distinctMembers = new ArrayList();
+                    ClusteredArrayList distinctMembers = new ClusteredArrayList();
 
                     for (int i = 0; i < members.Count; i++)
                     {
                         if (!distinctMembers.Contains(members[i]))
                         {
                             distinctMembers.Add(members[i]);
-                            ArrayList temp = store.GetData(members[i], ComparisonType.EQUALS);
-                            if (temp != null)
-                                if (temp.Count > 0)
-                                    keyList.AddRange(temp);
+                            store.GetData(members[i], ComparisonType.EQUALS, queryContext.InternalQueryResult, CollectionOperation.Union);
                         }
                     }
                 }
                 else
                 {
                     ArrayList distinctMembers = new ArrayList();
-
-                    ArrayList temp = store.GetData(members[0], ComparisonType.NOT_EQUALS);
-                    if (temp != null)
+                    queryContext.InternalQueryResult = new HashedQueryResult();
+                    store.GetData(members[0], ComparisonType.NOT_EQUALS, queryContext.InternalQueryResult, CollectionOperation.Union);
+                    if (queryContext.InternalQueryResult != null)
                     {
-                        if (temp.Count > 0)
+                        if (queryContext.InternalQueryResult.Count > 0)
                         {
-                            for (int i = 0; i < members.Count; i++)
+                            for (int i = 1; i < members.Count; i++)
                             {
                                 if (!distinctMembers.Contains(members[i]))
                                 {
-                                    distinctMembers.Add(members[i]);         
-                                    ArrayList extras = store.GetData(members[i], ComparisonType.EQUALS);
-                                    if (extras != null)
-                                    {
-                                        IEnumerator ie = extras.GetEnumerator();
-                                        if (ie != null)
-                                        {
-                                            while (ie.MoveNext())
-                                            {
-                                                if (temp.Contains(ie.Current))
-                                                    temp.Remove(ie.Current);
-                                            }
-                                        }
-                                    }
+                                    distinctMembers.Add(members[i]);
+                                    store.GetData(members[i], ComparisonType.EQUALS, queryContext.InternalQueryResult, CollectionOperation.Subtract);
                                 }
-                                keyList = temp;
                             }
-                        }
-                    }
-                }
-
-                if (keyList != null && keyList.Count > 0)
-                {
-                    IEnumerator keyListEnum = keyList.GetEnumerator();
-
-                    if (queryContext.PopulateTree)
-                    {
-                       queryContext.Tree.RightList = keyList;
-
-                        queryContext.PopulateTree = false;
-                    }
-                    else
-                    {
-                        while (keyListEnum.MoveNext())
-                        {
-                            if (queryContext.Tree.LeftList.Contains(keyListEnum.Current))
-                                queryContext.Tree.Shift(keyListEnum.Current);
                         }
                     }
                 }

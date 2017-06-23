@@ -1,4 +1,4 @@
-// Copyright (c) 2015 Alachisoft
+// Copyright (c) 2017 Alachisoft
 // 
 // Licensed under the Apache License, Version 2.0 (the "License");
 // you may not use this file except in compliance with the License.
@@ -11,6 +11,7 @@
 // WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
 // See the License for the specific language governing permissions and
 // limitations under the License.
+
 using System;
 using System.Collections;
 using System.Collections.Generic;
@@ -21,11 +22,12 @@ using System.IO;
 using System.Runtime.Remoting;
 
 using Runtime = Alachisoft.NCache.Runtime;
+using System.Globalization;
+using System.Threading;
 
 namespace Alachisoft.NCache.Common.Configuration
 {
     /// <summary>
-    /// [Author: Taimoor Haider]
     /// This class is the key component of the tag based generic configuration handling framework.
     /// The framework handles cofiugration setting specified in XML format. All the properties should
     /// be specified in the form of an attributes e.g
@@ -515,7 +517,7 @@ namespace Alachisoft.NCache.Common.Configuration
         public object ConvertToPrimitive(Type type, string value, string appendedText)
         {
             object primitiveValue = null;
-            
+
             if (appendedText != null && appendedText != string.Empty)
                 value = value.ToLower().Replace(appendedText.ToLower(), "");
 
@@ -526,85 +528,92 @@ namespace Alachisoft.NCache.Common.Configuration
                 targetType = type.GetGenericArguments()[0];
                 isNullable = true;
             }
-
-            if (targetType.IsPrimitive)
+            CultureInfo cultureInfo = Thread.CurrentThread.CurrentCulture;
+            try
             {
-                switch (targetType.FullName)
+                Thread.CurrentThread.CurrentCulture = new CultureInfo("en-US");
+                if (targetType.IsPrimitive)
                 {
-                    case "System.Byte":
-                        if (isNullable)
-                            primitiveValue = value != null ? Convert.ToByte(value) : (byte?)null;
-                        else
-                            primitiveValue = Convert.ToByte(value);
-                        break;
+                    switch (targetType.FullName)
+                    {
+                        case "System.Byte":
+                            if (isNullable)
+                                primitiveValue = value != null ? Convert.ToByte(value) : (byte?)null;
+                            else
+                                primitiveValue = Convert.ToByte(value);
+                            break;
 
-                    case "System.Int16":
-                        if (isNullable)
-                            primitiveValue = (value != null && !string.IsNullOrEmpty(value.ToString())) ? Convert.ToInt16(value) : (Int16?)null;
-                        else
-                            primitiveValue = Convert.ToInt16(value);
-                        break;
+                        case "System.Int16":
+                            if (isNullable)
+                                primitiveValue = (value != null && !string.IsNullOrEmpty(value.ToString())) ? Convert.ToInt16(value) : (Int16?)null;
+                            else
+                                primitiveValue = Convert.ToInt16(value);
+                            break;
 
-                    case "System.Int32":
-                        if (isNullable)
-                            primitiveValue = value != null ? Convert.ToInt32(value) : (Int32?)null;
-                        else
-                            primitiveValue = Convert.ToInt32(value);
-                        break;
+                        case "System.Int32":
+                            if (isNullable)
+                                primitiveValue = value != null ? Convert.ToInt32(value) : (Int32?)null;
+                            else
+                                primitiveValue = Convert.ToInt32(value);
+                            break;
 
-                    case "System.Int64":
-                        if (isNullable)
-                            primitiveValue = value != null ? Convert.ToInt64(value) : (Int64?)null;
-                        else
-                            primitiveValue = Convert.ToInt64(value);
-                        break;
+                        case "System.Int64":
+                            if (isNullable)
+                                primitiveValue = value != null ? Convert.ToInt64(value) : (Int64?)null;
+                            else
+                                primitiveValue = Convert.ToInt64(value);
+                            break;
 
-                    case "System.Single":
-                        if (isNullable)
-                            primitiveValue = value != null ? Convert.ToSingle(value) : (Single?)null;
-                        else
-                            primitiveValue = Convert.ToSingle(value);
-                        break;
+                        case "System.Single":
+                            if (isNullable)
+                                primitiveValue = value != null ? Convert.ToSingle(value) : (Single?)null;
+                            else
+                                primitiveValue = Convert.ToSingle(value);
+                            break;
 
-                    case "System.Double":
-                        if (isNullable)
-                            primitiveValue = value != null ? Convert.ToDouble(value) : (Double?)null;
-                        else
-                            primitiveValue = Convert.ToDouble(value);
-                        break;
+                        case "System.Double":
+                            if (isNullable)
+                                primitiveValue = value != null ? Convert.ToDouble(value) : (Double?)null;
+                            else
+                                primitiveValue = Convert.ToDouble(value);
+                            break;
 
-                    case "System.Boolean":
-                        // in case of boolean we can ignore the the case as "True", "true" and "tRue" are the same
-                        if (isNullable)
-                            primitiveValue = value != null ? Convert.ToBoolean(value) : (Boolean?)null;
-                        else
-                            primitiveValue = Convert.ToBoolean(value.ToLower());
-                        break;
+                        case "System.Boolean":
+                            // in case of boolean we can ignore the the case as "True", "true" and "tRue" are the same
+                            if (isNullable)
+                                primitiveValue = value != null ? Convert.ToBoolean(value) : (Boolean?)null;
+                            else
+                                primitiveValue = Convert.ToBoolean(value.ToLower());
+                            break;
 
-                    case "System.Char":
-                        if (isNullable)
-                            primitiveValue = value != null ? Convert.ToChar(value) : (Char?)null;
-                        else
-                            primitiveValue = Convert.ToChar(value);
-                        break;
+                        case "System.Char":
+                            if (isNullable)
+                                primitiveValue = value != null ? Convert.ToChar(value) : (Char?)null;
+                            else
+                                primitiveValue = Convert.ToChar(value);
+                            break;
+                    }
+
                 }
 
+                if (targetType.FullName == "System.DateTime")
+                    if (isNullable)
+                        primitiveValue = (!string.IsNullOrEmpty(value.ToString()) && value != null) ? Convert.ToDateTime(value) : (DateTime?)null;
+                    else
+                        primitiveValue = Convert.ToDateTime(value);
+                if (type.FullName == "System.Decimal")
+                    if (isNullable)
+                        primitiveValue = value != null ? Convert.ToDecimal(value) : (Decimal?)null;
+                    else
+                        primitiveValue = Convert.ToDecimal(value);
+
+                if (targetType.FullName == "System.String")
+                    primitiveValue = value;
             }
-
-	   if (targetType.FullName == "System.DateTime")
-                if (isNullable)
-                    primitiveValue = (!string.IsNullOrEmpty(value.ToString()) && value != null) ? Convert.ToDateTime(value) : (DateTime?)null;
-                else
-                    primitiveValue = Convert.ToDateTime(value);
-            if (type.FullName == "System.Decimal")
-                if (isNullable)
-                    primitiveValue = value != null ? Convert.ToDecimal(value) : (Decimal?)null;
-                else
-                    primitiveValue = Convert.ToDecimal(value);
-
-            if (targetType.FullName == "System.String")
-                primitiveValue = value;
-
+            finally
+            {
+                Thread.CurrentThread.CurrentCulture = cultureInfo;
+            }
             return primitiveValue;
         }
 

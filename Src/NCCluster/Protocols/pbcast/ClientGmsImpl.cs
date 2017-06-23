@@ -10,6 +10,7 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 // $Id: ClientGmsImpl.java,v 1.12 2004/09/08 09:17:17 belaban Exp $
+
 using System;
 using System.Collections;
 
@@ -131,8 +132,6 @@ namespace Alachisoft.NGroups.Protocols.pbcast
 
                     Util.Util.sleep(gms.join_timeout);
                     continue;
-                    //becomeSingletonMember(mbr);
-                    //return ;
 				}
 				
 				try
@@ -243,7 +242,7 @@ namespace Alachisoft.NGroups.Protocols.pbcast
 				}
 				catch (System.Exception e)
 				{
-                    gms.Stack.NCacheLog.Error("ClientGmsImpl.join()",   e.Message + ", retrying");					
+                    gms.Stack.NCacheLog.Error("ClientGmsImpl.join()", "Error: "+  e.ToString() + ", retrying");					
 				}
 				
 				Util.Util.sleep(gms.join_retry_timeout);

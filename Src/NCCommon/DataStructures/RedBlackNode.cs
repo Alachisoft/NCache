@@ -1,4 +1,4 @@
-// Copyright (c) 2015 Alachisoft
+// Copyright (c) 2017 Alachisoft
 // 
 // Licensed under the Apache License, Version 2.0 (the "License");
 // you may not use this file except in compliance with the License.
@@ -11,60 +11,58 @@
 // WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
 // See the License for the specific language governing permissions and
 // limitations under the License.
+
 using System;
 using System.Text;
 using System.Collections;
+using Alachisoft.NCache.Common.DataStructures.Clustered;
 
 namespace Alachisoft.NCache.Common.DataStructures
 {
 	///<summary>
 	/// The RedBlackNode class encapsulates a node in the tree
 	///</summary>
-	public class RedBlackNode:ISizableIndex
+	public class RedBlackNode<T>:ISizableIndex, ITreeNode
 	{
         /// <summary> Tree node color. </summary>
-		public const int	RED		= 0;
+        public const byte RED = 0xff;
 		/// <summary> Tree node color. </summary>
-		public const int	BLACK	= 1;
+        public const byte BLACK = 0x00;
 
 		/// <summary> key provided by the calling class. </summary>
-		private IComparable		_key;
+        private T _key;
 
 		/// <summary> the data or value associated with the key. </summary>
-		private Hashtable  		_value;
+        private HashVector _value;
 
 		/// <summary> color - used to balance the tree. </summary>
-		private int				_color;
+        private Byte _color;
 
 		/// <summary> Left node. </summary>
-		private RedBlackNode	_leftNode;
+		private RedBlackNode<T>	_leftNode;
 
 		/// <summary> Right node. </summary>
-		private RedBlackNode	_rightNode;
+		private RedBlackNode<T>	_rightNode;
 
 		/// <summary> Parent node. </summary>
-        private RedBlackNode	_parentNode;
+        private RedBlackNode<T>	_parentNode;
 
-        private RedBlackNodeReference _rbReference;
-
-        /// <summary> Max Count of values in Hashtable  </summary>
-        private long _maxItemCount;
-
-        		
+        private RedBlackNodeReference<T> _rbReference;
+                		
 		/// <summary>
 		/// Default constructor.
 		/// </summary>
 		public RedBlackNode()
 		{
 			Color = RED;
-            Data = new Hashtable();
-            _rbReference = new RedBlackNodeReference(this);
+            Data = new HashVector();
+            _rbReference = new RedBlackNodeReference<T>(this);
 		}
 
 		///<summary>
 		///Key
 		///</summary>
-		public IComparable Key
+		public T Key
 		{
 			get { return _key; }
 			set { _key = value; }
@@ -73,7 +71,7 @@ namespace Alachisoft.NCache.Common.DataStructures
 		///<summary>
 		///Data
 		///</summary>
-		public Hashtable Data
+		public HashVector Data
 		{
 			get { return _value; }
 			set { _value = value; }
@@ -84,15 +82,15 @@ namespace Alachisoft.NCache.Common.DataStructures
         ///</summary>
         public void Insert(object key, object value)
         {
-            Data.Add(key, null);
-            if (Data.Count > _maxItemCount)
-                _maxItemCount = Data.Count;
+            if (!Data.ContainsKey(key))
+                Data.Add(key, null);
+           
         }
 
         ///<summary>
 		///Color
 		///</summary>
-		public int Color
+		public Byte Color
 		{
 			get { return _color; }
 			set { _color = value; }
@@ -100,7 +98,7 @@ namespace Alachisoft.NCache.Common.DataStructures
 		///<summary>
 		///Left
 		///</summary>
-		public RedBlackNode Left
+		public RedBlackNode<T> Left
 		{
 			get { return _leftNode; }			
 			set { _leftNode = value; }
@@ -109,7 +107,7 @@ namespace Alachisoft.NCache.Common.DataStructures
 		///<summary>
 		/// Right
 		///</summary>
-		public RedBlackNode Right
+		public RedBlackNode<T> Right
 		{
 			get { return _rightNode; }			
 			set { _rightNode = value; }
@@ -118,13 +116,13 @@ namespace Alachisoft.NCache.Common.DataStructures
 		/// <summary>
 		/// Parent node
 		/// </summary>
-        public RedBlackNode Parent
+        public RedBlackNode<T> Parent
         {
             get { return _parentNode; }			
             set { _parentNode = value; }
         }
 
-        public RedBlackNodeReference RBNodeReference
+        public RedBlackNodeReference<T> RBNodeReference
         {
             get { return _rbReference; }
             set { _rbReference = value; }
@@ -132,7 +130,57 @@ namespace Alachisoft.NCache.Common.DataStructures
 
         public long IndexInMemorySize
         {
-            get { return _maxItemCount * MemoryUtil.NetHashtableOverHead; }
+            get { return _value.BucketCount * MemoryUtil.NetHashtableOverHead; }
+        }
+
+        ITreeNode ITreeNode.Parent
+        {
+            get
+            {
+                return _parentNode;
+            }
+        }
+
+        ITreeNode ITreeNode.Left
+        {
+            get
+            {
+                return _leftNode;
+            }
+
+        }
+
+        ITreeNode ITreeNode.Right
+        {
+            get
+            {
+                return _rightNode;
+            }
+
+        }
+
+        object ITreeNode.Key
+        {
+            get
+            {
+                return _key;
+            }
+            set
+            {
+                _key = (T)value;
+            }
+        }
+
+        public object Value
+        {
+            get
+            {
+                return _value;
+            }
+            set
+            {
+                _value = (HashVector)value;
+            }
         }
 	}
 }

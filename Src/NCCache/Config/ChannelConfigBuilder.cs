@@ -1,4 +1,4 @@
-// Copyright (c) 2015 Alachisoft
+// Copyright (c) 2017 Alachisoft
 // 
 // Licensed under the Apache License, Version 2.0 (the "License");
 // you may not use this file except in compliance with the License.
@@ -11,6 +11,7 @@
 // WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
 // See the License for the specific language governing permissions and
 // limitations under the License.
+
 using System;
 using System.IO;
 using System.Text;
@@ -188,7 +189,6 @@ namespace Alachisoft.NCache.Config
 				.Append(ConfigHelper.SafeGetPair(properties,"timeout", null))		// "800,1600,3200,6400"
 				.Append(ConfigHelper.SafeGetPair(properties,"window_size", null))	// -1
 				.Append(ConfigHelper.SafeGetPair(properties,"min_threshold", null))	// -1
-				//.Append(ConfigHelper.SafeGetPair(properties,"use_gms", null))		// "true"
 				.Append(ConfigHelper.SafeGetPair(properties,"down_thread", null))
 				.Append(ConfigHelper.SafeGetPair(properties,"up_thread", null))
 				.Append(")");

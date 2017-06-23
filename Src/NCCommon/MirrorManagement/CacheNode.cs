@@ -1,4 +1,4 @@
-// Copyright (c) 2015 Alachisoft
+// Copyright (c) 2017 Alachisoft
 // 
 // Licensed under the Apache License, Version 2.0 (the "License");
 // you may not use this file except in compliance with the License.
@@ -12,14 +12,6 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-/*************************************************************************
- * Author: Hasan Khan
- * Date created: 17-04-2008
- * 
- * Modified By: Arif Iftikhar, Hasan Khan
- * Last modified by: Arif Iftikhar
- * Date modified: 06-05-2008
-/*************************************************************************/
 
 using System;
 using System.Runtime.Serialization;

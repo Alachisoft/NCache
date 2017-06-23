@@ -1,4 +1,4 @@
-// Copyright (c) 2015 Alachisoft
+// Copyright (c) 2017 Alachisoft
 // 
 // Licensed under the Apache License, Version 2.0 (the "License");
 // you may not use this file except in compliance with the License.
@@ -27,6 +27,7 @@ using System.Text;
 using Alachisoft.NCache.Common.Stats;
 using Alachisoft.NCache.Common.Util;
 using Alachisoft.NCache.Common.Logger;
+using Alachisoft.NCache.Common.DataStructures.Clustered;
 
 
 namespace Alachisoft.NCache.Caching.AutoExpiration
@@ -110,57 +111,7 @@ namespace Alachisoft.NCache.Caching.AutoExpiration
             }
         }
 
-        class ExpiryIndexEntry:ISizable
-        {
-            ExpirationHint _hint;
-
-            public ExpiryIndexEntry(ExpirationHint hint)
-            {
-                _hint = hint;
-            }
-
-
-            public bool IsExpired(CacheRuntimeContext context)
-            {
-                if (_hint != null) return _hint.DetermineExpiration(context);
-                return false;
-            }
-
-            public ExpirationHint Hint
-            {
-                get { return _hint; }
-                set { _hint = value; }
-            }
-
-            #region ISizable Members
-
-            public int Size
-            {
-                get { return ExpiryIndexEntrySize; }
-            }
-
-            public int InMemorySize
-            {
-                get
-                {
-                    int inMemorySize = this.Size;
-
-                    inMemorySize += inMemorySize <= 24 ? 0 : Common.MemoryUtil.NetOverHead;
-
-                    return inMemorySize;
-                }
-            }
-
-            private int ExpiryIndexEntrySize
-            {
-                get
-                {
-                    return _hint.InMemorySize;
-                }
-            }
-
-            #endregion
-        }
+       
         #endregion
 
         /// <summary> The top level Cache. esentially to remove the items on the whole cluster for the cascaded dependencies. </summary>
@@ -181,17 +132,11 @@ namespace Alachisoft.NCache.Caching.AutoExpiration
         /// <summary> to determine the last slot so expiration can be round robin. </summary>
         private bool _allowClusteredExpiry = true;
 
-        /// <summary> A value used for place holder</summary>
-        private static object _DATA = new object();
-
-        /// <summary> A counter which tells how many time expiration occured </summary>
-        private ulong _runCount;
-
-        private Hashtable _mainIndex = new Hashtable(25000, 0.7f);
+        private HashVector _mainIndex = new HashVector();
         /// <summary> Index for all type of expirations. it is used only when main index is
 
         /// locked for the selection of expired items. </summary>
-        private Hashtable _transitoryIndex = new Hashtable(25000, 0.7f);
+        private HashVector _transitoryIndex = new HashVector();
 
         /// A flag used to indicate that index is cleared while expiration was in progress. </summary>
         private bool _indexCleared;
@@ -210,9 +155,6 @@ namespace Alachisoft.NCache.Caching.AutoExpiration
         ///No of items which can be removed in a single clustered operation.
         private int _removeThreshhold = 10;
 
-        /// <summary>Flag which indicates whether to explicitly call GC.Collect or not</summary>
-        private bool _allowExplicitGCCollection = true;
-
         private bool _inProgress;
 
         //private ArrayList _nodesThatLeft;
@@ -224,13 +166,7 @@ namespace Alachisoft.NCache.Caching.AutoExpiration
         private bool _isSubCoordinator = false;
 
         /// <summary> Accumulated size of Expiration Manager </summary>
-        private long _expirationManagerSize = 0;
-
-        /// <summary> MaxCount of Index Hashtable </summary>
-        private long _mainIndexMaxCount = 0;
-
-        /// <summary> MaxCount of Transitory Index Hashtable</summary>
-        private long _transitoryIndexMaxCount = 0;
+        private long _expirationManagerSize = 0;        
 
         private ILogger _ncacheLog;
 
@@ -244,7 +180,7 @@ namespace Alachisoft.NCache.Caching.AutoExpiration
         private int _cacheLastAccessInterval;
         private bool _cacheLastAccessCountEnabled;
         private bool _cacheLastAccessCountLoggingEnabled;
-        
+      
 
         /// <summary>
         /// True if this node is a "cordinator" or a "subcordinator" in case of partition-of-replica.
@@ -277,21 +213,7 @@ namespace Alachisoft.NCache.Caching.AutoExpiration
         {
             get
             {
-                string enableCacheLastAccessCount="NCacheServer.EnableCacheLastAccessCount";
-                bool isCachelastAccessEnabled = false;
-                try
-                {
-                    string str = System.Configuration.ConfigurationSettings.AppSettings[enableCacheLastAccessCount];
-                    if (str != null && str != string.Empty)
-                    {
-                        isCachelastAccessEnabled = Convert.ToBoolean(str);
-                    }
-                }
-                catch (Exception e)
-                {
-                    NCacheLog.Error("ExpirationManager.IsCacheLastAccessCountEnabled", "invalid value provided for " + enableCacheLastAccessCount);
-                }
-                return isCachelastAccessEnabled;
+                return ServiceConfiguration.EnableCacheLastAccessCount;
             }
         }
 
@@ -300,18 +222,8 @@ namespace Alachisoft.NCache.Caching.AutoExpiration
             get
             {
                 bool isCachelastAccessLogEnabled = false;
-                try
-                {
-                    string str = System.Configuration.ConfigurationSettings.AppSettings["NCacheServer.EnableCacheLastAccessCountLogging"];
-                    if (str != null && str != string.Empty)
-                    {
-                        isCachelastAccessLogEnabled = Convert.ToBoolean(str);
-                    }
-                }
-                catch (Exception e)
-                {
-                    NCacheLog.Error("ExpirationManager.IsCacheLastAccessLoggingEnabled", "invalid value provided for NCacheServer.EnableCacheLastAccessCount");
-                }
+
+                isCachelastAccessLogEnabled = ServiceConfiguration.EnableCacheLastAccessCountLogging;
 
                 if (IsCacheLastAccessCountEnabled && isCachelastAccessLogEnabled)
                 {
@@ -327,21 +239,7 @@ namespace Alachisoft.NCache.Caching.AutoExpiration
         {
             get
             {
-                string cacheLastAccessCount="NCacheServer.CacheLastAccessCountInterval";
-                int isCachelastAccessInterval = _cacheLastAccessInterval;
-                try
-                {
-                    string str = System.Configuration.ConfigurationSettings.AppSettings[cacheLastAccessCount];
-                    if (str != null && str != string.Empty)
-                    {
-                        isCachelastAccessInterval = Convert.ToInt32(str);
-                    }
-                }
-                catch (Exception e)
-                {
-                    NCacheLog.Error("ExpirationManager.CacheLastAccessCountInterval", "invalid value provided for " + cacheLastAccessCount);
-                }
-                return isCachelastAccessInterval;
+                return ServiceConfiguration.CacheLastAccessCountInterval;
             }
         }
 
@@ -349,21 +247,7 @@ namespace Alachisoft.NCache.Caching.AutoExpiration
         {
             get
             {
-                string cacheLastAccessLogInterval="NCacheServer.CacheLastAccessLogInterval";
-                int isCachelastAccessLogingInterval = _cacheLastAccessLoggingInterval;
-                try
-                {
-                    string str = System.Configuration.ConfigurationSettings.AppSettings[cacheLastAccessLogInterval];
-                    if (str != null && str != string.Empty)
-                    {
-                        isCachelastAccessLogingInterval = Convert.ToInt32(str);
-                    }
-                }
-                catch (Exception e)
-                {
-                    NCacheLog.Error("ExpirationManager.CacheLastAccessLogInterval", "invalid value provided for " + cacheLastAccessLogInterval);
-                }
-                return isCachelastAccessLogingInterval;
+                return ServiceConfiguration.CacheLastAccessLogInterval;
             }
         }
 
@@ -380,14 +264,9 @@ namespace Alachisoft.NCache.Caching.AutoExpiration
             
             Initialize(properties);
 
-            //muds:
             //new way to do this...
-            _sleepInterval = Convert.ToInt32(ServiceConfiguration.ExpirationBulkRemoveDelay);
-            _removeThreshhold = Convert.ToInt32(ServiceConfiguration.ExpirationBulkRemoveSize);
-            if (System.Configuration.ConfigurationSettings.AppSettings.Get("NCacheServer.EnableGCCollection") != null)
-            {
-                _allowExplicitGCCollection = Convert.ToBoolean(System.Configuration.ConfigurationSettings.AppSettings.Get("NCacheServer.EnableGCCollection"));
-            }
+            _sleepInterval = ServiceConfiguration.ExpirationBulkRemoveDelay;
+            _removeThreshhold = ServiceConfiguration.ExpirationBulkRemoveSize;           
         }
 
         #region	/                 --- IDisposable ---           /
@@ -521,16 +400,13 @@ namespace Alachisoft.NCache.Caching.AutoExpiration
             {
                 if (!IsInProgress)
                 {
-                    _mainIndex = new Hashtable(25000, 0.7f);
-                    _transitoryIndex = new Hashtable(25000, 0.7f);
+                    _mainIndex = new HashVector();
+                    _transitoryIndex = new HashVector();
 
-                    _transitoryIndexMaxCount = 0;
-                    _mainIndexMaxCount = 0;
                 }
                 else
                 {
-                    _transitoryIndex = new Hashtable(25000, 0.7f);
-                    _transitoryIndexMaxCount = 0;
+                    _transitoryIndex = new HashVector();
 
                     _indexCleared = true;
                 }
@@ -545,32 +421,25 @@ namespace Alachisoft.NCache.Caching.AutoExpiration
         {
             //indicates whether some items expired during this interval or not...
             bool expired = false;
-
-            ulong currentRun = 0;
-            lock (this)
-            {
-                currentRun = _runCount++;
-            }
-
+           
             //if user has updated the file then the new values will be reloaded.
-            _sleepInterval = Convert.ToInt32(ServiceConfiguration.ExpirationBulkRemoveDelay);
-            _removeThreshhold = Convert.ToInt32(ServiceConfiguration.ExpirationBulkRemoveSize);
-           
-           
+            _sleepInterval = ServiceConfiguration.ExpirationBulkRemoveDelay;
+            _removeThreshhold = ServiceConfiguration.ExpirationBulkRemoveSize;
+
             CacheBase cacheInst = _context.CacheImpl;
             CacheBase cache = _context.CacheInternal;
             Cache rootCache = _context.CacheRoot;
-           
+
             if (cache == null)
                 throw new InvalidOperationException("No cache instance defined");
 
             bool allowExpire = AllowClusteredExpiry;
 
-            //in case of replication, only the coordinator/sub-coordinator is responsible to expire the items.
+            //in case of replication and por, only the coordinator/sub-coordinator is responsible to expire the items.
             if (!allowExpire) return false;
-            ArrayList selectedKeys = new System.Collections.ArrayList();
+            ClusteredArrayList selectedKeys = new ClusteredArrayList();
             int oldItemsCount = 0;
-            Hashtable oldeItems = null;
+            HashVector oldeItems = null;
 
             try
             {
@@ -598,7 +467,7 @@ namespace Alachisoft.NCache.Caching.AutoExpiration
                     if (_cacheLastAccessLoggingIntervalPassed >= _cacheLastAccessLoggingInterval)
                     {
                         _cacheLastAccessLoggingIntervalPassed = 0;
-                        oldeItems = new Hashtable();
+                        oldeItems = new HashVector();
                     }
                 }
                 lock (_mainIndex.SyncRoot)
@@ -609,8 +478,7 @@ namespace Alachisoft.NCache.Caching.AutoExpiration
                     {
                         while (em.MoveNext())
                         {
-                            ExpiryIndexEntry expirtyEntry = em.Value as ExpiryIndexEntry;
-                            ExpirationHint hint = expirtyEntry.Hint;
+                            ExpirationHint hint = em.Value as ExpirationHint;
                             if (hint != null && _cacheLastAccessCountEnabled && hint is IdleExpiration)
                             {
                                 IdleExpiration slidingExpHint = hint as IdleExpiration;
@@ -647,11 +515,10 @@ namespace Alachisoft.NCache.Caching.AutoExpiration
                 _context.PerfStatsColl.IncrementCacheLastAccessCountStats(oldItemsCount);
 
                 ApplyLoggs();
-                ArrayList dependentItems = new ArrayList();
-                ArrayList removedItems = null;
+                ClusteredArrayList dependentItems = new ClusteredArrayList();
                 DateTime startTime = DateTime.Now;
 
-                Hashtable expiredItemTable = new Hashtable();
+                HashVector expiredItemTable = new HashVector();
 
                 expiredItemTable.Add(ItemRemoveReason.Expired, selectedKeys);//Time based expiration
                 try
@@ -660,14 +527,14 @@ namespace Alachisoft.NCache.Caching.AutoExpiration
 
                     while (ide.MoveNext())
                     {
-                        selectedKeys = ide.Value as ArrayList;
+                        selectedKeys = ide.Value as ClusteredArrayList;
                         ItemRemoveReason removedReason = (ItemRemoveReason)ide.Key;
 
                         if (selectedKeys.Count > 0)
                         {
                             //new architectural changes begins from here.
 
-                            ArrayList keysTobeRemoved = new ArrayList();
+                            ClusteredArrayList keysTobeRemoved = new ClusteredArrayList();
 
                             for (int i = 0; i < selectedKeys.Count && !_cacheCleared; i++)
                             {
@@ -679,9 +546,11 @@ namespace Alachisoft.NCache.Caching.AutoExpiration
                                         if (this.IsDisposed) break;
 
                                         OperationContext operationContext = new OperationContext(OperationContextFieldName.OperationType, OperationContextOperationType.CacheOperation);
-
-                                        removedItems = cache.RemoveSync(keysTobeRemoved.ToArray(), removedReason, false, operationContext) as ArrayList;
-
+                                        object[][] keysExposed = keysTobeRemoved.ToInternalArray();
+                                        foreach (object[] collection in keysExposed)
+                                        {
+                                            cache.RemoveSync(collection, removedReason, false, operationContext);
+                                        }
                                         //set the flag that item has expired from cache...
                                         expired = true;
 
@@ -689,7 +558,7 @@ namespace Alachisoft.NCache.Caching.AutoExpiration
                                     }
                                     catch (Exception e)
                                     {
-                                        NCacheLog.Error("ExpiryManager.Expire", "an error occured while removing expired items. Error " + e.ToString());
+                                        NCacheLog.Error("ExpiryManager.Expire", "an error occurred while removing expired items. Error " + e.ToString());
                                     }
                                     keysTobeRemoved.Clear();
                                     //we stop the activity of the current thread so that normal user operation is not affected.
@@ -702,15 +571,18 @@ namespace Alachisoft.NCache.Caching.AutoExpiration
                                 try
                                 {
                                     OperationContext operationContext = new OperationContext(OperationContextFieldName.OperationType, OperationContextOperationType.CacheOperation);
-                                    removedItems = cache.RemoveSync(keysTobeRemoved.ToArray(), removedReason, false, operationContext) as ArrayList;
-
+                                    object[][] keysExposed = keysTobeRemoved.ToInternalArray();
+                                    foreach (object[] keyCollection in keysExposed)
+                                    {
+                                        cache.RemoveSync(keyCollection, removedReason, false, operationContext);
+                                    }
                                     //set the flag that item has expired from cache...
                                     expired = true;
                                     if (_context.PerfStatsColl != null) _context.PerfStatsColl.IncrementExpiryPerSecStatsBy(keysTobeRemoved.Count);
                                 }
                                 catch (Exception e)
                                 {
-                                    NCacheLog.Error("ExpiryManager.Expire", "an error occured while removing expired items. Error " + e.ToString());
+                                    NCacheLog.Error("ExpiryManager.Expire", "an error occurred while removing expired items. Error " + e.ToString());
                                 }
                             }
                         }
@@ -753,65 +625,36 @@ namespace Alachisoft.NCache.Caching.AutoExpiration
 
         public void UpdateIndex(object key, CacheEntry entry)
         {
-            if (entry == null || entry.ExpirationHint == null) return;
-            UpdateIndex(key, entry.ExpirationHint);
-        }
+            if (key == null || entry == null || entry.ExpirationHint == null || !entry.ExpirationHint.IsIndexable) return;
 
-        public void UpdateIndex(object key, ExpirationHint hint)
-        {
-            if (key == null || hint == null) return;
-
+            ExpirationHint hint = entry.ExpirationHint;
             lock (_status_mutex)
             {
-                int addSize = 0;
-                int removeSize = 0;
+                int addSize = hint.InMemorySize;
 
                 if (!IsInProgress)
                 {
-                    if (!_mainIndex.Contains(key))
+                    if (_mainIndex.Contains(key))
                     {
-                        ExpiryIndexEntry entry = new ExpiryIndexEntry(hint);
-                        _mainIndex[key] = entry;
-
-                        addSize = entry.InMemorySize;
-
-                        if (_mainIndex.Count > _mainIndexMaxCount)
-                            _mainIndexMaxCount = _mainIndex.Count;                   
+                        ExpirationHint expHint = _mainIndex[key] as ExpirationHint;
+                        
+                        addSize -= expHint.InMemorySize;                        
                     }
-                    else
-                    {
-                        ExpiryIndexEntry expEntry = _mainIndex[key] as ExpiryIndexEntry;
-                        if (expEntry != null)
-                        {
-                            removeSize = expEntry.InMemorySize;
-                            expEntry.Hint = hint;
-                            addSize = expEntry.InMemorySize;
-                        }
-                    }
+                    _mainIndex[key] = hint;                    
                 }
                 else
                 {
-                    if (_transitoryIndex[key] == null)
+                    if (_transitoryIndex.ContainsKey(key))
                     {
-                        ExpiryIndexEntry entry = new ExpiryIndexEntry(hint);
-                        _transitoryIndex[key] = entry;
-                        addSize = entry.InMemorySize;
-
-                        if (_transitoryIndex.Count > _transitoryIndexMaxCount)
-                            _transitoryIndexMaxCount = _transitoryIndex.Count;
-                    }
-                    else
-                    {
-                        ExpiryIndexEntry expEntry = _transitoryIndex[key] as ExpiryIndexEntry;
-                        if (expEntry != null)
+                        ExpirationHint expHint = _transitoryIndex[key] as ExpirationHint;
+                        if (expHint != null)
                         {
-                            removeSize = expEntry.InMemorySize;
-                            expEntry.Hint = hint;
-                            addSize = expEntry.InMemorySize;
+                            addSize -= expHint.InMemorySize;
                         }
                     }
+                    _transitoryIndex[key] = hint;
+                    
                 }
-                _expirationManagerSize -= removeSize;
                 _expirationManagerSize += addSize;
             }
         }
@@ -825,10 +668,10 @@ namespace Alachisoft.NCache.Caching.AutoExpiration
 
                 if (!IsInProgress)
                 {
-                    ExpiryIndexEntry expEntry = _mainIndex[key] as ExpiryIndexEntry;
-                    if (expEntry != null)
+                    ExpirationHint expHint = _mainIndex[key] as ExpirationHint;
+                    if (expHint != null)
                     {
-                        removeSize = expEntry.InMemorySize;
+                        removeSize = expHint.InMemorySize;
                     }
                     _mainIndex.Remove(key);
                 }
@@ -837,10 +680,10 @@ namespace Alachisoft.NCache.Caching.AutoExpiration
                     //Adding a with null value indicates that this key has been
                     //removed so we should remove it from the main index.
 
-                    ExpiryIndexEntry expEntry = _transitoryIndex[key] as ExpiryIndexEntry;
-                    if (expEntry != null)
+                    ExpirationHint expHint = _transitoryIndex[key] as ExpirationHint;
+                    if (expHint != null)
                     {
-                        removeSize = expEntry.InMemorySize;
+                        removeSize = expHint.InMemorySize;
                     }
 
                     _transitoryIndex[key] = null;
@@ -874,26 +717,24 @@ namespace Alachisoft.NCache.Caching.AutoExpiration
                 IsInProgress = false;
                 if (_indexCleared)
                 {
-                    //_mainIndex.Clear();
-                    _mainIndex = new Hashtable(25000, 0.7f);
-                    _mainIndexMaxCount = 0;
+                    _mainIndex = new HashVector();
                     _indexCleared = false;
                 }
 
                 IDictionaryEnumerator ide = _transitoryIndex.GetEnumerator();
 
                 object key;
-                ExpiryIndexEntry expEntry;
+                ExpirationHint expHint;
                 while (ide.MoveNext())
                 {
                     key = ide.Key;
-                    expEntry = ide.Value as ExpiryIndexEntry;
+                    expHint = ide.Value as ExpirationHint;
 
-                    ExpiryIndexEntry oldEntry = (ExpiryIndexEntry)_mainIndex[key];
+                    ExpirationHint oldEntry = (ExpirationHint)_mainIndex[key];
 
-                    if (expEntry != null)
+                    if (expHint != null)
                     {
-                        _mainIndex[key] = expEntry;
+                        _mainIndex[key] = expHint;
                     }
                     else
                     {
@@ -912,7 +753,7 @@ namespace Alachisoft.NCache.Caching.AutoExpiration
         {
             get
             {
-                return (_expirationManagerSize + ((_mainIndexMaxCount + _transitoryIndexMaxCount) * Common.MemoryUtil.NetHashtableOverHead));
+                return (_expirationManagerSize + ((_mainIndex.BucketCount + _transitoryIndex.BucketCount) * Common.MemoryUtil.NetHashtableOverHead));
             }
         }
     }

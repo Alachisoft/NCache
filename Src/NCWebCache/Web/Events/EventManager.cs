@@ -1,4 +1,4 @@
-// Copyright (c) 2015 Alachisoft
+// Copyright (c) 2017 Alachisoft
 // 
 // Licensed under the Apache License, Version 2.0 (the "License");
 // you may not use this file except in compliance with the License.
@@ -11,6 +11,7 @@
 // WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
 // See the License for the specific language governing permissions and
 // limitations under the License.
+
 using System;
 using Alachisoft.NCache.Runtime.Events;
 using Alachisoft.NCache.Common;
@@ -92,7 +93,7 @@ namespace Alachisoft.NCache.Web.Caching
         {
             if (callback != null)
             {
-                
+                //Avoiding new ResourcePool(inside = new Hashtable) at constructor level
                 if (_selectiveUpdateEventPool == null)
                 {
                     _selectiveUpdateEventPool = new ResourcePool();
@@ -117,7 +118,6 @@ namespace Alachisoft.NCache.Web.Caching
 
         internal void UnregisterAll()
         {
-            //TODO
         }
 
         private CacheEventArg CreateCacheEventArgument(EventDataFilter dataFilter, string key,string cacheName,EventType eventType,EventCacheItem item,EventCacheItem oldItem,CacheItemRemovedReason removedReason)
