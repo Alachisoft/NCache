@@ -1,4 +1,4 @@
-ECHO OFF
+@ECHO off
  @SET iuPath=%WINDIR%\Microsoft.NET\Framework\v4.0.30319\
  REG QUERY "HKLM\SOFTWARE\Microsoft\NET Framework Setup\NDP\v4\full" /v InstallPath >nul 2>&1
  SET QUERY_STATUS=%ERRORLEVEL%
@@ -49,8 +49,7 @@ ECHO OFF
 	XCOPY "..\..\integration\build\Memcached\Plug-Ins\BeITMemcached.dll" "%~1\integrations\Memcached Wrapper\Plug-Ins\BeITMemcached\bin\" /I /Y /Q
 	XCOPY "..\..\integration\build\Memcached\Plug-Ins\Enyim.Caching.dll" "%~1\integrations\Memcached Wrapper\Plug-Ins\Enyim.Caching\" /I /Y /Q /S
 	ECHO.
- )
-
+	
 	ECHO COPYING CONFIGS...
 	ECHO ==================
 	XCOPY "..\..\samples\config\client.ncconf" %1\config\ /Y /Q
@@ -64,5 +63,8 @@ ECHO OFF
 	ECHO.
 	
 	IF NOT EXIST %1\log-files ( MKDIR %1\log-files )
+ )
+
+	
 	
  

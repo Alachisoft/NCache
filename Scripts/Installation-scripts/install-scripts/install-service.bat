@@ -1,4 +1,4 @@
-@ECHO OFF
+@ECHO off
  @Set directory=%1
  
  @SET iuPathIS=%WINDIR%\Microsoft.NET\Framework\v4.0.30319\

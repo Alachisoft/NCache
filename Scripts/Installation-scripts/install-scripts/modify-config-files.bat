@@ -9,16 +9,10 @@ If not exist "%cd%\_.vbs" call :MakeReplace
 CALL :FINDREPLACE "127.0.0.1" %IP% "%~1\bin\service\Alachisoft.NCache.Service.exe.config"
 CALL :FINDREPLACE "127.0.0.1" %IP% "%~1\config\client.ncconf"
 CALL :FINDREPLACE "127.0.0.1" %IP% "%~1\config\config.ncconf"
-
-IF EXIST "%NCHOME%integrations\Memcached Wrapper\Gateway\bin\Alachisoft.NCache.Memcached.exe.config" (
-	CALL :FINDREPLACE "127.0.0.1" %IP% "%NCHOME%integrations\Memcached Wrapper\Gateway\bin\Alachisoft.NCache.Memcached.exe.config"
-)
-IF EXIST "%NCHOME%integrations\Memcached Wrapper\Gateway\bin\2.0\Alachisoft.NCache.Memcached.exe.config" (
-	CALL :FINDREPLACE "127.0.0.1" %IP% "%NCHOME%integrations\Memcached Wrapper\Gateway\bin\2.0\Alachisoft.NCache.Memcached.exe.config"
-)
+CALL :FINDREPLACE "127.0.0.1" %IP% "%~1\integrations\Memcached Wrapper\Gateway\bin\Alachisoft.NCache.Memcached.exe.config"
 
 del "%cd%\_.vbs"
-exit /b 
+exit /b
 
 :FindReplace <findstr> <replstr> <file>
 set tmp="%cd%\tmp.txt"

@@ -20,12 +20,10 @@ IF NOT ERRORLEVEL 1060 (
 
 ECHO Terminate Cache Processes 
 ECHO ==========================
-
-tasklist /v | find /I /c "Alachisoft.NCache.CacheHost.exe" >nul 2>&1
-if "%ERRORLEVEL%" == "0" echo Process is running
-	 taskkill /F /IM "Alachisoft.NCache.CacheHost.exe" 
-
-ECHO.
+tasklist | find /I /C "Alachisoft.NCache.CacheHost.exe"
+echo %ERRORLEVEL%
+IF %ERRORLEVEL% EQU 0 taskkill /F /IM "Alachisoft.NCache.CacheHost.exe"
+	
 set NCHOME2="%NCHOME%"
 ECHO REMOVING ASSEMBLIES FROM GAC
 ECHO ================================

@@ -1340,7 +1340,11 @@ namespace Alachisoft.NCache.Caching.Topologies.Clustered
                         {
                             if (Clustered_Lock(key, lockExpiration, ref lockId, ref lockDate, operationContext))
                             {
-                                e = Local_Get(key,  ref lockId, ref lockDate, lockExpiration, LockAccessType.IGNORE_LOCK, operationContext);
+                                e = Local_Get(key, ref lockId, ref lockDate, lockExpiration, LockAccessType.IGNORE_LOCK, operationContext);
+                            }
+                            else
+                            {
+                                e = null;
                             }
                         }
                         else
@@ -1356,6 +1360,10 @@ namespace Alachisoft.NCache.Caching.Topologies.Clustered
                             if (Clustered_Lock(key, lockExpiration, ref lockId, ref lockDate, operationContext))
                             {
                                 e = Clustered_Get(key, ref lockId, ref lockDate, access, operationContext);
+                            }
+                            else
+                            {
+                                e = null;
                             }
                         }
                         else

@@ -1,4 +1,4 @@
-@ECHO OFF
+@ECHO off
 
 ECHO SETTING ENVIRONMENT VARIABLE ...
 ECHO ================================

@@ -1,4 +1,4 @@
-@ECHO OFF
+@ECHO off
 
 ECHO setting environment variables and registry keys
 CALL install-scripts\write-env.bat %1

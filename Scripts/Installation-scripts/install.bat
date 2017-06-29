@@ -1,4 +1,4 @@
-@ECHO OFF
+@ECHO off
 
 SET InstallDir="C:\Program Files\NCache"
 reg query "HKLM\SOFTWARE\Alachisoft\NCache" /v InstallDir >nul 2>&1
