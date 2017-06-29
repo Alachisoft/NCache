@@ -1,4 +1,4 @@
-@echo off
+@echo OFF
 
 @set directory=%NCHOME%
 
@@ -20,8 +20,7 @@ IF NOT ERRORLEVEL 1060 (
 
 ECHO Terminate Cache Processes 
 ECHO ==========================
-tasklist | find /I /C "Alachisoft.NCache.CacheHost.exe"
-echo %ERRORLEVEL%
+tasklist | find /I /C "Alachisoft.NCache.CacheHo"
 IF %ERRORLEVEL% EQU 0 taskkill /F /IM "Alachisoft.NCache.CacheHost.exe"
 	
 set NCHOME2="%NCHOME%"
