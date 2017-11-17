@@ -193,11 +193,9 @@ namespace Alachisoft.NCache.Common.Configuration
             }
             catch (Exception e)
             {
-                new Exception("Can not open " + fileName + " Error:" + e.ToString());
+                throw new Exception("Can not open " + fileName + " Error:" + e.ToString());
             }
-
-			ReadConfiguration(document);
-
+	    ReadConfiguration(document);
         }
 
 		public void ReadConfiguration(XmlDocument xmlDocument)
