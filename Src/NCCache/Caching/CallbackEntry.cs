@@ -284,7 +284,7 @@ namespace Alachisoft.NCache.Caching
                 }
                 if (_itemUpdateListener != null)
                 {
-                    temp += _itemRemovedListener.Count * Common.MemoryUtil.NetListOverHead;
+                    temp += _itemUpdateListener.Count * Common.MemoryUtil.NetListOverHead;
                     foreach (CallbackInfo cbInfo in _itemUpdateListener)
                     {
                         temp += cbInfo.Size;
