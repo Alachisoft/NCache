@@ -475,7 +475,7 @@ namespace Alachisoft.NCache.Common.Util
                 {
                     tempInt = Int32.Parse(config.AppSettings.Settings["NCacheServer.ForcedGCThreshold"].Value);
 
-                    if (tempInt > 0 || tempInt < 100)
+                    if (tempInt > 0 && tempInt < 100)
                         ForcedGCThreshold = tempInt;
                 }
             }
