@@ -98,7 +98,7 @@ namespace Alachisoft.NGroups.Protocols
 				oe = (own_addr == rsp.own_addr);
 
 			bool ce = false;
-			if(own_addr != null)
+			if(coord_addr != null)
 			{
 				ce = coord_addr.Equals(rsp.coord_addr);
 			}
