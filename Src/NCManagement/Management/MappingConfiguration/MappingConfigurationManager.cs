@@ -24,11 +24,12 @@ using Alachisoft.NCache.Config;
 namespace Alachisoft.NCache.Management.MappingConfiguration
 {
     public class MappingConfigurationManager
-    {
-        static string m_configDir = DIRNAME;
-        static string m_configFileName = FILENAME;
+    { 
         static string DIRNAME = "Config";
         static string FILENAME = "server-end-point.ncconf";
+        static string m_configDir = DIRNAME;
+        static string m_configFileName = FILENAME;
+        
         private static object _syncRoot = new object();
 
         private static void CombinePath()
