@@ -153,7 +153,7 @@ namespace Alachisoft.NCache.SocketServer.Util
             if (dic != null && dic.Count > 0) 
             {
                 if (keyPackageResponse == null)
-                    keyPackageResponse = new Alachisoft.NCache.Common.Protobuf.KeyValuePackageResponse(); ;
+                    keyPackageResponse = new Alachisoft.NCache.Common.Protobuf.KeyValuePackageResponse();
 
                 IDictionaryEnumerator enu = dic.GetEnumerator();
                 while (enu.MoveNext())
