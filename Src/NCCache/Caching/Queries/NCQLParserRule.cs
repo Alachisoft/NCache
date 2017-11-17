@@ -72,7 +72,7 @@ namespace Alachisoft.NCache.Caching.Queries
         public Reduction CreateRULE_DELETEPARAMS_DOLLARTEXTDOLLAR(Reduction reduction)
         {
             reduction.Tag = "System.String";
-            if (NCacheLog.IsInfoEnabled) NCacheLog.Info("CreateRULE_OBJECTTYPE_DOLLARTEXTDOLLAR");
+            if (NCacheLog.IsInfoEnabled) NCacheLog.Info("CreateRULE_DELETEPARAMS_DOLLARTEXTDOLLAR");
             return null;
         }
 
