@@ -103,7 +103,7 @@ namespace Alachisoft.NCache.Web.RemoteClient.Config
                     }
                     _loadServersFromConfigFile = false;
                 }
-                else if (initParam.ServerList != null && initParam.ServerList.Length > 0)
+                else if (initParam.ServerList != null && initParam.ServerList.Length == 1)
                 {
                     AddServer(new RemoteServer(initParam.ServerList[0].Name, initParam.ServerList[0].Port));
                 }
