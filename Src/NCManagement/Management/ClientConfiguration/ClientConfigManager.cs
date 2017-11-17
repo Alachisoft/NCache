@@ -36,11 +36,11 @@ namespace Alachisoft.NCache.Management.ClientConfiguration
     class ClientConfigManager
     {
         static ArrayList ipAddresses = new ArrayList(1);
+
+        static string DIRNAME = "Config";
+        static string FILENAME = "client.ncconf";
         static string c_configDir = DIRNAME;
         static string c_configFileName = FILENAME;
-        static string DIRNAME = "Config";
-
-        static string FILENAME = "client.ncconf";
 
         internal static string ENDSTRING = "\r\n";
         static string bindIp;
