@@ -277,7 +277,7 @@ namespace Alachisoft.NCache.Common
         {
             dt = dt.ToUniversalTime();
             TimeSpan interval = dt - START_DT;
-            return (int)interval.Milliseconds;
+            return (int)interval.TotalMilliseconds;
         }
 
         public static long DiffTicks(DateTime dt)
