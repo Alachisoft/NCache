@@ -452,9 +452,10 @@ namespace Alachisoft.NCache.Management
                 LeasedCache cache = cacheInfo.Cache;
                 if (cache != null)
                 {
-                    if (cache.IsRunning)
+                    if (cache.IsRunning) {
                         status.Status = CacheStatus.Running;
                         status.IsCoordinator = cache.IsCoordinator;
+                    }
                 }
             }
             return status;
