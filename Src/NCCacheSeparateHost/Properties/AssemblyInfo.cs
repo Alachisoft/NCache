@@ -9,7 +9,7 @@ using System.Runtime.InteropServices;
 [assembly: AssemblyTrademark("NCache ™ is a registered trademark of Alachisoft.")]
 [assembly: AssemblyConfiguration("")]
 [assembly: AssemblyCompany("Alachisoft")]
-[assembly: AssemblyCopyright("Copyright © 2005-2017 Alachisoft")]
+[assembly: AssemblyCopyright("Copyright © 2005-2018 Alachisoft")]
 [assembly: AssemblyCulture("")]
 
 // Setting ComVisible to false makes the types in this assembly not visible 
@@ -48,7 +48,7 @@ namespace Alachisoft.NCache.CacheHost
         public static void PrintLogo(bool printlogo)
         {
             Assembly assembly = Assembly.GetExecutingAssembly();
-            string logo = @"Alachisoft (R) NCache Utility CacheSeparateHost. Version " + assembly.GetName().Version + @" Copyright (C) Alachisoft 2017. All rights reserved.";
+            string logo = @"Alachisoft (R) NCache Utility CacheSeparateHost. Version " + assembly.GetName().Version + @" Copyright (C) 2005-2018 Alachisoft. All rights reserved.";
 
             if (printlogo)
             {

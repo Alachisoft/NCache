@@ -29,7 +29,7 @@ using System.Runtime.InteropServices;
 [assembly: AssemblyTitle("Alachisoft.NGroups")]
 [assembly: AssemblyProduct("Alachisoft® NCache Open Source")]
 [assembly: AssemblyTrademark("NCache ™ is a registered trademark of Alachisoft.")]
-[assembly: AssemblyCopyright("Copyright © 2005-2017 Alachisoft")]
+[assembly: AssemblyCopyright("Copyright © 2005-2018 Alachisoft")]
 [assembly: AssemblyCulture("")]		
 
 //
