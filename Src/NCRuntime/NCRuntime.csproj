@@ -137,6 +137,11 @@
     <Compile Include="Exceptions\SuspectedException.cs" />
     <Compile Include="Exceptions\TimeoutException.cs" />
     <Compile Include="Exceptions\TypeIndexNotDefined.cs" />
+    <Compile Include="Processor\EntryProcessorException.cs" />
+    <Compile Include="Processor\IEntry.cs" />
+    <Compile Include="Processor\IEntryProcessor.cs" />
+    <Compile Include="Processor\IEntryProcessorResult.cs" />
+    <Compile Include="Processor\IMutableEntry.cs" />
     <Compile Include="Serialization\CompactReader.cs" />
     <Compile Include="Serialization\CompactWriter.cs" />
     <Compile Include="Serialization\ICompactSerializable.cs" />
