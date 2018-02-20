@@ -1,0 +1,1453 @@
+<?xml version="1.0" encoding="utf-8"?>
+<helpItems schema="maml" xmlns="http://msh">
+  <!-- Cmdlet: Clear-Cache -->
+  <command:command xmlns:maml="http://schemas.microsoft.com/maml/2004/10" xmlns:command="http://schemas.microsoft.com/maml/dev/command/2004/10" xmlns:dev="http://schemas.microsoft.com/maml/dev/2004/10">
+    <command:details>
+      <command:name>Clear-Cache</command:name>
+	  <maml:description>
+			<maml:para>Clears the registered cache.</maml:para>
+		</maml:description>
+      <command:verb>Clear</command:verb>
+      <command:noun>Cache</command:noun>
+    </command:details>
+	<command:description>
+	<maml:para>Clear-Cache cmdlet enables the user to clear the cache by removing all the items present in the cache. </maml:para>
+	</command:description>
+    <command:syntax>
+      <!-- Parameter set: __AllParameterSets -->
+      <command:syntaxItem>
+        <maml:name>Clear-Cache</maml:name>
+        <!-- Parameter: Name -->
+        <command:parameter required="true" globbing="false" pipelineInput="true (ByPropertyName)" position="0">
+          <maml:name>Name</maml:name>
+          <command:parameterValue required="true">string</command:parameterValue>
+          <dev:type>
+            <maml:name>System.String</maml:name>
+            <maml:uri />
+          </dev:type>
+          <dev:defaultValue></dev:defaultValue>
+        </command:parameter>
+        <!-- Parameter: ForceClear -->
+        <command:parameter required="false" globbing="false" pipelineInput="true (ByPropertyName)" position="named">
+          <maml:name>ForceClear</maml:name>
+          <command:parameterValue required="true">SwitchParameter</command:parameterValue>
+          <dev:type>
+            <maml:name>System.Management.Automation.SwitchParameter</maml:name>
+            <maml:uri />
+          </dev:type>
+          <dev:defaultValue>False</dev:defaultValue>
+        </command:parameter>
+        <!-- Parameter: NoLogo -->
+        <command:parameter required="false" globbing="false" pipelineInput="true (ByPropertyName)" position="named">
+          <maml:name>NoLogo</maml:name>
+          <command:parameterValue required="true">SwitchParameter</command:parameterValue>
+          <dev:type>
+            <maml:name>System.Management.Automation.SwitchParameter</maml:name>
+            <maml:uri />
+          </dev:type>
+          <dev:defaultValue>False</dev:defaultValue>
+        </command:parameter>
+      </command:syntaxItem>
+    </command:syntax>
+    <command:parameters>
+      <!-- Parameter: Name -->
+      <command:parameter required="true" globbing="false" pipelineInput="true (ByPropertyName)" position="0">
+        <maml:name>Name</maml:name>
+		<maml:description>
+			<maml:para>Name of the cache for which you want to use this tool.</maml:para>
+		</maml:description>
+        <command:parameterValue required="true">string</command:parameterValue>
+        <dev:type>
+          <maml:name>System.String</maml:name>
+          <maml:uri />
+        </dev:type>
+        <dev:defaultValue></dev:defaultValue>
+      </command:parameter>
+      <!-- Parameter: ForceClear -->
+      <command:parameter required="false" globbing="false" pipelineInput="true (ByPropertyName)" position="named">
+        <maml:name>ForceClear</maml:name>
+		<maml:description>
+			<maml:para>Force the clearing of the cache. If not specified, the user is asked before clearing the cache.</maml:para>
+		</maml:description>
+        <command:parameterValue required="true">SwitchParameter</command:parameterValue>
+        <dev:type>
+          <maml:name>System.Management.Automation.SwitchParameter</maml:name>
+          <maml:uri />
+        </dev:type>
+        <dev:defaultValue>False</dev:defaultValue>
+      </command:parameter>
+      <!-- Parameter: NoLogo -->
+      <command:parameter required="false" globbing="false" pipelineInput="true (ByPropertyName)" position="named">
+        <maml:name>NoLogo</maml:name>
+		<maml:description>
+			<maml:para>Suppresses display of the logo banner.</maml:para>
+		</maml:description>
+        <command:parameterValue required="true">SwitchParameter</command:parameterValue>
+        <dev:type>
+          <maml:name>System.Management.Automation.SwitchParameter</maml:name>
+          <maml:uri />
+        </dev:type>
+        <dev:defaultValue>False</dev:defaultValue>
+      </command:parameter>
+    </command:parameters>
+    <command:inputTypes>
+      <command:inputType>
+        <dev:type>
+          <maml:name></maml:name>
+          <maml:uri />
+        </dev:type>
+      </command:inputType>
+    </command:inputTypes>
+    <command:returnValues />
+	<maml:alertSet>
+		<maml:title></maml:title>
+		<maml:alert>
+			<maml:para></maml:para>
+		</maml:alert>
+	</maml:alertSet>
+	<command:examples>
+		<command:example>
+			<maml:title>--------------------------  Example 1  --------------------------</maml:title>
+			<dev:code>Clear-Cache -Name demoCache</dev:code>
+			<dev:remarks>
+				<maml:para>This command clears the demoCache.</maml:para>
+				<maml:para></maml:para>
+				<maml:para></maml:para>
+			</dev:remarks>
+		</command:example>
+		<command:example>
+			<maml:title>--------------------------  Example 2  --------------------------</maml:title>
+			<maml:introduction>
+			</maml:introduction>
+			<dev:code>Clear-Cache -Name demoCache -ForceClear</dev:code>
+			<dev:remarks>
+				<maml:para>This command  forcefully clears the cache and does not ask the user before clearing the cache.</maml:para>
+				<maml:para></maml:para>
+				<maml:para></maml:para>
+			</dev:remarks>
+		</command:example>
+	</command:examples>
+  </command:command>
+  <!-- Cmdlet: Start-Cache -->
+  <command:command xmlns:maml="http://schemas.microsoft.com/maml/2004/10" xmlns:command="http://schemas.microsoft.com/maml/dev/command/2004/10" xmlns:dev="http://schemas.microsoft.com/maml/dev/2004/10">
+    <command:details>
+      <command:name>Start-Cache</command:name>
+	  <maml:description>
+			<maml:para>Starts the registered cache.</maml:para>
+		</maml:description>
+      <command:verb>Start</command:verb>
+      <command:noun>Cache</command:noun>
+    </command:details>
+	<command:description>
+	<maml:para>Start-Cache cmdlet starts the registered cache. If nodes are mentioned, the cache process is only started on given nodes. </maml:para>
+	</command:description>
+    <command:syntax>
+      <!-- Parameter set: __AllParameterSets -->
+      <command:syntaxItem>
+        <maml:name>Start-Cache</maml:name>
+        <!-- Parameter: Name -->
+        <command:parameter required="true" globbing="false" pipelineInput="true (ByValue, ByPropertyName)" position="0">
+          <maml:name>Name</maml:name>
+          <command:parameterValue required="true">string[]</command:parameterValue>
+          <dev:type>
+            <maml:name>System.String[]</maml:name>
+            <maml:uri />
+          </dev:type>
+        </command:parameter>
+        <!-- Parameter: Server -->
+        <command:parameter required="false" globbing="false" pipelineInput="true (ByValue, ByPropertyName)" position="1">
+          <maml:name>Server</maml:name>
+          <command:parameterValue required="true">string</command:parameterValue>
+          <dev:type>
+            <maml:name>System.String</maml:name>
+            <maml:uri />
+          </dev:type>
+        </command:parameter>
+        <!-- Parameter: Port -->
+        <command:parameter required="false" globbing="false" pipelineInput="true (ByValue, ByPropertyName)" position="named">
+          <maml:name>Port</maml:name>
+          <command:parameterValue required="true">long</command:parameterValue>
+          <dev:type>
+            <maml:name>System.Int64</maml:name>
+            <maml:uri />
+          </dev:type>
+          <dev:defaultValue>8250</dev:defaultValue>
+        </command:parameter>
+        <!-- Parameter: NoLogo -->
+        <command:parameter required="false" globbing="false" pipelineInput="true (ByPropertyName)" position="named">
+          <maml:name>NoLogo</maml:name>
+          <command:parameterValue required="true">SwitchParameter</command:parameterValue>
+          <dev:type>
+            <maml:name>System.Management.Automation.SwitchParameter</maml:name>
+            <maml:uri />
+          </dev:type>
+          <dev:defaultValue>False</dev:defaultValue>
+        </command:parameter>
+      </command:syntaxItem>
+    </command:syntax>
+    <command:parameters>
+      <!-- Parameter: Name -->
+      <command:parameter required="true" globbing="false" pipelineInput="true (ByValue, ByPropertyName)" position="0">
+        <maml:name>Name</maml:name>
+				  <maml:description>
+					<maml:para>Specifies one or more name(s) of caches separated by comma registered on the server. The cache(s) with this/these name(s) is/are started on the server. Note: Comma-separated cache names are to be specified in case of multiple caches</maml:para>
+				</maml:description>
+        <command:parameterValue required="true">string[]</command:parameterValue>
+        <dev:type>
+          <maml:name>System.String[]</maml:name>
+          <maml:uri />
+        </dev:type>
+      </command:parameter>
+      <!-- Parameter: Server -->
+      <command:parameter required="false" globbing="false" pipelineInput="true (ByValue, ByPropertyName)" position="1">
+        <maml:name>Server</maml:name>
+		<maml:description>
+					<maml:para>Specifies a server name where the NCache service is running. The default is the local machine</maml:para>
+				</maml:description>
+        <command:parameterValue required="true">string</command:parameterValue>
+        <dev:type>
+          <maml:name>System.String</maml:name>
+          <maml:uri />
+        </dev:type>
+      </command:parameter>
+      <!-- Parameter: Port -->
+      <command:parameter required="false" globbing="false" pipelineInput="true (ByValue, ByPropertyName)" position="named">
+        <maml:name>Port</maml:name>
+		<maml:description>
+					<maml:para>Specifies the port on which NCache server is listening. Default port is 8250</maml:para>
+				</maml:description>
+        <command:parameterValue required="true">long</command:parameterValue>
+        <dev:type>
+          <maml:name>System.Int64</maml:name>
+          <maml:uri />
+        </dev:type>
+        <dev:defaultValue>8250</dev:defaultValue>
+      </command:parameter>
+      <!-- Parameter: NoLogo -->
+      <command:parameter required="false" globbing="false" pipelineInput="true (ByPropertyName)" position="named">
+        <maml:name>NoLogo</maml:name>
+		<maml:description>
+					<maml:para>Suppresses display of the logo banner.</maml:para>
+				</maml:description>
+        <command:parameterValue required="true">SwitchParameter</command:parameterValue>
+        <dev:type>
+          <maml:name>System.Management.Automation.SwitchParameter</maml:name>
+          <maml:uri />
+        </dev:type>
+        <dev:defaultValue>False</dev:defaultValue>
+      </command:parameter>
+    </command:parameters>
+    <command:inputTypes>
+      <command:inputType>
+        <dev:type>
+          <maml:name></maml:name>
+          <maml:uri />
+        </dev:type>
+      </command:inputType>
+    </command:inputTypes>
+    <command:returnValues />
+	<maml:alertSet>
+		<maml:title></maml:title>
+		<maml:alert>
+			<maml:para></maml:para>
+		</maml:alert>
+	</maml:alertSet>
+	<command:examples>
+		<command:example>
+			<maml:title>--------------------------  Example 1  --------------------------</maml:title>
+			<maml:introduction>
+				<maml:paragraph>The following command starts cache on local server</maml:paragraph>
+			</maml:introduction>
+			<dev:code>Start-Cache -Name demoCache</dev:code>
+			<dev:remarks>
+				<maml:para>This command starts cache named demoCache on local server.</maml:para>
+				<maml:para></maml:para>
+				<maml:para></maml:para>
+			</dev:remarks>
+		</command:example>
+		<command:example>
+			<maml:title>--------------------------  Example 2  --------------------------</maml:title>
+			<maml:introduction>
+			</maml:introduction>
+			<dev:code>Start-Cache -Name demoCache -Server 20.200.21.11</dev:code>
+			<dev:remarks>
+				<maml:para>This command starts cache named demoCache existing on server 20.200.21.11.</maml:para>
+				<maml:para></maml:para>
+				<maml:para></maml:para>
+			</dev:remarks>
+		</command:example>
+		<command:example>
+			<maml:title>--------------------------  Example 3  --------------------------</maml:title>
+			<maml:introduction>
+			</maml:introduction>
+			<dev:code>Start-Cache -Name demoCache -Server 20.200.21.11 -Port 8250</dev:code>
+			<dev:remarks>
+				<maml:para>This command uses port and starts cache named demoCache existing on server 20.200.21.11.</maml:para>
+				<maml:para></maml:para>
+				<maml:para></maml:para>
+			</dev:remarks>
+		</command:example>
+	</command:examples>
+  </command:command>
+  <!-- Cmdlet: Stop-Cache -->
+  <command:command xmlns:maml="http://schemas.microsoft.com/maml/2004/10" xmlns:command="http://schemas.microsoft.com/maml/dev/command/2004/10" xmlns:dev="http://schemas.microsoft.com/maml/dev/2004/10">
+    <command:details>
+      <command:name>Stop-Cache</command:name>
+	  <maml:description>
+			<maml:para>Stops the registered cache.</maml:para>
+		</maml:description>
+      <command:verb>Stop</command:verb>
+      <command:noun>Cache</command:noun>
+    </command:details>
+	<command:description>
+	<maml:para>Stop-Cache cmdlet enables users to stop a cache.</maml:para>
+	</command:description>
+    <command:syntax>
+      <!-- Parameter set: __AllParameterSets -->
+      <command:syntaxItem>
+        <maml:name>Stop-Cache</maml:name>
+        <!-- Parameter: Name -->
+        <command:parameter required="true" globbing="false" pipelineInput="true (ByPropertyName)" position="0">
+          <maml:name>Name</maml:name>
+          <command:parameterValue required="true">string</command:parameterValue>
+          <dev:type>
+            <maml:name>System.String</maml:name>
+            <maml:uri />
+          </dev:type>
+          <dev:defaultValue></dev:defaultValue>
+        </command:parameter>
+        <!-- Parameter: NoLogo -->
+        <command:parameter required="false" globbing="false" pipelineInput="true (ByPropertyName)" position="named">
+          <maml:name>NoLogo</maml:name>
+          <command:parameterValue required="true">SwitchParameter</command:parameterValue>
+          <dev:type>
+            <maml:name>System.Management.Automation.SwitchParameter</maml:name>
+            <maml:uri />
+          </dev:type>
+          <dev:defaultValue>False</dev:defaultValue>
+        </command:parameter>
+        <!-- Parameter: Port -->
+        <command:parameter required="false" globbing="false" pipelineInput="true (ByValue, ByPropertyName)" position="named">
+          <maml:name>Port</maml:name>
+          <command:parameterValue required="true">int</command:parameterValue>
+          <dev:type>
+            <maml:name>System.Int32</maml:name>
+            <maml:uri />
+          </dev:type>
+          <dev:defaultValue>-1</dev:defaultValue>
+        </command:parameter>
+        <!-- Parameter: Server -->
+        <command:parameter required="false" globbing="false" pipelineInput="true (ByPropertyName)" position="named">
+          <maml:name>Server</maml:name>
+          <command:parameterValue required="true">string</command:parameterValue>
+          <dev:type>
+            <maml:name>System.String</maml:name>
+            <maml:uri />
+          </dev:type>
+        </command:parameter>
+      </command:syntaxItem>
+    </command:syntax>
+    <command:parameters>
+      <!-- Parameter: Name -->
+      <command:parameter required="true" globbing="false" pipelineInput="true (ByPropertyName)" position="0">
+        <maml:name>Name</maml:name>
+		<maml:description>
+			<maml:para>Specifies one or more name(s) of caches separated by comma registered on the server. The cache(s) with this/these name(s) is/are stopped on the server. Note: Comma-separated cache names are to be specified in case of multiple caches</maml:para>
+		</maml:description>
+        <command:parameterValue required="true">string</command:parameterValue>
+        <dev:type>
+          <maml:name>System.String</maml:name>
+          <maml:uri />
+        </dev:type>
+        <dev:defaultValue></dev:defaultValue>
+      </command:parameter>
+      <!-- Parameter: Server -->
+      <command:parameter required="false" globbing="false" pipelineInput="true (ByPropertyName)" position="named">
+        <maml:name>Server</maml:name>
+		<maml:description>
+			<maml:para>Specifies a server name where the NCache service is running. The default is the local machine.</maml:para>
+		</maml:description>
+        <command:parameterValue required="true">string</command:parameterValue>
+        <dev:type>
+          <maml:name>System.String</maml:name>
+          <maml:uri />
+        </dev:type>
+      </command:parameter>
+      <!-- Parameter: Port -->
+      <command:parameter required="false" globbing="false" pipelineInput="true (ByValue, ByPropertyName)" position="named">
+        <maml:name>Port</maml:name>
+		<maml:description>
+			<maml:para>Specifies the port on which NCache server is listening. Default port is 8250.</maml:para>
+		</maml:description>
+        <command:parameterValue required="true">int</command:parameterValue>
+        <dev:type>
+          <maml:name>System.Int32</maml:name>
+          <maml:uri />
+        </dev:type>
+        <dev:defaultValue>8250</dev:defaultValue>
+      </command:parameter>
+      <!-- Parameter: NoLogo -->
+      <command:parameter required="false" globbing="false" pipelineInput="true (ByPropertyName)" position="named">
+        <maml:name>NoLogo</maml:name>
+		<maml:description>
+			<maml:para>Suppresses display of the logo banner.</maml:para>
+		</maml:description>
+        <command:parameterValue required="true">SwitchParameter</command:parameterValue>
+        <dev:type>
+          <maml:name>System.Management.Automation.SwitchParameter</maml:name>
+          <maml:uri />
+        </dev:type>
+        <dev:defaultValue>False</dev:defaultValue>
+      </command:parameter>
+    </command:parameters>
+    <command:inputTypes>
+      <command:inputType>
+        <dev:type>
+          <maml:name></maml:name>
+          <maml:uri />
+        </dev:type>
+      </command:inputType>
+    </command:inputTypes>
+    <command:returnValues />
+	<maml:alertSet>
+		<maml:title></maml:title>
+		<maml:alert>
+			<maml:para></maml:para>
+		</maml:alert>
+	</maml:alertSet>
+	<command:examples>
+		<command:example>
+			<maml:title>--------------------------  Example 1  --------------------------</maml:title>
+			<dev:code>Stop-Cache -CacheName demoCache</dev:code>
+			<dev:remarks>
+				<maml:para>This command stops demoCache on local server.</maml:para>
+				<maml:para></maml:para>
+				<maml:para></maml:para>
+			</dev:remarks>
+		</command:example>
+		<command:example>
+			<maml:title>--------------------------  Example 2  --------------------------</maml:title>
+			<maml:introduction>
+			</maml:introduction>
+			<dev:code>Stop-Cache -CacheName demoCache -Server 20.200.21.11</dev:code>
+			<dev:remarks>
+				<maml:para>This command stops demoCache on sever 20.200.21.11</maml:para>
+				<maml:para></maml:para>
+				<maml:para></maml:para>
+			</dev:remarks>
+		</command:example>
+		<command:example>
+			<maml:title>--------------------------  Example 3  --------------------------</maml:title>
+			<maml:introduction>
+			</maml:introduction>
+			<dev:code>Stop-Cache -CacheName demoCache -Server 20.200.21.11 -NoLogo</dev:code>
+			<dev:remarks>
+				<maml:para>This command stops cache demoCache existing on server 20.200.21.11 and logo is suppressed.</maml:para>
+				<maml:para></maml:para>
+				<maml:para></maml:para>
+			</dev:remarks>
+		</command:example>
+	</command:examples>
+  </command:command>
+  <!-- Cmdlet: Get-Caches -->
+  <command:command xmlns:maml="http://schemas.microsoft.com/maml/2004/10" xmlns:command="http://schemas.microsoft.com/maml/dev/command/2004/10" xmlns:dev="http://schemas.microsoft.com/maml/dev/2004/10">
+    <command:details>
+      <command:name>Get-Caches</command:name>
+	  <maml:description>
+			<maml:para>Lists the registered caches.</maml:para>
+		</maml:description>
+      <command:verb>Get</command:verb>
+      <command:noun>Caches</command:noun>
+    </command:details>
+	<command:description>
+	<maml:para>Get-Caches cmdlet enables the user to list the total caches registered on the server and there status.</maml:para>
+	</command:description>
+    <command:syntax>
+      <!-- Parameter set: __AllParameterSets -->
+      <command:syntaxItem>
+        <maml:name>Get-Caches</maml:name>
+        <!-- Parameter: Detail -->
+        <command:parameter required="false" globbing="false" pipelineInput="true (ByPropertyName)" position="named">
+          <maml:name>Detail</maml:name>
+          <command:parameterValue required="true">SwitchParameter</command:parameterValue>
+          <dev:type>
+            <maml:name>System.Management.Automation.SwitchParameter</maml:name>
+            <maml:uri />
+          </dev:type>
+          <dev:defaultValue>False</dev:defaultValue>
+        </command:parameter>
+        <!-- Parameter: NoLogo -->
+        <command:parameter required="false" globbing="false" pipelineInput="true (ByPropertyName)" position="named">
+          <maml:name>NoLogo</maml:name>
+          <command:parameterValue required="true">SwitchParameter</command:parameterValue>
+          <dev:type>
+            <maml:name>System.Management.Automation.SwitchParameter</maml:name>
+            <maml:uri />
+          </dev:type>
+          <dev:defaultValue>False</dev:defaultValue>
+        </command:parameter>
+        <!-- Parameter: Port -->
+        <command:parameter required="false" globbing="false" pipelineInput="true (ByPropertyName)" position="named">
+          <maml:name>Port</maml:name>
+          <command:parameterValue required="true">int</command:parameterValue>
+          <dev:type>
+            <maml:name>System.Int32</maml:name>
+            <maml:uri />
+          </dev:type>
+          <dev:defaultValue>-1</dev:defaultValue>
+        </command:parameter>
+        <!-- Parameter: Server -->
+        <command:parameter required="false" globbing="false" pipelineInput="true (ByValue)" position="named">
+          <maml:name>Server</maml:name>
+          <command:parameterValue required="true">string</command:parameterValue>
+          <dev:type>
+            <maml:name>System.String</maml:name>
+            <maml:uri />
+          </dev:type>
+          <dev:defaultValue></dev:defaultValue>
+        </command:parameter>
+      </command:syntaxItem>
+    </command:syntax>
+    <command:parameters>
+      <!-- Parameter: Server -->
+      <command:parameter required="false" globbing="false" pipelineInput="true (ByValue)" position="named">
+        <maml:name>Server</maml:name>
+		<maml:description>
+			<maml:para>Specifies a server name where the NCache service is running. The default is the local machine</maml:para>
+		</maml:description>
+        <command:parameterValue required="true">string</command:parameterValue>
+        <dev:type>
+          <maml:name>System.String</maml:name>
+          <maml:uri />
+        </dev:type>
+        <dev:defaultValue></dev:defaultValue>
+      </command:parameter>
+      <!-- Parameter: Port -->
+      <command:parameter required="false" globbing="false" pipelineInput="true (ByPropertyName)" position="named">
+        <maml:name>Port</maml:name>
+		<maml:description>
+			<maml:para>Specifies the port on which NCache server is listening. Default port is 8250.</maml:para>
+		</maml:description>
+        <command:parameterValue required="true">int</command:parameterValue>
+        <dev:type>
+          <maml:name>System.Int32</maml:name>
+          <maml:uri />
+        </dev:type>
+        <dev:defaultValue>8250</dev:defaultValue>
+      </command:parameter>
+      <!-- Parameter: Detail -->
+      <command:parameter required="false" globbing="false" pipelineInput="true (ByPropertyName)" position="named">
+        <maml:name>Detail</maml:name>
+		<maml:description>
+			<maml:para>Displays detailed information about the cache(s) registered on the server.</maml:para>
+		</maml:description>
+        <command:parameterValue required="true">SwitchParameter</command:parameterValue>
+        <dev:type>
+          <maml:name>System.Management.Automation.SwitchParameter</maml:name>
+          <maml:uri />
+        </dev:type>
+        <dev:defaultValue>False</dev:defaultValue>
+      </command:parameter>
+      <!-- Parameter: NoLogo -->
+      <command:parameter required="false" globbing="false" pipelineInput="true (ByPropertyName)" position="named">
+        <maml:name>NoLogo</maml:name>
+		<maml:description>
+					<maml:para>Suppresses display of the logo banner.</maml:para>
+				</maml:description>
+        <command:parameterValue required="true">SwitchParameter</command:parameterValue>
+        <dev:type>
+          <maml:name>System.Management.Automation.SwitchParameter</maml:name>
+          <maml:uri />
+        </dev:type>
+        <dev:defaultValue>False</dev:defaultValue>
+      </command:parameter>
+    </command:parameters>
+    <command:inputTypes>
+      <command:inputType>
+        <dev:type>
+          <maml:name></maml:name>
+          <maml:uri />
+        </dev:type>
+      </command:inputType>
+    </command:inputTypes>
+    <command:returnValues />
+	<maml:alertSet>
+		<maml:title></maml:title>
+		<maml:alert>
+			<maml:para></maml:para>
+		</maml:alert>
+	</maml:alertSet>
+	<command:examples>
+		<command:example>
+			<maml:title>--------------------------  Example 1  --------------------------</maml:title>
+			<dev:code>Get-Caches</dev:code>
+			<dev:remarks>
+				<maml:para>This command  displays all caches registered on local machine.</maml:para>
+				<maml:para></maml:para>
+				<maml:para></maml:para>
+			</dev:remarks>
+		</command:example>
+		<command:example>
+			<maml:title>--------------------------  Example 2  --------------------------</maml:title>
+			<maml:introduction>
+			</maml:introduction>
+			<dev:code>Get-Caches -Detail -Server 20.200.21.11</dev:code>
+			<dev:remarks>
+				<maml:para>This command  displays all caches currently registered on the provided server with detailed information.</maml:para> <maml:para></maml:para>
+				<maml:para></maml:para>
+			</dev:remarks>
+		</command:example>
+		<command:example>
+			<maml:title>--------------------------  Example 3  --------------------------</maml:title>
+			<maml:introduction>
+			</maml:introduction>
+			<dev:code>Get-Caches -Detail</dev:code>
+			<dev:remarks>
+				<maml:para>This command  displays all caches currently registered on the server with detailed information.</maml:para>
+				<maml:para></maml:para>
+				<maml:para></maml:para>
+			</dev:remarks>
+		</command:example>
+	</command:examples>
+  </command:command>
+   <!-- Cmdlet: Get-NCacheVersion -->
+  <command:command xmlns:maml="http://schemas.microsoft.com/maml/2004/10" xmlns:command="http://schemas.microsoft.com/maml/dev/command/2004/10" xmlns:dev="http://schemas.microsoft.com/maml/dev/2004/10">
+    <command:details>
+      <command:name>Get-NCacheVersion</command:name>
+	  	  <maml:description>
+			<maml:para>Verifies license.</maml:para>
+		</maml:description>
+      <command:verb>Get</command:verb>
+      <command:noun>NCacheVersion</command:noun>
+    </command:details>
+	<command:description>
+	<maml:para>Get-NCacheVersion cmdlet enables the user to verify the NCache License. For registered version it will display the registration details. In evaluation mode it will display the remaining day if evaluation is still valid else give the expiration message.</maml:para>
+	</command:description>
+    <command:syntax>
+      <!-- Parameter set: __AllParameterSets -->
+      <command:syntaxItem>
+        <maml:name>Get-NCacheVersion</maml:name>
+        <!-- Parameter: NoLogo -->
+        <command:parameter required="false" globbing="false" pipelineInput="true (ByPropertyName)" position="named">
+          <maml:name>NoLogo</maml:name>
+          <command:parameterValue required="true">SwitchParameter</command:parameterValue>
+          <dev:type>
+            <maml:name>System.Management.Automation.SwitchParameter</maml:name>
+            <maml:uri />
+          </dev:type>
+          <dev:defaultValue>False</dev:defaultValue>
+        </command:parameter>
+      </command:syntaxItem>
+    </command:syntax>
+    <command:parameters>
+      <!-- Parameter: NoLogo -->
+      <command:parameter required="false" globbing="false" pipelineInput="true (ByPropertyName)" position="named">
+        <maml:name>NoLogo</maml:name>
+		<maml:description>
+					<maml:para>Suppresses display of the logo banner.</maml:para>
+				</maml:description>
+        <command:parameterValue required="true">SwitchParameter</command:parameterValue>
+        <dev:type>
+          <maml:name>System.Management.Automation.SwitchParameter</maml:name>
+          <maml:uri />
+        </dev:type>
+        <dev:defaultValue>False</dev:defaultValue>
+      </command:parameter>
+    </command:parameters>
+    <command:inputTypes>
+      <command:inputType>
+        <dev:type>
+          <maml:name></maml:name>
+          <maml:uri />
+        </dev:type>
+      </command:inputType>
+    </command:inputTypes>
+    <command:returnValues />
+	<maml:alertSet>
+		<maml:title></maml:title>
+		<maml:alert>
+			<maml:para></maml:para>
+		</maml:alert>
+	</maml:alertSet>
+	<command:examples>
+		<command:example>
+			<maml:title>--------------------------  Example 1  --------------------------</maml:title>
+			<dev:code>Get-NCacheVersion</dev:code>
+			<dev:remarks>
+				<maml:para>This command displays registration details.</maml:para>
+				<maml:para></maml:para>
+				<maml:para></maml:para>
+			</dev:remarks>
+		</command:example>
+		<command:example>
+			<maml:title>--------------------------  Example 2  --------------------------</maml:title>
+			<maml:introduction>
+			</maml:introduction>
+			<dev:code>Get-NCacheVersion -NoLogo</dev:code>
+			<dev:remarks>
+				<maml:para>This command displays registration details without displaying logo banner.</maml:para>
+				<maml:para></maml:para>
+				<maml:para></maml:para>
+			</dev:remarks>
+		</command:example>
+	</command:examples>
+  </command:command>
+  <!-- Cmdlet: Test-Stress -->
+  <command:command xmlns:maml="http://schemas.microsoft.com/maml/2004/10" xmlns:command="http://schemas.microsoft.com/maml/dev/command/2004/10" xmlns:dev="http://schemas.microsoft.com/maml/dev/2004/10">
+    <command:details>
+      <command:name>Test-Stress</command:name>
+	    <maml:description>
+			<maml:para>Starts stress test tool.</maml:para>
+		</maml:description>
+      <command:verb>Test</command:verb>
+      <command:noun>Stress</command:noun>
+    </command:details>
+	<command:description>
+	<maml:para>Test-Stress cmdlet enables users to quickly simulate heavy transactional load on a given cache. And, this helps you see how NCache actually performs under stress in your own environment. Please watch NCache performance counters in NCache Manager "statistics" or regular PerfMon.</maml:para>
+	</command:description>
+    <command:syntax>
+      <!-- Parameter set: __AllParameterSets -->
+      <command:syntaxItem>
+        <maml:name>Test-Stress</maml:name>
+        <!-- Parameter: CacheName -->
+        <command:parameter required="true" globbing="false" pipelineInput="true (ByValue, ByPropertyName)" position="0">
+          <maml:name>CacheName</maml:name>
+          <command:parameterValue required="true">string</command:parameterValue>
+          <dev:type>
+            <maml:name>System.String</maml:name>
+            <maml:uri />
+          </dev:type>
+          <dev:defaultValue></dev:defaultValue>
+        </command:parameter>
+        <!-- Parameter: DataSize -->
+        <command:parameter required="false" globbing="false" pipelineInput="true (ByPropertyName)" position="named">
+          <maml:name>DataSize</maml:name>
+          <command:parameterValue required="true">int</command:parameterValue>
+          <dev:type>
+            <maml:name>System.Int32</maml:name>
+            <maml:uri />
+          </dev:type>
+          <dev:defaultValue>1024</dev:defaultValue>
+        </command:parameter>
+        <!-- Parameter: GetsPerIteration -->
+        <command:parameter required="false" globbing="false" pipelineInput="true (ByPropertyName)" position="named">
+          <maml:name>GetsPerIteration</maml:name>
+          <command:parameterValue required="true">int</command:parameterValue>
+          <dev:type>
+            <maml:name>System.Int32</maml:name>
+            <maml:uri />
+          </dev:type>
+          <dev:defaultValue>1</dev:defaultValue>
+        </command:parameter>
+        <!-- Parameter: ItemsCount -->
+        <command:parameter required="false" globbing="false" pipelineInput="true (ByPropertyName)" position="named">
+          <maml:name>ItemsCount</maml:name>
+          <command:parameterValue required="true">int</command:parameterValue>
+          <dev:type>
+            <maml:name>System.Int32</maml:name>
+            <maml:uri />
+          </dev:type>
+          <dev:defaultValue>0</dev:defaultValue>
+        </command:parameter>
+        <!-- Parameter: NoLogo -->
+        <command:parameter required="false" globbing="false" pipelineInput="true (ByPropertyName)" position="named">
+          <maml:name>NoLogo</maml:name>
+          <command:parameterValue required="true">SwitchParameter</command:parameterValue>
+          <dev:type>
+            <maml:name>System.Management.Automation.SwitchParameter</maml:name>
+            <maml:uri />
+          </dev:type>
+          <dev:defaultValue>False</dev:defaultValue>
+        </command:parameter>
+        <!-- Parameter: ReportingInterval -->
+        <command:parameter required="false" globbing="false" pipelineInput="true (ByPropertyName)" position="named">
+          <maml:name>ReportingInterval</maml:name>
+          <command:parameterValue required="true">int</command:parameterValue>
+          <dev:type>
+            <maml:name>System.Int32</maml:name>
+            <maml:uri />
+          </dev:type>
+          <dev:defaultValue>5000</dev:defaultValue>
+        </command:parameter>
+        <!-- Parameter: SlidingExpiration -->
+        <command:parameter required="false" globbing="false" pipelineInput="true (ByPropertyName)" position="named">
+          <maml:name>SlidingExpiration</maml:name>
+          <command:parameterValue required="true">int</command:parameterValue>
+          <dev:type>
+            <maml:name>System.Int32</maml:name>
+            <maml:uri />
+          </dev:type>
+          <dev:defaultValue>60</dev:defaultValue>
+        </command:parameter>
+        <!-- Parameter: TestCaseIterationDelay -->
+        <command:parameter required="false" globbing="false" pipelineInput="true (ByPropertyName)" position="named">
+          <maml:name>TestCaseIterationDelay</maml:name>
+          <command:parameterValue required="true">int</command:parameterValue>
+          <dev:type>
+            <maml:name>System.Int32</maml:name>
+            <maml:uri />
+          </dev:type>
+          <dev:defaultValue>0</dev:defaultValue>
+        </command:parameter>
+        <!-- Parameter: TestCaseIterations -->
+        <command:parameter required="false" globbing="false" pipelineInput="true (ByPropertyName)" position="named">
+          <maml:name>TestCaseIterations</maml:name>
+          <command:parameterValue required="true">int</command:parameterValue>
+          <dev:type>
+            <maml:name>System.Int32</maml:name>
+            <maml:uri />
+          </dev:type>
+          <dev:defaultValue>20</dev:defaultValue>
+        </command:parameter>
+        <!-- Parameter: ThreadCount -->
+        <command:parameter required="false" globbing="false" pipelineInput="true (ByPropertyName)" position="named">
+          <maml:name>ThreadCount</maml:name>
+          <command:parameterValue required="true">int</command:parameterValue>
+          <dev:type>
+            <maml:name>System.Int32</maml:name>
+            <maml:uri />
+          </dev:type>
+          <dev:defaultValue>1</dev:defaultValue>
+        </command:parameter>
+        <!-- Parameter: UpdatesPerIteration -->
+        <command:parameter required="false" globbing="false" pipelineInput="true (ByPropertyName)" position="named">
+          <maml:name>UpdatesPerIteration</maml:name>
+          <command:parameterValue required="true">int</command:parameterValue>
+          <dev:type>
+            <maml:name>System.Int32</maml:name>
+            <maml:uri />
+          </dev:type>
+          <dev:defaultValue>1</dev:defaultValue>
+        </command:parameter>
+      </command:syntaxItem>
+    </command:syntax>
+    <command:parameters>
+      <!-- Parameter: CacheName -->
+      <command:parameter required="true" globbing="false" pipelineInput="true (ByValue, ByPropertyName)" position="0">
+        <maml:name>CacheName</maml:name>
+		<maml:description>
+					<maml:para>Specifies name of the cache.</maml:para>
+				</maml:description>
+        <command:parameterValue required="true">string</command:parameterValue>
+        <dev:type>
+          <maml:name>System.String</maml:name>
+          <maml:uri />
+        </dev:type>
+        <dev:defaultValue></dev:defaultValue>
+      </command:parameter>
+      <!-- Parameter: ItemsCount -->
+      <command:parameter required="false" globbing="false" pipelineInput="true (ByPropertyName)" position="named">
+        <maml:name>ItemsCount</maml:name>
+		<maml:description>
+					<maml:para>Specifies how many total items you want to add. (default: infinite)</maml:para>
+				</maml:description>
+        <command:parameterValue required="true">int</command:parameterValue>
+        <dev:type>
+          <maml:name>System.Int32</maml:name>
+          <maml:uri />
+        </dev:type>
+        <dev:defaultValue>0</dev:defaultValue>
+      </command:parameter>
+      <!-- Parameter: TestCaseIterations -->
+      <command:parameter required="false" globbing="false" pipelineInput="true (ByPropertyName)" position="named">
+        <maml:name>TestCaseIterations</maml:name>
+		<maml:description>
+					<maml:para>Specifies how many iterations within a test case (default: 20)</maml:para>
+				</maml:description>
+        <command:parameterValue required="true">int</command:parameterValue>
+        <dev:type>
+          <maml:name>System.Int32</maml:name>
+          <maml:uri />
+        </dev:type>
+        <dev:defaultValue>20</dev:defaultValue>
+      </command:parameter>
+      <!-- Parameter: TestCaseIterationDelay -->
+      <command:parameter required="false" globbing="false" pipelineInput="true (ByPropertyName)" position="named">
+        <maml:name>TestCaseIterationDelay</maml:name>
+		<maml:description>
+					<maml:para>Specifies how much delay (in seconds) between each test case iteration (default: 0)</maml:para>
+				</maml:description>
+        <command:parameterValue required="true">int</command:parameterValue>
+        <dev:type>
+          <maml:name>System.Int32</maml:name>
+          <maml:uri />
+        </dev:type>
+        <dev:defaultValue>0</dev:defaultValue>
+      </command:parameter>
+      <!-- Parameter: GetsPerIteration -->
+      <command:parameter required="false" globbing="false" pipelineInput="true (ByPropertyName)" position="named">
+        <maml:name>GetsPerIteration</maml:name>
+		<maml:description>
+					<maml:para>Specifies how many gets within one iteration of a test case (default: 1)</maml:para>
+				</maml:description>
+        <command:parameterValue required="true">int</command:parameterValue>
+        <dev:type>
+          <maml:name>System.Int32</maml:name>
+          <maml:uri />
+        </dev:type>
+        <dev:defaultValue>1</dev:defaultValue>
+      </command:parameter>
+      <!-- Parameter: UpdatesPerIteration -->
+      <command:parameter required="false" globbing="false" pipelineInput="true (ByPropertyName)" position="named">
+        <maml:name>UpdatesPerIteration</maml:name>
+		<maml:description>
+					<maml:para>Specifies how many updates within one iteration of a test case (default: 1)</maml:para>
+				</maml:description>
+        <command:parameterValue required="true">int</command:parameterValue>
+        <dev:type>
+          <maml:name>System.Int32</maml:name>
+          <maml:uri />
+        </dev:type>
+        <dev:defaultValue>1</dev:defaultValue>
+      </command:parameter>
+      <!-- Parameter: DataSize -->
+      <command:parameter required="false" globbing="false" pipelineInput="true (ByPropertyName)" position="named">
+        <maml:name>DataSize</maml:name>
+		<maml:description>
+					<maml:para>Specifies in bytes the size of each cache item (default: 1024)</maml:para>
+				</maml:description>
+        <command:parameterValue required="true">int</command:parameterValue>
+        <dev:type>
+          <maml:name>System.Int32</maml:name>
+          <maml:uri />
+        </dev:type>
+        <dev:defaultValue>1024</dev:defaultValue>
+      </command:parameter>
+      <!-- Parameter: SlidingExpiration -->
+      <command:parameter required="false" globbing="false" pipelineInput="true (ByPropertyName)" position="named">
+        <maml:name>SlidingExpiration</maml:name>
+		<maml:description>
+					<maml:para>Specifies in seconds sliding expiration (default: 300; minimum: 15)</maml:para>
+				</maml:description>
+        <command:parameterValue required="true">int</command:parameterValue>
+        <dev:type>
+          <maml:name>System.Int32</maml:name>
+          <maml:uri />
+        </dev:type>
+        <dev:defaultValue>60</dev:defaultValue>
+      </command:parameter>
+      <!-- Parameter: ThreadCount -->
+      <command:parameter required="false" globbing="false" pipelineInput="true (ByPropertyName)" position="named">
+        <maml:name>ThreadCount</maml:name>
+		<maml:description>
+					<maml:para>Specifies how many client threads (default: 1; maximum: 3)</maml:para>
+				</maml:description>
+        <command:parameterValue required="true">int</command:parameterValue>
+        <dev:type>
+          <maml:name>System.Int32</maml:name>
+          <maml:uri />
+        </dev:type>
+        <dev:defaultValue>1</dev:defaultValue>
+      </command:parameter>
+      <!-- Parameter: ReportingInterval -->
+      <command:parameter required="false" globbing="false" pipelineInput="true (ByPropertyName)" position="named">
+        <maml:name>ReportingInterval</maml:name>
+		<maml:description>
+					<maml:para>Report after this many total iterations (default: 5000)</maml:para>
+				</maml:description>
+        <command:parameterValue required="true">int</command:parameterValue>
+        <dev:type>
+          <maml:name>System.Int32</maml:name>
+          <maml:uri />
+        </dev:type>
+        <dev:defaultValue>5000</dev:defaultValue>
+      </command:parameter>
+      <!-- Parameter: NoLogo -->
+      <command:parameter required="false" globbing="false" pipelineInput="true (ByPropertyName)" position="named">
+        <maml:name>NoLogo</maml:name>
+		<maml:description>
+					<maml:para>Suppresses display of the logo banner.</maml:para>
+		</maml:description>
+        <command:parameterValue required="true">SwitchParameter</command:parameterValue>
+        <dev:type>
+          <maml:name>System.Management.Automation.SwitchParameter</maml:name>
+          <maml:uri />
+        </dev:type>
+        <dev:defaultValue>False</dev:defaultValue>
+      </command:parameter>
+    </command:parameters>
+    <command:inputTypes>
+      <command:inputType>
+        <dev:type>
+          <maml:name></maml:name>
+          <maml:uri />
+        </dev:type>
+      </command:inputType>
+    </command:inputTypes>
+    <command:returnValues />
+	<maml:alertSet>
+		<maml:title></maml:title>
+		<maml:alert>
+			<maml:para></maml:para>
+		</maml:alert>
+	</maml:alertSet>
+	<command:examples>
+		<command:example>
+			<maml:title>--------------------------  Example 1  --------------------------</maml:title>
+			<dev:code>Test-Stress -CacheName demoCache</dev:code>
+			<dev:remarks>
+				<maml:para>This command executes stresstesttool on demoCache.</maml:para>
+				<maml:para></maml:para>
+				<maml:para></maml:para>
+			</dev:remarks>
+		</command:example>
+		<command:example>
+			<maml:title>--------------------------  Example 2  --------------------------</maml:title>
+			<dev:code>Test-Stress -CacheName demoCache -DataSize 2048</dev:code>
+			<dev:remarks>
+				<maml:para>This command executes stresstesttool on demoCache and will add items of size 2kb</maml:para>
+				<maml:para></maml:para>
+				<maml:para></maml:para>
+			</dev:remarks>
+		</command:example>
+	</command:examples>
+  </command:command>
+  <!-- Cmdlet: Write-BackingSourceConfig -->
+  <command:command xmlns:maml="http://schemas.microsoft.com/maml/2004/10" xmlns:command="http://schemas.microsoft.com/maml/dev/command/2004/10" xmlns:dev="http://schemas.microsoft.com/maml/dev/2004/10">
+    <command:details>
+      <command:name>Write-BackingSourceConfig</command:name>
+	  <maml:description>
+			<maml:para>Writes Backing source configuration.</maml:para>
+		</maml:description>
+      <command:verb>Write</command:verb>
+      <command:noun>BackingSourceConfig</command:noun>
+    </command:details>
+	<command:description>
+	<maml:para>Write-BackingSourceConfig cmdlet writes the configuration for backing source readthru/writethru.</maml:para>
+	</command:description>
+    <command:syntax>
+      <!-- Parameter set: __AllParameterSets -->
+      <command:syntaxItem>
+        <maml:name>Write-BackingSourceConfig</maml:name>
+        <!-- Parameter: AssemblyPath -->
+        <command:parameter required="true" globbing="false" pipelineInput="true (ByPropertyName)" position="named">
+          <maml:name>AssemblyPath</maml:name>
+          <command:parameterValue required="true">string</command:parameterValue>
+          <dev:type>
+            <maml:name>System.String</maml:name>
+            <maml:uri />
+          </dev:type>
+          <dev:defaultValue></dev:defaultValue>
+        </command:parameter>
+        <!-- Parameter: Class -->
+        <command:parameter required="true" globbing="false" pipelineInput="true (ByPropertyName)" position="named">
+          <maml:name>Class</maml:name>
+          <command:parameterValue required="true">string</command:parameterValue>
+          <dev:type>
+            <maml:name>System.String</maml:name>
+            <maml:uri />
+          </dev:type>
+          <dev:defaultValue></dev:defaultValue>
+        </command:parameter>
+        <!-- Parameter: ProviderName -->
+        <command:parameter required="true" globbing="false" pipelineInput="true (ByValue, ByPropertyName)" position="named">
+          <maml:name>ProviderName</maml:name>
+          <command:parameterValue required="true">string</command:parameterValue>
+          <dev:type>
+            <maml:name>System.String</maml:name>
+            <maml:uri />
+          </dev:type>
+          <dev:defaultValue></dev:defaultValue>
+        </command:parameter>
+        <!-- Parameter: DefaultProvider -->
+        <command:parameter required="false" globbing="false" pipelineInput="true (ByValue, ByPropertyName)" position="named">
+          <maml:name>DefaultProvider</maml:name>
+          <command:parameterValue required="true">SwitchParameter</command:parameterValue>
+          <dev:type>
+            <maml:name>System.Management.Automation.SwitchParameter</maml:name>
+            <maml:uri />
+          </dev:type>
+          <dev:defaultValue>False</dev:defaultValue>
+        </command:parameter>
+        <!-- Parameter: NoLogo -->
+        <command:parameter required="false" globbing="false" pipelineInput="true (ByPropertyName)" position="named">
+          <maml:name>NoLogo</maml:name>
+          <command:parameterValue required="true">SwitchParameter</command:parameterValue>
+          <dev:type>
+            <maml:name>System.Management.Automation.SwitchParameter</maml:name>
+            <maml:uri />
+          </dev:type>
+          <dev:defaultValue>True</dev:defaultValue>
+        </command:parameter>
+        <!-- Parameter: OutputFile -->
+        <command:parameter required="false" globbing="false" pipelineInput="true (ByPropertyName)" position="named">
+          <maml:name>OutputFile</maml:name>
+          <command:parameterValue required="true">string</command:parameterValue>
+          <dev:type>
+            <maml:name>System.String</maml:name>
+            <maml:uri />
+          </dev:type>
+          <dev:defaultValue></dev:defaultValue>
+        </command:parameter>
+        <!-- Parameter: Parameters -->
+        <command:parameter required="false" globbing="false" pipelineInput="true (ByPropertyName)" position="named">
+          <maml:name>Parameters</maml:name>
+          <command:parameterValue required="true">string</command:parameterValue>
+          <dev:type>
+            <maml:name>System.String</maml:name>
+            <maml:uri />
+          </dev:type>
+          <dev:defaultValue></dev:defaultValue>
+        </command:parameter>
+        <!-- Parameter: ReadThru -->
+        <command:parameter required="false" globbing="false" pipelineInput="true (ByPropertyName)" position="named">
+          <maml:name>ReadThru</maml:name>
+          <command:parameterValue required="true">SwitchParameter</command:parameterValue>
+          <dev:type>
+            <maml:name>System.Management.Automation.SwitchParameter</maml:name>
+            <maml:uri />
+          </dev:type>
+          <dev:defaultValue>False</dev:defaultValue>
+        </command:parameter>
+        <!-- Parameter: WriteThru -->
+        <command:parameter required="false" globbing="false" pipelineInput="true (ByPropertyName)" position="named">
+          <maml:name>WriteThru</maml:name>
+          <command:parameterValue required="true">SwitchParameter</command:parameterValue>
+          <dev:type>
+            <maml:name>System.Management.Automation.SwitchParameter</maml:name>
+            <maml:uri />
+          </dev:type>
+          <dev:defaultValue>False</dev:defaultValue>
+        </command:parameter>
+      </command:syntaxItem>
+    </command:syntax>
+    <command:parameters>
+      <!-- Parameter: AssemblyPath -->
+      <command:parameter required="true" globbing="false" pipelineInput="true (ByPropertyName)" position="named">
+        <maml:name>AssemblyPath</maml:name>
+		<maml:description>
+			<maml:para>Specifies the path of the assembly which will be configured as a backing source.</maml:para>
+		</maml:description>
+        <command:parameterValue required="true">string</command:parameterValue>
+        <dev:type>
+          <maml:name>System.String</maml:name>
+          <maml:uri />
+        </dev:type>
+        <dev:defaultValue></dev:defaultValue>
+      </command:parameter>
+      <!-- Parameter: Class -->
+      <command:parameter required="true" globbing="false" pipelineInput="true (ByPropertyName)" position="named">
+        <maml:name>Class</maml:name>
+		<maml:description>
+			<maml:para>Specifies the fully qualified class from the backing source assembly which implements ReadThru/WriteThru.</maml:para>
+		</maml:description>
+        <command:parameterValue required="true">string</command:parameterValue>
+        <dev:type>
+          <maml:name>System.String</maml:name>
+          <maml:uri />
+        </dev:type>
+        <dev:defaultValue></dev:defaultValue>
+      </command:parameter>
+      <!-- Parameter: Parameters -->
+      <command:parameter required="false" globbing="false" pipelineInput="true (ByPropertyName)" position="named">
+        <maml:name>Parameters</maml:name>
+		<maml:description>
+			<maml:para>Specifies the list of the parameters passed to the backing source provider ('$'separated) e.g. key1=value1'$'key2=value2'$'....</maml:para>
+		</maml:description>
+        <command:parameterValue required="true">string</command:parameterValue>
+        <dev:type>
+          <maml:name>System.String</maml:name>
+          <maml:uri />
+        </dev:type>
+        <dev:defaultValue></dev:defaultValue>
+      </command:parameter>
+	  <!-- Parameter: ProviderName -->
+      <command:parameter required="true" globbing="false" pipelineInput="true (ByValue, ByPropertyName)" position="named">
+        <maml:name>ProviderName</maml:name>
+		<maml:description>
+			<maml:para>Specifies the provider name.</maml:para>
+		</maml:description>
+        <command:parameterValue required="true">string</command:parameterValue>
+        <dev:type>
+          <maml:name>System.String</maml:name>
+          <maml:uri />
+        </dev:type>
+        <dev:defaultValue></dev:defaultValue>
+      </command:parameter>
+      <!-- Parameter: ReadThru -->
+      <command:parameter required="false" globbing="false" pipelineInput="true (ByPropertyName)" position="named">
+        <maml:name>ReadThru</maml:name>
+		<maml:description>
+			<maml:para>Specifies if provided backing source is configured for ReadThru.</maml:para>
+		</maml:description>
+        <command:parameterValue required="true">SwitchParameter</command:parameterValue>
+        <dev:type>
+          <maml:name>System.Management.Automation.SwitchParameter</maml:name>
+          <maml:uri />
+        </dev:type>
+        <dev:defaultValue>False</dev:defaultValue>
+      </command:parameter>
+      <!-- Parameter: WriteThru -->
+      <command:parameter required="false" globbing="false" pipelineInput="true (ByPropertyName)" position="named">
+        <maml:name>WriteThru</maml:name>
+		<maml:description>
+			<maml:para>Specifies if provided backing source is configured for WriteThru.</maml:para>
+		</maml:description>
+        <command:parameterValue required="true">SwitchParameter</command:parameterValue>
+        <dev:type>
+          <maml:name>System.Management.Automation.SwitchParameter</maml:name>
+          <maml:uri />
+        </dev:type>
+        <dev:defaultValue>False</dev:defaultValue>
+      </command:parameter>      
+      <!-- Parameter: DefaultProvider -->
+      <command:parameter required="false" globbing="false" pipelineInput="true (ByValue, ByPropertyName)" position="named">
+        <maml:name>DefaultProvider</maml:name>
+		<maml:description>
+			<maml:para>Specifies if provider is default provider.</maml:para>
+		</maml:description>
+        <command:parameterValue required="true">SwitchParameter</command:parameterValue>
+        <dev:type>
+          <maml:name>System.Management.Automation.SwitchParameter</maml:name>
+          <maml:uri />
+        </dev:type>
+        <dev:defaultValue>False</dev:defaultValue>
+      </command:parameter>
+	  <!-- Parameter: OutputFile -->
+      <command:parameter required="false" globbing="false" pipelineInput="true (ByPropertyName)" position="named">
+        <maml:name>OutputFile</maml:name>
+		<maml:description>
+			<maml:para>Specifies the path of the output file in which configuration will be written.</maml:para>
+		</maml:description>
+        <command:parameterValue required="true">string</command:parameterValue>
+        <dev:type>
+          <maml:name>System.String</maml:name>
+          <maml:uri />
+        </dev:type>
+        <dev:defaultValue></dev:defaultValue>
+      </command:parameter>
+      <!-- Parameter: NoLogo -->
+      <command:parameter required="false" globbing="false" pipelineInput="true (ByPropertyName)" position="named">
+        <maml:name>NoLogo</maml:name>
+		<maml:description>
+			<maml:para>Suppresses display of the logo banner.</maml:para>
+		</maml:description>
+        <command:parameterValue required="true">SwitchParameter</command:parameterValue>
+        <dev:type>
+          <maml:name>System.Management.Automation.SwitchParameter</maml:name>
+          <maml:uri />
+        </dev:type>
+        <dev:defaultValue>True</dev:defaultValue>
+      </command:parameter>
+    </command:parameters>
+      <command:inputTypes>
+      <command:inputType>
+        <dev:type>
+          <maml:name></maml:name>
+          <maml:uri />
+        </dev:type>
+      </command:inputType>
+    </command:inputTypes>
+    <command:returnValues />
+	<maml:alertSet>
+		<maml:title></maml:title>
+		<maml:alert>
+			<maml:para></maml:para>
+		</maml:alert>
+	</maml:alertSet>
+	<command:examples>
+		<command:example>
+			<maml:title>--------------------------  Example 1  --------------------------</maml:title>
+			<dev:code>Write-BackingSourceConfig -AssemblyPath C:\Provider.dll -Class ReadThrough.Reader -ProviderName MyReader -ReadThru</dev:code>
+			<dev:remarks>
+				<maml:para>This command  writes configuration for specified read-thru provider on powershell console.</maml:para>
+				<maml:para></maml:para>
+				<maml:para></maml:para>
+			</dev:remarks>
+		</command:example>
+		<command:example>
+			<maml:title>--------------------------  Example 2  --------------------------</maml:title>
+			<maml:introduction>
+			</maml:introduction>
+			<dev:code>Write-BackingSourceConfig -AssemblyPath C:\Provider.dll -Class WriteThrough.Writer -ProviderName MyWriter -WriteThru</dev:code>
+			<dev:remarks>
+				<maml:para>This command  writes configuration for specified write-thru provider on powershell console.</maml:para>
+				<maml:para></maml:para>
+				<maml:para></maml:para>
+			</dev:remarks>
+		</command:example>
+		<command:example>
+			<maml:title>--------------------------  Example 3  --------------------------</maml:title>
+			<maml:introduction>
+			</maml:introduction>
+			<dev:code>Write-BackingSourceConfig -AssemblyPath C:\Provider.dll -Class WriteThrough.Writer -ProviderName MyWriter -WriteThru -OutputFile D:\BackSrcCfg.txt</dev:code>
+			<dev:remarks>
+				<maml:para>This command  writes configuration for specified write-thru provider in the specified output file.</maml:para>
+				<maml:para></maml:para>
+				<maml:para></maml:para>
+			</dev:remarks>
+		</command:example>
+		<command:example>
+			<maml:title>--------------------------  Example 4  --------------------------</maml:title>
+			<dev:code>Write-BackingSourceConfig -AssemblyPath C:\Provider.dll -Class ReadThrough.Reader -ProviderName MyReader -ReadThru -OutputFile D:\BackSrcCfg.txt -Parameters "_connectionString=Server=localhost; Database=Northwind; Trusted_Connection=True;'$' LoggerInfo=Server=localhost;Database=TestLogger;Trusted_Connection=True;"</dev:code>
+			<dev:remarks>
+				<maml:para>This command  writes configuration for specified read-thru provider with the '$' separated parameters in the specified output file.</maml:para>
+				<maml:para></maml:para>
+				<maml:para></maml:para>
+			</dev:remarks>
+		</command:example>
+		<command:example>
+			<maml:title>--------------------------  Example 5  --------------------------</maml:title>
+			<maml:introduction>
+			</maml:introduction>
+			<dev:code>Write-BackingSourceConfig -AssemblyPath C:\Provider.dll -Class WriteThrough.Writer -ProviderName MyWriter -WriteThru -OutputFile D:\BackSrcCfg.txt -DefaultProvider</dev:code>
+			<dev:remarks>
+				<maml:para>This command  writes configuration for specified write-thru provider in the specified output file with default provider set as "true".</maml:para>
+				<maml:para></maml:para>
+				<maml:para></maml:para>
+			</dev:remarks>
+		</command:example>
+	</command:examples>
+  </command:command>
+   <!-- Cmdlet: Write-QueryIndexConfig -->
+  <command:command xmlns:maml="http://schemas.microsoft.com/maml/2004/10" xmlns:command="http://schemas.microsoft.com/maml/dev/command/2004/10" xmlns:dev="http://schemas.microsoft.com/maml/dev/2004/10">
+    <command:details>
+      <command:name>Write-QueryIndexConfig</command:name>
+      <command:verb>Write</command:verb>
+      <command:noun>QueryIndexConfig</command:noun>
+    </command:details>
+	<command:description>
+		<maml:para>Write-QueryIndexConfig cmdlet enable users to generates indexes for all public properties of the given class. Please note that indexes are generated only for primitive property types. This tool ignores non-primitive data types.</maml:para>
+	</command:description>
+    <command:syntax>
+      <!-- Parameter set: __AllParameterSets -->
+      <command:syntaxItem>
+        <maml:name>Write-QueryIndexConfig</maml:name>
+        <!-- Parameter: AssemblyPath -->
+        <command:parameter required="true" globbing="false" pipelineInput="true (ByPropertyName)" position="named">
+          <maml:name>AssemblyPath</maml:name>
+          <command:parameterValue required="true">string</command:parameterValue>
+          <dev:type>
+            <maml:name>System.String</maml:name>
+            <maml:uri />
+          </dev:type>
+          <dev:defaultValue></dev:defaultValue>
+        </command:parameter>
+        <!-- Parameter: Class -->
+        <command:parameter required="true" globbing="false" pipelineInput="true (ByPropertyName)" position="named">
+          <maml:name>Class</maml:name>
+          <command:parameterValue required="true">string</command:parameterValue>
+          <dev:type>
+            <maml:name>System.String</maml:name>
+            <maml:uri />
+          </dev:type>
+          <dev:defaultValue></dev:defaultValue>
+        </command:parameter>
+        <!-- Parameter: NoLogo -->
+        <command:parameter required="false" globbing="false" pipelineInput="true (ByPropertyName)" position="named">
+          <maml:name>NoLogo</maml:name>
+          <command:parameterValue required="true">SwitchParameter</command:parameterValue>
+          <dev:type>
+            <maml:name>System.Management.Automation.SwitchParameter</maml:name>
+            <maml:uri />
+          </dev:type>
+          <dev:defaultValue>True</dev:defaultValue>
+        </command:parameter>
+        <!-- Parameter: OutputFile -->
+        <command:parameter required="false" globbing="false" pipelineInput="true (ByPropertyName)" position="named">
+          <maml:name>OutputFile</maml:name>		  
+          <command:parameterValue required="true">string</command:parameterValue>
+          <dev:type>
+            <maml:name>System.String</maml:name>
+            <maml:uri />
+          </dev:type>
+          <dev:defaultValue></dev:defaultValue>
+        </command:parameter>
+      </command:syntaxItem>
+    </command:syntax>
+    <command:parameters>
+      <!-- Parameter: AssemblyPath -->
+      <command:parameter required="true" globbing="false" pipelineInput="true (ByPropertyName)" position="named">
+        <maml:name>AssemblyPath</maml:name>
+		<maml:description>
+					<maml:para>Specifies the path of the assembly which will be configured.</maml:para>
+		</maml:description>
+        <command:parameterValue required="true">string</command:parameterValue>
+        <dev:type>
+          <maml:name>System.String</maml:name>
+          <maml:uri />
+        </dev:type>
+        <dev:defaultValue></dev:defaultValue>
+      </command:parameter>      
+      <!-- Parameter: Class -->
+      <command:parameter required="true" globbing="false" pipelineInput="true (ByPropertyName)" position="named">
+        <maml:name>Class</maml:name>
+		<maml:description>
+			<maml:para>Specifies the name of the cache for which query index will be configured.</maml:para>
+		</maml:description>
+
+        <command:parameterValue required="true">string</command:parameterValue>
+        <dev:type>
+          <maml:name>System.String</maml:name>
+          <maml:uri />
+        </dev:type>
+        <dev:defaultValue></dev:defaultValue>
+      </command:parameter>
+	  <!-- Parameter: OutputFile -->
+      <command:parameter required="false" globbing="false" pipelineInput="true (ByPropertyName)" position="named">
+        <maml:name>OutputFile</maml:name>
+		<maml:description>
+			<maml:para>Specifies the path of the output file in which configuration will be written.</maml:para>
+		</maml:description>
+        <command:parameterValue required="true">string</command:parameterValue>
+        <dev:type>
+          <maml:name>System.String</maml:name>
+		<maml:description>
+			<maml:para>Specifies the path of the output file in which configuration will be written.</maml:para>
+		</maml:description>
+          <maml:uri />
+        </dev:type>
+        <dev:defaultValue></dev:defaultValue>
+      </command:parameter>
+      <!-- Parameter: NoLogo -->
+      <command:parameter required="false" globbing="false" pipelineInput="true (ByPropertyName)" position="named">
+        <maml:name>NoLogo</maml:name>
+		<maml:description>
+					<maml:para>Suppresses display of the logo banner.</maml:para>
+				</maml:description>
+        <command:parameterValue required="true">SwitchParameter</command:parameterValue>
+        <dev:type>
+          <maml:name>System.Management.Automation.SwitchParameter</maml:name>
+          <maml:uri />
+        </dev:type>
+        <dev:defaultValue>False</dev:defaultValue>
+      </command:parameter>
+    </command:parameters>
+    <command:inputTypes>
+      <command:inputType>
+        <dev:type>
+          <maml:name></maml:name>
+          <maml:uri />
+        </dev:type>
+      </command:inputType>
+    </command:inputTypes>
+    <command:returnValues />
+	<maml:alertSet>
+		<maml:title></maml:title>
+		<maml:alert>
+			<maml:para></maml:para>
+		</maml:alert>
+	</maml:alertSet>
+    <command:returnValues />	
+		<command:examples>
+		<command:example>
+			<maml:title>--------------------------  Example 1  --------------------------</maml:title>
+			<dev:code>Write-QueryIndexConfig -AssemblyPath C:\Data.dll -Class Data.Customer </dev:code>
+			<dev:remarks>
+				<maml:para>This command Generates the query indexes for all non-primitive types for the class specified and show them on outputwindow.</maml:para>
+				<maml:para></maml:para>
+				<maml:para></maml:para>
+			</dev:remarks>
+		</command:example>
+		<command:example>
+			<maml:title>--------------------------  Example 2  --------------------------</maml:title>
+			<dev:code>Write-QueryIndexConfig -AssemblyPath C:\Data.dll -Class Data.Customer -OutputFile "C:\config.xml"</dev:code>
+			<dev:remarks>
+				<maml:para>This command generates query indexes for all non-primitive types for the class specified and write them to file config.xml as specified</maml:para>
+				<maml:para></maml:para>
+				<maml:para></maml:para>
+			</dev:remarks>
+		</command:example>
+	</command:examples>
+  </command:command>
+ </helpItems>

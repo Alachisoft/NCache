@@ -1,0 +1,96 @@
+<Project Sdk="Microsoft.NET.Sdk">
+
+  <PropertyGroup>
+  <GenerateAssemblyInfo>false</GenerateAssemblyInfo>
+    <TargetFramework>netcoreapp2.0</TargetFramework>
+    <AssemblyName>ncacheps</AssemblyName>
+    <RootNamespace>Alachisoft.NCache.Automation.ProfessionalClient.NetCore</RootNamespace>
+  </PropertyGroup>
+
+  <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Debug|AnyCPU'">
+    <DefineConstants>TRACE;DEBUG;NETCORE</DefineConstants>
+  </PropertyGroup>
+
+  <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Release|AnyCPU'">
+    <DefineConstants>TRACE;RELEASE;NETCOREAPP2_0;NETCORE</DefineConstants>
+  </PropertyGroup>
+
+  <ItemGroup>
+    <Compile Remove="ToolsBase\AddBackingSourceBase.cs" />
+    <Compile Remove="ToolsBase\AddBridgeBase.cs" />
+    <Compile Remove="ToolsBase\AddBridgeCacheBase.cs" />
+    <Compile Remove="ToolsBase\AddBridgeNodeBase.cs" />
+    <Compile Remove="ToolsBase\AddClientNodeBase.cs" />
+    <Compile Remove="ToolsBase\AddNodeBase.cs" />
+    <Compile Remove="ToolsBase\AddQueryIndexBase.cs" />
+    <Compile Remove="ToolsBase\AddTestDataBase.cs" />
+    <Compile Remove="ToolsBase\ConfigureMapReduceBase.cs" />
+    <Compile Remove="ToolsBase\CreateCacheBase.cs" />
+    <Compile Remove="ToolsBase\DeployProviderBase.cs" />
+    <Compile Remove="ToolsBase\DumpCacheKeysBase.cs" />
+    <Compile Remove="ToolsBase\GetCacheConfigurationBase.cs" />
+    <Compile Remove="ToolsBase\GetCacheCountBase.cs" />
+    <Compile Remove="ToolsBase\ListTopicsBase.cs" />
+    <Compile Remove="ToolsBase\RemoveBackingSourceBase.cs" />
+    <Compile Remove="ToolsBase\RemoveBridgeBase.cs" />
+    <Compile Remove="ToolsBase\RemoveBridgeCacheBase.cs" />
+    <Compile Remove="ToolsBase\RemoveBridgeNodeBase.cs" />
+    <Compile Remove="ToolsBase\RemoveCacheBase.cs" />
+    <Compile Remove="ToolsBase\RemoveClientNode.cs" />
+    <Compile Remove="ToolsBase\RemoveNodeBase.cs" />
+    <Compile Remove="ToolsBase\RemoveQueryIndexBase.cs" />
+    <Compile Remove="ToolsBase\SetBridgeCacheConnectionBase.cs" />
+    <Compile Remove="ToolsBase\SetBridgeCacheModeBase.cs" />
+    <Compile Remove="ToolsBase\StartBridgeBase.cs" />
+    <Compile Remove="ToolsBase\StopBridgeBase.cs" />
+    <Compile Remove="ToolsParametersBase\AddBackingSourceParameters.cs" />
+    <Compile Remove="ToolsParametersBase\AddClientNodeParameters.cs" />
+    <Compile Remove="ToolsParametersBase\AddNodeParameters.cs" />
+    <Compile Remove="ToolsParametersBase\AddQueryIndexParameters.cs" />
+    <Compile Remove="ToolsParametersBase\AddTestDataParameters.cs" />
+    <Compile Remove="ToolsParametersBase\ConfigureMapReduceParameters.cs" />
+    <Compile Remove="ToolsParametersBase\CreateCacheParameters.cs" />
+    <Compile Remove="ToolsParametersBase\DeployProviderParameters.cs" />
+    <Compile Remove="ToolsParametersBase\DumpCacheKeysParameters.cs" />
+    <Compile Remove="ToolsParametersBase\GetCacheConfigurationParameters.cs" />
+    <Compile Remove="ToolsParametersBase\GetCacheCountParameters.cs" />
+    <Compile Remove="ToolsParametersBase\ListChannelsParameters.cs" />
+    <Compile Remove="ToolsParametersBase\RemovebackingSourceParameters.cs" />
+    <Compile Remove="ToolsParametersBase\RemoveCacheParameters.cs" />
+    <Compile Remove="ToolsParametersBase\RemoveClientNodeParameter.cs" />
+    <Compile Remove="ToolsParametersBase\RemoveNodeParameter.cs" />
+    <Compile Remove="ToolsParametersBase\RemoveQueryIndexparameters.cs" />
+  </ItemGroup>
+
+  <ItemGroup>
+    <PackageReference Include="System.Management.Automation.dll" Version="10.0.10586" />
+  </ItemGroup>
+
+  <ItemGroup>
+    <Reference Include="Alachisoft.NCache.Cache">
+      <HintPath>..\..\Src\build\NetCore\Client\Alachisoft.NCache.Cache.dll</HintPath>
+    </Reference>
+    <Reference Include="Alachisoft.NCache.Common">
+      <HintPath>..\..\Src\build\NetCore\Client\Alachisoft.NCache.Common.dll</HintPath>
+    </Reference>
+    <Reference Include="Alachisoft.NCache.Management">
+      <HintPath>..\..\Src\build\NetCore\Client\Alachisoft.NCache.Management.dll</HintPath>
+    </Reference>
+    <Reference Include="Alachisoft.NCache.Runtime">
+      <HintPath>..\..\Src\build\NetCore\Client\Alachisoft.NCache.Runtime.dll</HintPath>
+    </Reference>
+    <Reference Include="Alachisoft.NCache.Web">
+      <HintPath>..\..\Src\build\NetCore\Client\Alachisoft.NCache.Web.dll</HintPath>
+    </Reference>
+  </ItemGroup>
+
+  <ItemGroup>
+    <None Update="client.ncconf">
+      <CopyToOutputDirectory>Always</CopyToOutputDirectory>
+    </None>
+    <None Update="config.ncconf">
+      <CopyToOutputDirectory>Always</CopyToOutputDirectory>
+    </None>
+  </ItemGroup>
+
+</Project>
