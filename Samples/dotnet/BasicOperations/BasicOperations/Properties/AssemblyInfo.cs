@@ -1,4 +1,4 @@
-﻿// Copyright (c) 2017 Alachisoft
+﻿// Copyright (c) 2018 Alachisoft
 // 
 // Licensed under the Apache License, Version 2.0 (the "License");
 // you may not use this file except in compliance with the License.
@@ -19,12 +19,12 @@ using System.Runtime.InteropServices;
 // set of attributes. Change these attribute values to modify the information
 // associated with an assembly.
 [assembly: AssemblyTitle("BasicOperations")]
-[assembly: AssemblyProduct("Alachisoft® NCache Open Source")]
-[assembly: AssemblyTrademark("NCache ™ is a registered trademark of Alachisoft.")]
+[assembly: AssemblyDescription("")]
 [assembly: AssemblyConfiguration("")]
 [assembly: AssemblyCompany("Alachisoft")]
-
-[assembly: AssemblyCopyright("Copyright © 2005-2017 Alachisoft")]
+[assembly: AssemblyProduct("BasicOperations")]
+[assembly: AssemblyCopyright("Copyright © Alachisoft 2018")]
+[assembly: AssemblyTrademark("")]
 [assembly: AssemblyCulture("")]
 
 // Setting ComVisible to false makes the types in this assembly not visible 
