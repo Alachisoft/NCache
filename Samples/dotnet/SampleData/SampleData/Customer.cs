@@ -1,6 +1,7 @@
-﻿// ===============================================================================
+﻿using System;
+
+// ===============================================================================
 // Alachisoft (R) NCache Sample Code.
-// NCache Customer Class used by samples
 // ===============================================================================
 // Copyright © Alachisoft.  All rights reserved.
 // THIS CODE AND INFORMATION IS PROVIDED "AS IS" WITHOUT WARRANTY
@@ -9,91 +10,96 @@
 // FITNESS FOR A PARTICULAR PURPOSE.
 // ===============================================================================
 
-using System;
-
-
 namespace Alachisoft.NCache.Sample.Data
 {
+    /// <summary>
+    /// Model class for Customers
+    /// </summary>
+    [Serializable]
+    public class Customer
+    {
+        public Customer()
+        { }
 
-	[Serializable]
-	public class Customer
-	{
-		public string name;
-		public int age;
-		public string contactNo;
-		public string address;
-		public string gender;
+        /// <summary>
+        /// Uniqure Id of the customer
+        /// </summary>
+        public string CustomerID
+        {
+            get;
+            set;
+        }
 
-		public Customer()
-		{
+        /// <summary>
+        /// Contact name of the customer
+        /// </summary>
+        public virtual string ContactName 
+        {
+            set;
+            get;
+        }
 
-		}
+        /// <summary>
+        /// Company the customer works for
+        /// </summary>
+        public virtual string CompanyName
+        {
+            set;
+            get;
+        }
 
-		public virtual string Name
-		{
-			set
-			{
-				this.name = value;
-			}
-			get
-			{
-				return this.name;
-			}
-		}
+        /// <summary>
+        /// Contact number of the customer
+        /// </summary>
+        public virtual string ContactNo
+        {
+            set;
+            get;
+        }
 
+        /// <summary>
+        /// Residential address of the customer
+        /// </summary>
+        public virtual string Address
+        {
+            set;
+            get;
+        }
 
-		public virtual int Age
-		{
-			set
-			{
-				this.age = value;
-			}
-			get
-			{
-				return this.age;
-			}
-		}
+        /// <summary>
+        /// Residence city of the customer
+        /// </summary>
+        public virtual string City
+        {
+            set;
+            get;
+        }
 
+        /// <summary>
+        /// Nationality of the customer
+        /// </summary>
+        public virtual string Country
+        {
+            set;
+            get;
+        }
 
-		public virtual string ContactNo
-		{
-			set
-			{
-				this.contactNo = value;
-			}
-			get
-			{
-				return this.contactNo;
-			}
-		}
+        /// <summary>
+        /// Postal code of the customer
+        /// </summary>
+        public virtual string PostalCode
+        {
+            set;
+            get;
+        }
 
-
-		public virtual string Address
-		{
-			set
-			{
-				this.address = value;
-			}
-			get
-			{
-				return this.address;
-			}
-		}
-
-
-		public virtual string Gender
-		{
-			set
-			{
-				this.gender = value;
-			}
-			get
-			{
-				return this.gender;
-			}
-		}
-
-
-	}
-
+        /// <summary>
+        /// Fax number of the customer
+        /// </summary>
+        public virtual string Fax
+        {
+            set;
+            get;
+        }
+    }
 }
