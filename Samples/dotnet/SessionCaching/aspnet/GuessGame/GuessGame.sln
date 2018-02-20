@@ -1,0 +1,34 @@
+Microsoft Visual Studio Solution File, Format Version 11.00
+# Visual Studio 2010
+Project("{E24C65DC-7377-472B-9ABA-BC803B73C61A}") = "GuessGame", "..\GuessGame", "{0E0593D4-CA1E-4622-A714-7E74B11B4673}"
+	ProjectSection(WebsiteProperties) = preProject
+		TargetFrameworkMoniker = ".NETFramework,Version%3Dv4.0"
+		Debug.AspNetCompiler.VirtualPath = "/GuessGame"
+		Debug.AspNetCompiler.PhysicalPath = "..\GuessGame\"
+		Debug.AspNetCompiler.TargetPath = "PrecompiledWeb\GuessGame\"
+		Debug.AspNetCompiler.Updateable = "true"
+		Debug.AspNetCompiler.ForceOverwrite = "true"
+		Debug.AspNetCompiler.FixedNames = "false"
+		Debug.AspNetCompiler.Debug = "True"
+		Release.AspNetCompiler.VirtualPath = "/GuessGame"
+		Release.AspNetCompiler.PhysicalPath = "..\GuessGame\"
+		Release.AspNetCompiler.TargetPath = "PrecompiledWeb\GuessGame\"
+		Release.AspNetCompiler.Updateable = "true"
+		Release.AspNetCompiler.ForceOverwrite = "true"
+		Release.AspNetCompiler.FixedNames = "false"
+		Release.AspNetCompiler.Debug = "False"
+		VWDPort = "65104"
+	EndProjectSection
+EndProject
+Global
+	GlobalSection(SolutionConfigurationPlatforms) = preSolution
+		Debug|.NET = Debug|.NET
+	EndGlobalSection
+	GlobalSection(ProjectConfigurationPlatforms) = postSolution
+		{0E0593D4-CA1E-4622-A714-7E74B11B4673}.Debug|.NET.ActiveCfg = Debug|.NET
+		{0E0593D4-CA1E-4622-A714-7E74B11B4673}.Debug|.NET.Build.0 = Debug|.NET
+	EndGlobalSection
+	GlobalSection(SolutionProperties) = preSolution
+		HideSolutionNode = FALSE
+	EndGlobalSection
+EndGlobal

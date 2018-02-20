@@ -1,0 +1,140 @@
+﻿.label1 {
+    Z-INDEX: 100;
+    LEFT: 22px;
+    POSITION: absolute;
+    TOP: 58px;
+    Height: 24px;
+    Width: 454px;
+    font-weight: bold;
+    font-family: Tahoma;
+    Font-Size: small;
+    background-color: Wheat;
+}
+.label6 {
+    Z-INDEX: 112;
+    LEFT: 24px;
+    POSITION: absolute;
+    TOP: 271px;
+    font-Size: xx-small;
+    font-family: Tahoma;
+    Width: 96px;
+    background-color: Transparent;
+}
+.lblHistory {
+    Z-INDEX: 111;
+    LEFT: 170px;
+    POSITION: absolute;
+    TOP: 295px;
+    Font-Size: xx-small;
+    font-family: Tahoma;
+    font-weight: bold;
+    Width: 304px;
+    Height: 72px;
+}
+.Label5 {
+    Z-INDEX: 110;
+    LEFT: 22px;
+    POSITION: absolute;
+    TOP: 295px;
+    Font-Size: xx-small;
+    font-family: Tahoma;
+}
+.txtGuess {
+    Z-INDEX: 101;
+    LEFT: 121px;
+    POSITION: absolute;
+    TOP: 130px;
+    width: 48px;
+    border-style: solid;
+    border-width: 1px;
+}
+.Label2 {
+    Z-INDEX: 102;
+    LEFT: 22px;
+    POSITION: absolute;
+    TOP: 133px;
+    Font-Size: smaller;
+    font-family: Tahoma;
+}
+
+.lblHint {
+    Z-INDEX: 103;
+    LEFT: 24px;
+    POSITION: absolute;
+    TOP: 199px;
+    Font-Size: x-small;
+    font-family: Tahoma;
+    font-style: italic;
+    background-color: Transparent;
+}
+.lblMessage {
+    Z-INDEX: 105;
+    LEFT: 22px;
+    POSITION: absolute;
+    TOP: 168px;
+    width: 450px;
+    Font-Size: smaller;
+    font-family: Tahoma;
+    color: Crimson;
+    background-color: Transparent;
+}
+.lblLastGuess {
+    Z-INDEX: 106;
+    LEFT: 170px;
+    POSITION: absolute;
+    TOP: 271px;
+    width: 54px;
+    Font-Size: xx-small;
+    font-family: Tahoma;
+    font-weight: bold;
+}
+.cmdGuess {
+    Z-INDEX: 107;
+    LEFT: 188px;
+    POSITION: absolute;
+    TOP: 129px;
+    width: 134px;
+    Font-Size: small;
+    font-family: Tahoma;
+    border-style: solid;
+    border-width: 1px;
+}
+.lblSystemName {
+    Z-INDEX: 108;
+    LEFT: 22px;
+    POSITION: absolute;
+    TOP: 388px;
+    width: 454px;
+    Font-Size: small;
+    font-family: Tahoma;
+    font-style: italic;
+    background-color: Wheat;
+}
+
+.Label4 {
+    Z-INDEX: 109;
+    LEFT: 22px;
+    POSITION: absolute;
+    TOP: 239px;
+    width: 454px;
+    Font-Size: x-small;
+    font-family: Tahoma;
+    font-weight: bold;
+    background-color: Wheat;
+}
+
+.Label3 {
+    Z-INDEX: auto;
+    LEFT: 22px;
+    POSITION: absolute;
+    TOP: 24px;
+    width: 454px;
+    Font-Size: x-small;
+    font-family: Tahoma;
+    font-weight: bold;
+    background-color: LightSlateGray;
+    height: 23px;
+    color: white;
+    border-style: outset;
+}
+
