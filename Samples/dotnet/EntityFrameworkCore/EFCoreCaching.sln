@@ -1,0 +1,25 @@
+﻿
+Microsoft Visual Studio Solution File, Format Version 12.00
+# Visual Studio 14
+VisualStudioVersion = 14.0.25420.1
+MinimumVisualStudioVersion = 10.0.40219.1
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "EFCoreCaching", "EFCoreCaching\EFCoreCaching.csproj", "{697B2543-A3E1-416B-89B2-6CE9F7C3A914}"
+EndProject
+Global
+	GlobalSection(SolutionConfigurationPlatforms) = preSolution
+		Debug|Any CPU = Debug|Any CPU
+		Release|Any CPU = Release|Any CPU
+	EndGlobalSection
+	GlobalSection(ProjectConfigurationPlatforms) = postSolution
+		{697B2543-A3E1-416B-89B2-6CE9F7C3A914}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{697B2543-A3E1-416B-89B2-6CE9F7C3A914}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{697B2543-A3E1-416B-89B2-6CE9F7C3A914}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{697B2543-A3E1-416B-89B2-6CE9F7C3A914}.Release|Any CPU.Build.0 = Release|Any CPU
+	EndGlobalSection
+	GlobalSection(SolutionProperties) = preSolution
+		HideSolutionNode = FALSE
+	EndGlobalSection
+	GlobalSection(ExtensibilityGlobals) = postSolution
+		SolutionGuid = {5F0C2F3C-BBCA-47FB-91B3-D10BF951F176}
+	EndGlobalSection
+EndGlobal
