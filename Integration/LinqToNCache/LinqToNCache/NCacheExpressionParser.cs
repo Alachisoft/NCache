@@ -1,4 +1,4 @@
-// Copyright (c) 2017 Alachisoft
+// Copyright (c) 2018 Alachisoft
 // 
 // Licensed under the Apache License, Version 2.0 (the "License");
 // you may not use this file except in compliance with the License.
@@ -22,6 +22,7 @@ using System.Reflection;
 using System.Data.Common;
 using Alachisoft.NCache.Web.Caching;
 using System.Collections;
+
 
 namespace Alachisoft.NCache.Linq
 {
@@ -436,7 +437,8 @@ namespace Alachisoft.NCache.Linq
             }
 
             Type returnType = GetReturnType();
-                       if (returnType == null)
+            
+            if (returnType == null)
             {
                 throw new InvalidOperationException("Cannot translate statement");
             }
@@ -520,11 +522,6 @@ namespace Alachisoft.NCache.Linq
         {
             return tableType.FullName;
         }
-
-
-
-
-
 
         private enum AggregateType
         {
@@ -2434,6 +2431,7 @@ namespace Alachisoft.NCache.Linq
                 string CommandText = NCacheExpressionParser.GetNQLStatement();
                 if (_queryValues == null)
                     _queryValues = new Hashtable();
+				
                 returnValues = _cache.SearchEntries(CommandText, _queryValues);
                 IDictionaryEnumerator ie = returnValues.GetEnumerator();
 
@@ -2536,6 +2534,7 @@ namespace Alachisoft.NCache.Linq
                 string CommandText = NCacheExpressionParser.GetNQLStatement();
                 if (_queryValues == null)
                     _queryValues = new Hashtable();
+
                 returnVal = _cache.Search(CommandText, _queryValues);
                 if (returnVal.Count > 0)
                 {
