@@ -13,14 +13,17 @@
 // limitations under the License.
 
 using System;
-using System.Text;
 using System.Collections;
 using Alachisoft.NCache.Common.Net;
-using Alachisoft.NCache.Caching.Topologies.Local;
-using Alachisoft.NCache.Common.Util;
-using Runtime = Alachisoft.NCache.Runtime;
-using Alachisoft.NCache.Common.DataStructures.Clustered;
+
+#if DEBUGSTATETRANSFER
+using Alachisoft.NCache.Caching.Topologies.History;
+#endif
+
 using System.IO;
+using Alachisoft.NCache.Common.DataStructures.Clustered;
+using System.Collections.Generic;
+using Alachisoft.NCache.Caching.Messaging;
 
 namespace Alachisoft.NCache.Caching.Topologies.Clustered
 {
@@ -42,13 +45,15 @@ namespace Alachisoft.NCache.Caching.Topologies.Clustered
         protected long _threshold = 20 * 1024;//200 * 1000;
         protected int _currentBucket = -1;
         protected int _keyCount;
+        protected int _messageCount = 0;
         private int _lastTxfrId = 0;
 
         internal ClusterCacheBase _parent;
         private DistributionManager _distMgr;
 
-        protected bool _sendLogData;
+        protected bool sendMesages;
         private bool _isBalanceDataLoad;
+
         
         protected Hashtable _keyUpdateLogTbl = new Hashtable();
         private HashVector _result = new HashVector();
@@ -56,9 +61,15 @@ namespace Alachisoft.NCache.Caching.Topologies.Clustered
         protected ClusteredArrayList _keyList;
         private ArrayList _logableBuckets = new ArrayList();
         private Stream stream = null;
+		
+		private Address _clientNode;
         
-        private Address _clientNode;
         private byte _transferType;
+        private bool _transferTypeChanged;
+
+
+        private IList<Int32> compoundFilteredBuckets = new List<int>();
+        private OrderedDictionary _topicWiseMessageList;
 
 
         /// <summary>
@@ -75,23 +86,31 @@ namespace Alachisoft.NCache.Caching.Topologies.Clustered
 			 _parent = parent;
 			 _distMgr = distMgr;
 			 _clientNode = requestingNode;
-             _transferType = transferType;
+             _transferType = transferType == StateTransferType.REPLICATE_DATA ? StateTransferType.MOVE_DATA:  transferType;
+             _transferTypeChanged = transferType == StateTransferType.REPLICATE_DATA;
              stream = new MemoryStream((int)_threshold);
 		 }
 
 
 		 public StateTxfrInfo TransferBucket(ArrayList bucketIds, bool sparsedBuckets, int expectedTxfrId)
 		 {
+#if DEBUGSTATETRANSFER
+             _parent.Cluster._history.AddActivity(new CorresponderActivity(_transferType, _clientNode, (int)bucketIds[0], expectedTxfrId));
+#endif
              stream.Seek(0, SeekOrigin.Begin);
+             
 			 if (bucketIds != null)
 			 {
 				 for (int i = bucketIds.Count - 1; i >= 0; i--)
 				 {
 					 int bkId = (int)bucketIds[i];
+
 					 if (_transferType == StateTransferType.MOVE_DATA && !_distMgr.VerifyTemporaryOwnership(bkId, _clientNode))
 					 {
 						 if (_parent.Context.NCacheLog.IsInfoEnabled) _parent.Context.NCacheLog.Info("StateTxfrCorresponder.TransferBucket", bkId + " ownership changed");
-
+#if DEBUGSTATETRANSFER
+                         _parent.Cluster._history.AddActivity(new Activity("Ownership changed of bucket " + bkId + "."));
+#endif
 					 }
 				 }
 			 }
@@ -117,49 +136,81 @@ namespace Alachisoft.NCache.Caching.Topologies.Clustered
                          if (_parent.Context.NCacheLog.IsInfoEnabled) _parent.Context.NCacheLog.Info("StateTxfrCorresponder.TxfrBucket", "bucketid : " + bucketIds[0] + " exptxfrId : " + expectedTxfrId);
 
 						 _lastTxfrId = expectedTxfrId;
-						 //request for a new bucket.
-
+						 //request for a new bucket. get its key list from parent.
 						 _currentBucket = (int)bucketIds[0];
                          bool enableLogs = _transferType == StateTransferType.MOVE_DATA ? true : false;
                          _parent.InternalCache.GetKeyList(_currentBucket, enableLogs, out _keyList);
+                        _topicWiseMessageList = _parent.InternalCache.GetMessageList(_currentBucket);
 						 _logableBuckets.Add(_currentBucket);
-
+                        _messageCount = 0;
+						  
 						 //reset the _lastLogTblCount
-						 _sendLogData = false;
+						 sendMesages = false;
 					 }
 					 else
 					 {
                          if (_parent.Context.NCacheLog.IsInfoEnabled) _parent.Context.NCacheLog.Info("StateTxfrCorresponder.TxfrBucket", "bucketid : " + bucketIds[0] + " exptxfrId : " + expectedTxfrId);
 						 //remove all the last sent keys from keylist that has not been
 						 //modified during this time.
-						 if (_keyList != null && expectedTxfrId > _lastTxfrId)
+						 if (expectedTxfrId > _lastTxfrId)
 						 {
-							 lock (_keyList.SyncRoot)
-							 {
-								 _keyList.RemoveRange(0, _keyCount);
-								 _keyCount = 0;
-							 }
-							 _lastTxfrId = expectedTxfrId;
-						 }
+                            if (_keyList != null && _keyList.Count > 0)
+                            {
+                                lock (_keyList.SyncRoot)
+                                {
+                                    _keyList.RemoveRange(0, _keyCount);
+                                    _keyCount = 0;
+                                }
+                            }
+                            else if (_topicWiseMessageList != null && _messageCount > 0)
+                            {
+                                ArrayList removedTopics = new ArrayList();
+
+                                foreach (DictionaryEntry topicWiseMessage in _topicWiseMessageList)
+                                {
+                                    ClusteredArrayList messageList = topicWiseMessage.Value as ClusteredArrayList;
+
+                                    if (_messageCount <= 0) break;
+
+                                    if (_messageCount < messageList.Count)
+                                    {
+                                        messageList.RemoveRange(0, _messageCount);
+                                        _messageCount = 0;
+                                    }
+                                    else
+                                    {
+                                        _messageCount -= messageList.Count;
+                                        removedTopics.Add(topicWiseMessage.Key);
+                                    }
+                                }
+
+                                foreach (string topic in removedTopics)
+                                {
+                                    _topicWiseMessageList.Remove(topic);
+                                }
+                            }
+                            _lastTxfrId = expectedTxfrId;
+                        }
+                         
 					 }
 				 }
 				 else
 				 {
-                     return new StateTxfrInfo(new HashVector(), false, 0, null);
+					 return new StateTxfrInfo(new HashVector(), true, 0,null,false);
 				 }
 
+				  
 				 //take care that we need to send data in chunks if 
 				 //bucket is too large.
 				 return GetData(_currentBucket);
 			 }
 		 }
 
+
 		 protected StateTxfrInfo GetData(int bucketId)
 		 {
              if (_result.Count > 0)
-             {
                  _result.Clear();
-             }
 
 			 long sizeToSend = 0;
 
@@ -172,75 +223,146 @@ namespace Alachisoft.NCache.Caching.Topologies.Clustered
 
 			 if (_keyList != null && _keyList.Count > 0)
 			 {
-                 if (_parent.Context.NCacheLog.IsInfoEnabled) _parent.Context.NCacheLog.Info("StateTxfrCorresponder.GetData(2)", "bucket size :" + _keyList.Count);
-
-				 for (_keyCount = 0; _keyCount < _keyList.Count; _keyCount++)
-				 {
-					 string key = _keyList[_keyCount] as string;
-
-                     OperationContext operationContext = new OperationContext(OperationContextFieldName.OperationType, OperationContextOperationType.CacheOperation);
-                      operationContext.Add(OperationContextFieldName.GenerateQueryInfo, true);
-                     CacheEntry entry = _parent.InternalCache.InternalCache.Get(key, false,operationContext);
-					 if (entry != null)
-					 {
-                         long size = (entry.InMemorySize + Common.MemoryUtil.GetStringSize(key));//.DataSize;                         
-                         if (sizeToSend > _threshold) break;
-
-                         _result[key] = entry;
-						 sizeToSend += size;
-					 }
-				 }
-                 if (_parent.Context.NCacheLog.IsInfoEnabled) _parent.Context.NCacheLog.Info("StateTxfrCorresponder.GetData(2)", "items sent :" + _keyCount);
-                 
-                 if (_parent.Context.NCacheLog.IsInfoEnabled)
-                     _parent.Context.NCacheLog.Info("StateTxfrCorresponder.GetData(2)", "BalanceDataLoad = " + _isBalanceDataLoad.ToString()); 
-
-                 if (_isBalanceDataLoad)
-                     _parent.Context.PerfStatsColl.IncrementDataBalPerSecStatsBy(_result.Count);
-                 else
-                     _parent.Context.PerfStatsColl.IncrementStateTxfrPerSecStatsBy(_result.Count);
-
-				 return new StateTxfrInfo(_result,false,sizeToSend, this.stream);
+                return GetCacheItems(bucketId);
 			 }
+             else if(_topicWiseMessageList.Count >0)
+            {
+                return GetMessages(bucketId);
+            }
              else if (_transferType == StateTransferType.MOVE_DATA)
              {
+                
                  //We need to transfer the logs.
                  if (_parent.Context.NCacheLog.IsInfoEnabled) _parent.Context.NCacheLog.Info("StateTxfrCorresponder.GetData(2)", "sending log data for bucket: " + bucketId);
 
                  ArrayList list = new ArrayList(1);
                  list.Add(bucketId);
-                 return GetLoggedData(list);
+                 StateTxfrInfo info = GetLoggedData(list);
+
+                 if (info.transferCompleted && _transferTypeChanged)
+                 {
+                     StartCompoundFilteration(bucketId);
+                 }
+
+                 return info;
              }
              else
              {
                  //As transfer mode is not MOVE_DATA, therefore no logs are maintained
                  //and hence are not transferred.
-                 return new StateTxfrInfo(null, true, 0, null);
+
+                 StartCompoundFilteration(bucketId);
+                 
+                 return new StateTxfrInfo(null,true,0, null,false);
              }
 		 }
 
-	
+        private StateTxfrInfo GetCacheItems(int bucketId)
+        {
+            long sizeToSend = 0;
+            if (_parent.Context.NCacheLog.IsInfoEnabled) _parent.Context.NCacheLog.Info("StateTxfrCorresponder.GetData(2)", "bucket size :" + _keyList.Count);
+
+            for (_keyCount = 0; _keyCount < _keyList.Count; _keyCount++)
+            {
+                string key = _keyList[_keyCount] as string;
+
+                OperationContext operationContext = new OperationContext(OperationContextFieldName.OperationType, OperationContextOperationType.CacheOperation);
+                operationContext.Add(OperationContextFieldName.GenerateQueryInfo, true);
+                CacheEntry entry = _parent.InternalCache.InternalCache.Get(key, false, operationContext);
+                if (entry != null)
+                {
+                    long size = (entry.InMemorySize + Common.MemoryUtil.GetStringSize(key));//.DataSize;
+                    if (sizeToSend > _threshold) break;
+
+                    _result[key] = entry;
+                    sizeToSend += size;
+                }
+            }
+            if (_parent.Context.NCacheLog.IsInfoEnabled) _parent.Context.NCacheLog.Info("StateTxfrCorresponder.GetData(2)", "items sent :" + _keyCount);
+
+            if (_parent.Context.NCacheLog.IsInfoEnabled)
+                _parent.Context.NCacheLog.Info("StateTxfrCorresponder.GetData(2)", "BalanceDataLoad = " + _isBalanceDataLoad.ToString());
+
+                _parent.Context.PerfStatsColl.IncrementStateTxfrPerSecStatsBy(_result.Count);
+
+            return new StateTxfrInfo(_result, false, sizeToSend, this.stream, false);
+        }
+
+        private StateTxfrInfo GetMessages(int bucketId)
+        {
+            long sizeToSend = 0;
+            if (_parent.Context.NCacheLog.IsInfoEnabled) _parent.Context.NCacheLog.Info("StateTxfrCorresponder.GetData(2)", "bucket size :" + _keyList.Count);
+
+            foreach (DictionaryEntry topicWiseMessage in _topicWiseMessageList)
+            {
+                ClusteredArrayList messageList = topicWiseMessage.Value as ClusteredArrayList;
+
+                foreach (string messageId in messageList)
+                {
+                    
+                        OperationContext operationContext = new OperationContext(OperationContextFieldName.OperationType, OperationContextOperationType.CacheOperation);
+                        operationContext.Add(OperationContextFieldName.GenerateQueryInfo, true);
+                        TransferrableMessage message = _parent.InternalCache.GetTransferrableMessage(topicWiseMessage.Key as string, messageId);
+                        if (message != null)
+                        {
+                            if (sizeToSend > _threshold) break;
+
+                            ClusteredArrayList transferrableMessageList = _result[topicWiseMessage.Key] as ClusteredArrayList;
+                            if(transferrableMessageList == null)
+                            {
+                                transferrableMessageList = new ClusteredArrayList();
+                                _result.Add(topicWiseMessage.Key, transferrableMessageList);
+                            }
+                            _messageCount++;
+                            transferrableMessageList.Add(message);
+                            sizeToSend += message.Message.Size;
+                        }                    
+                }
+            }
+            if (_parent.Context.NCacheLog.IsInfoEnabled) _parent.Context.NCacheLog.Info("StateTxfrCorresponder.GetData(2)", "items sent :" + _keyCount);
+
+            if (_parent.Context.NCacheLog.IsInfoEnabled)
+                _parent.Context.NCacheLog.Info("StateTxfrCorresponder.GetData(2)", "BalanceDataLoad = " + _isBalanceDataLoad.ToString());
+                _parent.Context.PerfStatsColl.IncrementStateTxfrPerSecStatsBy(_result.Count);
+
+            return new StateTxfrInfo(_result, false, sizeToSend, this.stream, true);
+        }
+        protected virtual void StartCompoundFilteration(int bucketID)
+         {
+             if (this._parent.InternalCache != null )
+             {
+                 _parent.InternalCache.StartBucketFilteration(bucketID, Common.Queries.FilterType.CompoundFilter);
+                 if (!compoundFilteredBuckets.Contains(bucketID))
+                     compoundFilteredBuckets.Add(bucketID);
+             }
+         }
+
+         protected virtual void StopCompoundFilteration()
+         {
+             if (this._parent.InternalCache != null )
+             {
+                 _parent.InternalCache.StopBucketFilteration(compoundFilteredBuckets, Common.Queries.FilterType.CompoundFilter);
+             }
+         }
+
 		 protected virtual StateTxfrInfo GetLoggedData(ArrayList bucketIds)
 		 {
 			 ArrayList updatedKeys = null;
 			 ArrayList removedKeys = null;
 			 Hashtable logTbl = null;
 			 StateTxfrInfo info = null;
-
 			 bool isLoggingStopped = false;
-
-			 try
+			 
+             try
 			 {
-
+                 isLoggingStopped = _transferTypeChanged;
 				 logTbl = _parent.InternalCache.GetLogTable(bucketIds, ref isLoggingStopped);
-
 				 if (logTbl != null)
 				 {
 
 					 updatedKeys = logTbl["updated"] as ArrayList;
 					 removedKeys = logTbl["removed"] as ArrayList;
-
-					 if (updatedKeys != null && updatedKeys.Count > 0)
+                    if (updatedKeys != null && updatedKeys.Count > 0)
 					 {
 						 for (int i = 0; i < updatedKeys.Count; i++)
 						 {
@@ -248,6 +370,7 @@ namespace Alachisoft.NCache.Caching.Topologies.Clustered
                              OperationContext operationContext = new OperationContext(OperationContextFieldName.OperationType, OperationContextOperationType.CacheOperation);
                              operationContext.Add(OperationContextFieldName.GenerateQueryInfo, true);
                              CacheEntry entry = _parent.InternalCache.Get(key, false, operationContext);
+
                              _result[key] = entry;
 						 }
 					 }
@@ -259,12 +382,16 @@ namespace Alachisoft.NCache.Caching.Topologies.Clustered
 							 _result[key] = null;
 						 }
 					 }
+                    _result["$__messageLogs__$"] = logTbl["messageops"];
 
                      if (!isLoggingStopped)
-                         info = new StateTxfrInfo(_result, false, 0, this.stream);
+                         info = new StateTxfrInfo(_result, false, 0, this.stream,false);
                      else
-                         info = new StateTxfrInfo(_result, true, 0, this.stream);
+                     {
+                         info = new StateTxfrInfo(_result, true, 0, this.stream,false);
+                     }
 
+                    info.HasLoggedOperations = true;
 
                      _parent.Context.NCacheLog.Debug("StateTxfrCorresponder.GetLoggedData()", info == null ? "returning null state-txfr-info" : "returning " + info.data.Count.ToString() + " items in state-txfr-info");
 					 return info;
@@ -281,9 +408,10 @@ namespace Alachisoft.NCache.Caching.Topologies.Clustered
 			 {
                 
 			 }
+			  
 			 //no operation has been logged during state transfer.
 			 //so announce completion of state transfer for this bucket.
-             return new StateTxfrInfo(_result, true, 0, this.stream);
+             return new StateTxfrInfo(_result, true, 0, this.stream,false);
 		 }
 
 		 #region IDisposable Members
@@ -296,9 +424,12 @@ namespace Alachisoft.NCache.Caching.Topologies.Clustered
 		 {
              if (_parent.Context.NCacheLog.IsInfoEnabled) _parent.Context.NCacheLog.Info("StateTxfrCorresponder.Dispose", _clientNode.ToString() + " corresponder disposed");
 			 if(_keyList != null) _keyList.Clear();
+            if (_topicWiseMessageList != null) _topicWiseMessageList.Clear();
+            _messageCount = 0;
 			 if(_keyUpdateLogTbl != null) _keyUpdateLogTbl.Clear();
              if (_result != null) _result.Clear();
 
+             
              if (_transferType == StateTransferType.MOVE_DATA)
              {
                  if (_parent != null && _logableBuckets != null)
@@ -306,9 +437,14 @@ namespace Alachisoft.NCache.Caching.Topologies.Clustered
                      for (int i = 0; i < _logableBuckets.Count; i++)
                      {
                          if (_parent.Context.NCacheLog.IsInfoEnabled) _parent.Context.NCacheLog.Info("StateTxfrCorresponder.Dispose", " removing logs for bucketid " + _logableBuckets[i]);
-                         _parent.RemoveFromLogTbl((int)_logableBuckets[i]);
+                         _parent.InternalCache.RemoveFromLogTbl((int)_logableBuckets[i]);
                      }
                  }
+             }
+
+             if(_transferType == StateTransferType.REPLICATE_DATA || _transferTypeChanged)
+             {
+                 StopCompoundFilteration();
              }
 		 }
 
@@ -316,4 +452,5 @@ namespace Alachisoft.NCache.Caching.Topologies.Clustered
 	 }
 
     #endregion
+ 
 }

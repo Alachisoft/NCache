@@ -12,9 +12,6 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-using System;
-using System.Collections.Generic;
-using System.Text;
 using Alachisoft.NCache.Common.DataStructures;
 using Alachisoft.NCache.Common.Util;
 
@@ -29,7 +26,8 @@ namespace Alachisoft.NCache.Web.Command
             base.name = "GetNextChunkCommand";
 
             _getNextChunkCommand = new Alachisoft.NCache.Common.Protobuf.GetNextChunkCommand();
-            _getNextChunkCommand.enumerationPointer = EnumerationPointerConversionUtil.ConvertToProtobufEnumerationPointer(pointer);
+            _getNextChunkCommand.enumerationPointer =
+                EnumerationPointerConversionUtil.ConvertToProtobufEnumerationPointer(pointer);
         }
 
         protected override void CreateCommand()
@@ -49,6 +47,11 @@ namespace Alachisoft.NCache.Web.Command
         internal override RequestType CommandRequestType
         {
             get { return RequestType.ChunkRead; }
+        }
+
+        internal override bool IsKeyBased
+        {
+            get { return false; }
         }
     }
 }

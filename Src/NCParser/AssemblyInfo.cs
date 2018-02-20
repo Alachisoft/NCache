@@ -1,3 +1,20 @@
+#region Copyright
+// Copyright (c) 2018 Alachisoft
+// 
+// Licensed under the Apache License, Version 2.0 (the "License");
+// you may not use this file except in compliance with the License.
+// You may obtain a copy of the License at
+// 
+//    http://www.apache.org/licenses/LICENSE-2.0
+// 
+// Unless required by applicable law or agreed to in writing, software
+// distributed under the License is distributed on an "AS IS" BASIS,
+// WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+// See the License for the specific language governing permissions and
+// limitations under the License
+
+
+//----------------------------------------------------------------------
 // Gold Parser engine.
 // See more details on http://www.devincook.com/goldparser/
 // 
@@ -8,6 +25,9 @@
 // The translation is based on the other engine translations:
 // Delphi engine by Alexandre Rai (riccio@gmx.at)
 // C# engine by Marcus Klimstra (klimstra@home.nl)
+//----------------------------------------------------------------------
+
+#endregion
 
 #region Using directives
 
@@ -26,12 +46,16 @@ using System.Security.Permissions;
 //
 [assembly: CLSCompliant(true)]
 [assembly: ComVisible(false)]
+#if NETCORE
+[assembly: AssemblyTitle("Alachisoft.NCache.Parser (.NETCore)")]
+#else
 [assembly: AssemblyTitle("Alachisoft.NCache.Parser")]
+#endif
 [assembly: AssemblyConfiguration("")]
 [assembly: AssemblyCompany("Alachisoft")]
-[assembly: AssemblyProduct("AlachisoftÂ® NCache")]
-[assembly: AssemblyCopyright("Copyright Â© 2005-2018 Alachisoft")]
-[assembly: AssemblyTrademark("NCache â„¢ is a registered trademark of Alachisoft.")]
+[assembly: AssemblyProduct("Alachisoft® NCache")]
+[assembly: AssemblyCopyright("Copyright © 2005-2018 Alachisoft")]
+[assembly: AssemblyTrademark("NCache ™ is a registered trademark of Alachisoft.")]
 [assembly: AssemblyCulture("")]	
 
 //
@@ -45,7 +69,7 @@ using System.Security.Permissions;
 // You can specify all the values or you can default the Revision and Build Numbers 
 // by using the '*' as shown below:
 
-[assembly: AssemblyVersion("4.6.0.0")]
+[assembly: AssemblyVersion("4.9.0")]
 
 //
 // Since we need to support two runtimes which are not fully backward compatible we have
@@ -70,13 +94,13 @@ using System.Security.Permissions;
 // Private
 //		Defines the private or developer build numbers. Not to be used for production.
 //
-
+//#if VS2005
 //[assembly: AssemblyVersion("1.5.200.0")]
 //[assembly: AssemblyDescription(".NET 2.0 supported")]
 //#else
 //[assembly: AssemblyVersion("1.5.100.0")]
 //[assembly: AssemblyDescription(".NET 1.0 and 1.1 supported")]
-
+//#endif
 
 //
 // In order to sign your assembly you must specify a key to use. Refer to the 
@@ -105,7 +129,11 @@ using System.Security.Permissions;
 //
 [assembly: AssemblyDelaySign(false)]
 [assembly: AssemblyKeyName("")]
+#if DEBUG
 [assembly: AssemblyKeyFile("..\\..\\..\\..\\Resources\\ncache.snk")]
-[assembly: AssemblyFileVersionAttribute("4.6.3.0")]
+#else
+[assembly: AssemblyKeyFile("..\\..\\..\\..\\Resources\\ncache.snk")]
+#endif
+[assembly: AssemblyFileVersionAttribute("4.9.0.0")]
 [assembly: AssemblyDescriptionAttribute("Pasring Engine")]
-[assembly: AssemblyInformationalVersion("4.6.0")]
+[assembly: AssemblyInformationalVersion("4.9.0")]

@@ -12,6 +12,8 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
+using System.Collections;
+
 namespace Alachisoft.NCache.SocketServer.EventTask
 {
     internal sealed class LoggingInfoModifiedEvent : IEventTask
@@ -43,9 +45,9 @@ namespace Alachisoft.NCache.SocketServer.EventTask
                 response.loggingInfoModified = loggingInfoModified;
                 response.responseType = Alachisoft.NCache.Common.Protobuf.Response.Type.LOGGING_INFO_MODIFIED_EVENT;
 
-                byte[] serializedResponse = Alachisoft.NCache.Common.Util.ResponseHelper.SerializeResponse(response);
+                IList serializedResponse = Alachisoft.NCache.Common.Util.ResponseHelper.SerializeResponse(response);
 
-                ConnectionManager.AssureSend(clientManager, serializedResponse, Alachisoft.NCache.Common.Enum.Priority.Critical);
+                ConnectionManager.AssureSend(clientManager, serializedResponse, Alachisoft.NCache.Common.Enum.Priority.High);
             }
         }
     }

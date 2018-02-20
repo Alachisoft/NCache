@@ -10,7 +10,7 @@
 // distributed under the License is distributed on an "AS IS" BASIS,
 // WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
 // See the License for the specific language governing permissions and
-// limitations under the License.
+// limitations under the License
 
 using System;
 using System.Collections;
@@ -32,7 +32,9 @@ namespace Alachisoft.NCache.Common.Threading
         public interface IAsyncTask
         {
             /// <summary> Process itself. </summary>
+
             void Process();
+
         }
 
         /// <summary> The worker thread. </summary>
@@ -41,7 +43,6 @@ namespace Alachisoft.NCache.Common.Threading
         /// <summary> The queue of events. </summary>
         private Queue _eventsHi, _eventsLow;
 
-        
         private int _numProcessingThreads = 1;
         private Boolean _started;
         ILogger NCacheLog;
@@ -74,6 +75,45 @@ namespace Alachisoft.NCache.Common.Threading
             _numProcessingThreads = numProcessingThread;
             _eventsHi = new Queue(256);
             _eventsLow = new Queue(256);
+        }
+
+        public void WindUpTask()
+        {
+            NCacheLog.CriticalInfo("AsyncProcessor", "WindUp Task Started.");
+
+            if (_eventsHi != null)
+            {
+                NCacheLog.CriticalInfo("AsyncProcessor", "Async operation(s) Queue Count: " + _eventsHi.Count);
+            }
+
+            _isShutdown = true;
+            lock (this)
+            {
+                Monitor.Pulse(this);
+            }
+            NCacheLog.CriticalInfo("AsyncProcessor", "WindUp Task Ended.");
+        }
+
+        public void WaitForShutDown(long interval)
+        {
+            NCacheLog.CriticalInfo("AsyncProcessor", "Waiting for  async process queue shutdown task completion.");
+            if (interval > 0)
+            {
+                bool waitlock = false;
+                lock (_shutdownMutex)
+                {
+                    if(_eventsHi.Count > 0)
+                        waitlock = Monitor.Wait(_shutdownMutex, (int)interval * 1000);
+                }
+
+                if (!waitlock)
+                {
+                    if(_eventsHi.Count > 0)
+                        NCacheLog.CriticalInfo("AsyncProcessor", "Remaining Async operations in queue: " + _eventsHi.Count);
+                }
+            }
+
+           NCacheLog.CriticalInfo("AsyncProcessor", "Shutdown task completed.");
         }
 
         /// <summary>
@@ -153,7 +193,11 @@ namespace Alachisoft.NCache.Common.Threading
 
                             if (thread != null && thread.IsAlive)
                             {
+#if !NETCORE
                                 thread.Abort();
+#else
+                                thread.Interrupt();
+#endif
                                 _workerThreads[i] = null;
                             }
                         }
@@ -169,6 +213,7 @@ namespace Alachisoft.NCache.Common.Threading
                 }
             }
         }
+
 
         /// <summary>
         /// Thread function, keeps running.
@@ -213,8 +258,17 @@ namespace Alachisoft.NCache.Common.Threading
                     if (evnt == null) continue;
 
                     evnt.Process();
+
                 }
                 catch (ThreadAbortException e)
+                {
+                    if (NCacheLog != null)
+                    {
+                        NCacheLog.Flush();
+                    }
+                    break;
+                }
+                catch (ThreadInterruptedException e)
                 {
                     if (NCacheLog != null)
                     {
@@ -232,6 +286,7 @@ namespace Alachisoft.NCache.Common.Threading
                         {
                             NCacheLog.Error("AsyncProcessor.Run()", "Task name: " + evnt.GetType().FullName + " Exception: " + exceptionString);
 
+
                         }
                     }
                 }
@@ -240,3 +295,4 @@ namespace Alachisoft.NCache.Common.Threading
         }
     }
 }
+

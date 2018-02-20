@@ -14,28 +14,25 @@
 
 using System;
 using System.Collections;
-using System.Text;
 using Alachisoft.NCache.Common.Protobuf;
-using System.IO;
-
-using Alachisoft.NCache.Common.Protobuf.Util;
 using Alachisoft.NCache.Web.Caching.Util;
-
-using Alachisoft.NCache.Web.Communication;
+using Alachisoft.NCache.Runtime.Caching;
 
 namespace Alachisoft.NCache.Web.Command
 {
     internal sealed class SearchCommand : CommandBase
     {
         private Alachisoft.NCache.Common.Protobuf.SearchCommand _searchCommand;
+        private int _methodOverload;
 
-        public SearchCommand(string query, IDictionary values, bool searchEnteries)
+        public SearchCommand(string query, IDictionary values, bool searchEnteries, int methodOverload)
         {
             base.name = "SearchCommand";
             _searchCommand = new Alachisoft.NCache.Common.Protobuf.SearchCommand();
             _searchCommand.query = query;
-            _searchCommand.searchEntries = searchEnteries;            
-            PopulateValues(values, _searchCommand.values); 
+            _searchCommand.searchEntries = searchEnteries;
+            PopulateValues(values, _searchCommand.values);
+            _methodOverload = methodOverload;
         }
 
         private void PopulateValues(IDictionary from, System.Collections.Generic.List<KeyValue> to)
@@ -50,25 +47,40 @@ namespace Alachisoft.NCache.Web.Command
                 keyValue.key = ide.Key.ToString();
                 if (ide.Value == null)
                     throw new ArgumentException("NCache query does not support null values");
-
                 if (ide.Value is ArrayList)
                 {
-                    ArrayList list = (ArrayList)ide.Value;
+                    ArrayList list = (ArrayList) ide.Value;
                     foreach (object value in list)
                     {
+                        if (value == null)
+                            throw new ArgumentNullException("NCache query does not support null values. ",
+                                (System.Exception) null);
+                        Type type = value.GetType();
+                        bool isTag = CommandHelper.IsTag(type);
+                        if (!(CommandHelper.IsIndexable(type) || isTag))
+                            throw new ArgumentException("The provided type is not indexable. ", type.Name);
                         valueWithType = new ValueWithType();
                         valueWithType.value = GetValueString(value);
-                        valueWithType.type = value.GetType().FullName;
-                        
+                        if (isTag)
+                            valueWithType.type = typeof(string).FullName;
+                        else
+                            valueWithType.type = value.GetType().FullName;
+
                         keyValue.value.Add(valueWithType);
                     }
                 }
                 else
                 {
+                    Type type = ide.Value.GetType();
+                    bool isTag = CommandHelper.IsTag(type);
+                    if (!(CommandHelper.IsIndexable(type) || isTag))
+                        throw new ArgumentException("The provided type is not indexable. ", type.Name);
                     valueWithType = new ValueWithType();
                     valueWithType.value = GetValueString(ide.Value);
-                    valueWithType.type = ide.Value.GetType().FullName;
-
+                    if (isTag)
+                        valueWithType.type = typeof(string).FullName;
+                    else
+                        valueWithType.type = ide.Value.GetType().FullName;
                     keyValue.value.Add(valueWithType);
                 }
 
@@ -78,21 +90,27 @@ namespace Alachisoft.NCache.Web.Command
 
         private string GetValueString(object value)
         {
-            string valueString = string.Empty;
+            string valueString = String.Empty;
 
-            // inform the user that null is not supported.
             if (value == null)
-            throw new System.Exception("NCache query does not support null values");
-            if (value is string) //Catter for case in-sensitive comparison
+
+                throw new System.Exception("NCache query does not support null values");
+
+            if (value is System.String)
             {
                 valueString = value.ToString().ToLower();
                 return valueString;
             }
 
-            if (value is DateTime)
+            if (value is System.DateTime)
             {
-                valueString = ((DateTime)value).Ticks.ToString();
+                valueString = ((DateTime) value).Ticks.ToString();
                 return valueString;
+            }
+
+            if (value is Tag)
+            {
+                valueString = ((Tag) value).TagName;
             }
 
             return value.ToString();
@@ -105,7 +123,12 @@ namespace Alachisoft.NCache.Web.Command
 
         internal override RequestType CommandRequestType
         {
-            get { return RequestType.BulkRead; }
+            get { return RequestType.NonKeyBulkRead; }
+        }
+
+        internal override bool IsKeyBased
+        {
+            get { return false; }
         }
 
         protected override void CreateCommand()
@@ -114,8 +137,14 @@ namespace Alachisoft.NCache.Web.Command
             base._command.requestID = base.RequestId;
             base._command.searchCommand = _searchCommand;
             base._command.type = Alachisoft.NCache.Common.Protobuf.Command.Type.SEARCH;
-            base._command.commandVersion = 2;
+
+            if (_searchCommand.searchEntries)
+                base._command.commandVersion = 2;
+            else
+                base._command.commandVersion = 3;
+
             base._command.clientLastViewId = base.ClientLastViewId;
+            base._command.MethodOverload = _methodOverload;
         }
     }
 }

@@ -9,7 +9,6 @@
 // WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
 // See the License for the specific language governing permissions and
 // limitations under the License.
-
 using System;
 using System.IO;
 using System.Text;
@@ -59,15 +58,13 @@ public class Trace
 	/// </summary>
 	/// <param name="module">Module responsible for the information</param>
 	/// <param name="message">The message to be displayed</param>
-	///[Conditional("DEBUG")] 
 	public static void info(String module, String message) 
 	{
 		if(isInfoEnabled)
             writeToDebug("[DBG]", module, message);
 	}
 
-    
-	///[Conditional("DEBUG")] 
+
 	public static void info(String message) 
 	{
 		info("", message);
@@ -78,14 +75,12 @@ public class Trace
 	/// </summary>
 	/// <param name="module">Module responsible for the warning</param>
 	/// <param name="message">The message to be displayed</param>
-	///[Conditional("DEBUG")] 
 	public static void warn(String module, String message) 
 	{
 		if(isWarnEnabled)
 			writeToDebug("[WARN]",module,message);
 	} 
 	
-	///[Conditional("DEBUG")] 
 	public static void warn(String message) 
 	{
 		warn("",message);
@@ -102,34 +97,32 @@ public class Trace
 		if(isErrorEnabled)
 			writeToDebug("[ERR]",module,message);
 	}
-
-	/// [Conditional("DEBUG")] 
+    
 	public static void error(String message) 
 	{
 		error("",message);
 	}
 
-	/// [Conditional("DEBUG")] 
 	public static void fatal(String module, String message) 
 	{
 		if(isFatalEnabled)
 			writeToDebug("[FATAL]",module,message);
 	}
 
-	/// [Conditional("DEBUG")] 
+
 	public static void fatal(String message) 
 	{
 		fatal("",message);
 	}
 
-	///[Conditional("DEBUG")] 
+
 	public static void debug(String module, String message) 
 	{
 		if(isDebugEnabled)
 			writeToDebug("[DBG]",module,message);
 	}
 
-	///[Conditional("DEBUG")] 
+
 	public static void debug(String message) 
 	{
 		debug("",message);
@@ -141,7 +134,6 @@ public class Trace
 	/// <param name="type">Type of trace</param>
 	/// <param name="module">Module responsible for the error</param>
 	/// <param name="message">The message to be displayed</param>
-	/// [Conditional("DEBUG")] 
 	private static void writeToDebug(String type, String module, String message)
 	{
 		int space1 = 8;
@@ -152,7 +144,6 @@ public class Trace
         else
             line = System.DateTime.Now.ToString("HH:mm:ss:ffff") + ":  " + type.PadRight(space1, ' ') + module.PadRight(space2, ' ') + message;
 
-		SysTrace.WriteLine(line);
-		
-    }
+		SysTrace.WriteLine(line);		
+	}
 }

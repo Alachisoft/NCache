@@ -1,4 +1,4 @@
-// Copyright (c) 2018 Alachisoft
+﻿// Copyright (c) 2018 Alachisoft
 // 
 // Licensed under the Apache License, Version 2.0 (the "License");
 // you may not use this file except in compliance with the License.
@@ -10,8 +10,7 @@
 // distributed under the License is distributed on an "AS IS" BASIS,
 // WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
 // See the License for the specific language governing permissions and
-// limitations under the License.
-
+// limitations under the License
 using System;
 using System.Collections.Generic;
 using System.Text;
@@ -38,7 +37,7 @@ namespace Alachisoft.NCache.Common.DataStructures
 
         public SlidingIndex(int interval, bool checkDuplication)
         {
-            if (interval > MIN_OBSERVATION_INTERVAL)
+            if (interval > MIN_OBSERVATION_INTERVAL)//&& interval < MAX_OBSERVATION_INTERVAL)
                 _observationInterval = interval;
             _checkDuplication = checkDuplication;
             Clock.StartClock();
@@ -79,19 +78,19 @@ namespace Alachisoft.NCache.Common.DataStructures
                         }
                     }
 
-                     if (matchEntry != null)
+                    bool newEntry = false;
+                    if (matchEntry != null)
                     {
                         indexEntry = matchEntry;
                     }
                     else
                     {
-                       
+                        newEntry = true;
                         indexEntry = new InstantaneousIndex<T>();
                         indexEntry.EnableDuplicationCheck = _checkDuplication;
                         indexEntry.ClockTime = currentTime;
                         _mainIndex.Add(indexEntry);
                     }
-
                 }
                 indexEntry.AddEntry(entryId, indexValue);
             }
@@ -119,6 +118,14 @@ namespace Alachisoft.NCache.Common.DataStructures
             }
         }
 
+        public IEnumerator<T> GetCurrentData(ref long startTime)
+        {
+            lock (this)
+            {
+                IEnumerator<T> enumerator = new SlidingIndex<T>.Enumerator(this, ref startTime);
+                return enumerator;
+            }
+        }
         private void ExpireOldEnteries(long currentTime)
         {
             lock (this)
@@ -165,6 +172,29 @@ namespace Alachisoft.NCache.Common.DataStructures
                         //index being modified currently
                         _index.Add(indexEntry.Clone() as InstantaneousIndex<T>);
                     }
+                }
+
+                _enumerator = _index.GetEnumerator();
+            }
+
+
+            public Enumerator(SlidingIndex<T> slidingIndex, ref long startTime)
+            {
+                long initialTime = startTime;
+                foreach (InstantaneousIndex<T> indexEntry in slidingIndex._mainIndex)
+                {
+                    if (indexEntry.ClockTime > initialTime)
+                    {
+                        //for older enteries which are not supposed to change
+                        if (indexEntry.ClockTime != Clock.CurrentTimeInSeconds)
+                            _index.Add(indexEntry);
+                        else
+                        {
+                            //index being modified currently
+                            _index.Add(indexEntry.Clone() as InstantaneousIndex<T>);
+                        }
+                    }
+                    startTime = indexEntry.ClockTime;
                 }
 
                 _enumerator = _index.GetEnumerator();

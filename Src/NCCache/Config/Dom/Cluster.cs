@@ -14,14 +14,11 @@
 
 using System;
 using System.Collections;
-using System.Text;
 using Alachisoft.NCache.Common.Configuration;
 using System.Collections.Generic;
 using Alachisoft.NCache.Common;
 using Alachisoft.NCache.Common.Net;
-using System.Text.RegularExpressions;
 using Alachisoft.NCache.Runtime.Serialization;
-using Runtime = Alachisoft.NCache.Runtime;
 
 namespace Alachisoft.NCache.Config.Dom
 {
@@ -29,18 +26,22 @@ namespace Alachisoft.NCache.Config.Dom
     public class Cluster: ICloneable,ICompactSerializable
     {
         string topology;
-        
+        string activeMirrorNode = null;
         int opTimeout = 60;
         int statsRepInterval;
         bool useHeartBeat;
+
         Channel channel;
+
         Dictionary<NodeIdentity, StatusInfo> nodes;
+
 
         public Cluster() 
         {
             channel = new Channel();
 
             nodes = new Dictionary<NodeIdentity, StatusInfo>();
+
         }
          
         [ConfigurationAttribute("topology")]
@@ -49,6 +50,7 @@ namespace Alachisoft.NCache.Config.Dom
             get { return this.topology; }
             set { this.topology = value; }
         }
+
         /// <summary>
         /// Get the topology type
         /// </summary>
@@ -62,9 +64,9 @@ namespace Alachisoft.NCache.Config.Dom
                     value = value.ToLower();
                     switch (value)
                     {
-                       case "replicated": return "replicated-server"; 
-                       case "partitioned": return "partitioned-server";
-                       
+                        case "replicated": return "replicated-server";
+                        case "partitioned": return "partitioned-server";
+
                     }
                 }
                 return value;
@@ -105,10 +107,13 @@ namespace Alachisoft.NCache.Config.Dom
             get { return nodes; }
             set { nodes = value; }
         }
+
+
         public List<NodeIdentity> NodeIdentities
         {
             get
             {
+
                 NodeIdentity[] nodeIdentities = new NodeIdentity[nodes.Count];
                 nodes.Keys.CopyTo(nodeIdentities, 0);
                 return new List<NodeIdentity>(nodeIdentities);
@@ -116,7 +121,12 @@ namespace Alachisoft.NCache.Config.Dom
             }
         }
 
-     
+        
+        public string ActiveMirrorNode
+        {
+            get { return activeMirrorNode; }
+            set { activeMirrorNode = value; }
+        }
 
         public int NewNodePriority
         {
@@ -190,7 +200,8 @@ namespace Alachisoft.NCache.Config.Dom
             cluster.OpTimeout = OpTimeout;
             cluster.StatsRepInterval = StatsRepInterval;
             cluster.UseHeartbeat = UseHeartbeat;
-            
+            cluster.activeMirrorNode = activeMirrorNode;
+
             if (nodes != null)
             {
 
@@ -214,11 +225,13 @@ namespace Alachisoft.NCache.Config.Dom
         {
            
             topology = reader.ReadObject() as string;
-          
+            activeMirrorNode = reader.ReadObject() as string;
             opTimeout = reader.ReadInt32();
             statsRepInterval = reader.ReadInt32();
             useHeartBeat = reader.ReadBoolean();
+
             channel = reader.ReadObject() as Channel;
+
             bool nodeExists = reader.ReadBoolean();
             if (nodeExists)
             {
@@ -230,13 +243,14 @@ namespace Alachisoft.NCache.Config.Dom
                     nodes.Add(reader.ReadObject() as NodeIdentity , reader.ReadObject() as StatusInfo);
                 }
             }
+
         }
 
         public void Serialize(Runtime.Serialization.IO.CompactWriter writer)
         {
            
             writer.WriteObject(topology);
-           
+            writer.WriteObject(activeMirrorNode);
             writer.Write(opTimeout);
             writer.Write(statsRepInterval);
             writer.Write(useHeartBeat);

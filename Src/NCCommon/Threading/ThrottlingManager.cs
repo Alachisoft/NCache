@@ -1,4 +1,4 @@
-// Copyright (c) 2018 Alachisoft
+﻿// Copyright (c) 2018 Alachisoft
 // 
 // Licensed under the Apache License, Version 2.0 (the "License");
 // you may not use this file except in compliance with the License.
@@ -10,7 +10,7 @@
 // distributed under the License is distributed on an "AS IS" BASIS,
 // WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
 // See the License for the specific language governing permissions and
-// limitations under the License.
+// limitations under the License
 
 using System;
 using System.Collections.Generic;
@@ -27,9 +27,10 @@ namespace Alachisoft.NCache.Common.Threading
         long _currentSize;
         long _currentMilliSeconds;
 
+ 
         DateTime _startTime;
 
-
+       
         public ThrottlingManager(long limit)
         {
             _limit = limit;
@@ -65,21 +66,20 @@ namespace Alachisoft.NCache.Common.Threading
             {
                 long msNow = GetMilliSecondDiff();
                 long currentInterval = msNow / _throtllingUnitMs;
-
                 if (currentInterval == _currentInternval)
                 {
                     _currentSize += size;
-
                     if (_currentSize >= _limit)
                     {
                         Thread.Sleep((int)(_throtllingUnitMs - (msNow - _currentMilliSeconds)));
                     }
+                  
                 }
                 else
                 {
                     _currentInternval = currentInterval;
                     _currentMilliSeconds = msNow;
-                    _currentSize = size;
+                    _currentSize= size;
                 }
             }
         }

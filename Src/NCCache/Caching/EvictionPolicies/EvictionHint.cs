@@ -13,12 +13,8 @@
 // limitations under the License.
 
 using System;
-using System.Runtime.Serialization;
-using Alachisoft.NCache.Caching;
-using Alachisoft.NCache.Util;
 using Alachisoft.NCache.Runtime.Serialization.IO;
 using Alachisoft.NCache.Runtime.Serialization;
-
 
 namespace Alachisoft.NCache.Caching.EvictionPolicies
 {
@@ -31,21 +27,12 @@ namespace Alachisoft.NCache.Caching.EvictionPolicies
     [Serializable]
 	public abstract class EvictionHint : ICompactSerializable//: IComparable
 	{
-
-        /// <summary>
-        /// Contain In Memory Size of Eviction Hint
-        /// </summary>
-        internal static int InMemorySize = Common.MemoryUtil.NetEnumSize; // for _hintType
-
-		/// <summary>
-		/// Get the slot in which this hint should be placed
-		/// </summary>
-		//public abstract byte SlotIndex {get;}
-
-       
 		[CLSCompliant(false)]
         public EvictionHintType _hintType;
-        
+
+
+        internal static int InMemorySize = Common.MemoryUtil.NetEnumSize; // for _hintType
+
         /// <summary>
 		/// Return if hint is to be changed on Update
 		/// </summary>
@@ -58,7 +45,6 @@ namespace Alachisoft.NCache.Caching.EvictionPolicies
 		/// update the eviction value
 		/// </summary>
 		public abstract bool Update();
-
 
         public static EvictionHint ReadEvcHint(CompactReader reader)
         {
@@ -77,7 +63,7 @@ namespace Alachisoft.NCache.Caching.EvictionPolicies
                 case EvictionHintType.PriorityEvictionHint:
                     PriorityEvictionHint peh = new PriorityEvictionHint();
                     ((ICompactSerializable)peh).Deserialize(reader);
-                    return (EvictionHint)peh;            
+                    return (EvictionHint)peh;
                 
                 default:
                     break;            
@@ -110,8 +96,8 @@ namespace Alachisoft.NCache.Caching.EvictionPolicies
         {
             writer.Write((short)_hintType);
         }
-
-        #endregion
+       
+        #endregion     
     }
 
 }

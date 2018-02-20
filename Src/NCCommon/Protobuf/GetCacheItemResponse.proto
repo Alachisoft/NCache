@@ -1,4 +1,6 @@
-
+import "Commands/TagInfo.proto";
+import "Commands/Dependency.proto";
+import "Commands/NamedTagInfo.proto";
 
 option java_outer_classname="GetCacheItemResponseProtocol";
 package Alachisoft.NCache.Common.Protobuf;
@@ -11,8 +13,13 @@ message GetCacheItemResponse {
 	optional int64 absExp = 6;
 	optional int64 sldExp = 7;
 	optional int32 flag = 8;
-	optional int64 creationTime = 9;
-	optional int64 lastModifiedTime = 10;
-	repeated bytes value = 11;
-
+	optional uint64 version = 9;
+	optional int64 creationTime = 10;
+	optional int64 lastModifiedTime = 11;
+	optional string group = 12;
+	optional string subGroup = 13;
+	optional TagInfo tagInfo = 14;
+	optional Dependency dependency = 15;
+	repeated bytes value = 16;
+	optional NamedTagInfo namedTagInfo = 17;
 }

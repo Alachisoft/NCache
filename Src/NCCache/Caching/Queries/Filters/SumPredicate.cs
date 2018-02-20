@@ -15,7 +15,6 @@
 using System;
 using System.Collections;
 using Alachisoft.NCache.Common.Enum;
-using Alachisoft.NCache.Common.Queries;
 
 namespace Alachisoft.NCache.Caching.Queries.Filters
 {
@@ -41,7 +40,6 @@ namespace Alachisoft.NCache.Caching.Queries.Filters
                 {
                     CacheEntry cacheentry = queryContext.Cache.GetEntryInternal(key, false);
                     object attribValue = queryContext.Index.GetAttributeValue(key, AttributeName, cacheentry.IndexInfo);
-
                     if (attribValue != null)
                     {
                         Type type = attribValue.GetType();
@@ -59,11 +57,7 @@ namespace Alachisoft.NCache.Caching.Queries.Filters
                 base.SetResult(queryContext, AggregateFunctionType.SUM, null);
             }
         }
-
-        internal override void ExecuteInternal(QueryContext queryContext, CollectionOperation mergeType)
-        {
-        }
-
+        
         internal override AggregateFunctionType GetFunctionType()
         {
             return AggregateFunctionType.SUM;

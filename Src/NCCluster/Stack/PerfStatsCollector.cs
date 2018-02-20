@@ -9,13 +9,13 @@
 // WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
 // See the License for the specific language governing permissions and
 // limitations under the License.
-
 using System;
 using System.Diagnostics;
 using System.IO;
 using System.Text;
 using System.Threading;
 using Alachisoft.NCache.Common.Logger;
+using Alachisoft.NCache.Common.Util;
 
 namespace Alachisoft.NGroups.Stack
 {
@@ -24,142 +24,7 @@ namespace Alachisoft.NGroups.Stack
     /// </summary>
     public class PerfStatsCollector : IDisposable
     {
-
-        #region /                           --- Logger ----                 /
-
-        /// <summary>
-        /// Create logs
-        /// </summary>
-        public class Logs
-        {
-            private TextWriter _writer;
-            private bool _logsEnabled;
-            private bool _errorLogsEnabled;
-
-            private object _sync_mutex = new object();
-
-            /// <summary>
-            /// Gets/Sets the flag whether logs are enabled or not.
-            /// </summary>
-            public bool LogsEnabled
-            {
-                get { return _logsEnabled; }
-                set { lock (_sync_mutex) { _logsEnabled = value; } }
-            }
-
-            /// <summary>
-            /// Gets/Sets the flag whether Error logs are enabled or not.
-            /// </summary>
-            public bool IsErrorLogEnabled
-            {
-                get { return _errorLogsEnabled; }
-                set { lock (_sync_mutex) { _errorLogsEnabled = value; } }
-            }
-
-            /// <summary>
-            /// True if writer is not instantiated, false otherwise
-            /// </summary>
-            public bool IsWriterNull
-            {
-                get
-                {
-                    if (_writer == null) return true;
-                    else return false;
-                }
-            }
-
-            /// <summary>
-            /// Creates logs in installation folder
-            /// </summary>
-            /// <param name="fileName">name of file</param>
-            /// <param name="directory">directory in which the logs are to be made</param>
-            public void Initialize(string fileName, string directory)
-            {
-                Initialize(fileName, null, directory);
-            }
-
-            /// <summary>
-            /// Creates logs in provided folder
-            /// </summary>
-            /// <param name="fileName">name of file</param>
-            /// <param name="filepath">path where logs are to be created</param>
-            /// <param name="directory">directory in which the logs are to be made</param>
-            public void Initialize(string fileName, string filepath, string directory)
-            {
-                lock (_sync_mutex)
-                {
-                    string filename = fileName + "." +
-                                      Environment.MachineName.ToLower() + "." +
-                                      DateTime.Now.ToString("dd-MM-yy HH-mm-ss") + @".logs.txt";
-
-                    if (filepath == null || filepath == string.Empty)
-                    {
-
-
-                        filepath = Path.Combine(filepath, "log-files");
-
-                        if (!Directory.Exists(filepath)) Directory.CreateDirectory(filepath);
-                    }
-
-                    try
-                    {
-                        filepath = Path.Combine(filepath, directory);
-                        if (!Directory.Exists(filepath)) Directory.CreateDirectory(filepath);
-
-                        filepath = Path.Combine(filepath, filename);
-
-                        _writer = TextWriter.Synchronized(new StreamWriter(filepath, false));
-                        _errorLogsEnabled = true;
-                    }
-                    catch (Exception)
-                    {
-                        throw;
-                    }
-                }
-            }
-
-            /// <summary>
-            /// Write to log file
-            /// </summary>
-            /// <param name="module">module</param>
-            /// <param name="logText">text</param>
-            public void WriteLogEntry(string module, string logText)
-            {
-                if (_writer != null)
-                {
-                    int space2 = 40;
-                    string line = null;
-                    line = System.DateTime.Now.ToString("HH:mm:ss:ffff") + ":  " + module.PadRight(space2, ' ') + logText;
-                    lock (_sync_mutex)
-                    {
-                        _writer.WriteLine(line);
-                        _writer.Flush();
-                    }
-                }
-            }
-
-            /// <summary>
-            /// Close writer
-            /// </summary>
-            public void Close()
-            {
-                lock (_sync_mutex)
-                {
-                    if (_writer != null)
-                    {
-                        lock (_writer)
-                        {
-                            _writer.Close();
-                            _writer = null;
-                            _logsEnabled = false;
-                            _errorLogsEnabled = false;
-                        }
-                    }
-                }
-            }
-        }
-
-        #endregion
+        
         /// <summary> Instance name. </summary>
         private string _instanceName;
         /// <summary> Port number. </summary>
@@ -199,13 +64,18 @@ namespace Alachisoft.NGroups.Stack
         /// <summary> performance counter for Socker recv size(bytes). </summary>
         private PerformanceCounter _pcSocketReceiveSize = null;
 
-        /// <summary> performance counter how many massages were sent togethor in socket.send.
-        private PerformanceCounter _pcNagglingMsgCount = null;
+     
 
+        ///
+        /// <summary> performance counter for Socket recv time (mili seconds). </summary>
+        private PerformanceCounter _pcDispatchEnter = null;
+        private PerformanceCounter _pcTcpDownEnter = null;
+        private PerformanceCounter _pcClusterOpsSent= null;
+        private PerformanceCounter _pcClusterOpsReceived = null;
+        private PerformanceCounter _pcResponseSent = null;
+        ////
 
         /// <summary> performance counter for Cache hits per second. </summary>
-        //public NewTrace nTrace;
-        //public string _cacheName;
         private ILogger _ncacheLog;
         public ILogger NCacheLog
         {
@@ -214,8 +84,11 @@ namespace Alachisoft.NGroups.Stack
         }
 
         /// <summary> Category name of counter performance data.</summary>
-
+#if JAVA
+        private const string PC_CATEGORY = "TayzGrid";
+#else
         private const string PC_CATEGORY = "NCache";
+#endif
         private Thread _printThread;
         private TimeSpan _printInterval = new TimeSpan(10,0,0);
         private string _logFilePath;
@@ -300,7 +173,11 @@ namespace Alachisoft.NGroups.Stack
             if (_printThread != null)
             {
                 NCacheLog.Flush();
+#if !NETCORE
                 _printThread.Abort();
+#else
+                _printThread.Interrupt();
+#endif
             }
             _printThread = null;
             if (_logger != null) _logger.Close();
@@ -348,13 +225,7 @@ namespace Alachisoft.NGroups.Stack
                     _pcBytesReceivedPerSec.RemoveInstance();
                     _pcBytesReceivedPerSec.Dispose();
                     _pcBytesReceivedPerSec = null;
-                }
-                if (_pcNagglingMsgCount != null)
-                {
-                    _pcNagglingMsgCount.RemoveInstance();
-                    _pcNagglingMsgCount.Dispose();
-                    _pcNagglingMsgCount = null;
-                }
+                }               
                 if (_pcSocketSendSize != null)
                 {
                     _pcSocketSendSize.RemoveInstance();
@@ -381,6 +252,44 @@ namespace Alachisoft.NGroups.Stack
                 }
 
 
+                ///
+                if (_pcDispatchEnter != null)
+                {
+                    _pcDispatchEnter.RemoveInstance();
+                    _pcDispatchEnter.Dispose();
+                    _pcDispatchEnter = null;
+                }
+
+                if (_pcTcpDownEnter != null)
+                {
+                    _pcTcpDownEnter.RemoveInstance();
+                    _pcTcpDownEnter.Dispose();
+                    _pcTcpDownEnter = null;
+                }
+
+                if (_pcClusterOpsSent != null)
+                {
+                    _pcClusterOpsSent.RemoveInstance();
+                    _pcClusterOpsSent.Dispose();
+                    _pcClusterOpsSent = null;
+                }
+
+                if (_pcClusterOpsReceived != null)
+                {
+                    _pcClusterOpsReceived.RemoveInstance();
+                    _pcClusterOpsReceived.Dispose();
+                    _pcClusterOpsReceived = null;
+                }
+
+                if (_pcResponseSent != null)
+                {
+                    _pcResponseSent.RemoveInstance();
+                    _pcResponseSent.Dispose();
+                    _pcResponseSent = null;
+                }
+
+
+                ////
             }
         }
 
@@ -414,30 +323,19 @@ namespace Alachisoft.NGroups.Stack
                         _pcSocketSendSize = new PerformanceCounter(PC_CATEGORY, "Socket send size (bytes)", _instanceName, false);
                         _pcSocketReceiveTime = new PerformanceCounter(PC_CATEGORY, "Socket recv time (msec)", _instanceName, false);
                         _pcSocketReceiveSize = new PerformanceCounter(PC_CATEGORY, "Socket recv size (bytes)", _instanceName, false);
-                        _pcNagglingMsgCount = new PerformanceCounter(PC_CATEGORY, "NaglingMsgCount", _instanceName, false);
                         _pcBytesSentPerSec = new PerformanceCounter(PC_CATEGORY, "Bytes sent/sec", _instanceName, false);
                         _pcBytesReceivedPerSec = new PerformanceCounter(PC_CATEGORY, "Bytes received/sec", _instanceName, false);
                     }
 
                     _pcClusteredOperationsPerSec = new PerformanceCounter(PC_CATEGORY, "Cluster ops/sec", _instanceName, false);
 
-                    if(System.Configuration.ConfigurationSettings.AppSettings["printClusterStats"] != null)
-                    {
-                        bool printStats = Convert.ToBoolean(System.Configuration.ConfigurationSettings.AppSettings["printClusterStats"]);
-                        if (printStats)
-                        {
-                            if (System.Configuration.ConfigurationSettings.AppSettings["statsPrintInterval"] != null)
-                            {
-                                _printInterval = new TimeSpan(Convert.ToInt32(System.Configuration.ConfigurationSettings.AppSettings["statsPrintInterval"]),0,0);
-                            }
+                    _printInterval = ServiceConfiguration.StatsPrintInterval;
 
-                            _logger = new Logs();
-                            _logger.Initialize(instname + ".clstats", "ClusterPerfMonStats");
+                    _logger = new Logs();
+                    _logger.Initialize(instname + ".clstats", "ClusterPerfMonStats");
 
-                            _printThread = new Thread(new ThreadStart(PrintStats));
-                            _printThread.Start();
-                        }
-                    }
+                    _printThread = new Thread(new ThreadStart(PrintStats));
+                    _printThread.Start();
                 }
             }
             catch (Exception e)
@@ -614,22 +512,60 @@ namespace Alachisoft.NGroups.Stack
                     _pcSocketReceiveSize.IncrementBy(byteSent);
                 }
             }
-        }
-
-        public void IncrementNagglingMessageStats(long nagglingMsgs)
+        }        
+        ///
+        public void IncrementDispatchEnter()
         {
-            if (_pcNagglingMsgCount != null)
+            if (_pcDispatchEnter != null)
             {
-                lock (_pcNagglingMsgCount)
+                lock (_pcDispatchEnter)
                 {
-                    _pcNagglingMsgCount.RawValue = nagglingMsgs;
+                    _pcDispatchEnter.Increment();
                 }
             }
         }
-        
-     
 
-        
+        public void IncrementTcpDownEnter()
+        {
+            if (_pcTcpDownEnter != null)
+            {
+                lock (_pcTcpDownEnter)
+                {
+                    _pcTcpDownEnter.Increment();
+                }
+            }
+        }
+
+        public void IncrementClusterOpsReceived()
+        {
+            if (_pcClusterOpsReceived != null)
+            {
+                lock (_pcClusterOpsReceived)
+                {
+                    _pcClusterOpsReceived.Increment();
+                }
+            }
+        }
+        public void IncrementClusterOpsSent(long sentCount)
+        {
+            if (_pcClusterOpsSent != null)
+            {
+                lock (_pcClusterOpsSent)
+                {
+                    _pcClusterOpsSent.IncrementBy(sentCount);
+                }
+            }
+        }
+        public void IncrementResponseSent()
+        {
+            if (_pcResponseSent != null)
+            {
+                lock (_pcResponseSent)
+                {
+                    _pcResponseSent.Increment();
+                }
+            }
+        }
 
 
         ////

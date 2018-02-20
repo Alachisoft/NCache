@@ -1,0 +1,9 @@
+import "Commands/Value.proto";
+import "KeyValuePackageResponse.proto";
+
+
+option java_outer_classname="GetTagResponseProtocol";
+package Alachisoft.NCache.Common.Protobuf;
+message GetTagResponse {
+	optional KeyValuePackageResponse keyValuePackage = 1;
+}

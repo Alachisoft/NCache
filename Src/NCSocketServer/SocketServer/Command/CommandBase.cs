@@ -14,13 +14,12 @@
 
 using System;
 using System.Text;
-using System.Threading;
-using Alachisoft.NCache.SocketServer;
-
+using Alachisoft.NCache.Caching.CacheSynchronization;
 using Alachisoft.NCache.Runtime.Exceptions;
-using System.Collections.Generic; 
-using Runtime = Alachisoft.NCache.Runtime;
+using Alachisoft.NCache.Web.Synchronization;
 using Alachisoft.NCache.SocketServer.Statistics;
+using Alachisoft.NCache.Common.DataStructures.Clustered;
+using System.Collections;
 
 namespace Alachisoft.NCache.SocketServer.Command
 {
@@ -34,13 +33,12 @@ namespace Alachisoft.NCache.SocketServer.Command
         internal virtual OperationResult OperationResult{get {return OperationResult.Failure;}}
         public virtual int Operations { get { return 1; } }
 
-        protected IList<byte[]> _serializedResponsePackets = new List<byte[]>();
+        protected IList _serializedResponsePackets = new ClusteredArrayList();
 
-        public virtual IList<byte[]> SerializedResponsePackets
+        public virtual IList SerializedResponsePackets
         {
             get { return _serializedResponsePackets; }
         }
-        
        
         public virtual bool CanHaveLargedata { get { return false; } }
         public virtual bool IsBulkOperation { get { return false; } }
@@ -54,12 +52,17 @@ namespace Alachisoft.NCache.SocketServer.Command
         //PROTOBUF
         abstract public void ExecuteCommand(ClientManager clientManager, Alachisoft.NCache.Common.Protobuf.Command command);
 
-
-
         // For Counters
         public virtual void IncrementCounter(PerfStatsCollector collector, long value) 
         {
+        }
 
+        public virtual string GetCommandParameters(out string commandName)
+        {
+            StringBuilder details = new StringBuilder();
+            commandName = this.GetType().Name;
+            details.Append("Command Type: " + this.GetType().Name);
+            return details.ToString();
         }
 
         /// <summary>
@@ -103,5 +106,19 @@ namespace Alachisoft.NCache.SocketServer.Command
         {
             return Util.HelperFxn.ToBytes("ParsingException: " + exc.ToString());
         }
+
+        protected CacheSyncDependency GetCacheSyncDependencyObj(Alachisoft.NCache.Common.Protobuf.SyncDependency protocolSyncDependency)
+        {
+            if (protocolSyncDependency == null) return null;
+            SyncCache syncCache = new SyncCache(protocolSyncDependency.cacheId,
+                protocolSyncDependency.server,
+                protocolSyncDependency.port, false);
+
+            CacheSyncDependency syncDep = new CacheSyncDependency(protocolSyncDependency.cacheId,
+                protocolSyncDependency.key, 
+                syncCache);
+
+            return syncDep;
+        } 
     }
 }

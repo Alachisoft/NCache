@@ -10,7 +10,7 @@
 // distributed under the License is distributed on an "AS IS" BASIS,
 // WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
 // See the License for the specific language governing permissions and
-// limitations under the License.
+// limitations under the License
 
 using System;
 using System.Collections;
@@ -29,17 +29,22 @@ namespace Alachisoft.NCache.Common.Util
     /// <summary>
     /// Summary description for Log.
     /// </summary>
-
+    //TODO: ALACHISOFT (For now I have changed code here directly. Do something so that we don't have to)
     public sealed class Log4net
     {
+#if JAVA
+       static string _cacheserver="TayzGrid";
+        /// <summary>Configuration file folder name</summary>
+        private const string DIRNAME = @"log";
+#else
         static string _cacheserver="NCache";
         /// <summary>Configuration file folder name</summary>
         private const string DIRNAME = @"log-files";
-
+#endif
         private static byte[] log4netXML = Encoding.ASCII.GetBytes("<?xml version=\"1.0\"?> <configuration>  <configSections>   <section name=\"log4net\" type=\"log4net.Config.Log4NetConfigurationSectionHandler, log4net, Version=1.2.10.0, Culture = neutral, PublicKeyToken=1b44e1d426115821 \"/> </configSections>   <log4net> </log4net> </configuration>");
 
         public static log4net.Core.Level criticalInfo = new log4net.Core.Level(5000000, "CRIT", "INFO");
-
+        public static log4net.Repository.ILoggerRepository LogRepository = log4net.LogManager.GetRepository(Assembly.GetCallingAssembly());
 
         /// <summary>Path of the configuration folder.</summary>
         static private string s_configDir = "";
@@ -52,9 +57,7 @@ namespace Alachisoft.NCache.Common.Util
         /// </summary>
         static Log4net()
         {
-
-
-            s_configDir = AppUtil.InstallDir;
+            s_configDir = AppUtil.LogDir;
 
             try
             {
@@ -79,7 +82,7 @@ namespace Alachisoft.NCache.Common.Util
             }
             try
             {
-                log4net.LogManager.GetRepository().LevelMap.Add(criticalInfo);
+                log4net.LogManager.GetRepository(LogRepository.Name).LevelMap.Add(criticalInfo);
 
                 if (!System.IO.Directory.Exists(path))
                     System.IO.Directory.CreateDirectory(path);
@@ -108,7 +111,7 @@ namespace Alachisoft.NCache.Common.Util
             lock (lockObj)
             {
                 MemoryStream logStream = new MemoryStream(log4netXML);
-                log4net.Config.XmlConfigurator.Configure(logStream);
+                log4net.Config.XmlConfigurator.Configure(LogRepository, logStream);
 
                 string logger_name = "";
 
@@ -122,7 +125,7 @@ namespace Alachisoft.NCache.Common.Util
                         logger_name += "-" + "replica";
 
                     if (inproc && !isStartedAsMirror) logger_name += "." + System.Diagnostics.Process.GetCurrentProcess().Id;
-
+                
                     //Add loggerName to be accessed w.r.t the cache Name
                     if (!LoggingInformation.cacheLogger.Contains(logger_name))
                     {
@@ -131,9 +134,9 @@ namespace Alachisoft.NCache.Common.Util
                         string LogExceptions = "";
 
                         if (logger_name == "LogExceptions")
-                            LogExceptions = "\\LogExceptions";
+                            LogExceptions = Path.DirectorySeparatorChar+"LogExceptions";
 
-                        string fileName = GetLogPath() + LogExceptions + "\\" + logger_name + "_" + DateTime.Now.Day.ToString() + "-" + DateTime.Now.Month + "-" + DateTime.Now.Year + "-" + DateTime.Now.Hour + "-" + DateTime.Now.Minute + "-" + DateTime.Now.Second + ".txt"; ;
+                        string fileName = GetLogPath() + LogExceptions + Path.DirectorySeparatorChar + logger_name + "_" + DateTime.Now.Day.ToString() + "-" + DateTime.Now.Month + "-" + DateTime.Now.Year + "-" + DateTime.Now.Hour + "-" + DateTime.Now.Minute + "-" + DateTime.Now.Second + ".txt"; ;
 
                         AddAppender(logger_name, CreateBufferAppender(logger_name, fileName));
 
@@ -146,20 +149,6 @@ namespace Alachisoft.NCache.Common.Util
                                     SetLevel(logger_name, "ERROR");
                                 }
                             }
-
-                            if (properties.Contains("trace-notices"))
-                            {
-                                if (Convert.ToBoolean(properties["trace-notices"]))
-                                {
-                                    SetLevel(logger_name, "INFO");
-                                }
-                            }
-
-                            if (properties.Contains("trace-warnings"))
-                                if (Convert.ToBoolean(properties["trace-warnings"]))
-                                {
-                                    SetLevel(logger_name, "WARN");
-                                }
 
                             if (properties.Contains("trace-debug"))
                                 if (Convert.ToBoolean(properties["trace-debug"]))
@@ -193,21 +182,7 @@ namespace Alachisoft.NCache.Common.Util
                                     SetLevel(logger_name, "ERROR");
                                 }
                             }
-
-                            if (properties.Contains("trace-notices"))
-                            {
-                                if (Convert.ToBoolean(properties["trace-notices"]))
-                                {
-                                    SetLevel(logger_name, "INFO");
-                                }
-                            }
-
-                            if (properties.Contains("trace-warnings"))
-                                if (Convert.ToBoolean(properties["trace-warnings"]))
-                                {
-                                    SetLevel(logger_name, "WARN");
-                                }
-
+                            
                             if (properties.Contains("trace-debug"))
                                 if (Convert.ToBoolean(properties["trace-debug"]))
                                 {
@@ -235,8 +210,13 @@ namespace Alachisoft.NCache.Common.Util
                     AppUtil.LogEvent(_cacheserver, "Failed to open log. " + e, System.Diagnostics.EventLogEntryType.Error, EventCategories.Error, EventID.GeneralError);
                 }
 
+                //if (properties.Contains("usehptime"))
+                //    nTrace.UseHPTime = Convert.ToBoolean(properties["usehptime"]);
                 return logger_name;
+
+
             }
+
         }
 
         /// <summary>
@@ -251,18 +231,19 @@ namespace Alachisoft.NCache.Common.Util
             }
         }
 
+
         /// <summary>
         /// intitializes Known name based log files
         /// </summary>
         /// <param name="loggerName">Enum of Known loggerNames</param>
-        /// <param name="cacheName">cacheName  use the other override</param>
+        /// <param name="cacheName">cacheName if Clientcache logging, if not ClientCache, use the other override</param>
         public static void Initialize(NCacheLog.LoggerNames loggerNameEnum, string cacheName)
         {
             lock (lockObj)
             {
 
                 MemoryStream logStream = new MemoryStream(log4netXML);
-                log4net.Config.XmlConfigurator.Configure(logStream);
+                log4net.Config.XmlConfigurator.Configure(LogRepository, logStream);
 
                 string logName = loggerNameEnum.ToString();
 
@@ -307,18 +288,24 @@ namespace Alachisoft.NCache.Common.Util
                         }
                     }
                 }
-
                 filename = filename + "." +
                             Environment.MachineName.ToLower() + "." +
                             DateTime.Now.ToString("dd-MM-yy HH-mm-ss") + @".logs.txt";
 
                 string filepath = "";
-
-                if (!DirectoryUtil.SearchGlobalDirectory("log-files", false, out filepath))
+#if JAVA
+                if (!DirectoryUtil.SearchGlobalDirectory("log", false, out filepath))
+                {
+                    try
+                    {
+                        DirectoryUtil.SearchLocalDirectory("log", true, out filepath);
+#else
+                        if (!DirectoryUtil.SearchGlobalDirectory("log-files", false, out filepath))
                 {
                     try
                     {
                         DirectoryUtil.SearchLocalDirectory("log-files", true, out filepath);
+#endif
                     }
                     catch (Exception ex)
                     {
@@ -330,7 +317,7 @@ namespace Alachisoft.NCache.Common.Util
                 {
                     filepath = Path.Combine(filepath, loggerNameEnum.ToString());
                     if (!Directory.Exists(filepath)) Directory.CreateDirectory(filepath);
-
+                    
                     filepath = Path.Combine(filepath, filename);
 
                     LoggingInformation.cacheLogger.Add(logName, logName);
@@ -340,8 +327,7 @@ namespace Alachisoft.NCache.Common.Util
                     }
 
                     SetLevel(logName, NCacheLog.Level.OFF.ToString());
-                    AddAppender(logName, CreateBufferAppender(logName, filepath));
-
+                    AddAppender(logName, CreateBufferAppender(logName, filepath));                    
                 }
                 catch (Exception)
                 {
@@ -366,10 +352,9 @@ namespace Alachisoft.NCache.Common.Util
                         if (temploggerName != null)
                         {
                             SetLevel(temploggerName, "OFF");
-
                             if (temploggerName != null)
                             {
-                                log4net.ILog log = log4net.LogManager.GetLogger(temploggerName);
+                                log4net.ILog log = log4net.LogManager.GetLogger(LogRepository.Name, temploggerName);
 
                                 log4net.Core.IAppenderAttachable closingAppenders = (log4net.Core.IAppenderAttachable)log.Logger;
                                 AppenderCollection collection = closingAppenders.Appenders;
@@ -380,8 +365,7 @@ namespace Alachisoft.NCache.Common.Util
                                         //This FLUSH and close the current appenders along with all of its children appenders
                                         ((BufferingForwardingAppender)collection[i]).Close();
                                     }
-                                }
-
+                                }                               
                                 RemoveAllAppender(temploggerName);
                                 LoggingInformation.cacheLogger.Remove(cacheName);
                             }
@@ -452,6 +436,7 @@ namespace Alachisoft.NCache.Common.Util
 
             log4net.Layout.PatternLayout layout = new log4net.Layout.PatternLayout();
 
+            //DateSpace == 23 || appdomain == 25 || Longest thread.Name == 34 || Leve max length == 5 || 
             layout.ConversionPattern = "%-27date{ISO8601}" + "\t%-45.42appdomain" + "\t%-35logger" + "\t%-42thread" + "\t%-9level" + "\t%message" + "%newline";
 
             layout.Header = "TIMESTAMP                  \tAPPDOMAIN                                    \tLOGGERNAME                         \tTHREADNAME                                \tLEVEL    \tMESSAGE\r\n";
@@ -471,7 +456,7 @@ namespace Alachisoft.NCache.Common.Util
         /// <param name="appender">Appender to add to the logger</param>
         private static void AddAppender(string loggerName, log4net.Appender.IAppender appender)
         {
-            log4net.ILog log = log4net.LogManager.GetLogger(loggerName);
+            log4net.ILog log = log4net.LogManager.GetLogger(LogRepository.Name, loggerName);
             log4net.Repository.Hierarchy.Logger l = (log4net.Repository.Hierarchy.Logger)log.Logger;
 
             l.AddAppender(appender);
@@ -479,7 +464,7 @@ namespace Alachisoft.NCache.Common.Util
 
         private static void RemoveAllAppender(string loggerName)
         {
-            log4net.ILog log = log4net.LogManager.GetLogger(loggerName);
+            log4net.ILog log = log4net.LogManager.GetLogger(LogRepository.Name, loggerName);
             log4net.Repository.Hierarchy.Logger l = (log4net.Repository.Hierarchy.Logger)log.Logger;
 
             l.RemoveAllAppenders();
@@ -524,8 +509,9 @@ namespace Alachisoft.NCache.Common.Util
 
             }
 
+
             //If the logger doesnot exist it will create one else fetches one
-            log4net.ILog log = log4net.LogManager.GetLogger(loggerName);
+            log4net.ILog log = log4net.LogManager.GetLogger(LogRepository.Name, loggerName);
             //adds the logger as a seperate hierchy, not dependant on any other logger
             log4net.Repository.Hierarchy.Logger l = (log4net.Repository.Hierarchy.Logger)log.Logger;
 
@@ -558,9 +544,8 @@ namespace Alachisoft.NCache.Common.Util
         private static void EnableFilter(string loggerName, string stringToMatch)
         {
 
-            log4net.ILog log = log4net.LogManager.GetLogger(loggerName);
+            log4net.ILog log = log4net.LogManager.GetLogger(LogRepository.Name, loggerName);
             log4net.Repository.Hierarchy.Logger l = (log4net.Repository.Hierarchy.Logger)log.Logger;
-
         }
 
         /// <summary>
@@ -570,7 +555,7 @@ namespace Alachisoft.NCache.Common.Util
         /// <returns> if not found null will be returned</returns>
         public static log4net.Appender.IAppender FindAppender(string appenderName)
         {
-            foreach (log4net.Appender.IAppender appender in log4net.LogManager.GetRepository().GetAppenders())
+            foreach (log4net.Appender.IAppender appender in log4net.LogManager.GetRepository(LogRepository.Name).GetAppenders())
             {
                 if (appender.Name == appenderName)
                 {
@@ -596,6 +581,8 @@ namespace Alachisoft.NCache.Common.Util
             {
                 Close((string)cacheNameEnum.Current);
             }
+
         }
+
     }
 }

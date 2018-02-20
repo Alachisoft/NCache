@@ -10,7 +10,7 @@
 // distributed under the License is distributed on an "AS IS" BASIS,
 // WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
 // See the License for the specific language governing permissions and
-// limitations under the License.
+// limitations under the License
 
 using System;
 using System.Text;
@@ -33,15 +33,15 @@ namespace Alachisoft.NCache.Serialization.Surrogates
         }
         public override void Write(CompactBinaryWriter writer, object graph) { 
         
-            //In case of Special strings the generated stream length and string length are different
+            // In case of Special strings the generated stream length and string length are different
             //So we should first convert the string to stream and then write stream lenght
-            
+           
             string str = (string)graph;
             byte[] stream = UTF8Encoding.UTF8.GetBytes(graph as string);
             int length =  (int) stream.Length;
             writer.Write(length);
             writer.Write(stream);
-        
+         
         }
         public override void Skip(CompactBinaryReader reader)
         {

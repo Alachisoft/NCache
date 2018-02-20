@@ -9,12 +9,19 @@
 // WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
 // See the License for the specific language governing permissions and
 // limitations under the License.
-
 using System;
 using System.Net;
 using System.IO;
+#if JAVA
+using Alachisoft.TayzGrid.Runtime.Serialization;
+#else
 using Alachisoft.NCache.Runtime.Serialization;
+#endif
+#if JAVA
+using Alachisoft.TayzGrid.Runtime.Serialization.IO;
+#else
 using Alachisoft.NCache.Runtime.Serialization.IO;
+#endif
 
 namespace Alachisoft.NCache.Common.Net
 {
@@ -130,7 +137,6 @@ namespace Alachisoft.NCache.Common.Net
 
             if ((o == null))
                 return 1;
-
 			Address other = o as Address;
             if (other == null) return 1;
 			if (ip_addr == null)
@@ -184,7 +190,6 @@ namespace Alachisoft.NCache.Common.Net
 				}
 			}
 			sb.Append(":" + port);
-
 			return sb.ToString();
 		}
 
@@ -345,7 +350,6 @@ namespace Alachisoft.NCache.Common.Net
 
         public void Deserialize(CompactReader reader)
         {
-
             byte[] ip = (byte[])reader.ReadObject();
             if (ip != null)
             {
@@ -355,7 +359,6 @@ namespace Alachisoft.NCache.Common.Net
                 }
                 catch (Exception) { }
             }
-
             port = reader.ReadInt32();
             additional_data = (byte[])reader.ReadObject();
 

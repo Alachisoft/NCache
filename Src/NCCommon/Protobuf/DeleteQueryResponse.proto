@@ -1,0 +1,4 @@
+option java_outer_classname="DeleteQueryResponseProtocol";
+package Alachisoft.NCache.Common.Protobuf;
+message DeleteQueryResponse {
+}

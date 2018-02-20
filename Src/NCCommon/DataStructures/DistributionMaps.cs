@@ -10,8 +10,7 @@
 // distributed under the License is distributed on an "AS IS" BASIS,
 // WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
 // See the License for the specific language governing permissions and
-// limitations under the License.
-
+// limitations under the License
 using System;
 using System.Collections;
 using System.Text;
@@ -81,9 +80,10 @@ namespace Alachisoft.NCache.Common.DataStructures
             for (int i = 0; i < _bucketsOwnershipMap.Count; i++)
             {
                 idict.MoveNext();
-                sb.Append("Key: " + idict.Key.ToString() + "Bucket Count: " +  (idict.Value as ArrayList).Count + "\n");
+                sb.Append("Key: " + idict.Key.ToString() + "Bucket Count: " + (idict.Value as ArrayList).Count + "\n");
                 ArrayList values = idict.Value as ArrayList;
-                
+                //foreach (HashMapBucket hs in values)
+                //    sb.Append(hs.ToString() + "\n");
             }
             return sb.ToString();
         }
@@ -93,7 +93,7 @@ namespace Alachisoft.NCache.Common.DataStructures
         public object Clone()
         {
             DistributionMaps maps = new DistributionMaps(_result);
-            if(_hashmap != null) maps.Hashmap = _hashmap.Clone() as ArrayList;
+            if (_hashmap != null) maps.Hashmap = _hashmap.Clone() as ArrayList;
             if (_bucketsOwnershipMap != null) maps.BucketsOwnershipMap = _bucketsOwnershipMap.Clone() as Hashtable;
             if (_specialBucketOwners != null) maps.SpecialBucketOwners = _specialBucketOwners.Clone() as Hashtable;
 

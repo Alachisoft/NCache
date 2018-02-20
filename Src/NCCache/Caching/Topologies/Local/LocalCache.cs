@@ -12,21 +12,28 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
+
 using System;
 using System.Collections;
 using System.Threading;
-using Alachisoft.NCache.Caching.AutoExpiration;
-using Alachisoft.NCache.Caching.Statistics;
+
 using Alachisoft.NCache.Storage;
 using Alachisoft.NCache.Runtime.Exceptions;
 
 using Alachisoft.NCache.Caching.EvictionPolicies;
-using Alachisoft.NCache.Util;
+using Alachisoft.NCache.Caching.AutoExpiration;
+
 using Alachisoft.NCache.Common.Monitoring;
 using Alachisoft.NCache.Common.Net;
 using Alachisoft.NCache.Common.Util;
 using System.Net;
 using Alachisoft.NCache.Caching.Queries;
+using Alachisoft.NCache.Common;
+
+using System.Collections.Generic;
+using Alachisoft.NCache.Caching.Messaging;
+using Alachisoft.NCache.Common.Enum;
+using Alachisoft.NCache.Common.DataStructures.Clustered;
 
 namespace Alachisoft.NCache.Caching.Topologies.Local
 {
@@ -34,11 +41,9 @@ namespace Alachisoft.NCache.Caching.Topologies.Local
     /// This class provides the local storage options i.e. the actual storage of objects. It is used 
     /// by the Cache Manager, replicated cache and partitioned cache.
     /// </summary>
+
 	internal class LocalCache : LocalCacheBase
     {
-        /// <summary> The underlying physical data store. </summary>
-        protected ICacheStorage _cacheStore;
-
         /// <summary> The eviction policy for the cache. </summary>
         protected IEvictionPolicy _evictionPolicy;
 
@@ -52,6 +57,8 @@ namespace Alachisoft.NCache.Caching.Topologies.Local
 
         private bool _notifyCacheFull = false;
 
+        private TopicManager _topicManager;
+
         /// <summary>
         /// Overloaded constructor. Takes the properties as a map.
         /// </summary>
@@ -59,11 +66,20 @@ namespace Alachisoft.NCache.Caching.Topologies.Local
         /// <param name="properties">properties collection for this cache.</param>
         /// <param name="listener">cache events listener</param>
         /// <param name="timeSched">scheduler to use for periodic tasks</param>
-        public LocalCache(IDictionary cacheClasses, CacheBase parentCache, IDictionary properties, ICacheEventsListener listener, CacheRuntimeContext context)
+        public LocalCache(IDictionary cacheClasses, CacheBase parentCache, IDictionary properties, ICacheEventsListener listener, CacheRuntimeContext context
+           
+            , ActiveQueryAnalyzer activeQueryAnalyzer
 
-            : base(properties, parentCache, listener, context)
+            )
+
+            : base(properties, parentCache, listener, context
+               
+            , activeQueryAnalyzer
+
+            )
         {
             _stats.ClassName = "local-cache";
+            _topicManager = new TopicManager(context);
             Initialize(cacheClasses, properties);
         }
 
@@ -91,6 +107,7 @@ namespace Alachisoft.NCache.Caching.Topologies.Local
         /// </summary>
         public override long Count
         {
+            
             get
             {
                 if (ServerMonitor.MonitorActivity) ServerMonitor.LogClientActivity("LocalCache.Count", "");
@@ -98,11 +115,24 @@ namespace Alachisoft.NCache.Caching.Topologies.Local
                 if (_cacheStore == null)
                     throw new InvalidOperationException();
 
-                return _cacheStore.Count;
+                return  _cacheStore.Count;
             }
         }
 
-  
+
+        public override long SessionCount
+        {
+            get
+            {
+                return _stats.SessionCount;
+            }
+        }
+
+         public override IPAddress ServerJustLeft
+        {
+            get { return null; }
+            set { ;}
+        }
 
         public override int ServersCount
         {
@@ -113,7 +143,6 @@ namespace Alachisoft.NCache.Caching.Topologies.Local
             return false;
         }
 
-
         /// <summary>
         /// Get the size of data in store, in bytes.
         /// </summary>
@@ -121,7 +150,8 @@ namespace Alachisoft.NCache.Caching.Topologies.Local
         {
             get
             {
-                if (_cacheStore != null) return _cacheStore.Size;
+                if (_cacheStore != null)
+                    return _cacheStore.Size;
                 return 0;
             }
         }
@@ -142,21 +172,26 @@ namespace Alachisoft.NCache.Caching.Topologies.Local
             }
         }
 
+
         /// <summary>
         /// Returns true if cache is started as backup mirror cache, false otherwise.
         /// In Case of replica space will not be checked at storage level
         /// </summary>
+        /// 
+
         public override bool VirtualUnlimitedSpace
         {
             get
             {
-                return this._cacheStore.VirtualUnlimitedSpace;
+                return _cacheStore.VirtualUnlimitedSpace;
             }
             set
             {
-                this._cacheStore.VirtualUnlimitedSpace = value;
+                _cacheStore.VirtualUnlimitedSpace = value;
+               
             }
         }
+
 
 
         internal override long MaxSize
@@ -170,6 +205,7 @@ namespace Alachisoft.NCache.Caching.Topologies.Local
             {
                 if (_cacheStore != null)
                 {
+                     
                     //if the cache has less data than the new maximum size.
                     //we can not apply the new size to the cache if the cache has already more data.
                     if (_cacheStore.Size <= value)
@@ -204,11 +240,7 @@ namespace Alachisoft.NCache.Caching.Topologies.Local
             {
                 base.Initialize(cacheClasses, properties);
 
-                if (System.Configuration.ConfigurationSettings.AppSettings.Get("NCache.EnableGCCollection") != null)
-                {
-                    _allowExplicitGCCollection = Convert.ToBoolean(System.Configuration.ConfigurationSettings.AppSettings.Get("NCache.EnableGCCollection"));
-                }
-
+                _allowExplicitGCCollection = ServiceConfiguration.EnableGCCollection; 
 
                 if (!properties.Contains("storage"))
                     throw new ConfigurationException("Missing configuration option 'storage'");
@@ -217,9 +249,8 @@ namespace Alachisoft.NCache.Caching.Topologies.Local
                 {
                     IDictionary evictionProps = properties["scavenging-policy"] as IDictionary;
 
-                    if (evictionProps != null && evictionProps.Contains("eviction-enabled"))
-                        if (Convert.ToBoolean(evictionProps["eviction-enabled"]) && Convert.ToDouble(evictionProps["evict-ratio"]) > 0)
-                            _evictionPolicy = EvictionPolicyFactory.CreateEvictionPolicy(evictionProps);
+                    if (Convert.ToBoolean(evictionProps["eviction-enabled"]) && Convert.ToDouble(evictionProps["evict-ratio"]) > 0)
+                        _evictionPolicy = EvictionPolicyFactory.CreateEvictionPolicy(evictionProps,_context.NCacheLog);
 
                 }
                 else
@@ -227,12 +258,11 @@ namespace Alachisoft.NCache.Caching.Topologies.Local
                     _evictionPolicy = EvictionPolicyFactory.CreateDefaultEvictionPolicy();
                 }
 
-
                 IDictionary storageProps = properties["storage"] as IDictionary;               
 
-               
 				_cacheStore = CacheStorageFactory.CreateStorageProvider(storageProps, this._context.SerializationContext, _evictionPolicy != null, _context.NCacheLog);
-
+              
+                _cacheStore.ISizableMessageStore = _topicManager;
                 _stats.MaxCount = _cacheStore.MaxCount;
                 _stats.MaxSize = _cacheStore.MaxSize;
             }
@@ -269,12 +299,18 @@ namespace Alachisoft.NCache.Caching.Topologies.Local
 
             _cacheStore.Clear();
 
+            _topicManager.Clear();
+
             _context.PerfStatsColl.SetCacheSize(0); // on clear cache cachesize set to zero
 
             if (_evictionThread != null)
             {
                 NCacheLog.Flush();
+#if !NETCORE
                 _evictionThread.Abort();
+#else
+                _evictionThread.Interrupt();
+#endif
             }
 
             if (_evictionPolicy != null)
@@ -285,6 +321,7 @@ namespace Alachisoft.NCache.Caching.Topologies.Local
                 {
                     _context.PerfStatsColl.SetEvictionIndexSize(_evictionPolicy.IndexInMemorySize);
                 }
+
             }
         }
 
@@ -350,46 +387,6 @@ namespace Alachisoft.NCache.Caching.Topologies.Local
         }
 
         /// <summary>
-        /// 
-        /// </summary>
-        /// <param name="key"></param>
-        /// <param name="eh"></param>
-        /// <returns></returns>
-        internal override bool AddInternal(object key, ExpirationHint eh, OperationContext operationContext)
-        {
-            if (ServerMonitor.MonitorActivity) ServerMonitor.LogClientActivity("LocalCache.Add_2", "");
-
-            if (_cacheStore == null)
-                throw new InvalidOperationException();
-
-            CacheEntry e = (CacheEntry)_cacheStore.Get(key);
-            if (e == null) return false;
-
-            //We only allow either idle expiration or Fixed expiration both cannot be set at the same time
-            if ((e.ExpirationHint is IdleExpiration && eh is FixedExpiration)
-                || (e.ExpirationHint is FixedExpiration && eh is IdleExpiration))
-            {
-                return false;
-            }
-
-            e.ExpirationHint = eh;
-            _cacheStore.Insert(key, e, true);
-            e.LastModifiedTime = System.DateTime.Now;
-
-
-            if (_context.PerfStatsColl != null)
-            {
-                if (_evictionPolicy != null)
-                    _context.PerfStatsColl.SetEvictionIndexSize((long)_evictionPolicy.IndexInMemorySize);
-
-                if (_context.ExpiryMgr != null)
-                    _context.PerfStatsColl.SetExpirationIndexSize((long)_context.ExpiryMgr.IndexInMemorySize);
-            }
-
-            return true;
-        }
-
-        /// <summary>
         /// Get the item size stored in cache
         /// </summary>
         /// <param name="key">key</param>
@@ -399,6 +396,7 @@ namespace Alachisoft.NCache.Caching.Topologies.Local
             if (_cacheStore == null) return 0;
             return _cacheStore.GetItemSize(key);
         }
+
 
         /// <summary>
         /// Adds a pair of key and value to the cache. Throws an exception or reports error 
@@ -421,12 +419,12 @@ namespace Alachisoft.NCache.Caching.Topologies.Local
                 cacheEntry.EvictionHint = _evictionPolicy.CompatibleHint(cacheEntry.EvictionHint);
             }
 
-            //No Need to insert Eviction if Eviction is turned off it will reduce cache-entry overhead
+         
             if (_evictionPolicy == null)
                 cacheEntry.EvictionHint = null;
 
+           
             StoreAddResult result = _cacheStore.Add(key, cacheEntry, !isUserOperation);
-            // Operation completed!
             if (result == StoreAddResult.Success || result == StoreAddResult.SuccessNearEviction)
             {
                 if (_evictionPolicy != null)
@@ -447,17 +445,153 @@ namespace Alachisoft.NCache.Caching.Topologies.Local
                     _context.PerfStatsColl.SetExpirationIndexSize((long)_context.ExpiryMgr.IndexInMemorySize);
             }
 
-
             switch (result)
             {
                 case StoreAddResult.Success: return CacheAddResult.Success;
                 case StoreAddResult.KeyExists: return CacheAddResult.KeyExists;
                 case StoreAddResult.NotEnoughSpace: return CacheAddResult.NeedsEviction;
                 case StoreAddResult.SuccessNearEviction: return CacheAddResult.SuccessNearEviction;
-            }
+            }           
+
             return CacheAddResult.Failure;
         }
 
+
+        /// <summary>
+        /// 
+        /// </summary>
+        /// <param name="key"></param>
+        /// <param name="eh"></param>
+        /// <returns></returns>
+        internal override bool AddInternal(object key, ExpirationHint eh, OperationContext operationContext)
+        {
+            if (ServerMonitor.MonitorActivity) ServerMonitor.LogClientActivity("LocalCache.Add_2", "");
+
+            if (_cacheStore == null)
+                throw new InvalidOperationException();
+
+            CacheEntry e = (CacheEntry)_cacheStore.Get(key);
+            if (e == null) return false;
+
+            //We only allow either idle expiration or Fixed expiration both cannot be set at the same time
+            if ((e.ExpirationHint is IdleExpiration && eh is FixedExpiration)
+                || (e.ExpirationHint is FixedExpiration && eh is IdleExpiration))
+            {
+                return false;
+            }
+
+            if (e.ExpirationHint == null)
+            {
+                e.ExpirationHint = eh;
+            }
+            else
+            {
+                if (e.ExpirationHint is AggregateExpirationHint)
+                {
+                    ((AggregateExpirationHint)e.ExpirationHint).Add(eh);
+                }
+                else
+                {
+                    AggregateExpirationHint aeh = new AggregateExpirationHint();
+                    aeh.Add(e.ExpirationHint);
+                    aeh.Add(eh);
+                    e.ExpirationHint = aeh;
+                }
+            }
+
+            _cacheStore.Insert(key, e, true);
+            e.LastModifiedTime = System.DateTime.Now;
+            
+            if (_context.PerfStatsColl != null)
+            {
+                if (_evictionPolicy != null)
+                    _context.PerfStatsColl.SetEvictionIndexSize((long)_evictionPolicy.IndexInMemorySize);
+
+                if (_context.ExpiryMgr != null)
+                    _context.PerfStatsColl.SetExpirationIndexSize((long)_context.ExpiryMgr.IndexInMemorySize);
+            }
+            return true;
+        }
+
+        /// <summary>
+        /// 
+        /// </summary>
+        /// <param name="key"></param>
+        /// <param name="eh"></param>
+        /// <returns></returns>
+        internal override bool RemoveInternal(object key, ExpirationHint eh)
+        {
+            if (ServerMonitor.MonitorActivity) ServerMonitor.LogClientActivity("LocalCache.Remove", "");
+
+            if (_cacheStore == null)
+                throw new InvalidOperationException();
+
+            CacheEntry e = (CacheEntry)_cacheStore.Get(key);
+            if (e == null || e.ExpirationHint == null)
+            {
+                return false;
+            }
+            else
+            {
+                if (e.ExpirationHint is AggregateExpirationHint)
+                {
+                    AggregateExpirationHint AggHint = new AggregateExpirationHint();
+                    AggregateExpirationHint entryExpHint = (AggregateExpirationHint)e.ExpirationHint;
+
+                    foreach (ExpirationHint exp in entryExpHint)
+                    {
+                        if (!exp.Equals(eh))
+                        {
+                            AggHint.Add(exp);
+                        }
+                    }
+                    e.ExpirationHint = AggHint;
+                }
+                else if (e.ExpirationHint.Equals(eh))
+                {
+                    e.ExpirationHint = null;
+                }
+            }
+
+            if (_notifyCacheFull)
+            {
+                _notifyCacheFull = false;               
+            }
+            _cacheStore.Insert(key, e, true);
+            e.LastModifiedTime = System.DateTime.Now;
+
+            if (_context.PerfStatsColl != null)
+            {
+                if (_evictionPolicy != null)
+                    _context.PerfStatsColl.SetEvictionIndexSize((long)_evictionPolicy.IndexInMemorySize);
+
+                if (_context.ExpiryMgr != null)
+                    _context.PerfStatsColl.SetExpirationIndexSize((long)_context.ExpiryMgr.IndexInMemorySize);
+            }
+
+            return true;
+        }
+
+        /// <summary>
+        /// 
+        /// </summary>
+        /// <param name="key"></param>
+        /// <param name="eh"></param>
+        /// <returns></returns>
+        internal override bool AddInternal(object key, CacheSynchronization.CacheSyncDependency syncDependency)
+        {
+            if (_cacheStore == null)
+                throw new InvalidOperationException();
+
+            CacheEntry e = (CacheEntry)_cacheStore.Get(key);
+            if (e == null) return false;
+
+            e.SyncDependency = syncDependency;
+
+            _cacheStore.Insert(key, e, true);
+            e.LastModifiedTime = System.DateTime.Now;
+            return true;
+        }
 
         /// <summary>
         /// Adds a pair of key and value to the cache. If the specified key already exists 
@@ -483,14 +617,14 @@ namespace Alachisoft.NCache.Caching.Topologies.Local
 
             EvictionHint peEvh = oldEntry == null ? null : oldEntry.EvictionHint;
 
-            // No Need to insert Eviction if Eviction is turned off it will reduce cache-entry overhead
+         
 
             if (_evictionPolicy == null)
                 cacheEntry.EvictionHint = null;
             
-            //
 
-            StoreInsResult result = _cacheStore.Insert(key, cacheEntry, !isUserOperation);
+
+            StoreInsResult result = _cacheStore. Insert(key, cacheEntry, !isUserOperation);
             // Operation completed!            
             if (result == StoreInsResult.Success || result == StoreInsResult.SuccessNearEviction)
             {
@@ -499,11 +633,18 @@ namespace Alachisoft.NCache.Caching.Topologies.Local
             }
             else if (result == StoreInsResult.SuccessOverwrite || result == StoreInsResult.SuccessOverwriteNearEviction)
             {
+                 
+                //update the cache item version...
+                if (isUserOperation)
+                {
+                    cacheEntry.UpdateVersion(oldEntry);
+                }
+
                 //update the cache item last modifeid time...
                 cacheEntry.UpdateLastModifiedTime(oldEntry);
 
                 if (_evictionPolicy != null)
-                    _evictionPolicy.Notify(key, peEvh, cacheEntry.EvictionHint);
+                    _evictionPolicy.Notify(key, peEvh, cacheEntry.EvictionHint);                
             }
             if (result == StoreInsResult.NotEnoughSpace && !_notifyCacheFull)
             {
@@ -528,6 +669,8 @@ namespace Alachisoft.NCache.Caching.Topologies.Local
                 case StoreInsResult.SuccessNearEviction: return CacheInsResult.SuccessNearEvicition;
                 case StoreInsResult.SuccessOverwriteNearEviction: return CacheInsResult.SuccessOverwriteNearEviction;
             }
+
+           
             return CacheInsResult.Failure;
         }
 
@@ -569,52 +712,7 @@ namespace Alachisoft.NCache.Caching.Topologies.Local
                 if (_context.ExpiryMgr != null)
                     _context.PerfStatsColl.SetExpirationIndexSize((long)_context.ExpiryMgr.IndexInMemorySize);
             }
-
             return e;
-        }
-
-        /// <summary>
-        /// 
-        /// </summary>
-        /// <param name="key"></param>
-        /// <param name="eh"></param>
-        /// <returns></returns>
-        internal override bool RemoveInternal(object key, ExpirationHint eh)
-        {
-            if (ServerMonitor.MonitorActivity) ServerMonitor.LogClientActivity("LocalCache.Remove", "");
-
-            if (_cacheStore == null)
-                throw new InvalidOperationException();
-
-            CacheEntry e = (CacheEntry)_cacheStore.Get(key);
-            if (e == null || e.ExpirationHint == null)
-            {
-                return false;
-            }
-            else if (e.ExpirationHint.Equals(eh))
-            {
-                e.ExpirationHint = null;
-            }
-
-            // Our store may not be an in memory store
-            
-            if (_notifyCacheFull)
-            {
-                _notifyCacheFull = false;
-            }
-            _cacheStore.Insert(key, e, true);
-            e.LastModifiedTime = System.DateTime.Now;
-
-            if (_context.PerfStatsColl != null)
-            {
-                if (_evictionPolicy != null)
-                    _context.PerfStatsColl.SetEvictionIndexSize((long)_evictionPolicy.IndexInMemorySize);
-
-                if (_context.ExpiryMgr != null)
-                    _context.PerfStatsColl.SetExpirationIndexSize((long)_context.ExpiryMgr.IndexInMemorySize);
-            }
-
-            return true;
         }
 
         #endregion
@@ -686,7 +784,13 @@ namespace Alachisoft.NCache.Caching.Topologies.Local
             {
                 if (_evictionPolicy != null)
                 {
-                    _evictionPolicy.Execute(cache, _context, Size);
+                    var sizeToEvict = (long)Math.Ceiling(Size * _evictionPolicy.EvictRatio);
+                   long evictedSize = _evictionPolicy.Execute(cache, _context, Size);
+
+                    if(sizeToEvict > evictedSize)
+                    {
+                        _context.MessageManager.Evict(sizeToEvict - evictedSize);
+                    }
                 }
             }
             finally
@@ -725,6 +829,358 @@ namespace Alachisoft.NCache.Caching.Topologies.Local
                 }
             }
         }
+
+        internal override void TouchInternal(string key, OperationContext operationContext)
+        {
+            if (ServerMonitor.MonitorActivity) ServerMonitor.LogClientActivity("LocalCache.Touch", "");
+
+            if (_cacheStore == null)
+                throw new InvalidOperationException();
+
+            CacheEntry e = (CacheEntry)_cacheStore.Get(key);
+            if (e != null)
+            {
+                EvictionHint evh = e.EvictionHint;
+                if (_evictionPolicy != null && evh != null && evh.IsVariant)
+                    _evictionPolicy.Notify(key, evh, null);
+                ExpirationHint exh = e.ExpirationHint;
+                if (exh != null && exh.IsVariant)
+                {
+                    try
+                    {
+                        _context.ExpiryMgr.ResetVariant(exh);
+                    }
+                    catch (Exception ex)
+                    {
+                        throw ex;
+                    }
+                }
+            }
+        }
+
+
+
+
+
+        public override void ClientDisconnected(string client, bool isInproc)
+        {
+            _topicManager.OnClientDisconnected(client);
+        }
+
+
+        #region /                       --- IMessageStore implementation ----                                   /
+
+        public override bool TopicOperation(TopicOperation operation, OperationContext operationContext)
+        {
+            bool result = false;
+            if (operation != null)
+            {
+                switch (operation.TopicOperationType)
+                {
+                    case TopicOperationType.Create:
+                        result = CreateTopic(operation.Topic);
+                        break;
+                    case TopicOperationType.Get:
+                        result = GetTopic(operation.Topic);
+                        break;
+                    case TopicOperationType.Remove:
+                        result = DeleteTopic(operation.Topic);
+                        break;
+                    case TopicOperationType.Subscribe:
+                        result = CreateSubscription(operation.Topic, ((SubscriptionOperation)operation).SubscriptionInfo);
+                        break;
+                    case TopicOperationType.UnSubscribe:
+                        result = RemoveSubscription(operation.Topic, ((SubscriptionOperation)operation).SubscriptionInfo);
+                        break;
+                    case TopicOperationType.RefreshSubscription:
+                        result = RefreshSubscription(operation.Topic, ((SubscriptionOperation)operation).SubscriptionInfo);
+                        break;
+                }
+            }
+
+            if (result && _context.PerfStatsColl != null)
+            {
+                _context.PerfStatsColl.SetCacheSize(Size);
+            }
+
+            return result;
+        }
+
+        
+
+        private bool CreateTopic(string topic)
+        {
+            _topicManager.CreateTopic(topic);
+            return true;
+        }
+
+        private bool GetTopic(string topic)
+        {
+            return _topicManager.GetTopic(topic) != null;
+        }
+
+        private bool DeleteTopic(string topic)
+        {
+            return _topicManager.RemoveTopic(topic);
+        }
+
+        private bool CreateSubscription(string topic,SubscriptionInfo subscriptionInfo)
+        {
+            Topic instance = _topicManager.GetTopic(topic);
+
+            if (instance != null)
+            {
+                instance.CreateSubscription(subscriptionInfo);
+            }
+            else
+            {
+                throw new OperationFailedException(string.Format("Topic '{0}' does not exists.", topic));
+            }
+            return true;
+        }
+
+        private bool RemoveSubscription(string topic, SubscriptionInfo subscriptionInfo)
+        {
+            Topic instance = _topicManager.GetTopic(topic);
+
+            if (instance != null)
+            {
+                return instance.RemoveSubscription(subscriptionInfo);
+            }
+            else
+            {
+                throw new OperationFailedException(string.Format("Topic '{0}' does not exists.", topic));
+            }
+        }
+
+        private bool RefreshSubscription(string topic, SubscriptionInfo subscriptionInfo)
+        {
+            Topic instance = _topicManager.GetTopic(topic);
+
+            if (instance != null)
+            {
+                instance.RefrshSubscription(subscriptionInfo);
+            }
+           
+            return true;
+        }
+
+        public override bool StoreMessage(string topic, Message message, OperationContext context)
+        {
+            Topic topicInstance = _topicManager.GetTopic(topic);
+            bool stored = false;
+            if (topicInstance != null)
+            {
+                StoreStatus status = _cacheStore.HasSpace(message, 0, true);
+
+                _cacheStore.CheckIfCacheNearEviction();
+
+                if (status == StoreStatus.HasSpace || status == StoreStatus.NearEviction)
+                    stored = topicInstance.StoreMessage(message, context);
+
+                if (_context.PerfStatsColl != null)
+                {
+                    _context.PerfStatsColl.SetCacheSize(Size);
+                }
+
+                if (status != StoreStatus.HasSpace)
+                {
+                    Evict();
+                }
+
+                if (status == StoreStatus.HasNotEnoughSpace)
+                    throw new OperationFailedException("The cache is full and not enough items could be evicted.");
+
+            }
+            else
+            {
+                throw new OperationFailedException(string.Format("Topic '{0}' does not exists.", topic));
+            }
+
+            return stored;
+        }
+
+        public override MessageInfo GetNextUnassignedMessage(TimeSpan timeout, OperationContext context)
+        {
+            return _topicManager.GetNextUnassignedMessage(timeout,context);
+        }
+
+        public override MessageInfo GetNextUndeliveredMessage(TimeSpan timeout,OperationContext context)
+        {
+            return _topicManager.GetNextUndeliveredMessage(context);
+        }
+
+
+        public override SubscriptionInfo GetSubscriber(string topic, SubscriptionType type, OperationContext context)
+        {
+            Topic instance = _topicManager.GetTopic(topic);
+            if (instance != null) return instance.GetSubscriberForAssignment(type, context);
+
+            return null;
+        }
+
+        public override bool AssignmentOperation(MessageInfo messageInfo, SubscriptionInfo subscriptionInfo, TopicOperationType type, OperationContext context)
+        {
+            Topic instance = _topicManager.GetTopic(messageInfo.Topic);
+            if (instance != null)
+            {
+                switch (type)
+                {
+                    case TopicOperationType.AssignSubscription:
+                        return instance.AssignSubscription(messageInfo, subscriptionInfo);
+
+                    case TopicOperationType.RevokeAssignment:
+                            instance.RevokeAssignment(messageInfo, subscriptionInfo);
+                            return true;
+                }
+            }
+            return false;
+        }
+
+        public override IDictionary<string, IList<object>> GetAssignedMessage(SubscriptionInfo subscriptionInfo, OperationContext operationContext)
+        {
+            return _topicManager.GetAssignedMessages(subscriptionInfo);
+        }
+
+        public override void AcknowledgeMessageReceipt(string clientId, IDictionary<string, IList<string>> topicWiseMessageIds, OperationContext operationContext)
+        {
+            HashVector errors = new HashVector();
+            foreach (KeyValuePair<string, IList<string>> topicMessges in topicWiseMessageIds)
+            {
+                foreach (string messageId in topicMessges.Value)
+                {
+                    try
+                    {
+                        AcknowledgeMessageReceiptInternal(clientId, topicMessges.Key, messageId, operationContext);
+                    }
+                    catch (Exception e)
+                    {
+                        errors.Add(new MessageInfo() { Topic = topicMessges.Key, MessageId = messageId }, e);
+                    }
+                    
+                }
+            }
+        }
+
+        protected virtual void AcknowledgeMessageReceiptInternal(string clientId, string topic,string messageId, OperationContext operationContext)
+        {
+            _topicManager.AcknowledgeMessageReceipt(clientId, topic,messageId, operationContext);
+        }
+
+        public override IList<MessageInfo> GetDeliveredMessages()
+        {
+            return _topicManager.GetDeliveredMessages();
+        }
+
+        public override IList<MessageInfo> GetExpiredMessages()
+        {
+            return _topicManager.GetExpiredMessages();
+        }
+
+        public override IList<MessageInfo> GetEvicatableMessages(long sizeToEvict)
+        {
+            return _topicManager.GetEvicatableMessages(sizeToEvict);
+        }
+
+        public override void RemoveMessages(IList<MessageInfo> messagesTobeRemoved, MessageRemovedReason reason, OperationContext context)
+        {
+            HashVector errors = new HashVector();
+            foreach (MessageInfo messageInfo in messagesTobeRemoved)
+            {
+                try
+                {
+                    RemoveMessagesInternal(messageInfo, reason,context);
+                }
+                catch (Exception e)
+                {
+                    errors.Add(messageInfo, e);
+                }
+            }
+
+            if (_context.PerfStatsColl != null)
+            {
+                _context.PerfStatsColl.SetCacheSize(Size);
+            }
+        }
+        protected virtual Message RemoveMessagesInternal(MessageInfo messageTobeRemoved, MessageRemovedReason reason, OperationContext context)
+        {
+           return _topicManager.RemoveMessage(messageTobeRemoved,reason);
+        }
+
+        public override IList<MessageInfo> GetUnacknowledgeMessages(TimeSpan assginmentTimeout)
+        {
+            return _topicManager.GetUnAcknowledgedMessages(assginmentTimeout);
+        }
+
+
+        public override void RevokeAssignment(MessageInfo message, SubscriptionInfo subscription, OperationContext context)
+        {
+            Topic instance = _topicManager.GetTopic(message.Topic);
+            if (instance != null) instance.RevokeAssignment(message, subscription);
+        }
+        public override IList<string> GetNotifiableClients()
+        {
+            return _topicManager.GetNotifiableClients();
+        }
+
+        public override void RegiserTopicEventListener(ITopicEventListener listener)
+        {
+            _topicManager.RegisterTopicListener(listener);
+        }
+
+        public override ArrayList GetTopicsState()
+        {
+            return _topicManager.GetTopicsState();
+        }
+
+        public override void SetTopicsState(ArrayList topicState)
+        {
+            _topicManager.SetTopicsState(topicState);
+        }
+
+        public override TransferrableMessage GetTransferrableMessage(string topic, string messageId)
+        {
+            return _topicManager.GetTransferrableMessage(topic, messageId);
+        }
+
+        public override bool StoreTransferrableMessage(string topic, TransferrableMessage message)
+        {
+            bool result = _topicManager.StoreTransferrableMessage(topic, message);
+            if (result && _context.PerfStatsColl != null)
+            {
+                _context.PerfStatsColl.SetCacheSize(Size);
+            }
+
+            return result;
+        }
+
+        public override void AcknowledgeMessageReceipt(string clientId, string topic, string messageId, OperationContext operationContext)
+        {
+            AcknowledgeMessageReceiptInternal(clientId, topic, messageId, operationContext);
+        }
+
+        public override OrderedDictionary GetMessageList(int bucketId)
+        {
+            return _topicManager.GetMessageList();
+        }
+
+
+        public override Dictionary<string, TopicStats> GetTopicsStats()
+        {
+            return _topicManager.GetTopicsStats();
+        }
+
+        public override IDictionary<string, IList<string>> GetInActiveClientSubscriptions(TimeSpan inactivityThreshold)
+        {
+            return _topicManager.GetInActiveClientSubscriptions(inactivityThreshold);
+        }
+
+        public override IDictionary<string, IList<string>> GetActiveClientSubscriptions(TimeSpan inactivityThreshold)
+        {
+            return _topicManager.GetActiveClientSubscriptions(inactivityThreshold);
+        }
+        #endregion
+
     }
 }
 

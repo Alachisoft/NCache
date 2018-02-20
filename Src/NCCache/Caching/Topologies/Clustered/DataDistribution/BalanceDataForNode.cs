@@ -22,7 +22,7 @@ namespace Alachisoft.NCache.Caching.Topologies.Clustered
     {
         Address _address;
         ArrayList _filteredWeightIdList;
-        int _percentData; //%age data of cluster this node is carrying.
+        int _percentData; // percentage data of cluster this node is carrying.
         int _itemsCount; // total buckets this node is keeping  with.
         long _totalWeight; //total weight of this node.
 

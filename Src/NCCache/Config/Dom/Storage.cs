@@ -1,3 +1,4 @@
+
 // Copyright (c) 2018 Alachisoft
 // 
 // Licensed under the Apache License, Version 2.0 (the "License");
@@ -11,13 +12,9 @@
 // WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
 // See the License for the specific language governing permissions and
 // limitations under the License.
-
 using System;
-using System.Collections;
-using System.Text;
 using Alachisoft.NCache.Common.Configuration;
 using Alachisoft.NCache.Runtime.Serialization;
-using Runtime = Alachisoft.NCache.Runtime;
 
 namespace Alachisoft.NCache.Config.Dom
 {
@@ -29,7 +26,9 @@ namespace Alachisoft.NCache.Config.Dom
 
         public Storage() { }
 
+
         [ConfigurationAttribute("type")]
+
         public string Type
         {
             get { return type; }
@@ -49,7 +48,9 @@ namespace Alachisoft.NCache.Config.Dom
         public object Clone()
         {
             Storage storage = new Storage();
+
             storage.Type = Type != null ? (string)Type.Clone(): null;
+
             storage.Size = size;
             return storage;
         }

@@ -1,0 +1,8 @@
+option java_outer_classname="CQTypeProtocol";
+package Alachisoft.NCache.Common.Protobuf;
+
+enum CQType
+{
+	SEARCH_CQ_KEYS = 0;
+    SEARCH_CQ_ENTRIES = 1;
+}

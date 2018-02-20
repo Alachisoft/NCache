@@ -16,8 +16,11 @@ using System;
 using Alachisoft.NCache.Caching;
 using Alachisoft.NCache.Common;
 using Alachisoft.NCache.Common.Monitoring;
-using System.Collections.Generic;
-using Runtime = Alachisoft.NCache.Runtime;
+
+using Alachisoft.NCache.Common.Util;
+using System.Text;
+using Alachisoft.NCache.SocketServer.RuntimeLogging;
+using System.Diagnostics;
 
 namespace Alachisoft.NCache.SocketServer.Command
 {
@@ -25,14 +28,31 @@ namespace Alachisoft.NCache.SocketServer.Command
     {
         protected struct CommandInfo
         {
+            public bool DoAsync;            
+
             public string RequestId;
             public string Key;
             public BitSet FlagMap;
+            public short DsItemRemovedId;
             public object LockId;
+            public ulong Version;
+            public string ProviderName;
             public LockAccessType LockAccessType;
         }
 
+        CommandInfo cmdInfo;
+
         private OperationResult _removeResult = OperationResult.Success;
+        public override string GetCommandParameters(out string commandName)
+        {
+            StringBuilder details = new StringBuilder();
+            commandName = "Remove";
+            details.AppendLine("Command Key: " + cmdInfo.Key);
+            details.Append(" ; ");
+            if (cmdInfo.FlagMap != null)
+                details.AppendLine("WriteThru: " + cmdInfo.FlagMap.IsBitSet(BitSetConstants.WriteThru));
+            return details.ToString();
+        }
 
         internal override OperationResult OperationResult
         {
@@ -52,10 +72,13 @@ namespace Alachisoft.NCache.SocketServer.Command
 
         public override void ExecuteCommand(ClientManager clientManager, Alachisoft.NCache.Common.Protobuf.Command command)
         {
-            CommandInfo cmdInfo;
-
+            int overload;
+            string exception = null;
+            Stopwatch stopWatch = new Stopwatch();
+            stopWatch.Start();
             try
             {
+                overload = command.MethodOverload;
                 cmdInfo = ParseCommand(command, clientManager);
                 if (ServerMonitor.MonitorActivity) ServerMonitor.LogClientActivity("RemCmd.Exec", "cmd parsed");
 
@@ -66,51 +89,124 @@ namespace Alachisoft.NCache.SocketServer.Command
                 if (!base.immatureId.Equals("-2"))
                 {
                     //PROTOBUF:RESPONSE
-                    _serializedResponsePackets.Add(Alachisoft.NCache.Common.Util.ResponseHelper.SerializeExceptionResponse(exc, command.requestID));
+                    _serializedResponsePackets.Add(Alachisoft.NCache.Common.Util.ResponseHelper.SerializeExceptionResponse(exc, command.requestID, command.commandID));
                 }
                 return;
             }
             NCache nCache = clientManager.CmdExecuter as NCache;
-            try
+            if (!cmdInfo.DoAsync)
             {
-                CallbackEntry cbEntry = null;
-                
-
-                CompressedValueEntry flagValueEntry = null;
-
-                OperationContext operationContext = new OperationContext(OperationContextFieldName.OperationType, OperationContextOperationType.CacheOperation);
-                flagValueEntry = nCache.Cache.Remove(cmdInfo.Key, cmdInfo.FlagMap, cbEntry, cmdInfo.LockId, cmdInfo.LockAccessType, operationContext);
-
-                UserBinaryObject ubObject = (flagValueEntry == null) ? null : (UserBinaryObject) flagValueEntry.Value;
-
-                //PROTOBUF:RESPONSE
-                Alachisoft.NCache.Common.Protobuf.Response response = new Alachisoft.NCache.Common.Protobuf.Response();
-                Alachisoft.NCache.Common.Protobuf.RemoveResponse removeResponse =
-                    new Alachisoft.NCache.Common.Protobuf.RemoveResponse();
-                response.responseType = Alachisoft.NCache.Common.Protobuf.Response.Type.REMOVE;
-                response.remove = removeResponse;
-                response.requestId = Convert.ToInt64(cmdInfo.RequestId);
-                if (ubObject != null)
+                try
                 {
-                    removeResponse.value.AddRange(ubObject.DataList);
-                    removeResponse.flag = flagValueEntry.Flag.Data;
+                    CallbackEntry cbEntry = null;
+                    if (cmdInfo.DsItemRemovedId != -1)
+                    {
+                        cbEntry = new CallbackEntry(clientManager.ClientID, -1, null, -1, -1, -1, cmdInfo.DsItemRemovedId, cmdInfo.FlagMap
+                            , Runtime.Events.EventDataFilter.None, Runtime.Events.EventDataFilter.None); //DataFilter not required
+                    }
+
+                    CompressedValueEntry flagValueEntry = null;
+
+                    OperationContext operationContext = new OperationContext(OperationContextFieldName.OperationType, OperationContextOperationType.CacheOperation);
+
+                    operationContext.Add(OperationContextFieldName.ClientId, clientManager.ClientID);
+
+                    operationContext.Add(OperationContextFieldName.MethodOverload, overload);
+                    operationContext.Add(OperationContextFieldName.RaiseCQNotification, true);
+
+                    flagValueEntry = nCache.Cache.Remove(cmdInfo.Key, cmdInfo.FlagMap, cbEntry, cmdInfo.LockId, cmdInfo.Version, cmdInfo.LockAccessType, cmdInfo.ProviderName, operationContext);
+                    stopWatch.Stop();
+                    UserBinaryObject ubObject = null;
+                    if (flagValueEntry != null)
+                    {
+                        if (flagValueEntry.Value is UserBinaryObject)
+                            ubObject = (UserBinaryObject)flagValueEntry.Value;
+                        else
+                            ubObject = (flagValueEntry == null) ? null : (UserBinaryObject)nCache.Cache.SocketServerDataService.GetClientData(flagValueEntry.Value, ref flagValueEntry.Flag, LanguageContext.DOTNET);
+                    }
+                    //PROTOBUF:RESPONSE
+                    Alachisoft.NCache.Common.Protobuf.Response response = new Alachisoft.NCache.Common.Protobuf.Response();
+                    Alachisoft.NCache.Common.Protobuf.RemoveResponse removeResponse = new Alachisoft.NCache.Common.Protobuf.RemoveResponse();
+                    response.responseType = Alachisoft.NCache.Common.Protobuf.Response.Type.REMOVE;
+                    response.remove = removeResponse;
+                    response.commandID = command.commandID;
+                    response.requestId = Convert.ToInt64(cmdInfo.RequestId);
+                    if (ubObject != null)
+                    {
+                        removeResponse.value.AddRange(ubObject.DataList);
+                        removeResponse.flag = flagValueEntry.Flag.Data;
+                    }
+                    _serializedResponsePackets.Add(Alachisoft.NCache.Common.Util.ResponseHelper.SerializeResponse(response));
                 }
-                _serializedResponsePackets.Add(Alachisoft.NCache.Common.Util.ResponseHelper.SerializeResponse(response));
+                catch (Exception exc)
+                {
+                    _removeResult = OperationResult.Failure;
+                    exception = exc.ToString();
+                    //PROTOBUF:RESPONSE
+                    _serializedResponsePackets.Add(Alachisoft.NCache.Common.Util.ResponseHelper.SerializeExceptionResponse(exc, command.requestID, command.commandID));
+                }
+                finally
+                {
+                    TimeSpan executionTime = stopWatch.Elapsed;
+                    try
+                    {
+                        if (Alachisoft.NCache.Management.APILogging.APILogManager.APILogManger != null && Alachisoft.NCache.Management.APILogging.APILogManager.EnableLogging)
+                        {
+                            APILogItemBuilder log = new APILogItemBuilder(MethodsName.REMOVE.ToLower());
+                            log.GenerateRemoveAPILogItem(cmdInfo.Key, cmdInfo.FlagMap, cmdInfo.LockId, (long)cmdInfo.Version, cmdInfo.LockAccessType, cmdInfo.ProviderName, cmdInfo.DsItemRemovedId, overload, exception, executionTime, clientManager.ClientID.ToLower(), clientManager.ClientSocketId.ToString());
+                        }
+                    }
+                    catch
+                    {
+                    }
+                    if (ServerMonitor.MonitorActivity) ServerMonitor.LogClientActivity("RemCmd.Exec", "cmd executed on cache");
+                }
             }
-            catch (Exception exc)
+            else
             {
-                _removeResult = OperationResult.Failure;
+                try
+                {
+                    object[] package = null;
+                    if (!cmdInfo.RequestId.Equals("-1") || cmdInfo.DsItemRemovedId != -1)
+                    {
+                        package = new object[] { cmdInfo.Key, cmdInfo.FlagMap, new CallbackEntry(clientManager.ClientID, 
+                        Convert.ToInt32(cmdInfo.RequestId),
+                        null,
+                        -1,
+                        -1,
+                        (short)(cmdInfo.RequestId.Equals("-1") ? -1 : 0),
+                        cmdInfo.DsItemRemovedId,
+                        cmdInfo.FlagMap
+                        ,Runtime.Events.EventDataFilter.None, Runtime.Events.EventDataFilter.None),cmdInfo.ProviderName}; // DataFilter not required
+                    }
+                    else
+                    {
+                        package = new object[] { cmdInfo.Key, cmdInfo.FlagMap, null, cmdInfo.ProviderName };
+                    }
 
-                //PROTOBUF:RESPONSE
-                _serializedResponsePackets.Add(
-                    Alachisoft.NCache.Common.Util.ResponseHelper.SerializeExceptionResponse(exc, command.requestID));
+                    OperationContext operationContext = new OperationContext(OperationContextFieldName.OperationType, OperationContextOperationType.CacheOperation);
+                    operationContext.Add(OperationContextFieldName.RaiseCQNotification, true);
+                    operationContext.Add(OperationContextFieldName.MethodOverload, overload);
+                    nCache.Cache.RemoveAsync(package, operationContext);
+                    stopWatch.Stop();
+                }
+                finally
+                {
+                    TimeSpan executionTime = stopWatch.Elapsed;
+                    try
+                    {
+                        if (Alachisoft.NCache.Management.APILogging.APILogManager.APILogManger != null && Alachisoft.NCache.Management.APILogging.APILogManager.EnableLogging)
+                        {
+                            APILogItemBuilder log = new APILogItemBuilder(MethodsName.RemoveAsync.ToLower());
+                            log.GenerateRemoveAPILogItem(cmdInfo.Key, cmdInfo.FlagMap, cmdInfo.LockId, (long)cmdInfo.Version, cmdInfo.LockAccessType, cmdInfo.ProviderName,cmdInfo.DsItemRemovedId, overload, exception, executionTime, clientManager.ClientID.ToLower(), clientManager.ClientSocketId.ToString());
+                        }
+                    }
+                    catch
+                    {
+                    }
+                    if (ServerMonitor.MonitorActivity) ServerMonitor.LogClientActivity("RemCmd.Exec", "cmd executed on cache");
+                }
             }
-            finally
-            {
-                if (ServerMonitor.MonitorActivity)
-                    ServerMonitor.LogClientActivity("RemCmd.Exec", "cmd executed on cache");
-            }
-
         }
 
         //PROTOBUF
@@ -119,12 +215,16 @@ namespace Alachisoft.NCache.SocketServer.Command
             CommandInfo cmdInfo = new CommandInfo();
 
             Alachisoft.NCache.Common.Protobuf.RemoveCommand removeCommand = command.removeCommand;
+            cmdInfo.DoAsync = removeCommand.isAsync;
+            cmdInfo.DsItemRemovedId = (short)removeCommand.datasourceItemRemovedCallbackId;
             cmdInfo.FlagMap = new BitSet((byte)removeCommand.flag);
             cmdInfo.Key = removeCommand.key;
             cmdInfo.LockAccessType = (LockAccessType)removeCommand.lockAccessType;
             cmdInfo.LockId = removeCommand.lockId;
             cmdInfo.RequestId = removeCommand.requestId.ToString();
-            
+            cmdInfo.Version = removeCommand.version;
+            cmdInfo.ProviderName = !string.IsNullOrEmpty(removeCommand.providerName)?  removeCommand.providerName: null;
+
             return cmdInfo;
         }
     }

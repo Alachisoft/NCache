@@ -250,6 +250,7 @@ namespace Alachisoft.NCache.Caching.Topologies.Clustered
             HashMapBucket bucket = null;
             foreach (WeightIdPair widPair in weightIdPair)
             {
+                //((HashMapBucket)_hashMap[widPair.BucketId]).PermanentAddress = newAddr;
                 bucket = (HashMapBucket)_hashMap[widPair.BucketId];
                 if (!newAddr.Equals(bucket.TempAddress))
                     bucket.Status = BucketStatus.NeedTransfer;
@@ -286,5 +287,5 @@ namespace Alachisoft.NCache.Caching.Topologies.Clustered
 
     }
 
-    //This class keeps information related to each indivisual node. 
+    //This class keeps information related to each individual node. 
 }

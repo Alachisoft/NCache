@@ -14,7 +14,6 @@
 
 using System.Collections;
 using Alachisoft.NCache.Common.Enum;
-using Alachisoft.NCache.Common.Queries;
 
 namespace Alachisoft.NCache.Caching.Queries.Filters
 {
@@ -32,10 +31,6 @@ namespace Alachisoft.NCache.Caching.Queries.Filters
 
             decimal count = queryContext.InternalQueryResult.Count;
             base.SetResult(queryContext, AggregateFunctionType.COUNT, count);
-        }
-
-        internal override void ExecuteInternal(QueryContext queryContext, CollectionOperation mergeType)
-        {
         }
 
         internal override AggregateFunctionType GetFunctionType()

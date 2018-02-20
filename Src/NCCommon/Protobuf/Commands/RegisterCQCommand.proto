@@ -1,0 +1,19 @@
+import "KeyValue.proto";
+
+
+option java_outer_classname="RegisterCQCommandProtocol";
+package Alachisoft.NCache.Common.Protobuf;
+
+message RegisterCQCommand {
+    optional string query = 1;
+    repeated KeyValue values = 2;
+	optional bool notifyAdd = 3;
+	optional bool notifyUpdate = 4;
+	optional bool notifyRemove = 5;
+	optional string clientUniqueId = 6;
+	optional int64 requestId = 7;
+	optional sint32 addDataFilter = 8;
+	optional sint32 remvoeDataFilter = 9;
+	optional  sint32 updateDataFilter = 10;
+
+}

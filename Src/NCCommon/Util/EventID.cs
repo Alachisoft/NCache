@@ -10,7 +10,7 @@
 // distributed under the License is distributed on an "AS IS" BASIS,
 // WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
 // See the License for the specific language governing permissions and
-// limitations under the License.
+// limitations under the License
 
 namespace Alachisoft.NCache.Common
 {
@@ -29,15 +29,17 @@ namespace Alachisoft.NCache.Common
         public const int StateTransferError = 1010;
         public const int UnhandledException = 1011;
         public const int LoginFailure = 1012;
-        public const int ServiceStartFailure = 1013;
+        public const int ServiceFailure = 1013;
         public const int LoggingEnabled = 1014;
         public const int LoggingDisabled = 1015;
         public const int CacheSizeWarning = 1016;
         public const int GeneralError = 1017;
         public const int GeneralInformation = 1018;
         public const int ConfigurationError = 1019;
-
-        public const int BadClientFound = 1021;
+        public const int LicensingError = 1020;
+        public const int BadClientFound = 1022;
+        public const int ServiceStart = 1025;
+        public const int ServiceStop = 1026;
 
         public static string EventText(int eventID)
         {
@@ -83,8 +85,8 @@ namespace Alachisoft.NCache.Common
                 case EventID.LoginFailure:
                     text = "Login Failure";
                     break;
-                case EventID.ServiceStartFailure:
-                    text = "Service Start Failure";
+                case EventID.ServiceFailure:
+                    text = "Service Failure";
                     break;
                 case EventID.CacheSizeWarning:
                     text = "Cache Size Warning";
@@ -98,9 +100,18 @@ namespace Alachisoft.NCache.Common
                 case EventID.ConfigurationError:
                     text = "Configuration Error";
                     break;
-               
+                case EventID.LicensingError:
+                    text = "Licensing Error";
+                    break;
+              
                 case EventID.BadClientFound:
                     text = "Bad Client Found";
+                    break;
+                case EventID.ServiceStart:
+                    text = "Service Start";
+                    break;
+                case EventID.ServiceStop:
+                    text = "Service Stop";
                     break;
                 default:
                     text = "Unknown";

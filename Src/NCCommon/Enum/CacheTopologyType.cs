@@ -10,9 +10,7 @@
 // distributed under the License is distributed on an "AS IS" BASIS,
 // WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
 // See the License for the specific language governing permissions and
-// limitations under the License.
-
-
+// limitations under the License
 namespace Alachisoft.NCache.Common.Enum
 {
     public class CacheTopologyType
@@ -21,9 +19,8 @@ namespace Alachisoft.NCache.Common.Enum
 
         public static readonly string ClusteredCache = "clustered-cache";
         public static readonly string LocalCache = "local-cache";
-        public static readonly string Partioned = "partitioned";
-        public static readonly string PartitionedOfReplica = "partitioned-replica";
         public static readonly string Replicated = "replicated";
-       
+        public static readonly string Partioned = "partitioned";
+
     }
 }

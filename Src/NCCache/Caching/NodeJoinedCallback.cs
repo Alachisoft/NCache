@@ -18,5 +18,6 @@ namespace Alachisoft.NCache.Caching
     /// Delegate for node join and node leave operations.
     /// These are used to inform the user when a node joins or leaves the cluster.
     /// </summary>
-    public delegate void NodeJoinedCallback(object clusterAddress, object serverAddress, bool reconnect, EventContext eventContext);
+    public delegate void NodeJoinedCallback(
+        object clusterAddress, object serverAddress, bool reconnect, EventContext eventContext);
 }

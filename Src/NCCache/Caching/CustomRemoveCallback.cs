@@ -16,8 +16,6 @@ using Alachisoft.NCache.Common;
 
 namespace Alachisoft.NCache.Caching
 {
-    /// <summary>
-    /// Delegates for synchronous cache operations. 
-    /// </summary>
-    public delegate void CustomRemoveCallback(object key, object value, ItemRemoveReason reason, BitSet Flag, EventContext eventContext);
+    public delegate void CustomRemoveCallback(
+        object key, object value, ItemRemoveReason reason, BitSet Flag, EventContext eventContext);
 }

@@ -1,0 +1,9 @@
+import "EventId.proto";
+
+option java_outer_classname="CacheClearedEventResponseProtocol";
+package Alachisoft.NCache.Common.Protobuf;
+message CacheClearedEventResponse {
+	
+	optional EventId eventId = 1;
+
+}

@@ -12,42 +12,54 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-using Alachisoft.NCache.Web.Caching.Util;
-
 namespace Alachisoft.NCache.Web.Command
 {
     class GetRunningServersCommand : CommandBase
     {
-        private Common.Protobuf.GetRunningServersCommand _getRunningServersCommand;
-       
-        private byte[] _userName;
-        private byte[] _password;
-       
+        private Alachisoft.NCache.Common.Protobuf.GetRunningServersCommand _getRunningServersCommand;
+
+
         private Alachisoft.NCache.Common.ProductVersion _currentVersion;
-       
-        public GetRunningServersCommand(string id)
+
+        #region Helper Methods
+
+        //This function is needed to parse byte to byte[] because all values in protobuf.ProductVersion are byte[]
+        private byte[] ParseToByteArray(byte value)
+        {
+            byte[] tempArray = new byte[1];
+            tempArray[0] = value;
+            return tempArray;
+        }
+
+        #endregion
+
+
+        public GetRunningServersCommand(string id, byte[] userName, byte[] password)
         {
             base.name = "GetRunningServersCommand";
             _currentVersion = Alachisoft.NCache.Common.ProductVersion.ProductInfo;
             _getRunningServersCommand = new Alachisoft.NCache.Common.Protobuf.GetRunningServersCommand();
             _getRunningServersCommand.cacheId = id;
+            _getRunningServersCommand.binaryUserId = userName;
+            _getRunningServersCommand.binaryPassword = password;
 
             _getRunningServersCommand.isDotnetClient = true;
             _getRunningServersCommand.requestId = base.RequestId;
 
-        
             if (_getRunningServersCommand.productVersion == null)
                 _getRunningServersCommand.productVersion = new Common.Protobuf.ProductVersion();
 
-                _getRunningServersCommand.productVersion.AddiotionalData = _currentVersion.AdditionalData;
-                _getRunningServersCommand.productVersion.EditionID = _currentVersion.EditionID;
-                _getRunningServersCommand.productVersion.MajorVersion1 = HelperFxn.ParseToByteArray(_currentVersion.MajorVersion1);
-                _getRunningServersCommand.productVersion.MajorVersion2 = HelperFxn.ParseToByteArray(_currentVersion.MajorVersion2);
-                _getRunningServersCommand.productVersion.MinorVersion1 = HelperFxn.ParseToByteArray(_currentVersion.MinorVersion1);
-                _getRunningServersCommand.productVersion.MinorVersion2 = HelperFxn.ParseToByteArray(_currentVersion.MinorVersion2);
-                _getRunningServersCommand.productVersion.ProductName = _currentVersion.ProductName;
-            
-        
+            _getRunningServersCommand.productVersion.AddiotionalData = _currentVersion.AdditionalData;
+            _getRunningServersCommand.productVersion.EditionID = _currentVersion.EditionID;
+            _getRunningServersCommand.productVersion.MajorVersion1 =
+                this.ParseToByteArray(_currentVersion.MajorVersion1);
+            _getRunningServersCommand.productVersion.MajorVersion2 =
+                this.ParseToByteArray(_currentVersion.MajorVersion2);
+            _getRunningServersCommand.productVersion.MinorVersion1 =
+                this.ParseToByteArray(_currentVersion.MinorVersion1);
+            _getRunningServersCommand.productVersion.MinorVersion2 =
+                this.ParseToByteArray(_currentVersion.MinorVersion2);
+            _getRunningServersCommand.productVersion.ProductName = _currentVersion.ProductName;
         }
 
         internal override CommandType CommandType
@@ -58,6 +70,11 @@ namespace Alachisoft.NCache.Web.Command
         internal override RequestType CommandRequestType
         {
             get { return RequestType.InternalCommand; }
+        }
+
+        internal override bool IsKeyBased
+        {
+            get { return false; }
         }
 
         protected override void CreateCommand()

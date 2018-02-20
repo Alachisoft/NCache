@@ -1,0 +1,19 @@
+import "KeyValue.proto";
+
+
+option java_outer_classname="SearchCQCommandProtocol";
+package Alachisoft.NCache.Common.Protobuf;
+
+message SearchCQCommand {
+    optional string query = 1;
+    repeated KeyValue values = 2;
+	optional bool notifyAdd = 3;
+	optional bool notifyUpdate = 4;
+	optional bool notifyRemove = 5;
+    optional bool searchEntries = 6;
+	optional string clientUniqueId = 7;
+	optional int64 requestId = 8;
+	optional int32 addDataFilter = 9;
+	optional int32 remvoeDataFilter = 10;
+	optional  int32 updateDataFilter = 11;
+}

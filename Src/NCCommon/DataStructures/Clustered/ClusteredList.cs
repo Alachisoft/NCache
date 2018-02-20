@@ -34,13 +34,14 @@
 
 using System;
 using System.Collections.Generic;
-
+using System.Linq;
+using System.Text;
 #if DEBUG
 using System.Diagnostics.Contracts;
 #endif
+using System.Diagnostics;
 using System.Collections.ObjectModel;
 using System.Runtime;
-using System.Diagnostics;
 
 namespace Alachisoft.NCache.Common.DataStructures.Clustered
 {
@@ -353,7 +354,7 @@ namespace Alachisoft.NCache.Common.DataStructures.Clustered
             return new ReadOnlyCollection<T>(this);
         }
 
-        //   Usman: Search requires sort and sort is a bit problem at the moment, given our whole clustered array scenario.
+        //   Search requires sort and sort is a bit problem at the moment, given our whole clustered array scenario.
 
         // Searches a section of the list for a given element using a binary search
         // algorithm. Elements of the list are compared to the search value using
@@ -409,9 +410,7 @@ namespace Alachisoft.NCache.Common.DataStructures.Clustered
         // Contains returns true if the specified element is in the ArrayList.
         // It does a linear, O(n) search.  Equality is determined by calling
         // item.Equals().
-        //
-        // Changelog:
-        // Usman: Optimized for clustered array through its internal calls.
+      
         public bool Contains(T item)
         {
             int i = _items.IndexOf(item);
@@ -526,134 +525,7 @@ namespace Alachisoft.NCache.Common.DataStructures.Clustered
         }
 
 #if FEATURE_LIST_PREDICATES || FEATURE_NETCORE
-        //public bool Exists(Predicate<T> match) {
-        //    return FindIndex(match) != -1;
-        //}
-
-        //public T Find(Predicate<T> match) {
-        //    if( match == null) {
-        //        ThrowHelper.ThrowArgumentNullException(ExceptionArgument.match);
-        //    }
-        //    Contract.EndContractBlock();
-
-        //    for(int i = 0 ; i < _size; i++) {
-        //        if(match(_items[i])) {
-        //            return _items[i];
-        //        }
-        //    }
-        //    return default(T);
-        //}
-  
-        //public List<T> FindAll(Predicate<T> match) { 
-        //    if( match == null) {
-        //        ThrowHelper.ThrowArgumentNullException(ExceptionArgument.match);
-        //    }
-        //    Contract.EndContractBlock();
-
-        //    List<T> list = new List<T>(); 
-        //    for(int i = 0 ; i < _size; i++) {
-        //        if(match(_items[i])) {
-        //            list.Add(_items[i]);
-        //        }
-        //    }
-        //    return list;
-        //}
-  
-        //public int FindIndex(Predicate<T> match) {
-        //    Contract.Ensures(Contract.Result<int>() >= -1);
-        //    Contract.Ensures(Contract.Result<int>() < Count);
-        //    return FindIndex(0, _size, match);
-        //}
-  
-        //public int FindIndex(int startIndex, Predicate<T> match) {
-        //    Contract.Ensures(Contract.Result<int>() >= -1);
-        //    Contract.Ensures(Contract.Result<int>() < startIndex + Count);
-        //    return FindIndex(startIndex, _size - startIndex, match);
-        //}
- 
-        //public int FindIndex(int startIndex, int count, Predicate<T> match) {
-        //    if( (uint)startIndex > (uint)_size ) {
-        //        ThrowHelper.ThrowArgumentOutOfRangeException(ExceptionArgument.startIndex, ExceptionResource.ArgumentOutOfRange_Index);                
-        //    }
-
-        //    if (count < 0 || startIndex > _size - count) {
-        //        ThrowHelper.ThrowArgumentOutOfRangeException(ExceptionArgument.count, ExceptionResource.ArgumentOutOfRange_Count);
-        //    }
-
-        //    if( match == null) {
-        //        ThrowHelper.ThrowArgumentNullException(ExceptionArgument.match);
-        //    }
-        //    Contract.Ensures(Contract.Result<int>() >= -1);
-        //    Contract.Ensures(Contract.Result<int>() < startIndex + count);
-        //    Contract.EndContractBlock();
-
-        //    int endIndex = startIndex + count;
-        //    for( int i = startIndex; i < endIndex; i++) {
-        //        if( match(_items[i])) return i;
-        //    }
-        //    return -1;
-        //}
- 
-        //public T FindLast(Predicate<T> match) {
-        //    if( match == null) {
-        //        ThrowHelper.ThrowArgumentNullException(ExceptionArgument.match);
-        //    }
-        //    Contract.EndContractBlock();
-
-        //    for(int i = _size - 1 ; i >= 0; i--) {
-        //        if(match(_items[i])) {
-        //            return _items[i];
-        //        }
-        //    }
-        //    return default(T);
-        //}
-
-        //public int FindLastIndex(Predicate<T> match) {
-        //    Contract.Ensures(Contract.Result<int>() >= -1);
-        //    Contract.Ensures(Contract.Result<int>() < Count);
-        //    return FindLastIndex(_size - 1, _size, match);
-        //}
-   
-        //public int FindLastIndex(int startIndex, Predicate<T> match) {
-        //    Contract.Ensures(Contract.Result<int>() >= -1);
-        //    Contract.Ensures(Contract.Result<int>() <= startIndex);
-        //    return FindLastIndex(startIndex, startIndex + 1, match);
-        //}
-
-        //public int FindLastIndex(int startIndex, int count, Predicate<T> match) {
-        //    if( match == null) {
-        //        ThrowHelper.ThrowArgumentNullException(ExceptionArgument.match);
-        //    }
-        //    Contract.Ensures(Contract.Result<int>() >= -1);
-        //    Contract.Ensures(Contract.Result<int>() <= startIndex);
-        //    Contract.EndContractBlock();
-
-        //    if(_size == 0) {
-        //        // Special case for 0 length List
-        //        if( startIndex != -1) {
-        //            ThrowHelper.ThrowArgumentOutOfRangeException(ExceptionArgument.startIndex, ExceptionResource.ArgumentOutOfRange_Index);
-        //        }
-        //    }
-        //    else {
-        //        // Make sure we're not out of range            
-        //        if ( (uint)startIndex >= (uint)_size) {
-        //            ThrowHelper.ThrowArgumentOutOfRangeException(ExceptionArgument.startIndex, ExceptionResource.ArgumentOutOfRange_Index);
-        //        }
-        //    }
-            
-        //    // 2nd have of this also catches when startIndex == MAXINT, so MAXINT - 0 + 1 == -1, which is < 0.
-        //    if (count < 0 || startIndex - count + 1 < 0) {
-        //        ThrowHelper.ThrowArgumentOutOfRangeException(ExceptionArgument.count, ExceptionResource.ArgumentOutOfRange_Count);
-        //    }
-                        
-        //    int endIndex = startIndex - count;
-        //    for( int i = startIndex; i > endIndex; i--) {
-        //        if( match(_items[i])) {
-        //            return i;
-        //        }
-        //    }
-        //    return -1;
-        //}
+      
 #endif // FEATURE_LIST_PREDICATES || FEATURE_NETCORE
 
         public void ForEach(Action<T> action)
@@ -688,9 +560,9 @@ namespace Alachisoft.NCache.Common.DataStructures.Clustered
 #if DEBUG
         [TargetedPatchingOptOut("Performance critical to inline across NGen image boundaries")]
 #endif
-        public ClusteredListEnumerator GetEnumerator()
+        public ClusteredListImmutableEnumerator GetEnumerator()
         {
-            return new ClusteredListEnumerator(this);
+            return new ClusteredListImmutableEnumerator(this);
         }
 
         /// <internalonly/>
@@ -699,7 +571,7 @@ namespace Alachisoft.NCache.Common.DataStructures.Clustered
 #endif
         IEnumerator<T> IEnumerable<T>.GetEnumerator()
         {
-            return new ClusteredListEnumerator(this);
+            return new ClusteredListImmutableEnumerator(this);
         }
 
 #if DEBUG
@@ -707,7 +579,7 @@ namespace Alachisoft.NCache.Common.DataStructures.Clustered
 #endif
         System.Collections.IEnumerator System.Collections.IEnumerable.GetEnumerator()
         {
-            return new ClusteredListEnumerator(this);
+            return new ClusteredListImmutableEnumerator(this);
         }
 
         public ClusteredList<T> GetRange(int index, int count)
@@ -881,7 +753,7 @@ namespace Alachisoft.NCache.Common.DataStructures.Clustered
 #endif
             ICollection<T> c = collection as ICollection<T>;
             if (c != null)
-            {    // if collection is ICollection<T>
+            {   
                 int count = c.Count;
                 if (count > 0)
                 {
@@ -1081,10 +953,6 @@ namespace Alachisoft.NCache.Common.DataStructures.Clustered
         // 
         public void RemoveAt(int index)
         {
-            //if ((uint)index > (uint)_size)
-            //{
-            //    ThrowHelper.ThrowArgumentOutOfRangeException();
-            //}
 #if DEBUG
             Contract.EndContractBlock();
 #endif
@@ -1130,7 +998,7 @@ namespace Alachisoft.NCache.Common.DataStructures.Clustered
         }
 
 
-        // Usman: Not sure if reversal is necessary
+        //  Not sure if reversal is necessary
 
         //Reverses the elements in this list.
         public void Reverse()
@@ -1153,7 +1021,7 @@ namespace Alachisoft.NCache.Common.DataStructures.Clustered
 
 
 
-        //Usman: Need an algorithm to sort clustered data.
+        //Need an algorithm to sort clustered data.
 
         // Sorts the elements in this list.  Uses the default comparer and 
         // Array.Sort.
@@ -1224,23 +1092,7 @@ namespace Alachisoft.NCache.Common.DataStructures.Clustered
                 Capacity = _size;
             }
         }
-
-#if FEATURE_LIST_PREDICATES || FEATURE_NETCORE
-        //public bool TrueForAll(Predicate<T> match) {
-        //    if( match == null) {
-        //        ThrowHelper.ThrowArgumentNullException(ExceptionArgument.match);
-        //    }
-        //    Contract.EndContractBlock();
-
-        //    for(int i = 0 ; i < _size; i++) {
-        //        if( !match(_items[i])) {
-        //            return false;
-        //        }
-        //    }
-        //    return true;
-        //} 
-#endif // FEATURE_LIST_PREDICATES || FEATURE_NETCORE
-
+      
         internal static IList<T> Synchronized(ClusteredList<T> list)
         {
             return new SynchronizedClusteredList(list);
@@ -1452,6 +1304,76 @@ namespace Alachisoft.NCache.Common.DataStructures.Clustered
                     ThrowHelper.ThrowInvalidOperationException(ExceptionResource.InvalidOperation_EnumFailedVersion);
                 }
 
+                index = 0;
+                current = default(T);
+            }
+
+        }
+
+
+
+        [Serializable]
+        public struct ClusteredListImmutableEnumerator : IEnumerator<T>, System.Collections.IEnumerator
+        {
+            private ClusteredList<T> _list;
+            private int index;
+            
+            private T current;
+
+            internal ClusteredListImmutableEnumerator(ClusteredList<T> list)
+            {
+                _list = (ClusteredList<T>)list.Clone();
+                index = 0;
+                current = default(T);
+            }
+
+#if DEBUG
+            [TargetedPatchingOptOut("Performance critical to inline across NGen image boundaries")]
+#endif
+            public void Dispose()
+            {
+            }
+
+            public bool MoveNext()
+            {
+                if (((uint)index < (uint)_list._size))
+                {
+                    current = _list[index];
+                    index++;
+                    return true;
+                }
+                return MoveNextRare();
+            }
+
+            private bool MoveNextRare()
+            {
+                index = _list._size + 1;
+                current = default(T);
+                return false;
+            }
+
+            public T Current
+            {
+                get
+                {
+                    return current;
+                }
+            }
+
+            Object System.Collections.IEnumerator.Current
+            {
+                get
+                {
+                    if (index == 0 || index == _list._size + 1)
+                    {
+                        ThrowHelper.ThrowInvalidOperationException(ExceptionResource.InvalidOperation_EnumOpCantHappen);
+                    }
+                    return Current;
+                }
+            }
+
+            void System.Collections.IEnumerator.Reset()
+            {
                 index = 0;
                 current = default(T);
             }

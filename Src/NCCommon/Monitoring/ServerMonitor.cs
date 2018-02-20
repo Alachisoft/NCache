@@ -10,8 +10,7 @@
 // distributed under the License is distributed on an "AS IS" BASIS,
 // WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
 // See the License for the specific language governing permissions and
-// limitations under the License.
-
+// limitations under the License
 using System;
 using System.Text;
 using System.Collections;
@@ -115,6 +114,7 @@ namespace Alachisoft.NCache.Common.Monitoring
 
         public static void StopClientActivity(string clientId)
         {
+
             if (_monitor)
             {
                 ClientMonitor cMonitor = _clientActivity[clientId] as ClientMonitor;
@@ -129,7 +129,7 @@ namespace Alachisoft.NCache.Common.Monitoring
                     _threadClientMap.Remove(tId);
                 }
             }
-       }
+        }
 
         public static void LogClientActivity(string method, string activity)
         {

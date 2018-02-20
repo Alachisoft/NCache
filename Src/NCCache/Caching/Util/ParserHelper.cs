@@ -12,7 +12,6 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-using System.Text;
 using Alachisoft.NCache.Parser;
 using Alachisoft.NCache.Caching.Queries;
 using Alachisoft.NCache.Common.Logger;
@@ -22,7 +21,7 @@ namespace Alachisoft.NCache.Caching.Util
     class ParserHelper
     {
         private const string ResourceName = "Alachisoft.NCache.Cache.Caching.Queries.NCQL.cgt";
-        private Reduction _currentReduction;
+        private Reduction _currentReduction;  
         private ILogger _ncacheLog;
         ILogger NCacheLog
         {

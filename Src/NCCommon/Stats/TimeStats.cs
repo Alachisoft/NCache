@@ -10,7 +10,7 @@
 // distributed under the License is distributed on an "AS IS" BASIS,
 // WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
 // See the License for the specific language governing permissions and
-// limitations under the License.
+// limitations under the License
 
 using System;
 using System.IO;
@@ -19,14 +19,24 @@ using System.Net;
 using System.Text;
 using System.Collections;
 using System.Reflection;
-using System.Runtime.Remoting;
 using System.Runtime.InteropServices;
 using System.Runtime.Serialization.Formatters.Binary;
 using System.Threading;
 using SysTrace = System.Diagnostics.Trace;
+#if JAVA
+using Alachisoft.TayzGrid.Runtime.Serialization;
+#else
+#endif
+#if JAVA
+using Alachisoft.TayzGrid.Runtime.Serialization.IO;
+#else
 using Alachisoft.NCache.Runtime.Serialization.IO;
+#endif
+#if JAVA
+using Runtime = Alachisoft.TayzGrid.Runtime;
+#else
 using Runtime = Alachisoft.NCache.Runtime;
-
+#endif
 namespace Alachisoft.NCache.Common.Stats
 {
 	/// <summary>
@@ -43,11 +53,11 @@ namespace Alachisoft.NCache.Common.Stats
 		private long		_lastStop;
 		/// <summary> Total time spent in sampling, i.e., acrued sample time. </summary>
 		private long		_totalTime;
-		/// <summary> Best time interval mesaured during sampling. </summary>
+		/// <summary> Best time interval measured during sampling. </summary>
 		private long		_bestTime;
-		/// <summary> Worst time interval mesaured during sampling. </summary>
+		/// <summary> Worst time interval measured during sampling. </summary>
 		private long		_worstTime;
-		/// <summary> Avg. time interval mesaured during sampling. </summary>
+		/// <summary> Avg. time interval measured during sampling. </summary>
 		private float		_avgTime;
         /// <summary> Total number of samples collected for the statistics. </summary>
         private long        _totalRunCount;
@@ -115,15 +125,15 @@ namespace Alachisoft.NCache.Common.Stats
 		}
 
 		/// <summary>
-		/// Returns the best time interval mesaured during sampling
+		/// Returns the best time interval measured during sampling
 		/// </summary>
 		public long Best	
 		{ 
-			get { lock(this){ return _bestTime; } } 
-		}
+			get { lock(this){ return _bestTime; } }
+        }
 
 		/// <summary>
-		/// Returns the avg. time interval mesaured during sampling
+		/// Returns the avg. time interval measured during sampling
 		/// </summary>
 		public float Avg		
 		{ 
@@ -131,7 +141,7 @@ namespace Alachisoft.NCache.Common.Stats
 		}
 
 		/// <summary>
-		/// Returns the worst time interval mesaured during sampling
+		/// Returns the worst time interval measured during sampling
 		/// </summary>
 		public long Worst	
 		{ 

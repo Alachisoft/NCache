@@ -15,8 +15,10 @@
 using System;
 using System.Collections.Generic;
 using Alachisoft.NCache.Common;
+using Alachisoft.NCache.Common.DataStructures;
 using Alachisoft.NCache.Runtime.Serialization;
 using Alachisoft.NCache.Runtime.Serialization.IO;
+using System.Collections;
 
 namespace Alachisoft.NCache.Caching
 {
@@ -26,7 +28,7 @@ namespace Alachisoft.NCache.Caching
     /// It is designed to handle the large objects.
     /// </summary>
     [Serializable]
-    public abstract class UserBinaryObject : ICompactSerializable,ISizable
+    public abstract class UserBinaryObject : ICompactSerializable,IStreamItem,ISizable
     {
         public static int LARGE_OBJECT_SIZE = 79 * 1024;
         public static int BYTE_ARRAY_MEMORY_OVERHEAD = 24;
@@ -41,27 +43,28 @@ namespace Alachisoft.NCache.Caching
             UserBinaryObject binaryObject = null;
             if (byteArray != null)
             {
-                float noOfChunks = (float)byteArray.Length / (float)LARGE_OBJECT_SIZE;
+                float noOfChunks =(float) byteArray.Length /(float) LARGE_OBJECT_SIZE;
 
-                if (noOfChunks < 1.0)
+                if (noOfChunks > 1)
                 {
-                    binaryObject = SmallUserBinaryObject.CreateUserBinaryObject(byteArray);
+                    binaryObject = LargeUserBinaryObject.CreateUserBinaryObject(byteArray);
                 }
                 else
                 {
-                    binaryObject = LargeUserBinaryObject.CreateUserBinaryObject(byteArray);
+                    binaryObject = SmallUserBinaryObject.CreateUserBinaryObject(byteArray);
+
                 }
             }
 
             return binaryObject;           
         }
 
-        public static UserBinaryObject CreateUserBinaryObject(Array data)
+        public static UserBinaryObject CreateUserBinaryObject(ICollection data)
         {         
             UserBinaryObject binaryObject = null;
             if (data != null)
             {
-                if (data.Length > 1)
+                if (data.Count > 1)
                 {
                     binaryObject = LargeUserBinaryObject.CreateUserBinaryObject(data);
                 }
@@ -99,9 +102,14 @@ namespace Alachisoft.NCache.Caching
         public abstract void Deserialize(CompactReader reader);
 
         public abstract void Serialize(CompactWriter writer);
-        
+
         #endregion
 
-        public abstract int Length{get;}
+        #region IStreamItem Members
+
+        public abstract VirtualArray Read(int offset, int length);
+        public abstract void Write(VirtualArray vBuffer, int srcOffset, int dstOffset, int length);
+        public abstract int Length{get;set;}
+        #endregion      
     }
 }

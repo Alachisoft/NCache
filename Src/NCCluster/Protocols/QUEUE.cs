@@ -10,7 +10,6 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 // $Id: QUEUE.java,v 1.6 2004/07/23 02:28:01 belaban Exp $
-
 using System;
 using System.Threading;
 using Alachisoft.NGroups;
@@ -125,10 +124,10 @@ namespace Alachisoft.NGroups.Protocols
 				case Event.MSG:
 					Message msg = (Message) evt.Arg;
                     object obj = msg.getHeader(HeaderType.GMS);
-					if (obj != null && obj is Gms.HDR)
+					if (obj != null && obj is GmsHDR)
 					{
-						Gms.HDR hdr = (Gms.HDR)obj;
-						if (hdr.type == Gms.HDR.VIEW || hdr.type == Gms.HDR.JOIN_RSP)
+						GmsHDR hdr = (GmsHDR)obj;
+						if (hdr.type == GmsHDR.VIEW || hdr.type == GmsHDR.JOIN_RSP)
 						{
                             queingLock.AcquireWriterLock(Timeout.Infinite);
                             try
@@ -156,17 +155,15 @@ namespace Alachisoft.NGroups.Protocols
                     finally { queingLock.ReleaseReaderLock(); }
                        
 					break;
-
-
-				}
+            }
 		
 			passUp(evt); // Pass up to the layer above us
 		}
 		
 		private void deliverUpQueuedEvts(Event evt)
 		{
-
-			Event e;					
+			Event e;
+					
 			if(Stack.NCacheLog.IsInfoEnabled) Stack.NCacheLog.Info("replaying up events");
 
             queingLock.AcquireWriterLock(Timeout.Infinite);
@@ -187,14 +184,12 @@ namespace Alachisoft.NGroups.Protocols
 		
 		public override void  down(Event evt)
 		{
-			
 			switch (evt.Type)
 			{
 				case Event.VIEW_CHANGE_OK:
 					if(Stack.NCacheLog.IsInfoEnabled) Stack.NCacheLog.Info("Queue.down()",  "VIEW_CHANGE : lets stop queuing");
 					deliverUpQueuedEvts(evt);
 					break;
-
 				}
 			
 			if (queueing_dn)

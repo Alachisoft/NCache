@@ -80,6 +80,5 @@ namespace Alachisoft.NCache.Caching.Queries
         {
             get { return (long)(_indexInformationSize + (_nodeInfoMaxCount * Common.MemoryUtil.NetListOverHead)); }
         }
-      
     }
 }

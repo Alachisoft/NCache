@@ -10,11 +10,15 @@
 // distributed under the License is distributed on an "AS IS" BASIS,
 // WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
 // See the License for the specific language governing permissions and
-// limitations under the License.
+// limitations under the License
 
 using System;
 
+#if JAVA
+namespace Alachisoft.TayzGrid.Runtime.Events
+#else
 namespace Alachisoft.NCache.Runtime.Events
+#endif
 {
     /// <summary>
     /// Type of event
@@ -34,6 +38,10 @@ namespace Alachisoft.NCache.Runtime.Events
         /// <summary>
         /// When an item is removed from cache
         /// </summary>
-        ItemRemoved = 0x004
+        ItemRemoved = 0x004,
+
+        /// For pub-sub Poll based notfication. THis event type is internal.
+        /// </summary>
+        PubSub = 0x10
     }
 }

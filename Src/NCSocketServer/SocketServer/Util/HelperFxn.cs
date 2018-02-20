@@ -14,7 +14,6 @@
 
 using System;
 using System.Text;
-using System.IO;
 
 namespace Alachisoft.NCache.SocketServer.Util
 {
@@ -72,7 +71,6 @@ namespace Alachisoft.NCache.SocketServer.Util
             {
                 throw;
             }
-
             return cInt;
         }
 
@@ -94,7 +92,13 @@ namespace Alachisoft.NCache.SocketServer.Util
             {
                 throw;
             }
+            return cInt;
+        }
 
+        public static long ToInt64(byte[] buffer, int offset, int size)
+        {
+            long cInt = 0;
+            cInt = Convert.ToInt64(UTF8Encoding.UTF8.GetString(buffer, offset, size));
             return cInt;
         }
 
@@ -116,14 +120,6 @@ namespace Alachisoft.NCache.SocketServer.Util
             {
                 throw;
             }
-
-            return cInt;
-        }
-
-        public static long ToInt64(byte[] buffer, int offset, int size)
-        {
-            long cInt = 0;
-            cInt = Convert.ToInt64(UTF8Encoding.UTF8.GetString(buffer, offset, size));
             return cInt;
         }
 

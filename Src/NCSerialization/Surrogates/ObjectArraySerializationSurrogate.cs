@@ -10,7 +10,7 @@
 // distributed under the License is distributed on an "AS IS" BASIS,
 // WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
 // See the License for the specific language governing permissions and
-// limitations under the License.
+// limitations under the License
 
 using System;
 using Alachisoft.NCache.IO;
@@ -37,11 +37,16 @@ namespace Alachisoft.NCache.Serialization.Surrogates
             short handle = reader.ReadInt16();
             ISerializationSurrogate surrogate = TypeSurrogateSelector.GetSurrogateForTypeHandle(handle, reader.CacheContext);
 
+            if (surrogate == null)
+            {
+                surrogate = TypeSurrogateSelector.GetSurrogateForSubTypeHandle(handle, reader.ReadInt16(), reader.Context.CacheContext);
+            }
+
             Object obj = Array.CreateInstance(surrogate.ActualType, array.Length);
 
             for (int i = 0; i < array.Length; i++)
                 ((Array)obj).SetValue(reader.ReadObject(), i);
-            //array[i] = reader.ReadObject();
+            
             
             return obj;
         }
@@ -82,6 +87,12 @@ namespace Alachisoft.NCache.Serialization.Surrogates
             object[] array = (object[])graph;
             short handle = reader.ReadInt16();
             ISerializationSurrogate surrogate = TypeSurrogateSelector.GetSurrogateForTypeHandle(handle, reader.CacheContext);
+
+            if (surrogate == null)
+            {
+                surrogate = TypeSurrogateSelector.GetSurrogateForSubTypeHandle(handle, reader.ReadInt16(), reader.Context.CacheContext);
+            }
+
             for (int i = 0; i < array.Length; i++)
                 reader.SkipObject();
         }

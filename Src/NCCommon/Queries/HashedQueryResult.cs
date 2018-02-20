@@ -12,12 +12,11 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-
-using Alachisoft.NCache.Common.DataStructures;
-using Alachisoft.NCache.Common.DataStructures.Clustered;
-using Alachisoft.NCache.Common.Enum;
 using System;
 using System.Collections;
+using Alachisoft.NCache.Common.DataStructures;
+using Alachisoft.NCache.Common.DataStructures.Clustered;
+using Alachisoft.NCache.Common.Queries.Filters;
 
 namespace Alachisoft.NCache.Common.Queries
 {
@@ -26,29 +25,68 @@ namespace Alachisoft.NCache.Common.Queries
         private HashVector _resultKeys = new HashVector();
         private HashVector _temp = new HashVector();
 
+        public HashedQueryResult(IKeyFilter keyFilter, IKeyFilter compoundFilter)
+        {
+            this.KeyFilter = KeyFilter;
+            this.CompoundFilter = compoundFilter;
+        }
+
+        public IKeyFilter KeyFilter { get; set; }
+
+        public IKeyFilter CompoundFilter { get; set; }
+
         public int Count
         { get { return _resultKeys.Count; } }
 
-        public void Add(IDictionary other, CollectionOperation mergeType)
+        private Boolean EvaluateFilter(Object key,Boolean filter) 
         {
-            IDictionaryEnumerator ide = other.GetEnumerator();
+            if (KeyFilter == null && CompoundFilter == null) return true;
+            
+            if (!filter) return true;
+
+            if (KeyFilter != null && CompoundFilter != null)
+                return KeyFilter.Evaluate((String)key) && CompoundFilter.Evaluate((String)key);
+
+            if(KeyFilter!=null)
+                return KeyFilter.Evaluate((String)key);
+
+            if (CompoundFilter != null)
+                return CompoundFilter.Evaluate((String)key);
+
+            return false;
+        }
+
+        public void Add(IDictionary other, CollectionOperation mergeType, bool filterResult = true)
+        {
+            IDictionaryEnumerator ide = other.GetEnumerator();            
             switch (mergeType)
             {
                 case CollectionOperation.Union:
+                {
                     while (ide.MoveNext())
-                        _resultKeys[ide.Key] = null;
+                    {
+                        if(EvaluateFilter(ide.Key,filterResult))
+                            _resultKeys[ide.Key] = null;                            
+                    }
+                }
                     break;
                 case CollectionOperation.Intersection:
                     while (ide.MoveNext())
                     {
-                        if (_resultKeys.Contains(ide.Key))
-                            _temp[ide.Key] = null;
+                        if (EvaluateFilter(ide.Key, filterResult))
+                        {
+                            if (_resultKeys.Contains(ide.Key))
+                                _temp[ide.Key] = null;
+                        }
                     }
                     break;
                 case CollectionOperation.Subtract:
                     while (ide.MoveNext())
                     {
-                        _resultKeys.Remove(ide.Key);
+                        if (EvaluateFilter(ide.Key, filterResult))
+                        {
+                            _resultKeys.Remove(ide.Key);
+                        }
                     }
                     break;
             }
@@ -102,6 +140,7 @@ namespace Alachisoft.NCache.Common.Queries
                     while (e.MoveNext())
                     {
                         Hashtable tbl = e.Value as Hashtable;
+                        
                         this.Add(tbl, CollectionOperation.Union);
                         this.Mark(CollectionOperation.Union);
                     }
@@ -135,7 +174,7 @@ namespace Alachisoft.NCache.Common.Queries
                     _resultKeys[obj] = null;
                     break;
                 case CollectionOperation.Intersection:
-                    if (_resultKeys.Contains(obj))
+                    if(_resultKeys.Contains(obj))
                         _temp[obj] = null;
                     break;
                 case CollectionOperation.Subtract:
@@ -143,5 +182,6 @@ namespace Alachisoft.NCache.Common.Queries
                     break;
             }
         }
+
     }
 }

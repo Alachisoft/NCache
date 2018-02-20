@@ -13,8 +13,6 @@
 // limitations under the License.
 
 using System;
-using System.Collections.Generic;
-using System.Text;
 using Alachisoft.NCache.Common.DataStructures;
 using Alachisoft.NCache.Caching.Topologies.Local;
 

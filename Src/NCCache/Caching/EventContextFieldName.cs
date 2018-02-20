@@ -19,6 +19,8 @@ namespace Alachisoft.NCache.Caching
         EventID,
         EventCacheEntry,
         OldEventCacheEntry,
-        ItemRemoveCallbackList
+        ItemRemoveCallbackList,
+        TaskStatus,
+        TaskFailureReason       
     }
 }

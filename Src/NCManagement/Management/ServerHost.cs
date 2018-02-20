@@ -10,31 +10,35 @@
 // distributed under the License is distributed on an "AS IS" BASIS,
 // WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
 // See the License for the specific language governing permissions and
-// limitations under the License.
+// limitations under the License
 
 using System;
 
 namespace Alachisoft.NCache.Management
 {
     [CLSCompliant(false)]
-    public class ServerHost 
+    public class ServerHost : HostBase
     {
+
         public ServerHost(CacheServer server)
+            : base(server, CacheServer.ObjectUri)
         {
             CacheServer.Instance = server;
         }
 
         public ServerHost() : this(new CacheServer()) { }
+
         
-        protected  int GetHttpPort()
+        protected override int GetHttpPort()
         {
             return CacheConfigManager.HttpPort;
         }
 
-        protected  int GetTcpPort()
+        protected override int GetTcpPort()
         {
             return CacheConfigManager.NCacheTcpPort;
         }
+
 
         public CacheServer CacheServer
         {

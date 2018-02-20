@@ -10,12 +10,14 @@
 // distributed under the License is distributed on an "AS IS" BASIS,
 // WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
 // See the License for the specific language governing permissions and
-// limitations under the License.
+// limitations under the License
 
 using System.Configuration;
 using System.Xml;
 
+
 namespace Alachisoft.NCache.Web.SessionStateManagement
+
 {
     /// <summary>
     /// Provides Configuration system support for the NCache configuration section
@@ -26,8 +28,10 @@ namespace Alachisoft.NCache.Web.SessionStateManagement
     internal class NCacheSection : IConfigurationSectionHandler
     {
         /// <summary>Confiuration section name</summary>
+         
 
         private const string SectionName = "ncache";
+
         private static XmlNode _ncsection = null;
 
         /// <summary>

@@ -16,32 +16,37 @@ using System;
 
 namespace Alachisoft.NCache.Web.Caching
 {
-	/// <summary>
-	/// Specifies the reason an item was removed from the <see cref="Cache"/>.
-	/// </summary>
-	/// <remarks>
-	/// This enumeration works in concert with the <see cref="CacheItemRemovedCallback"/> delegate to 
-	/// notify your applications when and why an object was removed from the <see cref="Cache"/>.</remarks>
-	///<requirements>
-	/// <constraint>This member is not available in SessionState edition.</constraint> 
-	/// </requirements>
-	[Serializable]
-	public enum CacheItemRemovedReason
-	{
-	    /// <summary>
-		/// The item is removed from the cache because it expired.
-		/// </summary>
-		Expired,
+    /// <summary>
+    /// Specifies the reason an item was removed from the <see cref="Cache"/>.
+    /// </summary>
+    /// <remarks>
+    /// This enumeration works in concert with the <see cref="CacheItemRemovedCallback"/> delegate to 
+    /// notify your applications when and why an object was removed from the <see cref="Cache"/>.</remarks>
+    ///<requirements>
+    /// <constraint>This member is not available in SessionState edition.</constraint> 
+    /// </requirements>
+    [Serializable]
+    public enum CacheItemRemovedReason
+    {
+        /// <summary>
+        /// The item is removed from the cache because a file or key dependency changed.
+        /// </summary>
+        DependencyChanged,
 
-		/// <summary>
-		/// The item is removed from the cache by a <see cref="Cache.Remove"/> method call or by an 
-		/// <see cref="Cache.Insert"/> method call that specified the same key.
-		/// </summary>
-		Removed,
+        /// <summary>
+        /// The item is removed from the cache because it expired.
+        /// </summary>
+        Expired,
 
-		/// <summary>
-		/// The item is removed from the cache because the system removed it to free memory.
-		/// </summary>
-		Underused
-	}
+        /// <summary>
+        /// The item is removed from the cache by a <see cref="Cache.Remove"/> method call or by an 
+        /// <see cref="Cache.Insert"/> method call that specified the same key.
+        /// </summary>
+        Removed,
+
+        /// <summary>
+        /// The item is removed from the cache because the system removed it to free memory.
+        /// </summary>
+        Underused
+    }
 }

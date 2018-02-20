@@ -1,4 +1,4 @@
-﻿// Copyright (c) 2018 Alachisoft
+// Copyright (c) 2018 Alachisoft
 // 
 // Licensed under the Apache License, Version 2.0 (the "License");
 // you may not use this file except in compliance with the License.
@@ -12,18 +12,16 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-using System;
 
-using Alachisoft.NCache.Runtime.Serialization;
-using Alachisoft.NCache.Common.Queries;
-using Alachisoft.NCache.Common.Enum;
-using Runtime = Alachisoft.NCache.Runtime;
-using Alachisoft.NCache.Common.DataStructures.Clustered;
+using System;
 using System.Collections.Generic;
+using Alachisoft.NCache.Common.DataStructures.Clustered;
+using Alachisoft.NCache.Common.Enum;
+using Alachisoft.NCache.Common.Queries;
+using Alachisoft.NCache.Runtime.Serialization;
 
 namespace Alachisoft.NCache.Common.DataReader
 {
-
     public class RecordRow : ICloneable, ICompactSerializable
     {
 
@@ -159,7 +157,7 @@ namespace Alachisoft.NCache.Common.DataReader
         public object Clone()
         {
             RecordRow row = new RecordRow(this._columns);
-            row._objects = (ClusteredArray<object>)this._objects.Clone();
+            row._objects = (ClusteredArray<object>)this._objects.Clone();           
             return row;
         }
 
@@ -264,7 +262,7 @@ namespace Alachisoft.NCache.Common.DataReader
 
                             if (sum != null)
                             {
-                                this._objects[i] = sum;
+                                this._objects[i] = sum;                                
                             }
                             else
                             {
@@ -302,6 +300,7 @@ namespace Alachisoft.NCache.Common.DataReader
                                 min = otherValue;
                             }
 
+                            //this.AggregateFunctionResult = min;
                             this._objects[i] = min;
                             break;
 
@@ -327,6 +326,7 @@ namespace Alachisoft.NCache.Common.DataReader
                                 max = otherValue;
                             }
 
+                            //this.AggregateFunctionResult = max;
                             this._objects[i] = max;
                             break;
 
@@ -370,6 +370,7 @@ namespace Alachisoft.NCache.Common.DataReader
 
         public void Deserialize(Runtime.Serialization.IO.CompactReader reader)
         {
+            IsSurrogate = reader.ReadBoolean();
             _columns = reader.ReadObject() as ColumnCollection;
             _objects = new ClusteredArray<object>(_columns.Count);
             for (int i = 0; i < _objects.Length; i++)
@@ -380,12 +381,14 @@ namespace Alachisoft.NCache.Common.DataReader
 
         public void Serialize(Runtime.Serialization.IO.CompactWriter writer)
         {
+            writer.Write(IsSurrogate);
             writer.WriteObject(_columns);
             for (int i = 0; i < _objects.Length; i++)
             {
                 writer.WriteObject(_objects[i]);
             }
         }
-    }
 
+        public bool IsSurrogate { get; set; }
+    }
 }

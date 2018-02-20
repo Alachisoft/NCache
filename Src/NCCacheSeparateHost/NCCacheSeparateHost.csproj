@@ -70,7 +70,7 @@
   </PropertyGroup>
   <PropertyGroup Condition="'$(Configuration)|$(Platform)' == 'Release|AnyCPU'">
     <OutputPath>bin\Release\</OutputPath>
-    <DefineConstants>TRACE</DefineConstants>
+    <DefineConstants>TRACE;NET40</DefineConstants>
     <Optimize>true</Optimize>
     <DebugType>pdbonly</DebugType>
     <PlatformTarget>AnyCPU</PlatformTarget>
@@ -87,14 +87,6 @@
   <PropertyGroup>
     <ApplicationIcon>por.ico</ApplicationIcon>
   </PropertyGroup>
-  <PropertyGroup Condition="'$(Configuration)|$(Platform)' == 'Elad.Release40|x86'">
-    <OutputPath>bin\x86\Elad.Release40\</OutputPath>
-  </PropertyGroup>
-  <PropertyGroup Condition="'$(Configuration)|$(Platform)' == 'Elad.Release40|AnyCPU'">
-    <OutputPath>bin\Elad.Release40\</OutputPath>
-    <Optimize>true</Optimize>
-    <DefineConstants>TRACE</DefineConstants>
-  </PropertyGroup>
   <ItemGroup>
     <Reference Include="System" />
     <Reference Include="System.configuration" />
@@ -107,48 +99,29 @@
   </ItemGroup>
   <ItemGroup>
     <Compile Include="CacheSeparateHost.cs" />
-    <Compile Include="Properties\AssemblyInfo.cs" />
+    <Compile Include="CacheSeperateHostUtil.cs" />
+    <Compile Include="Properties\AssemblyUsage.cs" />
   </ItemGroup>
   <ItemGroup>
     <ProjectReference Include="..\NCCache\NCCache.csproj">
       <Project>{BF3BCF64-ADEB-455B-AD8A-39EE84EE300D}</Project>
-      <Name>NCCache.Enterprise.4x</Name>
-    </ProjectReference>
-    <ProjectReference Include="..\NCCluster\NCCluster.csproj">
-      <Project>{05b496f4-4822-4ad1-ba75-c0d6bcd3428d}</Project>
-      <Name>NCCluster.Professional.4x</Name>
+      <Name>NCCache</Name>
     </ProjectReference>
     <ProjectReference Include="..\NCCommon\NCCommon.csproj">
       <Project>{EC5A66B8-2272-4337-A4E2-248BDBD968B3}</Project>
-      <Name>NCCommon.Enterprise.4x</Name>
+      <Name>NCCommon</Name>
     </ProjectReference>
     <ProjectReference Include="..\NCManagement\NCManagement.csproj">
       <Project>{6E6E852E-1A3F-4E6B-999B-06EA6D4EAB49}</Project>
-      <Name>NCManagement.Enterprise.4x</Name>
-    </ProjectReference>
-    <ProjectReference Include="..\NCParser\NCParser.csproj">
-      <Project>{c12c28e3-449d-4ed9-800f-91c18c0a3598}</Project>
-      <Name>NCParser.Professional.4x</Name>
+      <Name>NCManagement</Name>
     </ProjectReference>
     <ProjectReference Include="..\NCRuntime\NCRuntime.csproj">
       <Project>{E60E545B-1A03-45D1-BB06-4FBB4BE71FAD}</Project>
-      <Name>NCRuntime.Enterprise.4x</Name>
-    </ProjectReference>
-    <ProjectReference Include="..\NCSerialization\NCSerialization.csproj">
-      <Project>{f428cfdd-f259-404c-be95-2d35b17751a1}</Project>
-      <Name>NCSerialization.Professional.4x</Name>
+      <Name>NCRuntime</Name>
     </ProjectReference>
     <ProjectReference Include="..\NCSocketServer\NCSocketServer.csproj">
       <Project>{EAB8378D-35B0-4BE2-8845-2CA3B002B234}</Project>
-      <Name>NCSocketServer.Enterprise.4x</Name>
-    </ProjectReference>
-    <ProjectReference Include="..\NCStorage\NCStorage.csproj">
-      <Project>{803a83dd-5c47-466d-b32b-9136ac1d8454}</Project>
-      <Name>NCStorage.Professional.4x</Name>
-    </ProjectReference>
-    <ProjectReference Include="..\NCWebCache\NCWebCache.csproj">
-      <Project>{4f8d7b6f-f031-4b7b-9871-63e6ee2acc47}</Project>
-      <Name>NCWebCache.Professional.4x</Name>
+      <Name>NCSocketServer</Name>
     </ProjectReference>
   </ItemGroup>
   <ItemGroup>
@@ -158,31 +131,15 @@
     <Content Include="por.ico" />
   </ItemGroup>
   <ItemGroup>
-    <BootstrapperPackage Include=".NETFramework,Version=v4.0">
-      <Visible>False</Visible>
-      <ProductName>Microsoft .NET Framework 4 %28x86 and x64%29</ProductName>
-      <Install>true</Install>
-    </BootstrapperPackage>
-    <BootstrapperPackage Include="Microsoft.Net.Client.3.5">
-      <Visible>False</Visible>
-      <ProductName>.NET Framework 3.5 SP1 Client Profile</ProductName>
-      <Install>false</Install>
-    </BootstrapperPackage>
     <BootstrapperPackage Include="Microsoft.Net.Framework.3.5.SP1">
       <Visible>False</Visible>
       <ProductName>.NET Framework 3.5 SP1</ProductName>
       <Install>false</Install>
     </BootstrapperPackage>
-    <BootstrapperPackage Include="Microsoft.Windows.Installer.4.5">
-      <Visible>False</Visible>
-      <ProductName>Windows Installer 4.5</ProductName>
-      <Install>true</Install>
-    </BootstrapperPackage>
   </ItemGroup>
   <Import Project="$(MSBuildToolsPath)\Microsoft.CSharp.targets" />
   <PropertyGroup>
-    <PostBuildEvent>call $(SolutionDir)copy.bat $(SolutionDir) $(TargetName) $(TargetDir)
-xcopy /Y "$(TargetPath)" "$(SolutionDir)build\Server\4x\"</PostBuildEvent>
+    <PostBuildEvent>xcopy /Y "$(TargetPath)" "$(SolutionDir)build\Server\4x\"</PostBuildEvent>
   </PropertyGroup>
   <!-- To modify your build process, add your task inside one of the targets below and uncomment it. 
        Other similar extension points exist, see Microsoft.Common.targets.

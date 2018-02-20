@@ -12,13 +12,14 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-
 namespace Alachisoft.NCache.Web.Command
 {
-	internal sealed class CommandOptions
-	{
-        private CommandOptions() { }
+    internal sealed class CommandOptions
+    {
+        private CommandOptions()
+        {
+        }
 
-		internal const string EXC_INITIAL = "EXCEPTION";
-	}
+        internal const string EXC_INITIAL = "EXCEPTION";
+    }
 }

@@ -1,0 +1,10 @@
+import "Dependency.proto";
+
+option java_outer_classname="AddDependencyCommandProtocol";
+package Alachisoft.NCache.Common.Protobuf;
+message AddDependencyCommand {
+	optional string key = 1;
+	optional int64 requestId = 2;
+	optional bool isResync = 3;
+	optional Dependency dependency = 4;
+}

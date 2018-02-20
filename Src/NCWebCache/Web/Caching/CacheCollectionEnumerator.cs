@@ -31,7 +31,7 @@ namespace Alachisoft.NCache.Web.Caching
 
         object IEnumerator.Current
         {
-            get { return ((DictionaryEntry)_ce.Current).Value as Cache; }
+            get { return ((DictionaryEntry) _ce.Current).Value as Cache; }
         }
 
         bool IEnumerator.MoveNext()

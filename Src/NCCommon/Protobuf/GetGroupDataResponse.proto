@@ -1,0 +1,9 @@
+import "Commands/Value.proto";
+import "KeyValuePackageResponse.proto";
+
+
+option java_outer_classname="GetGroupDataResponseProtocol";
+package Alachisoft.NCache.Common.Protobuf;
+message GetGroupDataResponse {
+	optional KeyValuePackageResponse keyValuePackage = 1;
+}

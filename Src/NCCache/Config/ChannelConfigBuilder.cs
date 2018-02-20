@@ -11,16 +11,11 @@
 // WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
 // See the License for the specific language governing permissions and
 // limitations under the License.
-
-using System;
-using System.IO;
 using System.Text;
 using System.Collections;
-using System.Net;
-using System.Configuration;
-using Alachisoft.NCache.Config;
-using Alachisoft.NCache.Caching;
-using Alachisoft.NCache.Runtime.Exceptions;
+
+using Alachisoft.NCache.Common.Util;
+
 
 namespace Alachisoft.NCache.Config
 {
@@ -29,6 +24,8 @@ namespace Alachisoft.NCache.Config
 	/// </summary>
 	internal class ChannelConfigBuilder
 	{
+
+
 		/// <summary>
 		/// 
 		/// </summary>
@@ -188,7 +185,7 @@ namespace Alachisoft.NCache.Config
 			b.Append("UNICAST(")
 				.Append(ConfigHelper.SafeGetPair(properties,"timeout", null))		// "800,1600,3200,6400"
 				.Append(ConfigHelper.SafeGetPair(properties,"window_size", null))	// -1
-				.Append(ConfigHelper.SafeGetPair(properties,"min_threshold", null))	// -1
+				.Append(ConfigHelper.SafeGetPair(properties,"min_threshold", null))	// -1				
 				.Append(ConfigHelper.SafeGetPair(properties,"down_thread", null))
 				.Append(ConfigHelper.SafeGetPair(properties,"up_thread", null))
 				.Append(")");
@@ -284,12 +281,18 @@ namespace Alachisoft.NCache.Config
 				.Append(ConfigHelper.SafeGetPair(properties,"down_thread", null))
 				.Append(ConfigHelper.SafeGetPair(properties,"up_thread", null))
 				.Append(")");
+
+
 			return b.ToString();
 		}
-        
+
+		
+
 		private static string BuildTCP(IDictionary properties)
 		{
-            string bindIP = ConfigurationSettings.AppSettings["NCacheServer.BindToIP"];
+
+            string bindIP = ServiceConfiguration.BindToIP.ToString();
+
             StringBuilder b = new StringBuilder(256);
             b.Append("TCP(")
                 .Append(ConfigHelper.SafeGetPair(properties, "connection_retries", 0))
@@ -305,8 +308,7 @@ namespace Alachisoft.NCache.Config
 				.Append(ConfigHelper.SafeGetPair(properties, "down_thread", true))
 				.Append(ConfigHelper.SafeGetPair(properties, "up_thread", true))
                 .Append(ConfigHelper.SafeGetPair(properties, "use_heart_beat", true))
-                .Append(ConfigHelper.SafeGetPair(properties, "heart_beat_interval", null))
-				.Append(")");
+            	.Append(")");
 			return b.ToString();
 		}
 	}

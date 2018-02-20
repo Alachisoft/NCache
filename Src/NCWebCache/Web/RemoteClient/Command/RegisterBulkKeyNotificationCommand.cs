@@ -19,8 +19,9 @@ namespace Alachisoft.NCache.Web.Command
     class RegisterBulkKeyNotificationCommand : CommandBase
     {
         private Alachisoft.NCache.Common.Protobuf.RegisterBulkKeyNotifCommand _registerBulkKeyNotifCommand;
-        
-        public RegisterBulkKeyNotificationCommand(string[] keys, short updateCallbackid, short removeCallbackid)
+
+        public RegisterBulkKeyNotificationCommand(string[] keys, short updateCallbackid, short removeCallbackid,
+            string clientId, CallbackType callbackType = Runtime.Events.CallbackType.PushBasedNotification)
         {
             name = "RegisterBulkKeyNotificationCommand";
 
@@ -29,13 +30,26 @@ namespace Alachisoft.NCache.Web.Command
             _registerBulkKeyNotifCommand.removeCallbackId = removeCallbackid;
             _registerBulkKeyNotifCommand.updateCallbackId = updateCallbackid;
             _registerBulkKeyNotifCommand.requestId = base.RequestId;
-
+            _registerBulkKeyNotifCommand.callbackType = CallbackType(callbackType);
+            _registerBulkKeyNotifCommand.surrogateClientID = clientId;
         }
 
-        public RegisterBulkKeyNotificationCommand(string[] key, short update, short remove, EventDataFilter dataFilter, bool notifyOnItemExpiration)
-            : this(key, update, remove)
+        private int CallbackType(CallbackType type)
         {
-            _registerBulkKeyNotifCommand.datafilter = (int)dataFilter;
+            if (type == Runtime.Events.CallbackType.PullBasedCallback)
+                return 0;
+            else if (type == Runtime.Events.CallbackType.PushBasedNotification)
+                return 1;
+            else
+                return 0;
+        }
+
+        public RegisterBulkKeyNotificationCommand(string[] key, short update, short remove, EventDataFilter dataFilter,
+            bool notifyOnItemExpiration, CallbackType callbackType = Runtime.Events.CallbackType.PullBasedCallback)
+            : this(key, update, remove, null, callbackType)
+
+        {
+            _registerBulkKeyNotifCommand.datafilter = (int) dataFilter;
             _registerBulkKeyNotifCommand.notifyOnExpiration = notifyOnItemExpiration;
         }
 
@@ -47,7 +61,7 @@ namespace Alachisoft.NCache.Web.Command
 
         internal override RequestType CommandRequestType
         {
-            get { return RequestType.BulkWrite; }
+            get { return RequestType.KeyBulkWrite; }
         }
 
         protected override void CreateCommand()
@@ -56,8 +70,6 @@ namespace Alachisoft.NCache.Web.Command
             base._command.requestID = base.RequestId;
             base._command.registerBulkKeyNotifCommand = _registerBulkKeyNotifCommand;
             base._command.type = Alachisoft.NCache.Common.Protobuf.Command.Type.REGISTER_BULK_KEY_NOTIF;
-
         }
-
     }
 }

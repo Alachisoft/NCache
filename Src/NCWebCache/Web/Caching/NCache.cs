@@ -14,20 +14,11 @@
 
 using System;
 using System.Collections;
-
-
 using Alachisoft.NCache.Caching;
-using Alachisoft.NCache.Caching.Util;
-using Alachisoft.NCache.Web.Caching.Util;
-using Alachisoft.NCache.Web.RemoteClient;
-using Alachisoft.NCache.Runtime.Exceptions;
-using Alachisoft.NCache.Common;
 using Alachisoft.NCache.Management;
+using Alachisoft.NCache.Runtime.Exceptions;
 using Alachisoft.NCache.Config.Dom;
 using Alachisoft.NCache.Web.Statistics;
-using System.Diagnostics;
-using System.Collections.Generic;
-using System.Net;
 
 namespace Alachisoft.NCache.Web.Caching
 {
@@ -52,18 +43,50 @@ namespace Alachisoft.NCache.Web.Caching
     /// <requirements>
     /// <constraint>This member is not available in SessionState edition.</constraint> 
     /// </requirements>
-
     public sealed class NCache
     {
         /// <summary> Underlying implementation of NCache. </summary>
+        static private Cache s_webCache = new Cache(null, "", null);
 
-        static private Cache s_webCache = new Cache(null, "",null);
 
         /// <summary> Contains all initialized instances of caches. They can be accessed using their cache-ids </summary>
         static private CacheCollection s_webCaches = new CacheCollection();
 
         static private bool s_exceptions;
-       
+
+
+        /// <summary>
+        /// Returns the instance clustered cache for this application.
+        /// </summary>
+        /// <remarks>
+        /// Many instances of this class can be created per application domain, and they remains 
+        /// valid as long as the application domain remains active. First cache instance can be 
+        /// referred to using this property. Once the first cache instance has been disposed, this 
+        /// property can be set to refer to another instance of the cache. Information about an 
+        /// instance of this class is available through the Cache property of the 
+        /// </remarks>
+        /// <value>The instance of clustered <see cref="Alachisoft.NCache.Web.Caching.Cache"/> for 
+        /// this Web application.</value>
+        [Obsolete(
+            "This property is deprecated. Please use the cache handle returned by the 'InitializeCache' method instead.",
+            false)]
+        static private Cache Cache
+        {
+            get
+            {
+                lock (s_webCache)
+                {
+                    return s_webCache;
+                }
+            }
+            set
+            {
+                lock (s_webCache)
+                {
+                    s_webCache = value;
+                }
+            }
+        }
 
         /// <summary>
         /// Returns the collection of clustered caches for this application.
@@ -78,7 +101,13 @@ namespace Alachisoft.NCache.Web.Caching
         /// this Web application.</value>
         static public CacheCollection Caches
         {
-            get { lock (s_webCaches) { return s_webCaches; } }
+            get
+            {
+                lock (s_webCaches)
+                {
+                    return s_webCaches;
+                }
+            }
         }
 
         static NCache()
@@ -107,12 +136,10 @@ namespace Alachisoft.NCache.Web.Caching
                         {
                             if (cache != null)
                                 cache.Dispose();
-
                         }
                         catch (Exception)
                         {
                         }
-                            
                     }
                 }
             }
@@ -163,6 +190,10 @@ namespace Alachisoft.NCache.Web.Caching
         /// Depending upon the configuration the <see cref="Alachisoft.NCache.Web.Caching.Cache"/> object is 
         /// created inproc or outproc.
         /// <para>
+        /// As this overload does not take <see cref="Alachisoft.NCache.Web.Security.SecurityParams"/>, internally
+        /// it tries to load this information from "client.ncconf" file. For more details see NCache Help Collection.
+        /// </para>
+        /// <para>
         /// Calling this method twice with the same <paramref name="cacheId"/> increments the reference count
         /// of the cache. The number of <see cref="InitializeCache"/> calls must be balanced by a corresponding
         /// same number of <see cref="Alachisoft.NCache.Web.Caching.Cache.Dispose"/> calls.
@@ -198,26 +229,92 @@ namespace Alachisoft.NCache.Web.Caching
         /// </example>
         public static Cache InitializeCache(string cacheId)
         {
-           return InitializeCache(cacheId, new CacheInitParams());
+            bool isPessimistic = false;
+            return InitializeCache(cacheId, new CacheInitParams(), isPessimistic);
         }
 
-
+        /// <summary>
+        /// Initializes the instance of <see cref="Alachisoft.NCache.Web.Caching.Cache"/> for this application.
+        /// </summary>
+        /// <param name="cacheId">The identifier for the <see cref="Alachisoft.NCache.Web.Caching.Cache"/>
+        /// item to initialize.</param>
+        /// <param name="initParams">Holds the initialization parameters for <see cref="Alachisoft.NCache.Web.Caching.Cache"/>. </param>
+        /// <remarks>
+        /// The <paramref name="cacheId"/> parameter represents the registration/config id of the cache. 
+        /// <para>
+        /// Calling this method twice with the same <paramref name="cacheId"/> increments the reference count
+        /// of the cache. The number of <see cref="InitializeCache"/> calls must be balanced by a corresponding
+        /// same number of <see cref="Alachisoft.NCache.Web.Caching.Cache.Dispose"/> calls.
+        /// </para>
+        /// <para>
+        /// Multiple cache instances can be inititalized within the same application domain. If multiple cache 
+        /// instances are initialized, <see cref="NCache.Cache"/> refers to the first instance of the cache.
+        /// </para>
+        /// <para>
+        /// <b>Note:</b> When starting a <see cref="Alachisoft.NCache.Web.Caching.Cache"/> as outproc, this method 
+        /// attempts to start NCache service on the local machine if it is not already running. However it does not
+        /// start the cache automatically. 
+        /// </para>
+        /// </remarks>
+        /// <exception cref="ArgumentNullException"><paramref name="cacheId"/> is a null reference (Nothing in Visual Basic).</exception>
+        /// <example> This sample shows how to use the <see cref="InitializeCache"/> method inside a sample Web application.
+        /// <code>
+        ///	public override void Init()
+        ///	{
+        ///		// A cache with id 'myCache' is already registered.
+        ///		try
+        ///		{
+        ///         CacheInitParams initParams = new CacheInitParams();
+        ///         initParams.BalanceNodes = true;
+        ///         initParams.ConnectionRetries = 5;
+        ///         initParams.Mode = CacheMode.OutProc;
+        ///         initParams.MultiPartitionConnection = false;
+        ///         initParams.OperationTimeout = 30;
+        ///         initParams.Port = 9900;
+        ///         initParams.PrimaryUserCredentials = new Alachisoft.NCache.Web.Security.SecurityParams("domain\\user-id", "password");
+        ///         initParams.RetryInterval = 5;
+        ///         initParams.SecondaryUserCredentials = new Alachisoft.NCache.Web.Security.SecurityParams("domain\\user-id", "password");
+        ///         initParams.Server = "server";
+        ///         Alachisoft.NCache.Web.Caching.Cache theCache = NCache.InitializeCache("myCache", initParams);
+        ///		}
+        ///		catch(Exception e)
+        ///		{
+        ///			// Cache is not available.
+        ///		}
+        ///	}
+        ///      
+        /// </code>
+        /// </example>
         public static Cache InitializeCache(string cacheId, CacheInitParams initParams)
         {
-            return InitializeCacheInternal(cacheId, initParams);
+            bool isPessimistic = false;
+
+            return InitializeCache(cacheId, initParams, isPessimistic);
         }
 
-        private static Cache InitializeCacheInternal(string cacheId, CacheInitParams initParams)
+        internal static Cache InitializeCache(string cacheId, CacheInitParams initParams, bool isPessimistic)
+        {
+            if (initParams == null) initParams = new CacheInitParams();
+            initParams.Initialize(cacheId);
+            Cache cache = InitializeCacheInternal(cacheId, initParams);
+            cache.SetMessagingServiceCacheImpl(cache.CacheImpl);
+            return cache;
+        }
+
+        private static Cache InitializeCacheInternal(string cacheId, CacheInitParams initParams,
+            bool isRemoveCache = true)
         {
             if (cacheId == null) throw new ArgumentNullException("cacheId");
             if (cacheId == string.Empty) throw new ArgumentException("cacheId cannot be an empty string");
 
             CacheMode mode = initParams.Mode;
-        
+
+
             int maxTries = 2;
+
             try
             {
-                CacheServerConfig config = null;                
+                CacheServerConfig config = null;
 
                 if (mode != CacheMode.OutProc)
                 {
@@ -227,6 +324,8 @@ namespace Alachisoft.NCache.Web.Caching
                         {
                             config = DirectoryUtil.GetCacheDom(cacheId, mode == CacheMode.InProc);
                         }
+
+
                         catch (Exception ex)
                         {
                             if (mode == CacheMode.Default)
@@ -234,21 +333,31 @@ namespace Alachisoft.NCache.Web.Caching
                             else
                                 throw ex;
                         }
+
                         if (config != null)
                         {
+                            if (config.CacheType.ToLower().Equals("clustered-cache"))
+                            {
+                                throw new Exception("Cluster cache cannot be initialized in In-Proc mode.");
+                            }
+
                             switch (mode)
                             {
-                                case CacheMode.InProc: config.InProc = true; break;
-                                case CacheMode.OutProc: config.InProc = false; break;
+                                case CacheMode.InProc:
+                                    config.InProc = true;
+                                    break;
+                                case CacheMode.OutProc:
+                                    config.InProc = false;
+                                    break;
                             }
                         }
-                        break; 
+
+                        break;
                     } while (maxTries > 0);
                 }
 
                 lock (typeof(NCache))
                 {
-
                     Cache primaryCache = null;
 
                     lock (s_webCaches)
@@ -262,29 +371,38 @@ namespace Alachisoft.NCache.Web.Caching
                                 Alachisoft.NCache.Caching.Cache ncache = null;
                                 Cache cache = null;
                                 maxTries = 2;
+
                                 do
                                 {
-                                    try
+                                   
+
+                                    CacheConfig cacheConfig = CacheConfig.FromDom(config);
+
+                                    if (Caching.APILogging.DebugAPIConfiguraions.LoggingEnabled)
+                                        cache = new WrapperCache(new Cache(null, cacheConfig));
+                                    else
+
+                                        cache = new Cache(null, cacheConfig);
+
+
+                                    ncache = CacheFactory.CreateFromPropertyString(cacheConfig.PropertyString, config,
+                                        false, false);
+
+
+                                    cacheImpl = new InprocCache(ncache, cacheConfig, cache);
+                                    cache.CacheImpl = cacheImpl;
+
+                                    if (primaryCache == null)
                                     {
-                                        CacheConfig cacheConfig = CacheConfig.FromDom(config);
-
-                                        if (Web.Caching.APILogging.DebugAPIConfiguraions.LoggingEnabled)
-                                            cache = new WrapperCache(new Cache(null, cacheConfig));
-                                        else 
-                                            cache = new Cache(null, cacheConfig);
-
-                                        ncache = CacheFactory.CreateFromPropertyString(cacheConfig.PropertyString, config,
-                                            false, false);
-                                        
-                                        cacheImpl = new InprocCache(ncache, cacheConfig, cache);
-                                        cache.CacheImpl = cacheImpl;
-
-                                        if (primaryCache == null)
-                                            primaryCache = cache;
-                                        break;
+                                        primaryCache = cache;
                                     }
-                                    catch (Exception) { }
 
+                                    else
+                                    {
+                                        primaryCache.AddSecondaryInprocInstance(cache);
+                                    }
+
+                                    break;
                                 } while (maxTries > 0);
                             }
                             else
@@ -294,22 +412,26 @@ namespace Alachisoft.NCache.Web.Caching
                                 {
                                     try
                                     {
-                                        // does an AddRef() internally.
+                                        PerfStatsCollector2 perfStatsCollector =
+                                            new PerfStatsCollector2(cacheId, false);
 
-                                        PerfStatsCollector2 perfStatsCollector = new PerfStatsCollector2(cacheId, false);
-
-                                        if (Web.Caching.APILogging.DebugAPIConfiguraions.LoggingEnabled)
-                                            primaryCache = new WrapperCache(new Cache(null, cacheId, perfStatsCollector));
-                                        else 
+                                        if (Caching.APILogging.DebugAPIConfiguraions.LoggingEnabled)
+                                            primaryCache =
+                                                new WrapperCache(new Cache(null, cacheId, perfStatsCollector));
+                                        else
 
                                             primaryCache = new Cache(null, cacheId, perfStatsCollector);
-                                        cacheImpl = new RemoteCache(cacheId, primaryCache, initParams, perfStatsCollector);
-                                       
+                                        cacheImpl = new RemoteCache(cacheId, primaryCache, initParams,
+                                            perfStatsCollector);
+
                                         perfStatsCollector.InitializePerfCounters(false);
+
                                         primaryCache.CacheImpl = cacheImpl;
-                                        
+
                                         break;
                                     }
+
+
                                     catch (OperationNotSupportedException ex)
                                     {
                                         throw ex;
@@ -319,7 +441,6 @@ namespace Alachisoft.NCache.Web.Caching
 
                             if (primaryCache != null)
                             {
-                                primaryCache.InitializeCompactFramework();
                                 s_webCaches.AddCache(cacheId, primaryCache);
                             }
                         }
@@ -328,6 +449,7 @@ namespace Alachisoft.NCache.Web.Caching
                             lock (s_webCaches.GetCache(cacheId))
                             {
                                 primaryCache = s_webCaches.GetCache(cacheId) as Cache;
+
                                 primaryCache.AddRef();
                             }
                         }
@@ -335,20 +457,196 @@ namespace Alachisoft.NCache.Web.Caching
 
                     lock (s_webCache)
                     {
-                        // it is first cache instance.
                         if (s_webCache.CacheImpl == null)
                         {
                             primaryCache.ExceptionsEnabled = ExceptionsEnabled;
                             s_webCache = primaryCache;
                         }
                     }
-            return primaryCache;
+
+                    return primaryCache;
                 }
             }
             catch (Exception)
             {
                 throw;
             }
+        }
+
+
+        /// <summary>
+        /// Initializes the instance of <see cref="Alachisoft.NCache.Web.Caching.Cache"/> for this application.
+        /// </summary>
+        /// <param name="cacheId">The identifier for the <see cref="Alachisoft.NCache.Web.Caching.Cache"/>
+        /// item to initialize.</param>
+        /// <param name="server">The identifier for the server where the cache is running.</param> 
+        /// <param name="port">The port at which the server accepts the remote client connections.</param>
+        /// <remarks>
+        /// The <paramref name="cacheId"/> parameter represents the registration/config id of the cache. 
+        /// Depending upon the configuration the <see cref="Alachisoft.NCache.Web.Caching.Cache"/> object is 
+        /// created inproc or outproc.
+        /// <para>
+        /// As this overload does not take <see cref="Alachisoft.NCache.Web.Security.SecurityParams"/>, internally
+        /// it tries to load this information from "client.ncconf" file. For more details see NCache Help Collection.
+        /// </para>
+        /// <para>
+        /// Calling this method twice with the same <paramref name="cacheId"/> increments the reference count
+        /// of the cache. The number of <see cref="InitializeCache"/> calls must be balanced by a corresponding
+        /// same number of <see cref="Alachisoft.NCache.Web.Caching.Cache.Dispose"/> calls.
+        /// </para>
+        /// <para>
+        /// Multiple cache instances can be inititalized within the same application domain. If multiple cache 
+        /// instances are initialized, <see cref="NCache.Cache"/> refers to the first instance of the cache.
+        /// </para>
+        /// <para>
+        /// <b>Note:</b> When starting a <see cref="Alachisoft.NCache.Web.Caching.Cache"/> as outproc, this method 
+        /// attempts to start NCache service on the local machine if it is not already running. However it does not
+        /// start the cache automatically. 
+        /// </para>
+        /// </remarks>
+        /// <exception cref="ArgumentNullException"><paramref name="cacheId"/> is a null reference (Nothing in Visual Basic).</exception>
+        /// <example> This sample shows how to use the <see cref="InitializeCache"/> method inside a sample Web application.
+        /// <code>
+        /// 
+        ///	public override void Init()
+        ///	{
+        ///		// A cache with id 'myCache' is already registered.
+        ///		try
+        ///		{
+        ///			Alachisoft.NCache.Web.Caching.Cache theCache = NCache.InitializeCache("myCache", "server-name","9900"));
+        ///		}
+        ///		catch(Exception e)
+        ///		{
+        ///			// Cache is not available.
+        ///		}
+        ///	}
+        ///      
+        /// </code>
+        /// </example>
+        private static Cache InitializeCache(string cacheId, string server, int port)
+        {
+            CacheInitParams initParams = new CacheInitParams();
+            initParams.Server = server;
+            initParams.Port = port;
+
+            bool isPessimistic = false;
+
+            return InitializeCache(cacheId, initParams);
+        }
+
+
+        /// <summary>
+        /// Initializes the instance of <see cref="Alachisoft.NCache.Web.Caching.Cache"/> for this application.
+        /// </summary>
+        /// <param name="cacheId">The identifier for the <see cref="Alachisoft.NCache.Web.Caching.Cache"/>
+        /// item to initialize.</param>
+        /// <param name="server">The identifier for the server where the cache is running.</param> 
+        /// <param name="port">The port at which the server accepts the remote client connections.</param>
+        /// <param name="balanceNodes">True to select the least loaded server, false to connect to the given server anyway</param>
+        /// <remarks>
+        /// The <paramref name="cacheId"/> parameter represents the registration/config id of the cache. 
+        /// Depending upon the configuration the <see cref="Alachisoft.NCache.Web.Caching.Cache"/> object is 
+        /// created inproc or outproc.
+        /// <para>
+        /// As this overload does not take <see cref="Alachisoft.NCache.Web.Security.SecurityParams"/>, internally
+        /// it tries to load this information from "client.ncconf" file. For more details see NCache Help Collection.
+        /// </para>
+        /// <para>
+        /// Calling this method twice with the same <paramref name="cacheId"/> increments the reference count
+        /// of the cache. The number of <see cref="InitializeCache"/> calls must be balanced by a corresponding
+        /// same number of <see cref="Alachisoft.NCache.Web.Caching.Cache.Dispose"/> calls.
+        /// </para>
+        /// <para>
+        /// Multiple cache instances can be inititalized within the same application domain. If multiple cache 
+        /// instances are initialized, <see cref="NCache.Cache"/> refers to the first instance of the cache.
+        /// </para>
+        /// <para>
+        /// <b>Note:</b> When starting a <see cref="Alachisoft.NCache.Web.Caching.Cache"/> as outproc, this method 
+        /// attempts to start NCache service on the local machine if it is not already running. However it does not
+        /// start the cache automatically. 
+        /// </para>
+        /// </remarks>
+        /// <exception cref="ArgumentNullException"><paramref name="cacheId"/> is a null reference (Nothing in Visual Basic).</exception>
+        /// <example> This sample shows how to use the <see cref="InitializeCache"/> method inside a sample Web application.
+        /// <code>
+        /// 
+        ///	public override void Init()
+        ///	{
+        ///		// A cache with id 'myCache' is already registered.
+        ///		try
+        ///		{
+        ///			Alachisoft.NCache.Web.Caching.Cache theCache = NCache.InitializeCache("myCache", "server-name","9900"));
+        ///		}
+        ///		catch(Exception e)
+        ///		{
+        ///			// Cache is not available.
+        ///		}
+        ///	}
+        ///      
+        /// </code>
+        /// </example>
+        [Obsolete("This method is deprecated. 'Please use InitializeCache(string cacheId, CacheInitParams initParams)'",
+            false)]
+        private static Cache InitializeCache(string cacheId, string server, int port, bool balanceNodes)
+        {
+            CacheInitParams initParams = new CacheInitParams();
+            initParams.Server = server;
+            initParams.Port = port;
+            initParams.LoadBalance = balanceNodes;
+
+            bool isPessimistic = false;
+            return InitializeCache(cacheId, initParams);
+        }
+
+        /// <summary>
+        /// Initializes the instance of <see cref="Alachisoft.NCache.Web.Caching.Cache"/> for this application. Allows you
+        /// to control the startup type of the <see cref="Alachisoft.NCache.Web.Caching.Cache"/>.
+        /// </summary>
+        /// <param name="cacheId">The identifier for the <see cref="Alachisoft.NCache.Web.Caching.Cache"/>
+        /// item to initialize.</param>
+        /// <param name="mode">Cache startup mode.</param>
+        /// <remarks>
+        /// The <paramref name="cacheId"/> parameter represents the registration/config id of the cache. 
+        /// The startup type of the cache is controlled by the <paramref name="mode"/> parameter.
+        /// <para>
+        /// Calling this method twice with the same <paramref name="cacheId"/> increments the reference count
+        /// of the cache. The number of <see cref="InitializeCache"/> calls must be balanced by a corresponding
+        /// same number of <see cref="Alachisoft.NCache.Web.Caching.Cache.Dispose"/> calls.
+        /// </para>
+        /// <para>
+        /// Multiple cache instances can be inititalized within the same application domain. If multiple cache 
+        /// instances are initialized, <see cref="NCache.Cache"/> refers to the first instance of the cache.
+        /// </para>
+        /// <para>
+        /// <b>Note:</b> If the value of <paramref name=""/> is <see cref="CacheMode.OutProc"/>, this method 
+        /// attempts to start NCache service on the local machine if it is not already running. However it does not
+        /// start the cache automatically. 
+        /// </para>
+        /// </remarks>
+        /// <exception cref="ArgumentNullException"><paramref name="cacheId"/> is a null reference (Nothing in Visual Basic).</exception>
+        /// <example> This sample shows how to use the <see cref="InitializeCache"/> method inside a sample Web application.
+        /// <code>
+        /// 
+        ///	public override void Init()
+        ///	{
+        ///		// A cache with id 'myCache' is already registered.
+        ///		try
+        ///		{
+        ///			Alachisoft.NCache.Web.Caching.Cache theCache = NCache.InitializeCache("myCache", CacheMode.InProc);
+        ///		}
+        ///		catch(Exception e)
+        ///		{
+        ///			// Cache is not available.
+        ///		}
+        ///	}
+        ///      
+        /// </code>
+        /// </example>
+        private static Cache InitializeCache(string cacheId, CacheMode mode)
+        {
+            CacheInitParams initParams = new CacheInitParams();
+            initParams.Mode = mode;
+            return InitializeCache(cacheId, initParams);
         }
     }
 }

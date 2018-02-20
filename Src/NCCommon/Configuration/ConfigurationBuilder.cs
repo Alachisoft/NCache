@@ -11,7 +11,6 @@
 // WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
 // See the License for the specific language governing permissions and
 // limitations under the License.
-
 using System;
 using System.Collections;
 using System.Collections.Generic;
@@ -19,12 +18,18 @@ using System.Reflection;
 using System.Text;
 using System.Xml;
 using System.IO;
+using System.Web;
+#if !NETCORE
 using System.Runtime.Remoting;
-
+#endif
+#if JAVA
+using Runtime = Alachisoft.TayzGrid.Runtime;
+#else
 using Runtime = Alachisoft.NCache.Runtime;
 using System.Globalization;
 using System.Threading;
-
+using System.Web;
+#endif
 namespace Alachisoft.NCache.Common.Configuration
 {
     /// <summary>
@@ -46,7 +51,52 @@ namespace Alachisoft.NCache.Common.Configuration
     /// .Net class which is populated by the framework from the the above XML.
     /// <example>
     ///  [ConfigurationRoot("Cache")]
+    //public class CacheClientConfig
+    //{
+    //    private string _id;
+    //    private int _retryInterval;
+    //    private ServerCofig[] _serverConfig;
+
+    //    [ConfigurationAttribute("id")]
+    //    public string Id
+    //    {
+    //        get { return _id; }
+    //        set { _id = value; }
+    //    }
+    //    [ConfigurationAttribute("retry-interval", "sec")]
+    //    public int RetryInterval
+    //    {
+    //        get { return _retryInterval; }
+    //        set { _retryInterval = value; }
+    //    }
     
+    //    [ConfigurationSection("server")]
+    //    public ServerCofig[] ServerConifg
+    //    {
+    //        get { return _serverConfig; }
+    //        set { _serverConfig = value; }
+    //    }
+
+    //}
+    //public class ServerCofig
+    //{
+    //    private string _serverName;
+    //    private string _priority;
+
+    //    [ConfigurationAttribute("name")]
+    //    public string ServerName
+    //    {
+    //        get { return _serverName; }
+    //        set { _serverName = value; }
+    //    }
+
+    //    [ConfigurationAttribute("priority")]
+    //    public string Priority
+    //    {
+    //        get { return _priority; }
+    //        set { _priority = value; }
+    //    }
+    //}
     /// </example>
     /// </summary>
     public class ConfigurationBuilder
@@ -58,9 +108,11 @@ namespace Alachisoft.NCache.Common.Configuration
         string _file;
         string _path;
         const string DYNAMIC_CONFIG_SECTION = "dynamic-config-object";
-
+#if JAVA
+        string config="client.conf";
+#else
         string config="client.ncconf";
-
+#endif
         public ConfigurationBuilder(object[] configuration)
         {
             Configuration = configuration;
@@ -87,9 +139,8 @@ namespace Alachisoft.NCache.Common.Configuration
         public object[] Configuration
         {
             get { return _lastLoadedConfiugration.ToArray(); }
-
-			internal
-
+			
+            internal
 			set 
             {
                 if (value != null)
@@ -111,6 +162,8 @@ namespace Alachisoft.NCache.Common.Configuration
                 }
             }
         }
+
+        public object HttpUtility { get; private set; }
 
         /// <summary>
         /// Registers a type to be matched for root configuration. ConfigurationBuilder map an XML config
@@ -192,8 +245,8 @@ namespace Alachisoft.NCache.Common.Configuration
                 document.Load(fileName);
             }
             catch (Exception e)
-            {
-                new Exception("Can not open " + fileName + " Error:" + e.ToString());
+            {                
+                throw new Exception("Can not open " + fileName + " Error:" + e.ToString());
             }
 
 			ReadConfiguration(document);
@@ -307,15 +360,23 @@ namespace Alachisoft.NCache.Common.Configuration
                             sameSessionList = tmp["section-list"] as ArrayList;
                         }
 
+#if !NETCORE
                         ObjectHandle objHandle = Activator.CreateInstance(sectionType.Assembly.FullName,nonArrayType);
                         object singleSessionObject = objHandle.Unwrap();
+#elif NETCORE
+                        var singleSessionObject = Activator.CreateInstance(sectionType.GetElementType()); //TODO: ALACHISOFT (This method is changed)
+#endif
                         PopulateConfiugrationObject(singleSessionObject, sectionNode);
                         sameSessionList.Add(singleSessionObject);
                     }
                     else
                     {
+#if !NETCORE
                         ObjectHandle objHandle = Activator.CreateInstance(sectionType.Assembly.FullName, sectionType.FullName);
                         object sectionConfig = objHandle.Unwrap();
+#elif NETCORE
+                        var sectionConfig = Activator.CreateInstance(sectionType); //TODO: ALACHISOFT (This method is changed)
+#endif
                         PopulateConfiugrationObject(sectionConfig, sectionNode);
                         SetConfigSectionObject(config, sectionConfig, sectionNode.Name);
                     }
@@ -517,7 +578,7 @@ namespace Alachisoft.NCache.Common.Configuration
         public object ConvertToPrimitive(Type type, string value, string appendedText)
         {
             object primitiveValue = null;
-
+            
             if (appendedText != null && appendedText != string.Empty)
                 value = value.ToLower().Replace(appendedText.ToLower(), "");
 
@@ -531,7 +592,8 @@ namespace Alachisoft.NCache.Common.Configuration
             CultureInfo cultureInfo = Thread.CurrentThread.CurrentCulture;
             try
             {
-                Thread.CurrentThread.CurrentCulture = new CultureInfo("en-US");
+                System.Threading.Thread.CurrentThread.CurrentCulture =
+            new System.Globalization.CultureInfo("en-US");
                 if (targetType.IsPrimitive)
                 {
                     switch (targetType.FullName)
@@ -545,7 +607,7 @@ namespace Alachisoft.NCache.Common.Configuration
 
                         case "System.Int16":
                             if (isNullable)
-                                primitiveValue = (value != null && !string.IsNullOrEmpty(value.ToString())) ? Convert.ToInt16(value) : (Int16?)null;
+                                primitiveValue = value != null ? Convert.ToInt16(value) : (Int16?)null;
                             else
                                 primitiveValue = Convert.ToInt16(value);
                             break;
@@ -596,11 +658,6 @@ namespace Alachisoft.NCache.Common.Configuration
 
                 }
 
-                if (targetType.FullName == "System.DateTime")
-                    if (isNullable)
-                        primitiveValue = (!string.IsNullOrEmpty(value.ToString()) && value != null) ? Convert.ToDateTime(value) : (DateTime?)null;
-                    else
-                        primitiveValue = Convert.ToDateTime(value);
                 if (type.FullName == "System.Decimal")
                     if (isNullable)
                         primitiveValue = value != null ? Convert.ToDecimal(value) : (Decimal?)null;
@@ -612,7 +669,7 @@ namespace Alachisoft.NCache.Common.Configuration
             }
             finally
             {
-                Thread.CurrentThread.CurrentCulture = cultureInfo;
+                System.Threading.Thread.CurrentThread.CurrentCulture = cultureInfo;
             }
             return primitiveValue;
         }
@@ -700,7 +757,7 @@ namespace Alachisoft.NCache.Common.Configuration
 
         }
 
-        private string GetSectionXml(Object configSection, string sectionName, int indent)
+        public string GetSectionXml(Object configSection, string sectionName, int indent)
         {
             string endStr = "\r\n";
             string preStr = "".PadRight(indent * 2);
@@ -728,7 +785,12 @@ namespace Alachisoft.NCache.Common.Configuration
                                 string appendedText = attrib.AppendedText != null ? attrib.AppendedText : "";
                                 if (propertyValue != null)
                                 {
-                                    sb.Append(" " + attrib.AttributeName + "=\"" + propertyValue.ToString() + appendedText + "\"");
+                                    string encodedPropertyValue = null;
+                                    if (sectionName.Equals("parameters", StringComparison.InvariantCultureIgnoreCase))
+                                        encodedPropertyValue = System.Web.HttpUtility.HtmlEncode(propertyValue.ToString());
+                                    else
+                                        encodedPropertyValue = propertyValue.ToString();
+                                        sb.Append(" " + attrib.AttributeName + "=\"" + encodedPropertyValue + appendedText + "\"");
                                 }
                                 else
                                 {

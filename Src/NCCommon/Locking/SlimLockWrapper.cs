@@ -10,8 +10,7 @@
 // distributed under the License is distributed on an "AS IS" BASIS,
 // WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
 // See the License for the specific language governing permissions and
-// limitations under the License.
-
+// limitations under the License
 using System.Threading;
 
 namespace Alachisoft.NCache.Common.Locking
@@ -20,31 +19,39 @@ namespace Alachisoft.NCache.Common.Locking
     {
         private bool _isDeleted;
         private int _refCount;
-      
+
+#if NET40        
         private readonly ReaderWriterLockSlim _rwsObject;    
+#else
+        private readonly ReaderWriterLock _rwsObject;
+#endif
+
 
         private readonly object _mutex = new object();
 
         internal SlimLockWrapper(LockRecursionPolicy policy)
         {
+#if NET40        
             _rwsObject = new ReaderWriterLockSlim(policy);   
+#else
+            _rwsObject = new ReaderWriterLock();
+#endif
         }
-
+        
         internal bool MarkedDeleted
         {
             get
             {
-                lock (_mutex)
-                {
-                    if (_isDeleted)
-                    {
+                lock (_mutex){
+
+                    if (_isDeleted){
                         return true;
                     }
 
-                    if (_refCount <= 0)
-                    {
+                    if (_refCount <= 0){
                         return _isDeleted = true;
                     }
+
                     return false;
                 }
             }
@@ -52,41 +59,58 @@ namespace Alachisoft.NCache.Common.Locking
 
         internal void IncrementRef()
         {
-            lock (_mutex)
-            {
+            lock (_mutex){
                 _refCount++;
             }
         }
 
         internal void DecrementRef()
         {
-            lock (_mutex)
-            {
-                _refCount--;
+            lock (_mutex){
+                _refCount --;
             }
         }
 
         internal void GetReaderLock()
         {
             IncrementRef();
+
+#if NET40        
             _rwsObject.EnterReadLock();  
+#else
+            _rwsObject.AcquireReaderLock(Timeout.Infinite);
+#endif            
         }
 
         internal void ReleaseReaderLock()
         {
+#if NET40        
             _rwsObject.ExitReadLock();
+#else
+            _rwsObject.ReleaseReaderLock();
+#endif  
             DecrementRef();
         }
 
         internal void GetWriterLock()
         {
             IncrementRef();
-            _rwsObject.EnterWriteLock();
+#if NET40        
+           _rwsObject.EnterWriteLock(); 
+#else
+            _rwsObject.AcquireWriterLock(Timeout.Infinite);
+#endif              
         }
 
         internal void ReleaseWriterLock()
         {
-            _rwsObject.ExitWriteLock();
+
+#if NET40        
+          _rwsObject.ExitWriteLock();
+#else
+            _rwsObject.ReleaseWriterLock();
+#endif    
+            DecrementRef();
         }
     }
 }

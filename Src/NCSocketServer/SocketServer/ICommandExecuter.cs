@@ -13,20 +13,21 @@
 // limitations under the License.
 
 using System;
+using Alachisoft.NCache.Caching;
 using Alachisoft.NCache.Common.DataStructures;
-
+using Alachisoft.NCache.Runtime.Caching;
 
 namespace Alachisoft.NCache.SocketServer
 {
     public interface ICommandExecuter : IDisposable
     {
         string ID { get;}
-        void OnClientConnected(string clientID, string cacheId);
+        void OnClientConnected(string clientID, string cacheId, ClientInfo clientInfo);
         void OnClientDisconnected(string clientID, string cacheId);
+        void UpdateSocketServerStats(SocketServerStats stats);
         void RegisterNotification(NotificationsType type);
         bool IsCoordinator(string srcCacheUniqueID);
         void DisposeEnumerator(EnumerationPointer pointer);
         void OnClientForceFullyDisconnected(string clientId);
     }
-
 }

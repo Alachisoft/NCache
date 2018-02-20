@@ -12,10 +12,13 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
+using Alachisoft.NCache.Caching;
 using Alachisoft.NCache.SocketServer.Command;
 using Alachisoft.NCache.Common.Stats;
 using Alachisoft.NCache.Common.Monitoring;
 using System.IO;
+using Alachisoft.NCache.SocketServer.RequestLogging;
+using System.Collections;
 
 namespace Alachisoft.NCache.SocketServer
 {
@@ -44,20 +47,38 @@ namespace Alachisoft.NCache.SocketServer
             NCManagementCommandBase incommingCmd = null;
             incommingCmd = new ManagementCommand();
 
-            incommingCmd.ExecuteCommand(clientManager, cmd);/**/
-            /*****************************************************************/
+            incommingCmd.ExecuteCommand(clientManager, cmd);
+
             if (SocketServer.Logger.IsDetailedLogsEnabled) SocketServer.Logger.NCacheLog.Info("ConnectionManager.ReceiveCallback", clientManager.ToString() + " after executing COMMAND : " + "Management Command" + " RequestId :" + cmd.requestId);
 
+#if COMMUNITY
+            if (clientManager != null &&
+                incommingCmd.OperationResult == OperationResult.Success)
+            {
+                if (clientManager.CmdExecuter != null)
+                {
+                    clientManager.CmdExecuter.UpdateSocketServerStats(new SocketServerStats(clientManager.ClientsRequests, clientManager.ClientsBytesSent, clientManager.ClientsBytesRecieved));
+                }
+            }
+#endif
             if (clientManager != null && incommingCmd.SerializedResponsePackets != null && !clientManager.IsCacheStopped)
             {
-                foreach (byte[] reponse in incommingCmd.SerializedResponsePackets)
+                foreach (IList reponse in incommingCmd.SerializedResponsePackets)
                 {
                     ConnectionManager.AssureSend(clientManager, reponse, Common.Enum.Priority.Normal);
                 }
             }
             if (ServerMonitor.MonitorActivity) ServerMonitor.LogClientActivity("CmdMgr.PrsCmd", "exit");
-
         }
 
+        public Alachisoft.NCache.Common.DataStructures.RequestStatus GetRequestStatus(string clientId, long requestId, long commandId)
+        {
+            return null;
+        }
+
+        public Bookie RequestLogger
+        {
+            get { return null; }
+        }
     }
 }

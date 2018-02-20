@@ -10,14 +10,11 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 // $Id: CoordGmsImpl.java,v 1.13 2004/09/08 09:17:17 belaban Exp $
-
 using System;
 using System.Collections;
-using Alachisoft.NGroups;
 using Alachisoft.NCache.Common.Threading;
 using Alachisoft.NCache.Common.Net;
 using Alachisoft.NCache.Common.Enum;
-using Alachisoft.NCache.Common.Util;
 
 namespace Alachisoft.NGroups.Protocols.pbcast
 {
@@ -48,10 +45,7 @@ namespace Alachisoft.NGroups.Protocols.pbcast
         internal int missingResults;
         internal int conNodesReqId = 0;
         ArrayList viewRejectingMembers = new ArrayList();
-
-
         private const int MAX_CLUSTER_MBRS = 2;
-
 
         public CoordGmsImpl(GMS g)
         {
@@ -70,7 +64,7 @@ namespace Alachisoft.NGroups.Protocols.pbcast
             gms = g;
         }
 
-        public override void join(Address mbr, bool isStartedAsMirror)
+        public override void join(Address mbr)
         {
             wrongMethod("join");
         }
@@ -272,20 +266,19 @@ namespace Alachisoft.NGroups.Protocols.pbcast
         /// <summary> Computes the new view (including the newly joined member) and get the digest from PBCAST.
         /// Returns both in the form of a JoinRsp
         /// </summary>
-        public override JoinRsp handleJoin(Address mbr, string subGroup_name, bool isStartedAsMirror, string gmsId, ref bool acquireHashmap)
+        public override JoinRsp handleJoin(Address mbr, string subGroup_name, string gmsId, ref bool acquireHashmap)
         {
             lock (this)
             {
-
                 System.Collections.ArrayList new_mbrs = System.Collections.ArrayList.Synchronized(new System.Collections.ArrayList(1));
                 View v = null;
                 Digest d, tmp;
-                
-                gms.Stack.NCacheLog.CriticalInfo("CoordGmsImpl.handleJoin", "mbr=" + mbr);
+
+
+                gms.Stack.NCacheLog.CriticalInfo("CoordGmsImpl.HandleJoin", "Member: " + mbr + " is joining the cluster.");
 
                 if (gms.local_addr.Equals(mbr))
                 {
-                    
                     gms.Stack.NCacheLog.Error("CoordGmsImpl.handleJoin", "cannot join myself !");
                     return null;
                 }
@@ -366,7 +359,6 @@ namespace Alachisoft.NGroups.Protocols.pbcast
 
                 gms.Stack.NCacheLog.Debug("joined member " + mbr + ", view is " + v);
 
-               
                 return new JoinRsp(v, d);
             }
         }
@@ -469,11 +461,10 @@ namespace Alachisoft.NGroups.Protocols.pbcast
                         }
                     }
                     v.Add(leavingNode);
-                    
                     //requests the gms to acquire a new map after this member leaves.
                     System.Collections.ArrayList mbrs = new System.Collections.ArrayList(1);
                     mbrs.Add(leavingNode);
-                    gms.acquireHashmap(mbrs, false, subGroup, false);
+                    gms.acquireHashmap(mbrs, false, subGroup);
                 }
                 //===============================================
 
@@ -488,7 +479,7 @@ namespace Alachisoft.NGroups.Protocols.pbcast
         internal virtual void sendLeaveResponse(Address mbr)
         {
             Message msg = new Message(mbr, null, null);
-            GMS.HDR hdr = new GMS.HDR(GMS.HDR.LEAVE_RSP);
+            GmsHDR hdr = new GmsHDR(GmsHDR.LEAVE_RSP);
             msg.putHeader(HeaderType.GMS, hdr);
             gms.passDown(new Event(Event.MSG, msg));
         }
@@ -591,12 +582,12 @@ namespace Alachisoft.NGroups.Protocols.pbcast
                 if (gms.members.contains(node))
                 {
                     ViewId viewId = gms.GetNextViewId();
-                    GMS.HDR header = new GMS.HDR(GMS.HDR.RESET_ON_NODE_REJOINING, node);
+                    GmsHDR header = new GmsHDR(GmsHDR.RESET_ON_NODE_REJOINING, node);
                     header.view = new View(viewId, gms.members.Clone() as ArrayList);
                     header.view.CoordinatorGmsId = gms.unique_id;
                     Message rejoiningMsg = new Message(null, null, new byte[0]);
                     rejoiningMsg.putHeader(HeaderType.GMS, header);
-                    gms.passDown(new Event(Event.MSG, rejoiningMsg, Priority.Critical));
+                    gms.passDown(new Event(Event.MSG, rejoiningMsg, Priority.High));
                 }
             }
         }
@@ -705,10 +696,10 @@ namespace Alachisoft.NGroups.Protocols.pbcast
             if (gms.Stack.NCacheLog.IsInfoEnabled) gms.Stack.NCacheLog.Info("CoodGmsImpl.AskToLeaveCluster", leavingMember + " is requested to leave the cluster");
 
             Message msg = new Message(leavingMember, null, new byte[0]);
-            GMS.HDR  hdr =  new GMS.HDR(GMS.HDR.LEAVE_CLUSTER, gms.local_addr);
+            GmsHDR  hdr =  new GmsHDR(GmsHDR.LEAVE_CLUSTER, gms.local_addr);
             hdr.arg = urGmsId;
             msg.putHeader(HeaderType.GMS,hdr);
-            gms.passDown(new Event(Event.MSG, msg, Priority.Critical)); ;
+            gms.passDown(new Event(Event.MSG, msg, Priority.High)); ;
         }
 
         /* ------------------------------------------ Private methods ----------------------------------------- */
@@ -735,7 +726,7 @@ namespace Alachisoft.NGroups.Protocols.pbcast
         internal virtual void getMergeDataFromSubgroupCoordinators(System.Collections.ArrayList coords, long timeout)
         {
             Message msg;
-            GMS.HDR hdr;
+            GmsHDR hdr;
             Address coord;
             long curr_time, time_to_wait = 0, end_time;
             int num_rsps_expected = 0;
@@ -762,7 +753,7 @@ namespace Alachisoft.NGroups.Protocols.pbcast
                     }
 
                     msg = new Message(coord, null, null);
-                    hdr = new GMS.HDR(GMS.HDR.MERGE_REQ);
+                    hdr = new GmsHDR(GmsHDR.MERGE_REQ);
                     hdr.mbr = gms.local_addr;
                     hdr.merge_id = merge_id;
                     msg.putHeader(HeaderType.GMS, hdr);
@@ -789,8 +780,7 @@ namespace Alachisoft.NGroups.Protocols.pbcast
                             gms.Stack.NCacheLog.Error("CoordGmsImpl.getMergeDataFromSubgroupCoordinators()", ex.ToString());
                         }
                     }
-
-                    // SAL:
+                    
                     if (time_to_wait < 0)
                     {
                         gms.Stack.NCacheLog.Fatal("[Timeout]CoordGmsImpl.getMergeDataFromSubgroupCoordinators:" + time_to_wait);
@@ -921,7 +911,7 @@ namespace Alachisoft.NGroups.Protocols.pbcast
         internal virtual void sendMergeView(System.Collections.ArrayList coords, MergeData combined_merge_data)
         {
             Message msg;
-            GMS.HDR hdr;
+            GmsHDR hdr;
             Address coord;
             View v;
             Digest d;
@@ -940,7 +930,7 @@ namespace Alachisoft.NGroups.Protocols.pbcast
             {
                 coord = (Address)coords[i];
                 msg = new Message(coord, null, null);
-                hdr = new GMS.HDR(GMS.HDR.INSTALL_MERGE_VIEW);
+                hdr = new GmsHDR(GmsHDR.INSTALL_MERGE_VIEW);
                 hdr.view = v;
                 hdr.digest = d;
                 hdr.merge_id = merge_id;
@@ -953,7 +943,7 @@ namespace Alachisoft.NGroups.Protocols.pbcast
         internal virtual void sendMergeResponse(Address sender, View view, Digest digest)
         {
             Message msg = new Message(sender, null, null);
-            GMS.HDR hdr = new GMS.HDR(GMS.HDR.MERGE_RSP);
+            GmsHDR hdr = new GmsHDR(GmsHDR.MERGE_RSP);
             hdr.merge_id = merge_id;
             hdr.view = view;
             hdr.digest = digest;
@@ -967,7 +957,7 @@ namespace Alachisoft.NGroups.Protocols.pbcast
         internal virtual void sendMergeRejectedResponse(Address sender)
         {
             Message msg = new Message(sender, null, null);
-            GMS.HDR hdr = new GMS.HDR(GMS.HDR.MERGE_RSP);
+            GmsHDR hdr = new GmsHDR(GmsHDR.MERGE_RSP);
             hdr.merge_rejected = true;
             hdr.merge_id = merge_id;
             msg.putHeader(HeaderType.GMS, hdr);
@@ -980,7 +970,7 @@ namespace Alachisoft.NGroups.Protocols.pbcast
         internal virtual void sendMergeCancelledMessage(System.Collections.ArrayList coords, object merge_id)
         {
             Message msg;
-            GMS.HDR hdr;
+            GmsHDR hdr;
             Address coord;
 
             if (coords == null || merge_id == null)
@@ -992,7 +982,7 @@ namespace Alachisoft.NGroups.Protocols.pbcast
             {
                 coord = (Address)coords[i];
                 msg = new Message(coord, null, null);
-                hdr = new GMS.HDR(GMS.HDR.CANCEL_MERGE);
+                hdr = new GmsHDR(GmsHDR.CANCEL_MERGE);
                 hdr.merge_id = merge_id;
                 msg.putHeader(HeaderType.GMS, hdr);
                 gms.passDown(new Event(Event.MSG, msg));
@@ -1024,124 +1014,6 @@ namespace Alachisoft.NGroups.Protocols.pbcast
 
         /* --------------------------------------- End of Private methods ------------------------------------- */
 
-        /// <summary> Starts the merge protocol (only run by the merge leader). Essentially sends a MERGE_REQ to all
-        /// coordinators of all subgroups found. Each coord receives its digest and view and returns it.
-        /// The leader then computes the digest and view for the new group from the return values. Finally, it
-        /// sends this merged view/digest to all subgroup coordinators; each coordinator will install it in their
-        /// subgroup.
-        /// </summary>
-        internal class MergeTask : IThreadRunnable
-        {
-            public MergeTask(CoordGmsImpl enclosingInstance)
-            {
-                InitBlock(enclosingInstance);
-            }
-            private void InitBlock(CoordGmsImpl enclosingInstance)
-            {
-                this.enclosingInstance = enclosingInstance;
-            }
-            private CoordGmsImpl enclosingInstance;
-            virtual public bool Running
-            {
-                get
-                {
-                    return t != null && t.IsAlive;
-                }
-
-            }
-            public CoordGmsImpl Enclosing_Instance
-            {
-                get
-                {
-                    return enclosingInstance;
-                }
-
-            }
-            internal ThreadClass t = null;
-            internal System.Collections.ArrayList coords = null; // list of subgroup coordinators to be contacted
-
-            public virtual void start(System.Collections.ArrayList coords)
-            {
-                if (t == null)
-                {
-                    this.coords = coords;
-                    t = new ThreadClass(new System.Threading.ThreadStart(this.Run), "MergeTask thread");
-                    t.IsBackground = true;
-                    t.Start();
-                }
-            }
-
-            public virtual void stop()
-            {
-                ThreadClass tmp = t;
-                if (Running)
-                {
-                    t = null;
-                    tmp.Interrupt();
-                }
-                t = null;
-                coords = null;
-            }
-
-            /// <summary> Runs the merge protocol as a leader</summary>
-            public virtual void Run()
-            {
-                MergeData combined_merge_data = null;
-
-                if (Enclosing_Instance.merging == true)
-                {
-                    Enclosing_Instance.gms.Stack.NCacheLog.Warn("CoordGmsImpl.Run()", "merge is already in progress, terminating");
-                    return;
-                }
-
-                Enclosing_Instance.gms.Stack.NCacheLog.Debug("CoordGmsImpl.Run()", "merge task started");
-                try
-                {
-
-                    /* 1. Generate a merge_id that uniquely identifies the merge in progress */
-                    Enclosing_Instance.merge_id = Enclosing_Instance.generateMergeId();
-
-                    /* 2. Fetch the current Views/Digests from all subgroup coordinators */
-                    Enclosing_Instance.getMergeDataFromSubgroupCoordinators(coords, Enclosing_Instance.gms.merge_timeout);
-
-                    /* 3. Remove rejected MergeData elements from merge_rsp and coords (so we'll send the new view only
-                    to members who accepted the merge request) */
-                    Enclosing_Instance.removeRejectedMergeRequests(coords);
-
-                    if (Enclosing_Instance.merge_rsps.Count <= 1)
-                    {
-                        Enclosing_Instance.gms.Stack.NCacheLog.Warn("CoordGmsImpl.Run()", "merge responses from subgroup coordinators <= 1 (" + Global.CollectionToString(Enclosing_Instance.merge_rsps) + "). Cancelling merge");
-                        Enclosing_Instance.sendMergeCancelledMessage(coords, Enclosing_Instance.merge_id);
-                        return;
-                    }
-
-                    /* 4. Combine all views and digests into 1 View/1 Digest */
-                    combined_merge_data = Enclosing_Instance.consolidateMergeData(Enclosing_Instance.merge_rsps);
-                    if (combined_merge_data == null)
-                    {
-                        Enclosing_Instance.gms.Stack.NCacheLog.Error("CoordGmsImpl.Run()", "combined_merge_data == null");
-                        Enclosing_Instance.sendMergeCancelledMessage(coords, Enclosing_Instance.merge_id);
-                        return;
-                    }
-
-                    /* 5. Send the new View/Digest to all coordinators (including myself). On reception, they will
-                    install the digest and view in all of their subgroup members */
-                    Enclosing_Instance.sendMergeView(coords, combined_merge_data);
-                }
-                catch (System.Exception ex)
-                {
-                    Enclosing_Instance.gms.Stack.NCacheLog.Error("MergeTask.Run()", ex.ToString());
-                }
-                finally
-                {
-                    Enclosing_Instance.merging = false;
-
-                    Enclosing_Instance.gms.Stack.NCacheLog.Debug("CoordGmsImpl.Run()", "merge task terminated");
-                    t = null;
-                }
-            }
-        }
-
         /// <summary>
         /// Shoudl be called only incase of POR, this will perform same steps as that of ClientGMSImpl.join
         /// will call in findInitialMembers
@@ -1158,22 +1030,21 @@ namespace Alachisoft.NGroups.Protocols.pbcast
             if(gms.Stack.NCacheLog.IsInfoEnabled) gms.Stack.NCacheLog.Info("CoordGmsImpl.Join()", "CheckOwnClusterHealth - Retry Number: " + retryNumber.ToString());
             JoinRsp rsp;
             Digest tmp_digest;
+            //Console.WriteLine("initial_mbrs.Count = " + initial_mbrs.Count + "\tgms.members.Members.Count: " + gms.members.Members.Count + (gms.members.Members.Count > 2) + !(initial_mbrs.Count > 2));
             if(retryNumber !=1 )
             {
                 if (isPOR)
                 {
                     if (!((initial_mbrs.Count > 2) && (gms.members.Members.Count <= 2)))
                     {
-                       
                         return true;
                     }
                 }
                 else
                 {
-                     FindAliveMembers();
+                    FindAliveMembers();
                     if (!((initial_mbrs.Count > 1) && (gms.members.Members.Count == 1)))
                     {
-                       
                         return true;
                     }
                 }
@@ -1190,12 +1061,8 @@ namespace Alachisoft.NGroups.Protocols.pbcast
             {
                 while (!leaving)
                 {
-                     
-                    
-                    gms.Stack.NCacheLog.CriticalInfo("CoordGmsImpl.Join()", "CheckOwnClusterHealth - Retry Count: " + retryCount.ToString());
+                    gms.Stack.NCacheLog.CriticalInfo("CoordGmsImpl.Join", "CheckOwnClusterHealth - Retry Count: " + retryCount.ToString());
                     ArrayList initMembers = FindAliveMembers();
-                    
-
                     join_promise.Reset();
                     if (initMembers.Count == 0)
                     {
@@ -1209,10 +1076,7 @@ namespace Alachisoft.NGroups.Protocols.pbcast
 
                     //This will determine that coord that is already a coord of a cluster or the one with the lowest IP
                     Address coord = determineCoord(initMembers);
-
                     
-
-
                     if (coord == null)
                     {
                         Util.Util.sleep(gms.join_retry_timeout);
@@ -1222,14 +1086,13 @@ namespace Alachisoft.NGroups.Protocols.pbcast
                         return true;
                     else
                     {
-                        sendJoinMessage(coord, gms.local_addr, gms.subGroup_addr, false);
+                        sendJoinMessage(coord, gms.local_addr, gms.subGroup_addr);
                         rsp = (JoinRsp)join_promise.WaitResult(gms._castViewChangeTimeOut);
                     }
-                   
+                    
 
                     if (rsp == null)
                     {
-                        
                         gms.Stack.NCacheLog.CriticalInfo("CoordGmsImpl.Join()", "Reply was NULL");
                         retryCount--;
                         if (retryCount <= 0)
@@ -1308,12 +1171,10 @@ namespace Alachisoft.NGroups.Protocols.pbcast
                 gms.Stack.NCacheLog.Error("pb.ClientGmsImpl.installView()",   "I (" + gms.local_addr + ") am not member of " + Global.CollectionToString(mems) + ", will not install view");
 				return false;
 			}
-           
-
 
             //Cast view to the replica node as well
 			gms.installView(new_view);
-            
+            //gms.castViewChange(new_view);
 			gms.becomeParticipant();
 			gms.Stack.IsOperational = true;
 
@@ -1352,7 +1213,7 @@ namespace Alachisoft.NGroups.Protocols.pbcast
                     ping_rsp = (PingRsp)initial_mbrs[i];
                     if (ping_rsp.OwnAddress != null && gms.local_addr != null && ping_rsp.OwnAddress.Equals(gms.local_addr))
                     {
-                      
+                        //initial_mbrs.RemoveAt(i);
                         break;
                     }
                     if (!ping_rsp.IsStarted) initial_mbrs.RemoveAt(i);
@@ -1406,19 +1267,19 @@ namespace Alachisoft.NGroups.Protocols.pbcast
                     }
 
                     /// Find the maximum vote cast value. This will be used to resolve a
-                    /// tie later on. (shoaib)
+                    /// tie later on.
                     if (((int)votes[mbr.CoordAddress]) > max_votecast)
                         max_votecast = ((int)votes[mbr.CoordAddress]);
 
-                   
-                    gms.Stack.NCacheLog.CriticalInfo("pb.CoordGmsImpl.determineCoord()", "Owner " + mbr.OwnAddress + " -- CoordAddress " + mbr.CoordAddress + " -- Vote " + (int)votes[mbr.CoordAddress]);
+                  
+                    gms.Stack.NCacheLog.CriticalInfo("CoordGmsImpl.DetermineCoord", "Owner " + mbr.OwnAddress + " -- CoordAddress " + mbr.CoordAddress + " -- Vote " + (int)votes[mbr.CoordAddress]);
 
                 }
             }
 
 
             /// Collect all the candidates with the highest but similar vote count.
-            /// Ideally there should only be one. (shoaib)
+            /// Ideally there should only be one.
             ArrayList candidates = new ArrayList(votes.Count);
             for (IDictionaryEnumerator e = votes.GetEnumerator(); e.MoveNext(); )
             {
@@ -1436,37 +1297,35 @@ namespace Alachisoft.NGroups.Protocols.pbcast
 
             if (candidates.Count > 1)
                 gms.Stack.NCacheLog.Warn("pb.CoordGmsImpl.determineCoord()", "there was more than 1 candidate for coordinator: " + Global.CollectionToString(candidates));
-            gms.Stack.NCacheLog.CriticalInfo("pb.CoordGmsImpl.determineCoord()", "election winner: " + winner + " with votes " + max_votecast);
+            gms.Stack.NCacheLog.CriticalInfo("CoordGmsImpl.DetermineCoord", "election winner: " + winner + " with votes " + max_votecast);
 
             return winner;
         }
 
-        internal virtual void sendJoinMessage(Address coord, Address mbr, string subGroup_name, bool isStartedAsMirror)
-        {
-            
 
+        internal virtual void sendJoinMessage(Address coord, Address mbr, string subGroup_name)
+        {          
             Message msg;
-            GMS.HDR hdr;
+            GmsHDR hdr;
 
             msg = new Message(coord, null, null);
-            hdr = new GMS.HDR(GMS.HDR.JOIN_REQ, mbr, subGroup_name, isStartedAsMirror);
+            hdr = new GmsHDR(GmsHDR.JOIN_REQ, mbr, subGroup_name);
             hdr.GMSId = gms.unique_id;
             msg.putHeader(HeaderType.GMS, hdr);
-            gms.passDown(new Event(Event.MSG_URGENT, msg, Priority.Critical));
+            gms.passDown(new Event(Event.MSG_URGENT, msg, Priority.High));
         }
 
 
         internal virtual void SendCheckClusterHealth(Address destination, Address coord)
         {
-            
             Message msg;
-            GMS.HDR hdr;
+            GmsHDR hdr;
 
             msg = new Message(destination, null, null);
-            hdr = new GMS.HDR(GMS.HDR.RE_CHECK_CLUSTER_HEALTH, coord);
+            hdr = new GmsHDR(GmsHDR.RE_CHECK_CLUSTER_HEALTH, coord);
             hdr.GMSId = gms.unique_id;
             msg.putHeader(HeaderType.GMS, hdr);
-            gms.passDown(new Event(Event.MSG_URGENT, msg, Priority.Critical));
+            gms.passDown(new Event(Event.MSG_URGENT, msg, Priority.High));
         }
     }
 }

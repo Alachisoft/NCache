@@ -9,7 +9,6 @@
 // WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
 // See the License for the specific language governing permissions and
 // limitations under the License.
-
 using System;
 using Alachisoft.NCache.Common;
 using Alachisoft.NCache.Common.Enum;
@@ -41,8 +40,11 @@ namespace Alachisoft.NGroups
 		public const int MERGE = 14; // arg = Vector of Objects
 		public const int TMP_VIEW = 15; // arg = View
 		public const int BECOME_SERVER = 16; // sent when client has joined group
+//		public const int GET_APPLSTATE = 17; // get state from appl (arg=requestor)
+//		public const int GET_APPLSTATE_OK = 18; // arg = byte[] (state)
         public const int GET_STATE = 19; // arg = StateTransferInfo
         public const int GET_STATE_OK = 20; // arg = Object or Vector (state(s))
+//		public const int STATE_RECEIVED = 21; // arg = state
 		public const int START_QUEUEING = 22;
 		public const int STOP_QUEUEING = 23; // arg = Vector (event-list)
 		public const int SWITCH_NAK = 24;
@@ -73,6 +75,7 @@ namespace Alachisoft.NGroups
 		public const int SUBVIEWSET_MERGE = 49; // arg = vector of addresses; see JGroups/EVS/Readme.txt
 		public const int HEARD_FROM = 50; // arg = Vector (list of Addresses)
 		public const int UNSUSPECT = 51; // arg = Address (of unsuspected member)
+//		public const int SET_PID = 52; // arg = Integer (process id)
 		public const int MERGE_DIGEST = 53; // arg = Digest
 		public const int BLOCK_SEND = 54; // arg = null
 		public const int UNBLOCK_SEND = 55; // arg = null
@@ -117,7 +120,6 @@ namespace Alachisoft.NGroups
         public const int I_AM_LEAVING = 94;
         public const int CONNECTION_NOT_OPENED = 95;
         public const int NOTIFY_LEAVING = 96;
-
 
 		/// <summary> Current type of event </summary>
 		private int     type=0;  
@@ -220,10 +222,8 @@ namespace Alachisoft.NGroups
 				case FIND_INITIAL_MBRS_OK:  return "FIND_INITIAL_MBRS_OK";
 				case TMP_VIEW:  return "TMP_VIEW";
 				case BECOME_SERVER:  return "BECOME_SERVER";
-
                 case GET_STATE: return "GET_STATE";
                 case GET_STATE_OK: return "GET_STATE_OK";
-
 				case START_QUEUEING:  return "START_QUEUEING";
 				case STOP_QUEUEING:  return "STOP_QUEUEING";
 				case SWITCH_NAK:  return "SWITCH_NAK";
@@ -256,7 +256,7 @@ namespace Alachisoft.NGroups
 				case SUBVIEWSET_MERGE:  return "SUBVIEWSET_MERGE";
 				case HEARD_FROM:  return "HEARD_FROM";
 				case UNSUSPECT:  return "UNSUSPECT";
-
+//				case SET_PID:  return "SET_PID";
 				case MERGE_DIGEST:  return "MERGE_DIGEST";
 				case BLOCK_SEND:  return "BLOCK_SEND";
 				case UNBLOCK_SEND:  return "UNBLOCK_SEND";
@@ -301,8 +301,7 @@ namespace Alachisoft.NGroups
             arg = null;
             priority = Priority.Normal;
         }
-        
-
+       
 		/// <summary>
 		/// Returns a string representation of the Event 
 		/// </summary>

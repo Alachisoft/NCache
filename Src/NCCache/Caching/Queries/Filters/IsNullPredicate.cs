@@ -14,9 +14,8 @@
 
 using System;
 using System.Collections;
-using Alachisoft.NCache.Parser;
 using Alachisoft.NCache.Common.Queries;
-using Alachisoft.NCache.Common.Enum;
+using Alachisoft.NCache.Parser;
 
 namespace Alachisoft.NCache.Caching.Queries.Filters
 {
@@ -47,7 +46,6 @@ namespace Alachisoft.NCache.Caching.Queries.Filters
         internal override void Execute(QueryContext queryContext, Predicate nextPredicate)
         {
             throw new ParserException("Incorrect query format. \'" + this.ToString() + "\' not supported.");
-
         }
         #region IComparable Members
 

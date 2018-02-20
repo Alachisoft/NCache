@@ -12,7 +12,6 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-
 using Alachisoft.NCache.Common.Util;
 using Alachisoft.NCache.SocketServer.Util;
 
@@ -20,17 +19,12 @@ namespace Alachisoft.NCache.SocketServer.Command
 {
     internal class ServiceCacheBindingCommand : CommandBase
     {
-
         private long acknowledgementId;
+
         private struct CommandInfo 
         {
             public string RequestId;
             public string CacheId;
-            public string UserName;
-            public string Password;
-            public byte[] UserNameBinary;
-            public byte[] PasswordBinary;
-            public bool IsJavaClient;
 
         }
 
@@ -50,7 +44,7 @@ namespace Alachisoft.NCache.SocketServer.Command
             {
                 if (!base.immatureId.Equals("-2"))
                 {
-                    _serializedResponsePackets.Add(ResponseHelper.SerializeExceptionResponse(exc, command.requestID));
+                    _serializedResponsePackets.Add(ResponseHelper.SerializeExceptionResponse(exc, command.requestID, command.commandID));
                 }
                 return;
             }
@@ -61,7 +55,7 @@ namespace Alachisoft.NCache.SocketServer.Command
             }
             catch (System.Exception ex)
             {
-                _serializedResponsePackets.Add(ResponseHelper.SerializeExceptionResponse(ex, command.requestID));
+                _serializedResponsePackets.Add(ResponseHelper.SerializeExceptionResponse(ex, command.requestID, command.commandID));
             }
         }
 

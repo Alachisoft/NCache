@@ -1,4 +1,4 @@
-// Copyright (c) 2018 Alachisoft
+﻿// Copyright (c) 2018 Alachisoft
 // 
 // Licensed under the Apache License, Version 2.0 (the "License");
 // you may not use this file except in compliance with the License.
@@ -11,7 +11,6 @@
 // WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
 // See the License for the specific language governing permissions and
 // limitations under the License.
-
 using System;
 using System.Collections.Generic;
 using System.Text;
@@ -56,9 +55,11 @@ namespace Alachisoft.NCache.Common.Communication
         {
             try
             {
-                if (_connected && _socket != null && _socket.Connected)
+                if (_socket != null && _socket.Connected)
                 {
-                    _socket.Close();
+                    
+                        _socket.Shutdown(SocketShutdown.Both);
+                        _socket.Close();
                 }
             }
             catch (Exception) { }
@@ -100,7 +101,7 @@ namespace Alachisoft.NCache.Common.Communication
         public bool Receive(byte[] buffer, int count)
         {
             bool received = false;
-            {
+            
                 if (_connected)
                 {
                     int receivedCount = 0;
@@ -126,7 +127,7 @@ namespace Alachisoft.NCache.Common.Communication
                 }
                 else
                     throw new ConnectionException();
-            }
+            
             return received;
         }
 

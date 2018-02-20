@@ -1,0 +1,2177 @@
+============================================================
+GOLD Parser Builder
+Version 3.0.3
+============================================================
+
+
+========================================
+System Log
+========================================
+
+Grammar        Details           Whitespace was implicitly defined
+Grammar        Details           - was implicitly defined
+Grammar        Details           != was implicitly defined
+Grammar        Details           ( was implicitly defined
+Grammar        Details           ) was implicitly defined
+Grammar        Details           * was implicitly defined
+Grammar        Details           , was implicitly defined
+Grammar        Details           . was implicitly defined
+Grammar        Details           ? was implicitly defined
+Grammar        Details           < was implicitly defined
+Grammar        Details           <= was implicitly defined
+Grammar        Details           <> was implicitly defined
+Grammar        Details           = was implicitly defined
+Grammar        Details           == was implicitly defined
+Grammar        Details           > was implicitly defined
+Grammar        Details           >= was implicitly defined
+Grammar        Details           AND was implicitly defined
+Grammar        Details           DateTime was implicitly defined
+Grammar        Details           false was implicitly defined
+Grammar        Details           IN was implicitly defined
+Grammar        Details           IS was implicitly defined
+Grammar        Details           LIKE was implicitly defined
+Grammar        Details           NOT was implicitly defined
+Grammar        Details           now was implicitly defined
+Grammar        Details           NULL was implicitly defined
+Grammar        Details           OR was implicitly defined
+Grammar        Details           SELECT was implicitly defined
+Grammar        Details           true was implicitly defined
+Grammar        Details           WHERE was implicitly defined
+Grammar        Details           The grammar contains a total of 34 formal terminals.
+Grammar        Success           The grammar was successfully analyzed
+LALR States    Details           The temporary First and Nullable tables were successfully created
+LALR States    Details           LALR computation took: 0 Hours 0 Minutes 0 Seconds
+LALR States    Success           The LALR Table was succesfully created
+LALR States    Details           Total actions: 145 Shifts, 212 Reduces, 77 Gotos, 1 Accepts.
+DFA States     Details           The terminal 'Whitespace' is variable length.
+DFA States     Details           The terminal 'Identifier' is variable length.
+DFA States     Details           The terminal 'IntegerLiteral' is variable length.
+DFA States     Details           The terminal 'RealLiteral' is variable length.
+DFA States     Details           The terminal 'StringLiteral' is variable length.
+DFA States     Details           The initial Nondeterministic Finite Automata has 211 states
+DFA States     Success           The DFA State Table was successfully created
+DFA States     Details           DFA computation took: 0 Hours 0 Minutes 0 Seconds
+System         Complete          The grammar was successfully analyzed and tables were created.
+
+
+========================================
+Grammar
+========================================
+
+! -----------------------------------------------------------------------------------
+! NCQL - NCache Query Language 
+! -----------------------------------------------------------------------------------
+
+"Name"                  = 'NCQL'
+"Version"               = '1.0'
+"About"                 = 'This is first version of NCQL.'
+"Start Symbol"          = <Query>
+
+! =============================================================================
+! Terminals
+! =============================================================================
+
+{String Ch 1}           = {Printable} - ["]
+{String Ch 2}           = {Printable} - ['']
+{Id Ch Standard}        = {Alphanumeric} + [_]
+{Id Ch Extended}        = {Printable} - ['['] - [']']
+{Underscore}            = [_]
+
+StringLiteral           = '"'{String Ch 1}*'"' | ''{String Ch 2}*''
+IntegerLiteral          = {Digit}+
+RealLiteral             = {Digit}+'.'{Digit}+
+Keyword                 = 'this'
+Tag				= '$Tag$'
+
+
+! =============================================================================
+! Identifiers in SQL are very complex.
+! =============================================================================
+
+Identifier              = ({Underscore}*{Letter}{Id Ch Standard}*)
+
+! ============================================================================= 
+! Expressions
+! =============================================================================
+
+<Query>                 ::= SELECT <ObjectType> 
+                          | SELECT <ObjectType> WHERE <Expression>
+
+<Expression>            ::= <OrExpr>
+        
+<OrExpr>                ::= <OrExpr> 'OR' <AndExpr>
+                          | <AndExpr>
+
+<AndExpr>               ::= <AndExpr> 'AND' <UnaryExpr>
+                          | <UnaryExpr>
+
+<UnaryExpr>             ::= 'NOT'  <CompareExpr>
+                          | <CompareExpr>
+
+<CompareExpr>           ::= <Atrrib> '='  <Value>
+                          | <Atrrib> '!=' <Value>
+                          | <Atrrib> '==' <Value>
+                          | <Atrrib> '<>' <Value>
+                          | <Atrrib> '<'  <Value>
+                          | <Atrrib> '>'  <Value>
+                          | <Atrrib> '<=' <Value>
+                          | <Atrrib> '>=' <Value>
+                          | <Atrrib> 'LIKE' StringLiteral
+                          | <Atrrib> 'LIKE' '?'   			        		
+                          | <Atrrib> 'NOT' 'LIKE' StringLiteral
+                          | <Atrrib> 'NOT' 'LIKE' '?'
+                          | <Atrrib> 'IN' <InList>
+                          | <Atrrib> 'NOT' 'IN' <InList>
+                          | <Atrrib> 'IS' 'NULL'
+                          | <Atrrib> 'IS' 'NOT' 'NULL'
+                          | '(' <Expression> ')'
+
+<Atrrib>		::= <ObjectValue>                          
+                          
+<Value>                 ::= '-' <NumLiteral> 
+                          | <NumLiteral> 
+                          | <StrLiteral>
+                          | 'true'
+                          | 'false'
+                          | <Date>
+
+<Date>                  ::= 'DateTime' '.' 'now'
+                          | 'DateTime' '(' StringLiteral ')'
+                                                   
+<StrLiteral>		::= StringLiteral
+			  | 'null'
+			  | '?'
+			                            
+                                
+<NumLiteral>            ::= IntegerLiteral 
+                          | RealLiteral
+                          
+<ObjectType>            ::= '*' 
+                          | <Property>
+                          
+<Property>		::= <Property> '.' Identifier
+			  | Identifier
+
+<ObjectValue>           ::= Keyword '.' Identifier  
+					| Keyword '.' Tag            
+
+                          
+<InList>                ::= '(' <ListType> ')'
+
+<ListType>              ::= <NumLiteralList>
+                          | <StrLiteralList>
+                          | <DateList>
+
+<NumLiteralList>       ::=  <NumLiteral> ',' <NumLiteralList>
+                          | <NumLiteral>
+                                                   
+<StrLiteralList>        ::= <StrLiteral> ',' <StrLiteralList>
+                          | <StrLiteral>
+                                                   
+<DateList>              ::= <Date> ',' <DateList>
+                          | <Date>
+                                                   
+                          
+
+
+
+========================================
+Terminals
+========================================
+
+0       (EOF)
+1       (Error)
+2       (Whitespace)
+3       '-'
+4       '!='
+5       '('
+6       ')'
+7       '*'
+8       ','
+9       '.'
+10      '?'
+11      '<'
+12      '<='
+13      '<>'
+14      '='
+15      '=='
+16      '>'
+17      '>='
+18      AND
+19      DateTime
+20      false
+21      Identifier
+22      IN
+23      IntegerLiteral
+24      IS
+25      Keyword
+26      LIKE
+27      NOT
+28      now
+29      NULL
+30      OR
+31      RealLiteral
+32      SELECT
+33      StringLiteral
+34      Tag
+35      true
+36      WHERE
+
+
+========================================
+Nonterminals
+========================================
+
+37      <AndExpr>
+38      <Atrrib>
+39      <CompareExpr>
+40      <Date>
+41      <DateList>
+42      <Expression>
+43      <InList>
+44      <ListType>
+45      <NumLiteral>
+46      <NumLiteralList>
+47      <ObjectType>
+48      <ObjectValue>
+49      <OrExpr>
+50      <Property>
+51      <Query>
+52      <StrLiteral>
+53      <StrLiteralList>
+54      <UnaryExpr>
+55      <Value>
+
+
+========================================
+Rules
+========================================
+
+0       <Query> ::= SELECT <ObjectType>
+1       <Query> ::= SELECT <ObjectType> WHERE <Expression>
+2       <Expression> ::= <OrExpr>
+3       <OrExpr> ::= <OrExpr> OR <AndExpr>
+4       <OrExpr> ::= <AndExpr>
+5       <AndExpr> ::= <AndExpr> AND <UnaryExpr>
+6       <AndExpr> ::= <UnaryExpr>
+7       <UnaryExpr> ::= NOT <CompareExpr>
+8       <UnaryExpr> ::= <CompareExpr>
+9       <CompareExpr> ::= <Atrrib> '=' <Value>
+10      <CompareExpr> ::= <Atrrib> '!=' <Value>
+11      <CompareExpr> ::= <Atrrib> '==' <Value>
+12      <CompareExpr> ::= <Atrrib> '<>' <Value>
+13      <CompareExpr> ::= <Atrrib> '<' <Value>
+14      <CompareExpr> ::= <Atrrib> '>' <Value>
+15      <CompareExpr> ::= <Atrrib> '<=' <Value>
+16      <CompareExpr> ::= <Atrrib> '>=' <Value>
+17      <CompareExpr> ::= <Atrrib> LIKE StringLiteral
+18      <CompareExpr> ::= <Atrrib> LIKE '?'
+19      <CompareExpr> ::= <Atrrib> NOT LIKE StringLiteral
+20      <CompareExpr> ::= <Atrrib> NOT LIKE '?'
+21      <CompareExpr> ::= <Atrrib> IN <InList>
+22      <CompareExpr> ::= <Atrrib> NOT IN <InList>
+23      <CompareExpr> ::= <Atrrib> IS NULL
+24      <CompareExpr> ::= <Atrrib> IS NOT NULL
+25      <CompareExpr> ::= '(' <Expression> ')'
+26      <Atrrib> ::= <ObjectValue>
+27      <Value> ::= '-' <NumLiteral>
+28      <Value> ::= <NumLiteral>
+29      <Value> ::= <StrLiteral>
+30      <Value> ::= true
+31      <Value> ::= false
+32      <Value> ::= <Date>
+33      <Date> ::= DateTime '.' now
+34      <Date> ::= DateTime '(' StringLiteral ')'
+35      <StrLiteral> ::= StringLiteral
+36      <StrLiteral> ::= NULL
+37      <StrLiteral> ::= '?'
+38      <NumLiteral> ::= IntegerLiteral
+39      <NumLiteral> ::= RealLiteral
+40      <ObjectType> ::= '*'
+41      <ObjectType> ::= <Property>
+42      <Property> ::= <Property> '.' Identifier
+43      <Property> ::= Identifier
+44      <ObjectValue> ::= Keyword '.' Identifier
+45      <ObjectValue> ::= Keyword '.' Tag
+46      <InList> ::= '(' <ListType> ')'
+47      <ListType> ::= <NumLiteralList>
+48      <ListType> ::= <StrLiteralList>
+49      <ListType> ::= <DateList>
+50      <NumLiteralList> ::= <NumLiteral> ',' <NumLiteralList>
+51      <NumLiteralList> ::= <NumLiteral>
+52      <StrLiteralList> ::= <StrLiteral> ',' <StrLiteralList>
+53      <StrLiteralList> ::= <StrLiteral>
+54      <DateList> ::= <Date> ',' <DateList>
+55      <DateList> ::= <Date>
+
+
+========================================
+DFA States
+========================================
+
+State 0
+        Goto 1       {HT}{LF}{VT}{FF}{CR}{Space}{NBSP}
+        Goto 2       -
+        Goto 3       !
+        Goto 5       (
+        Goto 6       )
+        Goto 7       *
+        Goto 8       ,
+        Goto 9       .
+        Goto 10      ?
+        Goto 11      _
+        Goto 12      BCEGHJKMPQRUVXYZbceghjkmpqruvxyz
+        Goto 14      "
+        Goto 17      '
+        Goto 20      $
+        Goto 25      0123456789
+        Goto 28      <
+        Goto 31      =
+        Goto 33      >
+        Goto 35      Aa
+        Goto 38      Dd
+        Goto 46      Ff
+        Goto 51      Ii
+        Goto 54      Ll
+        Goto 58      Nn
+        Goto 65      Oo
+        Goto 67      Ss
+        Goto 73      Tt
+        Goto 80      Ww
+
+
+State 1
+        Goto 1       {HT}{LF}{VT}{FF}{CR}{Space}{NBSP}
+        Accept (Whitespace)
+
+
+State 2
+        Accept '-'
+
+
+State 3
+        Goto 4       =
+
+
+State 4
+        Accept '!='
+
+
+State 5
+        Accept '('
+
+
+State 6
+        Accept ')'
+
+
+State 7
+        Accept '*'
+
+
+State 8
+        Accept ','
+
+
+State 9
+        Accept '.'
+
+
+State 10
+        Accept '?'
+
+
+State 11
+        Goto 11      _
+        Goto 12      ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz
+
+
+State 12
+        Goto 13      0123456789ABCDEFGHIJKLMNOPQRSTUVWXYZ_abcdefghijklmnopqrstuvwxyz
+        Accept Identifier
+
+
+State 13
+        Goto 13      0123456789ABCDEFGHIJKLMNOPQRSTUVWXYZ_abcdefghijklmnopqrstuvwxyz
+        Accept Identifier
+
+
+State 14
+        Goto 15      {Space}!#$%&'()*+,-./0123456789:;<=>?@ABCDEFGHIJKLMNOPQRSTUVWXYZ[\]^_`abcdefghijklmnopqrstuvwxyz{|}~{NBSP}
+        Goto 16      "
+
+
+State 15
+        Goto 15      {Space}!#$%&'()*+,-./0123456789:;<=>?@ABCDEFGHIJKLMNOPQRSTUVWXYZ[\]^_`abcdefghijklmnopqrstuvwxyz{|}~{NBSP}
+        Goto 16      "
+
+
+State 16
+        Accept StringLiteral
+
+
+State 17
+        Goto 18      {Space}!"#$%&()*+,-./0123456789:;<=>?@ABCDEFGHIJKLMNOPQRSTUVWXYZ[\]^_`abcdefghijklmnopqrstuvwxyz{|}~{NBSP}
+        Goto 19      '
+
+
+State 18
+        Goto 18      {Space}!"#$%&()*+,-./0123456789:;<=>?@ABCDEFGHIJKLMNOPQRSTUVWXYZ[\]^_`abcdefghijklmnopqrstuvwxyz{|}~{NBSP}
+        Goto 19      '
+
+
+State 19
+        Accept StringLiteral
+
+
+State 20
+        Goto 21      Tt
+
+
+State 21
+        Goto 22      Aa
+
+
+State 22
+        Goto 23      Gg
+
+
+State 23
+        Goto 24      $
+
+
+State 24
+        Accept Tag
+
+
+State 25
+        Goto 26      .
+        Goto 25      0123456789
+        Accept IntegerLiteral
+
+
+State 26
+        Goto 27      0123456789
+
+
+State 27
+        Goto 27      0123456789
+        Accept RealLiteral
+
+
+State 28
+        Goto 29      =
+        Goto 30      >
+        Accept '<'
+
+
+State 29
+        Accept '<='
+
+
+State 30
+        Accept '<>'
+
+
+State 31
+        Goto 32      =
+        Accept '='
+
+
+State 32
+        Accept '=='
+
+
+State 33
+        Goto 34      =
+        Accept '>'
+
+
+State 34
+        Accept '>='
+
+
+State 35
+        Goto 13      0123456789ABCDEFGHIJKLMOPQRSTUVWXYZ_abcdefghijklmopqrstuvwxyz
+        Goto 36      Nn
+        Accept Identifier
+
+
+State 36
+        Goto 13      0123456789ABCEFGHIJKLMNOPQRSTUVWXYZ_abcefghijklmnopqrstuvwxyz
+        Goto 37      Dd
+        Accept Identifier
+
+
+State 37
+        Goto 13      0123456789ABCDEFGHIJKLMNOPQRSTUVWXYZ_abcdefghijklmnopqrstuvwxyz
+        Accept AND
+
+
+State 38
+        Goto 13      0123456789BCDEFGHIJKLMNOPQRSTUVWXYZ_bcdefghijklmnopqrstuvwxyz
+        Goto 39      Aa
+        Accept Identifier
+
+
+State 39
+        Goto 13      0123456789ABCDEFGHIJKLMNOPQRSUVWXYZ_abcdefghijklmnopqrsuvwxyz
+        Goto 40      Tt
+        Accept Identifier
+
+
+State 40
+        Goto 13      0123456789ABCDFGHIJKLMNOPQRSTUVWXYZ_abcdfghijklmnopqrstuvwxyz
+        Goto 41      Ee
+        Accept Identifier
+
+
+State 41
+        Goto 13      0123456789ABCDEFGHIJKLMNOPQRSUVWXYZ_abcdefghijklmnopqrsuvwxyz
+        Goto 42      Tt
+        Accept Identifier
+
+
+State 42
+        Goto 13      0123456789ABCDEFGHJKLMNOPQRSTUVWXYZ_abcdefghjklmnopqrstuvwxyz
+        Goto 43      Ii
+        Accept Identifier
+
+
+State 43
+        Goto 13      0123456789ABCDEFGHIJKLNOPQRSTUVWXYZ_abcdefghijklnopqrstuvwxyz
+        Goto 44      Mm
+        Accept Identifier
+
+
+State 44
+        Goto 13      0123456789ABCDFGHIJKLMNOPQRSTUVWXYZ_abcdfghijklmnopqrstuvwxyz
+        Goto 45      Ee
+        Accept Identifier
+
+
+State 45
+        Goto 13      0123456789ABCDEFGHIJKLMNOPQRSTUVWXYZ_abcdefghijklmnopqrstuvwxyz
+        Accept DateTime
+
+
+State 46
+        Goto 13      0123456789BCDEFGHIJKLMNOPQRSTUVWXYZ_bcdefghijklmnopqrstuvwxyz
+        Goto 47      Aa
+        Accept Identifier
+
+
+State 47
+        Goto 13      0123456789ABCDEFGHIJKMNOPQRSTUVWXYZ_abcdefghijkmnopqrstuvwxyz
+        Goto 48      Ll
+        Accept Identifier
+
+
+State 48
+        Goto 13      0123456789ABCDEFGHIJKLMNOPQRTUVWXYZ_abcdefghijklmnopqrtuvwxyz
+        Goto 49      Ss
+        Accept Identifier
+
+
+State 49
+        Goto 13      0123456789ABCDFGHIJKLMNOPQRSTUVWXYZ_abcdfghijklmnopqrstuvwxyz
+        Goto 50      Ee
+        Accept Identifier
+
+
+State 50
+        Goto 13      0123456789ABCDEFGHIJKLMNOPQRSTUVWXYZ_abcdefghijklmnopqrstuvwxyz
+        Accept false
+
+
+State 51
+        Goto 13      0123456789ABCDEFGHIJKLMOPQRTUVWXYZ_abcdefghijklmopqrtuvwxyz
+        Goto 52      Nn
+        Goto 53      Ss
+        Accept Identifier
+
+
+State 52
+        Goto 13      0123456789ABCDEFGHIJKLMNOPQRSTUVWXYZ_abcdefghijklmnopqrstuvwxyz
+        Accept IN
+
+
+State 53
+        Goto 13      0123456789ABCDEFGHIJKLMNOPQRSTUVWXYZ_abcdefghijklmnopqrstuvwxyz
+        Accept IS
+
+
+State 54
+        Goto 13      0123456789ABCDEFGHJKLMNOPQRSTUVWXYZ_abcdefghjklmnopqrstuvwxyz
+        Goto 55      Ii
+        Accept Identifier
+
+
+State 55
+        Goto 13      0123456789ABCDEFGHIJLMNOPQRSTUVWXYZ_abcdefghijlmnopqrstuvwxyz
+        Goto 56      Kk
+        Accept Identifier
+
+
+State 56
+        Goto 13      0123456789ABCDFGHIJKLMNOPQRSTUVWXYZ_abcdfghijklmnopqrstuvwxyz
+        Goto 57      Ee
+        Accept Identifier
+
+
+State 57
+        Goto 13      0123456789ABCDEFGHIJKLMNOPQRSTUVWXYZ_abcdefghijklmnopqrstuvwxyz
+        Accept LIKE
+
+
+State 58
+        Goto 13      0123456789ABCDEFGHIJKLMNPQRSTVWXYZ_abcdefghijklmnpqrstvwxyz
+        Goto 59      Oo
+        Goto 62      Uu
+        Accept Identifier
+
+
+State 59
+        Goto 13      0123456789ABCDEFGHIJKLMNOPQRSUVXYZ_abcdefghijklmnopqrsuvxyz
+        Goto 60      Tt
+        Goto 61      Ww
+        Accept Identifier
+
+
+State 60
+        Goto 13      0123456789ABCDEFGHIJKLMNOPQRSTUVWXYZ_abcdefghijklmnopqrstuvwxyz
+        Accept NOT
+
+
+State 61
+        Goto 13      0123456789ABCDEFGHIJKLMNOPQRSTUVWXYZ_abcdefghijklmnopqrstuvwxyz
+        Accept now
+
+
+State 62
+        Goto 13      0123456789ABCDEFGHIJKMNOPQRSTUVWXYZ_abcdefghijkmnopqrstuvwxyz
+        Goto 63      Ll
+        Accept Identifier
+
+
+State 63
+        Goto 13      0123456789ABCDEFGHIJKMNOPQRSTUVWXYZ_abcdefghijkmnopqrstuvwxyz
+        Goto 64      Ll
+        Accept Identifier
+
+
+State 64
+        Goto 13      0123456789ABCDEFGHIJKLMNOPQRSTUVWXYZ_abcdefghijklmnopqrstuvwxyz
+        Accept NULL
+
+
+State 65
+        Goto 13      0123456789ABCDEFGHIJKLMNOPQSTUVWXYZ_abcdefghijklmnopqstuvwxyz
+        Goto 66      Rr
+        Accept Identifier
+
+
+State 66
+        Goto 13      0123456789ABCDEFGHIJKLMNOPQRSTUVWXYZ_abcdefghijklmnopqrstuvwxyz
+        Accept OR
+
+
+State 67
+        Goto 13      0123456789ABCDFGHIJKLMNOPQRSTUVWXYZ_abcdfghijklmnopqrstuvwxyz
+        Goto 68      Ee
+        Accept Identifier
+
+
+State 68
+        Goto 13      0123456789ABCDEFGHIJKMNOPQRSTUVWXYZ_abcdefghijkmnopqrstuvwxyz
+        Goto 69      Ll
+        Accept Identifier
+
+
+State 69
+        Goto 13      0123456789ABCDFGHIJKLMNOPQRSTUVWXYZ_abcdfghijklmnopqrstuvwxyz
+        Goto 70      Ee
+        Accept Identifier
+
+
+State 70
+        Goto 13      0123456789ABDEFGHIJKLMNOPQRSTUVWXYZ_abdefghijklmnopqrstuvwxyz
+        Goto 71      Cc
+        Accept Identifier
+
+
+State 71
+        Goto 13      0123456789ABCDEFGHIJKLMNOPQRSUVWXYZ_abcdefghijklmnopqrsuvwxyz
+        Goto 72      Tt
+        Accept Identifier
+
+
+State 72
+        Goto 13      0123456789ABCDEFGHIJKLMNOPQRSTUVWXYZ_abcdefghijklmnopqrstuvwxyz
+        Accept SELECT
+
+
+State 73
+        Goto 13      0123456789ABCDEFGIJKLMNOPQSTUVWXYZ_abcdefgijklmnopqstuvwxyz
+        Goto 74      Hh
+        Goto 77      Rr
+        Accept Identifier
+
+
+State 74
+        Goto 13      0123456789ABCDEFGHJKLMNOPQRSTUVWXYZ_abcdefghjklmnopqrstuvwxyz
+        Goto 75      Ii
+        Accept Identifier
+
+
+State 75
+        Goto 13      0123456789ABCDEFGHIJKLMNOPQRTUVWXYZ_abcdefghijklmnopqrtuvwxyz
+        Goto 76      Ss
+        Accept Identifier
+
+
+State 76
+        Goto 13      0123456789ABCDEFGHIJKLMNOPQRSTUVWXYZ_abcdefghijklmnopqrstuvwxyz
+        Accept Keyword
+
+
+State 77
+        Goto 13      0123456789ABCDEFGHIJKLMNOPQRSTVWXYZ_abcdefghijklmnopqrstvwxyz
+        Goto 78      Uu
+        Accept Identifier
+
+
+State 78
+        Goto 13      0123456789ABCDFGHIJKLMNOPQRSTUVWXYZ_abcdfghijklmnopqrstuvwxyz
+        Goto 79      Ee
+        Accept Identifier
+
+
+State 79
+        Goto 13      0123456789ABCDEFGHIJKLMNOPQRSTUVWXYZ_abcdefghijklmnopqrstuvwxyz
+        Accept true
+
+
+State 80
+        Goto 13      0123456789ABCDEFGIJKLMNOPQRSTUVWXYZ_abcdefgijklmnopqrstuvwxyz
+        Goto 81      Hh
+        Accept Identifier
+
+
+State 81
+        Goto 13      0123456789ABCDFGHIJKLMNOPQRSTUVWXYZ_abcdfghijklmnopqrstuvwxyz
+        Goto 82      Ee
+        Accept Identifier
+
+
+State 82
+        Goto 13      0123456789ABCDEFGHIJKLMNOPQSTUVWXYZ_abcdefghijklmnopqstuvwxyz
+        Goto 83      Rr
+        Accept Identifier
+
+
+State 83
+        Goto 13      0123456789ABCDFGHIJKLMNOPQRSTUVWXYZ_abcdfghijklmnopqrstuvwxyz
+        Goto 84      Ee
+        Accept Identifier
+
+
+State 84
+        Goto 13      0123456789ABCDEFGHIJKLMNOPQRSTUVWXYZ_abcdefghijklmnopqrstuvwxyz
+        Accept WHERE
+
+
+
+
+========================================
+LALR States
+========================================
+
+State 0
+        <S'> ::= · <Query> (EOF)                                        
+        <Query> ::= · SELECT <ObjectType>                               EOF
+        <Query> ::= · SELECT <ObjectType> WHERE <Expression>            EOF
+
+        SELECT Shift 1
+        <Query> Goto 2
+
+
+State 1
+        Prior States: 0
+
+        <Query> ::= SELECT · <ObjectType>                               EOF
+        <Query> ::= SELECT · <ObjectType> WHERE <Expression>            EOF
+        <ObjectType> ::= · '*'                                          EOF  WHERE
+        <ObjectType> ::= · <Property>                                   EOF  WHERE
+        <Property> ::= · <Property> '.' Identifier                      EOF  .  WHERE
+        <Property> ::= · Identifier                                     EOF  .  WHERE
+
+        '*' Shift 3
+        Identifier Shift 4
+        <ObjectType> Goto 5
+        <Property> Goto 6
+
+
+State 2
+        Prior States: 0
+
+        <S'> ::= <Query> · (EOF)                                        
+
+        (EOF) Accept
+
+
+State 3
+        Prior States: 1
+
+        <ObjectType> ::= '*' ·                                          EOF  WHERE
+
+        (EOF) Reduce Rule 40
+        WHERE Reduce Rule 40
+
+
+State 4
+        Prior States: 1
+
+        <Property> ::= Identifier ·                                     EOF  .  WHERE
+
+        (EOF) Reduce Rule 43
+        '.' Reduce Rule 43
+        WHERE Reduce Rule 43
+
+
+State 5
+        Prior States: 1
+
+        <Query> ::= SELECT <ObjectType> ·                               EOF
+        <Query> ::= SELECT <ObjectType> · WHERE <Expression>            EOF
+
+        WHERE Shift 7
+        (EOF) Reduce Rule 0
+
+
+State 6
+        Prior States: 1
+
+        <ObjectType> ::= <Property> ·                                   EOF  WHERE
+        <Property> ::= <Property> · '.' Identifier                      EOF  .  WHERE
+
+        '.' Shift 8
+        (EOF) Reduce Rule 41
+        WHERE Reduce Rule 41
+
+
+State 7
+        Prior States: 5
+
+        <Query> ::= SELECT <ObjectType> WHERE · <Expression>            EOF
+        <Expression> ::= · <OrExpr>                                     EOF
+        <OrExpr> ::= · <OrExpr> OR <AndExpr>                            EOF  OR
+        <OrExpr> ::= · <AndExpr>                                        EOF  OR
+        <AndExpr> ::= · <AndExpr> AND <UnaryExpr>                       EOF  AND  OR
+        <AndExpr> ::= · <UnaryExpr>                                     EOF  AND  OR
+        <UnaryExpr> ::= · NOT <CompareExpr>                             EOF  AND  OR
+        <UnaryExpr> ::= · <CompareExpr>                                 EOF  AND  OR
+        <CompareExpr> ::= · <Atrrib> '=' <Value>                        EOF  AND  OR
+        <CompareExpr> ::= · <Atrrib> '!=' <Value>                       EOF  AND  OR
+        <CompareExpr> ::= · <Atrrib> '==' <Value>                       EOF  AND  OR
+        <CompareExpr> ::= · <Atrrib> '<>' <Value>                       EOF  AND  OR
+        <CompareExpr> ::= · <Atrrib> '<' <Value>                        EOF  AND  OR
+        <CompareExpr> ::= · <Atrrib> '>' <Value>                        EOF  AND  OR
+        <CompareExpr> ::= · <Atrrib> '<=' <Value>                       EOF  AND  OR
+        <CompareExpr> ::= · <Atrrib> '>=' <Value>                       EOF  AND  OR
+        <CompareExpr> ::= · <Atrrib> LIKE StringLiteral                 EOF  AND  OR
+        <CompareExpr> ::= · <Atrrib> LIKE '?'                           EOF  AND  OR
+        <CompareExpr> ::= · <Atrrib> NOT LIKE StringLiteral             EOF  AND  OR
+        <CompareExpr> ::= · <Atrrib> NOT LIKE '?'                       EOF  AND  OR
+        <CompareExpr> ::= · <Atrrib> IN <InList>                        EOF  AND  OR
+        <CompareExpr> ::= · <Atrrib> NOT IN <InList>                    EOF  AND  OR
+        <CompareExpr> ::= · <Atrrib> IS NULL                            EOF  AND  OR
+        <CompareExpr> ::= · <Atrrib> IS NOT NULL                        EOF  AND  OR
+        <CompareExpr> ::= · '(' <Expression> ')'                        EOF  AND  OR
+        <Atrrib> ::= · <ObjectValue>                                    !=  <  <=  <>  =  ==  >  >=  IN  IS  LIKE  NOT
+        <ObjectValue> ::= · Keyword '.' Identifier                      !=  <  <=  <>  =  ==  >  >=  IN  IS  LIKE  NOT
+        <ObjectValue> ::= · Keyword '.' Tag                             !=  <  <=  <>  =  ==  >  >=  IN  IS  LIKE  NOT
+
+        '(' Shift 9
+        Keyword Shift 10
+        NOT Shift 11
+        <AndExpr> Goto 12
+        <Atrrib> Goto 13
+        <CompareExpr> Goto 14
+        <Expression> Goto 15
+        <ObjectValue> Goto 16
+        <OrExpr> Goto 17
+        <UnaryExpr> Goto 18
+
+
+State 8
+        Prior States: 6
+
+        <Property> ::= <Property> '.' · Identifier                      EOF  .  WHERE
+
+        Identifier Shift 19
+
+
+State 9
+        Prior States: 7, 9, 11, 23, 36
+
+        <CompareExpr> ::= '(' · <Expression> ')'                        EOF  )  AND  OR
+        <Expression> ::= · <OrExpr>                                     )
+        <OrExpr> ::= · <OrExpr> OR <AndExpr>                            )  OR
+        <OrExpr> ::= · <AndExpr>                                        )  OR
+        <AndExpr> ::= · <AndExpr> AND <UnaryExpr>                       )  AND  OR
+        <AndExpr> ::= · <UnaryExpr>                                     )  AND  OR
+        <UnaryExpr> ::= · NOT <CompareExpr>                             )  AND  OR
+        <UnaryExpr> ::= · <CompareExpr>                                 )  AND  OR
+        <CompareExpr> ::= · <Atrrib> '=' <Value>                        )  AND  OR
+        <CompareExpr> ::= · <Atrrib> '!=' <Value>                       )  AND  OR
+        <CompareExpr> ::= · <Atrrib> '==' <Value>                       )  AND  OR
+        <CompareExpr> ::= · <Atrrib> '<>' <Value>                       )  AND  OR
+        <CompareExpr> ::= · <Atrrib> '<' <Value>                        )  AND  OR
+        <CompareExpr> ::= · <Atrrib> '>' <Value>                        )  AND  OR
+        <CompareExpr> ::= · <Atrrib> '<=' <Value>                       )  AND  OR
+        <CompareExpr> ::= · <Atrrib> '>=' <Value>                       )  AND  OR
+        <CompareExpr> ::= · <Atrrib> LIKE StringLiteral                 )  AND  OR
+        <CompareExpr> ::= · <Atrrib> LIKE '?'                           )  AND  OR
+        <CompareExpr> ::= · <Atrrib> NOT LIKE StringLiteral             )  AND  OR
+        <CompareExpr> ::= · <Atrrib> NOT LIKE '?'                       )  AND  OR
+        <CompareExpr> ::= · <Atrrib> IN <InList>                        )  AND  OR
+        <CompareExpr> ::= · <Atrrib> NOT IN <InList>                    )  AND  OR
+        <CompareExpr> ::= · <Atrrib> IS NULL                            )  AND  OR
+        <CompareExpr> ::= · <Atrrib> IS NOT NULL                        )  AND  OR
+        <CompareExpr> ::= · '(' <Expression> ')'                        )  AND  OR
+        <Atrrib> ::= · <ObjectValue>                                    !=  <  <=  <>  =  ==  >  >=  IN  IS  LIKE  NOT
+        <ObjectValue> ::= · Keyword '.' Identifier                      !=  <  <=  <>  =  ==  >  >=  IN  IS  LIKE  NOT
+        <ObjectValue> ::= · Keyword '.' Tag                             !=  <  <=  <>  =  ==  >  >=  IN  IS  LIKE  NOT
+
+        '(' Shift 9
+        Keyword Shift 10
+        NOT Shift 11
+        <AndExpr> Goto 12
+        <Atrrib> Goto 13
+        <CompareExpr> Goto 14
+        <Expression> Goto 20
+        <ObjectValue> Goto 16
+        <OrExpr> Goto 17
+        <UnaryExpr> Goto 18
+
+
+State 10
+        Prior States: 7, 9, 11, 23, 36
+
+        <ObjectValue> ::= Keyword · '.' Identifier                      !=  <  <=  <>  =  ==  >  >=  IN  IS  LIKE  NOT
+        <ObjectValue> ::= Keyword · '.' Tag                             !=  <  <=  <>  =  ==  >  >=  IN  IS  LIKE  NOT
+
+        '.' Shift 21
+
+
+State 11
+        Prior States: 7, 9, 23, 36
+
+        <UnaryExpr> ::= NOT · <CompareExpr>                             EOF  )  AND  OR
+        <CompareExpr> ::= · <Atrrib> '=' <Value>                        EOF  )  AND  OR
+        <CompareExpr> ::= · <Atrrib> '!=' <Value>                       EOF  )  AND  OR
+        <CompareExpr> ::= · <Atrrib> '==' <Value>                       EOF  )  AND  OR
+        <CompareExpr> ::= · <Atrrib> '<>' <Value>                       EOF  )  AND  OR
+        <CompareExpr> ::= · <Atrrib> '<' <Value>                        EOF  )  AND  OR
+        <CompareExpr> ::= · <Atrrib> '>' <Value>                        EOF  )  AND  OR
+        <CompareExpr> ::= · <Atrrib> '<=' <Value>                       EOF  )  AND  OR
+        <CompareExpr> ::= · <Atrrib> '>=' <Value>                       EOF  )  AND  OR
+        <CompareExpr> ::= · <Atrrib> LIKE StringLiteral                 EOF  )  AND  OR
+        <CompareExpr> ::= · <Atrrib> LIKE '?'                           EOF  )  AND  OR
+        <CompareExpr> ::= · <Atrrib> NOT LIKE StringLiteral             EOF  )  AND  OR
+        <CompareExpr> ::= · <Atrrib> NOT LIKE '?'                       EOF  )  AND  OR
+        <CompareExpr> ::= · <Atrrib> IN <InList>                        EOF  )  AND  OR
+        <CompareExpr> ::= · <Atrrib> NOT IN <InList>                    EOF  )  AND  OR
+        <CompareExpr> ::= · <Atrrib> IS NULL                            EOF  )  AND  OR
+        <CompareExpr> ::= · <Atrrib> IS NOT NULL                        EOF  )  AND  OR
+        <CompareExpr> ::= · '(' <Expression> ')'                        EOF  )  AND  OR
+        <Atrrib> ::= · <ObjectValue>                                    !=  <  <=  <>  =  ==  >  >=  IN  IS  LIKE  NOT
+        <ObjectValue> ::= · Keyword '.' Identifier                      !=  <  <=  <>  =  ==  >  >=  IN  IS  LIKE  NOT
+        <ObjectValue> ::= · Keyword '.' Tag                             !=  <  <=  <>  =  ==  >  >=  IN  IS  LIKE  NOT
+
+        '(' Shift 9
+        Keyword Shift 10
+        <Atrrib> Goto 13
+        <CompareExpr> Goto 22
+        <ObjectValue> Goto 16
+
+
+State 12
+        Prior States: 7, 9
+
+        <OrExpr> ::= <AndExpr> ·                                        EOF  )  OR
+        <AndExpr> ::= <AndExpr> · AND <UnaryExpr>                       EOF  )  AND  OR
+
+        AND Shift 23
+        (EOF) Reduce Rule 4
+        ')' Reduce Rule 4
+        OR Reduce Rule 4
+
+
+State 13
+        Prior States: 7, 9, 11, 23, 36
+
+        <CompareExpr> ::= <Atrrib> · '=' <Value>                        EOF  )  AND  OR
+        <CompareExpr> ::= <Atrrib> · '!=' <Value>                       EOF  )  AND  OR
+        <CompareExpr> ::= <Atrrib> · '==' <Value>                       EOF  )  AND  OR
+        <CompareExpr> ::= <Atrrib> · '<>' <Value>                       EOF  )  AND  OR
+        <CompareExpr> ::= <Atrrib> · '<' <Value>                        EOF  )  AND  OR
+        <CompareExpr> ::= <Atrrib> · '>' <Value>                        EOF  )  AND  OR
+        <CompareExpr> ::= <Atrrib> · '<=' <Value>                       EOF  )  AND  OR
+        <CompareExpr> ::= <Atrrib> · '>=' <Value>                       EOF  )  AND  OR
+        <CompareExpr> ::= <Atrrib> · LIKE StringLiteral                 EOF  )  AND  OR
+        <CompareExpr> ::= <Atrrib> · LIKE '?'                           EOF  )  AND  OR
+        <CompareExpr> ::= <Atrrib> · NOT LIKE StringLiteral             EOF  )  AND  OR
+        <CompareExpr> ::= <Atrrib> · NOT LIKE '?'                       EOF  )  AND  OR
+        <CompareExpr> ::= <Atrrib> · IN <InList>                        EOF  )  AND  OR
+        <CompareExpr> ::= <Atrrib> · NOT IN <InList>                    EOF  )  AND  OR
+        <CompareExpr> ::= <Atrrib> · IS NULL                            EOF  )  AND  OR
+        <CompareExpr> ::= <Atrrib> · IS NOT NULL                        EOF  )  AND  OR
+
+        '!=' Shift 24
+        '<' Shift 25
+        '<=' Shift 26
+        '<>' Shift 27
+        '=' Shift 28
+        '==' Shift 29
+        '>' Shift 30
+        '>=' Shift 31
+        IN Shift 32
+        IS Shift 33
+        LIKE Shift 34
+        NOT Shift 35
+
+
+State 14
+        Prior States: 7, 9, 23, 36
+
+        <UnaryExpr> ::= <CompareExpr> ·                                 EOF  )  AND  OR
+
+        (EOF) Reduce Rule 8
+        ')' Reduce Rule 8
+        AND Reduce Rule 8
+        OR Reduce Rule 8
+
+
+State 15
+        Prior States: 7
+
+        <Query> ::= SELECT <ObjectType> WHERE <Expression> ·            EOF
+
+        (EOF) Reduce Rule 1
+
+
+State 16
+        Prior States: 7, 9, 11, 23, 36
+
+        <Atrrib> ::= <ObjectValue> ·                                    !=  <  <=  <>  =  ==  >  >=  IN  IS  LIKE  NOT
+
+        '!=' Reduce Rule 26
+        '<' Reduce Rule 26
+        '<=' Reduce Rule 26
+        '<>' Reduce Rule 26
+        '=' Reduce Rule 26
+        '==' Reduce Rule 26
+        '>' Reduce Rule 26
+        '>=' Reduce Rule 26
+        IN Reduce Rule 26
+        IS Reduce Rule 26
+        LIKE Reduce Rule 26
+        NOT Reduce Rule 26
+
+
+State 17
+        Prior States: 7, 9
+
+        <Expression> ::= <OrExpr> ·                                     EOF  )
+        <OrExpr> ::= <OrExpr> · OR <AndExpr>                            EOF  )  OR
+
+        OR Shift 36
+        (EOF) Reduce Rule 2
+        ')' Reduce Rule 2
+
+
+State 18
+        Prior States: 7, 9, 36
+
+        <AndExpr> ::= <UnaryExpr> ·                                     EOF  )  AND  OR
+
+        (EOF) Reduce Rule 6
+        ')' Reduce Rule 6
+        AND Reduce Rule 6
+        OR Reduce Rule 6
+
+
+State 19
+        Prior States: 8
+
+        <Property> ::= <Property> '.' Identifier ·                      EOF  .  WHERE
+
+        (EOF) Reduce Rule 42
+        '.' Reduce Rule 42
+        WHERE Reduce Rule 42
+
+
+State 20
+        Prior States: 9
+
+        <CompareExpr> ::= '(' <Expression> · ')'                        EOF  )  AND  OR
+
+        ')' Shift 37
+
+
+State 21
+        Prior States: 10
+
+        <ObjectValue> ::= Keyword '.' · Identifier                      !=  <  <=  <>  =  ==  >  >=  IN  IS  LIKE  NOT
+        <ObjectValue> ::= Keyword '.' · Tag                             !=  <  <=  <>  =  ==  >  >=  IN  IS  LIKE  NOT
+
+        Identifier Shift 38
+        Tag Shift 39
+
+
+State 22
+        Prior States: 11
+
+        <UnaryExpr> ::= NOT <CompareExpr> ·                             EOF  )  AND  OR
+
+        (EOF) Reduce Rule 7
+        ')' Reduce Rule 7
+        AND Reduce Rule 7
+        OR Reduce Rule 7
+
+
+State 23
+        Prior States: 12, 69
+
+        <AndExpr> ::= <AndExpr> AND · <UnaryExpr>                       EOF  )  AND  OR
+        <UnaryExpr> ::= · NOT <CompareExpr>                             EOF  )  AND  OR
+        <UnaryExpr> ::= · <CompareExpr>                                 EOF  )  AND  OR
+        <CompareExpr> ::= · <Atrrib> '=' <Value>                        EOF  )  AND  OR
+        <CompareExpr> ::= · <Atrrib> '!=' <Value>                       EOF  )  AND  OR
+        <CompareExpr> ::= · <Atrrib> '==' <Value>                       EOF  )  AND  OR
+        <CompareExpr> ::= · <Atrrib> '<>' <Value>                       EOF  )  AND  OR
+        <CompareExpr> ::= · <Atrrib> '<' <Value>                        EOF  )  AND  OR
+        <CompareExpr> ::= · <Atrrib> '>' <Value>                        EOF  )  AND  OR
+        <CompareExpr> ::= · <Atrrib> '<=' <Value>                       EOF  )  AND  OR
+        <CompareExpr> ::= · <Atrrib> '>=' <Value>                       EOF  )  AND  OR
+        <CompareExpr> ::= · <Atrrib> LIKE StringLiteral                 EOF  )  AND  OR
+        <CompareExpr> ::= · <Atrrib> LIKE '?'                           EOF  )  AND  OR
+        <CompareExpr> ::= · <Atrrib> NOT LIKE StringLiteral             EOF  )  AND  OR
+        <CompareExpr> ::= · <Atrrib> NOT LIKE '?'                       EOF  )  AND  OR
+        <CompareExpr> ::= · <Atrrib> IN <InList>                        EOF  )  AND  OR
+        <CompareExpr> ::= · <Atrrib> NOT IN <InList>                    EOF  )  AND  OR
+        <CompareExpr> ::= · <Atrrib> IS NULL                            EOF  )  AND  OR
+        <CompareExpr> ::= · <Atrrib> IS NOT NULL                        EOF  )  AND  OR
+        <CompareExpr> ::= · '(' <Expression> ')'                        EOF  )  AND  OR
+        <Atrrib> ::= · <ObjectValue>                                    !=  <  <=  <>  =  ==  >  >=  IN  IS  LIKE  NOT
+        <ObjectValue> ::= · Keyword '.' Identifier                      !=  <  <=  <>  =  ==  >  >=  IN  IS  LIKE  NOT
+        <ObjectValue> ::= · Keyword '.' Tag                             !=  <  <=  <>  =  ==  >  >=  IN  IS  LIKE  NOT
+
+        '(' Shift 9
+        Keyword Shift 10
+        NOT Shift 11
+        <Atrrib> Goto 13
+        <CompareExpr> Goto 14
+        <ObjectValue> Goto 16
+        <UnaryExpr> Goto 40
+
+
+State 24
+        Prior States: 13
+
+        <CompareExpr> ::= <Atrrib> '!=' · <Value>                       EOF  )  AND  OR
+        <Value> ::= · '-' <NumLiteral>                                  EOF  )  AND  OR
+        <Value> ::= · <NumLiteral>                                      EOF  )  AND  OR
+        <Value> ::= · <StrLiteral>                                      EOF  )  AND  OR
+        <Value> ::= · true                                              EOF  )  AND  OR
+        <Value> ::= · false                                             EOF  )  AND  OR
+        <Value> ::= · <Date>                                            EOF  )  AND  OR
+        <Date> ::= · DateTime '.' now                                   EOF  )  AND  OR
+        <Date> ::= · DateTime '(' StringLiteral ')'                     EOF  )  AND  OR
+        <StrLiteral> ::= · StringLiteral                                EOF  )  AND  OR
+        <StrLiteral> ::= · NULL                                         EOF  )  AND  OR
+        <StrLiteral> ::= · '?'                                          EOF  )  AND  OR
+        <NumLiteral> ::= · IntegerLiteral                               EOF  )  AND  OR
+        <NumLiteral> ::= · RealLiteral                                  EOF  )  AND  OR
+
+        '-' Shift 41
+        '?' Shift 42
+        DateTime Shift 43
+        false Shift 44
+        IntegerLiteral Shift 45
+        NULL Shift 46
+        RealLiteral Shift 47
+        StringLiteral Shift 48
+        true Shift 49
+        <Date> Goto 50
+        <NumLiteral> Goto 51
+        <StrLiteral> Goto 52
+        <Value> Goto 53
+
+
+State 25
+        Prior States: 13
+
+        <CompareExpr> ::= <Atrrib> '<' · <Value>                        EOF  )  AND  OR
+        <Value> ::= · '-' <NumLiteral>                                  EOF  )  AND  OR
+        <Value> ::= · <NumLiteral>                                      EOF  )  AND  OR
+        <Value> ::= · <StrLiteral>                                      EOF  )  AND  OR
+        <Value> ::= · true                                              EOF  )  AND  OR
+        <Value> ::= · false                                             EOF  )  AND  OR
+        <Value> ::= · <Date>                                            EOF  )  AND  OR
+        <Date> ::= · DateTime '.' now                                   EOF  )  AND  OR
+        <Date> ::= · DateTime '(' StringLiteral ')'                     EOF  )  AND  OR
+        <StrLiteral> ::= · StringLiteral                                EOF  )  AND  OR
+        <StrLiteral> ::= · NULL                                         EOF  )  AND  OR
+        <StrLiteral> ::= · '?'                                          EOF  )  AND  OR
+        <NumLiteral> ::= · IntegerLiteral                               EOF  )  AND  OR
+        <NumLiteral> ::= · RealLiteral                                  EOF  )  AND  OR
+
+        '-' Shift 41
+        '?' Shift 42
+        DateTime Shift 43
+        false Shift 44
+        IntegerLiteral Shift 45
+        NULL Shift 46
+        RealLiteral Shift 47
+        StringLiteral Shift 48
+        true Shift 49
+        <Date> Goto 50
+        <NumLiteral> Goto 51
+        <StrLiteral> Goto 52
+        <Value> Goto 54
+
+
+State 26
+        Prior States: 13
+
+        <CompareExpr> ::= <Atrrib> '<=' · <Value>                       EOF  )  AND  OR
+        <Value> ::= · '-' <NumLiteral>                                  EOF  )  AND  OR
+        <Value> ::= · <NumLiteral>                                      EOF  )  AND  OR
+        <Value> ::= · <StrLiteral>                                      EOF  )  AND  OR
+        <Value> ::= · true                                              EOF  )  AND  OR
+        <Value> ::= · false                                             EOF  )  AND  OR
+        <Value> ::= · <Date>                                            EOF  )  AND  OR
+        <Date> ::= · DateTime '.' now                                   EOF  )  AND  OR
+        <Date> ::= · DateTime '(' StringLiteral ')'                     EOF  )  AND  OR
+        <StrLiteral> ::= · StringLiteral                                EOF  )  AND  OR
+        <StrLiteral> ::= · NULL                                         EOF  )  AND  OR
+        <StrLiteral> ::= · '?'                                          EOF  )  AND  OR
+        <NumLiteral> ::= · IntegerLiteral                               EOF  )  AND  OR
+        <NumLiteral> ::= · RealLiteral                                  EOF  )  AND  OR
+
+        '-' Shift 41
+        '?' Shift 42
+        DateTime Shift 43
+        false Shift 44
+        IntegerLiteral Shift 45
+        NULL Shift 46
+        RealLiteral Shift 47
+        StringLiteral Shift 48
+        true Shift 49
+        <Date> Goto 50
+        <NumLiteral> Goto 51
+        <StrLiteral> Goto 52
+        <Value> Goto 55
+
+
+State 27
+        Prior States: 13
+
+        <CompareExpr> ::= <Atrrib> '<>' · <Value>                       EOF  )  AND  OR
+        <Value> ::= · '-' <NumLiteral>                                  EOF  )  AND  OR
+        <Value> ::= · <NumLiteral>                                      EOF  )  AND  OR
+        <Value> ::= · <StrLiteral>                                      EOF  )  AND  OR
+        <Value> ::= · true                                              EOF  )  AND  OR
+        <Value> ::= · false                                             EOF  )  AND  OR
+        <Value> ::= · <Date>                                            EOF  )  AND  OR
+        <Date> ::= · DateTime '.' now                                   EOF  )  AND  OR
+        <Date> ::= · DateTime '(' StringLiteral ')'                     EOF  )  AND  OR
+        <StrLiteral> ::= · StringLiteral                                EOF  )  AND  OR
+        <StrLiteral> ::= · NULL                                         EOF  )  AND  OR
+        <StrLiteral> ::= · '?'                                          EOF  )  AND  OR
+        <NumLiteral> ::= · IntegerLiteral                               EOF  )  AND  OR
+        <NumLiteral> ::= · RealLiteral                                  EOF  )  AND  OR
+
+        '-' Shift 41
+        '?' Shift 42
+        DateTime Shift 43
+        false Shift 44
+        IntegerLiteral Shift 45
+        NULL Shift 46
+        RealLiteral Shift 47
+        StringLiteral Shift 48
+        true Shift 49
+        <Date> Goto 50
+        <NumLiteral> Goto 51
+        <StrLiteral> Goto 52
+        <Value> Goto 56
+
+
+State 28
+        Prior States: 13
+
+        <CompareExpr> ::= <Atrrib> '=' · <Value>                        EOF  )  AND  OR
+        <Value> ::= · '-' <NumLiteral>                                  EOF  )  AND  OR
+        <Value> ::= · <NumLiteral>                                      EOF  )  AND  OR
+        <Value> ::= · <StrLiteral>                                      EOF  )  AND  OR
+        <Value> ::= · true                                              EOF  )  AND  OR
+        <Value> ::= · false                                             EOF  )  AND  OR
+        <Value> ::= · <Date>                                            EOF  )  AND  OR
+        <Date> ::= · DateTime '.' now                                   EOF  )  AND  OR
+        <Date> ::= · DateTime '(' StringLiteral ')'                     EOF  )  AND  OR
+        <StrLiteral> ::= · StringLiteral                                EOF  )  AND  OR
+        <StrLiteral> ::= · NULL                                         EOF  )  AND  OR
+        <StrLiteral> ::= · '?'                                          EOF  )  AND  OR
+        <NumLiteral> ::= · IntegerLiteral                               EOF  )  AND  OR
+        <NumLiteral> ::= · RealLiteral                                  EOF  )  AND  OR
+
+        '-' Shift 41
+        '?' Shift 42
+        DateTime Shift 43
+        false Shift 44
+        IntegerLiteral Shift 45
+        NULL Shift 46
+        RealLiteral Shift 47
+        StringLiteral Shift 48
+        true Shift 49
+        <Date> Goto 50
+        <NumLiteral> Goto 51
+        <StrLiteral> Goto 52
+        <Value> Goto 57
+
+
+State 29
+        Prior States: 13
+
+        <CompareExpr> ::= <Atrrib> '==' · <Value>                       EOF  )  AND  OR
+        <Value> ::= · '-' <NumLiteral>                                  EOF  )  AND  OR
+        <Value> ::= · <NumLiteral>                                      EOF  )  AND  OR
+        <Value> ::= · <StrLiteral>                                      EOF  )  AND  OR
+        <Value> ::= · true                                              EOF  )  AND  OR
+        <Value> ::= · false                                             EOF  )  AND  OR
+        <Value> ::= · <Date>                                            EOF  )  AND  OR
+        <Date> ::= · DateTime '.' now                                   EOF  )  AND  OR
+        <Date> ::= · DateTime '(' StringLiteral ')'                     EOF  )  AND  OR
+        <StrLiteral> ::= · StringLiteral                                EOF  )  AND  OR
+        <StrLiteral> ::= · NULL                                         EOF  )  AND  OR
+        <StrLiteral> ::= · '?'                                          EOF  )  AND  OR
+        <NumLiteral> ::= · IntegerLiteral                               EOF  )  AND  OR
+        <NumLiteral> ::= · RealLiteral                                  EOF  )  AND  OR
+
+        '-' Shift 41
+        '?' Shift 42
+        DateTime Shift 43
+        false Shift 44
+        IntegerLiteral Shift 45
+        NULL Shift 46
+        RealLiteral Shift 47
+        StringLiteral Shift 48
+        true Shift 49
+        <Date> Goto 50
+        <NumLiteral> Goto 51
+        <StrLiteral> Goto 52
+        <Value> Goto 58
+
+
+State 30
+        Prior States: 13
+
+        <CompareExpr> ::= <Atrrib> '>' · <Value>                        EOF  )  AND  OR
+        <Value> ::= · '-' <NumLiteral>                                  EOF  )  AND  OR
+        <Value> ::= · <NumLiteral>                                      EOF  )  AND  OR
+        <Value> ::= · <StrLiteral>                                      EOF  )  AND  OR
+        <Value> ::= · true                                              EOF  )  AND  OR
+        <Value> ::= · false                                             EOF  )  AND  OR
+        <Value> ::= · <Date>                                            EOF  )  AND  OR
+        <Date> ::= · DateTime '.' now                                   EOF  )  AND  OR
+        <Date> ::= · DateTime '(' StringLiteral ')'                     EOF  )  AND  OR
+        <StrLiteral> ::= · StringLiteral                                EOF  )  AND  OR
+        <StrLiteral> ::= · NULL                                         EOF  )  AND  OR
+        <StrLiteral> ::= · '?'                                          EOF  )  AND  OR
+        <NumLiteral> ::= · IntegerLiteral                               EOF  )  AND  OR
+        <NumLiteral> ::= · RealLiteral                                  EOF  )  AND  OR
+
+        '-' Shift 41
+        '?' Shift 42
+        DateTime Shift 43
+        false Shift 44
+        IntegerLiteral Shift 45
+        NULL Shift 46
+        RealLiteral Shift 47
+        StringLiteral Shift 48
+        true Shift 49
+        <Date> Goto 50
+        <NumLiteral> Goto 51
+        <StrLiteral> Goto 52
+        <Value> Goto 59
+
+
+State 31
+        Prior States: 13
+
+        <CompareExpr> ::= <Atrrib> '>=' · <Value>                       EOF  )  AND  OR
+        <Value> ::= · '-' <NumLiteral>                                  EOF  )  AND  OR
+        <Value> ::= · <NumLiteral>                                      EOF  )  AND  OR
+        <Value> ::= · <StrLiteral>                                      EOF  )  AND  OR
+        <Value> ::= · true                                              EOF  )  AND  OR
+        <Value> ::= · false                                             EOF  )  AND  OR
+        <Value> ::= · <Date>                                            EOF  )  AND  OR
+        <Date> ::= · DateTime '.' now                                   EOF  )  AND  OR
+        <Date> ::= · DateTime '(' StringLiteral ')'                     EOF  )  AND  OR
+        <StrLiteral> ::= · StringLiteral                                EOF  )  AND  OR
+        <StrLiteral> ::= · NULL                                         EOF  )  AND  OR
+        <StrLiteral> ::= · '?'                                          EOF  )  AND  OR
+        <NumLiteral> ::= · IntegerLiteral                               EOF  )  AND  OR
+        <NumLiteral> ::= · RealLiteral                                  EOF  )  AND  OR
+
+        '-' Shift 41
+        '?' Shift 42
+        DateTime Shift 43
+        false Shift 44
+        IntegerLiteral Shift 45
+        NULL Shift 46
+        RealLiteral Shift 47
+        StringLiteral Shift 48
+        true Shift 49
+        <Date> Goto 50
+        <NumLiteral> Goto 51
+        <StrLiteral> Goto 52
+        <Value> Goto 60
+
+
+State 32
+        Prior States: 13
+
+        <CompareExpr> ::= <Atrrib> IN · <InList>                        EOF  )  AND  OR
+        <InList> ::= · '(' <ListType> ')'                               EOF  )  AND  OR
+
+        '(' Shift 61
+        <InList> Goto 62
+
+
+State 33
+        Prior States: 13
+
+        <CompareExpr> ::= <Atrrib> IS · NULL                            EOF  )  AND  OR
+        <CompareExpr> ::= <Atrrib> IS · NOT NULL                        EOF  )  AND  OR
+
+        NOT Shift 63
+        NULL Shift 64
+
+
+State 34
+        Prior States: 13
+
+        <CompareExpr> ::= <Atrrib> LIKE · StringLiteral                 EOF  )  AND  OR
+        <CompareExpr> ::= <Atrrib> LIKE · '?'                           EOF  )  AND  OR
+
+        '?' Shift 65
+        StringLiteral Shift 66
+
+
+State 35
+        Prior States: 13
+
+        <CompareExpr> ::= <Atrrib> NOT · LIKE StringLiteral             EOF  )  AND  OR
+        <CompareExpr> ::= <Atrrib> NOT · LIKE '?'                       EOF  )  AND  OR
+        <CompareExpr> ::= <Atrrib> NOT · IN <InList>                    EOF  )  AND  OR
+
+        IN Shift 67
+        LIKE Shift 68
+
+
+State 36
+        Prior States: 17
+
+        <OrExpr> ::= <OrExpr> OR · <AndExpr>                            EOF  )  OR
+        <AndExpr> ::= · <AndExpr> AND <UnaryExpr>                       EOF  )  AND  OR
+        <AndExpr> ::= · <UnaryExpr>                                     EOF  )  AND  OR
+        <UnaryExpr> ::= · NOT <CompareExpr>                             EOF  )  AND  OR
+        <UnaryExpr> ::= · <CompareExpr>                                 EOF  )  AND  OR
+        <CompareExpr> ::= · <Atrrib> '=' <Value>                        EOF  )  AND  OR
+        <CompareExpr> ::= · <Atrrib> '!=' <Value>                       EOF  )  AND  OR
+        <CompareExpr> ::= · <Atrrib> '==' <Value>                       EOF  )  AND  OR
+        <CompareExpr> ::= · <Atrrib> '<>' <Value>                       EOF  )  AND  OR
+        <CompareExpr> ::= · <Atrrib> '<' <Value>                        EOF  )  AND  OR
+        <CompareExpr> ::= · <Atrrib> '>' <Value>                        EOF  )  AND  OR
+        <CompareExpr> ::= · <Atrrib> '<=' <Value>                       EOF  )  AND  OR
+        <CompareExpr> ::= · <Atrrib> '>=' <Value>                       EOF  )  AND  OR
+        <CompareExpr> ::= · <Atrrib> LIKE StringLiteral                 EOF  )  AND  OR
+        <CompareExpr> ::= · <Atrrib> LIKE '?'                           EOF  )  AND  OR
+        <CompareExpr> ::= · <Atrrib> NOT LIKE StringLiteral             EOF  )  AND  OR
+        <CompareExpr> ::= · <Atrrib> NOT LIKE '?'                       EOF  )  AND  OR
+        <CompareExpr> ::= · <Atrrib> IN <InList>                        EOF  )  AND  OR
+        <CompareExpr> ::= · <Atrrib> NOT IN <InList>                    EOF  )  AND  OR
+        <CompareExpr> ::= · <Atrrib> IS NULL                            EOF  )  AND  OR
+        <CompareExpr> ::= · <Atrrib> IS NOT NULL                        EOF  )  AND  OR
+        <CompareExpr> ::= · '(' <Expression> ')'                        EOF  )  AND  OR
+        <Atrrib> ::= · <ObjectValue>                                    !=  <  <=  <>  =  ==  >  >=  IN  IS  LIKE  NOT
+        <ObjectValue> ::= · Keyword '.' Identifier                      !=  <  <=  <>  =  ==  >  >=  IN  IS  LIKE  NOT
+        <ObjectValue> ::= · Keyword '.' Tag                             !=  <  <=  <>  =  ==  >  >=  IN  IS  LIKE  NOT
+
+        '(' Shift 9
+        Keyword Shift 10
+        NOT Shift 11
+        <AndExpr> Goto 69
+        <Atrrib> Goto 13
+        <CompareExpr> Goto 14
+        <ObjectValue> Goto 16
+        <UnaryExpr> Goto 18
+
+
+State 37
+        Prior States: 20
+
+        <CompareExpr> ::= '(' <Expression> ')' ·                        EOF  )  AND  OR
+
+        (EOF) Reduce Rule 25
+        ')' Reduce Rule 25
+        AND Reduce Rule 25
+        OR Reduce Rule 25
+
+
+State 38
+        Prior States: 21
+
+        <ObjectValue> ::= Keyword '.' Identifier ·                      !=  <  <=  <>  =  ==  >  >=  IN  IS  LIKE  NOT
+
+        '!=' Reduce Rule 44
+        '<' Reduce Rule 44
+        '<=' Reduce Rule 44
+        '<>' Reduce Rule 44
+        '=' Reduce Rule 44
+        '==' Reduce Rule 44
+        '>' Reduce Rule 44
+        '>=' Reduce Rule 44
+        IN Reduce Rule 44
+        IS Reduce Rule 44
+        LIKE Reduce Rule 44
+        NOT Reduce Rule 44
+
+
+State 39
+        Prior States: 21
+
+        <ObjectValue> ::= Keyword '.' Tag ·                             !=  <  <=  <>  =  ==  >  >=  IN  IS  LIKE  NOT
+
+        '!=' Reduce Rule 45
+        '<' Reduce Rule 45
+        '<=' Reduce Rule 45
+        '<>' Reduce Rule 45
+        '=' Reduce Rule 45
+        '==' Reduce Rule 45
+        '>' Reduce Rule 45
+        '>=' Reduce Rule 45
+        IN Reduce Rule 45
+        IS Reduce Rule 45
+        LIKE Reduce Rule 45
+        NOT Reduce Rule 45
+
+
+State 40
+        Prior States: 23
+
+        <AndExpr> ::= <AndExpr> AND <UnaryExpr> ·                       EOF  )  AND  OR
+
+        (EOF) Reduce Rule 5
+        ')' Reduce Rule 5
+        AND Reduce Rule 5
+        OR Reduce Rule 5
+
+
+State 41
+        Prior States: 24, 25, 26, 27, 28, 29, 30, 31
+
+        <Value> ::= '-' · <NumLiteral>                                  EOF  )  AND  OR
+        <NumLiteral> ::= · IntegerLiteral                               EOF  )  AND  OR
+        <NumLiteral> ::= · RealLiteral                                  EOF  )  AND  OR
+
+        IntegerLiteral Shift 45
+        RealLiteral Shift 47
+        <NumLiteral> Goto 70
+
+
+State 42
+        Prior States: 24, 25, 26, 27, 28, 29, 30, 31, 61, 89
+
+        <StrLiteral> ::= '?' ·                                          EOF  )  ,  AND  OR
+
+        (EOF) Reduce Rule 37
+        ')' Reduce Rule 37
+        ',' Reduce Rule 37
+        AND Reduce Rule 37
+        OR Reduce Rule 37
+
+
+State 43
+        Prior States: 24, 25, 26, 27, 28, 29, 30, 31, 61, 86
+
+        <Date> ::= DateTime · '.' now                                   EOF  )  ,  AND  OR
+        <Date> ::= DateTime · '(' StringLiteral ')'                     EOF  )  ,  AND  OR
+
+        '(' Shift 71
+        '.' Shift 72
+
+
+State 44
+        Prior States: 24, 25, 26, 27, 28, 29, 30, 31
+
+        <Value> ::= false ·                                             EOF  )  AND  OR
+
+        (EOF) Reduce Rule 31
+        ')' Reduce Rule 31
+        AND Reduce Rule 31
+        OR Reduce Rule 31
+
+
+State 45
+        Prior States: 24, 25, 26, 27, 28, 29, 30, 31, 41, 61, 88
+
+        <NumLiteral> ::= IntegerLiteral ·                               EOF  )  ,  AND  OR
+
+        (EOF) Reduce Rule 38
+        ')' Reduce Rule 38
+        ',' Reduce Rule 38
+        AND Reduce Rule 38
+        OR Reduce Rule 38
+
+
+State 46
+        Prior States: 24, 25, 26, 27, 28, 29, 30, 31, 61, 89
+
+        <StrLiteral> ::= NULL ·                                         EOF  )  ,  AND  OR
+
+        (EOF) Reduce Rule 36
+        ')' Reduce Rule 36
+        ',' Reduce Rule 36
+        AND Reduce Rule 36
+        OR Reduce Rule 36
+
+
+State 47
+        Prior States: 24, 25, 26, 27, 28, 29, 30, 31, 41, 61, 88
+
+        <NumLiteral> ::= RealLiteral ·                                  EOF  )  ,  AND  OR
+
+        (EOF) Reduce Rule 39
+        ')' Reduce Rule 39
+        ',' Reduce Rule 39
+        AND Reduce Rule 39
+        OR Reduce Rule 39
+
+
+State 48
+        Prior States: 24, 25, 26, 27, 28, 29, 30, 31, 61, 89
+
+        <StrLiteral> ::= StringLiteral ·                                EOF  )  ,  AND  OR
+
+        (EOF) Reduce Rule 35
+        ')' Reduce Rule 35
+        ',' Reduce Rule 35
+        AND Reduce Rule 35
+        OR Reduce Rule 35
+
+
+State 49
+        Prior States: 24, 25, 26, 27, 28, 29, 30, 31
+
+        <Value> ::= true ·                                              EOF  )  AND  OR
+
+        (EOF) Reduce Rule 30
+        ')' Reduce Rule 30
+        AND Reduce Rule 30
+        OR Reduce Rule 30
+
+
+State 50
+        Prior States: 24, 25, 26, 27, 28, 29, 30, 31
+
+        <Value> ::= <Date> ·                                            EOF  )  AND  OR
+
+        (EOF) Reduce Rule 32
+        ')' Reduce Rule 32
+        AND Reduce Rule 32
+        OR Reduce Rule 32
+
+
+State 51
+        Prior States: 24, 25, 26, 27, 28, 29, 30, 31
+
+        <Value> ::= <NumLiteral> ·                                      EOF  )  AND  OR
+
+        (EOF) Reduce Rule 28
+        ')' Reduce Rule 28
+        AND Reduce Rule 28
+        OR Reduce Rule 28
+
+
+State 52
+        Prior States: 24, 25, 26, 27, 28, 29, 30, 31
+
+        <Value> ::= <StrLiteral> ·                                      EOF  )  AND  OR
+
+        (EOF) Reduce Rule 29
+        ')' Reduce Rule 29
+        AND Reduce Rule 29
+        OR Reduce Rule 29
+
+
+State 53
+        Prior States: 24
+
+        <CompareExpr> ::= <Atrrib> '!=' <Value> ·                       EOF  )  AND  OR
+
+        (EOF) Reduce Rule 10
+        ')' Reduce Rule 10
+        AND Reduce Rule 10
+        OR Reduce Rule 10
+
+
+State 54
+        Prior States: 25
+
+        <CompareExpr> ::= <Atrrib> '<' <Value> ·                        EOF  )  AND  OR
+
+        (EOF) Reduce Rule 13
+        ')' Reduce Rule 13
+        AND Reduce Rule 13
+        OR Reduce Rule 13
+
+
+State 55
+        Prior States: 26
+
+        <CompareExpr> ::= <Atrrib> '<=' <Value> ·                       EOF  )  AND  OR
+
+        (EOF) Reduce Rule 15
+        ')' Reduce Rule 15
+        AND Reduce Rule 15
+        OR Reduce Rule 15
+
+
+State 56
+        Prior States: 27
+
+        <CompareExpr> ::= <Atrrib> '<>' <Value> ·                       EOF  )  AND  OR
+
+        (EOF) Reduce Rule 12
+        ')' Reduce Rule 12
+        AND Reduce Rule 12
+        OR Reduce Rule 12
+
+
+State 57
+        Prior States: 28
+
+        <CompareExpr> ::= <Atrrib> '=' <Value> ·                        EOF  )  AND  OR
+
+        (EOF) Reduce Rule 9
+        ')' Reduce Rule 9
+        AND Reduce Rule 9
+        OR Reduce Rule 9
+
+
+State 58
+        Prior States: 29
+
+        <CompareExpr> ::= <Atrrib> '==' <Value> ·                       EOF  )  AND  OR
+
+        (EOF) Reduce Rule 11
+        ')' Reduce Rule 11
+        AND Reduce Rule 11
+        OR Reduce Rule 11
+
+
+State 59
+        Prior States: 30
+
+        <CompareExpr> ::= <Atrrib> '>' <Value> ·                        EOF  )  AND  OR
+
+        (EOF) Reduce Rule 14
+        ')' Reduce Rule 14
+        AND Reduce Rule 14
+        OR Reduce Rule 14
+
+
+State 60
+        Prior States: 31
+
+        <CompareExpr> ::= <Atrrib> '>=' <Value> ·                       EOF  )  AND  OR
+
+        (EOF) Reduce Rule 16
+        ')' Reduce Rule 16
+        AND Reduce Rule 16
+        OR Reduce Rule 16
+
+
+State 61
+        Prior States: 32, 67
+
+        <InList> ::= '(' · <ListType> ')'                               EOF  )  AND  OR
+        <Date> ::= · DateTime '.' now                                   )  ,
+        <Date> ::= · DateTime '(' StringLiteral ')'                     )  ,
+        <StrLiteral> ::= · StringLiteral                                )  ,
+        <StrLiteral> ::= · NULL                                         )  ,
+        <StrLiteral> ::= · '?'                                          )  ,
+        <NumLiteral> ::= · IntegerLiteral                               )  ,
+        <NumLiteral> ::= · RealLiteral                                  )  ,
+        <ListType> ::= · <NumLiteralList>                               )
+        <ListType> ::= · <StrLiteralList>                               )
+        <ListType> ::= · <DateList>                                     )
+        <NumLiteralList> ::= · <NumLiteral> ',' <NumLiteralList>        )
+        <NumLiteralList> ::= · <NumLiteral>                             )
+        <StrLiteralList> ::= · <StrLiteral> ',' <StrLiteralList>        )
+        <StrLiteralList> ::= · <StrLiteral>                             )
+        <DateList> ::= · <Date> ',' <DateList>                          )
+        <DateList> ::= · <Date>                                         )
+
+        '?' Shift 42
+        DateTime Shift 43
+        IntegerLiteral Shift 45
+        NULL Shift 46
+        RealLiteral Shift 47
+        StringLiteral Shift 48
+        <Date> Goto 73
+        <DateList> Goto 74
+        <ListType> Goto 75
+        <NumLiteral> Goto 76
+        <NumLiteralList> Goto 77
+        <StrLiteral> Goto 78
+        <StrLiteralList> Goto 79
+
+
+State 62
+        Prior States: 32
+
+        <CompareExpr> ::= <Atrrib> IN <InList> ·                        EOF  )  AND  OR
+
+        (EOF) Reduce Rule 21
+        ')' Reduce Rule 21
+        AND Reduce Rule 21
+        OR Reduce Rule 21
+
+
+State 63
+        Prior States: 33
+
+        <CompareExpr> ::= <Atrrib> IS NOT · NULL                        EOF  )  AND  OR
+
+        NULL Shift 80
+
+
+State 64
+        Prior States: 33
+
+        <CompareExpr> ::= <Atrrib> IS NULL ·                            EOF  )  AND  OR
+
+        (EOF) Reduce Rule 23
+        ')' Reduce Rule 23
+        AND Reduce Rule 23
+        OR Reduce Rule 23
+
+
+State 65
+        Prior States: 34
+
+        <CompareExpr> ::= <Atrrib> LIKE '?' ·                           EOF  )  AND  OR
+
+        (EOF) Reduce Rule 18
+        ')' Reduce Rule 18
+        AND Reduce Rule 18
+        OR Reduce Rule 18
+
+
+State 66
+        Prior States: 34
+
+        <CompareExpr> ::= <Atrrib> LIKE StringLiteral ·                 EOF  )  AND  OR
+
+        (EOF) Reduce Rule 17
+        ')' Reduce Rule 17
+        AND Reduce Rule 17
+        OR Reduce Rule 17
+
+
+State 67
+        Prior States: 35
+
+        <CompareExpr> ::= <Atrrib> NOT IN · <InList>                    EOF  )  AND  OR
+        <InList> ::= · '(' <ListType> ')'                               EOF  )  AND  OR
+
+        '(' Shift 61
+        <InList> Goto 81
+
+
+State 68
+        Prior States: 35
+
+        <CompareExpr> ::= <Atrrib> NOT LIKE · StringLiteral             EOF  )  AND  OR
+        <CompareExpr> ::= <Atrrib> NOT LIKE · '?'                       EOF  )  AND  OR
+
+        '?' Shift 82
+        StringLiteral Shift 83
+
+
+State 69
+        Prior States: 36
+
+        <OrExpr> ::= <OrExpr> OR <AndExpr> ·                            EOF  )  OR
+        <AndExpr> ::= <AndExpr> · AND <UnaryExpr>                       EOF  )  AND  OR
+
+        AND Shift 23
+        (EOF) Reduce Rule 3
+        ')' Reduce Rule 3
+        OR Reduce Rule 3
+
+
+State 70
+        Prior States: 41
+
+        <Value> ::= '-' <NumLiteral> ·                                  EOF  )  AND  OR
+
+        (EOF) Reduce Rule 27
+        ')' Reduce Rule 27
+        AND Reduce Rule 27
+        OR Reduce Rule 27
+
+
+State 71
+        Prior States: 43
+
+        <Date> ::= DateTime '(' · StringLiteral ')'                     EOF  )  ,  AND  OR
+
+        StringLiteral Shift 84
+
+
+State 72
+        Prior States: 43
+
+        <Date> ::= DateTime '.' · now                                   EOF  )  ,  AND  OR
+
+        now Shift 85
+
+
+State 73
+        Prior States: 61, 86
+
+        <DateList> ::= <Date> · ',' <DateList>                          )
+        <DateList> ::= <Date> ·                                         )
+
+        ',' Shift 86
+        ')' Reduce Rule 55
+
+
+State 74
+        Prior States: 61
+
+        <ListType> ::= <DateList> ·                                     )
+
+        ')' Reduce Rule 49
+
+
+State 75
+        Prior States: 61
+
+        <InList> ::= '(' <ListType> · ')'                               EOF  )  AND  OR
+
+        ')' Shift 87
+
+
+State 76
+        Prior States: 61, 88
+
+        <NumLiteralList> ::= <NumLiteral> · ',' <NumLiteralList>        )
+        <NumLiteralList> ::= <NumLiteral> ·                             )
+
+        ',' Shift 88
+        ')' Reduce Rule 51
+
+
+State 77
+        Prior States: 61
+
+        <ListType> ::= <NumLiteralList> ·                               )
+
+        ')' Reduce Rule 47
+
+
+State 78
+        Prior States: 61, 89
+
+        <StrLiteralList> ::= <StrLiteral> · ',' <StrLiteralList>        )
+        <StrLiteralList> ::= <StrLiteral> ·                             )
+
+        ',' Shift 89
+        ')' Reduce Rule 53
+
+
+State 79
+        Prior States: 61
+
+        <ListType> ::= <StrLiteralList> ·                               )
+
+        ')' Reduce Rule 48
+
+
+State 80
+        Prior States: 63
+
+        <CompareExpr> ::= <Atrrib> IS NOT NULL ·                        EOF  )  AND  OR
+
+        (EOF) Reduce Rule 24
+        ')' Reduce Rule 24
+        AND Reduce Rule 24
+        OR Reduce Rule 24
+
+
+State 81
+        Prior States: 67
+
+        <CompareExpr> ::= <Atrrib> NOT IN <InList> ·                    EOF  )  AND  OR
+
+        (EOF) Reduce Rule 22
+        ')' Reduce Rule 22
+        AND Reduce Rule 22
+        OR Reduce Rule 22
+
+
+State 82
+        Prior States: 68
+
+        <CompareExpr> ::= <Atrrib> NOT LIKE '?' ·                       EOF  )  AND  OR
+
+        (EOF) Reduce Rule 20
+        ')' Reduce Rule 20
+        AND Reduce Rule 20
+        OR Reduce Rule 20
+
+
+State 83
+        Prior States: 68
+
+        <CompareExpr> ::= <Atrrib> NOT LIKE StringLiteral ·             EOF  )  AND  OR
+
+        (EOF) Reduce Rule 19
+        ')' Reduce Rule 19
+        AND Reduce Rule 19
+        OR Reduce Rule 19
+
+
+State 84
+        Prior States: 71
+
+        <Date> ::= DateTime '(' StringLiteral · ')'                     EOF  )  ,  AND  OR
+
+        ')' Shift 90
+
+
+State 85
+        Prior States: 72
+
+        <Date> ::= DateTime '.' now ·                                   EOF  )  ,  AND  OR
+
+        (EOF) Reduce Rule 33
+        ')' Reduce Rule 33
+        ',' Reduce Rule 33
+        AND Reduce Rule 33
+        OR Reduce Rule 33
+
+
+State 86
+        Prior States: 73
+
+        <DateList> ::= <Date> ',' · <DateList>                          )
+        <Date> ::= · DateTime '.' now                                   )  ,
+        <Date> ::= · DateTime '(' StringLiteral ')'                     )  ,
+        <DateList> ::= · <Date> ',' <DateList>                          )
+        <DateList> ::= · <Date>                                         )
+
+        DateTime Shift 43
+        <Date> Goto 73
+        <DateList> Goto 91
+
+
+State 87
+        Prior States: 75
+
+        <InList> ::= '(' <ListType> ')' ·                               EOF  )  AND  OR
+
+        (EOF) Reduce Rule 46
+        ')' Reduce Rule 46
+        AND Reduce Rule 46
+        OR Reduce Rule 46
+
+
+State 88
+        Prior States: 76
+
+        <NumLiteralList> ::= <NumLiteral> ',' · <NumLiteralList>        )
+        <NumLiteral> ::= · IntegerLiteral                               )  ,
+        <NumLiteral> ::= · RealLiteral                                  )  ,
+        <NumLiteralList> ::= · <NumLiteral> ',' <NumLiteralList>        )
+        <NumLiteralList> ::= · <NumLiteral>                             )
+
+        IntegerLiteral Shift 45
+        RealLiteral Shift 47
+        <NumLiteral> Goto 76
+        <NumLiteralList> Goto 92
+
+
+State 89
+        Prior States: 78
+
+        <StrLiteralList> ::= <StrLiteral> ',' · <StrLiteralList>        )
+        <StrLiteral> ::= · StringLiteral                                )  ,
+        <StrLiteral> ::= · NULL                                         )  ,
+        <StrLiteral> ::= · '?'                                          )  ,
+        <StrLiteralList> ::= · <StrLiteral> ',' <StrLiteralList>        )
+        <StrLiteralList> ::= · <StrLiteral>                             )
+
+        '?' Shift 42
+        NULL Shift 46
+        StringLiteral Shift 48
+        <StrLiteral> Goto 78
+        <StrLiteralList> Goto 93
+
+
+State 90
+        Prior States: 84
+
+        <Date> ::= DateTime '(' StringLiteral ')' ·                     EOF  )  ,  AND  OR
+
+        (EOF) Reduce Rule 34
+        ')' Reduce Rule 34
+        ',' Reduce Rule 34
+        AND Reduce Rule 34
+        OR Reduce Rule 34
+
+
+State 91
+        Prior States: 86
+
+        <DateList> ::= <Date> ',' <DateList> ·                          )
+
+        ')' Reduce Rule 54
+
+
+State 92
+        Prior States: 88
+
+        <NumLiteralList> ::= <NumLiteral> ',' <NumLiteralList> ·        )
+
+        ')' Reduce Rule 50
+
+
+State 93
+        Prior States: 89
+
+        <StrLiteralList> ::= <StrLiteral> ',' <StrLiteralList> ·        )
+
+        ')' Reduce Rule 52
+
+
+
+

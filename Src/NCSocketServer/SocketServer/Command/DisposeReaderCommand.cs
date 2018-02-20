@@ -13,11 +13,10 @@
 // limitations under the License.
 
 using System;
-using System.Collections.Generic;
-using System.Text;
-using Alachisoft.NCache.Common.DataStructures;
 using Alachisoft.NCache.Caching;
-using Alachisoft.NCache.Common.Util;
+using Alachisoft.NCache.SocketServer.RuntimeLogging;
+using System.Diagnostics;
+using Alachisoft.NCache.Common.Monitoring;
 
 namespace Alachisoft.NCache.SocketServer.Command
 {
@@ -34,15 +33,19 @@ namespace Alachisoft.NCache.SocketServer.Command
         public override void ExecuteCommand(ClientManager clientManager, Alachisoft.NCache.Common.Protobuf.Command command)
         {
             CommandInfo cmdInfo;
-
+            int overload;
+            string exception = null;
+            Stopwatch stopWatch = new Stopwatch();
+            stopWatch.Start();
             try
             {
+                overload = command.MethodOverload;
                 cmdInfo = ParseCommand(command, clientManager);
             }
             catch (Exception exc)
             {
                 if (!base.immatureId.Equals("-2"))
-                    _serializedResponsePackets.Add(Alachisoft.NCache.Common.Util.ResponseHelper.SerializeExceptionResponse(exc, command.requestID));
+                    _serializedResponsePackets.Add(Alachisoft.NCache.Common.Util.ResponseHelper.SerializeExceptionResponse(exc, command.requestID, command.commandID));
 
                 return;
             }
@@ -51,9 +54,11 @@ namespace Alachisoft.NCache.SocketServer.Command
             {
                 NCache nCache = clientManager.CmdExecuter as NCache;
                 nCache.Cache.DisposeReader(cmdInfo.ReaderId, cmdInfo.OperationContext);
+                stopWatch.Stop();
                 Alachisoft.NCache.Common.Protobuf.Response response = new Alachisoft.NCache.Common.Protobuf.Response();
                 Alachisoft.NCache.Common.Protobuf.DisposeReaderResponse disposeReaderResponse = new Alachisoft.NCache.Common.Protobuf.DisposeReaderResponse();
                 response.requestId = Convert.ToInt64(cmdInfo.RequestId);
+                response.commandID = command.commandID;
                 response.responseType = Alachisoft.NCache.Common.Protobuf.Response.Type.DISPOSE_READER;
                 response.disposeReaderResponse = disposeReaderResponse;
 
@@ -61,7 +66,23 @@ namespace Alachisoft.NCache.SocketServer.Command
             }
             catch (Exception exc)
             {
-                _serializedResponsePackets.Add(Alachisoft.NCache.Common.Util.ResponseHelper.SerializeExceptionResponse(exc, command.requestID));
+                exception = exc.ToString();
+                _serializedResponsePackets.Add(Alachisoft.NCache.Common.Util.ResponseHelper.SerializeExceptionResponse(exc, command.requestID,command.commandID));
+            }
+            finally
+            {
+                TimeSpan executionTime = stopWatch.Elapsed;
+                try
+                {
+                    if (Alachisoft.NCache.Management.APILogging.APILogManager.APILogManger != null && Alachisoft.NCache.Management.APILogging.APILogManager.EnableLogging)
+                    {
+                        APILogItemBuilder log = new APILogItemBuilder(MethodsName.DisposeReader.ToLower());
+                        log.GenerateDisposeReaderAPILogItem(overload, exception, executionTime, clientManager.ClientID.ToLower(), clientManager.ClientSocketId.ToString());
+                    }
+                }
+                catch
+                {
+                }
             }
         }
 
@@ -82,7 +103,4 @@ namespace Alachisoft.NCache.SocketServer.Command
             return cmdInfo;
         }
     }
-
 }
-
-

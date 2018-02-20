@@ -14,10 +14,9 @@
 
 using System;
 using System.Collections;
-using Alachisoft.NCache.Parser;
 using Alachisoft.NCache.Common.Queries;
+using Alachisoft.NCache.Parser;
 using Alachisoft.NCache.Common.DataStructures.Clustered;
-using Alachisoft.NCache.Common.Enum;
 
 namespace Alachisoft.NCache.Caching.Queries.Filters
 {
@@ -25,6 +24,8 @@ namespace Alachisoft.NCache.Caching.Queries.Filters
     {
         private IFunctor functor;
         private ArrayList members;
+        private const string RUNTIME_VALUE = "_$Runtime#Value$5%_";
+        private bool _orderRectified;
 
         public IsInListPredicate()
         {
@@ -36,12 +37,16 @@ namespace Alachisoft.NCache.Caching.Queries.Filters
             set { functor = value; }
         }
 
-        public ArrayList Values { get { return members; } }
-
         public void Append(object item)
         {
             object obj = ((IGenerator)item).Evaluate();
-            if (members.Contains(obj)) return;
+
+            if (obj == null && item is RuntimeValue)
+            {
+                obj = RUNTIME_VALUE;
+            }
+
+            //if (members.Contains(obj)) return;
             members.Add(obj);
             members.Sort();
         }
@@ -61,47 +66,35 @@ namespace Alachisoft.NCache.Caching.Queries.Filters
 
             if (store != null)
             {
-                members = queryContext.AttributeValues[((MemberFunction)functor).MemberName] as ArrayList;
-                if (members == null)
-                {
-                    if (queryContext.AttributeValues.Count > 0)
-                    {
-                        members = new ArrayList();
-                        members.Add(queryContext.AttributeValues[((MemberFunction)functor).MemberName]);
-                    }
-                    else
-                    {
-                        throw new Exception("Value(s) not specified for indexed attribute " + ((MemberFunction)functor).MemberName + ".");
-                    }
-                }
+                var values = GetComparibleValues(queryContext);
 
                 IQueryResult tempResult = queryContext.InternalQueryResult;
-                queryContext.InternalQueryResult = new Common.Queries.HashedQueryResult();
+                queryContext.InternalQueryResult = new Common.Queries.HashedQueryResult(queryContext.KeyFilter, queryContext.CompoundFilter);
 
 
                 if (!Inverse)
                 {
-                    for (int i = 0; i < members.Count; i++)
+                    for (int i = 0; i < values.Count; i++)
                     {
-                        store.GetData(members[i], ComparisonType.EQUALS, queryContext.InternalQueryResult, CollectionOperation.Union);
+                        store.GetData(values[i], ComparisonType.EQUALS, queryContext.InternalQueryResult, CollectionOperation.Union);
                     }
                 }
                 else
                 {
-                    store.GetData(members[0], ComparisonType.NOT_EQUALS, queryContext.InternalQueryResult, CollectionOperation.Union);
+                    store.GetData(values[0], ComparisonType.NOT_EQUALS, queryContext.InternalQueryResult, CollectionOperation.Union);
                     if (queryContext.InternalQueryResult != null)
                     {
                         if (queryContext.InternalQueryResult.Count > 0)
                         {
-                            for (int i = 1; i < members.Count; i++)
+                            for (int i = 1; i < values.Count; i++)
                             {
-                                store.GetData(members[i], ComparisonType.EQUALS, queryContext.InternalQueryResult, CollectionOperation.Subtract);
+                                store.GetData(values[i], ComparisonType.EQUALS, queryContext.InternalQueryResult, CollectionOperation.Subtract);
                             }
                         }
                     }
                 }
                 queryContext.InternalQueryResult.Merge(tempResult, mergeType);
-                
+
             }
             else
             {
@@ -116,50 +109,37 @@ namespace Alachisoft.NCache.Caching.Queries.Filters
 
             if (store != null)
             {
-                members = queryContext.AttributeValues[((MemberFunction)functor).MemberName] as ArrayList;
-
-                if (members == null)
-                {
-                    if (queryContext.AttributeValues.Count > 0)
-                    {
-                        members = new ArrayList();
-                        members.Add(queryContext.AttributeValues[((MemberFunction)functor).MemberName]);
-                    }
-                    else
-                    {
-                        throw new Exception("Value(s) not specified for indexed attribute " + ((MemberFunction)functor).MemberName + ".");
-                    }
-                }
+                var values = GetComparibleValues(queryContext);
 
                 ClusteredArrayList keyList = new ClusteredArrayList();
                 if (!Inverse)
                 {
                     ClusteredArrayList distinctMembers = new ClusteredArrayList();
 
-                    for (int i = 0; i < members.Count; i++)
+                    for (int i = 0; i < values.Count; i++)
                     {
-                        if (!distinctMembers.Contains(members[i]))
+                        if (!distinctMembers.Contains(values[i]))
                         {
-                            distinctMembers.Add(members[i]);
-                            store.GetData(members[i], ComparisonType.EQUALS, queryContext.InternalQueryResult, CollectionOperation.Union);
+                            distinctMembers.Add(values[i]);
+                            store.GetData(values[i], ComparisonType.EQUALS, queryContext.InternalQueryResult, CollectionOperation.Union);
                         }
                     }
                 }
                 else
                 {
                     ArrayList distinctMembers = new ArrayList();
-                    queryContext.InternalQueryResult = new HashedQueryResult();
-                    store.GetData(members[0], ComparisonType.NOT_EQUALS, queryContext.InternalQueryResult, CollectionOperation.Union);
+                    queryContext.InternalQueryResult = new HashedQueryResult(queryContext.KeyFilter, queryContext.CompoundFilter);
+                    store.GetData(values[0], ComparisonType.NOT_EQUALS, queryContext.InternalQueryResult, CollectionOperation.Union);
                     if (queryContext.InternalQueryResult != null)
                     {
                         if (queryContext.InternalQueryResult.Count > 0)
                         {
-                            for (int i = 1; i < members.Count; i++)
+                            for (int i = 1; i < values.Count; i++)
                             {
-                                if (!distinctMembers.Contains(members[i]))
+                                if (!distinctMembers.Contains(values[i]))
                                 {
-                                    distinctMembers.Add(members[i]);
-                                    store.GetData(members[i], ComparisonType.EQUALS, queryContext.InternalQueryResult, CollectionOperation.Subtract);
+                                    distinctMembers.Add(values[i]);
+                                    store.GetData(values[i], ComparisonType.EQUALS, queryContext.InternalQueryResult, CollectionOperation.Subtract);
                                 }
                             }
                         }
@@ -171,13 +151,78 @@ namespace Alachisoft.NCache.Caching.Queries.Filters
                 throw new AttributeIndexNotDefined("Index is not defined for attribute '" + ((MemberFunction)functor).MemberName + "'");
             }
         }
-        
+
+        private ArrayList GetComparibleValues(QueryContext queryContext)
+        {
+            ArrayList values = new ArrayList();
+
+            var providedValues = queryContext.AttributeValues[((MemberFunction)functor).MemberName] as ArrayList;
+
+            if (providedValues == null)
+            {
+                if (queryContext.AttributeValues.Count > 0)
+                {
+                    providedValues = new ArrayList();
+                    providedValues.Add(queryContext.AttributeValues[((MemberFunction)functor).MemberName]);
+                }
+            }
+
+            int providedValueIndex = 0;
+
+            if (members != null)
+            {
+
+                bool valuesMissing = false;
+                bool insufficientValues = false;
+
+                for (int i = 0; i < members.Count; i++)
+                {
+                    var value = members[i];
+
+                    if (String.Equals(value, RUNTIME_VALUE))
+                    {
+                        if (providedValues != null && providedValues.Count > 0)
+                        {
+                            if (providedValueIndex < providedValues.Count)
+                            {
+                                value = providedValues[providedValueIndex];
+                                providedValueIndex++;
+                            }
+                            else
+                                insufficientValues = true;
+                        }
+                        else
+                            valuesMissing = true;
+                    }
+
+                    if (valuesMissing)
+                        throw new Exception("Value(s) not specified for indexed attribute " + ((MemberFunction)functor).MemberName + ".");
+
+                    if (insufficientValues)
+                        throw new Exception("Less value(s) are specified for indexed attribute " + ((MemberFunction)functor).MemberName + ".");
+
+                    //avoid duplicate values
+                    if (!values.Contains(value)) values.Add(value);
+                }
+            }
+
+            if (providedValues != null && providedValues.Count > providedValueIndex)
+                throw new Exception("Extra value(s) are specified for indexed attribute " + ((MemberFunction)functor).MemberName + ".");
+
+            return values;
+
+        }
+
         public override string ToString()
         {
             string text = Inverse ? "is not in (" : "is in (";
             for (int i = 0; i < members.Count; i++)
             {
                 if (i > 0) text += ", ";
+                var value = members[i].ToString();
+                if (string.Equals(value, RUNTIME_VALUE))
+                    value = "?";
+
                 text += members[i].ToString();
             }
             text += ")";
@@ -197,7 +242,7 @@ namespace Alachisoft.NCache.Caching.Queries.Filters
                     {
                         for (int i = 0; i < members.Count; i++)
                             if (members[i] != other.members[i]) return -1;
-                        return 0; 
+                        return 0; //members.CompareTo(other.members);
                     }
                 }
             }

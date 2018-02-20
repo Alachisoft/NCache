@@ -10,7 +10,6 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 // $Id: SuspectedException.java,v 1.1.1.1 2003/09/09 01:24:08 belaban Exp $
-
 using System;
 namespace Alachisoft.NGroups
 {

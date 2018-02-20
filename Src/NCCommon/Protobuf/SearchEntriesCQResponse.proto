@@ -1,0 +1,7 @@
+import "CQResultSet.proto";
+
+option java_outer_classname="SearchEntriesCQResponseProtocol";
+package Alachisoft.NCache.Common.Protobuf;
+message SearchEntriesCQResponse {
+	optional CQResultSet queryResultSet = 1;
+}

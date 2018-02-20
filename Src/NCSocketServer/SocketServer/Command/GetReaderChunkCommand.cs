@@ -11,10 +11,14 @@
 // WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
 // See the License for the specific language governing permissions and
 // limitations under the License.
+
 using System;
 using Alachisoft.NCache.Caching;
 using Alachisoft.NCache.SocketServer.Command.ResponseBuilders;
 using Alachisoft.NCache.Common.DataReader;
+using System.Diagnostics;
+using Alachisoft.NCache.SocketServer.RuntimeLogging;
+using Alachisoft.NCache.Common.Monitoring;
 
 namespace Alachisoft.NCache.SocketServer.Command
 {
@@ -32,29 +36,50 @@ namespace Alachisoft.NCache.SocketServer.Command
         public override void ExecuteCommand(ClientManager clientManager, Alachisoft.NCache.Common.Protobuf.Command command)
         {
             CommandInfo cmdInfo;
-
+            int overload;
+            int count = 0;
+            string exception = null;
+            Stopwatch stopWatch = new Stopwatch();
+            stopWatch.Start();
             try
             {
+                overload = 1;
                 cmdInfo = ParseCommand(command, clientManager);
             }
             catch (Exception exc)
             {
                 if (!base.immatureId.Equals("-2"))
-                    _serializedResponsePackets.Add(Alachisoft.NCache.Common.Util.ResponseHelper.SerializeExceptionResponse(exc, command.requestID));
+                    _serializedResponsePackets.Add(Alachisoft.NCache.Common.Util.ResponseHelper.SerializeExceptionResponse(exc, command.requestID, command.commandID));
 
                 return;
             }
 
-           try
+            try
             {
                 NCache nCache = clientManager.CmdExecuter as NCache;
                 ReaderResultSet reader = nCache.Cache.GetReaderChunk(cmdInfo.ReaderId, cmdInfo.nextIndex, false, cmdInfo.OperationContext);
-
-                ReaderResponseBuilder.BuildReaderChunkResponse(reader, cmdInfo.RequestId, _serializedResponsePackets);
+                stopWatch.Stop();
+                ReaderResponseBuilder.BuildReaderChunkResponse(reader, cmdInfo.RequestId, _serializedResponsePackets, command.commandID, clientManager.ClientVersion < 4620, out count);
             }
-             catch (Exception exc)
+            catch (Exception exc)
             {
-                _serializedResponsePackets.Add(Alachisoft.NCache.Common.Util.ResponseHelper.SerializeExceptionResponse(exc, command.requestID));
+                exception = exc.ToString();
+                _serializedResponsePackets.Add(Alachisoft.NCache.Common.Util.ResponseHelper.SerializeExceptionResponse(exc, command.requestID, command.commandID));
+            }
+            finally
+            {
+                TimeSpan executionTime = stopWatch.Elapsed;
+                try
+                {
+                    if (Alachisoft.NCache.Management.APILogging.APILogManager.APILogManger != null && Alachisoft.NCache.Management.APILogging.APILogManager.EnableLogging)
+                    {
+                        APILogItemBuilder log = new APILogItemBuilder(MethodsName.GetReaderChunkCommand.ToLower());
+                        log.GenerateGetReaderChunkCommand(cmdInfo.ReaderId, count, overload, exception, executionTime, clientManager.ClientID, clientManager.ClientSocketId.ToString());
+                    }
+                }
+                catch
+                {
+                }
             }
         }
 
@@ -75,7 +100,4 @@ namespace Alachisoft.NCache.SocketServer.Command
             return cmdInfo;
         }
     }
-
 }
-
-

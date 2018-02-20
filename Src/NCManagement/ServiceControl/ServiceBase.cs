@@ -10,10 +10,12 @@
 // distributed under the License is distributed on an "AS IS" BASIS,
 // WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
 // See the License for the specific language governing permissions and
-// limitations under the License.
+// limitations under the License
 
 using System;
-
+#if !NETCORE
+using Alachisoft.NCache.Common.Remoting;
+#endif
 using Alachisoft.NCache.Runtime.Exceptions;
 
 namespace Alachisoft.NCache.ServiceControl
@@ -29,12 +31,13 @@ namespace Alachisoft.NCache.ServiceControl
         /// <summary> Use TCP channel for remoting. </summary>
         protected bool _useTcp = true;
         
-
-
         /// <summary> Remoting port. </summary>
         protected long _port;
 
- 
+#if !NETCORE
+        /// <summary> </summary>
+        protected RemotingChannels _channel;
+#endif
 
         /// <summary>
         /// Constructor
@@ -53,10 +56,11 @@ namespace Alachisoft.NCache.ServiceControl
             ServerName = server;
             Port = port;
             UseTcp = useTcp;
+
             
         }
 
-        #region	/                 --- IDisposable ---           /
+#region	/                 --- IDisposable ---           /
 
         /// <summary>
         /// Performs application-defined tasks associated with freeing, releasing, or 
@@ -67,7 +71,6 @@ namespace Alachisoft.NCache.ServiceControl
         /// </remarks>
         private void Dispose(bool disposing)
         {
-           
             if (disposing) GC.SuppressFinalize(this);
         }
 
@@ -80,7 +83,7 @@ namespace Alachisoft.NCache.ServiceControl
             Dispose(true);
         }
 
-        #endregion
+#endregion
 
         /// <summary> Server name. </summary>
         public string ServerName
@@ -110,7 +113,7 @@ namespace Alachisoft.NCache.ServiceControl
         {
             try
             {
-                using (ServiceControl sc = new ServiceControl(_serverName, service))
+                using (Common.Util.ServiceControl sc = new Common.Util.ServiceControl(_serverName, service))
                 {
                     if (!sc.IsRunning)
                     {
@@ -133,7 +136,7 @@ namespace Alachisoft.NCache.ServiceControl
         {
             try
             {
-                using (ServiceControl sc = new ServiceControl(_serverName, service))
+                using (Common.Util.ServiceControl sc = new Common.Util.ServiceControl(_serverName, service))
                 {
                     if (sc.IsRunning)
                     {
@@ -156,7 +159,7 @@ namespace Alachisoft.NCache.ServiceControl
         {
             try
             {
-                using (ServiceControl sc = new ServiceControl(_serverName, service))
+                using (Common.Util.ServiceControl sc = new Common.Util.ServiceControl(_serverName, service))
                 {
                     if (sc.IsRunning)
                     {
@@ -176,7 +179,7 @@ namespace Alachisoft.NCache.ServiceControl
             bool isRunning = false;
             try
             {
-                using (ServiceControl sc = new ServiceControl(_serverName, service))
+                using (Common.Util.ServiceControl sc = new Common.Util.ServiceControl(_serverName, service))
                 {
                     if (sc.IsRunning)
                     {
@@ -190,7 +193,5 @@ namespace Alachisoft.NCache.ServiceControl
             }
             return isRunning;
         }
-
-
     }
 }

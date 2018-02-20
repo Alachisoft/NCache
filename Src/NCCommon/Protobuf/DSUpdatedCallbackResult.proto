@@ -1,0 +1,11 @@
+import "Exception.proto";
+
+option java_outer_classname="DSUpdatedCallbackResultProtocol";
+package Alachisoft.NCache.Common.Protobuf;
+
+message DSUpdatedCallbackResult 
+{
+	optional string key = 1;
+	optional Exception exception = 2;
+	optional bool success = 3;
+}

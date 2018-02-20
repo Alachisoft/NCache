@@ -10,9 +10,10 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 // $Id: Rsp.java,v 1.1.1.1 2003/09/09 01:24:12 belaban Exp $
-
 using System;
 using Alachisoft.NCache.Serialization.Formatters;
+using Alachisoft.NCache.Common.DataStructures.Clustered;
+using System.Collections;
 
 namespace Alachisoft.NGroups.Util
 {
@@ -68,11 +69,32 @@ namespace Alachisoft.NGroups.Util
             if (retval != null)
             {
                 if (retval is OperationResponse)
-                    ((OperationResponse)retval).SerializablePayload = CompactBinaryFormatter.FromByteBuffer((byte[]) ((OperationResponse)retval).SerializablePayload, serializationContext);
-                else if (retval is Byte[])
-                    retval = CompactBinaryFormatter.FromByteBuffer((byte[])retval, serializationContext);
+                    ((OperationResponse)retval).SerializablePayload = DeserailizeResponse(((OperationResponse)retval).SerializablePayload,serializationContext);
+                else
+                    retval = DeserailizeResponse(retval, serializationContext);
             }
 		}
+
+
+        public static object DeserailizeResponse(object response,string context)
+        {
+            object result = null;
+            if (response is byte[])
+                result = CompactBinaryFormatter.FromByteBuffer((byte[])response, context);
+            else if (response is IList)
+            {
+                IList buffers = response as IList;
+                ClusteredMemoryStream stream = new ClusteredMemoryStream(0);
+                foreach (byte[] buffer in buffers)
+                {
+                    stream.Write(buffer, 0, buffer.Length);
+                }
+                stream.Position = 0;
+                result = CompactBinaryFormatter.Deserialize(stream, context);
+            }
+
+            return result;
+        }
 		public bool wasReceived()
 		{
 			return received;

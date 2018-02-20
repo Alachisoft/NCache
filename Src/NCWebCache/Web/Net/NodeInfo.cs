@@ -12,83 +12,82 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-using System;
-using System.Text;
 
 namespace Alachisoft.NCache.Web.Net
+
 {
-	/// <summary>
-	/// Holds the information about the cluster member nodes. It identifies 
-	/// each member of the cluster uniquely with a combination of the Ip Address
-	/// and port.
-	/// An instance of this class can not be instantiated. When client applications
-	/// register the events <see cref="Alachisoft.NCache.Web.Caching.MemberJoinedCallback"/>
-	/// or <see cref="Alachisoft.NCache.Web.Caching.MemberLeftCallback"/>, an instance of 
-	/// NodeInfo is passed in the notification.
-	/// </summary>
-	public class NodeInfo
-	{
-		private System.Net.IPAddress _ip;
-		private int _port;
+    /// <summary>
+    /// Holds the information about the cluster member nodes. It identifies 
+    /// each member of the cluster uniquely with a combination of the Ip Address
+    /// and port.
+    /// An instance of this class can not be instantiated. When client applications
+    /// register the events <see cref="Alachisoft.NCache.Web.Caching.MemberJoinedCallback"/>
+    /// or <see cref="Alachisoft.NCache.Web.Caching.MemberLeftCallback"/>, an instance of 
+    /// NodeInfo is passed in the notification.
+    /// </summary>
+    public class NodeInfo
+    {
+        private System.Net.IPAddress _ip;
+        private int _port;
 
-		internal NodeInfo(System.Net.IPAddress ip, int port)
-		{
-			_ip = ip;
-			_port = port;
-		}
+        internal NodeInfo(System.Net.IPAddress ip, int port)
+        {
+            _ip = ip;
+            _port = port;
+        }
 
-		/// <summary>
-		/// IPAddress of the node joining / leaving the cluster.
-		/// </summary>
-		public System.Net.IPAddress IpAddress
-		{
-			get { return _ip; }
-		}
+        /// <summary>
+        /// IPAddress of the node joining / leaving the cluster.
+        /// </summary>
+        public System.Net.IPAddress IpAddress
+        {
+            get { return _ip; }
+        }
 
-		/// <summary>
-		/// Port, the member uses for the cluster-wide communication.
-		/// </summary>
-		public int Port
-		{
-			get { return _port; }
-		}
+        /// <summary>
+        /// Port, the member uses for the cluster-wide communication.
+        /// </summary>
+        public int Port
+        {
+            get { return _port; }
+        }
 
-		/// <summary>
-		/// provides the string representation of NodeInfo.
-		/// </summary>
-		/// <returns></returns>
-		public override string ToString()
-		{
-			System.Text.StringBuilder sb = new System.Text.StringBuilder();
+        /// <summary>
+        /// provides the string representation of NodeInfo.
+        /// </summary>
+        /// <returns></returns>
+        public override string ToString()
+        {
+            System.Text.StringBuilder sb = new System.Text.StringBuilder();
 
-			if (_ip == null)
-				sb.Append("<null>");
-			else
-			{
-				string host_name = _ip.ToString();
-				appendShortName(host_name, sb);
-			}
-			
-			sb.Append(":" + _port);
-			
-			return sb.ToString();
-		}
+            if (_ip == null)
+                sb.Append("<null>");
+            else
+            {
+                string host_name = _ip.ToString();
+                appendShortName(host_name, sb);
+            }
 
-		/// <summary> Input: "daddy.nms.fnc.fujitsu.com", output: "daddy". Appends result to string buffer 'sb'.</summary>
-		/// <param name="hostname">The hostname in long form. Guaranteed not to be null
-		/// </param>
-		/// <param name="sb">The string buffer to which the result is to be appended
-		/// </param>
-		private void appendShortName(string hostname, System.Text.StringBuilder sb)
-		{
-			int index = hostname.IndexOf((System.Char)'.');
+            sb.Append(":" + _port);
 
-			if (hostname == null)
-				return;
-			if (index > 0 && !System.Char.IsDigit(hostname[0]))
-				sb.Append(hostname.Substring(0, (index) - (0)));
-			else
-				sb.Append(hostname);
-		}
-	}
+            return sb.ToString();
+        }
+
+        /// <summary> Input: "daddy.nms.fnc.fujitsu.com", output: "daddy". Appends result to string buffer 'sb'.</summary>
+        /// <param name="hostname">The hostname in long form. Guaranteed not to be null
+        /// </param>
+        /// <param name="sb">The string buffer to which the result is to be appended
+        /// </param>
+        private void appendShortName(string hostname, System.Text.StringBuilder sb)
+        {
+            int index = hostname.IndexOf((System.Char) '.');
+
+            if (hostname == null)
+                return;
+            if (index > 0 && !System.Char.IsDigit(hostname[0]))
+                sb.Append(hostname.Substring(0, (index) - (0)));
+            else
+                sb.Append(hostname);
+        }
+    }
 }

@@ -61,8 +61,7 @@ namespace Alachisoft.NCache.Parser
                     int read = m_reader.Read(m_buffer, av, m_curpos);
 					m_buflen = read + av;
 					m_curpos = 0;
-
-                    //Fix for client issue regarding the length of the query
+                    
                     if (m_reader.Peek() == -1 && m_buflen == BUFSIZE && read == 0)
                         throw new EndOfStreamException();
 				}

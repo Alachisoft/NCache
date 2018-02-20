@@ -20,7 +20,6 @@ namespace Alachisoft.NCache.SocketServer
         AGGREGATE,
         CONFIGURATION,
         GENERALFAILURE,
-        NOTSUPPORTED,
-        MAX_CLIENTS_REACHED
+        NOTSUPPORTED
     }
 }

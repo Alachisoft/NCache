@@ -13,6 +13,8 @@
 // limitations under the License.
 
 using System.IO;
+using Alachisoft.NCache.Common.DataStructures;
+using Alachisoft.NCache.SocketServer.RequestLogging;
 using Alachisoft.NCache.Common.Stats;
 
 namespace Alachisoft.NCache.SocketServer
@@ -20,6 +22,8 @@ namespace Alachisoft.NCache.SocketServer
     internal interface ICommandManager
     {
         void ProcessCommand(ClientManager clientManager, object command, long acknowledgementId, UsageStats stats);
-        object Deserialize(Stream buffer); 
+        object Deserialize(Stream buffer);
+        RequestStatus GetRequestStatus(string clientId, long requestId, long commandId);
+        Bookie RequestLogger { get; }
     }
 }

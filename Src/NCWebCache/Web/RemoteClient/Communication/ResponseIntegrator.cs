@@ -18,9 +18,10 @@ using System.IO;
 
 namespace Alachisoft.NCache.Web.Communication
 {
-    class ResponseIntegrator :IComparer<FragmentedResponse>
+    class ResponseIntegrator : IComparer<FragmentedResponse>
     {
-        private Dictionary<Common.Net.Address, Dictionary<long, List<FragmentedResponse>>> _serverMap = new Dictionary<Common.Net.Address, Dictionary<long, List<FragmentedResponse>>>();
+        private Dictionary<Common.Net.Address, Dictionary<long, List<FragmentedResponse>>> _serverMap =
+            new Dictionary<Common.Net.Address, Dictionary<long, List<FragmentedResponse>>>();
 
         public Response AddResponseFragment(Common.Net.Address server, FragmentedResponse responseFragment)
         {
@@ -30,15 +31,15 @@ namespace Alachisoft.NCache.Web.Communication
             {
                 if (!_serverMap.ContainsKey(server))
                 {
-                    _serverMap.Add(server,new  Dictionary<long, List<FragmentedResponse>>() );
+                    _serverMap.Add(server, new Dictionary<long, List<FragmentedResponse>>());
                 }
 
-                 resposeTable = _serverMap[server];
+                resposeTable = _serverMap[server];
 
                 if (!resposeTable.ContainsKey(responseFragment.messageId))
-                 {
-                     resposeTable.Add(responseFragment.messageId, new List<FragmentedResponse>());
-                 }
+                {
+                    resposeTable.Add(responseFragment.messageId, new List<FragmentedResponse>());
+                }
             }
 
             responseList = resposeTable[responseFragment.messageId];
@@ -53,7 +54,7 @@ namespace Alachisoft.NCache.Web.Communication
 
                 responseList.Sort(this);
                 Response finalResponse = null;
-                
+
                 using (MemoryStream stream = new MemoryStream())
                 {
                     foreach (FragmentedResponse fragment in responseList)
@@ -65,8 +66,8 @@ namespace Alachisoft.NCache.Web.Communication
                     finalResponse = ProtoBuf.Serializer.Deserialize<Alachisoft.NCache.Common.Protobuf.Response>(stream);
                     stream.Close();
                 }
+
                 return finalResponse;
-               
             }
 
             return null;

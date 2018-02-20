@@ -14,15 +14,17 @@
 
 using System;
 
-
 namespace Alachisoft.NCache.Web.Caching
 {
-    public interface ICacheReader
+    /// <summary>
+    /// Reads one or more than forward-only stream of result sets by executing OQ commands on cache source. 
+    /// </summary>
+    public interface ICacheReader : IDisposable
     {
         /// <summary>
         /// Gets number of columns.
         /// </summary>
-        int FieldCount { get;}
+        int FieldCount { get; }
 
         /// <summary>
         /// Closes IDataReader
@@ -30,96 +32,95 @@ namespace Alachisoft.NCache.Web.Caching
         void Close();
 
         /// <summary>
-        /// Gets is Reader Closed
+        /// True, if reader is closed else false. 
         /// </summary>
         bool IsClosed { get; }
 
         /// <summary>
-        /// Returns object at specified index
+        /// Returns object at specified index.
         /// </summary>
         /// <param name="index">Index of column</param>
         /// <returns>object value of specified index</returns>
         /// 
         [System.Runtime.CompilerServices.IndexerName("Item")]
-        object this[int index] { get;}
+        object this[int index] { get; }
 
         /// <summary>
-        /// Returns object at specified index
+        /// Returns object at specified column.
         /// </summary>
-        /// <param name="index">Index of column</param>
-        /// <returns>object value of specified index</returns>
-        /// 
+        /// <param name="columnName">Namme of the column.</param>
+        /// <returns>value of specified column. </returns>
         [System.Runtime.CompilerServices.IndexerName("Item")]
         object this[string columnName] { get; }
 
         /// <summary>
         /// Advances ICacheReader to next record
         /// </summary>
-        /// <returns>true if there are more rows; otherwise false </returns>
+        /// <returns>true if there are more rows; else false </returns>
         bool Read();
 
         /// <summary>
-        /// Gets value of specified column as bool
+        /// Gets value of specified index as bool
         /// </summary>
         /// <param name="index">Index of column</param>
-        /// <returns>bool value of specified column</returns>
+        /// <returns>bool value on specified index</returns>
         bool GetBoolean(int index);
 
         /// <summary>
-        /// Gets value of specified column as string
+        /// Gets value of specified index as string
         /// </summary>
         /// <param name="index">Index of column</param>
-        /// <returns>string value of specified column</returns>
+        /// <returns>string value on specified column</returns>
         string GetString(int index);
 
         /// <summary>
-        /// Gets value of specified column as decimal
+        /// Gets value of specified index as decimal
         /// </summary>
         /// <param name="index">Index of column</param>
-        /// <returns>decimal value of specified column</returns>
+        /// <returns>decimal value on specified index</returns>
         decimal GetDecimal(int index);
 
         /// <summary>
-        /// Gets value of specified column as double
+        /// Gets value of specified index as double
         /// </summary>
         /// <param name="index">Index of column</param>
-        /// <returns>double value of specified column</returns>
+        /// <returns>double value on specified index</returns>
         double GetDouble(int index);
 
         /// <summary>
-        /// Gets value of specified column as 16 bit integer
+        /// Gets value of specified index as 16 bit integer
         /// </summary>
         /// <param name="index">Index of column</param>
-        /// <returns>Int16 value of specified column</returns>
+        /// <returns>Int16 value on specified index</returns>
         short GetInt16(int index);
 
         /// <summary>
-        /// Gets value of specified column as 32 bit integer
+        /// Gets value of specified index as 32 bit integer
         /// </summary>
         /// <param name="index">Index of column</param>
-        /// <returns>Int32 value of specified column</returns>
+        /// <returns>Int32 value on specified index</returns>
         int GetInt32(int index);
 
         /// <summary>
-        /// Gets value of specified column as 64 bit integer
+        /// Gets value of specified index as 64 bit integer
         /// </summary>
         /// <param name="index">Index of column</param>
-        /// <returns>Int64 value of specified column</returns>
+        /// <returns>Int64 value on specified index</returns>
         long GetInt64(int index);
 
         /// <summary>
         /// Gets value at specified column index
         /// </summary>
         /// <param name="index">Index of column</param>
-        /// <returns>Value at specified column</returns>
+        /// <returns>long value on specified index</returns>
         object GetValue(int index);
-        
+
         /// <summary>
         /// Populates array of objects with values in current row
         /// </summary>
         /// <param name="objects">array of objects to be populated</param>
         /// <returns>No of objects copied in specified array</returns>
-        int GetValues(object [] objects);
+        int GetValues(object[] objects);
 
         /// <summary>
         /// Returns name of specidied column index
@@ -141,7 +142,5 @@ namespace Alachisoft.NCache.Web.Caching
         /// <param name="index">Index of Column</param>
         /// <returns></returns>
         DateTime GetDateTime(int index);
-
-
     }
 }

@@ -10,7 +10,7 @@
 // distributed under the License is distributed on an "AS IS" BASIS,
 // WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
 // See the License for the specific language governing permissions and
-// limitations under the License.
+// limitations under the License
 
 using System;
 using System.IO;
@@ -19,6 +19,7 @@ using Alachisoft.NCache.Serialization.Formatters;
 using Alachisoft.NCache.Serialization.Surrogates;
 using Alachisoft.NCache.Serialization;
 using Alachisoft.NCache.Runtime.Serialization.IO;
+
 
 namespace Alachisoft.NCache.IO
 {
@@ -39,7 +40,6 @@ namespace Alachisoft.NCache.IO
             : this(output, new UTF8Encoding(true))
         {
         }
-
         /// <summary>
         /// Constructs a compact writer over a <see cref="Stream"/> object.
         /// </summary>
@@ -63,7 +63,6 @@ namespace Alachisoft.NCache.IO
         {
             if (writer != null) writer.Close();
         }
-
         /// <summary>
         /// Close the underlying <see cref="BinaryWriter"/>.
         /// </summary>
@@ -79,6 +78,7 @@ namespace Alachisoft.NCache.IO
         /// <param name="graph">Object to write</param>
         public override void WriteObject(object graph)
         {
+           
             // Find an appropriate surrogate for the object
             ISerializationSurrogate surrogate = TypeSurrogateSelector.GetSurrogateForObject(graph, context.CacheContext);
             // write type handle
@@ -91,12 +91,17 @@ namespace Alachisoft.NCache.IO
             {
                 throw;
             }
-            catch (System.Threading.ThreadAbortException)
+            catch (System.Threading.ThreadAbortException) 
+            {
+                throw;
+            }
+            catch (System.Threading.ThreadInterruptedException)
             {
                 throw;
             }
             catch (Exception e)
             {
+
                 throw new CompactSerializationException(e.Message);
             }
         }
@@ -124,77 +129,66 @@ namespace Alachisoft.NCache.IO
         /// </summary>
         /// <param name="value">Object to write</param>
         public override void Write(bool value) { writer.Write(value); }
-
         /// <summary>
         /// Writes <paramref name="value"/> to the current stream and advances the stream position. 
         /// This method writes directly to the underlying stream.
         /// </summary>
         /// <param name="value">Object to write</param>
         public override void Write(byte value) { writer.Write(value); }
-
         /// <summary>
         /// Writes <paramref name="ch"/> to the current stream and advances the stream position. 
         /// This method writes directly to the underlying stream.
         /// </summary>
         /// <param name="ch">Object to write</param>
         public override void Write(char ch) { writer.Write(ch); }
-
         /// <summary>
         /// Writes <paramref name="value"/> to the current stream and advances the stream position. 
         /// This method writes directly to the underlying stream.
         /// </summary>
         /// <param name="value">Object to write</param>
         public override void Write(short value) { writer.Write(value); }
-
         /// <summary>
         /// Writes <paramref name="value"/> to the current stream and advances the stream position. 
         /// This method writes directly to the underlying stream.
         /// </summary>
         /// <param name="value">Object to write</param>
         public override void Write(int value) { writer.Write(value); }
-
         /// <summary>
         /// Writes <paramref name="value"/> to the current stream and advances the stream position. 
         /// This method writes directly to the underlying stream.
         /// </summary>
         /// <param name="value">Object to write</param>
         public override void Write(long value) { writer.Write(value); }
-
         /// <summary>
         /// Writes <paramref name="value"/> to the current stream and advances the stream position. 
         /// This method writes directly to the underlying stream.
         /// </summary>
         /// <param name="value">Object to write</param>
         public override void Write(decimal value) { writer.Write(value); }
-
         /// <summary>
         /// Writes <paramref name="value"/> to the current stream and advances the stream position. 
         /// This method writes directly to the underlying stream.
         /// </summary>
         /// <param name="value">Object to write</param>
         public override void Write(float value) { writer.Write(value); }
-
         /// <summary>
         /// Writes <paramref name="value"/> to the current stream and advances the stream position. 
         /// This method writes directly to the underlying stream.
         /// </summary>
         /// <param name="value">Object to write</param>
         public override void Write(double value) { writer.Write(value); }
-
         /// <summary>
         /// Writes <paramref name="value"/> to the current stream and advances the stream position. 
         /// This method writes directly to the underlying stream.
         /// </summary>
         /// <param name="value">Object to write</param>
         public override void Write(DateTime value) { writer.Write(value.Ticks); }
-
         /// <summary>
         /// Writes <paramref name="value"/> to the current stream and advances the stream position. 
         /// This method writes directly to the underlying stream.
         /// </summary>
         /// <param name="value">Object to write</param>
         public override void Write(Guid value) { writer.Write(value.ToByteArray()); }
-
         /// <summary>
         /// Writes <paramref name="buffer"/> to the current stream and advances the stream position. 
         /// This method writes directly to the underlying stream.
@@ -207,7 +201,6 @@ namespace Alachisoft.NCache.IO
             else
                 WriteObject(null);
         }
-
         /// <summary>
         /// Writes <paramref name="chars"/> to the current stream and advances the stream position. 
         /// This method writes directly to the underlying stream.
@@ -220,7 +213,6 @@ namespace Alachisoft.NCache.IO
             else
                 WriteObject(null);
         }
-
         /// <summary>
         /// Writes <paramref name="value"/> to the current stream and advances the stream position. 
         /// This method writes directly to the underlying stream.
@@ -233,7 +225,6 @@ namespace Alachisoft.NCache.IO
             else
                 WriteObject(null);
         }
-
         /// <summary>
         /// Writes <paramref name="buffer"/> to the current stream and advances the stream position. 
         /// This method writes directly to the underlying stream.
@@ -248,7 +239,6 @@ namespace Alachisoft.NCache.IO
             else
                 WriteObject(null);
         }
-
         /// <summary>
         /// Writes <paramref name="chars"/> to the current stream and advances the stream position. 
         /// This method writes directly to the underlying stream.
@@ -263,7 +253,6 @@ namespace Alachisoft.NCache.IO
             else
                 WriteObject(null);
         }
-
         /// <summary>
         /// Writes <paramref name="value"/> to the current stream and advances the stream position. 
         /// This method writes directly to the underlying stream.
@@ -271,7 +260,6 @@ namespace Alachisoft.NCache.IO
         /// <param name="value">Object to write</param>
         [CLSCompliant(false)]
         public override void Write(sbyte value) { writer.Write(value); }
-
         /// <summary>
         /// Writes <paramref name="value"/> to the current stream and advances the stream position. 
         /// This method writes directly to the underlying stream.
@@ -279,7 +267,6 @@ namespace Alachisoft.NCache.IO
         /// <param name="value">Object to write</param>
         [CLSCompliant(false)]
         public override void Write(ushort value) { writer.Write(value); }
-
         /// <summary>
         /// Writes <paramref name="value"/> to the current stream and advances the stream position. 
         /// This method writes directly to the underlying stream.
@@ -287,7 +274,6 @@ namespace Alachisoft.NCache.IO
         /// <param name="value">Object to write</param>
         [CLSCompliant(false)]
         public override void Write(uint value) { writer.Write(value); }
-
         /// <summary>
         /// Writes <paramref name="value"/> to the current stream and advances the stream position. 
         /// This method writes directly to the underlying stream.

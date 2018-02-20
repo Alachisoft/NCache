@@ -11,8 +11,8 @@
 // WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
 // See the License for the specific language governing permissions and
 // limitations under the License.
+
 using System;
-using Alachisoft.NCache.Caching;
 
 namespace Alachisoft.NCache.SocketServer.Command
 {
@@ -23,8 +23,18 @@ namespace Alachisoft.NCache.SocketServer.Command
             public string RequestId;
             public string CacheId;
             public bool IsDotNetClient;
-        }
 
+            public CommandInfo clone()
+            {
+                CommandInfo varCopy = new CommandInfo();
+
+                varCopy.RequestId = this.RequestId;
+                varCopy.CacheId = this.CacheId;
+                varCopy.IsDotNetClient = this.IsDotNetClient;
+
+                return varCopy;
+            }
+        }
 
         //PROTOBUF
         public override void ExecuteCommand(ClientManager clientManager, Alachisoft.NCache.Common.Protobuf.Command command)
@@ -32,48 +42,49 @@ namespace Alachisoft.NCache.SocketServer.Command
             CommandInfo cmdInfo;
             try
             {
-                cmdInfo = ParseCommand(command, clientManager);
+                cmdInfo = ParseCommand(command, clientManager).clone();
             }
             catch (Exception exc)
             {
                 if (!base.immatureId.Equals("-2")) 
-                    _serializedResponsePackets.Add(Alachisoft.NCache.Common.Util.ResponseHelper.SerializeExceptionResponse(exc, command.requestID));
+                    _serializedResponsePackets.Add(Alachisoft.NCache.Common.Util.ResponseHelper.SerializeExceptionResponse(exc, command.requestID, command.commandID));
                 return;
             }
 
-            Cache cache = null;
+            Alachisoft.NCache.Caching.Cache cache = null;
 
             try
             {
                 string server = ConnectionManager.ServerIpAddress;
                 int port = ConnectionManager.ServerPort;
-                
-                cache = CacheProvider.Provider.GetCacheInstanceIgnoreReplica(cmdInfo.CacheId);                
-
+                cache = CacheProvider.Provider.GetCacheInstanceIgnoreReplica(cmdInfo.CacheId);
                 if (cache == null) throw new Exception("Cache is not registered");
                 if (!cache.IsRunning) throw new Exception("Cache is not running");
-                cache.GetLeastLoadedServer(ref server, ref port);
-                    
 
+#if (COMMUNITY)
+                cache.GetLeastLoadedServer(ref server, ref port);
+                   
+#endif
 
                 Alachisoft.NCache.Common.Protobuf.Response response = new Alachisoft.NCache.Common.Protobuf.Response();
                 Alachisoft.NCache.Common.Protobuf.GetOptimalServerResponse getOptimalServerResponse = new Alachisoft.NCache.Common.Protobuf.GetOptimalServerResponse();
                 getOptimalServerResponse.server = server;
                 getOptimalServerResponse.port = port;
-				response.requestId = Convert.ToInt64(cmdInfo.RequestId);
+                response.requestId = Convert.ToInt64(cmdInfo.RequestId);
+                response.commandID = command.commandID;
                 response.getOptimalServer = getOptimalServerResponse;
                 response.responseType = Alachisoft.NCache.Common.Protobuf.Response.Type.GET_OPTIMAL_SERVER;
 
                 //PROTOBUF:RESPONSE
+
                 _serializedResponsePackets.Add(Alachisoft.NCache.Common.Util.ResponseHelper.SerializeResponse(response));
             }
             catch (Exception exc)
             {
-                _serializedResponsePackets.Add(Alachisoft.NCache.Common.Util.ResponseHelper.SerializeExceptionResponse(exc, command.requestID));
+                _serializedResponsePackets.Add(Alachisoft.NCache.Common.Util.ResponseHelper.SerializeExceptionResponse(exc, command.requestID, command.commandID));
             }
         }
 
-        //PROTOBUF
         private CommandInfo ParseCommand(Alachisoft.NCache.Common.Protobuf.Command command, ClientManager clientManager)
         {
             CommandInfo cmdInfo = new CommandInfo();
@@ -82,9 +93,10 @@ namespace Alachisoft.NCache.SocketServer.Command
 
             cmdInfo.CacheId = getOptimalServerCommand.cacheId;
             cmdInfo.IsDotNetClient = getOptimalServerCommand.isDotnetClient;
+
             cmdInfo.RequestId = getOptimalServerCommand.requestId.ToString();
 
             return cmdInfo;
-        }     
+        }
     }
 }

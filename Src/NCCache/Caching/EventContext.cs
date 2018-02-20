@@ -13,13 +13,9 @@
 // limitations under the License.
 
 using System;
-using System.Collections.Generic;
-using System.Text;
 using System.Collections;
 using Alachisoft.NCache.Runtime.Serialization;
-using Alachisoft.NCache.Common.DataStructures;
-using Alachisoft.NCache.Caching.Queries;
-using Runtime = Alachisoft.NCache.Runtime;
+using Alachisoft.NCache.MapReduce.Notifications;
 
 namespace Alachisoft.NCache.Caching
 {
@@ -33,7 +29,10 @@ namespace Alachisoft.NCache.Caching
     public class EventContext : ICompactSerializable, ICloneable
     {
         private Hashtable _fieldValueTable;
+
+       
         
+        //TODO best not to keep such a heavy object in reference
         public EventCacheEntry Item
         {
             get { return (EventCacheEntry)this.GetValueByField(EventContextFieldName.EventCacheEntry); }
@@ -46,7 +45,18 @@ namespace Alachisoft.NCache.Caching
             set { Add(EventContextFieldName.OldEventCacheEntry, value); }
         }
 
-        public EventContext() { }
+        public TaskStatus TaskStatus
+        {
+            get { return (TaskStatus)this.GetValueByField(EventContextFieldName.TaskStatus); }
+            set { Add(EventContextFieldName.TaskStatus, value); }
+        }
+        public string TaskFailureReason
+        {
+            get { return (string)this.GetValueByField(EventContextFieldName.TaskFailureReason); }
+            set { Add(EventContextFieldName.TaskFailureReason, value); }
+        }
+
+        public EventContext() { /*_fieldValueTable = new Hashtable();*/ }
 
         public EventContext(EventContextFieldName fieldName, object fieldValue)
         {

@@ -10,11 +10,12 @@
 // distributed under the License is distributed on an "AS IS" BASIS,
 // WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
 // See the License for the specific language governing permissions and
-// limitations under the License.
+// limitations under the License
 
 using System;
 using System.Collections;
 using System.Net;
+using System.Net.Sockets;
 
 namespace Alachisoft.NCache.Common.Net
 {
@@ -40,11 +41,12 @@ namespace Alachisoft.NCache.Common.Net
 		/// <param name="hostname"></param>
 		/// <returns></returns>
 		public static IPAddress ResolveName(string hostname)
-		{
+        { 
 			hostname = hostname.ToLower();
 			if(!_fwdMap.ContainsKey(hostname))
 			{
-				IPHostEntry ie = Dns.GetHostByName(hostname);
+#if !NETCORE
+                IPHostEntry ie = Dns.GetHostByName(hostname);
 				if(ie != null && ie.AddressList.Length > 0)
 				{
 					lock(_fwdMap.SyncRoot)
@@ -53,9 +55,37 @@ namespace Alachisoft.NCache.Common.Net
 						_bckMap[ie.AddressList[0]] = hostname;
 					}
 				}
-			}
+#elif NETCORE
+                if (!String.IsNullOrEmpty(hostname))
+                {
+                    IPHostEntry ie = Dns.GetHostByName(hostname);
+                    if (ie != null && ie.AddressList.Length > 0)
+                    {
+                        lock (_fwdMap.SyncRoot)
+                        {
+                            _fwdMap[hostname] = ie.AddressList[0];
+                            _bckMap[ie.AddressList[0]] = hostname;
+                        }
+                    }
+                }
+                else
+                {
 
-			return _fwdMap[hostname] as IPAddress;
+                    IPAddress[] ipv4Addresses = Array.FindAll(Dns.GetHostEntry(hostname).AddressList, a => a.AddressFamily == AddressFamily.InterNetwork);
+                    if (ipv4Addresses != null && ipv4Addresses.Length > 0)
+                    {
+                        lock (_fwdMap.SyncRoot)
+                        {
+                            _fwdMap[hostname] = ipv4Addresses[0];
+                            _bckMap[ipv4Addresses[0]] = hostname;
+                        }
+                    }
+                }
+
+#endif
+            }
+
+            return _fwdMap[hostname] as IPAddress;
 		}
 
 
@@ -72,6 +102,7 @@ namespace Alachisoft.NCache.Common.Net
 			}
 			catch (Exception ex)
 			{
+                //Trace.error("DnsCache.ResolveAddress", "exception=" + ex.ToString());
 			}
 			return null;
 		}
@@ -96,7 +127,7 @@ namespace Alachisoft.NCache.Common.Net
 
 					lock(_fwdMap.SyncRoot)
 					{
-						_bckMap[address] = hostname;
+						_bckMap[address] = hostname;//ie.HostName.ToLower();
 						_fwdMap[ie.HostName.ToLower()] = address;
 					}
 				}
@@ -118,7 +149,6 @@ namespace Alachisoft.NCache.Common.Net
             }
             return ip;
         }
-
 		/// <summary>
 		/// Clears the caches 
 		/// </summary>

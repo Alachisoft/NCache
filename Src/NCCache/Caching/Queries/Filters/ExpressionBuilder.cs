@@ -12,12 +12,7 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-using System.IO;
 using System.Collections;
-using System.Runtime.Serialization;
-using System.Diagnostics;
-
-using Alachisoft.NCache.Caching.Queries;
 
 namespace Alachisoft.NCache.Caching.Queries.Filters
 {
@@ -223,23 +218,4 @@ namespace Alachisoft.NCache.Caching.Queries.Filters
         }
     }
 
-    #region /		Generators		/
-
-    #endregion
-
-    #region /		Functors		/
-
-    #endregion
-
-    #region /		Unary Predicates		/
-
-    #endregion
-
-    #region /		Predicates		/
-
-    #endregion
-
-    #region /		Binary Predicates		/
-
-    #endregion
 }

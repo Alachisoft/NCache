@@ -12,24 +12,28 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-
+using System.Collections.Generic;
 using Alachisoft.NCache.Common;
-
 
 namespace Alachisoft.NCache.Web.Command
 {
     internal sealed class BulkDeleteCommand : CommandBase
     {
         Alachisoft.NCache.Common.Protobuf.BulkDeleteCommand _bulkRemoveCommand;
+        private int _methodOverload;
 
-        public BulkDeleteCommand(string[] keys, BitSet flagMap)
+        public BulkDeleteCommand(string[] keys, BitSet flagMap, string providerName, short onDsItemRemovedId,
+            int methodOverload)
         {
-            base.name = "BulkDeleteCommand";            
+            base.name = "BulkDeleteCommand";
             base.BulkKeys = keys;
             _bulkRemoveCommand = new Alachisoft.NCache.Common.Protobuf.BulkDeleteCommand();
             _bulkRemoveCommand.keys.AddRange(keys);
+            _bulkRemoveCommand.datasourceItemRemovedCallbackId = onDsItemRemovedId;
             _bulkRemoveCommand.flag = flagMap.Data;
             _bulkRemoveCommand.requestId = base.RequestId;
+            _bulkRemoveCommand.providerName = providerName;
+            _methodOverload = methodOverload;
         }
 
         internal override CommandType CommandType
@@ -39,7 +43,7 @@ namespace Alachisoft.NCache.Web.Command
 
         internal override RequestType CommandRequestType
         {
-            get { return RequestType.BulkWrite; }
+            get { return RequestType.KeyBulkWrite; }
         }
 
         protected override void CreateCommand()
@@ -50,6 +54,32 @@ namespace Alachisoft.NCache.Web.Command
             base._command.type = Alachisoft.NCache.Common.Protobuf.Command.Type.DELETE_BULK;
             base._command.clientLastViewId = base.ClientLastViewId;
             base._command.intendedRecipient = base.IntendedRecipient;
+            base._command.MethodOverload = _methodOverload;
+        }
+
+        protected override CommandBase GetMergedCommand(List<CommandBase> commands)
+        {
+            BulkDeleteCommand mergedCommand = null;
+            if (commands != null || commands.Count > 0)
+            {
+                foreach (CommandBase command in commands)
+                {
+                    if (command is BulkDeleteCommand)
+                    {
+                        BulkDeleteCommand bulkCommand = (BulkDeleteCommand) command;
+                        if (mergedCommand == null)
+                        {
+                            mergedCommand = bulkCommand;
+                        }
+                        else
+                        {
+                            mergedCommand._bulkRemoveCommand.keys.AddRange(bulkCommand._bulkRemoveCommand.keys);
+                        }
+                    }
+                }
+            }
+
+            return mergedCommand;
         }
     }
 }

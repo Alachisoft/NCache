@@ -20,14 +20,14 @@ namespace Alachisoft.NCache.Web.Caching
     /// <summary>
     /// Holds the set of parameters that control the initialization behavior of the cache.
     /// </summary>
-
     /// <summary>
     /// Provides the properties to aid the ServerList property in CacheInitParams
     /// </summary>
     public class CacheServerInfo : IComparable
     {
         private RemoteServer _serverInfo;
-        
+
+
         /// <summary>
         ///Initializes the instance of <see cref="Alachisoft.NCache.Web.Caching.CacheServerInfo"/> for this application.
         /// </summary>
@@ -35,14 +35,18 @@ namespace Alachisoft.NCache.Web.Caching
         /// <param name="port">Port for the server to be connected with </param>
         public CacheServerInfo(string name, int port)
         {
-            if (string.IsNullOrEmpty(name))
+            if (name == null || name == "")
             {
-                throw new ArgumentException("name/IP cannot be null");
+                throw new ArgumentNullException("name/IP cannot be null");
             }
+
             if (port < 1)
                 throw new ArgumentException("Invalid value of port.Port cannot be less than 0");
             ServerInfo = new RemoteServer(name, port);
-                    
+        }
+
+        public CacheServerInfo(string name) : this(name, 9800)
+        {
         }
 
         /// <summary>
@@ -52,13 +56,13 @@ namespace Alachisoft.NCache.Web.Caching
         {
             ServerInfo = new RemoteServer();
         }
-        
+
         internal RemoteServer ServerInfo
         {
             get { return _serverInfo; }
             set { _serverInfo = value; }
         }
-        
+
         /// <summary>
         /// Get/Set the Port 
         /// </summary>
@@ -67,6 +71,7 @@ namespace Alachisoft.NCache.Web.Caching
             get { return ServerInfo.Port; }
         }
 
+
         internal bool IsUserProvided
         {
             get { return ServerInfo.IsUserProvided; }
@@ -74,19 +79,19 @@ namespace Alachisoft.NCache.Web.Caching
         }
 
         /// <summary>
-        /// Get the Name/IP of the server
+        /// Get/Set the Name/IP of the server
         /// </summary>
         public string Name
         {
             get { return ServerInfo.Name; }
-         
         }
-        
+
+
         public override bool Equals(object obj)
         {
             return ServerInfo.Equals(obj);
         }
-        
+
         public override string ToString()
         {
             return ServerInfo.ToString();

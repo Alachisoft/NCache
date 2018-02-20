@@ -51,7 +51,10 @@ namespace Alachisoft.NCache.Caching.Enumeration
         {
             _cache = cache;
             _pointer = pointer;
-            
+#if JAVA
+            if (System.Configuration.ConfigurationSettings.AppSettings.Get("CacheServer.EnumeratorChunkSize") != null)
+                _chunkSize = Convert.ToInt32(System.Configuration.ConfigurationSettings.AppSettings.Get("CacheServer.EnumeratorChunkSize"));
+#endif
             _snapshot = CacheSnapshotPool.Instance.GetSnaphot(pointer.Id, cache);
         }
 

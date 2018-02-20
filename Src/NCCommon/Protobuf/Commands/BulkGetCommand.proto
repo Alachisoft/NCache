@@ -5,4 +5,5 @@ message BulkGetCommand {
 	repeated string keys = 1;
 	optional int64 requestId = 2;
 	optional int32 flag = 3;
+	optional string providerName = 4;
 }

@@ -12,12 +12,15 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-
-
 using Alachisoft.NCache.Common.Logger;
 
 namespace Alachisoft.NCache.Web.Util
+
 {
+    ///// <summary>
+    ///// Create logs
+    ///// </summary>
+    /// <exclude/>
     public class Logs
     {
         private bool _logsEnabled;
@@ -43,6 +46,5 @@ namespace Alachisoft.NCache.Web.Util
             get { return _detailedLogsEnabled; }
             set { _detailedLogsEnabled = value; }
         }
-
     }
 }

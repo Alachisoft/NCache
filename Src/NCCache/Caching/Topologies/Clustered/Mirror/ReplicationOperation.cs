@@ -14,6 +14,8 @@
 
 using System;
 using Alachisoft.NCache.Common.DataStructures;
+using System.Collections;
+using Alachisoft.NCache.Caching.Topologies.Clustered.Operations;
 
 namespace Alachisoft.NCache.Caching.Topologies.Clustered
 {
@@ -68,6 +70,14 @@ namespace Alachisoft.NCache.Caching.Topologies.Clustered
         {
             get { return _payLoadSize; }
             set { _payLoadSize = value; }
-        }       
+        }
+
+        public int InMemorySize
+        {
+            get
+            {
+                throw new NotImplementedException();
+            }
+        }
     }
 }

@@ -13,7 +13,10 @@
 // limitations under the License.
 
 using Alachisoft.NCache.Caching;
+
 using Alachisoft.NCache.Runtime.Events;
+using System.Collections;
+
 
 namespace Alachisoft.NCache.SocketServer.CallbackTasks
 {
@@ -45,9 +48,9 @@ namespace Alachisoft.NCache.SocketServer.CallbackTasks
                 response.itemUpdatedCallback = Alachisoft.NCache.SocketServer.Util.EventHelper.GetItemUpdatedCallbackResponse(_eventContext, _key, _id, _dataFilter);
                 response.responseType = Alachisoft.NCache.Common.Protobuf.Response.Type.ITEM_UPDATED_CALLBACK;
 
-                byte[] serializedResponse = Alachisoft.NCache.Common.Util.ResponseHelper.SerializeResponse(response);
+                IList serializedResponse = Alachisoft.NCache.Common.Util.ResponseHelper.SerializeResponse(response);
 
-                ConnectionManager.AssureSend(clientManager, serializedResponse,Alachisoft.NCache.Common.Enum.Priority.Low);                
+                ConnectionManager.AssureSend(clientManager, serializedResponse,Alachisoft.NCache.Common.Enum.Priority.Low);
             }
         }
     }

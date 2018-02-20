@@ -13,33 +13,41 @@
 // limitations under the License.
 
 using System;
-using Alachisoft.NCache.Web.Caching;
+using Alachisoft.NCache.Runtime.Dependencies;
 
 namespace Alachisoft.NCache.Web.Command
-
 {
     internal sealed class AddAttributeCommand : CommandBase
     {
-        private Common.Protobuf.AddAttributeCommand _addAttributeCommand;
+        private Alachisoft.NCache.Common.Protobuf.AddAttributeCommand _addAttributeCommand;
+        int _methodOverload = 0;
 
-        internal AddAttributeCommand(string key, DateTime absoluteExpiration)
+        internal AddAttributeCommand(string key, DateTime absoluteExpiration, CacheDependency dependency,
+            int methodOverload)
         {
-            name = "AddAttributeCommand";
+            base.name = "AddAttributeCommand";
             base.key = key;
-            _addAttributeCommand = new Common.Protobuf.AddAttributeCommand();
-            if (absoluteExpiration != Cache.NoAbsoluteExpiration)
+
+            _methodOverload = methodOverload;
+            _addAttributeCommand = new Alachisoft.NCache.Common.Protobuf.AddAttributeCommand();
+            if (absoluteExpiration != Alachisoft.NCache.Web.Caching.Cache.NoAbsoluteExpiration)
                 _addAttributeCommand.absExpiration = absoluteExpiration.ToUniversalTime().Ticks;
 
             _addAttributeCommand.key = key;
-            _addAttributeCommand.requestId = RequestId;
+            _addAttributeCommand.requestId = base.RequestId;
+
+            if (dependency != null)
+                _addAttributeCommand.dependency =
+                    Alachisoft.NCache.Common.Util.DependencyHelper.GetProtoBufDependency(dependency);
         }
 
         protected override void CreateCommand()
         {
-            _command = new Common.Protobuf.Command();
-            _command.requestID = RequestId;
-            _command.addAttributeCommand = _addAttributeCommand;
-            _command.type = Common.Protobuf.Command.Type.ADD_ATTRIBUTE;
+            base._command = new Alachisoft.NCache.Common.Protobuf.Command();
+            base._command.requestID = base.RequestId;
+            base._command.addAttributeCommand = _addAttributeCommand;
+            base._command.type = Alachisoft.NCache.Common.Protobuf.Command.Type.ADD_ATTRIBUTE;
+            base._command.MethodOverload = _methodOverload;
         }
 
         internal override CommandType CommandType

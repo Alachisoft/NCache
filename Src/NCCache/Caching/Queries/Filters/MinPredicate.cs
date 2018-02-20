@@ -15,7 +15,6 @@
 using System;
 using System.Collections;
 using Alachisoft.NCache.Common.Enum;
-using Alachisoft.NCache.Common.Queries;
 
 namespace Alachisoft.NCache.Caching.Queries.Filters
 {
@@ -39,8 +38,7 @@ namespace Alachisoft.NCache.Caching.Queries.Filters
             foreach (string key in queryContext.InternalQueryResult)
             {
                 CacheEntry cacheentry = queryContext.Cache.GetEntryInternal(key, false);
-                IComparable current = (IComparable)queryContext.Index.GetAttributeValue(key, AttributeName, cacheentry.IndexInfo);
-
+                IComparable current = (IComparable)queryContext.Index.GetAttributeValue(key, AttributeName,cacheentry.IndexInfo);
                 if (current != null)
                 {
                     type = current.GetType();
@@ -69,10 +67,6 @@ namespace Alachisoft.NCache.Caching.Queries.Filters
                 }
             }
             base.SetResult(queryContext, AggregateFunctionType.MIN, min);
-        }
-
-        internal override void ExecuteInternal(QueryContext queryContext, CollectionOperation mergeType)
-        {
         }
 
         internal override AggregateFunctionType GetFunctionType()

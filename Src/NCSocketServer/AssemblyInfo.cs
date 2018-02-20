@@ -11,6 +11,8 @@
 // WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
 // See the License for the specific language governing permissions and
 // limitations under the License.
+
+
 using System;
 using System.Reflection;
 using System.Runtime.CompilerServices;
@@ -21,15 +23,26 @@ using System.Runtime.InteropServices;
 // set of attributes. Change these attribute values to modify the information
 // associated with an assembly.
 //
+#if !DEBUG
 [assembly: CLSCompliant(true)]
+#endif
 [assembly: ComVisible(false)]
+#if NETCORE
+[assembly: AssemblyTitle("Alachisoft.NCache.SocketServer (.NETCore)")]
+#else
 [assembly: AssemblyTitle("Alachisoft.NCache.SocketServer")]
+#endif
 [assembly: AssemblyConfiguration("")]
 [assembly: AssemblyCompany("Alachisoft")]
-[assembly: AssemblyProduct("AlachisoftÂ® NCache Open Source")]
-[assembly: AssemblyTrademark("NCache â„¢ is a registered trademark of Alachisoft.")]
-[assembly: AssemblyCopyright("Copyright Â© 2005-2018 Alachisoft")]
-[assembly: AssemblyCulture("")]		
+
+
+[assembly: AssemblyProduct("Alachisoft® NCache Open Source")]
+
+
+[assembly: AssemblyTrademark("NCache ™ is a registered trademark of Alachisoft.")]
+
+[assembly: AssemblyCopyright("Copyright © 2005-2018 Alachisoft")]
+[assembly: AssemblyCulture("")]
 
 //
 // Version information for an assembly consists of the following four values:
@@ -42,7 +55,7 @@ using System.Runtime.InteropServices;
 // You can specify all the values or you can default the Revision and Build Numbers 
 // by using the '*' as shown below:
 
-[assembly: AssemblyVersion("4.6.0.0")]
+[assembly: AssemblyVersion("4.9.0")]
 
 //
 // In order to sign your assembly you must specify a key to use. Refer to the 
@@ -71,7 +84,13 @@ using System.Runtime.InteropServices;
 //
 [assembly: AssemblyDelaySign(false)]
 [assembly: AssemblyKeyName("")]
+#if DEBUG
 [assembly: AssemblyKeyFile("..\\..\\..\\..\\Resources\\ncache.snk")]
-[assembly: AssemblyFileVersionAttribute("4.6.3.0")]
+#else
+[assembly: AssemblyKeyFile("..\\..\\..\\..\\Resources\\ncache.snk")]
+#endif
+[assembly: AssemblyFileVersionAttribute("4.9.0.0")]
+
 [assembly: AssemblyDescriptionAttribute("NCache Server")]
-[assembly: AssemblyInformationalVersion("4.6.0")]
+
+[assembly: AssemblyInformationalVersion("4.9.0")]

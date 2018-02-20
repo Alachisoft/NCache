@@ -12,7 +12,6 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-using System;
 using System.Collections;
 
 namespace Alachisoft.NCache.SocketServer
@@ -34,7 +33,7 @@ namespace Alachisoft.NCache.SocketServer
         /// <param name="cacheId">The cacheId to be stored</param>
         internal void Add(string cacheId, string socketId)
         {
-            lock (this) // multiple threads can add cacheId to mappingTable.
+            lock (this) // Multiple threads can add cacheId to mappingTable.
             {
                 if (_mappingTable.Contains(cacheId))
                 {

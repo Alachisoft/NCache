@@ -15,7 +15,7 @@
 using System;
 using Alachisoft.NCache.Common.Sockets;
 
-namespace Alachisoft.NCache.Web.RemoteClient.Communication
+namespace Alachisoft.NCache.Web.Communication
 {
     internal sealed class SendContextClient : SendContext
     {

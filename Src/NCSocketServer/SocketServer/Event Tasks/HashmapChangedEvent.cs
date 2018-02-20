@@ -13,9 +13,13 @@
 // limitations under the License.
 
 using System;
-
+using System.Collections;
 using Alachisoft.NCache.SocketServer.Util;
+#if JAVA
+using Alachisoft.TayzGrid.Web.Util;
+#else
 using Alachisoft.NCache.Web.Util;
+#endif
 using Alachisoft.NCache.Common.DataStructures;
 using System.Text;
 
@@ -84,10 +88,9 @@ namespace Alachisoft.NCache.SocketServer.EventTask
                     response.hashmapChanged = hashmapChangedResponse;
                     response.responseType = Alachisoft.NCache.Common.Protobuf.Response.Type.HASHMAP_CHANGED_EVENT;
 
-                    byte[] serializedResponse = Alachisoft.NCache.Common.Util.ResponseHelper.SerializeResponse(response);
+                    IList serializedResponse = Alachisoft.NCache.Common.Util.ResponseHelper.SerializeResponse(response);
 
-                    ConnectionManager.AssureSend(clientManager, serializedResponse, Alachisoft.NCache.Common.Enum.Priority.Critical);
-
+                    ConnectionManager.AssureSend(clientManager, serializedResponse, Alachisoft.NCache.Common.Enum.Priority.High);
                 }
             }
             catch (Exception exc)

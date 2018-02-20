@@ -1,4 +1,4 @@
-﻿// Copyright (c) 2018 Alachisoft
+// Copyright (c) 2018 Alachisoft
 // 
 // Licensed under the Apache License, Version 2.0 (the "License");
 // you may not use this file except in compliance with the License.
@@ -12,10 +12,11 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
+
 using System;
-using Alachisoft.NCache.Runtime.Serialization;
-using Alachisoft.NCache.Common.DataStructures.Clustered;
 using System.Collections;
+using Alachisoft.NCache.Common.DataStructures.Clustered;
+using Alachisoft.NCache.Runtime.Serialization;
 
 namespace Alachisoft.NCache.Common.DataReader
 {
@@ -29,10 +30,10 @@ namespace Alachisoft.NCache.Common.DataReader
 
         public int HiddenColumnCount
         {
-            get
+            get 
             {
                 int hiddenColumns = 0;
-                foreach (DictionaryEntry columnsEntry in _columns)
+                foreach(DictionaryEntry columnsEntry in _columns)
                 {
                     if (((RecordColumn)columnsEntry.Value).IsHidden)
                         hiddenColumns++;
@@ -77,7 +78,7 @@ namespace Alachisoft.NCache.Common.DataReader
 
         public bool Contains(string columnName)
         {
-            return _nameToIndex[columnName] != null;
+            return _nameToIndex[columnName] != null;     
         }
 
         public void Deserialize(Runtime.Serialization.IO.CompactReader reader)
@@ -114,5 +115,4 @@ namespace Alachisoft.NCache.Common.DataReader
             }
         }
     }
-
 }

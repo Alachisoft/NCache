@@ -34,7 +34,8 @@ namespace Alachisoft.NCache.Web.AsyncTask
         private BitSet _flag;
         private EventDataFilter _dataFilter = EventDataFilter.None;
 
-        public ItemUpdateCallbackTask(Broker parent, string key, short callBackId, bool notifyAsync, EventCacheItem item, EventCacheItem oldItem, BitSet flag,EventDataFilter dataFilter)
+        public ItemUpdateCallbackTask(Broker parent, string key, short callBackId, bool notifyAsync,
+            EventCacheItem item, EventCacheItem oldItem, BitSet flag, EventDataFilter dataFilter)
         {
             this._parent = parent;
             this._key = key;
@@ -54,7 +55,8 @@ namespace Alachisoft.NCache.Web.AsyncTask
                 {
                     _stats = new UsageStats();
                     _stats.BeginSample();
-                    _parent._cache.EventListener.OnCustomUpdateCallback(_callBackId, _key, _notifyAsync, _item, _oldItem, _flag,_dataFilter);
+                    _parent._cache.EventListener.OnCustomUpdateCallback(_callBackId, _key, _notifyAsync, _item,
+                        _oldItem, _flag, _dataFilter);
 
                     _stats.EndSample();
                     _parent._perfStatsColl2.IncrementAvgEventProcessingSample(_stats.Current);
@@ -62,7 +64,8 @@ namespace Alachisoft.NCache.Web.AsyncTask
             }
             catch (Exception ex)
             {
-                if (_parent.Logger.IsErrorLogsEnabled) _parent.Logger.NCacheLog.Error("Item Updated Callback Task.Process", ex.ToString());
+                if (_parent.Logger.IsErrorLogsEnabled)
+                    _parent.Logger.NCacheLog.Error("Item Updated Callback Task.Process", ex.ToString());
             }
         }
     }

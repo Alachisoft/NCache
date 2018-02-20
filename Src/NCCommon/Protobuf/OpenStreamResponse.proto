@@ -1,0 +1,7 @@
+
+option java_outer_classname="OpenStreamResponseProtocol";
+package Alachisoft.NCache.Common.Protobuf;
+message OpenStreamResponse 
+{
+	optional string lockHandle = 1;
+}

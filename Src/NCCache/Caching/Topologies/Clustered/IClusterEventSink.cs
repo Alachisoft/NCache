@@ -12,8 +12,8 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-using Alachisoft.NGroups;
 using Alachisoft.NCache.Common.Net;
+using Alachisoft.NGroups;
 
 namespace Alachisoft.NCache.Caching.Topologies.Clustered
 {

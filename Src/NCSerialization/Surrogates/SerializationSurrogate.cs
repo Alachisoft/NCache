@@ -10,7 +10,7 @@
 // distributed under the License is distributed on an "AS IS" BASIS,
 // WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
 // See the License for the specific language governing permissions and
-// limitations under the License.
+// limitations under the License
 
 using System;
 using System.Collections;
@@ -96,7 +96,8 @@ namespace Alachisoft.NCache.Serialization.Surrogates
                 if (provider != null)
                 {
                     obj = provider.RentAnObject();
-                }               
+                }
+               
             }
             return obj;
         }

@@ -54,6 +54,7 @@ namespace Alachisoft.NCache.Caching.Queries.Filters
 
         public object Evaluate(string paramName, IDictionary values)
         {
+
             return constant;
         }
 

@@ -16,7 +16,7 @@ namespace Alachisoft.NCache.Web
 {
     public enum Search
     {
-        LocalSearch=0,
+        LocalSearch = 0,
         LocalConfigSearch,
         GlobalSearch
     }

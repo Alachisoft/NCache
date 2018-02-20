@@ -13,11 +13,8 @@
 // limitations under the License.
 
 using System;
-using System.Collections.Generic;
-using System.Text;
 using Alachisoft.NCache.Common.Configuration;
 using Alachisoft.NCache.Runtime.Serialization;
-using Runtime = Alachisoft.NCache.Runtime;
 
 namespace Alachisoft.NCache.Config.Dom
 {
@@ -28,7 +25,9 @@ namespace Alachisoft.NCache.Config.Dom
         int autoBalancingThreshold = 60;
         int autoBalancingInterval = 30;
 
-        public AutoLoadBalancing() { }
+        public AutoLoadBalancing() {
+            
+        }
 
         [ConfigurationAttribute("enabled")]
         public bool Enabled

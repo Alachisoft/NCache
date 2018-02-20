@@ -12,15 +12,6 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-using System;
-
-using Alachisoft.NCache.Common;
-using System.IO;
-using Alachisoft.NCache.Common.Protobuf.Util;
-using Alachisoft.NCache.Web.Caching.Util;
-
-using Alachisoft.NCache.Web.Communication;
-
 namespace Alachisoft.NCache.Web.Command
 {
     internal sealed class VerifyLockCommand : CommandBase
@@ -53,7 +44,6 @@ namespace Alachisoft.NCache.Web.Command
             base._command.requestID = base.RequestId;
             base._command.lockVerifyCommand = _lockVerifyCommand;
             base._command.type = Alachisoft.NCache.Common.Protobuf.Command.Type.LOCK_VERIFY;
-
         }
     }
 }

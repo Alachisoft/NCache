@@ -10,18 +10,17 @@
 // C# engine by Marcus Klimstra (klimstra@home.nl)
 
 using System;
-using System.Text;
 using System.Collections;
 
 // C# Translation of GoldParser, by Marcus Klimstra <klimstra@home.nl>.
 // Based on GOLDParser by Devin Cook <http://www.devincook.com/goldparser>.
 namespace Alachisoft.NCache.Parser
 {
-	/// This class is used by the engine to hold a reduced rule. Rather than contain
-	/// a list of Symbols, a reduction contains a list of Tokens corresponding to the
-	/// the rule it represents. This class is important since it is used to store the
-	/// actual source program parsed by the Engine.
-	public class Reduction
+    /// This class is used by the engine to hold a reduced rule. Rather than contain
+    /// a list of Symbols, a reduction contains a list of Tokens corresponding to the
+    /// the rule it represents. This class is important since it is used to store the
+    /// actual source program parsed by the Engine.
+    public class Reduction
 	{
 		private ArrayList	m_tokens;
 		private Rule		m_parentRule;
@@ -92,7 +91,6 @@ namespace Alachisoft.NCache.Parser
 		
 		/* internal methods */
 
-		///
 		internal void AddToken(Token p_token)
 		{
 			m_tokens.Add(p_token);

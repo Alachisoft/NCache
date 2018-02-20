@@ -13,11 +13,8 @@
 // limitations under the License.
 
 using System;
-using System.Collections;
-using System.Text;
 using Alachisoft.NCache.Common.Configuration;
 using Alachisoft.NCache.Runtime.Serialization;
-using Runtime = Alachisoft.NCache.Runtime;
 
 namespace Alachisoft.NCache.Config.Dom
 {
@@ -38,9 +35,11 @@ namespace Alachisoft.NCache.Config.Dom
         [ConfigurationAttribute("value")]
         public string ParamValue
         {
-            get { return paramValue; }
+            get {
+                return paramValue;
+                }
             set { paramValue = value; }
-        }
+        } 
 
         #region ICloneable Members
 
@@ -70,5 +69,4 @@ namespace Alachisoft.NCache.Config.Dom
 
         #endregion
     }
-
 }

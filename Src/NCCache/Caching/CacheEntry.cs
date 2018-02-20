@@ -14,42 +14,67 @@
 
 using System;
 using System.Collections;
-using Alachisoft.NCache.Util;
+using Alachisoft.NCache.Caching.CacheSynchronization;
+
+using Alachisoft.NCache.Caching.DataGrouping;
 using Alachisoft.NCache.Caching.EvictionPolicies;
 using Alachisoft.NCache.Common;
 using Alachisoft.NCache.Caching.AutoExpiration;
+
 using Alachisoft.NCache.Runtime.Serialization.IO;
+
 using Alachisoft.NCache.Runtime.Serialization;
+
 using Alachisoft.NCache.Runtime;
+using Alachisoft.NCache.Runtime.Events;
+
+
 using Alachisoft.NCache.Serialization.Formatters;
 using Alachisoft.NCache.Common.Net;
 using Alachisoft.NCache.Common.DataStructures;
-using Alachisoft.NCache.Common.Stats;
+
 using Alachisoft.NCache.Common.Locking;
-using Alachisoft.NCache.Common.Util;
-using Runtime = Alachisoft.NCache.Runtime;
-using Alachisoft.NCache.Common.DataStructures.Clustered;
 using Alachisoft.NCache.Caching.Queries;
+using System.Collections.Generic;
+using Alachisoft.NCache.Common.DataStructures.Clustered;
+
 
 namespace Alachisoft.NCache.Caching
 {
     [Serializable]
-    public class CacheEntry : CacheItemBase, IDisposable, ICloneable, ICompactSerializable, ICustomSerializable, ISizable
+    public class CacheEntry : CacheItemBase, IDisposable, ICloneable, ICompactSerializable, ICustomSerializable, ISizable, IStreamItem
     {
         private static int PrimitiveDTSize = 200;
         private static byte FLATTENED = 0x01;
+        private static byte COMPRESSED = 0x02;
 
-        /// <summary> The falgs for the entry. </summary>
+        /// <summary> A Provider name for re-synchronization of cache</summary>
+        //private ushort _resyncProviderID;
+        private string _resyncProviderName;
+
+        //private ushort _providerID;
+        private string _providerName;
+
+        /// <summary> The flags for the entry. </summary>
         private BitSet _bitset = new BitSet();
 
         /// <summary> The eviction hint to be associated with the object. </summary>
         private EvictionHint _evh;
 
+        private string _lockClientId = string.Empty;
+        private int _lockThreadId = -1;
+
         /// <summary> The expiration hint to be associated with the object. </summary>
         private ExpirationHint _exh;
 
+        /// <summary> The group with which this item is related.</summary>
+        private GroupInfo _grpInfo = null;
+
         /// <summary> The query information for this item.</summary>
         private Hashtable _queryInfo = null;
+
+        /// <summary> List of keys which are dependiong on this item. </summary>
+        private HashVector _keysDependingOnMe;
 
         /// <summary> Time at which this item was created. </summary>
         private DateTime _creationTime = new DateTime();
@@ -59,7 +84,14 @@ namespace Alachisoft.NCache.Caching
 		private CacheItemPriority _priorityValue;
         private long _size = -1;
 
+        
+
         private LockMetaInfo lockMetaInfo = null;
+        
+        private UInt64 _version =0;
+
+        private CacheSyncDependency _syncDependency;
+        private string _type = null;
 
         private IndexInformation _indexInfo;
 
@@ -68,8 +100,20 @@ namespace Alachisoft.NCache.Caching
             get { return _indexInfo; }
             set { _indexInfo = value; }
         }
-       
-        private string _type = null;
+
+        private ArrayList _itemRemovedListener = ArrayList.Synchronized(new ArrayList(2));
+        private ArrayList _itemUpdateListener = ArrayList.Synchronized(new ArrayList(2));
+
+        public ArrayList ItemUpdateCallbackListener
+        {
+            get { return _itemUpdateListener; }
+        }
+
+        public ArrayList ItemRemoveCallbackListener
+        {
+            get { return _itemRemovedListener; }
+        }
+
 
         public CacheEntry() { }
 
@@ -84,7 +128,6 @@ namespace Alachisoft.NCache.Caching
         {
             _exh = expiryHint;
             _evh = evictionHint;
-            
             _bitset.SetBit(FLATTENED);
 
             _creationTime = System.DateTime.Now;
@@ -104,7 +147,9 @@ namespace Alachisoft.NCache.Caching
                 if (_exh != null)
                 {
                     ((IDisposable)_exh).Dispose();
-                    _exh = null;
+
+                    if ((this.KeysIAmDependingOn == null || this.KeysIAmDependingOn.Length == 0) && (this.KeysDependingOnMe == null || this.KeysDependingOnMe.Count == 0))
+                    { _exh = null; }
                 }
                 _evh = null;
             }
@@ -115,12 +160,12 @@ namespace Alachisoft.NCache.Caching
         public string ObjectType
         {
             get
-            {
+            {               
                 return this._type;
             }
             set
             {
-                this._type = Common.Util.StringPool.PoolString(value);
+                this._type = Common.Util.StringPool.PoolString(value);              
             }
         }
 
@@ -130,7 +175,7 @@ namespace Alachisoft.NCache.Caching
             {
                 if(_queryInfo != null)
                 {
-                    if (_queryInfo["query-info"] != null)
+                    if (_queryInfo["query-info"] != null || _queryInfo["tag-info"] != null || _queryInfo["named-tag-info"] != null)
                         return true;
                 }
 
@@ -140,6 +185,32 @@ namespace Alachisoft.NCache.Caching
             
         }
 
+        public string ResyncProviderName
+        {
+            get 
+            {               
+                return _resyncProviderName; 
+            }
+            set
+            {
+                _resyncProviderName = Common.Util.StringPool.PoolString(value);                
+            }
+        }
+
+        /// <summary>
+        /// Get or set provider name
+        /// </summary>
+        public string ProviderName
+        {
+            get
+            {
+                return this._providerName; 
+            }
+            set
+            {
+                this._providerName = Common.Util.StringPool.PoolString(value);               
+            }
+        }
 
         /// <summary>
         /// Eviction hint for the object.
@@ -157,7 +228,7 @@ namespace Alachisoft.NCache.Caching
         }
 
 		public CacheItemPriority Priority
-        {
+        { 
             get { return _priorityValue; }
             set { _priorityValue = value; }
         }
@@ -176,6 +247,19 @@ namespace Alachisoft.NCache.Caching
         }
 
         /// <summary> 
+        /// The group with which this item is related.
+        /// </summary>
+        public GroupInfo GroupInfo
+        {
+            get { return _grpInfo; }
+            set
+            {
+                lock (this)
+                { _grpInfo = value; }
+            }
+        }
+
+        /// <summary> 
         /// The query information for this item.
         /// </summary>
         public Hashtable QueryInfo
@@ -185,6 +269,17 @@ namespace Alachisoft.NCache.Caching
             {
                 lock (this)
                 { _queryInfo = value; }
+            }
+        }
+
+        /// <summary> List of Keys depending on this item. </summary>
+        public HashVector KeysDependingOnMe
+        {
+            get { return _keysDependingOnMe; }
+            set
+            {
+                lock (this)
+                { _keysDependingOnMe = value; }
             }
         }
 
@@ -304,7 +399,30 @@ namespace Alachisoft.NCache.Caching
             }
         }
 
-       
+    
+
+        /// <summary>
+        /// Gets the LockManager for this cache entry.
+        /// </summary>
+        public LockManager RWLockManager
+        {
+            get
+            {
+                if (lockMetaInfo==null || lockMetaInfo.LockManager == null)
+                {
+                    lock (this)
+                    {
+                        if(lockMetaInfo == null)
+                            lockMetaInfo=new LockMetaInfo();
+                 
+                        if (lockMetaInfo.LockManager == null)
+                            lockMetaInfo.LockManager = new LockManager();
+                    }
+                }
+                return lockMetaInfo.LockManager;
+            }
+        }
+
         public LockExpiration LockExpiration
         {
             get 
@@ -352,7 +470,7 @@ namespace Alachisoft.NCache.Caching
                 if (this.Flag.IsAnyBitSet(BitSetConstants.LockedItem))
                 {
                     if (lockId == null) return false;
-                    if (Object.Equals(this.LockId, lockId))
+                    if (Object.Equals(this.LockId, lockId) || (string.IsNullOrEmpty(this.LockId as string) && string.IsNullOrEmpty(lockId as string)))
                         return true;
                 }
                 return false;                
@@ -401,8 +519,11 @@ namespace Alachisoft.NCache.Caching
             }
         }
 
-        public bool Lock(LockExpiration lockExpiration, ref object lockId, ref DateTime lockDate)
+        public bool Lock(LockExpiration lockExpiration, ref object lockId, ref DateTime lockDate, OperationContext operationContext)
         {
+            string clientId = operationContext.GetValueByField(OperationContextFieldName.ClientId) as string;
+            int clientThreadId = operationContext.GetValueByField(OperationContextFieldName.ClientThreadId) != null ? (int)operationContext.GetValueByField(OperationContextFieldName.ClientThreadId) : -1;
+
             lock (this)
             {
                 if (!this.IsLocked(ref lockId, ref lockDate))
@@ -412,6 +533,18 @@ namespace Alachisoft.NCache.Caching
                     this.LockDate = lockDate;
                     this.LockExpiration = lockExpiration;
                     if (this.LockExpiration != null) this.LockExpiration.Set();
+                    if (!String.IsNullOrEmpty(clientId) && clientThreadId != -1)
+                    {
+                        this._lockClientId = clientId;
+                        this._lockThreadId = clientThreadId;
+                        object isRetryOperation = operationContext.GetValueByField(OperationContextFieldName.IsRetryOperation);
+                        if (isRetryOperation != null && (Boolean)isRetryOperation)
+                        {
+                            if (!String.IsNullOrEmpty(clientId) && clientThreadId != -1 &&
+                                clientId.Equals(this._lockClientId) && clientThreadId == this._lockThreadId)
+                                return true;
+                        }
+                    }
                     return true;
                 }
                 else
@@ -424,13 +557,121 @@ namespace Alachisoft.NCache.Caching
             }
         }
 
+        [CLSCompliant(false)]
+		public UInt64 Version
+        {
+            get { return _version; }
+            set { _version = value; } 
+           
+        }
+
+        public void UpdateVersion(CacheEntry entry)
+        {          
+            lock (this)
+            {
+                CopyVersion(entry);
+                _version++;
+            }         
+        }
+
+        private void CopyVersion(CacheEntry entry)
+        {
+            lock (this)
+            {
+                this._version = entry.Version;
+            }
+        }
+       
         public void UpdateLastModifiedTime(CacheEntry entry)
         {
+            //_semaLock.Enter();
+
             lock (this)
             {
                 this._creationTime = entry.CreationTime;
             }
+
+            //_semaLock.Exit();
         }
+
+        
+		[CLSCompliant(false)]
+		public bool IsNewer(ulong version)
+        {
+            lock (this)
+            {
+                return this.Version > version;
+            }
+        }
+
+        [CLSCompliant(false)]
+		public bool CompareVersion(ulong version)
+        {
+            lock (this)
+            {
+                return this._version == version;
+            }
+        }
+
+        public object[] KeysIAmDependingOn
+        {
+            get
+            {
+                ArrayList keyList = null;
+                if (ExpirationHint != null)
+                {
+                    if (ExpirationHint._hintType == ExpirationHintType.AggregateExpirationHint)
+                    {
+                        IList<ExpirationHint> hints = ((AggregateExpirationHint)ExpirationHint).Hints;
+                        for (int i = 0; i < hints.Count ; i++)
+                        {
+                            if (hints[i]._hintType == ExpirationHintType.KeyDependency)
+                            {
+                                if (keyList == null)
+                                     keyList = new ArrayList();
+
+                                string[] tmp = ((KeyDependency)hints[i]).CacheKeys;
+                                if (tmp != null && tmp.Length > 0)
+                                {
+                                    for (int j = 0; j < tmp.Length; j++)
+                                    {
+                                        if (!keyList.Contains(tmp[j]))
+                                            keyList.Add(tmp[j]);
+                                    }
+                                }
+                            }
+                        }
+                        if (keyList != null && keyList.Count > 0)
+                        {
+                            object[] cacheKeys = new object[keyList.Count];
+                            keyList.CopyTo(cacheKeys, 0);
+                            return cacheKeys;
+                        }
+                    }
+                    else if (ExpirationHint._hintType == ExpirationHintType.KeyDependency)
+                    {
+                        return ((KeyDependency)ExpirationHint).CacheKeys;
+                    }
+                }
+                return null;
+            }
+        }
+
+        /// <summary>
+        /// Gets/Sets the cache sync dependency.
+        /// </summary>
+        public CacheSyncDependency SyncDependency
+        {
+            get { return _syncDependency; }
+            set
+            {
+                lock (this)
+                {
+                    _syncDependency = value;
+                }
+            }
+        }
+
         public Array UserData
         {
             get
@@ -452,6 +693,32 @@ namespace Alachisoft.NCache.Caching
                 return userData;
             }
         }
+
+        public byte[] FullUserData
+        {
+            get
+            {
+                byte[] fullUserData = null;
+                if (Value != null)
+                {
+                    UserBinaryObject ubObject = null;
+                    if (Value is CallbackEntry)
+                    {
+                        if (((CallbackEntry)Value).Value != null)
+                            ubObject = ((CallbackEntry)Value).Value as UserBinaryObject;
+                    }
+                    else
+                    {
+                        ubObject = Value as UserBinaryObject;
+                    }
+
+                    if (ubObject != null)
+                        fullUserData = ubObject.GetFullObject();
+                }
+                return fullUserData;
+            }
+        }
+
         /// <summary> 
         /// The actual object provided by the client application 
         /// </summary>
@@ -459,7 +726,7 @@ namespace Alachisoft.NCache.Caching
         {
             get { return base.Value; }
             set
-            {
+            {               
                 lock (this)
                 {
                     if (_bitset != null)
@@ -488,28 +755,95 @@ namespace Alachisoft.NCache.Caching
             }
         }
 
+        private void AddItemUpdateCallback(CallbackInfo cbInfo)
+        {
+            if (_itemUpdateListener == null)
+                _itemUpdateListener = ArrayList.Synchronized(new ArrayList(2));
+
+            int indexOfCallback = _itemUpdateListener.IndexOf(cbInfo);
+            if (indexOfCallback != -1)
+            {
+                //update the data filter only
+                CallbackInfo oldCallback = _itemUpdateListener[indexOfCallback] as CallbackInfo;
+                oldCallback.DataFilter = cbInfo.DataFilter;
+            }
+            else
+            {
+                _itemUpdateListener.Add(cbInfo);
+            }
+        }
+        private void AddItemRemoveCallback(CallbackInfo cbInfo)
+        {
+            if (_itemRemovedListener == null)
+                _itemRemovedListener = ArrayList.Synchronized(new ArrayList(2));
+
+            int indexOfCallback = _itemRemovedListener.IndexOf(cbInfo);
+            if (indexOfCallback != -1)
+            {
+                //update the data filter only
+                CallbackInfo oldCallback = _itemRemovedListener[indexOfCallback] as CallbackInfo;
+                oldCallback.DataFilter = cbInfo.DataFilter;
+            }
+            else
+            {
+                _itemRemovedListener.Add(cbInfo);
+            }
+        }
+
+
         internal void AddCallbackInfo(CallbackInfo updateCallback, CallbackInfo removeCallback)
         {
             lock (this)
             {
                 CallbackEntry cbEntry;
-
-                if (Value is CallbackEntry)
+                bool isPullBasedCallback = false;
+                //pullbasedNotification
+                if (updateCallback != null && updateCallback.CallbackType == CallbackType.PullBasedCallback)
                 {
-                    cbEntry = Value as CallbackEntry;
+                    AddItemUpdateCallback(updateCallback);
+                    isPullBasedCallback = true;
                 }
-                else
+                if (removeCallback != null && removeCallback.CallbackType == CallbackType.PullBasedCallback)
                 {
-                    cbEntry = new CallbackEntry();
-                    cbEntry.Value = Value;
-                    cbEntry.Flag = Flag;
-                    Value = cbEntry;
+                    AddItemRemoveCallback(removeCallback);
+                    isPullBasedCallback = true;
                 }
+                if (!isPullBasedCallback)
+                {
 
-                if (updateCallback != null)
-                    cbEntry.AddItemUpdateCallback(updateCallback);
-                if (removeCallback != null)
-                    cbEntry.AddItemRemoveCallback(removeCallback);
+                    if (Value is CallbackEntry)
+                    {
+                        cbEntry = Value as CallbackEntry;
+                    }
+                    else
+                    {
+                        cbEntry = new CallbackEntry();
+                        cbEntry.Value = Value;
+                        cbEntry.Flag = Flag;
+                        Value = cbEntry;
+                    }
+
+                    if (updateCallback != null)
+                        cbEntry.AddItemUpdateCallback(updateCallback);
+                    if (removeCallback != null)
+                        cbEntry.AddItemRemoveCallback(removeCallback);
+                }
+            }
+        }
+
+        private void RemoveItemUpdateCallback(CallbackInfo cbInfo)
+        {
+            if (_itemUpdateListener != null && _itemUpdateListener.Contains(cbInfo))
+            {
+                _itemUpdateListener.Remove(cbInfo);
+            }
+        }
+
+        private void RemoveItemRemoveCallback(CallbackInfo cbInfo)
+        {
+            if (_itemRemovedListener != null && _itemRemovedListener.Contains(cbInfo))
+            {
+                _itemRemovedListener.Remove(cbInfo);
             }
         }
 
@@ -524,13 +858,22 @@ namespace Alachisoft.NCache.Caching
                     {
                         cbEntry = Value as CallbackEntry;
 
-                        if (updateCallback != null)
+                        if (updateCallback != null && updateCallback.CallbackType == CallbackType.PushBasedNotification)
                             cbEntry.RemoveItemUpdateCallback(updateCallback);
-                        if (removeCallback != null)
+                        if (removeCallback != null && removeCallback.CallbackType == CallbackType.PushBasedNotification)
                             cbEntry.RemoveItemRemoveCallback(removeCallback);
 
                     }
                 }
+                //dont use else as currently both pull and push can be confiured simoultaneously
+                //if pullbased notifications
+                {
+                    if (updateCallback != null)
+                        RemoveItemUpdateCallback(updateCallback);
+                    if (removeCallback != null)
+                        RemoveItemRemoveCallback(removeCallback);
+                }
+
             }
         }
         /// <summary>
@@ -540,8 +883,14 @@ namespace Alachisoft.NCache.Caching
         {
             get { return _bitset.IsBitSet(FLATTENED); }
         }
-        
-        
+
+        internal bool IsCompressed
+        {
+            get { return _bitset.IsBitSet(COMPRESSED);}
+        }
+
+
+
         public BitSet Flag
         {
             set
@@ -563,10 +912,17 @@ namespace Alachisoft.NCache.Caching
             {
                 e._exh = _exh;
                 e._evh = _evh;
+                if (this._grpInfo != null)
+                    e._grpInfo = (GroupInfo)this._grpInfo.Clone();
                 e._bitset = (BitSet)_bitset.Clone();
 
+
+                e._syncDependency = _syncDependency;
+
                 e._queryInfo = _queryInfo;
-               
+                if (_keysDependingOnMe != null)
+                    e._keysDependingOnMe = _keysDependingOnMe.Clone() as HashVector;
+
                 if (this.LockMetaInfo != null)
                 {
                     e.LockId = this.LockId;
@@ -576,9 +932,11 @@ namespace Alachisoft.NCache.Caching
                     e.LockMetaInfo.LockManager = this.LockMetaInfo.LockManager;
                 }
                 e._size = _size;
+                e._version = this._version;
                 e._creationTime = this._creationTime;
                 e._lastModifiedTime = this._lastModifiedTime;
-
+                e._resyncProviderName = this._resyncProviderName;
+                e._providerName = this._providerName;                
                 if (this.Value is CallbackEntry)
                 {
                     CallbackEntry cbEntry = (CallbackEntry)this.Value;
@@ -605,10 +963,17 @@ namespace Alachisoft.NCache.Caching
 
             lock (this)
             {
+                if (this._grpInfo != null)
+                    e._grpInfo = (GroupInfo)this._grpInfo.Clone();
                 e._bitset = (BitSet)_bitset.Clone();
                 e.Priority = Priority;
 
+
+                e._syncDependency = _syncDependency;
+
                 e._queryInfo = _queryInfo;
+                if (_keysDependingOnMe != null)
+                    e._keysDependingOnMe = _keysDependingOnMe.Clone() as HashVector;
                 if (this.LockMetaInfo != null)
                 {
                     e.LockId = this.LockId;
@@ -619,17 +984,109 @@ namespace Alachisoft.NCache.Caching
                 }
                
                 e._size = _size;
+                e._version = this._version;
                 e._creationTime = this._creationTime;
                 e._lastModifiedTime = this._lastModifiedTime;
-
+                e._resyncProviderName = this._resyncProviderName;
+                e._providerName = this._providerName;                
                 e._type = this._type;
-                e.IndexInfo = this.IndexInfo;
+                e._indexInfo = this._indexInfo;
             }
             return e;
         }
 
 
         #endregion
+
+#if COMMUNITY
+        /// <summary>
+        /// Creates a new object that is a copy of the current instance and that is routable as well.
+        /// </summary>
+        /// <returns>A routable copy of this instance.</returns>
+        internal CacheEntry RoutableClone(Address localAddress)
+        {
+            lock (this)
+            {
+                if (_syncDependency != null || _exh != null)
+                {
+                     
+                    //see if expiration hint itself is non-routable then we only need 
+                    //a node expiration to handle both the syncDependency and expiration.
+                    //otherwise we need a node expiration for syncDependency and also need to
+                    //maintain the actual routable expiration hint.
+
+                    NodeExpiration expiry = null;
+                    if (localAddress != null)
+                    {
+                        expiry = new NodeExpiration(localAddress);
+                    }
+
+                    if (SyncDependency == null)
+                    {
+                        if (!_exh.IsRoutable)
+                        {
+                            CacheEntry e = new CacheEntry(Value, expiry, _evh);
+                            if (_grpInfo != null)
+                                e._grpInfo = (GroupInfo)_grpInfo.Clone();
+                            e._bitset = (BitSet)_bitset.Clone();
+                            e._version = this._version;
+                            e._creationTime = this._creationTime;
+                            e._lastModifiedTime = this._lastModifiedTime;
+                            
+                            if(this.LockMetaInfo!=null)
+                                e.LockExpiration = this.LockExpiration;
+
+                            e._resyncProviderName = this._resyncProviderName;                            
+                            e.Priority = Priority;
+                            return e;
+                        }
+                    }
+                    else
+                    {
+                        if (_exh != null && _exh.IsRoutable)
+                        {
+                            AggregateExpirationHint aggHint = new AggregateExpirationHint();
+
+                            aggHint.Add(_exh);
+
+                            CacheEntry e = new CacheEntry(Value, aggHint, _evh);
+                            if (_grpInfo != null)
+                                e._grpInfo = (GroupInfo)_grpInfo.Clone();
+                            e._bitset = (BitSet)_bitset.Clone();
+                            e._version = this._version;
+                            e._creationTime = this._creationTime;
+                            e._lastModifiedTime = this._lastModifiedTime;
+
+                            if (this.LockMetaInfo != null)
+                                e.LockExpiration = this.LockExpiration;
+                            
+                            e._resyncProviderName = this._resyncProviderName;                            
+                            e.Priority = Priority;
+                            return e;
+                        }
+                        else
+                        {
+                            CacheEntry e = new CacheEntry(Value, expiry, _evh);
+                            if (_grpInfo != null)
+                                e._grpInfo = (GroupInfo)_grpInfo.Clone();
+                            e._bitset = (BitSet)_bitset.Clone();
+                            e._version = this._version;
+                            e._creationTime = this._creationTime;
+                            e._lastModifiedTime = this._lastModifiedTime;
+
+                            if (this.LockMetaInfo != null)
+                                e.LockExpiration = this.LockExpiration;
+                            
+                            e._resyncProviderName = this._resyncProviderName;                            
+                            e.Priority = Priority;
+                            return e;
+                        }
+                    }
+                }
+            }
+            return (CacheEntry)Clone();
+        }
+#endif
 
         /// <summary>
         /// Creates a new object that is a copy of the current instance and that is routable as well.
@@ -691,7 +1148,7 @@ namespace Alachisoft.NCache.Caching
                         ub = obj as UserBinaryObject;
 
                     byte[] data = ub.GetFullObject();
-
+                   
                     _size = data.Length;
                     obj = CompactBinaryFormatter.FromByteBuffer(data, cacheContext);
                     if (cbEntry != null)
@@ -723,7 +1180,7 @@ namespace Alachisoft.NCache.Caching
                         _bitset.UnsetBit(FLATTENED);
                     }
                 }
-                catch (Exception e)
+                catch (Exception)
                 {
                 }
             }
@@ -743,12 +1200,21 @@ namespace Alachisoft.NCache.Caching
                 _bitset = new BitSet(reader.ReadByte());
                 _evh = EvictionHint.ReadEvcHint(reader);
                 _exh = ExpirationHint.ReadExpHint(reader);
+                _grpInfo = GroupInfo.ReadGrpInfo(reader);
+
+                _syncDependency = reader.ReadObject() as CacheSyncDependency;
+
                 _queryInfo = (Hashtable)reader.ReadObject();
+                _keysDependingOnMe = (HashVector)reader.ReadObject();
                 _size = reader.ReadInt64();
                 lockMetaInfo = reader.ReadObject() as LockMetaInfo;
+
+                _version = reader.ReadUInt64();
                 _creationTime = reader.ReadDateTime();
                 _lastModifiedTime = reader.ReadDateTime();
-                _priorityValue = (CacheItemPriority)reader.ReadInt32();
+                ResyncProviderName = reader.ReadObject() as string;                
+				_priorityValue = (CacheItemPriority)reader.ReadInt32();
+                ProviderName = reader.ReadObject() as string;            
                 _type = reader.ReadObject() as string;
             }
         }
@@ -761,12 +1227,21 @@ namespace Alachisoft.NCache.Caching
                 writer.Write(_bitset.Data);
                 EvictionHint.WriteEvcHint(writer, _evh);
                 ExpirationHint.WriteExpHint(writer, _exh);
+                GroupInfo.WriteGrpInfo(writer, _grpInfo);
+
+                writer.WriteObject(_syncDependency);
+
                 writer.WriteObject(_queryInfo);
+                writer.WriteObject(_keysDependingOnMe);
                 writer.Write(_size);
                 writer.WriteObject(lockMetaInfo);
+                writer.Write(_version);
                 writer.Write(_creationTime);
                 writer.Write(_lastModifiedTime);
+                writer.WriteObject(ResyncProviderName);
                 writer.Write((int)_priorityValue);
+                writer.WriteObject(ProviderName);
+
                 writer.WriteObject(this._type);
             }
         }
@@ -836,7 +1311,15 @@ namespace Alachisoft.NCache.Caching
                         }
                         size += entry.InMemorySize;
                     }
-                }             
+                }
+                if (_grpInfo != null)
+                {
+                    size += _grpInfo.InMemorySize;
+                }
+                if (KeysDependingOnMe != null)
+                {
+                    size += (KeysDependingOnMe.BucketCount * MemoryUtil.NetHashtableOverHead);
+                }
 
                 return size;
             }         
@@ -871,6 +1354,56 @@ namespace Alachisoft.NCache.Caching
             }
         }
 
+        public void MergeCallbackListeners(CacheEntry entryToMerge)
+        {
+            if (entryToMerge != null)
+            {
+                if (entryToMerge._itemRemovedListener != null && entryToMerge._itemRemovedListener.Count > 0)
+                {
+                    if (_itemRemovedListener == null)
+                        _itemRemovedListener = ArrayList.Synchronized(new ArrayList(2));
+
+                    foreach (CallbackInfo cbInfo in entryToMerge._itemRemovedListener)
+                    {
+                        AddItemRemoveCallback(cbInfo);
+                    }
+                }
+
+                if (entryToMerge._itemUpdateListener != null && entryToMerge._itemUpdateListener.Count > 0)
+                {
+                    if (_itemUpdateListener == null)
+                        _itemUpdateListener = ArrayList.Synchronized(new ArrayList(2));
+
+                    foreach (CallbackInfo cbInfo in entryToMerge._itemUpdateListener)
+                    {
+                        AddItemUpdateCallback(cbInfo);
+                    }
+                }
+            }
+
+        }
+
+
+        #region IStreamItem Members
+
+        public VirtualArray Read(int offset, int length)
+        {
+            VirtualArray vBuffer = null;
+            UserBinaryObject ubObject =(UserBinaryObject) ( Value is CallbackEntry ? ((CallbackEntry)Value).Value : Value);
+
+            if (ubObject != null)
+                vBuffer = ubObject.Read(offset, length);
+            return vBuffer;
+        }
+
+        public void Write(VirtualArray vBuffer, int srcOffset, int dstOffset, int length)
+        {
+            UserBinaryObject ubObject = (UserBinaryObject)(Value is CallbackEntry ? ((CallbackEntry)Value).Value : Value);
+
+            if (ubObject != null)
+                ubObject.Write(vBuffer, srcOffset, dstOffset, length);
+        }
+
         public int Length
         {
             get
@@ -897,5 +1430,8 @@ namespace Alachisoft.NCache.Caching
             }
         }
 
+        #endregion
+
+        public bool IsSurrogate { get; set; }
     }
 }

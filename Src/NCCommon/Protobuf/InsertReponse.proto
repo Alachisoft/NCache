@@ -2,4 +2,5 @@
 option java_outer_classname="InsertReponseProtocol";
 package Alachisoft.NCache.Common.Protobuf;
 message InsertResponse {
+	optional uint64 version = 1;
 }

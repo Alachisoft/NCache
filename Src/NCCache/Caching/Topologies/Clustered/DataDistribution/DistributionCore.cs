@@ -14,7 +14,6 @@
 
 using System;
 using System.Collections;
-using Alachisoft.NCache.Common.DataStructures;
 
 namespace Alachisoft.NCache.Caching.Topologies.Clustered
 {
@@ -22,6 +21,9 @@ namespace Alachisoft.NCache.Caching.Topologies.Clustered
     {
         public DistributionCore()
         {
+            //
+            // TODO: Add constructor logic here
+            //
         }
 
         public enum BalanceAction
@@ -51,6 +53,7 @@ namespace Alachisoft.NCache.Caching.Topologies.Clustered
             }
         }
 
+     
         //
         // In case a member joins, each node must contribute its share of buckets to grant and weight to divide.
         //
@@ -89,6 +92,7 @@ namespace Alachisoft.NCache.Caching.Topologies.Clustered
                 {
                     if (bMatrix.Matrix[j, i] == -1)
                     {
+                        //i--;
                         break;
                     }
                     else
@@ -166,6 +170,7 @@ namespace Alachisoft.NCache.Caching.Topologies.Clustered
             return -1; //We got no single row that can be selected under required criteria
         }
 
+       
         //Backbone to be written now.//Two arrays ....both need to give a right combination against required weight.
         private static RowsBalanceResult BalanceWeight(Tuple rowPair, DistributionMatrix bMatrix)
         {

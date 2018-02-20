@@ -1,4 +1,4 @@
-﻿// Copyright (c) 2018 Alachisoft
+// Copyright (c) 2018 Alachisoft
 // 
 // Licensed under the Apache License, Version 2.0 (the "License");
 // you may not use this file except in compliance with the License.
@@ -12,10 +12,8 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-
-
 using Alachisoft.NCache.Common.Net;
-
+using System.Collections;
 
 namespace Alachisoft.NCache.SocketServer.EventTask
 {
@@ -52,9 +50,9 @@ namespace Alachisoft.NCache.SocketServer.EventTask
                 response.nodeLeft = nodeLeft;
                 response.responseType = Alachisoft.NCache.Common.Protobuf.Response.Type.NODE_LEFT_EVENT;
 
-                byte[] serializedResponse = Alachisoft.NCache.Common.Util.ResponseHelper.SerializeResponse(response);
+                IList serializedResponse = Alachisoft.NCache.Common.Util.ResponseHelper.SerializeResponse(response);
 
-                ConnectionManager.AssureSend(clientManager, serializedResponse, Alachisoft.NCache.Common.Enum.Priority.Critical);
+                ConnectionManager.AssureSend(clientManager, serializedResponse, Alachisoft.NCache.Common.Enum.Priority.High);                
             }
         }
     }

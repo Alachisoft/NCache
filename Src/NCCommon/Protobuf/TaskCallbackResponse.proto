@@ -1,0 +1,15 @@
+import "EventId.proto";
+
+option java_outer_classname="TaskCallbackResponse";
+
+package Alachisoft.NCache.Common.Protobuf;
+
+message TaskCallbackResponse {
+	optional int64 RequestId = 1;
+    optional int32 CallbackId = 2;
+    optional int32 TaskStatus = 3;
+    optional bytes TaskResult = 4;
+    optional string TaskFailureReason = 5;
+    optional string TaskId = 6;
+    optional EventId EventId = 7;
+}

@@ -14,10 +14,9 @@
 
 using System;
 using System.Collections;
+using Alachisoft.NCache.Common.Queries;
 using Alachisoft.NCache.Parser;
 using Alachisoft.NCache.Common.DataStructures.Clustered;
-using Alachisoft.NCache.Common.Queries;
-using Alachisoft.NCache.Common.Enum;
 
 namespace Alachisoft.NCache.Caching.Queries.Filters
 {
@@ -56,6 +55,7 @@ namespace Alachisoft.NCache.Caching.Queries.Filters
             }
             else
             {
+                //if (queryContext.Cache.Count != 0)
                 throw new AttributeIndexNotDefined("Index is not defined for attribute '" + ((MemberFunction)functor).MemberName + "'");
             }
         }
@@ -64,7 +64,6 @@ namespace Alachisoft.NCache.Caching.Queries.Filters
         {
             AttributeIndex index = queryContext.Index;
             IIndexStore store = ((MemberFunction)functor).GetStore(index);
-
             if (store != null)
             {
                 ClusteredArrayList keyList = null;

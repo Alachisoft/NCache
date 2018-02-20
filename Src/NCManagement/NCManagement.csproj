@@ -13,8 +13,12 @@
     </SccProvider>
     <Configuration Condition=" '$(Configuration)' == '' ">Debug</Configuration>
     <Platform Condition=" '$(Platform)' == '' ">AnyCPU</Platform>
+    <ApplicationIcon>
+    </ApplicationIcon>
+    <AssemblyKeyContainerName>
+    </AssemblyKeyContainerName>
     <AssemblyName>Alachisoft.NCache.Management</AssemblyName>
-    <AssemblyOriginatorKeyFile>..\\..\\Resources\\ncache.snk</AssemblyOriginatorKeyFile>
+    <AssemblyOriginatorKeyFile>..\..\Resources\ncache.snk</AssemblyOriginatorKeyFile>
     <DefaultClientScript>JScript</DefaultClientScript>
     <DefaultHTMLPageLayout>Grid</DefaultHTMLPageLayout>
     <DefaultTargetSchema>IE50</DefaultTargetSchema>
@@ -30,9 +34,9 @@
     </UpgradeBackupLocation>
     <SccAuxPath>
     </SccAuxPath>
-    <TargetFrameworkVersion>v4.0</TargetFrameworkVersion>
     <OldToolsVersion>2.0</OldToolsVersion>
     <IsWebBootstrapper>false</IsWebBootstrapper>
+    <TargetFrameworkProfile />
     <PublishUrl>publish\</PublishUrl>
     <Install>true</Install>
     <InstallFrom>Disk</InstallFrom>
@@ -49,10 +53,16 @@
     <BootstrapperEnabled>true</BootstrapperEnabled>
   </PropertyGroup>
   <PropertyGroup Condition=" '$(Configuration)|$(Platform)' == 'Debug|AnyCPU' ">
-    <OutputPath>bin\4.0\debug\</OutputPath>
+    <TargetFrameworkVersion>v4.0</TargetFrameworkVersion>
+    <OutputPath>bin\4.0\debug.enterprise\</OutputPath>
     <AllowUnsafeBlocks>false</AllowUnsafeBlocks>
     <BaseAddress>285212672</BaseAddress>
-    <DefineConstants>TRACE;DEBUG;</DefineConstants>
+    <CheckForOverflowUnderflow>false</CheckForOverflowUnderflow>
+    <ConfigurationOverrideFile>
+    </ConfigurationOverrideFile>
+    <DefineConstants>TRACE;DEBUG;COMMUNITY;NCACHEJAVA;NET40;</DefineConstants>
+    <DocumentationFile>
+    </DocumentationFile>
     <DebugSymbols>true</DebugSymbols>
     <FileAlignment>4096</FileAlignment>
     <NoStdLib>false</NoStdLib>
@@ -66,18 +76,20 @@
     <DebugType>full</DebugType>
     <ErrorReport>prompt</ErrorReport>
     <PlatformTarget>AnyCPU</PlatformTarget>
+    <CodeAnalysisRuleSet>AllRules.ruleset</CodeAnalysisRuleSet>
   </PropertyGroup>
   <PropertyGroup Condition=" '$(Configuration)|$(Platform)' == 'Release|AnyCPU' ">
-    <OutputPath>bin\4.0\release\</OutputPath>
+    <TargetFrameworkVersion>v4.0</TargetFrameworkVersion>
+    <OutputPath>bin\4.0\release.enterprise\</OutputPath>
     <AllowUnsafeBlocks>false</AllowUnsafeBlocks>
     <BaseAddress>285212672</BaseAddress>
     <CheckForOverflowUnderflow>false</CheckForOverflowUnderflow>
     <ConfigurationOverrideFile>
     </ConfigurationOverrideFile>
-    <DefineConstants>TRACE;</DefineConstants>
+    <DefineConstants>TRACE;COMMUNITY;NET40;</DefineConstants>
     <DocumentationFile>
     </DocumentationFile>
-    <DebugSymbols>false</DebugSymbols>
+    <DebugSymbols>true</DebugSymbols>
     <FileAlignment>4096</FileAlignment>
     <NoStdLib>false</NoStdLib>
     <NoWarn>
@@ -87,36 +99,17 @@
     <RemoveIntegerChecks>false</RemoveIntegerChecks>
     <TreatWarningsAsErrors>false</TreatWarningsAsErrors>
     <WarningLevel>4</WarningLevel>
-    <DebugType>none</DebugType>
+    <DebugType>pdbonly</DebugType>
     <ErrorReport>prompt</ErrorReport>
     <PlatformTarget>AnyCPU</PlatformTarget>
+    <CodeAnalysisRuleSet>AllRules.ruleset</CodeAnalysisRuleSet>
   </PropertyGroup>
   <PropertyGroup>
     <SignAssembly>true</SignAssembly>
   </PropertyGroup>
-  <PropertyGroup Condition="'$(Configuration)|$(Platform)' == 'Debug.2x|AnyCPU'">
-    <DebugSymbols>true</DebugSymbols>
-    <OutputPath>bin\2.0\debug\</OutputPath>
-    <DefineConstants>TRACE;DEBUG;</DefineConstants>
-    <BaseAddress>285212672</BaseAddress>
-    <FileAlignment>4096</FileAlignment>
-    <DebugType>full</DebugType>
-    <PlatformTarget>AnyCPU</PlatformTarget>
-    <TargetFrameworkVersion>v3.5</TargetFrameworkVersion>
-    <ErrorReport>prompt</ErrorReport>
-  </PropertyGroup>
-  <PropertyGroup Condition="'$(Configuration)|$(Platform)' == 'Release.2x|AnyCPU'">
-    <OutputPath>bin\2.0\release\</OutputPath>
-    <DefineConstants>TRACE;</DefineConstants>
-    <BaseAddress>285212672</BaseAddress>
-    <Optimize>true</Optimize>
-    <FileAlignment>4096</FileAlignment>
-    <PlatformTarget>AnyCPU</PlatformTarget>
-    <TargetFrameworkVersion>v3.5</TargetFrameworkVersion>
-    <ErrorReport>prompt</ErrorReport>
-  </PropertyGroup>
   <ItemGroup>
-    <Reference Include="protobuf-net">
+    <Reference Include="protobuf-net, Version=1.0.0.282, Culture=neutral, PublicKeyToken=257b51d87d2e4d67, processorArchitecture=MSIL">
+      <SpecificVersion>False</SpecificVersion>
       <HintPath>..\..\Resources\protobufdotnet\x32\protobuf-net.dll</HintPath>
     </Reference>
     <Reference Include="System">
@@ -136,65 +129,6 @@
     <Reference Include="System.Xml">
       <Name>System.XML</Name>
     </Reference>
-  </ItemGroup>
-  <ItemGroup>
-    <Compile Include="AssemblyInfo.cs">
-      <SubType>Code</SubType>
-    </Compile>
-    <Compile Include="Caching\LeasedCache.cs">
-      <SubType>Code</SubType>
-    </Compile>
-    <Compile Include="Management\BindedIpMap.cs" />
-    <Compile Include="Management\CacheClient.cs">
-      <SubType>Code</SubType>
-    </Compile>
-    <Compile Include="Management\CacheConfigManager.cs" />
-    <Compile Include="Management\CacheConfig.cs">
-      <SubType>Code</SubType>
-    </Compile>
-    <Compile Include="Management\CacheHost.cs">
-      <SubType>Code</SubType>
-    </Compile>
-    <Compile Include="Management\CacheInfo.cs" />
-    <Compile Include="Management\CacheRegisterationInfo.cs" />
-    <Compile Include="Management\CacheRPCService.cs" />
-    <Compile Include="Management\CacheServer.cs">
-      <SubType>Code</SubType>
-    </Compile>
-    <Compile Include="Management\ClientConfiguration\CacheServerList.cs" />
-    <Compile Include="Management\ClientConfiguration\ClientConfigManager.cs" />
-    <Compile Include="Management\ClientConfiguration\Dom\CacheConfiguration.cs" />
-    <Compile Include="Management\ClientConfiguration\Dom\CacheServer.cs" />
-    <Compile Include="Management\ClientConfiguration\Dom\ClientConfiguration.cs" />
-    <Compile Include="Management\ClientConfiguration\Dom\Mapping.cs" />
-    <Compile Include="Management\ClientConfiguration\Dom\NodeConfiguration.cs" />
-    <Compile Include="Management\HostServer.cs" />
-    <Compile Include="Management\ICacheServer.cs" />
-    <Compile Include="Management\MappingConfiguration\Dom\MappingConfiguration.cs" />
-    <Compile Include="Management\MappingConfiguration\MappingConfigurationManager.cs" />
-    <Compile Include="Management\CacheServiceClient.cs" />
-    <Compile Include="Management\NCacheSniffer.cs" />
-    <Compile Include="Management\NewCacheRegisterationInfo.cs" />
-    <Compile Include="Management\NodeInfoMap.cs" />
-    <Compile Include="Management\RPC\ConsoleTraceProvider.cs" />
-    <Compile Include="Management\RPC\ManagementChannelFormatter.cs" />
-    <Compile Include="Management\RPC\RemoteCacheServer.cs" />
-    <Compile Include="Management\RPC\RemoteServerBase.cs" />
-    <Compile Include="Management\ServerHost.cs" />
-    <Compile Include="Management\ThinClientConfigManager.cs" />
-    <Compile Include="Management\Util\ManagementWorkFlow.cs" />
-    <Compile Include="ServiceControl\CacheService.cs" />
-    <Compile Include="ServiceControl\NCacheRPCService.cs" />
-    <Compile Include="ServiceControl\RPCService.cs" />
-    <Compile Include="ServiceControl\ServiceBase.cs" />
-    <Compile Include="ServiceControl\ServiceControl.cs">
-      <SubType>Code</SubType>
-    </Compile>
-    <Compile Include="ServiceControl\ServiceNames.cs" />
-    <Compile Include="ToolsCommon\ClientConfigUtil.cs" />
-    <Compile Include="ToolsCommon\ToolOperations.cs" />
-  </ItemGroup>
-  <ItemGroup>
     <ProjectReference Include="..\NCCache\NCCache.csproj">
       <Project>{BF3BCF64-ADEB-455B-AD8A-39EE84EE300D}</Project>
       <Name>NCCache</Name>
@@ -213,6 +147,82 @@
     </ProjectReference>
   </ItemGroup>
   <ItemGroup>
+    <Compile Include="AssemblyInfo.cs">
+      <SubType>Code</SubType>
+    </Compile>
+    <Compile Include="Caching\LeasedCache.cs">
+      <SubType>Code</SubType>
+    </Compile>
+    <Compile Include="Caching\LeasedCacheSponsor.cs" />
+    <Compile Include="Management\APILogging\APILogging.cs" />
+    <Compile Include="Management\APILogging\APILogManager.cs" />
+    <Compile Include="Management\APILogging\APIServerLogger.cs" />
+    <Compile Include="Management\APISecConfig.cs" />
+    <Compile Include="Management\BindedIpMap.cs" />
+    <Compile Include="Management\CacheClient.cs">
+      <SubType>Code</SubType>
+    </Compile>
+    <Compile Include="Management\CacheConfigManager.cs" />
+    <Compile Include="Management\CacheConfig.cs">
+      <SubType>Code</SubType>
+    </Compile>
+    <Compile Include="Management\CacheHost.cs">
+      <SubType>Code</SubType>
+    </Compile>
+    <Compile Include="Management\CacheInfo.cs" />
+    <Compile Include="Management\CachePortsConfig.cs" />
+    <Compile Include="Management\CachePortsConfigManger.cs" />
+    <Compile Include="Management\CacheRegisterationInfo.cs" />
+    <Compile Include="Management\CacheRPCService.cs" />
+    <Compile Include="Management\CacheServer.cs">
+      <SubType>Code</SubType>
+    </Compile>
+    <Compile Include="Management\CacheServerEssentials\CacheStopReason.cs" />
+    <Compile Include="Management\CacheServerEssentials\Channel.cs" />
+    <Compile Include="Management\ClientConfiguration\CacheServerList.cs" />
+    <Compile Include="Management\ClientConfiguration\ClientConfigManager.cs" />
+    <Compile Include="Management\ClientConfiguration\Dom\CacheConfiguration.cs" />
+    <Compile Include="Management\ClientConfiguration\Dom\CacheServer.cs" />
+    <Compile Include="Management\ClientConfiguration\Dom\ClientConfiguration.cs" />
+    <Compile Include="Management\ClientConfiguration\Dom\NodeConfiguration.cs" />
+    <Compile Include="Management\HostBase.cs" />
+    <Compile Include="Management\HostServer.cs" />
+    <Compile Include="Management\ICacheServer.cs" />
+    <Compile Include="Management\ManagmentSecConfig.cs" />
+    <Compile Include="Management\MappingConfiguration\Dom\MappingConfiguration.cs" />
+    <Compile Include="Management\CacheServiceClient.cs" />
+    <Compile Include="Management\MappingConfiguration\MappingConfigurationManager.cs" />
+    <Compile Include="Management\NewCacheRegisterationInfo.cs" />
+    <Compile Include="Management\OnCacheStopped.cs" />
+    <Compile Include="Management\RPC\ConsoleTraceProvider.cs" />
+    <Compile Include="Management\ServerHost.cs" />
+    <Compile Include="Management\ThinClientConfigManager.cs" />
+    <Compile Include="Management\Util\ConfigurationUtil.cs" />
+    <Compile Include="Management\Util\ManagementWorkFlow.cs" />
+    <Compile Include="ServiceControl\CacheService.cs" />
+    <Compile Include="ServiceControl\CredentialsEventArgs.cs" />
+    <Compile Include="ServiceControl\FailureReason.cs" />
+    <Compile Include="ServiceControl\HostInfo.cs" />
+    <Compile Include="ServiceControl\NCacheRPCService.cs" />
+    <Compile Include="ServiceControl\NodeOSInfo.cs" />
+    <Compile Include="ServiceControl\RPCService.cs" />
+    <Compile Include="Management\NCacheSniffer.cs" />
+    <Compile Include="Management\NodeInfoMap.cs" />
+    <Compile Include="Management\RPC\ManagementChannelFormatter.cs" />
+    <Compile Include="Management\RPC\RemoteCacheServer.cs" />
+    <Compile Include="Management\CacheServerModerator.cs" />
+    <Compile Include="ServiceControl\OSDetector.cs" />
+    <Compile Include="ServiceControl\RemotingBasedCacheService.cs" />
+    <Compile Include="ServiceControl\ServiceBase.cs" />
+    <Compile Include="ServiceControl\ServiceCommands.cs" />
+    <Compile Include="ServiceControl\ServiceNames.cs" />
+    <Compile Include="ServiceControl\ServiceOptions.cs" />
+    <Compile Include="ServiceControl\ServiceStatus.cs" />
+    <Compile Include="ToolsCommon\LogErrors.cs" />
+    <Compile Include="ToolsCommon\ToolOperations.cs" />
+    <Compile Include="ToolsCommon\ClientConfigUtil.cs" />
+  </ItemGroup>
+  <ItemGroup>
     <BootstrapperPackage Include="Microsoft.Net.Client.3.5">
       <Visible>False</Visible>
       <ProductName>.NET Framework 3.5 SP1 Client Profile</ProductName>
@@ -229,20 +239,27 @@
       <Install>true</Install>
     </BootstrapperPackage>
   </ItemGroup>
+  <ItemGroup>
+    <COMReference Include="PlaLibrary">
+      <Guid>{03837500-098B-11D8-9414-505054503030}</Guid>
+      <VersionMajor>1</VersionMajor>
+      <VersionMinor>0</VersionMinor>
+      <Lcid>0</Lcid>
+      <WrapperTool>tlbimp</WrapperTool>
+      <Isolated>False</Isolated>
+      <EmbedInteropTypes>True</EmbedInteropTypes>
+    </COMReference>
+  </ItemGroup>
   <ProjectExtensions>
     <VisualStudio>
       <UserProperties tArchitectProject="False" />
     </VisualStudio>
   </ProjectExtensions>
   <Import Project="$(MSBuildBinPath)\Microsoft.CSharp.targets" />
-  <PropertyGroup Condition="'$(Configuration)|$(Platform)' == 'Release|AnyCPU' OR '$(Configuration)|$(Platform)' == 'Debug|AnyCPU'">
+  <PropertyGroup>
     <PreBuildEvent>
     </PreBuildEvent>
-    <PostBuildEvent>xcopy /Y "$(TargetPath)" "$(SolutionDir)build\Server\4x\"</PostBuildEvent>
-  </PropertyGroup>
-  <PropertyGroup Condition="'$(Configuration)|$(Platform)' == 'Release.2x|AnyCPU' OR '$(Configuration)|$(Platform)' == 'Debug.2x|AnyCPU'">
-    <PreBuildEvent>
-    </PreBuildEvent>
-    <PostBuildEvent>xcopy /Y "$(TargetPath)" "$(SolutionDir)build\Server\2x\"</PostBuildEvent>
+    <PostBuildEvent>call $(SolutionDir)copy.bat $(SolutionDir) $(TargetName) $(TargetDir)
+xcopy /Y "$(TargetPath)" "$(SolutionDir)build\Server\4x\"</PostBuildEvent>
   </PropertyGroup>
 </Project>

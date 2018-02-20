@@ -14,7 +14,12 @@
 
 using Alachisoft.NCache.Common;
 using Alachisoft.NCache.Caching;
+using Alachisoft.NCache.Serialization.Formatters;
+
 using Alachisoft.NCache.Runtime.Events;
+using System.Collections.Generic;
+using System.Collections;
+
 
 namespace Alachisoft.NCache.SocketServer.CallbackTasks
 {
@@ -48,14 +53,15 @@ namespace Alachisoft.NCache.SocketServer.CallbackTasks
             lock (ConnectionManager.ConnectionTable) clientManager = (ClientManager)ConnectionManager.ConnectionTable[_clientID];
             if (clientManager != null)
             {
-               Common.Protobuf.Response response = new Common.Protobuf.Response();
+                Alachisoft.NCache.Common.Protobuf.Response response = new Alachisoft.NCache.Common.Protobuf.Response();
 
-                response.itemRemovedCallback = Util.EventHelper.GetItemRemovedCallbackResponse(_eventContext,_id, _key, _value, _flag, _reason,_dataFilter);
-                response.responseType = Common.Protobuf.Response.Type.ITEM_REMOVED_CALLBACK;
+                response.itemRemovedCallback = Alachisoft.NCache.SocketServer.Util.EventHelper.GetItemRemovedCallbackResponse(_eventContext,_id, _key, _value, _flag, _reason,_dataFilter);
+                response.responseType = Alachisoft.NCache.Common.Protobuf.Response.Type.ITEM_REMOVED_CALLBACK;
 
-                byte[] serializedResponse = Common.Util.ResponseHelper.SerializeResponse(response);
+                IList serializedResponse = Alachisoft.NCache.Common.Util.ResponseHelper.SerializeResponse(response);
 
                 ConnectionManager.AssureSend(clientManager, serializedResponse,Alachisoft.NCache.Common.Enum.Priority.Low);
+                
             }
 
         }

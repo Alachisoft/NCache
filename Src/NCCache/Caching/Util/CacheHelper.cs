@@ -16,23 +16,18 @@ using System;
 using System.Collections;
 using System.Threading;
 
-using Alachisoft.NCache.Config;
-using Alachisoft.NCache.Caching;
 using Alachisoft.NCache.Caching.Topologies;
-using Alachisoft.NCache.Caching.Topologies.Local;
-using Alachisoft.NCache.Caching.Statistics;
 using Alachisoft.NCache.Caching.AutoExpiration;
-using Alachisoft.NCache.Caching.EvictionPolicies;
-using Alachisoft.NCache.Runtime.Exceptions;
-using Alachisoft.NCache.Util;
-using Alachisoft.NCache.Runtime.Events;
-using Alachisoft.NCache.Common.Util;
-using Alachisoft.NCache.Runtime.Events;
-using Alachisoft.NCache.Caching.Topologies.Clustered;
 
+using Alachisoft.NCache.Runtime.Exceptions;
+using Alachisoft.NCache.Runtime.Events;
+using System.Collections.Generic;
+#if !NETCORE
+using Alachisoft.NCache.Caching.Topologies.Clustered;
+#endif
 namespace Alachisoft.NCache.Caching.Util
 {
-    /// <summary>
+	/// <summary>
 	/// Class to help in common cache operations
 	/// </summary>
 	internal class CacheHelper
@@ -49,18 +44,70 @@ namespace Alachisoft.NCache.Caching.Util
 			return 0;
 		}
 
+
+#if COMMUNITY
 		/// <summary>
 		/// Tells if the cache is a clustered cache or a local one
 		/// </summary>
 		/// <param name="cache"></param>
 		/// <returns></returns>
-        public static bool IsClusteredCache(CacheBase cache)
+		public static bool IsClusteredCache(CacheBase cache)
 		{
             if (cache == null)
                 return false;
             else
 			    return cache.GetType().IsSubclassOf(typeof(ClusterCacheBase));
         }
+#else
+        /// <summary>
+		/// Tells if the cache is a clustered cache or a local one
+		/// </summary>
+		/// <param name="cache"></param>
+		/// <returns></returns>
+		public static bool IsClusteredCache(CacheBase cache)
+		{
+			return false;
+		}
+#endif
+
+#if COMMUNITY
+		/// <summary>
+		/// Copies the entries of a cache into an array. Used for state transfer.
+		/// </summary>
+		/// <param name="cache">cache object</param>
+		/// <param name="count">number of entries to return</param>
+		/// <returns>array of cache entries</returns>
+		public static CacheEntry[] GetCacheEntries(CacheBase cache, long count)
+		{
+			long index = 0;
+			CacheEntry[] entArr = null;
+			CacheEntry	 ent = null;
+			cache.Sync.AcquireReaderLock(Timeout.Infinite);
+			try
+			{
+				if(count == 0 || count > cache.Count)
+					count = cache.Count;
+				entArr = new CacheEntry[ count ];
+				IDictionaryEnumerator i = cache.GetEnumerator();
+				while(index < count && i.MoveNext())
+				{
+					ent = i.Value as CacheEntry;
+					entArr[index ++] = ent.RoutableClone(null);
+				}
+			}
+			catch(Exception e)
+			{
+				cache.Context.NCacheLog.Error("CacheHelper.CreateLocalEntry()",e.Message);
+				return null;
+			}
+			finally
+			{
+				cache.Sync.ReleaseReaderLock();
+			}
+			return entArr;
+		}
+#endif
+
         /// <summary>
         /// Merge the first entry i.e. c1 into c2
         /// </summary>
@@ -93,6 +140,48 @@ namespace Alachisoft.NCache.Caching.Util
             }
             return c2;
         }
+
+        public static object[] GetKeyDependencyTable(ExpirationHint hint)
+        {
+            ArrayList keyList = null;
+            if (hint != null)
+            {
+                if (hint._hintType == ExpirationHintType.AggregateExpirationHint)
+                {
+                    IList<ExpirationHint> hints = ((AggregateExpirationHint)hint).Hints;
+                    for (int i = 0; i < hints.Count; i++)
+                    {
+                        if (hints[i]._hintType == ExpirationHintType.KeyDependency)
+                        {
+                            if (keyList == null)
+                                keyList = new ArrayList();
+
+                            string[] tmp = ((KeyDependency)hints[i]).CacheKeys;
+                            if (tmp != null && tmp.Length > 0)
+                            {
+                                for (int j = 0; j < tmp.Length; j++)
+                                {
+                                    if (!keyList.Contains(tmp[j]))
+                                        keyList.Add(tmp[j]);
+                                }
+                            }
+                        }
+                    }
+                    if (keyList != null && keyList.Count > 0)
+                    {
+                        object[] cacheKeys = new object[keyList.Count];
+                        keyList.CopyTo(cacheKeys, 0);
+                        return cacheKeys;
+                    }
+                }
+                else if (hint._hintType == ExpirationHintType.KeyDependency)
+                {
+                    return ((KeyDependency)hint).CacheKeys;
+                }
+            }
+            return null;
+        }
+
 
         public static EventCacheEntry CreateCacheEventEntry(ArrayList listeners, CacheEntry cacheEntry)
         {
@@ -154,7 +243,61 @@ namespace Alachisoft.NCache.Caching.Util
         }
 
 
+        /// <summary>
+        /// Determines weather two data groups are compatible or not.
+        /// </summary>
+        /// <param name="g1"></param>
+        /// <param name="g2"></param>
+        /// <returns></returns>
+        public static bool CheckDataGroupsCompatibility(DataGrouping.GroupInfo g1, DataGrouping.GroupInfo g2)
+        {
+            bool compatible = false;
+            if (g1 == null)
+                compatible = true; // if read from readthru, there might be no group
+            else if (g1 == null && g2 == null)
+                compatible = true;
+            else if (g1 != null && g2 != null)
+                compatible = (g1.Group == g2.Group && g1.SubGroup == g2.SubGroup);
+            else if (g1 != null)
+            {
+                if (g1.Group == null && g1.SubGroup == null)
+                    compatible = true;
+            }
+            else if (g2.Group == null && g2.SubGroup == null)
+                    compatible = true;
 
+            return compatible;
+        }
+
+        /// <summary>
+        /// Gives the list of insertable items. An item to be inserted is said to be insertable if
+        /// its data groups match the existing items data groups.
+        /// </summary>
+        /// <param name="existingItems">Table of the exsiting items data group info</param>
+        /// <param name="newItems">Table of the data group info of the items to be inserted</param>
+        /// <returns>Items which have no data grop conflicts</returns>
+        public static Hashtable GetInsertableItems(Hashtable existingItems, Hashtable newItems)
+        {
+            Hashtable insertable = new Hashtable();
+            object key;
+            DataGrouping.GroupInfo newInfo;
+            DataGrouping.GroupInfo oldInfo;
+            if (existingItems != null)
+            {
+                IDictionaryEnumerator ide = existingItems.GetEnumerator();
+                while (ide.MoveNext())
+                {
+                    key = ide.Key;
+                    newInfo = ((CacheEntry)newItems[key]).GroupInfo as DataGrouping.GroupInfo;
+                    oldInfo = ide.Value as DataGrouping.GroupInfo;
+                    if (CacheHelper.CheckDataGroupsCompatibility(newInfo, oldInfo))
+                    {
+                        insertable.Add(key, newItems[key]);
+                    }
+                }
+            }
+            return insertable;
+        }
 
         /// <summary>
         /// Gets the list of failed items.
@@ -186,6 +329,12 @@ namespace Alachisoft.NCache.Caching.Util
                                 break;
                             case CacheInsResult.NeedsEviction:
                                 failedTable.Add(key, new OperationFailedException("The cache is full and not enough items could be evicted."));
+                                break;
+                            case CacheInsResult.IncompatibleGroup:
+                                failedTable.Add(key, new OperationFailedException("Data group of the inserted item does not match the existing item's data group"));
+                                break;
+                            case CacheInsResult.DependencyKeyNotExist:
+                                failedTable.Add(key, new OperationFailedException("One of the dependency keys does not exist."));
                                 break;
                         }
                     }

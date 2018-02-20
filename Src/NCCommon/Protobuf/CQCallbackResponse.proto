@@ -1,0 +1,13 @@
+import "EventId.proto";
+
+option java_outer_classname="CQCallbackResponseProtocol";
+package Alachisoft.NCache.Common.Protobuf;
+message CQCallbackResponse 
+{
+	optional string key = 1;
+	optional int32 changeType = 2;
+	optional string queryId = 3;
+	optional EventId eventId = 4;
+	optional sint32 flag = 5;
+	optional sint32 datafilter = 6;
+}

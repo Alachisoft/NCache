@@ -16,6 +16,8 @@ using System;
 using System.Collections;
 using Alachisoft.NCache.Common.DataStructures;
 using Alachisoft.NCache.Common.Queries;
+using Alachisoft.NCache.Caching.Queries.Filters;
+using Alachisoft.NCache.Common.Queries.Filters;
 
 namespace Alachisoft.NCache.Caching.Queries
 {
@@ -29,13 +31,9 @@ namespace Alachisoft.NCache.Caching.Queries
         private QueryResultSet _resultSet = new QueryResultSet();
         private string _typeName = String.Empty;
         private IQueryResult _internalQueryResult;
-
-        public IQueryResult InternalQueryResult
-        {
-            get { return _internalQueryResult; }
-            set { _internalQueryResult = value; }
-        }
-
+        private IKeyFilter _keyFilter;
+        private IKeyFilter _compoundFilter;
+        
         public QueryContext(Topologies.Local.LocalCacheBase cache)
         {
             _cache = cache;
@@ -46,6 +44,13 @@ namespace Alachisoft.NCache.Caching.Queries
             get { return _typeName; }
             set { _typeName = value; }
         }
+
+        public IQueryResult InternalQueryResult
+        {
+            get { return _internalQueryResult; }
+            set { _internalQueryResult = value; }
+        }
+
 
         internal QueryResultSet ResultSet
         {
@@ -82,8 +87,7 @@ namespace Alachisoft.NCache.Caching.Queries
 
             set { _index = value; }
         }
-
-
+        
         public bool PopulateTree
         {
             get { return _populateTree; }
@@ -96,6 +100,18 @@ namespace Alachisoft.NCache.Caching.Queries
             {
                 return ((Topologies.Local.IndexedLocalCache)_cache).IndexManager;
             }
+        }
+
+        public IKeyFilter KeyFilter
+        {
+            get { return _keyFilter; }
+            set { _keyFilter = value; }
+        }
+
+        public IKeyFilter CompoundFilter
+        {
+            get { return _compoundFilter; }
+            set { _compoundFilter = value; }
         }
 
         public object Get(object key, OperationContext operationContext)

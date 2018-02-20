@@ -22,8 +22,9 @@ namespace Alachisoft.NCache.Caching
     {
         private int _requestId;
 
+        //public AsyncCallbackInfo() { }
         public AsyncCallbackInfo(int reqid, string clietnid, object asyncCallback)
-            : base(clietnid, asyncCallback, EventDataFilter.None)
+            : base(clietnid, asyncCallback, (EventDataFilter) EventDataFilter.None)
         {
             _requestId = reqid;
         }

@@ -12,8 +12,8 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-using System;
 using System.IO;
+using Alachisoft.NCache.Web.Communication;
 using Alachisoft.NCache.Web.Caching.Util;
 
 namespace Alachisoft.NCache.Web.Command
@@ -38,9 +38,61 @@ namespace Alachisoft.NCache.Web.Command
             get { return RequestType.InternalCommand; }
         }
 
+        internal override bool IsKeyBased
+        {
+            get { return false; }
+        }
+
         protected override void CreateCommand()
         {
-            base.ConstructCommand("InitSecondarySocketCommand \"" + base.RequestId + "\"" + this._clientID + "\"Y\"", new byte[0]);
+            base.ConstructCommand("InitSecondarySocketCommand \"" + base.RequestId + "\"" + this._clientID + "\"Y\"",
+                new byte[0]);
+        }
+
+        protected override void SerializeCommand()
+        {
+            using (MemoryStream stream = new MemoryStream())
+            {
+                byte[] discardingBuffer = new byte[20];
+                stream.Write(discardingBuffer, 0, discardingBuffer.Length);
+                byte[] acknowledgementBuffer =
+                    (SupportsAacknowledgement && inquiryEnabled) ? new byte[20] : new byte[0];
+                stream.Write(acknowledgementBuffer, 0, acknowledgementBuffer.Length);
+                byte[] size = new byte[Connection.CmdSizeHolderBytesCount];
+                stream.Write(size, 0, size.Length);
+                ProtoBuf.Serializer.Serialize<Alachisoft.NCache.Common.Protobuf.Command>(stream, this._command);
+                int messageLen = (int) stream.Length -
+                                 (size.Length + discardingBuffer.Length + acknowledgementBuffer.Length);
+
+                size = HelperFxn.ToBytes(messageLen.ToString());
+                stream.Position = discardingBuffer.Length + acknowledgementBuffer.Length;
+                stream.Write(size, 0, size.Length);
+
+                this._commandBytes = stream.ToArray();
+                stream.Close();
+            }
+        }
+
+        internal override byte[] ToByte(long acknowledgement, bool inquiryEnabledOnConnection)
+        {
+            if (_commandBytes == null || inquiryEnabled != inquiryEnabledOnConnection)
+            {
+                inquiryEnabled = inquiryEnabledOnConnection;
+                this.CreateCommand();
+                _command.commandID = _commandID;
+                this.SerializeCommand();
+            }
+
+            if (SupportsAacknowledgement && inquiryEnabled)
+            {
+                byte[] acknowledgementBuffer = HelperFxn.ToBytes(acknowledgement.ToString());
+                MemoryStream stream = new MemoryStream(_commandBytes, 0, _commandBytes.Length, true, true);
+                stream.Seek(20, SeekOrigin.Begin);
+                stream.Write(acknowledgementBuffer, 0, acknowledgementBuffer.Length);
+                _commandBytes = stream.GetBuffer();
+            }
+
+            return _commandBytes;
         }
     }
 }

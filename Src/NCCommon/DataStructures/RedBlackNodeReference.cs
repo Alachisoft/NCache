@@ -10,8 +10,7 @@
 // distributed under the License is distributed on an "AS IS" BASIS,
 // WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
 // See the License for the specific language governing permissions and
-// limitations under the License.
-
+// limitations under the License
 using System;
 using System.Text;
 using System.Collections;
@@ -21,15 +20,16 @@ namespace Alachisoft.NCache.Common.DataStructures
 	///<summary>
 	/// The RedBlackNode class encapsulates a node in the tree
 	///</summary>
-	public class RedBlackNodeReference<T>: INodeReference
+	public class RedBlackNodeReference<T>:INodeReference
 	{
+
 		/// <summary> Red Black node reference. </summary>
         private RedBlackNode<T> _rbNode;
 
         public RedBlackNodeReference()
         {
         }
-
+        		
 		/// <summary>
 		/// Default constructor.
 		/// </summary>
@@ -55,7 +55,5 @@ namespace Alachisoft.NCache.Common.DataStructures
             return _rbNode.Key;
         }
 
-
-
-	}
+    }
 }

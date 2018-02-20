@@ -9,7 +9,6 @@
 // WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
 // See the License for the specific language governing permissions and
 // limitations under the License.
-
 using Alachisoft.NCache.Runtime.Serialization;
 using Alachisoft.NCache.Runtime.Serialization.IO;
 
@@ -19,6 +18,10 @@ namespace Alachisoft.NGroups.Blocks
     {
         public const byte CONNECT_FIRST_TIME = 1;
         public const byte RECONNECTING =2;
+       
+
+        
+
         byte _connectStatus = CONNECT_FIRST_TIME;
         int _id;
 

@@ -1,4 +1,6 @@
 import "AddCommand.proto";
+import "AddDependencyCommand.proto";
+import "AddSyncDependencyCommand.proto";
 import "BulkAddCommand.proto";
 import "BulkGetCommand.proto";
 import "BulkInsertCommand.proto";
@@ -10,35 +12,84 @@ import "DisposeCommand.proto";
 import "GetCacheItemCommand.proto";
 import "GetCommand.proto";
 import "GetEnumeratorCommand.proto";
+import "GetGroupCommand.proto";
 import "GetHashmapCommand.proto";
+import "GetOptimalServerCommand.proto";
 import "GetThresholdSizeCommand.proto";
 import "GetTypeInfoMapCommand.proto";
 import "InitCommand.proto";
 import "InsertCommand.proto";
+import "RaiseCustomEventCommand.proto";
 import "RegisterKeyNotifCommand.proto";
 import "RegisterBulkKeyNotifCommand.proto";
 import "RegisterNotifCommand.proto";
 import "RemoveCommand.proto";
+import "RemoveGroupCommand.proto";
 import "SearchCommand.proto";
+import "GetTagCommand.proto";
 import "LockCommand.proto";
 import "IsLockedCommand.proto";
 import "LockVerifyCommand.proto";
 import "UnlockCommand.proto";
 import "UnRegisterKeyNotifCommand.proto";
 import "UnRegisterBulkKeyNotifCommand.proto";
+import "HybridBulkCommand.proto";
 import "GetLoggingInfoCommand.proto";
+import "CloseStreamCommand.proto";
+import "GetStreamLengthCommand.proto";
+import "OpenStreamCommand.proto";
+import "WriteToStreamCommand.proto";
+import "ReadFromStreamCommand.proto";
+import "GetStateTransferInfoCommand.proto";
+import "GetTransferableKeyListCommand.proto";
+import "SetTransferableKeyListCommand.proto";
+import "SignlEndOfStateTransferCommand.proto";
+import "RemoveByTagCommand.proto";
+import "UnRegisterCQCommand.proto";
+import "SearchCQCommand.proto";
+import "RegisterCQCommand.proto";
+import "GetKeysByTagCommand.proto";
 import "BulkDeleteCommand.proto";
 import "DeleteCommand.proto";
 import "GetNextChunkCommand.proto";
+import "GetGroupNextChunkCommand.proto";
 import "AddAttributeCommand.proto";
-import "GetProductVersionCommand.proto";
-import "GetServerMappingCommand.proto";
-import "GetOptimalServerCommand.proto";
 import "GetRunningServersCommand.proto";
+import "SyncEventsCommand.proto";
+import "DeleteQueryCommand.proto";
+import "GetProductVersionCommand.proto";
+import "GetReplicatorStatusInfoCommand.proto";
+import "GetServerMappingCommand.proto";
+import "RequestStateTransferCommand.proto";
 import "GetCacheBindingCommand.proto";
+import "MapReduceTaskCommand.proto";
+import "TaskCallbackCommand.proto";
+import "TaskCancelCommand.proto";
+import "TaskProgressCommand.proto";
+import "GetRunningTasksCommand.proto";
+import "GetNextRecordCommand.proto";
+import "TaskEnumeratorCommand.proto";
+import "InvokeEntryProcessorCommand.proto";
+import "InquiryRequestCommand.proto";
 import "ExecuteReaderCommand.proto";
 import "GetReaderNextChunkCommand.proto";
 import "DisposeReaderCommand.proto";
+import "ExecuteReaderCQCommand.proto";
+import "GetExpirationCommand.proto";
+import "PollCommand.proto";
+import "RegisterPollingNotificationCommand.proto";
+import "GetLCCommand.proto";
+import "GetConnectedClientsCommand.proto";
+import "TouchCommand.proto";
+import "GetTopicCommand.proto";
+import "SubscribeTopicCommand.proto";
+import "RemoveTopicCommand.proto";
+import "UnSubscribeTopicCommand.proto";
+import "MessagePublishCommand.proto";
+import "GetMessageCommand.proto";
+import "MesasgeAcknowledgmentCommand.proto";
+import "GetCacheManagementPortCommand.proto";
+import "PingCommand.proto";
 
 option java_outer_classname="CommandProtocol";
 package Alachisoft.NCache.Common.Protobuf;
@@ -48,94 +99,219 @@ message Command
 	enum Type 
 	{
 		ADD = 1;
-		ADD_BULK = 2;
-		GET_BULK = 3;
-		INSERT_BULK = 4;
-		REMOVE_BULK = 5;
-		CLEAR = 6;
-		CONTAINS = 7;
-		COUNT = 8;
-		DISPOSE = 9;
-		GET_CACHE_ITEM = 10;
-		GET = 11;
-		GET_ENUMERATOR = 12;
-		GET_HASHMAP = 13;
-		GET_THRESHOLD_SIZE = 14;
-		GET_TYPEINFO_MAP = 15;
-		INIT = 16;
-		INSERT = 17;
-		REGISTER_KEY_NOTIF = 18;
-		REGISTER_NOTIF = 19;
-		REMOVE = 20;
-		SEARCH = 21;
-		LOCK = 22;
-		UNLOCK = 23;
-		ISLOCKED = 24;
-		LOCK_VERIFY = 25;
-		UNREGISTER_KEY_NOTIF = 26;	
-		UNREGISTER_BULK_KEY_NOTIF = 27;	
-		REGISTER_BULK_KEY_NOTIF = 28;
-		GET_LOGGING_INFO = 29;
-	    DELETE_BULK = 30;
-		DELETE = 31;
-		GET_NEXT_CHUNK=32;
-		ADD_ATTRIBUTE = 33;
-		GET_PRODUCT_VERSION = 34;
-		GET_SERVER_MAPPING = 35;
-		GET_OPTIMAL_SERVER = 36;
-		GET_RUNNING_SERVERS = 37;
-		GET_CACHE_BINDING = 38;
-        EXECUTE_READER = 39;
-        GET_READER_CHUNK = 40;
-        DISPOSE_READER = 41;
+		ADD_DEPENDENCY = 2;
+		ADD_SYNC_DEPENDENCY = 3;
+		ADD_BULK = 4;
+		GET_BULK = 5;
+		INSERT_BULK = 6;
+		REMOVE_BULK = 7;
+		CLEAR = 8;
+		CONTAINS = 9;
+		COUNT = 10;
+		DISPOSE = 11;
+		GET_CACHE_ITEM = 12;
+		GET = 13;
+		GET_ENUMERATOR = 15;
+		GET_GROUP = 16;
+		GET_HASHMAP = 17;
+		GET_OPTIMAL_SERVER = 18;
+		GET_THRESHOLD_SIZE = 19;
+		GET_TYPEINFO_MAP = 20;
+		INIT = 21;
+		INSERT = 22;
+		RAISE_CUSTOM_EVENT = 23;
+		REGISTER_KEY_NOTIF = 24;
+		REGISTER_NOTIF = 25;
+		REMOVE = 26;
+		REMOVE_GROUP = 27;
+		SEARCH = 28;
+		GET_TAG = 29;
+		LOCK = 30;
+		UNLOCK = 31;
+		ISLOCKED = 32;
+		LOCK_VERIFY = 33;
+		UNREGISTER_KEY_NOTIF = 34;	
+		UNREGISTER_BULK_KEY_NOTIF = 35;	
+		REGISTER_BULK_KEY_NOTIF = 36;
+		HYBRID_BULK = 37;
+		GET_LOGGING_INFO = 38;
+		CLOSE_STREAM = 39;
+		GET_STREAM_LENGTH = 40;
+		OPEN_STREAM = 41;
+		WRITE_TO_STREAM = 42;
+		READ_FROM_STREAM = 43;
+		
+		REMOVE_BY_TAG = 52;
+
+		UNREGISTER_CQ = 54;
+		SEARCH_CQ = 55;
+		REGISTER_CQ = 56;
+		GET_KEYS_TAG = 57;
+		DELETE_BULK = 58;
+		DELETE = 59;
+		GET_NEXT_CHUNK=60;
+		GET_GROUP_NEXT_CHUNK=61;
+		ADD_ATTRIBUTE = 62;
+		GET_RUNNING_SERVERS = 64;
+		SYNC_EVENTS = 65;
+		DELETEQUERY = 66;
+		GET_PRODUCT_VERSION = 67;
+		GET_SERVER_MAPPING = 70;
+		INQUIRY_REQUEST = 71;
+		GET_CACHE_BINDING = 72;
+        MAP_REDUCE_TASK = 74;
+        TASK_CALLBACK = 75;
+        RUNNING_TASKS = 76;
+        TASK_PROGRESS = 77;
+        CANCEL_TASK = 78;
+        TASK_NEXT_RECORD = 79;
+        TASK_ENUMERATOR = 80;
+		INVOKE_ENTRY_PROCESSOR = 81;
+		EXECUTE_READER = 82;
+        GET_READER_CHUNK=83;
+        DISPOSE_READER=84;
+		EXECUTE_READER_CQ = 85;
+		GET_EXPIRATION = 86;
+		GET_LC_DATA= 87;
+		POLL = 88;
+        REGISTER_POLLING_NOTIFICATION = 89;
+		GET_CONNECTED_CLIENTS = 91;
+		TOUCH=92;
+		GET_CACHE_MANAGEMENT_PORT = 94;
+		GET_TOPIC = 95;
+		SUBSCRIBE_TOPIC=97;
+		REMOVE_TOPIC=98;
+		UNSUBSCRIBE_TOPIC=99;
+		MESSAGE_PUBLISH=100;
+		GET_MESSAGE=101;
+		MESSAGE_ACKNOWLEDGMENT=102;
+		PING=103;
 	}
 	
 	optional Type type = 1;
 	optional string version = 2;
 	optional AddCommand addCommand = 3;
-	optional BulkAddCommand bulkAddCommand = 4;
-	optional BulkGetCommand bulkGetCommand = 5;
-	optional BulkInsertCommand bulkInsertCommand = 6;
-	optional BulkRemoveCommand bulkRemoveCommand = 7;
-	optional ClearCommand clearCommand = 8;
-	optional ContainsCommand containsCommand = 9;
-	optional CountCommand countCommand = 10;
-	optional DisposeCommand disposeCommand = 11;
-	optional GetCacheItemCommand getCacheItemCommand = 12;
-	optional GetCommand getCommand = 13;
-	optional GetEnumeratorCommand getEnumeratorCommand = 14;
-	optional GetHashmapCommand getHashmapCommand = 15;
-	optional GetThresholdSizeCommand getThresholdSizeCommand = 16;
-	optional GetTypeInfoMapCommand getTypeInfoMapCommand = 17;
-	optional InitCommand initCommand = 18;
-	optional InsertCommand insertCommand = 19;
-	optional RegisterKeyNotifCommand registerKeyNotifCommand= 20;
-	optional RegisterNotifCommand registerNotifCommand = 21;
-	optional RemoveCommand removeCommand = 22;
-	optional SearchCommand searchCommand = 23;
-	optional LockCommand lockCommand = 24;
-	optional UnlockCommand unlockCommand = 25;
-	optional IsLockedCommand isLockedCommand = 26;
-	optional LockVerifyCommand lockVerifyCommand = 27;
-	optional UnRegisterKeyNotifCommand unRegisterKeyNotifCommand = 28;
-	optional UnRegisterBulkKeyNotifCommand unRegisterBulkKeyNotifCommand = 29;
-	optional RegisterBulkKeyNotifCommand registerBulkKeyNotifCommand = 30;
-	optional GetLoggingInfoCommand getLoggingInfoCommand = 31;
-	optional int64 requestID = 32;
-	optional int32 commandVersion = 33 [default=0];
-	optional int64 clientLastViewId = 34 [default=-1];
-	optional BulkDeleteCommand bulkDeleteCommand = 35;
-	optional DeleteCommand deleteCommand = 36;
-	optional string intendedRecipient = 37 [default = ""];
-	optional GetNextChunkCommand getNextChunkCommand = 38;
-	optional AddAttributeCommand addAttributeCommand = 39;
-	optional GetProductVersionCommand getProductVersionCommand = 40;
-	optional GetServerMappingCommand getServerMappingCommand = 41;
-	optional GetOptimalServerCommand getOptimalServerCommand = 42;
-	optional GetRunningServersCommand getRunningServersCommand = 43;
-	optional GetCacheBindingCommand getCacheBindingCommand = 44;
-    optional ExecuteReaderCommand executeReaderCommand = 45;
-    optional GetReaderNextChunkCommand getReaderNextChunkCommand = 46;
-    optional DisposeReaderCommand disposeReaderCommand = 47;
+	optional AddDependencyCommand addDependencyCommand = 4;
+	optional AddSyncDependencyCommand  addSyncDependencyCommand = 5;
+	optional BulkAddCommand bulkAddCommand = 6;
+	optional BulkGetCommand bulkGetCommand = 7;
+	optional BulkInsertCommand bulkInsertCommand = 8;
+	optional BulkRemoveCommand bulkRemoveCommand = 9;
+	optional ClearCommand clearCommand = 10;
+	optional ContainsCommand containsCommand = 11;
+	optional CountCommand countCommand = 12;
+	optional DisposeCommand disposeCommand = 13;
+	optional GetCacheItemCommand getCacheItemCommand = 14;
+	optional GetCommand getCommand = 15;
+	optional GetEnumeratorCommand getEnumeratorCommand = 17;
+	optional GetGroupCommand getGroupCommand = 18;
+	optional GetHashmapCommand getHashmapCommand = 19;
+	optional GetOptimalServerCommand getOptimalServerCommand = 20;
+	optional GetThresholdSizeCommand getThresholdSizeCommand = 21;
+	optional GetTypeInfoMapCommand getTypeInfoMapCommand = 22;
+	optional InitCommand initCommand = 23;
+	optional InsertCommand insertCommand = 24;
+	optional RaiseCustomEventCommand raiseCustomEventCommand = 25;
+	optional RegisterKeyNotifCommand registerKeyNotifCommand= 26;
+	optional RegisterNotifCommand registerNotifCommand = 27;
+	optional RemoveCommand removeCommand = 28;
+	optional RemoveGroupCommand removeGroupCommand = 29;
+	optional SearchCommand searchCommand = 30;
+	optional GetTagCommand getTagCommand = 31;
+	optional LockCommand lockCommand = 32;
+	optional UnlockCommand unlockCommand = 33;
+	optional IsLockedCommand isLockedCommand = 34;
+	optional LockVerifyCommand lockVerifyCommand = 35;
+	optional UnRegisterKeyNotifCommand unRegisterKeyNotifCommand = 36;
+	optional UnRegisterBulkKeyNotifCommand unRegisterBulkKeyNotifCommand = 37;
+	optional RegisterBulkKeyNotifCommand registerBulkKeyNotifCommand = 38;
+	optional HybridBulkCommand hybridBulkCommand = 39;
+	optional GetLoggingInfoCommand getLoggingInfoCommand = 40;
+	optional CloseStreamCommand closeStreamCommand = 41;
+	optional GetStreamLengthCommand getStreamLengthCommand = 42;
+	optional OpenStreamCommand openStreamCommand = 43;
+	optional WriteToStreamCommand writeToStreamCommand = 44;
+	optional ReadFromStreamCommand readFromStreamCommand = 45;
+	optional int64 requestID = 52;
 
-	}
+	optional int32 commandVersion = 53 [default=0];
+	
+
+
+	optional RemoveByTagCommand removeByTagCommand = 56;
+
+
+	optional UnRegisterCQCommand unRegisterCQCommand = 58;
+
+	optional SearchCQCommand searchCQCommand = 59;
+
+	optional RegisterCQCommand registerCQCommand = 60;
+
+	optional GetKeysByTagCommand getKeysByTagCommand = 61;
+
+	optional int64 clientLastViewId = 62 [default=-1];
+
+	optional BulkDeleteCommand bulkDeleteCommand = 63;
+	
+	optional DeleteCommand deleteCommand = 64;
+
+	optional string intendedRecipient = 65 [default = ""];
+
+	optional GetNextChunkCommand getNextChunkCommand = 66;
+
+	optional GetGroupNextChunkCommand getGroupNextChunkCommand = 67;
+
+	optional AddAttributeCommand addAttributeCommand = 68;
+
+
+
+	optional GetRunningServersCommand getRunningServersCommand = 70;
+
+	optional SyncEventsCommand syncEventsCommand = 71;
+	optional DeleteQueryCommand deleteQueryCommand = 72;
+	optional GetProductVersionCommand getProductVersionCommand = 73;
+	
+	
+	optional GetServerMappingCommand getServerMappingCommand = 76;
+
+	optional InquiryRequestCommand inquiryRequestCommand = 77;
+
+	optional bool isRetryCommand = 78 [default = false];
+	
+    optional MapReduceTaskCommand mapReduceTaskCommand = 79;
+    optional TaskCallbackCommand TaskCallbackCommand = 80;
+    optional GetRunningTasksCommand RunningTasksCommand = 81;
+    optional TaskCancelCommand TaskCancelCommand = 82;
+    optional TaskProgressCommand TaskProgressCommand = 83;
+    optional GetNextRecordCommand NextRecordCommand = 84;
+	optional int32 commandID = 85 [default = -1];
+	optional GetCacheBindingCommand getCacheBindingCommand = 86;
+	
+    optional TaskEnumeratorCommand TaskEnumeratorCommand = 87;
+
+	optional InvokeEntryProcessorCommand invokeEntryProcessorCommand = 88;	
+    optional ExecuteReaderCommand executeReaderCommand = 89;
+    optional GetReaderNextChunkCommand getReaderNextChunkCommand = 90;
+    optional DisposeReaderCommand disposeReaderCommand = 91;
+
+	optional ExecuteReaderCQCommand executeReaderCQCommand = 92;
+	optional GetExpirationCommand getExpirationCommand = 93; 
+	optional GetLCCommand getLCCommand =94;
+
+	optional PollCommand pollCommand = 96;
+
+    optional RegisterPollingNotificationCommand registerPollNotifCommand = 97;
+	optional GetConnectedClientsCommand getConnectedClientsCommand = 98;
+	optional int32 MethodOverload = 99 [default=0];
+	optional TouchCommand touchCommand = 100;
+	optional GetCacheManagementPortCommand getCacheManagementPortCommand = 101;
+	optional GetTopicCommand getTopicCommand = 102;
+	optional SubscribeTopicCommand subscribeTopicCommand = 103;
+	optional RemoveTopicCommand removeTopicCommand=104;
+	optional UnSubscribeTopicCommand unSubscribeTopicCommand = 105;
+	optional MessagePublishCommand messagePublishCommand=106;
+	optional GetMessageCommand getMessageCommand=107;
+	optional MesasgeAcknowledgmentCommand mesasgeAcknowledgmentCommand=108;
+	optional PingCommand pingCommand=109;
+
+}

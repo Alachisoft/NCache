@@ -51,6 +51,7 @@ namespace Alachisoft.NCache.Caching.Topologies.Clustered
             _percentWeightToSacrifice = 0;
             _weightBalanceThreshold = Convert.ToInt32((_maxCacheSize * WeightBalanceThresholdPercent) / 100); //10%, threshold at which we feel to balance weight for incoming nodes. its value is percent of MaxCacheSize 
             if (NCacheLog.IsInfoEnabled) NCacheLog.Error("DistributionMatrix.ctor", "Address->" + address.ToString() + ", DistributionData->" + distData.ToString());
+             
             //this is the temp code just to put some trace...
             int bucketCount = 0;
             foreach (WeightIdPair wiPair in weightIdList)
@@ -111,7 +112,7 @@ namespace Alachisoft.NCache.Caching.Topologies.Clustered
                 _totalWeight += rowSum;
             }
 
-            //Here I am calculationg sum along with %age weight each row is keeping in. This would help while finding the right 
+            //Here I am calculating sum along with %age weight each row is keeping in. This would help while finding the right 
             // set of buckets to be given off.
             for (int i = 0; i < _mDimensions.Rows; i++)
             {                

@@ -11,7 +11,6 @@
 // WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
 // See the License for the specific language governing permissions and
 // limitations under the License.
-
 using System;
 using System.Collections.Generic;
 using Alachisoft.NCache.Runtime.Exceptions;
@@ -25,10 +24,12 @@ namespace Alachisoft.NCache.Common.DataReader
         protected RecordRow _current = null;
         private int _counter = 0;
         private bool _next = false;
+        private Dictionary<string, Dictionary<IRecordSetEnumerator, Object>> _validReaders;
 
-        public DistributedRSEnumerator(List<IRecordSetEnumerator> partitionRecordSets) 
+        public DistributedRSEnumerator(List<IRecordSetEnumerator> partitionRecordSets, Dictionary<string, Dictionary<IRecordSetEnumerator, Object>> validReaders)
         {
             _partitionRecordSets = partitionRecordSets;
+            _validReaders = validReaders;
         }
 
         #region-----------------IRecordSetEnumerator---------------------
@@ -61,9 +62,9 @@ namespace Alachisoft.NCache.Common.DataReader
                 {
                     if (_partitionRecordSets.Count <= _counter)
                         throw new InvalidReaderException("Data reader has lost its state");
-                    
+
                     _currentRecordSet = _partitionRecordSets[_counter];
-                    
+
                     hasNext = _currentRecordSet.MoveNext();
                 }
                 catch (InvalidReaderException e)
@@ -73,11 +74,15 @@ namespace Alachisoft.NCache.Common.DataReader
                 }
                 catch (Exception e)
                 {
-                    throw e;
+                    throw;
                 }
 
                 if (hasNext) _current = _currentRecordSet.Current;
-                else _partitionRecordSets.Remove(_currentRecordSet);
+                else
+                {
+                    _partitionRecordSets.Remove(_currentRecordSet);
+                    RemoveFromValidReaders(_currentRecordSet);
+                }
                 _counter++;
                 if (_counter >= _partitionRecordSets.Count)
                     _counter = 0;
@@ -86,17 +91,35 @@ namespace Alachisoft.NCache.Common.DataReader
 
         }
 
+        public void RemoveFromValidReaders(IRecordSetEnumerator pe)
+        {
+            IPartitionInfo info = pe as IPartitionInfo;
+
+            if (info != null)
+            {
+                var readers = default(Dictionary<IRecordSetEnumerator, Object>);
+
+                lock (_validReaders)
+                {
+                    _validReaders.TryGetValue(info.Server, out readers);
+
+                    if (readers != null)
+                    {
+                        readers.Remove(pe);
+                    }
+                }
+            }
+
+        }
 
         public void Dispose()
-        {
+        {            
             if (_partitionRecordSets != null)
             {
-                for (int i = 0; i < _partitionRecordSets.Count; i++)
+                foreach (var pe in _partitionRecordSets)
                 {
-                    if (_partitionRecordSets[i] != null)
-                    {
-                        _partitionRecordSets[i].Dispose();
-                    }
+                    pe.Dispose();
+                    RemoveFromValidReaders(pe);
                 }
                 _partitionRecordSets = null;
             }

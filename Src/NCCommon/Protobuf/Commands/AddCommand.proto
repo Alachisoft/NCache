@@ -1,4 +1,8 @@
+import "SyncDependency.proto";
 import "QueryInfo.proto";
+import "TagInfo.proto";
+import "Dependency.proto";
+import "NamedTagInfo.proto";
 import "ObjectQueryInfo.proto";
 
 option java_package = "com.alachisoft.ncache.protobuf";
@@ -9,15 +13,26 @@ message AddCommand {
 	optional int64 requestId = 2;
 	optional sint32 updateCallbackId = 3;
 	optional sint32 removeCallbackId = 4;
-	optional int32 priority = 5;
-	optional int64 absExpiration = 6;
-	optional int64 sldExpiration = 7;
-	optional QueryInfo queryInfo = 8;
-	optional int32 flag = 9;
-	repeated bytes data = 10;
-	optional ObjectQueryInfo objectQueryInfo = 11;		
-	repeated bytes objectQueryInfoEncrypted = 12;
-	optional sint32 updateDataFilter = 13 [default = -1];
-	optional sint32 removeDataFilter = 14 [default = -1];
-
+	optional sint32 datasourceItemAddedCallbackId = 5;
+	optional bool isAsync = 6;
+	optional int32 priority = 7;
+	optional int64 absExpiration = 8;
+	optional int64 sldExpiration = 9;
+	optional bool isResync = 10;
+	optional string group = 11;
+	optional string subGroup = 12;
+	optional int32 flag = 13;
+	optional string providerName = 14;
+	optional string resyncProviderName = 15;
+	optional SyncDependency syncDependency = 16;
+	optional QueryInfo queryInfo = 17;
+	optional TagInfo tagInfo = 18;
+	optional Dependency dependency = 19;
+	repeated bytes data = 20;
+	optional NamedTagInfo namedTagInfo = 21;	
+	optional ObjectQueryInfo objectQueryInfo = 22;		
+	optional sint32 updateDataFilter = 24 [default = -1];
+	optional sint32 removeDataFilter = 25 [default = -1];
+	optional string clientID = 26;
+    optional sint32 CallbackType = 27;
 }

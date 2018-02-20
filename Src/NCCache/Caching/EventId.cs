@@ -13,6 +13,7 @@
 // limitations under the License.
 
 using System;
+using Alachisoft.NCache.Caching.Queries;
 using Alachisoft.NCache.Persistence;
 using Alachisoft.NCache.Runtime.Serialization;
 
@@ -24,6 +25,9 @@ namespace Alachisoft.NCache.Caching
         private string _eventUniqueId;
         private long _operationCounter;
         private int _eventCounter;
+
+        private  QueryChangeType _queryChangeType;
+
         private EventType _eventType;
         private string _queryId;
         private int _hashCode = -1;
@@ -31,6 +35,23 @@ namespace Alachisoft.NCache.Caching
         public EventId()
         {
 
+        }
+        public override bool Equals(object obj)
+        {
+            EventId eventId = (EventId)obj;
+            if (_operationCounter == eventId._operationCounter && _eventCounter == eventId.EventCounter && _hashCode == eventId._hashCode)
+                if (AreEqual(_eventUniqueId, eventId._eventUniqueId) && AreEqual(_queryId, eventId._queryId))
+                    if (AreEqual(_eventType, eventId._eventType) && AreEqual(_queryChangeType, eventId._queryChangeType))
+                        return true;
+            return false;
+        }
+
+        private static bool AreEqual(object A, object B)
+        {
+            if (A == null && B == null)
+                return true;
+            else
+                return A.Equals(B);
         }
 
         public EventId(string eventUniqueId, long operationCounter, int eventCounter)
@@ -78,6 +99,20 @@ namespace Alachisoft.NCache.Caching
                 _eventCounter = value;
             }
         }
+
+        public QueryChangeType QueryChangeType
+        {
+            get
+            {
+                return _queryChangeType;
+            }
+
+            set
+            {
+                _queryChangeType = value;
+            }
+        }
+
         public EventType EventType
         {
             get
@@ -117,24 +152,12 @@ namespace Alachisoft.NCache.Caching
             if (_hashCode == -1 && _eventUniqueId == null)
                 return base.GetHashCode();
             else if(_hashCode == -1)
-                _hashCode = (_eventUniqueId + _eventCounter.ToString() + ":" + OperationCounter.ToString() + ":" + _eventType.ToString() + ":" + _queryId).GetHashCode();
+               
+                _hashCode = (_eventUniqueId+_eventCounter.ToString()+":"+OperationCounter.ToString()+":"+_eventType.ToString()+":"+_queryChangeType.ToString() + ":" + _queryId).GetHashCode();
 
             return _hashCode;
         }
 
-        public override bool Equals(object obj)
-        {
-            EventId eventId = (EventId)obj;
-            if (this.EventUniqueID == eventId.EventUniqueID && 
-                this.EventCounter == eventId.EventCounter && 
-                this.OperationCounter == eventId.OperationCounter && 
-                this.EventType == eventId.EventType &&
-                this._queryId == eventId._queryId)
-            {
-                return true;
-            }
-            return false;
-        }
         #region ICloneable Members
 
         public object Clone()
@@ -145,6 +168,9 @@ namespace Alachisoft.NCache.Caching
                 ei._eventUniqueId = _eventUniqueId;
                 ei._operationCounter = _operationCounter;
                 ei._eventCounter = _eventCounter;
+
+                ei._queryChangeType = _queryChangeType;
+
                 ei._eventType = _eventType;
                 ei._queryId = _queryId;
             }
@@ -159,6 +185,9 @@ namespace Alachisoft.NCache.Caching
             _eventUniqueId = (string)reader.ReadObject();
             _operationCounter = reader.ReadInt64();
             _eventType = (EventType)reader.ReadInt32();
+
+            _queryChangeType = (Queries.QueryChangeType)reader.ReadInt32();
+
             _queryId = (string)reader.ReadObject();
         }
 
@@ -168,6 +197,9 @@ namespace Alachisoft.NCache.Caching
             writer.WriteObject(_eventUniqueId);
             writer.Write(_operationCounter);
             writer.Write((int)_eventType);
+
+            writer.Write((int)_queryChangeType);
+
             writer.WriteObject(_queryId);
         }
     }

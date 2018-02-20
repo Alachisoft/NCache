@@ -14,13 +14,10 @@
 
 using System;
 using System.Collections;
-using System.Data;
-
 using Alachisoft.NCache.Common;
 using Alachisoft.NCache.Common.Monitoring;
 using Alachisoft.NCache.Common.Logger;
 using Alachisoft.NCache.Common.DataStructures.Clustered;
-using Alachisoft.NCache.Common.Util;
 
 namespace Alachisoft.NCache.Storage
 {
@@ -30,7 +27,7 @@ namespace Alachisoft.NCache.Storage
     class ClrHeapStorageProvider : StorageProviderBase
     {
         /// <summary> Storage Map </summary>
-        protected HashVector _itemDict;    
+        protected HashVector _itemDict;
 
         /// <summary>
         /// Default constructor.
@@ -69,8 +66,12 @@ namespace Alachisoft.NCache.Storage
         /// </summary>
         public override void Dispose()
         {
-            _itemDict.Clear();
-            _itemDict = null;
+            lock (_itemDict.SyncRoot)
+            {
+                _itemDict.Clear();
+                _itemDict = null;
+            }
+
             base.Dispose();
         }
 
@@ -81,7 +82,10 @@ namespace Alachisoft.NCache.Storage
         /// <summary>
         /// returns the number of objects contained in the cache.
         /// </summary>
-        public override long Count { get { return _itemDict.Count; } }
+        public override long Count
+        {
+            get { return _itemDict.Count; }
+        }
 
         /// <summary>
         /// Removes all entries from the store.
@@ -120,7 +124,10 @@ namespace Alachisoft.NCache.Storage
             {
                 if (ServerMonitor.MonitorActivity) ServerMonitor.LogClientActivity("Store.Get", "");
 
-                return (object)_itemDict[key];
+                lock (_itemDict.SyncRoot)
+                {
+                    return (object) _itemDict[key];
+                }
             }
             catch (Exception e)
             {
@@ -138,9 +145,13 @@ namespace Alachisoft.NCache.Storage
         {
             try
             {
-                ISizable item = _itemDict[key] as ISizable;
+                ISizable item = null;
+                lock (_itemDict.SyncRoot)
+                {
+                    item = _itemDict[key] as ISizable;
+                }
 
-                return item != null ? item.InMemorySize : 0;
+                return item != null ? (item.InMemorySize + Common.MemoryUtil.GetStringSize(key)) : 0;
             }
             catch (Exception e)
             {
@@ -162,14 +173,18 @@ namespace Alachisoft.NCache.Storage
             {
                 if (ServerMonitor.MonitorActivity) ServerMonitor.LogClientActivity("Store.Add", "");
 
-                if (_itemDict.ContainsKey(key))
+                lock (_itemDict.SyncRoot)
                 {
-                    return StoreAddResult.KeyExists;
+                    if (_itemDict.ContainsKey(key))
+                    {
+                        return StoreAddResult.KeyExists;
+                    }
                 }
-                StoreStatus status = HasSpace((ISizable)item,Common.MemoryUtil.GetStringSize(key),allowExtendedSize);
-                
-                if (ServiceConfiguration.CacheSizeThreshold > 0) _reportCacheNearEviction = true;
-                if (_reportCacheNearEviction) CheckForStoreNearEviction();
+
+                StoreStatus status = HasSpace((ISizable) item, Common.MemoryUtil.GetStringSize(key), allowExtendedSize);
+
+                CheckIfCacheNearEviction();
+
                 if (status == StoreStatus.HasNotEnoughSpace)
                 {
                     return StoreAddResult.NotEnoughSpace;
@@ -180,6 +195,7 @@ namespace Alachisoft.NCache.Storage
                     _itemDict.Add(key, item);
                     base.Added(item as ISizable, Common.MemoryUtil.GetStringSize(key));
                 }
+
                 if (status == StoreStatus.NearEviction)
                 {
                     return StoreAddResult.SuccessNearEviction;
@@ -193,6 +209,7 @@ namespace Alachisoft.NCache.Storage
             {
                 throw e;
             }
+
             return StoreAddResult.Success;
         }
 
@@ -211,10 +228,10 @@ namespace Alachisoft.NCache.Storage
 
                 object oldItem = _itemDict[key];
 
-                StoreStatus status = HasSpace(oldItem as ISizable, (ISizable)item, Common.MemoryUtil.GetStringSize(key), allowExtendedSize);
+                StoreStatus status = HasSpace(oldItem as ISizable, (ISizable) item,
+                    Common.MemoryUtil.GetStringSize(key), allowExtendedSize);
 
-                if (ServiceConfiguration.CacheSizeThreshold > 0) _reportCacheNearEviction = true;
-                if (_reportCacheNearEviction) CheckForStoreNearEviction();
+                CheckIfCacheNearEviction();
 
                 if (status == StoreStatus.HasNotEnoughSpace)
                 {
@@ -226,10 +243,13 @@ namespace Alachisoft.NCache.Storage
                     _itemDict[key] = item;
                     base.Inserted(oldItem as ISizable, item as ISizable, Common.MemoryUtil.GetStringSize(key));
                 }
+
                 if (status == StoreStatus.NearEviction)
                 {
-                    //the store is almost full, need to evict.
-                    return oldItem != null ? StoreInsResult.SuccessOverwriteNearEviction : StoreInsResult.SuccessNearEviction;
+                    // the store is almost full, need to evict.
+                    return oldItem != null
+                        ? StoreInsResult.SuccessOverwriteNearEviction
+                        : StoreInsResult.SuccessNearEviction;
                 }
 
                 return oldItem != null ? StoreInsResult.SuccessOverwrite : StoreInsResult.Success;
@@ -239,7 +259,7 @@ namespace Alachisoft.NCache.Storage
                 return StoreInsResult.NotEnoughSpace;
             }
             catch (Exception e)
-            {               
+            {
                 throw e;
             }
         }
@@ -263,6 +283,7 @@ namespace Alachisoft.NCache.Storage
                     base.Removed(e as ISizable, Common.MemoryUtil.GetStringSize(key));
                 }
             }
+
             return e;
         }
 
@@ -292,6 +313,5 @@ namespace Alachisoft.NCache.Storage
         }
 
         #endregion
-
     }
 }

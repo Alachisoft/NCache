@@ -13,8 +13,9 @@
 // limitations under the License.
 
 using System.Collections;
-using Alachisoft.NCache.Common.DataStructures.Clustered;
+using System;
 using System.IO;
+using Alachisoft.NCache.Common.DataStructures.Clustered;
 
 namespace Alachisoft.NCache.Caching.Topologies.Clustered
 {
@@ -22,47 +23,68 @@ namespace Alachisoft.NCache.Caching.Topologies.Clustered
     {
         public HashVector data;
         public bool transferCompleted;
+        private bool _isMessageData;
         private long sendDataSize;
         private Stream stream;
-
+        private bool _hasLoggedOperations;
+    
         public StateTxfrInfo(bool transferCompleted)
         {
             this.transferCompleted = transferCompleted;
             data = null;
         }
 
-        public StateTxfrInfo(HashVector data, bool transferCompleted, long dataSize, Stream st)
+        public StateTxfrInfo(HashVector data, bool transferCompleted, long dataSize, Stream st, bool isMessageData) 
         {
             this.data = data;
             this.transferCompleted = transferCompleted;
-            this.sendDataSize = dataSize;
-            this.stream = st;
+            sendDataSize = dataSize;
+            stream = st;
+            _isMessageData = isMessageData;
         }
 
         public Stream SerlizationStream
         {
-            get { return this.stream; }
+            get { return stream; }
         }
 
         public long DataSize
         {
             get { return sendDataSize; }
         }
-       
+
+        public bool IsMessageData
+        {
+            get
+            {
+                return _isMessageData;
+            }
+        }
+
+        public bool HasLoggedOperations
+        {
+            get { return _hasLoggedOperations; }
+            set { _hasLoggedOperations = value; }
+        }
+
         #region ICompactSerializable Members
 
         void Runtime.Serialization.ICompactSerializable.Deserialize(Runtime.Serialization.IO.CompactReader reader)
         {
             data = (HashVector)reader.ReadObject();
             transferCompleted = reader.ReadBoolean();
-            this.sendDataSize = reader.ReadInt64();
+            sendDataSize = reader.ReadInt64();
+            _isMessageData = reader.ReadBoolean();
+            _hasLoggedOperations = reader.ReadBoolean();
         }
 
         void Runtime.Serialization.ICompactSerializable.Serialize(Runtime.Serialization.IO.CompactWriter writer)
         {
             writer.WriteObject(data);
             writer.Write(transferCompleted);
-            writer.Write(this.sendDataSize);
+            writer.Write(sendDataSize);
+            writer.Write(IsMessageData);
+            writer.Write(_hasLoggedOperations);
         }
 
         #endregion

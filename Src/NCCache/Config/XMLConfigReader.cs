@@ -15,9 +15,12 @@
 using System;
 using System.Xml.XPath;
 using System.Collections;
+
 using Alachisoft.NCache.Common.Configuration;
 using Alachisoft.NCache.Config.Dom;
+
 using Alachisoft.NCache.Runtime.Exceptions;
+
 
 namespace Alachisoft.NCache.Config
 { 
@@ -243,7 +246,7 @@ namespace Alachisoft.NCache.Config
             builder.Configuration.CopyTo(newCaches, 0);
             properties = ConfigConverter.ToHashtable(convertToOldDom(newCaches));
         }
-
+              
         private static Alachisoft.NCache.Config.Dom.CacheServerConfig[] convertToOldDom(Alachisoft.NCache.Config.NewDom.CacheServerConfig[] newCacheConfigsList)
         {
             Alachisoft.NCache.Config.Dom.CacheServerConfig[] oldCacheConfigsList = new CacheServerConfig[newCacheConfigsList.Length];

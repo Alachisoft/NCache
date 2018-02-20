@@ -21,6 +21,10 @@ using Alachisoft.NCache.Config.Dom;
 using Alachisoft.NCache.Management;
 using Alachisoft.NCache.Runtime.Exceptions;
 
+#if NETCORE
+using System.Net.Http;
+#endif
+
 namespace Alachisoft.NCache.Web
 {
     internal class DirectoryUtil
@@ -56,7 +60,6 @@ namespace Alachisoft.NCache.Web
             if (!File.Exists(filePath))
                 return null;
             return filePath;
-
         }
 
         public static ArrayList GetCacheConfig(string cacheId, bool inproc)
@@ -114,8 +117,10 @@ namespace Alachisoft.NCache.Web
                         throw;
                     }
                 }
+
                 return false;
             }
+
             return true;
         }
 
@@ -123,7 +128,7 @@ namespace Alachisoft.NCache.Web
         {
             string ncacheInstallDirectory = AppUtil.InstallDir;
             path = string.Empty;
-                        
+
             if (ncacheInstallDirectory == null)
                 return false;
 
@@ -142,15 +147,17 @@ namespace Alachisoft.NCache.Web
                         throw;
                     }
                 }
+
                 return false;
             }
+
             return true;
         }
 
         public static string GetBaseFilePath(string fileName)
         {
             Search result;
-            return SearchLocal(fileName,out result);
+            return SearchLocal(fileName, out result);
         }
 
         public static string GetBaseFilePath(string fileName, Search search, out Search result)
@@ -159,16 +166,14 @@ namespace Alachisoft.NCache.Web
             {
                 return SearchLocal(fileName, out result);
             }
+            else if (search == Search.LocalConfigSearch)
+            {
+                return SearchLocalConfig(fileName, out result);
+            }
             else
-                if (search == Search.LocalConfigSearch)
-                {
-                    return SearchLocalConfig(fileName, out result);
-                }
-                else
-                {
-                    return SearchGlobal(fileName, out result);
-                }
-
+            {
+                return SearchGlobal(fileName, out result);
+            }
         }
 
         private static string SearchLocal(string fileName, out Search result)
@@ -176,10 +181,10 @@ namespace Alachisoft.NCache.Web
             result = Search.LocalSearch;
             String path = null;
 
-            path = Environment.CurrentDirectory + "\\" + fileName;
+            path = Environment.CurrentDirectory + Path.DirectorySeparatorChar + fileName;
             if (File.Exists(path))
                 return path;
-            return SearchLocalConfig(fileName,out result);
+            return SearchLocalConfig(fileName, out result);
         }
 
         private static string SearchLocalConfig(string fileName, out Search result)
@@ -187,6 +192,7 @@ namespace Alachisoft.NCache.Web
             result = Search.LocalConfigSearch;
             String path = null;
             bool found = false;
+#if !NETCORE
             if (HttpContext.Current != null)
             {
                 string approot = HttpContext.Current.Server.MapPath(@"~\");
@@ -198,7 +204,8 @@ namespace Alachisoft.NCache.Web
                         path = Path.Combine(approot + @"\", @"bin\config\" + fileName);
                         if (!File.Exists(path))
                         {
-                            string configDir = System.Configuration.ConfigurationSettings.AppSettings.Get("NCache.ConfigDir");
+                            string configDir =
+                                System.Configuration.ConfigurationSettings.AppSettings.Get("NCache.ConfigDir");
                             if (configDir != null)
                             {
                                 path = Path.Combine(configDir + @"/", fileName);
@@ -212,9 +219,11 @@ namespace Alachisoft.NCache.Web
                         else
                             found = true;
                     }
-
+                    else
+                        found = true;
                 }
             }
+#endif
             if (!found)
             {
                 string roleRootDir = Environment.GetEnvironmentVariable("RoleRoot");
@@ -232,11 +241,11 @@ namespace Alachisoft.NCache.Web
                     else
                         return path;
                 }
-
             }
             else
                 return path;
-            return SearchGlobal(fileName,out result);
+
+            return SearchGlobal(fileName, out result);
         }
 
         private static string SearchGlobal(string fileName, out Search result)
@@ -250,6 +259,7 @@ namespace Alachisoft.NCache.Web
                 if (File.Exists(filePath))
                     return filePath;
             }
+
             return null;
         }
     }

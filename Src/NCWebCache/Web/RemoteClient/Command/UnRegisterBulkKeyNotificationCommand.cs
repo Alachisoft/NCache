@@ -17,7 +17,7 @@ namespace Alachisoft.NCache.Web.Command
     class UnRegisterBulkKeyNotificationCommand : CommandBase
     {
         private Alachisoft.NCache.Common.Protobuf.UnRegisterBulkKeyNotifCommand _unregisterBulkKeyNotifCommand;
-        
+
         public UnRegisterBulkKeyNotificationCommand(string[] keys, short updateCallbackid, short removeCallbackid)
         {
             name = "UnRegisterBulkKeyNotificationCommand";
@@ -36,7 +36,7 @@ namespace Alachisoft.NCache.Web.Command
 
         internal override RequestType CommandRequestType
         {
-            get { return RequestType.BulkWrite; }
+            get { return RequestType.KeyBulkWrite; }
         }
 
 
@@ -46,7 +46,6 @@ namespace Alachisoft.NCache.Web.Command
             base._command.requestID = base.RequestId;
             base._command.unRegisterBulkKeyNotifCommand = _unregisterBulkKeyNotifCommand;
             base._command.type = Alachisoft.NCache.Common.Protobuf.Command.Type.UNREGISTER_BULK_KEY_NOTIF;
-
         }
     }
 }

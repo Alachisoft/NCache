@@ -14,7 +14,6 @@
 
 using System;
 using Alachisoft.NCache.Common.Net;
-using Alachisoft.NCache.Common.Util;
 
 namespace Alachisoft.NCache.Caching.Topologies.Clustered
 
@@ -57,4 +56,9 @@ namespace Alachisoft.NCache.Caching.Topologies.Clustered
 
         #endregion
     }
-}
+
+    //Keeps data that is related to ONE NODE. This consist of almost all the required data in required form.
+
+
+    //end class
+} //end namespace

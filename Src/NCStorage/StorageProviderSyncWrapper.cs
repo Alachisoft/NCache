@@ -52,13 +52,14 @@ namespace Alachisoft.NCache.Storage
                 _storage.Dispose();
                 _storage = null;
             }
+
             base.Dispose();
         }
 
         #endregion
 
         /// <summary>
-        /// get or set the maximam size of store, in bytes
+        /// get or set the maximum size of store, in bytes
         /// </summary>
         public override long MaxSize
         {
@@ -188,7 +189,7 @@ namespace Alachisoft.NCache.Storage
             Sync.AcquireWriterLock(Timeout.Infinite);
             try
             {
-                return _storage.Add(key, item,allowExtendedSize);
+                return _storage.Add(key, item, allowExtendedSize);
             }
             finally
             {
@@ -208,7 +209,7 @@ namespace Alachisoft.NCache.Storage
             Sync.AcquireWriterLock(Timeout.Infinite);
             try
             {
-                return _storage.Insert(key, item,allowExtendedSize);
+                return _storage.Insert(key, item, allowExtendedSize);
             }
             finally
             {
@@ -265,6 +266,5 @@ namespace Alachisoft.NCache.Storage
         }
 
         #endregion
-
     }
 }

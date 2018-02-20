@@ -11,13 +11,10 @@
 // WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
 // See the License for the specific language governing permissions and
 // limitations under the License.
-
 using System;
-using System.Collections.Generic;
 using System.Text;
 using Alachisoft.NCache.Common.Net;
 using Alachisoft.NCache.Runtime.Serialization;
-using Runtime = Alachisoft.NCache.Runtime;
 
 namespace Alachisoft.NCache.Config.Dom
 {
@@ -60,7 +57,7 @@ namespace Alachisoft.NCache.Config.Dom
 
         /// <summary>
         /// if the nodeIdentity contains an IpAddress instead of the node name
-        /// it returns an equalent node indentity with the node name.
+        /// it returns an equivalent node identity with the node name.
         /// </summary>
         /// <param name="?"></param>
         /// <returns></returns>

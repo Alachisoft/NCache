@@ -10,8 +10,7 @@
 // distributed under the License is distributed on an "AS IS" BASIS,
 // WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
 // See the License for the specific language governing permissions and
-// limitations under the License.
-
+// limitations under the License
 using System;
 using System.Collections;
 
@@ -68,7 +67,7 @@ namespace Alachisoft.NCache.Common.DataStructures
 		public int Push(object O)
 		{
 			int p = InnerList.Count,p2;
-			InnerList.Add(O); 
+			InnerList.Add(O); // E[p] = O
 			do
 			{
 				if(p==0)
@@ -214,7 +213,6 @@ namespace Alachisoft.NCache.Common.DataStructures
 			}
 		}
 		#endregion
-
 		#region explicit implementation
 		bool IList.IsReadOnly
 		{

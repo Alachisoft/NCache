@@ -12,11 +12,6 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-using System;
-using System.Collections.Generic;
-using System.Collections;
-using System.Text;
-
 namespace Alachisoft.NCache.Caching
 {
     public enum LockAccessType:byte
@@ -31,6 +26,17 @@ namespace Alachisoft.NCache.Caching
         DONT_RELEASE,
         /// <summary>Perform the operation as if there is no lock.</summary>
         IGNORE_LOCK,
+        /// <summary>Optimistic locking; update the item in the cache only if the version is same.</summary>
+        COMPARE_VERSION,
+        /// <summary>Optimistic locking; get the version while getting the object from the cache. 
+        /// this version is used to put the item back to the cache.</summary>
+        GET_VERSION,
+        MATCH_VERSION,
+
+        //this helps to preserve the version of the cache item when in case of client cache we
+        //remove the local copy of the item before updating the remote copy of the cache item.
+        //this is for internal use only.
+        PRESERVE_VERSION,
         DEFAULT
     }
 }

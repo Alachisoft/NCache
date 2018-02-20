@@ -11,15 +11,16 @@
 // WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
 // See the License for the specific language governing permissions and
 // limitations under the License.
-
 using System;
 using System.Collections;
 using System.Text;
 using Alachisoft.NCache.Common.Communication;
 using Alachisoft.NCache.Common.Communication.Exceptions;
-
+#if JAVA
+using Runtime = Alachisoft.TayzGrid.Runtime;
+#else
 using Runtime = Alachisoft.NCache.Runtime;
-
+#endif
 namespace Alachisoft.NCache.Common.Communication
 {
     public class RequestManager :IChannelEventListener, IDisposable
@@ -29,7 +30,7 @@ namespace Alachisoft.NCache.Common.Communication
         object _lock = new object();
         long _lastRequestId;
         bool _resendRequestOnChannelDisconnect = true;
-        private int _requestTimeout = 90 * 1000; //default is ninety second
+        private int _requestTimeout = 90 *1000; //default is ninety second
 
         public RequestManager(IChannel chnnel)
         {
@@ -64,29 +65,31 @@ namespace Alachisoft.NCache.Common.Communication
                 }
             }
 
-            lock (reqRespPair)
+
+            try
             {
-                try
+                lock (reqRespPair)
                 {
                     _channel.SendMessage(request);
                     reqRespPair.RequestSentOverChannel = true;
                     lockReacquired = System.Threading.Monitor.Wait(reqRespPair, _requestTimeout);
                 }
-                catch (ChannelException e)
+            }
+            catch (ChannelException e)
+            {
+                throw;
+            }
+            finally
+            {
+                lock (_lock)
                 {
-                    throw;
-                }
-                finally
-                {
-                    lock (_lock)
-                    {
-                        _requests.Remove(request.RequestId);
-                    }
+                    _requests.Remove(request.RequestId);
                 }
             }
 
+
             if (!lockReacquired)
-                throw new Runtime.Exceptions.TimeoutException("Request has timedout. Did not receive response from " + _channel.Server );
+                throw new Runtime.Exceptions.TimeoutException("Request has timedout. Did not receive response from " + _channel.Server);
 
             if (reqRespPair.ChannelException != null)
                 throw reqRespPair.ChannelException;
@@ -119,45 +122,50 @@ namespace Alachisoft.NCache.Common.Communication
   
             lock (reqResponsePair)
             {
-  
                 if (reqResponsePair != null)
                 {
                     reqResponsePair.Response = protoResponse;
                     System.Threading.Monitor.Pulse(reqResponsePair);
                 }
-
             }
         }
 
         public void ChannelDisconnected(string reason)
         {
+            Hashtable requestClone = null;
             lock (_lock)
             {
-                Hashtable requestClone = _requests.Clone() as Hashtable;
-                IDictionaryEnumerator ide = requestClone.GetEnumerator();
+                requestClone = _requests.Clone() as Hashtable;
+            }
+            IDictionaryEnumerator ide = requestClone.GetEnumerator();
 
-                while (ide.MoveNext())
+            while (ide.MoveNext())
+            {
+                RequestResponsePair reqRspPair = ide.Value as RequestResponsePair;
+
+                if (!reqRspPair.RequestSentOverChannel) continue;
+
+                lock (reqRspPair)
                 {
-                    RequestResponsePair reqRspPair = ide.Value as RequestResponsePair;
-
-                    if (!reqRspPair.RequestSentOverChannel) continue;
-                    
-                    lock (reqRspPair)
+                    if (_resendRequestOnChannelDisconnect)
                     {
-                        if (_resendRequestOnChannelDisconnect)
+                        //resend the request when channel is disconnected
+                        try
                         {
-                            //resend the request when channel is disconnected
-                            try
-                            {
-                                if (_channel != null) _channel.SendMessage(reqRspPair.Request);
-                            }
-                            catch (ChannelException ce)
+                            if (_channel != null) _channel.SendMessage(reqRspPair.Request);
+                        }
+                        catch (ChannelException ce)
+                        {
+                            lock (reqRspPair)
                             {
                                 reqRspPair.ChannelException = ce;
                                 System.Threading.Monitor.PulseAll(reqRspPair);
                             }
                         }
-                        else
+                    }
+                    else
+                    {
+                        lock (reqRspPair)
                         {
                             reqRspPair.ChannelException = new ChannelException(reason);
                             System.Threading.Monitor.PulseAll(reqRspPair);
@@ -165,35 +173,63 @@ namespace Alachisoft.NCache.Common.Communication
                     }
                 }
             }
-        }
 
+        }
+        public void ChannelError(object error)
+        {
+            Hashtable requestClone = null;
+            lock (_lock)
+            {
+                requestClone = _requests.Clone() as Hashtable;
+            }
+            IDictionaryEnumerator ide = requestClone.GetEnumerator();
+
+            while (ide.MoveNext())
+            {
+                RequestResponsePair reqRspPair = ide.Value as RequestResponsePair;
+
+                if (!reqRspPair.RequestSentOverChannel) continue;
+
+                lock (reqRspPair)
+                {
+                    reqRspPair.Response = error;
+                    System.Threading.Monitor.PulseAll(reqRspPair);
+                }
+            }
+        }
         
         #endregion
 
-        public void Dispose()
+        private void Dispose(bool gracefull)
         {
             try
             {
                 lock (_lock)
                 {
-                    _requests.Clear();
+                    if(_requests != null)
+                        _requests.Clear();
+                    if (_channel != null)
+                    {
+                        _channel.Disconnect();
+                        _channel = null;
+                    }
                 }
-
-                if (_channel != null)
-                {
-                    _channel.Disconnect();
-                    _channel = null;
-                }
-
             }
             catch (Exception e)
             {
             }
+            if(gracefull)
+                GC.SuppressFinalize(this);
         }
 
+        public void Dispose()
+        {
+            Dispose(true);
+        }
+     
         ~RequestManager()
         {
-            Dispose();
+            Dispose(false);
         }
     }
 }

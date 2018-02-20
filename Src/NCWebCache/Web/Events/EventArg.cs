@@ -12,9 +12,6 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-using System;
-using System.Collections.Generic;
-using System.Text;
 using Alachisoft.NCache.Runtime.Events;
 
 namespace Alachisoft.NCache.Web.Caching
@@ -25,11 +22,14 @@ namespace Alachisoft.NCache.Web.Caching
     /// </summary>
     public abstract class EventArg
     {
-        //private string _key; //an option
         private string _cacheName;
         private EventType _eventType;
-        private EventCacheItem _item; 
-        private EventCacheItem _oldItem; 
+
+        private EventCacheItem
+            _item; //Internal value will be null if fetch data was off, will be completely null if no data upon return was specified	
+
+        private EventCacheItem _oldItem; //For insert only
+
 
         /// <summary>
         /// Name of the cache the event is raised against
@@ -79,6 +79,5 @@ namespace Alachisoft.NCache.Web.Caching
             _item = item;
             _oldItem = oldItem;
         }
-
     }
 }

@@ -12,24 +12,23 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-
 using System.IO;
 using Alachisoft.NCache.Web.Communication;
 using Alachisoft.NCache.Web.Caching.Util;
 
 namespace Alachisoft.NCache.Web.Command
-
 {
     internal sealed class GetCacheBinding : CommandBase
     {
-        Common.Protobuf.GetCacheBindingCommand _getCacheBinding;
+        Alachisoft.NCache.Common.Protobuf.GetCacheBindingCommand _getCacheBinding;
 
-        public GetCacheBinding(string id)
+        public GetCacheBinding(string id, byte[] useName, byte[] password)
         {
-            name = "GetCacheBinding";
-            _getCacheBinding = new Common.Protobuf.GetCacheBindingCommand();
+            base.name = "GetCacheBinding";
+            _getCacheBinding = new Alachisoft.NCache.Common.Protobuf.GetCacheBindingCommand();
             _getCacheBinding.cacheId = id;
-            
+            _getCacheBinding.binaryUserId = useName;
+            _getCacheBinding.binaryPassword = password;
         }
 
         internal override CommandType CommandType
@@ -44,47 +43,58 @@ namespace Alachisoft.NCache.Web.Command
 
         protected override void CreateCommand()
         {
-            _command = new Common.Protobuf.Command();
-            _command.requestID = RequestId;
-            _command.getCacheBindingCommand = _getCacheBinding;
-            _command.type = Common.Protobuf.Command.Type.GET_CACHE_BINDING;
-            _command.clientLastViewId = ClientLastViewId;
-            _command.intendedRecipient = IntendedRecipient;
+            base._command = new Alachisoft.NCache.Common.Protobuf.Command();
+            base._command.requestID = base.RequestId;
+            base._command.getCacheBindingCommand = _getCacheBinding;
+            base._command.type = Alachisoft.NCache.Common.Protobuf.Command.Type.GET_CACHE_BINDING;
+            base._command.clientLastViewId = base.ClientLastViewId;
+            base._command.intendedRecipient = base.IntendedRecipient;
         }
 
-        public override byte[] ToByte()
-        {
-            if (_commandBytes == null)
-            {
-                CreateCommand();
-                SerializeCommand();
-            }
-            return _commandBytes;
-        }
-
-        public override void SerializeCommand()
+        protected override void SerializeCommand()
         {
             using (MemoryStream stream = new MemoryStream())
             {
-                ///Write discarding buffer that socketserver reads
                 byte[] discardingBuffer = new byte[20];
                 stream.Write(discardingBuffer, 0, discardingBuffer.Length);
-
+                byte[] acknowledgementBuffer =
+                    (SupportsAacknowledgement && inquiryEnabled) ? new byte[20] : new byte[0];
+                stream.Write(acknowledgementBuffer, 0, acknowledgementBuffer.Length);
                 byte[] size = new byte[Connection.CmdSizeHolderBytesCount];
                 stream.Write(size, 0, size.Length);
-
-                ProtoBuf.Serializer.Serialize(stream, _command);
-                int messageLen = (int)stream.Length - (size.Length + discardingBuffer.Length);
+                ProtoBuf.Serializer.Serialize<Alachisoft.NCache.Common.Protobuf.Command>(stream, this._command);
+                int messageLen = (int) stream.Length -
+                                 (size.Length + discardingBuffer.Length + acknowledgementBuffer.Length);
 
                 size = HelperFxn.ToBytes(messageLen.ToString());
-                stream.Position = discardingBuffer.Length;
+                stream.Position = discardingBuffer.Length + acknowledgementBuffer.Length;
                 stream.Write(size, 0, size.Length);
 
-                _commandBytes = stream.ToArray();
+                this._commandBytes = stream.ToArray();
                 stream.Close();
             }
         }
 
-        
+        internal override byte[] ToByte(long acknowledgement, bool inquiryEnabledOnConnection)
+        {
+            if (_commandBytes == null || inquiryEnabled != inquiryEnabledOnConnection)
+            {
+                inquiryEnabled = inquiryEnabledOnConnection;
+                this.CreateCommand();
+                _command.commandID = _commandID;
+                this.SerializeCommand();
+            }
+
+            if (SupportsAacknowledgement && inquiryEnabled)
+            {
+                byte[] acknowledgementBuffer = HelperFxn.ToBytes(acknowledgement.ToString());
+                MemoryStream stream = new MemoryStream(_commandBytes, 0, _commandBytes.Length, true, true);
+                stream.Seek(20, SeekOrigin.Begin);
+                stream.Write(acknowledgementBuffer, 0, acknowledgementBuffer.Length);
+                _commandBytes = stream.GetBuffer();
+            }
+
+            return _commandBytes;
+        }
     }
 }

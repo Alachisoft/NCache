@@ -63,7 +63,7 @@ namespace Alachisoft.NCache.Caching.Topologies.Clustered
                             pendingOperations.Add(operation);
                             _pendingRequests[operation.SyncKey] = pendingOperations;
                         }
-                    }
+                    }             
                 }
                 else
                 {

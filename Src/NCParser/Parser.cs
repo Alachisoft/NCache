@@ -11,7 +11,6 @@
 
 using System;
 using System.IO;
-using System.Text;
 using System.Collections;
 using Console = System.Console;
 
@@ -19,12 +18,12 @@ using Console = System.Console;
 // Based on GOLDParser by Devin Cook <http://www.devincook.com/goldparser>.
 namespace Alachisoft.NCache.Parser
 {
-	/// This is the main class in the GoldParser Engine and is used to perform
-	/// all duties required to the parsing of a source text string. This class
-	/// contains the LALR(1) State Machine code, the DFA State Machine code,
-	/// character table (used by the DFA algorithm) and all other structures and
-	/// methods needed to interact with the developer.
-	public class Parser
+    /// This is the main class in the GoldParser Engine and is used to perform
+    /// all duties required to the parsing of a source text string. This class
+    /// contains the LALR(1) State Machine code, the DFA State Machine code,
+    /// character table (used by the DFA algorithm) and all other structures and
+    /// methods needed to interact with the developer.
+    public class Parser
 	{		
 		private Hashtable		m_parameters;
 		private Symbol[]		m_symbols;
@@ -158,13 +157,7 @@ namespace Alachisoft.NCache.Parser
 		{
 			return m_inputTokens.PopToken();
 		}
-	/*	
-		/// Returns the token at the specified index.
-		public Token GetToken(int p_index)
-		{
-			return m_outputTokens.GetToken(p_index);
-		}
-	*/	
+
 		/// Returns a <c>TokenStack</c> containing the tokens for the reduced rule or
 		/// the tokens that where expected when a syntax error occures.
 		public TokenStack GetTokens()
@@ -204,7 +197,7 @@ namespace Alachisoft.NCache.Parser
 		}
 		/// Closes the file opened with <c>OpenFile</c>.
 		public void CloseFile()
-		{
+		{			
 			if (m_source != null)
 				m_source.Close(); 
 			
@@ -222,8 +215,6 @@ namespace Alachisoft.NCache.Parser
 			{
 				if (m_inputTokens.Count == 0)
 				{	
-					// we must read a token.				
-					
 					Token token = RetrieveToken();
 					
 					if (token == null)
@@ -239,8 +230,6 @@ namespace Alachisoft.NCache.Parser
 				}
 				else if (m_commentLevel > 0)
 				{
-					// we are in a block comment.
-					
 					Token token = m_inputTokens.PopToken();
 					
 					switch (token.Kind)
@@ -257,8 +246,6 @@ namespace Alachisoft.NCache.Parser
 				}
 				else
 				{
-					// we are ready to parse.
-					
 					Token token = m_inputTokens.PeekToken();					
 					switch (token.Kind)
 					{
@@ -287,9 +274,9 @@ namespace Alachisoft.NCache.Parser
 							return ParseMessage.SyntaxError;
 						}
 						break;
-					} // switch
-				} // else
-			} // while
+					}
+				} 
+			} 
 		}
 
 		/* private methods */
@@ -533,8 +520,7 @@ namespace Alachisoft.NCache.Parser
 				}
 			}
 			else
-			{
-				// syntax error - fill expected tokens.				
+			{						
 				m_outputTokens.Clear();				
 				foreach (LRAction a in table.Members)
 				{

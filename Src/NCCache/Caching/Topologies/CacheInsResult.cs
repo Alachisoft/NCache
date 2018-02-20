@@ -45,6 +45,9 @@ namespace Alachisoft.NCache.Caching.Topologies
         /// has become fully functional on the new node.
         /// </summary>
         BucketTransfered,
+        /// <summary> The operation failed, the new group is incompatible with existing group. </summary>
+        IncompatibleGroup,
+        
         /// <summary> 
         /// In case of Insert if all nodes return NeedsEviction Response so then 
         ///there is no need of sending remove call cluster wide, mean the new item 
@@ -56,9 +59,14 @@ namespace Alachisoft.NCache.Caching.Topologies
         /// in the cache was already locked.
         /// </summary>
         ItemLocked, 
+        VersionMismatch,
         /// <summary> Operation timedout on all of the nodes. </summary>
         FullTimeout,
         /// <summary> Operation timedout on some of the nodes. </summary>
         PartialTimeout,
+
+        DependencyKeyNotExist,
+
+        DependencyKeyError,
     }
 }

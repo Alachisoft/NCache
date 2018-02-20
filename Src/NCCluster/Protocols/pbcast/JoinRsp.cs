@@ -11,16 +11,8 @@
 // limitations under the License.
 // $Id: JoinRsp.java,v 1.2 2004/03/30 06:47:18 belaban Exp $
 
-using System;
-using Alachisoft.NGroups;
-
-
 using Alachisoft.NCache.Runtime.Serialization.IO;
-
-
 using Alachisoft.NCache.Runtime.Serialization;
-
-
 
 namespace Alachisoft.NGroups.Protocols.pbcast
 {
@@ -66,7 +58,10 @@ namespace Alachisoft.NGroups.Protocols.pbcast
                 case JoinResult.Success:
                     sb.Append("success");
                     break;
-                 case JoinResult.HandleJoinInProgress:
+                case JoinResult.MaxMbrLimitReached:
+                    sb.Append("more than 2 nodes can not join the cluster");
+                    break;
+                case JoinResult.HandleJoinInProgress:
                     sb.Append("Handle Join called");
                     break;
                 case JoinResult.HandleLeaveInProgress:

@@ -10,23 +10,20 @@
 // distributed under the License is distributed on an "AS IS" BASIS,
 // WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
 // See the License for the specific language governing permissions and
-// limitations under the License.
-
-using System.Runtime.Serialization.Formatters.Binary;
-using System.Threading;
-using System.Net.Sockets;
-using Runtime = Alachisoft.NCache.Runtime;
-using System.Net.NetworkInformation;
+// limitations under the License
 
 namespace Alachisoft.NCache.Common
 {
     public class BitSetConstants
     {
         public const int Flattened = 1;
-
-        public const int LockedItem = 8;
-        public const int BinaryData = 16;
+       
+        public const int WriteThru = 4;
+        public const int WriteBehind = 8;
+        public const int ReadThru = 16;
+        public const int OptionalDSOperation = 32;
+        public const int LockedItem = 64;
+        public const int BinaryData = 128;
         
     }
 }
-

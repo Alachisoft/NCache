@@ -1,5 +1,5 @@
 ﻿/*
-* Copyright (c) 2015, Alachisoft. All Rights Reserved.
+* Copyright (c) 2018, Alachisoft. All Rights Reserved.
 *
 * Licensed under the Apache License, Version 2.0 (the "License");
 * you may not use this file except in compliance with the License.
@@ -13,6 +13,8 @@
 * See the License for the specific language governing permissions and
 * limitations under the License.
 */
+
+
 
 using System;
 using System.Collections.Generic;
@@ -51,10 +53,9 @@ namespace Alachisoft.NCache.Common.DataStructures.Clustered
             {
                 Type genericType = typeof (T);
                 T defaultOfType = default(T);
-
                 try
                 {
-                    ISizable reference = defaultOfType as ISizable;
+                    IMemSizable reference = defaultOfType as IMemSizable;
 
                     if (reference != null)
                     {
@@ -75,18 +76,6 @@ namespace Alachisoft.NCache.Common.DataStructures.Clustered
                 _lengthThreshold = (81920 / _sizeOfReference);
                 _length = length;
                 int superLength = (length/_lengthThreshold) + 1;
-
-                //Usman:
-                //I still believe we need this exception, if we need to keep the main referencial array in SOH.
-                //An array declared with greater supersize than length threshold will be declared in LOH.
-                //The exception should be removed if we don't care that the main referencial array is being taken to LOH.
-                //Otherwise it should be caught by user, who will then declare a new clustered array structure.
-
-                //if (superLength < 0 || superLength > _lengthThreshold)
-                //    throw new ArgumentOutOfRangeException(length.ToString("length"));
-
-                //Your call.
-                //Update: Let it grow, care later.
 
                 _chunks = new T[superLength][];
                 for (int i = 0; i < superLength; i++)

@@ -10,7 +10,7 @@
 // distributed under the License is distributed on an "AS IS" BASIS,
 // WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
 // See the License for the specific language governing permissions and
-// limitations under the License.
+// limitations under the License
 
 using System;
 using System.Collections.Generic;
@@ -26,13 +26,30 @@ namespace Alachisoft.NCache.Common.Util
             enumerationPointer.isDisposable = pointer.isDisposed;
             return enumerationPointer;
         }
-        
+
+        public static Alachisoft.NCache.Common.DataStructures.GroupEnumerationPointer GetFromProtobufGroupEnumerationPointer(Alachisoft.NCache.Common.Protobuf.GroupEnumerationPointer pointer)
+        {
+            Alachisoft.NCache.Common.DataStructures.GroupEnumerationPointer enumerationPointer = new Alachisoft.NCache.Common.DataStructures.GroupEnumerationPointer(pointer.id, pointer.chunkId, pointer.group, pointer.subGroup);
+            return enumerationPointer;
+        }
+
         public static Alachisoft.NCache.Common.Protobuf.EnumerationPointer ConvertToProtobufEnumerationPointer(Alachisoft.NCache.Common.DataStructures.EnumerationPointer pointer)
         {
             Alachisoft.NCache.Common.Protobuf.EnumerationPointer enumerationPointer = new Alachisoft.NCache.Common.Protobuf.EnumerationPointer();
             enumerationPointer.chunkId = pointer.ChunkId;
             enumerationPointer.id = pointer.Id;
             enumerationPointer.isDisposed = pointer.isDisposable;
+            return enumerationPointer;
+        }
+
+        public static Alachisoft.NCache.Common.Protobuf.GroupEnumerationPointer ConvertToProtobufGroupEnumerationPointer(Alachisoft.NCache.Common.DataStructures.GroupEnumerationPointer pointer)
+        {
+            Alachisoft.NCache.Common.Protobuf.GroupEnumerationPointer enumerationPointer = new Alachisoft.NCache.Common.Protobuf.GroupEnumerationPointer();
+            enumerationPointer.id = pointer.Id;
+            enumerationPointer.chunkId = pointer.ChunkId;
+            enumerationPointer.group = pointer.Group;
+            enumerationPointer.subGroup = pointer.SubGroup;
+
             return enumerationPointer;
         }
     }

@@ -10,14 +10,20 @@
 // distributed under the License is distributed on an "AS IS" BASIS,
 // WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
 // See the License for the specific language governing permissions and
-// limitations under the License.
-
+// limitations under the License
 using System;
 using System.Text;
 using System.Collections;
-
+#if JAVA
+using Alachisoft.TayzGrid.Runtime.Serialization;
+#else
 using Alachisoft.NCache.Runtime.Serialization;
+#endif
+#if JAVA
+using Alachisoft.TayzGrid.Runtime.Serialization.IO;
+#else
 using Alachisoft.NCache.Runtime.Serialization.IO;
+#endif
 
 namespace Alachisoft.NCache.Common.DataStructures
 {
@@ -25,7 +31,6 @@ namespace Alachisoft.NCache.Common.DataStructures
     {
         IList _baseArray;
         long _size;
-
         const int maxSize = 79 * 1024;
 
         public VirtualArray(long size)

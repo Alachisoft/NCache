@@ -1,0 +1,6 @@
+option java_outer_classname="RegisterCQResponseProtocol";
+package Alachisoft.NCache.Common.Protobuf;
+
+message RegisterCQResponse {
+   optional string cqId = 1;
+}

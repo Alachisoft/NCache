@@ -12,29 +12,20 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-using System;
-using System.Text;
-
-using Alachisoft.NCache.Web.Caching;
-using System.IO;
-using Alachisoft.NCache.Web.Communication;
-using Alachisoft.NCache.Common.Protobuf.Util;
-using Alachisoft.NCache.Web.Caching.Util;
-
 namespace Alachisoft.NCache.Web.Command
 {
-	internal sealed class GetTypeInfoMapCommand : CommandBase
-	{
+    internal sealed class GetTypeInfoMapCommand : CommandBase
+    {
         Alachisoft.NCache.Common.Protobuf.GetTypeInfoMapCommand _getTypeInfoMapCommand;
 
         internal GetTypeInfoMapCommand(bool isAsync)
-		{
+        {
             base.name = "GetTypeInfoMapCommand";
             base.isAsync = isAsync;
 
             _getTypeInfoMapCommand = new Alachisoft.NCache.Common.Protobuf.GetTypeInfoMapCommand();
             _getTypeInfoMapCommand.requestId = base.RequestId;
-		}
+        }
 
         internal override CommandType CommandType
         {
@@ -46,13 +37,18 @@ namespace Alachisoft.NCache.Web.Command
             get { return RequestType.InternalCommand; }
         }
 
+        internal override bool IsKeyBased
+        {
+            get { return false; }
+        }
+
+
         protected override void CreateCommand()
         {
             base._command = new Alachisoft.NCache.Common.Protobuf.Command();
             base._command.requestID = base.RequestId;
             base._command.getTypeInfoMapCommand = _getTypeInfoMapCommand;
             base._command.type = Alachisoft.NCache.Common.Protobuf.Command.Type.GET_TYPEINFO_MAP;
-
-        }       
-	}
+        }
+    }
 }

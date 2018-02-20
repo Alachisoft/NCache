@@ -18,6 +18,8 @@ namespace Alachisoft.NCache.Caching.Queries
     {
         SearchKeys,
         SearchEntries,
-        AggregateFunction
+        AggregateFunction,
+        GroupByAggregateFunction,
+        OrderByQuery
     }
 }

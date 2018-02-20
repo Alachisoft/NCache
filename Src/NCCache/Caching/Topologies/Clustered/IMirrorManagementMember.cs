@@ -24,23 +24,23 @@ namespace Alachisoft.NCache.Caching.Topologies.Clustered
     interface IMirrorManagementMember
     {
         /// <summary>
-        /// Updates the MirroMap with this new list of cacheNodes. The sequence Idis automatically adjusted.
+        /// Updates the MirroMap with this new list of cacheNodes. The sequence Id is automatically adjusted.
         /// </summary>
         /// <param name="cacheNodes">List of CacheNodes</param>
         void UpdateMirrorMap(CacheNode[] cacheNodes);
 
         /// <summary>
         /// Called on the coordinator node when the view changes. 
-        /// It returns the mirror map. be sure to add the new node before retreiving the Map.
+        /// It returns the mirror map. be sure to add the new node before retrieving the Map.
         /// </summary>
-        /// <returns>Returns the object containg the array of CacheNodes (<cref>CacheNode</cref>[]).
+        /// <returns>Returns the object containing the array of CacheNodes (<cref>CacheNode</cref>[]).
         /// </returns>
         CacheNode[] GetMirrorMap();
 
         /// <summary>
         /// Gets the groupId for this node from the mirrorManager. If nodeIdentity is a mirror
         /// cache instance then groupId is the ip/name of the group it belongs to. Otherwise 
-        /// retruns Empty String. This only fetches the groupId if there is no GroupId for this
+        /// returns Empty String. This only fetches the groupId if there is no GroupId for this
         /// node then Empty String is returned. </summary>
         /// <param name="affectedNode">The Address of the AffectedNode.</param>
         /// <param name="isStartedAsMirror">Whether this node joined as Mirror.</param>
@@ -48,12 +48,12 @@ namespace Alachisoft.NCache.Caching.Topologies.Clustered
         string GetGroupId(Address affectedNode, bool isStartedAsMirror);
 
         /// <summary>
-        /// Adds the new joinging node in the mirror manager. So mirror manager can rearrange 
+        /// Adds the new joining node in the mirror manager. So mirror manager can rearrange 
         /// the mirrors. If this node is mirror then it only returns the group_id of this mirror.
         /// </summary>
         /// <param name="affectedNode">The new joining node.</param>
         /// <param name="isStartedAsMirror">Whether this node joined as Mirror.</param>
-        /// <returns>The groupId this node belongs to. If this is the new joinging node and is 
+        /// <returns>The groupId this node belongs to. If this is the new joining node and is 
         /// not mirror then the
         /// GroupId would be its name or Ip.</returns>
         string AddNode(Address affectedNode, bool isStartedAsMirror);
@@ -64,8 +64,8 @@ namespace Alachisoft.NCache.Caching.Topologies.Clustered
         /// </summary>
         /// <param name="affectedNode">The affectedNode leaving the cluster.</param>
         /// <param name="isStartedAsMirror">Whether this node joined as Mirror.</param>
-        /// <returns>The groupId this node belond to. Empty String or null if this node was not 
-        /// in teh mirror mapping.</returns>
+        /// <returns>The groupId this node belong to. Empty String or null if this node was not 
+        /// in the mirror mapping.</returns>
         string RemoveNode(Address affectedNode, bool isStartedAsMirror);
     }
 }

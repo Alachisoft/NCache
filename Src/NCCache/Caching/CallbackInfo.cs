@@ -21,26 +21,49 @@ using Alachisoft.NCache.Common;
 namespace Alachisoft.NCache.Caching
 {
     [Serializable]
-    public class CallbackInfo : ICompactSerializable, ISizable
+    public class CallbackInfo : ICompactSerializable, ISizable 
     {
         protected string theClient;
         protected object theCallback;
         protected bool notifyOnItemExpiration = true;
 
         protected EventDataFilter _dataFilter = EventDataFilter.None;
+        protected CallbackType _callbackType = CallbackType.PushBasedNotification;
+
+        [Obsolete("data filter required", true)]
+        public CallbackInfo() { }
+
+        [Obsolete("data filter required", true)]
+        public CallbackInfo(string client, object callback, CallbackType callbackType = CallbackType.PushBasedNotification)
+            : this(client, callback, true, callbackType)
+
+        {
+            
+        }
+
+        [Obsolete("data filter required", true)]
+        public CallbackInfo(string client, object callback, bool notifyOnItemExpiration, CallbackType callbackType = CallbackType.PushBasedNotification)
+            : this(client, callback, EventDataFilter.None, notifyOnItemExpiration, callbackType)
 
 
-        public CallbackInfo(string client, object callback, EventDataFilter datafilter)
-            : this(client, callback, datafilter, true)
         {
         }
 
-        public CallbackInfo(string client, object callback, EventDataFilter datafilter, bool notifyOnItemExpiration)
+        public CallbackInfo(string client, object callback, EventDataFilter datafilter, CallbackType callbackType = CallbackType.PushBasedNotification)
+            : this(client, callback, datafilter, true, callbackType)
+
+        {
+        }
+
+        public CallbackInfo(string client, object callback, EventDataFilter datafilter, bool notifyOnItemExpiration, CallbackType callbackType = CallbackType.PushBasedNotification)
+
         {
             this.theClient = client;
             this.theCallback = callback;
             this.notifyOnItemExpiration = notifyOnItemExpiration;
             this._dataFilter = datafilter;
+            this._callbackType = callbackType;
+
         }
 
 
@@ -51,7 +74,7 @@ namespace Alachisoft.NCache.Caching
         }
 
         /// <summary>
-        /// Gets/sets the client inteded to listen for the event
+        /// Gets/sets the client intended to listen for the event
         /// </summary>
         public string Client
         {
@@ -77,6 +100,14 @@ namespace Alachisoft.NCache.Caching
             get { return notifyOnItemExpiration; }
         }
 
+        /// <summary>
+        /// Gets the type of the notification for callback
+        /// </summary>
+        public CallbackType CallbackType
+        {
+            get { return _callbackType; }
+        }
+
 
         /// <summary>
         /// Compares on Callback and DataFilter
@@ -93,15 +124,15 @@ namespace Alachisoft.NCache.Caching
                 {
                     if ((short)other.Callback == (short)theCallback)
                     {
-                        return true;
+                        return true;                        
                     }
                     else
                         return false;
 
                 }
                 else if (other.Callback == theCallback)
-                {
-                    return true;
+                {                    
+                    return true;                    
                 }
                 else
                     return true;
@@ -116,30 +147,6 @@ namespace Alachisoft.NCache.Caching
             string dataFilter = _dataFilter.ToString();
             return cnt + ":" + cback + ":" + dataFilter;
         }
-
-        public int Size
-        {
-            get { return CallbackInfoSize; }
-        }
-
-        public int InMemorySize
-        {
-            get { return Common.MemoryUtil.GetInMemoryInstanceSize(this.Size); }
-        }
-
-        private int CallbackInfoSize
-        {
-            get
-            {
-                int temp = 0;
-                temp += Common.MemoryUtil.GetStringSize(theClient); // for theClient
-                temp += Common.MemoryUtil.NetReferenceSize; // for theCallback
-                temp += Common.MemoryUtil.NetByteSize; // for notifyOnItemExpiration
-                temp += Common.MemoryUtil.NetEnumSize;  //for _dataFilter
-                return temp;
-            }
-        }
-
         
         #region ICompactSerializable Members
 
@@ -149,6 +156,7 @@ namespace Alachisoft.NCache.Caching
             theCallback = reader.ReadObject();
             notifyOnItemExpiration = reader.ReadBoolean();
             _dataFilter = (EventDataFilter)reader.ReadByte();
+            _callbackType = (CallbackType)reader.ReadObject();
         }
 
         public void Serialize(CompactWriter writer)
@@ -157,8 +165,32 @@ namespace Alachisoft.NCache.Caching
             writer.WriteObject(theCallback);
             writer.Write(notifyOnItemExpiration);
             writer.Write((byte)_dataFilter);
+            writer.WriteObject(_callbackType);
         }
 
         #endregion
+
+        public int Size
+        {
+            get { return CallbackInfoSize; }
+        }
+
+        public int InMemorySize
+        {
+            get { return Common.MemoryUtil.GetInMemoryInstanceSize(this.Size);}
+        }
+
+        private int CallbackInfoSize
+        {
+            get 
+            {
+                int temp = 0;
+                temp += Common.MemoryUtil.GetStringSize(theClient); // for theClient
+                temp += Common.MemoryUtil.NetReferenceSize; // for theCallback
+                temp += Common.MemoryUtil.NetByteSize; // for notifyOnItemExpiration
+                temp += Common.MemoryUtil.NetEnumSize;  //for _dataFilter
+                return temp;
+            }
+        }
     }
 }

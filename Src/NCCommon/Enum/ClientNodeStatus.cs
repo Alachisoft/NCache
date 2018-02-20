@@ -12,6 +12,7 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
+
 namespace Alachisoft.NCache.Common.Enum
 {
     /// <summary>
@@ -26,11 +27,7 @@ namespace Alachisoft.NCache.Common.Enum
     /// </summary>
     public enum ClientNodeStatus
     {
-        ClientCacheDisabled,
-        ClientCacheUnavailable,
-        ClientCacheEnabled,
         Unavailable,
-        ClientCacheNotRegistered,
         UpdatingStatus
     }
 }

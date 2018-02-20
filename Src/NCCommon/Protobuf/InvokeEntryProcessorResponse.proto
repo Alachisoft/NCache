@@ -1,0 +1,9 @@
+import "InvokeEPKeyValuePackageResponse.proto";
+
+option java_outer_classname="InvokeEntryProcessorResponseProtocol";
+package Alachisoft.NCache.Common.Protobuf;
+
+message InvokeEntryProcessorResponse 
+{
+	optional InvokeEPKeyValuePackageResponse keyValuePackage = 1;
+}

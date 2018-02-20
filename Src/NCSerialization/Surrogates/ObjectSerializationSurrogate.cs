@@ -10,7 +10,7 @@
 // distributed under the License is distributed on an "AS IS" BASIS,
 // WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
 // See the License for the specific language governing permissions and
-// limitations under the License.
+// limitations under the License
 
 using System;
 using System.Runtime.Serialization.Formatters.Binary;
@@ -24,8 +24,6 @@ namespace Alachisoft.NCache.Serialization.Surrogates
     /// </summary>
     sealed class ObjectSerializationSurrogate : SerializationSurrogate
     {
-       
-
         public ObjectSerializationSurrogate(Type t) : base(t) { }
 
         /// <summary>
@@ -40,11 +38,10 @@ namespace Alachisoft.NCache.Serialization.Surrogates
             object custom = reader.Context.GetObject(cookie);
             if (custom == null)
             {
-                //using new instance of binary fomatter instead of static which may cause exception when shared by multiple threads.
+                // using new instance of binary fomatter instead of static which may cause exception when shared by multiple threads.
                 BinaryFormatter formatter = new BinaryFormatter();
                 custom = formatter.Deserialize(reader.BaseReader.BaseStream);
                 reader.Context.RememberObject(custom, false);
-
             }
             return custom;
         }
@@ -66,9 +63,9 @@ namespace Alachisoft.NCache.Serialization.Surrogates
 
             cookie = writer.Context.RememberObject(graph, true);
             writer.Write(cookie);
-            //BigClustered: Using new instance of binary fomatter instead of static which may cause exception when shared by multiple threads.
+            // using new instance of binary fomatter instead of static which may cause exception when shared by multiple threads.
             BinaryFormatter formatter = new BinaryFormatter();
-           formatter.Serialize(writer.BaseWriter.BaseStream, graph);
+            formatter.Serialize(writer.BaseWriter.BaseStream, graph);
         }
 
         public override void Skip(CompactBinaryReader reader)
@@ -79,7 +76,7 @@ namespace Alachisoft.NCache.Serialization.Surrogates
             {
                 BinaryFormatter formatter = new BinaryFormatter();
                 custom = formatter.Deserialize(reader.BaseReader.BaseStream);
-                reader.Context.RememberObject(custom,false);
+                reader.Context.RememberObject(custom, false);
             }
         }
     }

@@ -10,18 +10,10 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 // $Id: MergeView.java,v 1.1.1.1 2003/09/09 01:24:08 belaban Exp $
-
 using System;
 
-
-
 using Alachisoft.NCache.Runtime.Serialization.IO;
-
-
 using Alachisoft.NCache.Runtime.Serialization;
-
-
-
 using Alachisoft.NCache.Common.Net;
 
 namespace Alachisoft.NGroups

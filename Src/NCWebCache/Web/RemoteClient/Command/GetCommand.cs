@@ -14,35 +14,38 @@
 
 using System;
 using Alachisoft.NCache.Common;
-using Alachisoft.NCache.Util;
 using Alachisoft.NCache.Caching;
-using System.IO;
-using Alachisoft.NCache.Common.Protobuf.Util;
-using Alachisoft.NCache.Web.Caching.Util;
-using Alachisoft.NCache.Web.Communication;
-
 
 namespace Alachisoft.NCache.Web.Command
 {
     internal sealed class GetCommand : CommandBase
     {
         private Alachisoft.NCache.Common.Protobuf.GetCommand _getCommand;
+        private int _methodOverload;
 
-        public GetCommand(string key, BitSet flagMap, LockAccessType accessType, object lockId, TimeSpan lockTimeout)
+        public GetCommand(string key, BitSet flagMap, string group, string subGroup, LockAccessType accessType,
+            object lockId, TimeSpan lockTimeout, ulong version, string providerName, int threadId, int methodOverload)
         {
             base.name = "GetCommand";
             base.key = key;
 
             _getCommand = new Alachisoft.NCache.Common.Protobuf.GetCommand();
             _getCommand.key = key;
+            _getCommand.group = group;
+            _getCommand.subGroup = subGroup;
             _getCommand.flag = flagMap.Data;
 
             _getCommand.lockInfo = new Alachisoft.NCache.Common.Protobuf.LockInfo();
-            _getCommand.lockInfo.lockAccessType = (int)accessType;
-            if(lockId != null) _getCommand.lockInfo.lockId = lockId.ToString();
+            _getCommand.lockInfo.lockAccessType = (int) accessType;
+            if (lockId != null) _getCommand.lockInfo.lockId = lockId.ToString();
             _getCommand.lockInfo.lockTimeout = lockTimeout.Ticks;
 
-                        _getCommand.requestId = base.RequestId;
+            _getCommand.version = version;
+            _getCommand.providerName = providerName;
+
+            _getCommand.requestId = base.RequestId;
+            _getCommand.threadId = threadId;
+            _methodOverload = methodOverload;
         }
 
         internal override CommandType CommandType
@@ -61,8 +64,7 @@ namespace Alachisoft.NCache.Web.Command
             base._command.requestID = base.RequestId;
             base._command.getCommand = _getCommand;
             base._command.type = Alachisoft.NCache.Common.Protobuf.Command.Type.GET;
-
-            
+            base._command.MethodOverload = _methodOverload;
         }
     }
 }

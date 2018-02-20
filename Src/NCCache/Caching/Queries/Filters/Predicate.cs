@@ -14,8 +14,8 @@
 
 using System.Collections;
 using Alachisoft.NCache.Caching.Topologies.Local;
+using Alachisoft.NCache.Common.Queries;
 using Alachisoft.NCache.Common.DataStructures.Clustered;
-using Alachisoft.NCache.Common.Enum;
 
 namespace Alachisoft.NCache.Caching.Queries.Filters
 {

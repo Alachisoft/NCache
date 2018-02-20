@@ -10,18 +10,22 @@
 // distributed under the License is distributed on an "AS IS" BASIS,
 // WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
 // See the License for the specific language governing permissions and
-// limitations under the License.
-
+// limitations under the License
 using System;
+using System.Collections.Generic;
+using System.Linq;
+using System.Text;
 using System.Threading;
 
 namespace Alachisoft.NCache.Common.Locking
 {
-    public sealed class SemaphoreLock : IDisposable
+﻿    public sealed class SemaphoreLock : IDisposable
     {
         //The following fast semaphore could be considered too instead of getting a handle from the OS...
 
+        //readonly SemaphoreSlim _semaphore = new SemaphoreSlim(0, int.MaxValue);
         readonly FastSemaphore _semaphore = new FastSemaphore();
+        //readonly Semaphore _semaphore = new Semaphore(0, int.MaxValue);
         const int OwnedFlag = unchecked((int)0x80000000);
 
         // the high bit is set if the lock is held. the lower 31 bits hold the number of threads waiting
@@ -40,6 +44,7 @@ namespace Alachisoft.NCache.Common.Locking
                 // the lock is owned, so try to add ourselves to the count of waiting threads
                 else if (Interlocked.CompareExchange(ref _lockState, state + 1, state) == state)
                 {
+                    //semaphore.WaitOne(); // we succeeded in adding ourselves, so wait until we're awakened
                     _semaphore.Wait();
                 }
             }

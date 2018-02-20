@@ -9,7 +9,6 @@
 // WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
 // See the License for the specific language governing permissions and
 // limitations under the License.
-
 using System;
 using System.Collections;
 using System.Threading;
@@ -18,33 +17,24 @@ using Alachisoft.NGroups.Util;
 using Alachisoft.NCache.Common.Logger;
 using Alachisoft.NCache.Common;
 using Alachisoft.NCache.Common.Util;
+using Alachisoft.NCache.Common.DataStructures.Clustered;
 
 namespace Alachisoft.NGroups.Blocks
 {
     internal class DedicatedMessageSender : ThreadClass, IDisposable
     {
         private Alachisoft.NCache.Common.DataStructures.Queue mq;
-        private ConnectionTable.Connection peerConnection;
+        private Connection peerConnection;
         private ConnectionTable connectionTable;
         int id;
         private object sync_lock;
-
-        
         ILogger _ncacheLog;
-
-        ILogger NCacheLog
-        {
-            get { return _ncacheLog; }
-        }
         int sendBufferSize = 1024 * 1024;
         byte[] sendBuffer;
         long waitTimeout = 0;
-        
         PerfStatsCollector perfStatsCollector;
 
-
-        public DedicatedMessageSender(Alachisoft.NCache.Common.DataStructures.Queue mq, ConnectionTable.Connection connection, object syncLockObj, ILogger NCacheLog, bool onPrimaryNIC)
-
+        public DedicatedMessageSender(Alachisoft.NCache.Common.DataStructures.Queue mq, Connection connection, object syncLockObj, ILogger NCacheLog, bool onPrimaryNIC)
         {
             this.mq = mq;
             this.peerConnection = connection;
@@ -53,7 +43,6 @@ namespace Alachisoft.NGroups.Blocks
                 string primary = connection.IsPrimary ? "p" : "s";
                 string primaryNIC = onPrimaryNIC ? "p" : "s";
                 Name = "DmSender - " + connection.peer_addr.ToString() + " - " + primary + primaryNIC;
-
             }
 
             perfStatsCollector = peerConnection.Enclosing_Instance.enclosingInstance.Stack.perfStatsColl;
@@ -61,12 +50,15 @@ namespace Alachisoft.NGroups.Blocks
             IsBackground = true;
             sync_lock = syncLockObj;
             _ncacheLog = NCacheLog;
-
-            if (ServiceConfiguration.NaglingSize + 8 > sendBufferSize) sendBufferSize = ServiceConfiguration.NaglingSize + 8;
             sendBuffer = new byte[sendBufferSize];
         }
 
-        public void UpdateConnection(ConnectionTable.Connection newCon)
+        ILogger NCacheLog
+        {
+            get { return _ncacheLog; }
+        }
+
+        public void UpdateConnection(Connection newCon)
         {
             peerConnection = newCon;
         }
@@ -74,6 +66,7 @@ namespace Alachisoft.NGroups.Blocks
         /// <summary>Removes events from mq and calls handler.down(evt) </summary>
         override public void Run()
         {
+            bool connectionCloseNotified = false;
             try
             {
                 ArrayList msgList = new ArrayList();
@@ -83,82 +76,74 @@ namespace Alachisoft.NGroups.Blocks
                 int offset = 8;
                 bool resendMessage = false;
                 ArrayList msgsTobeSent = new ArrayList();
+                ClusteredMemoryStream stream = null;
                 while (!mq.Closed)
                 {
                     try
                     {
                         if (resendMessage)
                         {
-                            if (tmpBuffer != null && tmpBuffer.Length > 0)
+                            if (stream!= null && stream.Length > 0)
                             {
-                                peerConnection.send(tmpBuffer, null, totalMsgSize + 4);
+                                peerConnection.send(stream.GetInternalBuffer(), null, totalMsgSize + 4);
 
-                                if (perfStatsCollector != null) perfStatsCollector.IncrementNagglingMessageStats(noOfMsgs);
 
                             }
                             resendMessage = false;
                             continue;
                         }
                         msgsTobeSent.Clear();
+                        stream = new ClusteredMemoryStream();
+
                         lock (sync_lock)
                         {
                             tmpBuffer = sendBuffer;
                             totalMsgSize = 4;
                             noOfMsgs = 0;
                             offset = 8;
-                            while (true)
+                            
+                            stream.Seek(8, System.IO.SeekOrigin.Begin);
+
+                            BinaryMessage bMsg = (BinaryMessage)mq.remove();
+                            if (bMsg != null)
                             {
-                                BinaryMessage bMsg = (BinaryMessage)mq.remove();
-                                
-                                if (bMsg != null)
+
+                                if (!peerConnection.IsPrimary) msgsTobeSent.Add(bMsg);
+
+                                noOfMsgs++;
+                                totalMsgSize += bMsg.Size;
+
+                                foreach (byte[] buffer in bMsg.Buffer)
                                 {
-
-                                    if (!peerConnection.IsPrimary) msgsTobeSent.Add(bMsg);
-
-                                    noOfMsgs++;
-
-                                    totalMsgSize += bMsg.Size;
-
-                                    if (totalMsgSize + 8 > sendBuffer.Length)
+                                    stream.Write(buffer, 0, buffer.Length);
+                                }
+                                if (bMsg.UserPayLoad != null)
+                                {
+                                    byte[] buf = null;
+                                    for (int i = 0; i < bMsg.UserPayLoad.Length; i++)
                                     {
-                                        byte[] bigbuffer = new byte[totalMsgSize + 8];
-                                        Buffer.BlockCopy(tmpBuffer, 0, bigbuffer, 0, totalMsgSize - bMsg.Size);
-                                        tmpBuffer = bigbuffer;
-                                    }
-
-                                    Buffer.BlockCopy(bMsg.Buffer, 0, tmpBuffer, offset, bMsg.Buffer.Length);
-                                    offset += bMsg.Buffer.Length;
-                                    if (bMsg.UserPayLoad != null)
-                                    {
-                                        byte[] buf = null;
-                                        for (int i = 0; i < bMsg.UserPayLoad.Length; i++)
-                                        {
-                                            buf = bMsg.UserPayLoad.GetValue(i) as byte[];
-                                            Buffer.BlockCopy(buf, 0, tmpBuffer, offset, buf.Length);
-                                            offset += buf.Length;
-                                        }
+                                        buf = bMsg.UserPayLoad.GetValue(i) as byte[];
+                                        stream.Write(buf, 0, buf.Length);
+                                        offset += buf.Length;
                                     }
                                 }
-                                bMsg = null;
-                                bool success;
-                                bMsg = mq.peek(waitTimeout, out success) as BinaryMessage;
-                                if ((!ServiceConfiguration.EnableNagling || bMsg == null || ((bMsg.Size + totalMsgSize + 8) > ServiceConfiguration.NaglingSize))) break;
-
                             }
+                            bMsg = null;
+                            
                         }
 
-                        
                         byte[] bTotalLength = Util.Util.WriteInt32(totalMsgSize);
-                        Buffer.BlockCopy(bTotalLength, 0, tmpBuffer, 0, bTotalLength.Length);
+                        stream.Seek(0, System.IO.SeekOrigin.Begin);
+                        stream.Write(bTotalLength, 0, bTotalLength.Length);
                         byte[] bNoOfMsgs = Util.Util.WriteInt32(noOfMsgs);
-                        Buffer.BlockCopy(bNoOfMsgs, 0, tmpBuffer, 4, bNoOfMsgs.Length);
-                        peerConnection.send(tmpBuffer, null, totalMsgSize + 4);
-
-                        if (perfStatsCollector != null) perfStatsCollector.IncrementNagglingMessageStats(noOfMsgs);
+                        stream.Write(bNoOfMsgs, 0, bNoOfMsgs.Length);
+                        peerConnection.send(stream.GetInternalBuffer(), null, totalMsgSize + 4);
+                        stream = null;
 
                     }
                     catch (ExtSocketException e)
                     {
+                        connectionCloseNotified = false;
                         NCacheLog.Error(Name, e.ToString());
 
                         if (peerConnection.IsPrimary)
@@ -166,31 +151,27 @@ namespace Alachisoft.NGroups.Blocks
 
                             if (peerConnection.LeavingGracefully)
                             {
-                                NCacheLog.Error("DmSender.Run",   peerConnection.peer_addr + " left gracefully");
+                                NCacheLog.Error("DmSender.Run", peerConnection.peer_addr + " left gracefully");
                                 break;
                             }
-                            
-                            
-                                NCacheLog.Error("DMSender.Run",   "Connection broken with " + peerConnection.peer_addr + ". node left abruptly");
-                                ConnectionTable.Connection connection = peerConnection.Enclosing_Instance.Reconnect(peerConnection.peer_addr);
+                                NCacheLog.Error("DMSender.Run", "Connection broken with " + peerConnection.peer_addr + ". node left abruptly");
+                                Connection connection = peerConnection.Enclosing_Instance.Reconnect(peerConnection.peer_addr, out connectionCloseNotified);
+
                                 if (connection != null)
                                 {
-                                    
                                     Thread.Sleep(3000);
                                     resendMessage = true;
                                     continue;
                                 }
                                 else
                                 {
-                                    NCacheLog.Error("DMSender.Run",   Name + ". Failed to re-establish connection with " + peerConnection.peer_addr);
+                                    NCacheLog.Error("DMSender.Run", Name + ". Failed to re-establish connection with " + peerConnection.peer_addr);
                                     break;
                                 }
-
-                            
                         }
                         else
                         {
-                            NCacheLog.Error("DmSender.Run",   "secondary connection broken; peer_addr : " + peerConnection.peer_addr);
+                            NCacheLog.Error("DmSender.Run", "secondary connection broken; peer_addr : " + peerConnection.peer_addr);
                             try
                             {
                                 foreach (BinaryMessage bMsg in msgsTobeSent)
@@ -202,7 +183,7 @@ namespace Alachisoft.NGroups.Blocks
                                     }
                                     catch (Exception ex)
                                     {
-                                        NCacheLog.Error("DmSender.Run",   "an error occurred while requing the messages. " + ex.ToString());
+                                        NCacheLog.Error("DmSender.Run", "an error occurred while requing the messages. " + ex.ToString());
                                     }
                                 }
                             }
@@ -213,41 +194,45 @@ namespace Alachisoft.NGroups.Blocks
                     }
                     catch (QueueClosedException e)
                     {
-                       
+                        connectionCloseNotified = false;
                         break;
                     }
                     catch (ThreadInterruptedException e)
                     {
+                        connectionCloseNotified = false;
                         break;
                     }
-                    catch (ThreadAbortException) { break; }
+                    catch (ThreadAbortException) 
+                    { 
+                        break; 
+                    }
                     catch (System.Exception e)
                     {
-                        
-                        NCacheLog.Error(Name + "",   Name + " exception is " + e.ToString());
+                        connectionCloseNotified = false;
+                        NCacheLog.Error(Name + "", Name + " exception is " + e.ToString());
                     }
                 }
             }
-            catch (ThreadInterruptedException)
-            {
-            }
+            catch (ThreadInterruptedException){ }
             catch (ThreadAbortException) { }
-
             catch (Exception ex)
             {
-                NCacheLog.Error(Name + "",  "exception=" + ex.ToString());
-                
+                connectionCloseNotified = false;
+                NCacheLog.Error(Name + "", "exception=" + ex.ToString());
             }
             try
             {
-                peerConnection.Enclosing_Instance.notifyConnectionClosed(peerConnection.peer_addr);
+                if (!connectionCloseNotified)
+                    peerConnection.Enclosing_Instance.notifyConnectionClosed(peerConnection.peer_addr);
+                else
+                    NCacheLog.CriticalInfo("DmSender.Run", "no need to notify about connection close");
 
                 peerConnection.Enclosing_Instance.remove(peerConnection.peer_addr, peerConnection.IsPrimary);
 
             }
             catch (Exception e)
             {
-                
+                //who cares...
             }
 
         }

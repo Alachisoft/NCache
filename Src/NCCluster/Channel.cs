@@ -9,7 +9,6 @@
 // WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
 // See the License for the specific language governing permissions and
 // limitations under the License.
-
 using System;
 using System.Collections;
 using Alachisoft.NCache.Common.Net;
@@ -20,12 +19,12 @@ namespace Alachisoft.NGroups
 {
 	/// <summary>
 	/// Abstract class for any implementation of a channel
-	/// <p><b>Author:</b> Chris Koiak, Bela Ban</p>
 	/// <p><b>Date:</b>  12/03/2003</p>
 	/// </summary>
 	public abstract class Channel : Transport 
 	{
 		public const int BLOCK = 0;
+		//public const int VIEW = 1;
 		public const int SUSPECT = 2;
 		public const int LOCAL = 3;
 		public const int GET_STATE_EVENTS = 4;
@@ -133,7 +132,7 @@ namespace Alachisoft.NGroups
 		/// Connects the Channel to a group.
 		/// </summary>
 		/// <param name="channel_name">Group to connect to (or create).</param>
-        abstract public void connect(string channel_name, string subGroup_name, bool isStartedAsMirror, bool twoPhaseInitialization);
+        abstract public void connect(string channel_name, string subGroup_name,  bool twoPhaseInitialization);
         abstract public void connectPhase2();
 
 		/// <summary>
@@ -223,7 +222,6 @@ namespace Alachisoft.NGroups
 			{
 				case BLOCK: 
 					return "BLOCK";
-
 				case SUSPECT: 
 					return "SUSPECT";
 				case LOCAL: 

@@ -1,4 +1,4 @@
-﻿// Copyright (c) 2018 Alachisoft
+// Copyright (c) 2018 Alachisoft
 // 
 // Licensed under the Apache License, Version 2.0 (the "License");
 // you may not use this file except in compliance with the License.
@@ -13,14 +13,14 @@
 // limitations under the License.
 
 using System;
-
 using Alachisoft.NCache.Runtime.Serialization;
+
 using Alachisoft.NCache.Common.Queries;
 using Alachisoft.NCache.Common.Enum;
-using Runtime = Alachisoft.NCache.Runtime;
+
+
 namespace Alachisoft.NCache.Common.DataReader
 {
-
     public class RecordSet : IRecordSet, ICompactSerializable
     {
         private ColumnCollection _columns;
@@ -238,34 +238,47 @@ namespace Alachisoft.NCache.Common.DataReader
             {
                 case ColumnDataType.Bool:
                     return bool.Parse(stringValue);
+                    break;
                 case ColumnDataType.Byte:
                     return byte.Parse(stringValue);
+                    break;
                 case ColumnDataType.Char:
                     return char.Parse(stringValue);
+                    break;
                 case ColumnDataType.DateTime:
                     return DateTime.ParseExact(stringValue, "dd/MM/yyyy/HH/mm/ss/ffff/zzzz", System.Globalization.CultureInfo.InvariantCulture);
+                    break;
                 case ColumnDataType.Decimal:
                     return decimal.Parse(stringValue);
                 case ColumnDataType.Double:
                     return double.Parse(stringValue);
+                    break;
                 case ColumnDataType.Float:
                     return float.Parse(stringValue);
+                    break;
                 case ColumnDataType.Int16:
                     return Int16.Parse(stringValue);
+                    break;
                 case ColumnDataType.Int32:
                     return Int32.Parse(stringValue);
+                    break;
                 case ColumnDataType.Int64:
                     return Int64.Parse(stringValue);
+                    break;
                 case ColumnDataType.SByte:
                     return sbyte.Parse(stringValue);
                 case ColumnDataType.String:
                     return stringValue;
+                    break;
                 case ColumnDataType.UInt16:
                     return UInt16.Parse(stringValue);
+                    break;
                 case ColumnDataType.UInt32:
                     return UInt32.Parse(stringValue);
+                    break;
                 case ColumnDataType.UInt64:
                     return UInt64.Parse(stringValue);
+                    break;
                 default:
                     throw new InvalidCastException();
             }
@@ -279,7 +292,7 @@ namespace Alachisoft.NCache.Common.DataReader
         /// <returns></returns>
         public static string GetString(object obj, ColumnDataType dataType)
         {
-            switch (dataType)
+            switch(dataType)
             {
                 case ColumnDataType.DateTime:
                     return ((DateTime)obj).ToString("dd/MM/yyyy/HH/mm/ss/ffff/zzzz");
@@ -305,5 +318,4 @@ namespace Alachisoft.NCache.Common.DataReader
             writer.WriteObject(_subsetInfo);
         }
     }
-
 }

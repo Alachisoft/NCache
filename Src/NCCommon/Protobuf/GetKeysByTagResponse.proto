@@ -1,0 +1,5 @@
+option java_outer_classname="GetKeysByTagResponseProtocol";
+package Alachisoft.NCache.Common.Protobuf;
+message GetKeysByTagResponse {
+	repeated string keys = 1;
+}

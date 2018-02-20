@@ -4,4 +4,6 @@ message BulkDeleteCommand {
 	repeated string keys = 1;
 	optional int64 requestId = 2;
 	optional int32 flag = 3;
+	optional sint32 datasourceItemRemovedCallbackId = 4;
+	optional string providerName = 5;
 }

@@ -11,14 +11,14 @@
 // WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
 // See the License for the specific language governing permissions and
 // limitations under the License.
-
 using System;
-using System.IO;
 using System.Text;
 using System.Collections;
-using Alachisoft.NCache.Config;
+
 using Alachisoft.NCache.Caching.Util;
+
 using Alachisoft.NCache.Runtime.Exceptions;
+
 
 namespace Alachisoft.NCache.Config
 {
@@ -140,7 +140,7 @@ namespace Alachisoft.NCache.Config
             
             return returnStr.ToString();
 		}
-
+  
         static public string CreatePropertiesXml2(IDictionary properties, int indent, bool format)
         {
             IDictionaryEnumerator it = properties.GetEnumerator();
@@ -161,7 +161,6 @@ namespace Alachisoft.NCache.Config
                 if (pair.Value is Hashtable)
                 {
                     Hashtable subproperties = (Hashtable)pair.Value;
-
                     if (subproperties.Contains("type") && subproperties.Contains("name"))
                     {
                         cacheName = subproperties["name"] as string;
@@ -419,6 +418,7 @@ namespace Alachisoft.NCache.Config
 			return b.ToString();
 		}
 
+#if COMMUNITY
 		/// <summary>
 		/// Builds and returns a property string understood by the lower layer, i.e., Cluster
 		/// Uses the properties specified in the configuration, and defaults for others.
@@ -451,7 +451,10 @@ namespace Alachisoft.NCache.Config
 			bool udpCluster = true;
 
 			// check if a reference to some scheme is specified
-            udpCluster = false;
+
+			string cacheScheme = SafeGet(properties, "class").ToLower();
+			if (cacheScheme == "tcp") udpCluster = false;
+
 			if (!properties.Contains("channel"))
 			{
 				throw new ConfigurationException("Cannot find channel properties");
@@ -462,7 +465,8 @@ namespace Alachisoft.NCache.Config
 			{
 				return ChannelConfigBuilder.BuildUDPConfiguration(channelprops);
 			}
-			return ChannelConfigBuilder.BuildTCPConfiguration(channelprops, opTimeout,isPor);
+			return ChannelConfigBuilder.BuildTCPConfiguration(channelprops,opTimeout);
 		}
+#endif
 	}
 }

@@ -10,7 +10,7 @@
 // distributed under the License is distributed on an "AS IS" BASIS,
 // WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
 // See the License for the specific language governing permissions and
-// limitations under the License.
+// limitations under the License
 
 using System;
 using System.Collections.Generic;
@@ -18,18 +18,12 @@ using System.Text;
 using Alachisoft.NCache.Common.Configuration;
 using System.Collections;
 using System.IO;
-
-
 using Alachisoft.NCache.Runtime.Exceptions;
-
-
 using Alachisoft.NCache.Common;
 using Alachisoft.NCache.Management.ClientConfiguration.Dom;
-using Alachisoft.NCache.Common.Enum;
 using Alachisoft.NCache.Config.Dom;
-using Runtime = Alachisoft.NCache.Runtime;
-using System.Globalization;
 using System.Threading;
+using System.Globalization;
 
 namespace Alachisoft.NCache.Management.ClientConfiguration
 {
@@ -38,7 +32,7 @@ namespace Alachisoft.NCache.Management.ClientConfiguration
         static ArrayList ipAddresses = new ArrayList(1);
         static string c_configDir = DIRNAME;
         static string c_configFileName = FILENAME;
-        static string DIRNAME = "Config";
+        static string DIRNAME = "config";
 
         static string FILENAME = "client.ncconf";
 
@@ -47,12 +41,10 @@ namespace Alachisoft.NCache.Management.ClientConfiguration
         private static string _localCacheGivenId = String.Empty;
 
         public static int _serverPort = CacheServer.SocketServerPort;
-
+        
         static Hashtable _caches = Hashtable.Synchronized(new Hashtable());
         static ClientConfiguration.Dom.ClientConfiguration _configuration;
         static object _lock = new object();
-
-
         public static void AvailableNIC(Hashtable nic)
         {
             if (nic != null)
@@ -166,7 +158,6 @@ namespace Alachisoft.NCache.Management.ClientConfiguration
             CacheConfiguration cacheConfiguration = null;
             if (configuration.CacheConfigurationsMap.TryGetValue(cacheId, out cacheConfiguration))
             {
-                
                 cacheConfiguration.BindIp = configuration.BindIp;
                 _configuration.CacheConfigurationsMap[cacheId] = cacheConfiguration.Clone() as CacheConfiguration;
             }
@@ -223,11 +214,9 @@ namespace Alachisoft.NCache.Management.ClientConfiguration
                     cacheConfiguration.CacheId = cacheId;
                     cacheConfiguration.ServerRuntimeContext = serverRuntimeContext;
                     cacheConfiguration.AddLocalServer();
-                    //cacheConfiguration.CachePort = cachePort;
                     _configuration.CacheConfigurationsMap[cacheId.ToLower()] = cacheConfiguration;
                 }
             }
-
             SaveConfiguration();
         }
 
@@ -245,12 +234,12 @@ namespace Alachisoft.NCache.Management.ClientConfiguration
                     CacheConfiguration cacheConfiguration = new CacheConfiguration();
                     cacheConfiguration.CacheId = cacheId;
                     cacheConfiguration.BindIp = BindIP; // Internal static property set for local node.
-                    if (config.AutoLoadBalancing != null)
-                    cacheConfiguration.LoadBalance = config.AutoLoadBalancing.Enabled;
-
                     if (config.Cluster != null && config.Cluster.Nodes != null)
                     {
-                        if (config.Cluster.Nodes.Count != 1)
+                        if (!String.IsNullOrEmpty(config.Cluster.Topology))
+                            cacheConfiguration.LoadBalance = config.Cluster.Topology.Equals("replicated-server");
+
+                        if (config.Cluster.Nodes.Count > 1)
                         {
                             // Extract server names from config
                             string[] serverList = new string[config.Cluster.NodeIdentities.Count];
@@ -267,7 +256,6 @@ namespace Alachisoft.NCache.Management.ClientConfiguration
                             {
                                 for (int serverListCount = 0; serverListCount < serverList.Length; serverListCount++)
                                 {
-                                    copyServerList[serverListCount] = serverList[serverListCount];
                                     cacheConfiguration.AddServer(serverList[serverListCount], serverListCount);
                                 }
                             }
@@ -285,13 +273,12 @@ namespace Alachisoft.NCache.Management.ClientConfiguration
 
                                     nodeCount++;
                                 }
-
                             }
                         }
                         else
                         {
-                            if (config.Cluster.Nodes.Count > 0)
-                                    cacheConfiguration.AddServer(config.Cluster.NodeIdentities[0].NodeName, 0);
+                            if (config.Cluster.Nodes.Count>0)
+                                cacheConfiguration.AddServer(config.Cluster.NodeIdentities[0].NodeName, 0);
                         }
                     }
                     else
@@ -303,6 +290,7 @@ namespace Alachisoft.NCache.Management.ClientConfiguration
             }
 
             SaveConfiguration();
+
         }
 
         public static void SaveConfiguration()
@@ -314,7 +302,6 @@ namespace Alachisoft.NCache.Management.ClientConfiguration
             StreamWriter sw = null;
             lock (_lock)
             {
-
                 try
                 {
                     fs = new FileStream(c_configFileName, FileMode.Create);
@@ -337,11 +324,15 @@ namespace Alachisoft.NCache.Management.ClientConfiguration
         private static string ToXml()
         {
             StringBuilder sb = new StringBuilder();
+         
             sb.Append("<?xml version=\"1.0\" encoding=\"UTF-8\"?>");
 
             sb.Append(ENDSTRING + "<!-- Client configuration file is used by client to connect to out-proc caches. " +
+                ENDSTRING + "Light weight client also uses this configuration file to connect to the remote caches. " +
                 ENDSTRING + "This file is automatically generated each time a new cache/cluster is created or " +
-                ENDSTRING + "cache/cluster configuration settings are applied." +
+                ENDSTRING + "cache/cluster configuration settings are applied.  " +
+                ENDSTRING + "can be provided for each cache in the following format. " +
+              
                 ENDSTRING + "-->");
 
 
@@ -349,7 +340,8 @@ namespace Alachisoft.NCache.Management.ClientConfiguration
             CultureInfo cultureInfo = Thread.CurrentThread.CurrentCulture;
             try
             {
-                Thread.CurrentThread.CurrentCulture = new CultureInfo("en-US");
+                System.Threading.Thread.CurrentThread.CurrentCulture =
+         new System.Globalization.CultureInfo("en-US");
                 object[] configuration = new object[1];
                 configuration[0] = _configuration;
                 ConfigurationBuilder cfgBuilder = new ConfigurationBuilder(configuration);
@@ -358,9 +350,8 @@ namespace Alachisoft.NCache.Management.ClientConfiguration
             }
             finally
             {
-                Thread.CurrentThread.CurrentCulture = cultureInfo;
+                System.Threading.Thread.CurrentThread.CurrentCulture = cultureInfo;
             }
-
             return sb.ToString();
         }
 
@@ -394,7 +385,7 @@ namespace Alachisoft.NCache.Management.ClientConfiguration
             SaveConfiguration();
         }
 
-        public static void UpdateServerNodes(string cacheId, string[] servers, ref string xml,  bool loadBalance)
+        public static void UpdateServerNodes(string cacheId, string[] servers, ref string xml, string clientCacheId, bool loadBalance)
         {
             LoadXml();
 
@@ -407,7 +398,6 @@ namespace Alachisoft.NCache.Management.ClientConfiguration
                 {
                     cacheConfiguration = new CacheConfiguration();
                     cacheConfiguration.CacheId = cacheId;
-
                     _configuration.CacheConfigurationsMap.Add(cacheId, cacheConfiguration);
                 }
             }
@@ -416,18 +406,17 @@ namespace Alachisoft.NCache.Management.ClientConfiguration
 
             for (int i = 0; i < servers.Length; i++)
             {
-                Dom.CacheServer server = new Dom.CacheServer();
+                Alachisoft.NCache.Management.ClientConfiguration.Dom.CacheServer server = new Alachisoft.NCache.Management.ClientConfiguration.Dom.CacheServer();
                 server.ServerName = servers[i];
                 server.Priority = i;
                 cacheConfiguration.ServersPriorityList[i] = server;
             }
-            
+
+           
             cacheConfiguration.LoadBalance = loadBalance;
             SaveConfiguration();
             xml = string.Empty;
         }
-
-        
 
         internal static int GetConfigurationId()
         {
@@ -440,28 +429,9 @@ namespace Alachisoft.NCache.Management.ClientConfiguration
             return configurationId;
         }
 
+        
 
-        internal static ClientNodeStatus GetClientNodeStatus(string cacheId, out string clientCacheId)
-        {
-            ClientNodeStatus status = ClientNodeStatus.Unavailable;
-            clientCacheId = string.Empty;
-
-            LoadXml();
-
-            if (_configuration != null && _configuration.CacheConfigurationsMap != null)
-            {
-                CacheConfiguration config = null;
-                if (_configuration.CacheConfigurationsMap.TryGetValue(cacheId.ToLower(), out config))
-                {
-                   status = ClientNodeStatus.ClientCacheDisabled;  
-                }
-            }
-
-            return status;
-        }
-       
-
-        internal static Dom.ClientConfiguration GetClientConfiguration(string cacheId)
+        internal static ClientConfiguration.Dom.ClientConfiguration GetClientConfiguration(string cacheId)
         {
             LoadXml();
             return _configuration;

@@ -210,17 +210,22 @@ using System.Threading;
 		/// </summary>
 		public void Abort()
 		{
-			threadField.Abort();
-		}
-	      
-		/// <summary>
-		/// Raises a ThreadAbortException in the thread on which it is invoked, 
-		/// to begin the process of terminating the thread while also providing
-		/// exception information about the thread termination. 
-		/// Calling this method usually terminates the thread.
-		/// </summary>
-		/// <param name="stateInfo">An object that contains application-specific information, such as state, which can be used by the thread being aborted</param>
-		public void Abort(object stateInfo)
+#if !NETCORE
+            threadField.Abort();
+#else
+            threadField.Interrupt();
+#endif
+        }
+    
+
+        /// <summary>
+        /// Raises a ThreadAbortException in the thread on which it is invoked, 
+        /// to begin the process of terminating the thread while also providing
+        /// exception information about the thread termination. 
+        /// Calling this method usually terminates the thread.
+        /// </summary>
+        /// <param name="stateInfo">An object that contains application-specific information, such as state, which can be used by the thread being aborted</param>
+        public void Abort(object stateInfo)
 		{
 			lock(this)
 			{

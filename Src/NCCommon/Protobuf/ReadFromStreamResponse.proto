@@ -1,0 +1,7 @@
+
+option java_outer_classname="ReadFromStreamResponseProtocol";
+package Alachisoft.NCache.Common.Protobuf;
+message ReadFromStreamResponse {
+	optional int32 bytesRead = 1;
+	repeated bytes buffer = 2; 
+}

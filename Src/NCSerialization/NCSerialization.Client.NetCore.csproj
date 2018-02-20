@@ -1,0 +1,32 @@
+<Project Sdk="Microsoft.NET.Sdk">
+
+  <PropertyGroup>
+    <TargetFramework>netstandard2.0</TargetFramework>
+  </PropertyGroup>
+  
+  <PropertyGroup>
+    <GenerateAssemblyInfo>false</GenerateAssemblyInfo>
+    <RootNamespace>Alachisoft.NCache.Serialization</RootNamespace>
+    <AssemblyName>Alachisoft.NCache.Serialization</AssemblyName>
+  </PropertyGroup>
+  
+  <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Debug|AnyCPU'">
+    <DefineConstants>TRACE;DEBUG;CLIENT;VS2005;NETCORE</DefineConstants>
+  </PropertyGroup>
+
+  <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Release|AnyCPU'">
+    <DefineConstants>TRACE;RELEASE;CLIENT;VS2005;NETCORE</DefineConstants>
+  </PropertyGroup>
+  
+  <ItemGroup>
+    <Compile Remove="ICompactSerializable.cs" />
+    <Compile Remove="Surrogates\KeyValuePairSerializationSurrogate.cs" />
+  </ItemGroup>
+  
+  <ItemGroup>
+    <ProjectReference Include="..\NCCommon\NCCommon.Client.NetCore.csproj" />
+    <ProjectReference Include="..\NCRuntime\NCRuntime.Client.NetCore.csproj" />
+  </ItemGroup>
+  
+
+</Project>

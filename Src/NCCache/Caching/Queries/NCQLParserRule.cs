@@ -16,12 +16,14 @@ using System;
 using System.IO;
 using System.Runtime.Serialization;
 using System.Diagnostics;
-
+using Alachisoft.NCache.Caching.Queries.Filters;
 using Alachisoft.NCache.Common;
 using Alachisoft.NCache.Parser;
 using Alachisoft.NCache.Caching.Queries.Filters;
 using Alachisoft.NCache.Common.Util;
 using Alachisoft.NCache.Common.Logger;
+using Alachisoft.NCache.Common.Queries;
+using System.Collections.Generic;
 
 
 namespace Alachisoft.NCache.Caching.Queries
@@ -46,9 +48,70 @@ namespace Alachisoft.NCache.Caching.Queries
 		{
             this._ncacheLog = NCacheLog;
 		}
-      
-		/// Implements <Query> ::= SELECT <TypeIdentifier>      
-		public  Reduction CreateRULE_QUERY_SELECT(Reduction reduction)
+
+        /// Implements <Query> ::= <SelectQuery>
+        public Reduction CreateRULE_QUERY(Reduction reduction)
+        {
+            return null;
+        }
+
+        /// Implements <Query> ::= <SelectQuery> 'ORDER BY' <ObjectAttributeList>
+        public Reduction CreateRULE_QUERY_ORDERBY(Reduction reduction)
+        {
+            List<OrderByArgument> orderByArguments = null;
+            object tag = ((Reduction)reduction.GetToken(2).Data).Tag;
+            if(tag is List<OrderByArgument>)
+                orderByArguments = (List<OrderByArgument>)tag;
+            else if (tag is OrderByArgument)
+            {
+                orderByArguments = new List<OrderByArgument>();
+                orderByArguments.Add((OrderByArgument)tag);
+            }
+            else
+            {
+                orderByArguments = new List<OrderByArgument>();
+                OrderByArgument orderArgument = new OrderByArgument();
+                if(tag is string)
+                    orderArgument.AttributeName = tag as string;
+                else
+                    orderArgument.AttributeName = ((MemberFunction)tag).MemberName;
+                orderByArguments.Add(orderArgument);
+            }
+
+            //Arguments list is parsed in reversed order, needed to reversed at the end
+            orderByArguments.Reverse();
+            object predicate = ((Reduction)reduction.GetToken(0).Data).Tag;
+            if (predicate is GroupByPredicate)
+            {
+                GroupByPredicate gbp = predicate as GroupByPredicate;
+
+                foreach (OrderByArgument oba in orderByArguments)
+                {
+                    if (!gbp.GroupingAttributes.Contains(oba.AttributeName))
+                        throw new ParserException("Invalid query. All ORDER BY attributes must be included in GROUP BY clause.");
+                }
+                foreach (string attr in gbp.GroupingAttributes)
+                {
+                    OrderByArgument oba = new OrderByArgument();
+                    oba.AttributeName = attr;
+                    if (!orderByArguments.Contains(oba))
+                        orderByArguments.Add(oba);
+                }
+                gbp.OrderingAttributes = orderByArguments;
+                reduction.Tag = gbp;
+            }
+            else
+            {
+                OrderByPredicate orderByPredicate = new OrderByPredicate();
+                orderByPredicate.OrderByArguments = orderByArguments;
+                orderByPredicate.ChildPredicate = (Predicate)predicate;
+                reduction.Tag = orderByPredicate;
+            }
+            return null;
+        }
+
+        /// Implements <SelectQuery> ::= SELECT <ObjectType>
+        public Reduction CreateRULE_SELECTQUERY_SELECT(Reduction reduction)
 		{
 			object selectType = ((Reduction)((Token)reduction.GetToken(1)).Data).Tag;
 
@@ -64,11 +127,69 @@ namespace Alachisoft.NCache.Caching.Queries
 		}
 
         ///Implements <Query> ::= SELECT <AggregateFunction>
-        public Reduction CreateRULE_QUERY_SELECT2(Reduction reduction)
+        public Reduction CreateRULE_QUERY_SELECT(Reduction reduction)
         {
-            return CreateRULE_QUERY_SELECT(reduction);
+            return CreateRULE_SELECTQUERY_SELECT(reduction);
         }
 
+        ///Implements <SelectQuery> ::= SELECT <AggregateFunction> 'GROUP BY' <ObjectAttributeList>
+        public Reduction CreateRULE_SELECTQUERY_SELECT_GROUPBY(Reduction reduction)
+        {
+            object selectType = ((Reduction)((Token)reduction.GetToken(1)).Data).Tag;
+
+            AggregateFunctionPredicate aggregateFunctionPredicate = selectType as AggregateFunctionPredicate;
+
+            if (aggregateFunctionPredicate == null)
+                throw new ParserException("Invalid query. GROUP BY can only be used with Aggregate functions.");
+            GroupByPredicate gbp = null;
+            if (((Reduction)((Token)reduction.GetToken(3)).Data).Tag is GroupByPredicate)
+            {
+                gbp = ((Reduction)((Token)reduction.GetToken(3)).Data).Tag as GroupByPredicate;
+            }
+            else
+            {
+                 gbp = new GroupByPredicate();
+                 gbp.GroupingAttributes.Add(((MemberFunction)((Reduction)((Token)reduction.GetToken(3)).Data).Tag).MemberName);
+            }
+            gbp.ChildPredicate = aggregateFunctionPredicate.ChildPredicate;
+            //aggregateFunctionPredicate.ChildPredicate = null;
+            gbp.GroupByValueList=new GroupByValueList();
+            gbp.GroupByValueList.AggregateFunctions.Add(aggregateFunctionPredicate);
+            reduction.Tag = gbp;
+            if (NCacheLog.IsInfoEnabled) NCacheLog.Info("CreateRULE_QUERY_SELECT_GROUPBY");
+            return null;
+        }
+
+        ///Implements <SelectQuery> ::= SELECT <GroupByValueList> 'GROUP BY' <ObjectAttributeList>
+        public Reduction CreateRULE_SELECTQUERY_SELECT_GROUPBY2(Reduction reduction)
+        {
+            object groupBy = ((Reduction)((Token)reduction.GetToken(3)).Data).Tag;
+            GroupByPredicate groupByPredicate = groupBy as GroupByPredicate;
+            if (groupByPredicate == null)
+            {
+                groupByPredicate = new GroupByPredicate();
+                groupByPredicate.GroupingAttributes.Add((groupBy as MemberFunction).MemberName);
+            }
+
+            groupByPredicate.GroupByValueList = ((Reduction)((Token)reduction.GetToken(1)).Data).Tag as GroupByValueList;
+            //parsed in reverse order
+            groupByPredicate.GroupByValueList.AggregateFunctions.Reverse();
+            groupByPredicate.GroupByValueList.ObjectAttributes.Reverse();
+            groupByPredicate.GroupingAttributes.Reverse();
+
+            groupByPredicate.ChildPredicate = groupByPredicate.GroupByValueList.AggregateFunctions[0].ChildPredicate;
+
+            foreach (string attribute in groupByPredicate.GroupByValueList.ObjectAttributes)
+            {
+                if (!groupByPredicate.GroupingAttributes.Contains(attribute))
+                    throw new ArgumentException("Invalid query. " + attribute + " must be specified in GROUP BY clause.");
+            }
+
+            reduction.Tag = groupByPredicate;
+            if (NCacheLog.IsInfoEnabled) NCacheLog.Info("CreateRULE_QUERY_SELECT_GROUPBY2");
+            return null;
+        }
+		
         public Reduction CreateRULE_DELETEPARAMS_DOLLARTEXTDOLLAR(Reduction reduction)
         {
             reduction.Tag = "System.String";
@@ -81,8 +202,8 @@ namespace Alachisoft.NCache.Caching.Queries
             return null;
         }
 
-		/// Implements <Query> ::= SELECT <TypeIdentifier> WHERE <Expression>      
-        public  Reduction CreateRULE_QUERY_SELECT_WHERE(Reduction reduction)
+        /// Implements <SelectQuery> ::= SELECT <ObjectType> WHERE <Expression>
+        public Reduction CreateRULE_SELECTQUERY_SELECT_WHERE(Reduction reduction)
 		{
             //selectType can be one of the following depending on the query text: -
             //1. A plain string that is the name of Type; we can build IsOfTypePredicate from this.
@@ -101,9 +222,8 @@ namespace Alachisoft.NCache.Caching.Queries
             {
                 lhs = new IsOfTypePredicate(selectType.ToString());
                 result = ExpressionBuilder.CreateLogicalAndPredicate(lhs, rhs);
-            }
-            ////2. selectType is AggregateFunctionPredicate
-            //3. selectType is IsOfTypePredicate
+            }           
+            //2. selectType is IsOfTypePredicate
             else
             {
                 lhs = selectTypePredicate;
@@ -116,7 +236,8 @@ namespace Alachisoft.NCache.Caching.Queries
 			return null;
 		}
 
-        public Reduction CreateRULE_QUERY_SELECT_WHERE2(Reduction reduction)
+        ///Implements <Query> ::= SELECT <AggregateFunction> WHERE <Expression>
+        public Reduction CreateRULE_QUERY_SELECT_WHERE(Reduction reduction)
         {
             //selectType can be one of the following depending on the query text: -
             // AggregateFunctionPredicate that has IsOfTypePredicate set as its ChildPredicate
@@ -138,7 +259,111 @@ namespace Alachisoft.NCache.Caching.Queries
             return null;
         }
 
+        ///Implements <SelectQuery> ::= SELECT <AggregateFunction> WHERE <Expression> 'GROUP BY' <ObjectAttributeList>
+        public Reduction CreateRULE_SELECTQUERY_SELECT_WHERE_GROUPBY(Reduction reduction)
+        {
+            object groupBy = ((Reduction)((Token)reduction.GetToken(5)).Data).Tag;
+            GroupByPredicate groupByPredicate = groupBy as GroupByPredicate;
+            if (groupByPredicate == null)
+            {
+                groupByPredicate = new GroupByPredicate();
+                groupByPredicate.GroupingAttributes.Add((groupBy as MemberFunction).MemberName);
+            }
 
+            GroupByValueList gbv = new GroupByValueList();
+            AggregateFunctionPredicate afp=((Reduction)((Token)reduction.GetToken(1)).Data).Tag as AggregateFunctionPredicate;
+            Predicate lhs=afp.ChildPredicate;
+            gbv.AggregateFunctions.Add(afp);
+            Predicate rhs = ((Reduction)((Token)reduction.GetToken(3)).Data).Tag as Predicate;
+            groupByPredicate.ChildPredicate=ExpressionBuilder.CreateLogicalAndPredicate(lhs,rhs);
+            groupByPredicate.GroupByValueList = gbv;
+
+            reduction.Tag = groupByPredicate;
+            if (NCacheLog.IsInfoEnabled) NCacheLog.Info("CreateRULE_QUERY_SELECT_WHERE_GROUPBY");
+            return null;
+        }
+
+        ///Implements <SelectQuery> ::= SELECT <GroupByValueList> WHERE <Expression> 'GROUP BY' <ObjectAttributeList>
+        public Reduction CreateRULE_SELECTQUERY_SELECT_WHERE_GROUPBY2(Reduction reduction)
+        {
+            object groupBy = ((Reduction)((Token)reduction.GetToken(5)).Data).Tag;
+            GroupByPredicate groupByPredicate = groupBy as GroupByPredicate;
+            if (groupByPredicate == null)
+            {
+                groupByPredicate = new GroupByPredicate();
+                groupByPredicate.GroupingAttributes.Add((groupBy as MemberFunction).MemberName);
+            }
+
+            groupByPredicate.GroupByValueList = ((Reduction)((Token)reduction.GetToken(1)).Data).Tag as GroupByValueList;
+            //parsed in reverse order
+            groupByPredicate.GroupByValueList.AggregateFunctions.Reverse();
+            groupByPredicate.GroupByValueList.ObjectAttributes.Reverse();
+
+            Predicate lhs = groupByPredicate.GroupByValueList.AggregateFunctions[0].ChildPredicate;
+            Predicate rhs = ((Reduction)((Token)reduction.GetToken(3)).Data).Tag as Predicate;
+            groupByPredicate.ChildPredicate = ExpressionBuilder.CreateLogicalAndPredicate(lhs, rhs);
+
+            foreach (string attribute in groupByPredicate.GroupByValueList.ObjectAttributes)
+            {
+                if (!groupByPredicate.GroupingAttributes.Contains(attribute))
+                    throw new ArgumentException("Invalid query. " + attribute + " must be specified in GROUP BY clause.");
+            }
+
+            reduction.Tag = groupByPredicate;
+            if (NCacheLog.IsInfoEnabled) NCacheLog.Info("CreateRULE_QUERY_SELECT_WHERE_GROUPBY2");
+            return null;
+        }
+
+
+        /// Implements <Query> ::= DELETE <TypeIdentifier>
+        public Reduction CreateRULE_QUERY_DELETE(Reduction reduction)
+        {
+            object selectType = ((Reduction)((Token)reduction.GetToken(1)).Data).Tag;
+
+            Predicate selectTypePredicate = selectType as Predicate;
+
+            if (selectTypePredicate == null)
+                reduction.Tag = new IsOfTypePredicate(selectType.ToString());
+            else
+                reduction.Tag = selectTypePredicate;
+
+            if (NCacheLog.IsInfoEnabled) NCacheLog.Info("CreateRULE_QUERY_DELETE");
+            return null;
+        }
+
+        /// Implements <Query> ::= DELETE <TypeIdentifier> WHERE <Expression>      
+        public Reduction CreateRULE_QUERY_DELETE_WHERE(Reduction reduction)
+        {
+            //deleteType can be one of the following depending on the query text: -
+            //1. A plain string that is the name of Type; we can build IsOfTypePredicate from this.
+            //2. IsOfTypePredicate
+
+            object selectType = ((Reduction)reduction.GetToken(1).Data).Tag;
+
+            Predicate lhs = null;
+            Predicate rhs = (Predicate)((Reduction)reduction.GetToken(3).Data).Tag;
+            Predicate selectTypePredicate = selectType as Predicate;
+            Predicate result = null;
+
+            //1. selectType is string 
+            if (selectTypePredicate == null)
+            {
+                lhs = new IsOfTypePredicate(selectType.ToString());
+                result = ExpressionBuilder.CreateLogicalAndPredicate(lhs, rhs);
+            }
+
+            //2. selectType is IsOfTypePredicate
+            else
+            {
+                lhs = selectTypePredicate;
+                result = ExpressionBuilder.CreateLogicalAndPredicate(lhs, rhs);
+            }
+
+            reduction.Tag = result;
+            if (NCacheLog.IsInfoEnabled) NCacheLog.Info("CreateRULE_QUERY_DELETE_WHERE");
+            return null;
+        }
+		
 		/// Implements <Expression> ::= <OrExpr>      
         public  Reduction CreateRULE_EXPRESSION(Reduction reduction)
 		{
@@ -474,6 +699,7 @@ namespace Alachisoft.NCache.Caching.Queries
 		/// Implements <TypeIdentifier> ::= '*'      
         public  Reduction CreateRULE_OBJECTTYPE_TIMES(Reduction reduction)
 		{
+			//reduction.Tag = ExpressionBuilder.TRUE_PREDICATE;
             reduction.Tag = "*";
 			if(NCacheLog.IsInfoEnabled) NCacheLog.Info("CreateRULE_OBJECTTYPE_TIMES");
 			return null;
@@ -547,6 +773,7 @@ namespace Alachisoft.NCache.Caching.Queries
 		{
 			IFunctor nested = 
 				new MemberFunction(((Reduction)((Token)reduction.GetToken(2)).Data).Tag.ToString());
+			//			IFunctor func = (MemberFunction)((Reduction)reduction.GetToken(0).Data).Tag;
 			IFunctor func = 
 				new MemberFunction(((Reduction)((Token)reduction.GetToken(0)).Data).Tag.ToString());
 
@@ -634,6 +861,7 @@ namespace Alachisoft.NCache.Caching.Queries
 		{
 			if(NCacheLog.IsInfoEnabled) NCacheLog.Info("CreateRULE_NUMLITERALLIST");
             IsInListPredicate pred = new IsInListPredicate();
+            //((Reduction)reduction.GetToken(2).Data).Tag;
             pred.Append(((Reduction)reduction.GetToken(0).Data).Tag);
             reduction.Tag = pred;
 			return null;
@@ -667,6 +895,7 @@ namespace Alachisoft.NCache.Caching.Queries
 			return null;
 		}
 
+		//self create by muds:
 		//=========================
         public  Reduction CreateRULE_ATRRIB(Reduction reduction)
 		{
@@ -691,7 +920,15 @@ namespace Alachisoft.NCache.Caching.Queries
 			return null;
 		}
 
-        /// Implements <SumFunction> ::= 'SUM(' <TypePlusAttribute> ')'      
+        public  Reduction CreateRULE_OBJECTVALUE_KEYWORD_DOT_TAG(Reduction reduction)
+        {
+            if (NCacheLog.IsInfoEnabled) NCacheLog.Info("RULE_OBJECTVALUE_KEYWORD_DOT_TAG");
+            string memName = "$Tag$";
+            reduction.Tag = new MemberFunction(memName);
+            return null;
+        }             
+			
+		/// Implements <SumFunction> ::= 'SUM(' <TypePlusAttribute> ')'      
         public  Reduction CreateRULE_SUMFUNCTION_SUMLPARAN_RPARAN(Reduction reduction)
 		{
             Reduction typePlusAttributeReduction = (Reduction)reduction.GetToken(1).Data;
@@ -853,6 +1090,185 @@ namespace Alachisoft.NCache.Caching.Queries
 			return null;
 		}
 
+        private Reduction CreateObjectAttributeList(Reduction reduction)
+        {
+            object tag = ((Reduction)reduction.GetToken(2).Data).Tag;
+            GroupByPredicate gb = null;
+            if (tag is GroupByPredicate)
+                gb = tag as GroupByPredicate;
+            else
+            {
+                gb = new GroupByPredicate();
+                gb.GroupingAttributes.Add(((MemberFunction)tag).MemberName);
+            }
+            gb.GroupingAttributes.Add(((MemberFunction)((Reduction)reduction.GetToken(0).Data).Tag).MemberName);
+
+            reduction.Tag = gb;
+
+            return null;
+        }
+
+        ///Implements <GroupByValueList> ::= <ObjectAttribute> ',' <GroupByValueList>
+        public Reduction CreateRULE_GROUPBYVALUELIST_COMMA(Reduction reduction)
+        {
+            object tag = ((Reduction)reduction.GetToken(2).Data).Tag;
+            GroupByValueList groupByValueList = null;
+            if (tag is GroupByValueList)
+                groupByValueList = tag as GroupByValueList;
+            else
+            {
+                groupByValueList = new GroupByValueList();
+                groupByValueList.AggregateFunctions.Add(tag as AggregateFunctionPredicate);
+            }
+            string atributeName = ((MemberFunction)((Reduction)reduction.GetToken(0).Data).Tag).MemberName;
+            if (groupByValueList.ObjectAttributes.Contains(atributeName))
+                throw new ArgumentException("Invalid query. Same column cannot be selected twice.");
+            groupByValueList.ObjectAttributes.Add(atributeName);
+            reduction.Tag = groupByValueList;
+            if (NCacheLog.IsInfoEnabled) NCacheLog.Info("CreateRULE_GROUPBYVALUELIST_COMMA");
+            return null;
+        }
+
+        ///Implements <GroupByValueList> ::= <AggregateFunctionList>
+        public Reduction CreateRULE_GROUPBYVALUELIST(Reduction reduction)
+        {
+            //never called by parser
+            return null;
+        }
+
+
+        ///Implements <AggregateFunctionList> ::= <AggregateFunction> ',' <AggregateFunctionList>
+        public Reduction CreateRULE_AGGREGATEFUNCTIONLIST_COMMA(Reduction reduction)
+        {
+            if (NCacheLog.IsInfoEnabled) NCacheLog.Info("CreateRULE_AGGREGATEFUNCTIONLIST_COMMA");
+            return CreateGroupByValueList(reduction);
+        }
+
+        private Reduction CreateGroupByValueList(Reduction reduction)
+        {
+            object tag = ((Reduction)reduction.GetToken(2).Data).Tag;
+            GroupByValueList groupByValueList = null;
+            if (tag is GroupByValueList)
+                groupByValueList = tag as GroupByValueList;
+            else
+            {
+                groupByValueList = new GroupByValueList();
+                groupByValueList.AggregateFunctions.Add(tag as AggregateFunctionPredicate);
+            }
+
+            AggregateFunctionPredicate afp = (AggregateFunctionPredicate)((Reduction)reduction.GetToken(0).Data).Tag;
+            if (((IsOfTypePredicate)afp.ChildPredicate).TypeName == ((IsOfTypePredicate)groupByValueList.AggregateFunctions[0].ChildPredicate).TypeName)
+            {
+                groupByValueList.AggregateFunctions.Add(afp);
+            }
+            else
+                throw new ArgumentException("Invalid query. Same class should be specified in all aggregate functions.");
+
+            reduction.Tag = groupByValueList;
+
+            return null;
+ 
+        }
+
+        ///Implements <AggregateFunctionList> ::= <AggregateFunction>
+        public Reduction CreateRULE_AGGREGATEFUNCTIONLIST(Reduction reduction)
+        {
+            //never called by parser
+            return null;
+        }
+        
+        ///Implements <OrderByValueList> ::= <OrderArgument> ',' <OrderByValueList>
+        public Reduction CreateRULE_ORDERBYVALUELIST_COMMA(Reduction reduction)
+        {
+            if (NCacheLog.IsInfoEnabled) NCacheLog.Info("CreateRULE_ORDERBYVALUELIST_COMMA");
+            return CreateOrderByValueList(reduction);
+        }
+
+        private Reduction CreateOrderByValueList(Reduction reduction)
+        {
+            object tag = ((Reduction)reduction.GetToken(2).Data).Tag;
+            List<OrderByArgument> orderByValueList = null;
+            if (tag is List<OrderByArgument>)
+                orderByValueList = tag as List<OrderByArgument>;
+            else
+            {
+                orderByValueList = new List<OrderByArgument>();
+                if (tag is OrderByArgument)
+                    orderByValueList.Add(tag as OrderByArgument);
+                else
+                {
+                    OrderByArgument orderArgument = new OrderByArgument();
+                    orderArgument.AttributeName = ((MemberFunction)tag).MemberName;
+                    orderByValueList.Add(orderArgument);
+                }
+            }
+
+            object tag0 = ((Reduction)reduction.GetToken(0).Data).Tag;
+            if(tag0 is OrderByArgument)
+                orderByValueList.Add(tag0 as OrderByArgument);
+            else
+            {
+            OrderByArgument orderArgument = new OrderByArgument();
+            orderArgument.AttributeName=((MemberFunction)tag0).MemberName;
+            orderByValueList.Add(orderArgument);
+            }
+            reduction.Tag = orderByValueList;
+            return null;
+        }
+
+        ///Implements <OrderByValueList> ::= <OrderArgument>
+        public Reduction CreateRULE_ORDERBYVALUELIST(Reduction reduction)
+        {
+            return null;
+        }
+
+        ///Implements <OrderArgument> ::= <ObjectAttribute> <Order>
+        public Reduction CreateRULE_ORDERARGUMENT(Reduction reduction)
+        {
+            if (NCacheLog.IsInfoEnabled) NCacheLog.Info("CreateRULE_ORDERARGUMENT");
+            OrderByArgument orderByArgument = new OrderByArgument();
+            orderByArgument.AttributeName = ((MemberFunction)((Reduction)reduction.GetToken(0).Data).Tag).MemberName;
+            orderByArgument.Order = (Order)((Reduction)reduction.GetToken(1).Data).Tag;
+            reduction.Tag = orderByArgument;
+            return null;
+        }
+
+        ///Implements <OrderArgument> ::= <ObjectAttribute>
+        public Reduction CreateRULE_ORDERARGUMENT2(Reduction reduction)
+        {
+            //Never called by parser          
+            return null;
+        }
+
+        ///Implements <Order> ::= ASC
+        public Reduction CreateRULE_ORDER_ASC(Reduction reduction)
+        {
+            if (NCacheLog.IsInfoEnabled) NCacheLog.Info("CreateRULE_ORDER_ASC");
+            reduction.Tag = Order.ASC;
+            return null;
+        }
+
+        ///Implements <Order> ::= DESC
+        public Reduction CreateRULE_ORDER_DESC(Reduction reduction)
+        {
+            if (NCacheLog.IsInfoEnabled) NCacheLog.Info("CreateRULE_ORDER_DESC");
+            reduction.Tag = Order.DESC;
+            return null;
+        }
+
+        ///Implements <ObjectAttributeList> ::= <ObjectAttribute> ',' <ObjectAttributeList>
+        public Reduction CreateRULE_OBJECTATTRIBUTELIST_COMMA(Reduction reduction)
+        {
+            if (NCacheLog.IsInfoEnabled) NCacheLog.Info("CreateRULE_OBJECTATTRIBUTELIST_COMMA");
+            return CreateObjectAttributeList(reduction);
+        }
+
+        ///Implements <ObjectAttributeList> ::= <ObjectAttribute>
+        public Reduction CreateRULE_OBJECTATTRIBUTELIST(Reduction reduction)
+        {
+            //never called by parser
+            return null;
+        }
 
         ///Implements <ObjectAttribute> ::= Keyword '.' Identifier
         public Reduction CreateRULE_OBJECTATTRIBUTE_KEYWORD_DOT_IDENTIFIER(Reduction reduction)

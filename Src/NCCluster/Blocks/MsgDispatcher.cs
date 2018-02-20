@@ -10,7 +10,6 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 // $Id: MessageDispatcher.java,v 1.30 2004/09/02 14:00:40 belaban Exp $
-
 using System;
 using System.Collections;
 using System.Threading;
@@ -23,9 +22,11 @@ using Alachisoft.NCache.Common;
 using Alachisoft.NCache.Common.Stats;
 using Alachisoft.NCache.Common.Util;
 using Alachisoft.NCache.Common.Logger;
-
+#if JAVA
+using Runtime = Alachisoft.TayzGrid.Runtime;
+#else
 using Runtime = Alachisoft.NCache.Runtime;
-
+#endif
 namespace Alachisoft.NGroups.Blocks
 {
 	public class MsgDispatcher : RequestHandler, UpHandler
@@ -44,8 +45,6 @@ namespace Alachisoft.NGroups.Blocks
         private Hashtable syncTable = new Hashtable();
         private TimeStats _stats = new TimeStats();
         private long profileId = 0;
-        //public NewTrace nTrace = null;
-        //public string _cacheName = null;
         private ILogger _ncacheLog = null;
         public ILogger NCacheLog
         {
@@ -75,7 +74,6 @@ namespace Alachisoft.NGroups.Blocks
 			_req_handler = req_handler;
             _msgResponder = responder;
 
-		
 			channel.UpHandler = this;
 			start();
 		}
@@ -86,10 +84,7 @@ namespace Alachisoft.NGroups.Blocks
 			{
 				corr = new RequestCorrelator("MsgDisp", channel, this, deadlock_detection, channel.LocalAddress, concurrent_processing, this._ncacheLog);
 				corr.start();
-                if (System.Configuration.ConfigurationSettings.AppSettings["useAvgStats"] != null)
-                {
-                    useAvgStats = Convert.ToBoolean(System.Configuration.ConfigurationSettings.AppSettings["useAvgStats"]);
-                }
+                useAvgStats = ServiceConfiguration.UseAvgStats;
 			}
 		}
 
@@ -117,7 +112,7 @@ namespace Alachisoft.NGroups.Blocks
 				{
 					// message handled
                     if (corr.receive(evt))
-                    {                        
+                    {
                         return;
                     }
 				}
@@ -142,31 +137,20 @@ namespace Alachisoft.NGroups.Blocks
 				if (msg_listener != null)
 				{
                     HPTimeStats reqHandleStats = null;
-                   
-
 					msg_listener.receive((Message) evt.Arg);
 
                     if (reqHandleStats != null)
                     {
-                        reqHandleStats.EndSample();
-                        if (!useAvgStats)
-                        {
-                            
-                        }
-                        else
-                        {
-                            
-                        }
-                    }
-                    
+                        reqHandleStats.EndSample();                       
+                    }                  
+
 				}
 				break;
 
             case Event.HASHMAP_REQ:
                 if (_msgResponder != null)
                 {
-                    NCacheLog.Debug("MessageDispatcher.PassUp()",  "here comes the request for hashmap");
-                    
+                    NCacheLog.Debug("MessageDispatcher.PassUp()",  "here comes the request for hashmap");                   
                     object map = null;
                     try
                     {
@@ -184,8 +168,6 @@ namespace Alachisoft.NGroups.Blocks
                 }
                 break;
 
-          
-
 			case Event.VIEW_CHANGE: 
 				View v = (View) evt.Arg;
 				ArrayList new_mbrs = v.Members;
@@ -193,8 +175,7 @@ namespace Alachisoft.NGroups.Blocks
 				{
                     NCacheLog.Debug("MessageDispatcher.passUp", "Event.VIEW_CHANGE-> Entering: " + v.ToString());
 					membership_listener.viewAccepted(v);
-                    NCacheLog.Debug("MessageDispatcher.passUp", "Event.VIEW_CHANGE->Done" + v.ToString());
-                   
+                    NCacheLog.Debug("MessageDispatcher.passUp", "Event.VIEW_CHANGE->Done" + v.ToString());                  
 				}
 				break;
             case Event.ASK_JOIN:
@@ -204,7 +185,6 @@ namespace Alachisoft.NGroups.Blocks
                     et.Type = Event.ASK_JOIN_RESPONSE;
                     et.Arg = membership_listener.AllowJoin();
                     channel.down(et);
-                    
                 }
                    
                 break;
@@ -215,7 +195,6 @@ namespace Alachisoft.NGroups.Blocks
 				if (membership_listener != null)
 				{
 					membership_listener.suspect((Address) evt.Arg);
-                  
 				}
 				break;
 				
@@ -223,7 +202,6 @@ namespace Alachisoft.NGroups.Blocks
 				if (membership_listener != null)
 				{
 					membership_listener.block();
-                    
 				}
 				break;
 			}
@@ -271,7 +249,7 @@ namespace Alachisoft.NGroups.Blocks
 			// we need to clone because we don't want to modify the original
 			// (we remove ourselves if LOCAL is false, see below) !
             real_dests = dests != null ? (ArrayList)dests.Clone() : clusterMembership;
-			
+			//real_dests = dests != null ? (ArrayList) dests.Clone():null;
 			
 			// if local delivery is off, then we should not wait for the message from the local member.
 			// therefore remove it from the membership
@@ -286,7 +264,7 @@ namespace Alachisoft.NGroups.Blocks
 			if (real_dests == null || real_dests.Count == 0)
 			{
                 if (NCacheLog.IsInfoEnabled) NCacheLog.Info("MsgDispatcher.castMessage()",  "destination list is empty, won't send message");
-                
+                //((GroupChannel)channel).MsgProvider.SubmittObject(msg);
 				return new RspList(); // return empty response list
 			}
 			
@@ -298,9 +276,10 @@ namespace Alachisoft.NGroups.Blocks
            
             if(mode != GroupRequest.GET_NONE)
                 ((GroupChannel)channel).Stack.perfStatsColl.IncrementClusteredOperationsPerSecStats();
-  
+
 
             RspList rspList = _req.Results;
+
 
             if(rspList != null)
             {
@@ -377,6 +356,7 @@ namespace Alachisoft.NGroups.Blocks
 		}
 
 
+
         public virtual void done(long req_id)
 		{
 			corr.done(req_id);
@@ -451,6 +431,7 @@ namespace Alachisoft.NGroups.Blocks
 			if (_req_handler != null)
 			{
 
+
                 object result = _req_handler.handle(msg);
                 return result;
 			}
@@ -472,5 +453,7 @@ namespace Alachisoft.NGroups.Blocks
         }
 
 	}
+
+
 	
 }

@@ -1,0 +1,7 @@
+import "KeyValuePackageResponse.proto";
+
+option java_outer_classname="RemoveQueryResponseProtocol";
+package Alachisoft.NCache.Common.Protobuf;
+message RemoveQueryResponse {
+	optional int32 removedKeyCount = 1;
+}

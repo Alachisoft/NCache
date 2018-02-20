@@ -1,4 +1,4 @@
-// Licensed under the Apache License, Version 2.0 (the "License");
+﻿// Licensed under the Apache License, Version 2.0 (the "License");
 // you may not use this file except in compliance with the License.
 // You may obtain a copy of the License at
 // 
@@ -9,12 +9,14 @@
 // WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
 // See the License for the specific language governing permissions and
 // limitations under the License.
+// $Id: JoinRsp.java,v 1.2 2004/03/30 06:47:18 belaban Exp $
 
 namespace Alachisoft.NGroups.Protocols.pbcast
 {
     internal enum JoinResult
     {
         Success,
+        MaxMbrLimitReached, //muds: in express edition only 3 members can join the cluster.
         Rejected,
         HandleLeaveInProgress,
         HandleJoinInProgress,

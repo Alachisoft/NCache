@@ -1,4 +1,4 @@
-﻿// Copyright (c) 2018 Alachisoft
+// Copyright (c) 2018 Alachisoft
 // 
 // Licensed under the Apache License, Version 2.0 (the "License");
 // you may not use this file except in compliance with the License.
@@ -12,14 +12,10 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-using System;
 
-using Alachisoft.NCache.Runtime.Serialization;
-using Alachisoft.NCache.Common.Queries;
-using Alachisoft.NCache.Common.Enum;
-using Runtime = Alachisoft.NCache.Runtime;
 using System.Collections;
 using Alachisoft.NCache.Common.DataStructures.Clustered;
+using Alachisoft.NCache.Runtime.Serialization;
 
 namespace Alachisoft.NCache.Common.DataReader
 {
@@ -88,6 +84,10 @@ namespace Alachisoft.NCache.Common.DataReader
                 writer.WriteObject((RecordRow)kv.Value);
             }
         }
-    }
 
+        public IDictionary RowsVector
+        {
+            get { return _rows; }
+        }
+    }
 }

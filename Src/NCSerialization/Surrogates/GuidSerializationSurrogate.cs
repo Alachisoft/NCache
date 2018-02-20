@@ -10,7 +10,7 @@
 // distributed under the License is distributed on an "AS IS" BASIS,
 // WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
 // See the License for the specific language governing permissions and
-// limitations under the License.
+// limitations under the License
 
 using System;
 using Alachisoft.NCache.IO;
@@ -26,19 +26,19 @@ namespace Alachisoft.NCache.Serialization.Surrogates
         public override object Read(CompactBinaryReader reader) 
         {
             return new Guid(reader.ReadString());
-            //return reader.ReadGuid();
+          
         }
 
         public override void Write(CompactBinaryWriter writer, object graph)
         {
             writer.Write(((Guid)graph).ToString());
-            //writer.Write((Guid)graph); 
+           
         }
 
         public override void Skip(CompactBinaryReader reader)
         {
             reader.SkipString();
-            //reader.SkipGuid();
+           
         }
     }
 }

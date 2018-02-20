@@ -11,7 +11,6 @@
 // WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
 // See the License for the specific language governing permissions and
 // limitations under the License.
-
 using System;
 
 namespace Alachisoft.NCache.Caching
@@ -22,7 +21,12 @@ namespace Alachisoft.NCache.Caching
 	[Serializable]
 	public enum ItemRemoveReason
 	{
-	    /// <summary>
+		/// <summary>
+		/// The item is removed from the cache because a file or key dependency changed.
+		/// </summary>
+		DependencyChanged,
+
+		/// <summary>
 		/// The item is removed from the cache because it expired.
 		/// </summary>
 		Expired,
@@ -35,6 +39,11 @@ namespace Alachisoft.NCache.Caching
 		/// <summary>
 		/// The item is removed from the cache because the system removed it to free memory.
 		/// </summary>
-		Underused
+		Underused,
+
+        /// <summary>
+        /// The item is removed from the cache because of sql invalid dependency.
+        /// </summary>
+        DependencyInvalid
 	}
 }

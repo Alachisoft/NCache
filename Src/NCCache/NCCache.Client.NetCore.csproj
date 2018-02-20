@@ -1,0 +1,119 @@
+<Project Sdk="Microsoft.NET.Sdk">
+
+  <PropertyGroup>
+    <TargetFramework>netstandard2.0</TargetFramework>
+  </PropertyGroup>
+
+  <PropertyGroup>
+    <GenerateAssemblyInfo>false</GenerateAssemblyInfo>
+    <AssemblyName>Alachisoft.NCache.Cache</AssemblyName>
+    <RootNamespace>Alachisoft.NCache.Cache</RootNamespace>
+  </PropertyGroup>
+
+  <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Debug|AnyCPU'">
+    <DefineConstants>TRACE;DEBUG;CLIENT;VS2005;NET40;NETCORE</DefineConstants>
+  </PropertyGroup>
+
+  <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Release|AnyCPU'">
+     <DefineConstants>TRACE;RELEASE;CLIENT;VS2005;NET40;NETCORE</DefineConstants>
+  </PropertyGroup>
+
+  <ItemGroup>
+    <Compile Remove="Caching\Bridge\**" />
+    <Compile Remove="Caching\Indexing\**" />
+    <Compile Remove="Caching\Messaging\StateTransfer\**" />
+    <Compile Remove="Caching\Persistence\**" />
+    <Compile Remove="Caching\Queries\Continuous\StateTransfer\**" />
+    <Compile Remove="Caching\Store\**" />
+    <Compile Remove="Caching\Topologies\Clustered\**" />
+    <EmbeddedResource Remove="Caching\Bridge\**" />
+    <EmbeddedResource Remove="Caching\Indexing\**" />
+    <EmbeddedResource Remove="Caching\Messaging\StateTransfer\**" />
+    <EmbeddedResource Remove="Caching\Persistence\**" />
+    <EmbeddedResource Remove="Caching\Queries\Continuous\StateTransfer\**" />
+    <EmbeddedResource Remove="Caching\Store\**" />
+    <EmbeddedResource Remove="Caching\Topologies\Clustered\**" />
+    <None Remove="Caching\Bridge\**" />
+    <None Remove="Caching\Indexing\**" />
+    <None Remove="Caching\Messaging\StateTransfer\**" />
+    <None Remove="Caching\Persistence\**" />
+    <None Remove="Caching\Queries\Continuous\StateTransfer\**" />
+    <None Remove="Caching\Store\**" />
+    <None Remove="Caching\Topologies\Clustered\**" />
+  </ItemGroup>
+
+  <ItemGroup>
+    <Compile Remove="BridgeClient\BridgeReplicator.cs" />
+    <Compile Remove="Caching\AutoExpiration\ExpiryKey.cs" />
+    <Compile Remove="Caching\AutoExpiration\OracleExpiration.cs" />
+    <Compile Remove="Caching\ClientDeathDetector.cs" />
+    <Compile Remove="Caching\ClientsInvalidatedCallback.cs" />
+    <Compile Remove="Caching\CompactEntryProvider.cs" />
+    <Compile Remove="Caching\DatasourceProviders\DataSourceCorresponder.cs" />
+    <Compile Remove="Caching\DatasourceProviders\DataSourceReplicationManager.cs" />
+    <Compile Remove="Caching\DatasourceProviders\ISourceRW.cs" />
+    <Compile Remove="Caching\DatasourceProviders\WriteBehindQueueRequest.cs" />
+    <Compile Remove="Caching\DatasourceProviders\WriteBehindQueueResponse.cs" />
+    <Compile Remove="Caching\EvictionPolicies\EvictionPolicySyncWrapper.cs" />
+    <Compile Remove="Caching\KeyBasedLockManager.cs" />
+    <Compile Remove="Caching\LockAccessTypeConverter.cs" />
+    <Compile Remove="Caching\NCacheSessionItem.cs" />
+    <Compile Remove="Caching\Queries\Filters\CompoundKeyFilter.cs" />
+    <Compile Remove="Caching\Queries\Filters\IKeyFilter.cs" />
+    <Compile Remove="Caching\Queries\IndexPosition.cs" />
+    <Compile Remove="Caching\Queries\NCQL1.cs" />
+    <Compile Remove="Caching\Queries\NCQL2.cs" />
+    <Compile Remove="Caching\Queries\NCQLC.cs" />
+    <Compile Remove="Caching\Queries\NCQL_Aggregate.cs" />
+    <Compile Remove="Caching\Queries\SymbolConstants.cs" />
+    <Compile Remove="Caching\Queries\TagIndex.cs" />
+    <Compile Remove="Caching\Statistics\CacheStatsColletor.cs" />
+    <Compile Remove="Caching\Statistics\CustomPerfStatsCollector.cs" />
+    <Compile Remove="Caching\Statistics\PerfInstaller.cs" />
+    <Compile Remove="Caching\TagComparisonTypeConverter.cs" />
+    <Compile Remove="Caching\Topologies\Local\BucketStatistcs.cs" />
+    <Compile Remove="Caching\Topologies\Local\ClientCache.cs" />
+    <Compile Remove="Caching\Topologies\Local\HashedLocalCache.cs" />
+    <Compile Remove="Caching\Topologies\Local\HashedOverflowCache.cs" />
+    <Compile Remove="Caching\Topologies\Local\IDataGroupsEventListener.cs" />
+    <Compile Remove="Caching\Topologies\Local\LogMode.cs" />
+    <Compile Remove="Caching\Topologies\Local\OperationInfo.cs" />
+    <Compile Remove="Caching\Topologies\Local\OperationLogger.cs" />
+    <Compile Remove="Caching\Topologies\Local\OpLogManager.cs" />
+    <Compile Remove="Caching\Topologies\Local\PullBaseNotificationManager.cs" />
+    <Compile Remove="Caching\Topologies\Local\StorageSpace.cs" />
+    <Compile Remove="Caching\Topologies\Local\TopicWiseBucketStatistics.cs" />
+    <Compile Remove="Caching\Topologies\OperationType.cs" />
+    <Compile Remove="Caching\Util\ClusterHelper.cs" />
+    <Compile Remove="Caching\Util\ConnectionPool.cs" />
+    <Compile Remove="Caching\Util\LazyKeysetEnumerator.cs" />
+    <Compile Remove="Licensing\EncryptionUtil.cs" />
+    <Compile Remove="Licensing\ILicenseValidatior.cs" />
+    <Compile Remove="Licensing\License1.cs" />
+    <Compile Remove="PresenceAnnouncer.cs" />
+  </ItemGroup>
+
+  <ItemGroup>
+    <None Remove="Alachisoft.NCache.Cache.dll.config" />
+    <None Remove="Caching\AutoExpiration\DependencyHelper.cs.bak" />
+    <None Remove="Caching\Queries\NCQL Tables.txt" />
+    <None Remove="Caching\Queries\NCQL Tables1.txt" />
+    <None Remove="Caching\Queries\NCQL.cgt" />
+    <None Remove="Caching\Queries\NCQL1.cgt" />
+    <None Remove="Caching\Queries\NCQL_orginal.cgt" />
+    <None Remove="Caching\Queries\NCQL_original_agg.cgt" />
+  </ItemGroup>
+
+  <ItemGroup>
+    <PackageReference Include="System.Data.Common" Version="4.3.0" />
+    <PackageReference Include="System.Data.SqlClient" Version="4.4.0" />
+  </ItemGroup>
+
+  <ItemGroup>
+    <ProjectReference Include="..\NCParser\NCParser.Client.NetCore.csproj" />
+    <ProjectReference Include="..\NCSerialization\NCSerialization.Client.NetCore.csproj" />
+    <ProjectReference Include="..\NCStorage\NCStorage.Client.NetCore.csproj" />
+  </ItemGroup>
+  
+  
+</Project>

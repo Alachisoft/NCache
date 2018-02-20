@@ -1,0 +1,6 @@
+
+option java_outer_classname="AddDependencyResponseProtocol";
+package Alachisoft.NCache.Common.Protobuf;
+message AddDependencyResponse {
+	optional bool success = 1;
+}

@@ -11,6 +11,7 @@
 // WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
 // See the License for the specific language governing permissions and
 // limitations under the License.
+
 using System;
 using System.Reflection;
 using System.Runtime.CompilerServices;
@@ -24,15 +25,33 @@ using System.Runtime.InteropServices;
 //
 [assembly: CLSCompliant(true)]
 [assembly: ComVisible(false)]
+
+
+#if NETCORE
+[assembly: AssemblyTitle("Alachisoft.NCache.Cache (.NETCore)")]
+#else
 [assembly: AssemblyTitle("Alachisoft.NCache.Cache")]
-[assembly: AssemblyProduct("AlachisoftÂ® NCache Open Source")]
-[assembly: AssemblyTrademark("NCache â„¢ is a registered trademark of Alachisoft.")]
+#endif
+
+[assembly: AssemblyProduct("Alachisoft® NCache Open Source")]
+
+
+[assembly: AssemblyTrademark("NCache ™ is a registered trademark of Alachisoft.")]
+
+
 [assembly: AssemblyConfiguration("")]
 [assembly: AssemblyCompany("Alachisoft")]
 
-[assembly: AssemblyCopyright("Copyright Â© 2005-2018 Alachisoft")]
+
+
+[assembly: AssemblyCopyright("Copyright © 2005-2018 Alachisoft")]
 [assembly: AssemblyCulture("")]
 
+[assembly: InternalsVisibleTo("EladLicenseGenerator,PublicKey=002400000480000094000000060200000024000052534131000400000100010005a3e761ae2217"
++ "0e7f5cc1208e5a2e51fef749c98ee0cc3c94dc1d688fe0324370d327bb3e33248ad603831c8b5b"
++ "7316c451e26b5fcb99ec05884419f7102942e7446a51e0c5812530af21c49330e45baaba4247cb"
++ "07f4807a1d051466040c77d437fb79ffe78a2330d4d5a6830577b98907cba0365ced3f9c4bb91f"
++ "b9520bc9")]
 //
 // Version information for an assembly consists of the following four values:
 //
@@ -44,7 +63,7 @@ using System.Runtime.InteropServices;
 // You can specify all the values or you can default the Revision and Build Numbers 
 // by using the '*' as shown below:
 
-[assembly: AssemblyVersion("4.6.0.0")]
+[assembly: AssemblyVersion("4.9.0")]
 
 //
 // In order to sign your assembly you must specify a key to use. Refer to the 
@@ -73,7 +92,11 @@ using System.Runtime.InteropServices;
 //
 [assembly: AssemblyDelaySign(false)]
 [assembly: AssemblyKeyName("")]
+#if DEBUG
 [assembly: AssemblyKeyFile("..\\..\\..\\..\\Resources\\ncache.snk")]
+#else
+[assembly: AssemblyKeyFile("..\\..\\..\\..\\Resources\\ncache.snk")]
+#endif
 [assembly: AssemblyDescriptionAttribute("Cache Core")]
-[assembly: AssemblyFileVersionAttribute("4.6.3.0")]
-[assembly: AssemblyInformationalVersion("4.6.0")]
+[assembly: AssemblyFileVersionAttribute("4.9.0.0")]
+[assembly: AssemblyInformationalVersion("4.9.0")]

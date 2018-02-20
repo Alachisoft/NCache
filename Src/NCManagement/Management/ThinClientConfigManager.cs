@@ -10,27 +10,22 @@
 // distributed under the License is distributed on an "AS IS" BASIS,
 // WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
 // See the License for the specific language governing permissions and
-// limitations under the License.
+// limitations under the License
 
 using System;
 using System.Collections;
 using Alachisoft.NCache.Config;
 using Alachisoft.NCache.Config.Dom;
 using Alachisoft.NCache.Runtime.Exceptions;
+using System.Globalization;
+using System.Threading;
 
 namespace Alachisoft.NCache.Management
 {
     public class ThinClientConfigManager : CacheConfigManager
     {
-        /// intentionally hiding the base class member. the purpose is to avoid the call to the base class 
-        /// because every call to the base class scans for the ncache installation folder and throws exception if
-        /// installation folder is not found. This class 'ThinClientConfigManager' is used for thin clients where 
-        /// installation folder is not mandatory.
-        /// <summary> Default tcp channel port. </summary>
-        /// 
-
         public new const int DEF_TCP_PORT = 8250;
-
+       
         /// <summary>
         /// Initialize a registered cache given by the ID.
         /// </summary>
@@ -41,7 +36,7 @@ namespace Alachisoft.NCache.Management
             {
                 XmlConfigReader configReader = new XmlConfigReader(filePath, cacheId);
                 CacheServerConfig config = configReader.GetConfigDom();
-
+                CultureInfo cultureInfo = Thread.CurrentThread.CurrentCulture;
                 if (config == null)
                 {
                     return config;
@@ -54,11 +49,12 @@ namespace Alachisoft.NCache.Management
 
                 if (inProc)
                 {
-
-                    return config;
+                     return config;
                 }
                 return null;
             }
+
+            
 
             catch (ManagementException)
             {
@@ -75,7 +71,7 @@ namespace Alachisoft.NCache.Management
         /// Initialize a registered cache given by the ID.
         /// </summary>
         /// <param name="cacheId">A string identifier of configuration.</param>
-        static public ArrayList GetCacheConfig(string cacheId, string filePath, bool inProc)
+        static public ArrayList GetCacheConfig(string cacheId, string filePath,  bool inProc)
         {
             try
             {
@@ -92,10 +88,17 @@ namespace Alachisoft.NCache.Management
                 if (inProc)
                 {
 
+                    bool isAuthorize = false;
+                    Hashtable ht = (Hashtable)propsList[0];
+                    Hashtable cache = (Hashtable)ht["cache"];
+
+        
+
                     return configsList;
                 }
                 return null;
             }
+
 
             catch (ManagementException)
             {
@@ -105,7 +108,6 @@ namespace Alachisoft.NCache.Management
             {
                 throw new ManagementException(e.Message, e);
             }
-        }
-
+        }     
     }
 }

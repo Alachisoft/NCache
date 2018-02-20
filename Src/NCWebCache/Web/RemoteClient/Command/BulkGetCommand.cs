@@ -12,29 +12,26 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-using System;
-using System.Text;
-
+using System.Collections.Generic;
 using Alachisoft.NCache.Common;
-using System.IO;
-using Alachisoft.NCache.Web.Communication;
-using Alachisoft.NCache.Common.Protobuf.Util;
-using Alachisoft.NCache.Web.Caching.Util;
 
 namespace Alachisoft.NCache.Web.Command
 {
     internal sealed class BulkGetCommand : CommandBase
     {
         Alachisoft.NCache.Common.Protobuf.BulkGetCommand _bulkGetCommand;
+        private int _methodOverload;
 
-        public BulkGetCommand(string[] keys, BitSet flagMap)
+        public BulkGetCommand(string[] keys, BitSet flagMap, string provider, int methodOverload)
         {
             base.name = "BulkGetCommand";
             base.BulkKeys = keys;
             _bulkGetCommand = new Alachisoft.NCache.Common.Protobuf.BulkGetCommand();
             _bulkGetCommand.keys.AddRange(keys);
+            _bulkGetCommand.providerName = provider;
             _bulkGetCommand.flag = flagMap.Data;
             _bulkGetCommand.requestId = base.RequestId;
+            _methodOverload = methodOverload;
         }
 
         internal override CommandType CommandType
@@ -44,7 +41,7 @@ namespace Alachisoft.NCache.Web.Command
 
         internal override RequestType CommandRequestType
         {
-            get { return RequestType.BulkRead; }
+            get { return RequestType.KeyBulkRead; }
         }
 
         protected override void CreateCommand()
@@ -56,6 +53,32 @@ namespace Alachisoft.NCache.Web.Command
             base._command.clientLastViewId = base.ClientLastViewId;
             base._command.intendedRecipient = base.IntendedRecipient;
             base._command.commandVersion = 1; // NCache 4.1 Onwards
+            base._command.MethodOverload = _methodOverload;
+        }
+
+        protected override CommandBase GetMergedCommand(List<CommandBase> commands)
+        {
+            BulkGetCommand mergedCommand = null;
+            if (commands != null || commands.Count > 0)
+            {
+                foreach (CommandBase command in commands)
+                {
+                    if (command is BulkGetCommand)
+                    {
+                        BulkGetCommand bulkCommand = (BulkGetCommand) command;
+                        if (mergedCommand == null)
+                        {
+                            mergedCommand = bulkCommand;
+                        }
+                        else
+                        {
+                            mergedCommand._bulkGetCommand.keys.AddRange(bulkCommand._bulkGetCommand.keys);
+                        }
+                    }
+                }
+            }
+
+            return mergedCommand;
         }
     }
 }

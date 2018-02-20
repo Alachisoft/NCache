@@ -17,7 +17,7 @@ using System.Collections;
 namespace Alachisoft.NCache.Caching.Util
 {
     /// <summary>
-    /// Enumerator that provides single enumration over multiple containers.
+    /// Enumerator that provides single enumeration over multiple containers.
     /// </summary>
     internal class AggregateEnumerator: IDictionaryEnumerator
     {

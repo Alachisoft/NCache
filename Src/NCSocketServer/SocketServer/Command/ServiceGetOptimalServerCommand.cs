@@ -15,7 +15,6 @@
 using System;
 using Alachisoft.NCache.SocketServer.Util;
 
-
 namespace Alachisoft.NCache.SocketServer.Command
 {
     class ServiceGetOptimalServerCommand : CommandBase
@@ -24,20 +23,14 @@ namespace Alachisoft.NCache.SocketServer.Command
 
         public ServiceGetOptimalServerCommand(long acknowledgementId)
         {
-            // TODO: Complete member initialization
             this.acknowledgementId = acknowledgementId;
         }
         private struct CommandInfo
         {
             public string RequestId;
             public string CacheId;
-            public string UserName;
-            public string Password;
-            public byte[] UserNameBinary;
-            public byte[] PasswordBinary;
-            public bool IsDotNetClient;
+           
         }
-
 
         //PROTOBUF
         public override void ExecuteCommand(ClientManager clientManager, Alachisoft.NCache.Common.Protobuf.Command command)
@@ -50,7 +43,7 @@ namespace Alachisoft.NCache.SocketServer.Command
             catch (Exception exc)
             {
                 if (!base.immatureId.Equals("-2")) 
-                    _serializedResponsePackets.Add(Alachisoft.NCache.Common.Util.ResponseHelper.SerializeExceptionResponse(exc, command.requestID));
+                    _serializedResponsePackets.Add(Alachisoft.NCache.Common.Util.ResponseHelper.SerializeExceptionResponse(exc, command.requestID, command.commandID));
                 return;
             }
             try
@@ -59,7 +52,7 @@ namespace Alachisoft.NCache.SocketServer.Command
             }
             catch (Exception exc)
             {
-                _serializedResponsePackets.Add(Alachisoft.NCache.Common.Util.ResponseHelper.SerializeExceptionResponse(exc, command.requestID));
+                _serializedResponsePackets.Add(Alachisoft.NCache.Common.Util.ResponseHelper.SerializeExceptionResponse(exc, command.requestID, command.commandID));
             }
         }
 
@@ -72,7 +65,5 @@ namespace Alachisoft.NCache.SocketServer.Command
             cmdInfo.CacheId = getOptimalServerCommand.cacheId;
             return cmdInfo;
         }
-
-       
     }
 }

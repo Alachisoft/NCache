@@ -9,15 +9,15 @@
 // WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
 // See the License for the specific language governing permissions and
 // limitations under the License.
-
 using System;
 using System.Text;
 using Alachisoft.NCache.Runtime.Serialization.IO;
+using Alachisoft.NCache.Runtime.Serialization;
 
 namespace Alachisoft.NGroups.Blocks
 {
     [Serializable]
-    public class RequestStatus : Alachisoft.NCache.Runtime.Serialization.ICompactSerializable
+    public class RequestStatus : ICompactSerializable
     {
         public const byte REQ_NOT_RECEIVED = 1;
         public const byte REQ_RECEIVED_NOT_PROCESSED = 2;
@@ -116,6 +116,7 @@ namespace Alachisoft.NGroups.Blocks
             _reqId = reader.ReadInt32();
             _status = reader.ReadByte();
             
+
             _creationTime = (DateTime?)reader.ReadObject();
 
         }
@@ -124,9 +125,10 @@ namespace Alachisoft.NGroups.Blocks
         {
             writer.Write(_reqId); 
             writer.Write(_status);
+            
 
-            writer.WriteObject(_creationTime); //you cannot write nullable datetime with write so using writeObject
-     
+            writer.WriteObject(_creationTime); 
+      
         } 
         #endregion
     }

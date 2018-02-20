@@ -10,15 +10,24 @@
 // distributed under the License is distributed on an "AS IS" BASIS,
 // WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
 // See the License for the specific language governing permissions and
-// limitations under the License.
-
+// limitations under the License
 using System;
+using System.Collections.Generic;
+using System.Text;
+using System.Net;
 using Alachisoft.NCache.Common.Net;
-
+#if JAVA
+using Alachisoft.TayzGrid.Runtime.Serialization;
+#else
 using Alachisoft.NCache.Runtime.Serialization;
-
+#endif
+#if JAVA
+using Runtime = Alachisoft.TayzGrid.Runtime;
+#else
+using Runtime = Alachisoft.NCache.Runtime;
+#endif
 namespace Alachisoft.NCache.Common.Monitoring
-{
+{   
     /// <summary>
     /// Node represent a physical machine participating either as server
     /// or client.
@@ -67,7 +76,6 @@ namespace Alachisoft.NCache.Common.Monitoring
             if (other != null)
             {
                 if (Name == null && other.Name == null) equal = true;
-
                 if (equal)
                 {
                     equal = false;

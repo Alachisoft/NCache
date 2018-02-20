@@ -14,10 +14,10 @@
 
 using System;
 using System.Collections;
-using Alachisoft.NCache.Parser;
 using Alachisoft.NCache.Common.Queries;
+using Alachisoft.NCache.Parser;
 using Alachisoft.NCache.Common.DataStructures.Clustered;
-using Alachisoft.NCache.Common.Enum;
+
 namespace Alachisoft.NCache.Caching.Queries.Filters
 {
     public class FunctorGreaterGeneratorPredicate : Predicate, IComparable
@@ -59,7 +59,8 @@ namespace Alachisoft.NCache.Caching.Queries.Filters
             }
             else
             {
-                throw new AttributeIndexNotDefined("Index is not defined for attribute '" + ((MemberFunction)functor).MemberName + "'");
+                throw new AttributeIndexNotDefined("Index is not defined for attribute '" +
+                                                   ((MemberFunction) functor).MemberName + "'");
             }
         }
 

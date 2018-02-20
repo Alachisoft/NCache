@@ -12,16 +12,12 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-using System;
-using System.Collections.Generic;
-using System.Text;
-
-
 namespace Alachisoft.NCache.Web.Caching.APILogging
 {
     class RuntimeAPILogItem
     {
         private bool _isForSentObject = true;
+
         public bool IsForSentObject
         {
             get { return _isForSentObject; }
@@ -29,6 +25,7 @@ namespace Alachisoft.NCache.Web.Caching.APILogging
         }
 
         private bool _isBulk = false;
+
         public bool IsBulk
         {
             get { return _isBulk; }
@@ -36,6 +33,7 @@ namespace Alachisoft.NCache.Web.Caching.APILogging
         }
 
         private int _noOfObjects = 1;
+
         public int NoOfObjects
         {
             get { return _noOfObjects; }
@@ -43,11 +41,11 @@ namespace Alachisoft.NCache.Web.Caching.APILogging
         }
 
         private long _sizeOfObject = 0;
+
         public long SizeOfObject
         {
             get { return _sizeOfObject; }
             set { _sizeOfObject = value; }
         }
-
     }
 }

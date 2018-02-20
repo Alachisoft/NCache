@@ -13,29 +13,24 @@
 // limitations under the License.
 
 using System;
-using System.Collections;
-using System.Text;
-using Alachisoft.NCache.Common.Configuration;
 using Alachisoft.NCache.Runtime.Serialization;
-using Runtime = Alachisoft.NCache.Runtime;
+
 namespace Alachisoft.NCache.Config.Dom
 {
     [Serializable]
     public class ClientDeathDetection : ICloneable, ICompactSerializable
     {
-        bool enabled;
+        bool enabled = true;
         int graceTime = 60;
 
         public ClientDeathDetection() { }
 
-        [ConfigurationAttribute("enable")]
         public bool Enabled
         {
             get { return enabled; }
             set { enabled = value; }
         }
 
-        [ConfigurationAttribute("grace-interval", "sec")]
         public int GraceInterval
         {
             get { return graceTime; }

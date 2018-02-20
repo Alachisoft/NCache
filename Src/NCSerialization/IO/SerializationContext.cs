@@ -10,7 +10,7 @@
 // distributed under the License is distributed on an "AS IS" BASIS,
 // WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
 // See the License for the specific language governing permissions and
-// limitations under the License.
+// limitations under the License
 
 using System;
 using System.Collections;
@@ -28,9 +28,7 @@ namespace Alachisoft.NCache.IO
         /*
          * ISSUE: Using an ArrayList to maintain context doubles the prformance but for 
          * small number of objects only. This is good if there arent any containers, but as
-         * the number of objects grow a hashtable performs much better.
-         * 
-         * TODO: Come up with a structure that performs neraly linearly in most situations.
+         * the number of objects grow a hashtable performs much better
          */
         /// <summary> Represents a list of objects known in the context so far. </summary>
         private Hashtable graphList = new Hashtable();
@@ -45,7 +43,11 @@ namespace Alachisoft.NCache.IO
         public int GetCookie(object graph)
         {
             if (cookieList.ContainsKey(graph))
-                return (int)cookieList[graph];
+            {
+                object cookie = cookieList[graph];
+                if (cookie != null)
+                    return (int)cookie;
+            }
             return INVALID_COOKIE;
         }
 
@@ -88,10 +90,10 @@ namespace Alachisoft.NCache.IO
         {
             int cookie = graphList.Count;
             graphList.Add(cookie, graph);
-            // We will add in cookieList in serialization flow only.
+            //BigCluster fix: We will add in cookieList in serialization flow only.
             //In case of deserilization, we have zero object which may cause exception while insertion in hastable.
-            if (updateCookieList) 
-                    cookieList.Add(graph, cookie);
+            if(updateCookieList) 
+                cookieList.Add(graph, cookie);
             return cookie;
         }
     }

@@ -24,14 +24,12 @@ namespace Alachisoft.NCache.Parser
 		
 		/* constructors */
 		
-		///
 		internal Token()
 		{
 			m_state = -1;
 			m_data = "";
 		}
 		
-		///
 		internal Token(Symbol p_symbol)
 		:	this()
 		{
@@ -56,7 +54,6 @@ namespace Alachisoft.NCache.Parser
 		
 		/* public methods */
 		
-		/// 
 		internal void SetParent(Symbol p_symbol)
 		{
 			CopyData(p_symbol);

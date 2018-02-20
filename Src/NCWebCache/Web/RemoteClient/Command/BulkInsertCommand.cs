@@ -12,12 +12,12 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-using System.Collections;
+using System.Collections.Generic;
 using Alachisoft.NCache.Web.Caching;
 using Alachisoft.NCache.Caching.Util;
+using System.Collections;
 using Alachisoft.NCache.Common.Protobuf;
 using Alachisoft.NCache.Runtime.Events;
-
 
 namespace Alachisoft.NCache.Web.Command
 {
@@ -25,15 +25,25 @@ namespace Alachisoft.NCache.Web.Command
     {
         Alachisoft.NCache.Common.Protobuf.BulkInsertCommand _bulkInsertCommand;
         Alachisoft.NCache.Common.Protobuf.InsertCommand _insertCommand;
-        private Cache _parent;
+        private Alachisoft.NCache.Web.Caching.Cache _parent;
+        private int _methodOverload;
 
-        public BulkInsertCommand(string[] keys, CacheItem[] items,  Cache parent, string cacheId)
+        public BulkInsertCommand(string[] keys, CacheItem[] items, short onDataSourceItemUpdateCallbackId,
+            Alachisoft.NCache.Web.Caching.Cache parent, string providerName, string cacheId, int methodOverload,
+            string clientId, short updateCallbackId, short removeCallbackId, EventDataFilter updateCallbackDataFilter,
+            EventDataFilter removeCallbackDataFilter, bool returnVersions,
+            CallbackType callbackType = Runtime.Events.CallbackType.PushBasedNotification)
         {
             base.name = "BulkInsertCommand";
+
             _parent = parent;
             base.BulkKeys = keys;
             _bulkInsertCommand = new Alachisoft.NCache.Common.Protobuf.BulkInsertCommand();
+            _bulkInsertCommand.datasourceUpdatedCallbackId = onDataSourceItemUpdateCallbackId;
+            _bulkInsertCommand.providerName = providerName;
+            _bulkInsertCommand.returnVersions = returnVersions;
             _bulkInsertCommand.requestId = base.RequestId;
+            _methodOverload = methodOverload;
 
             for (int i = 0; i < keys.Length; i++)
             {
@@ -42,53 +52,109 @@ namespace Alachisoft.NCache.Web.Command
                 _insertCommand = new Alachisoft.NCache.Common.Protobuf.InsertCommand();
                 _insertCommand.key = keys[i];
 
-                Alachisoft.NCache.Caching.UserBinaryObject ubObject = Alachisoft.NCache.Caching.UserBinaryObject.CreateUserBinaryObject((byte[])item.Value);
+                Alachisoft.NCache.Caching.UserBinaryObject ubObject =
+                    Alachisoft.NCache.Caching.UserBinaryObject.CreateUserBinaryObject((byte[]) item.Value);
                 _insertCommand.data.AddRange(ubObject.DataList);
 
-				if (item.AbsoluteExpiration != Cache.NoAbsoluteExpiration)
-					_insertCommand.absExpiration = item.AbsoluteExpiration.Ticks;
+                if (item.AbsoluteExpiration.Equals(Caching.Cache.DefaultAbsolute.ToUniversalTime()))
+                    _insertCommand.absExpiration = 1;
+                else if (item.AbsoluteExpiration.Equals(Caching.Cache.DefaultAbsoluteLonger.ToUniversalTime()))
+                    _insertCommand.absExpiration = 2;
+                else if (item.AbsoluteExpiration != Caching.Cache.NoAbsoluteExpiration)
+                    _insertCommand.absExpiration = item.AbsoluteExpiration.Ticks;
 
-				if (item.SlidingExpiration != Cache.NoSlidingExpiration)
-					_insertCommand.sldExpiration = item.SlidingExpiration.Ticks;
+
+                if (item.SlidingExpiration.Equals(Caching.Cache.DefaultSliding))
+                    _insertCommand.sldExpiration = 1;
+                else if (item.SlidingExpiration.Equals(Caching.Cache.DefaultSlidingLonger))
+                    _insertCommand.sldExpiration = 2;
+                else if (item.SlidingExpiration != Caching.Cache.NoSlidingExpiration)
+                    _insertCommand.sldExpiration = item.SlidingExpiration.Ticks;
 
                 _insertCommand.flag = item.FlagMap.Data;
-               _insertCommand.priority = (int)item.Priority;
+                _insertCommand.group = item.Group;
+                _insertCommand.subGroup = item.SubGroup;
+                _insertCommand.isResync = item.IsResyncExpiredItems;
+                _insertCommand.priority = (int) item.Priority;
+                _insertCommand.dependency = item.Dependency == null
+                    ? null
+                    : Alachisoft.NCache.Common.Util.DependencyHelper.GetProtoBufDependency(item.Dependency);
+
+                _insertCommand.clientID = clientId;
+                _insertCommand.CallbackType = CallbackType(callbackType);
 
                 ObjectQueryInfo objectQueryInfo = new ObjectQueryInfo();
 
                 if (item.QueryInfo["query-info"] != null)
-                    objectQueryInfo.queryInfo = ProtobufHelper.GetQueryInfoObj(item.QueryInfo["query-info"] as Hashtable);
+                    objectQueryInfo.queryInfo =
+                        ProtobufHelper.GetQueryInfoObj(item.QueryInfo["query-info"] as Hashtable);
+
+                if (item.QueryInfo["tag-info"] != null)
+                    objectQueryInfo.tagInfo = ProtobufHelper.GetTagInfoObj(item.QueryInfo["tag-info"] as Hashtable);
+
+                if (item.QueryInfo["named-tag-info"] != null)
+                    objectQueryInfo.namedTagInfo =
+                        ProtobufHelper.GetNamedTagInfoObj(item.QueryInfo["named-tag-info"] as Hashtable, true);
+
 
                 _insertCommand.objectQueryInfo = objectQueryInfo;
 
-                short removeCallbackId = -1;
-                short updateCallbackId = -1;
-                EventDataFilter itemUpdateDataFilter = EventDataFilter.None;
-                EventDataFilter itemRemovedDataFilter = EventDataFilter.None;
+                EventDataFilter itemUpdateDataFilter = updateCallbackDataFilter;
+                EventDataFilter itemRemovedDataFilter = removeCallbackDataFilter;
 
                 if (item.CacheItemRemovedCallback != null)
                 {
                     itemRemovedDataFilter = item.ItemRemovedCallabackDataFilter;
-                    short[] callabackIds = _parent.EventManager.RegisterSelectiveEvent(item.CacheItemRemovedCallback, EventType.ItemRemoved, itemRemovedDataFilter);
+                    short[] callabackIds = _parent.EventManager.RegisterSelectiveEvent(item.CacheItemRemovedCallback,
+                        EventType.ItemRemoved, itemRemovedDataFilter);
                     removeCallbackId = callabackIds[1];
                 }
-                
+                else if (item.ItemRemoveCallback != null)
+                {
+                    removeCallbackId = _parent.GetCallbackId(item.ItemRemoveCallback);
+                    itemRemovedDataFilter = EventDataFilter.DataWithMetadata;
+                }
 
                 if (item.CacheItemUpdatedCallback != null)
                 {
                     itemUpdateDataFilter = item.ItemUpdatedCallabackDataFilter;
-                    short[] callabackIds = _parent.EventManager.RegisterSelectiveEvent(item.CacheItemUpdatedCallback, EventType.ItemUpdated, itemUpdateDataFilter);
+                    short[] callabackIds = _parent.EventManager.RegisterSelectiveEvent(item.CacheItemUpdatedCallback,
+                        EventType.ItemUpdated, itemUpdateDataFilter);
                     updateCallbackId = callabackIds[0];
                 }
-                
+                else if (item.ItemUpdateCallback != null)
+                {
+                    updateCallbackId = _parent.GetCallbackId(item.ItemUpdateCallback);
+                    itemUpdateDataFilter = EventDataFilter.None;
+                }
 
                 _insertCommand.removeCallbackId = removeCallbackId;
                 _insertCommand.updateCallbackId = updateCallbackId;
-                _insertCommand.updateDataFilter = (short)itemUpdateDataFilter;
-                _insertCommand.removeDataFilter = (short)itemRemovedDataFilter;
+                _insertCommand.updateDataFilter = (short) itemUpdateDataFilter;
+                _insertCommand.removeDataFilter = (short) itemRemovedDataFilter;
+                _insertCommand.resyncProviderName = item.ResyncProviderName;
+
+                if (item.SyncDependency != null)
+                {
+                    _insertCommand.syncDependency = new Alachisoft.NCache.Common.Protobuf.SyncDependency();
+                    _insertCommand.syncDependency.key = item.SyncDependency.Key;
+                    _insertCommand.syncDependency.cacheId = item.SyncDependency.CacheId;
+                    _insertCommand.syncDependency.server = item.SyncDependency.Server;
+                    _insertCommand.syncDependency.port = item.SyncDependency.Port;
+                }
 
                 _bulkInsertCommand.insertCommand.Add(_insertCommand);
             }
+        }
+
+        private int CallbackType(CallbackType type)
+        {
+            if (type == Runtime.Events.CallbackType.PullBasedCallback)
+                return 0;
+            else if (type == Runtime.Events.CallbackType.PushBasedNotification)
+                return 1;
+            else
+                return 1; // default is push
         }
 
         internal override CommandType CommandType
@@ -98,8 +164,14 @@ namespace Alachisoft.NCache.Web.Command
 
         internal override RequestType CommandRequestType
         {
-            get { return RequestType.BulkWrite; }
+            get { return RequestType.KeyBulkWrite; }
         }
+
+        internal override bool IsSafe
+        {
+            get { return false; }
+        }
+
 
         protected override void CreateCommand()
         {
@@ -110,6 +182,33 @@ namespace Alachisoft.NCache.Web.Command
             base._command.clientLastViewId = base.ClientLastViewId;
             base._command.intendedRecipient = base.IntendedRecipient;
             base._command.version = "4200";
+            base._command.MethodOverload = _methodOverload;
+        }
+
+        protected override CommandBase GetMergedCommand(List<CommandBase> commands)
+        {
+            BulkInsertCommand mergedCommand = null;
+            if (commands != null || commands.Count > 0)
+            {
+                foreach (CommandBase command in commands)
+                {
+                    if (command is BulkInsertCommand)
+                    {
+                        BulkInsertCommand bulkCommand = (BulkInsertCommand) command;
+                        if (mergedCommand == null)
+                        {
+                            mergedCommand = bulkCommand;
+                        }
+                        else
+                        {
+                            mergedCommand._bulkInsertCommand.insertCommand.AddRange(bulkCommand._bulkInsertCommand
+                                .insertCommand);
+                        }
+                    }
+                }
+            }
+
+            return mergedCommand;
         }
     }
 }

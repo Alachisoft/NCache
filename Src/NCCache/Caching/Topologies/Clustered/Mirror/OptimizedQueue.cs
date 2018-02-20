@@ -13,10 +13,9 @@
 // limitations under the License.
 
 using System;
-using System.Collections;
-using System.Collections.Generic;
 using Alachisoft.NCache.Common.DataStructures;
 using Alachisoft.NCache.Common.DataStructures.Clustered;
+using Alachisoft.NCache.Common;
 
 namespace Alachisoft.NCache.Caching.Topologies.Clustered
 {
@@ -48,7 +47,7 @@ namespace Alachisoft.NCache.Caching.Topologies.Clustered
         }
 
         /// <summary>
-        /// Optimized Enqueue opeartion, adds the opeartion at _tail index and removes 
+        /// Optimized Enqueue operation, adds the operation at _tail index and removes 
         /// any previous operations on that key from the queue
         /// </summary>
         /// <param name="operation"></param>
@@ -60,9 +59,9 @@ namespace Alachisoft.NCache.Caching.Topologies.Clustered
                 lock (_sync_mutex)
                 {
 
-                    if (_keyToIndexMap.ContainsKey(cacheKey))   //Optimized Queue, so checking in the map if the current cache key is already mapped to some index of Queue or not
+                    if (_keyToIndexMap.ContainsKey(cacheKey))    //Optimized Queue, so checking in the map if the current cache key is already mapped to some index of Queue or not
                     {
-                        //just update the old operation without chaning it's order in the queue.
+                        //just update the old operation without changing it's order in the queue.
                         int index1 = (int)_keyToIndexMap[cacheKey];
                         IOptimizedQueueOperation oldOperation = _queue[index1] as IOptimizedQueueOperation;
                         _queue[index1] = operation;
@@ -80,7 +79,7 @@ namespace Alachisoft.NCache.Caching.Topologies.Clustered
 
                     int index = ++_tail;
                     _size += operation.Size;
-                    _queue.Add(index, operation);   //Add new opeartion at the tail of the queue
+                    _queue.Add(index, operation);   //Add new operation at the tail of the queue
                     _keyToIndexMap[cacheKey] = index;        // update (cache key, queue index) map
                     _indexToKeyMap[index] = cacheKey;
                     if (isNewItem) _count++;
@@ -106,7 +105,7 @@ namespace Alachisoft.NCache.Caching.Topologies.Clustered
                     int index = 0;
                     do               //fetch the next valid operation from the queue
                     {
-                        if (_head < _tail || _tailMaxReached)  //or contition checks if the _tail has reached max long value and _head has not yet reached there , so in this case _head<_tail will fail bcz _tail has been reinitialized
+                        if (_head < _tail || _tailMaxReached)  //or condition checks if the _tail has reached max long value and _head has not yet reached there , so in this case _head<_tail will fail bcz _tail has been reinitialized
                         {
                             if (_head == int.MaxValue)     //checks if _head has reached the max long value, so reinitialize _head and make _tailMaxReached is set to false as _head<_tail is now again valid
                             {
@@ -144,7 +143,6 @@ namespace Alachisoft.NCache.Caching.Topologies.Clustered
             lock (_sync_mutex) { return !_keyToIndexMap.ContainsKey(cacheKey); }
         }
 
-
         /// <summary>
         /// Clears queue and helping datastructures like map, cache, itemstobereplicated
         /// </summary>
@@ -177,6 +175,8 @@ namespace Alachisoft.NCache.Caching.Topologies.Clustered
             lock (_sync_mutex)
             {
             }
+            //Clear();
+            //_cache.Dispose();
         }
 
         #endregion

@@ -10,30 +10,14 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 // $Id: TOTAL.java,v 1.6 2004/07/05 14:17:16 belaban Exp $
-
 using System;
-using System.IO;
 using System.Threading;
 using System.Collections;
-
-using Alachisoft.NGroups;
 using Alachisoft.NGroups.Stack;
-using Alachisoft.NGroups.Util;
-
-
-using Alachisoft.NCache.Runtime.Serialization.IO;
-
-
-using Alachisoft.NCache.Runtime.Serialization;
-
-
-
 using Alachisoft.NCache.Common.Threading;
 using Alachisoft.NCache.Common.Net;
-using Alachisoft.NCache.Common;
 using Alachisoft.NCache.Common.Stats;
 using Alachisoft.NCache.Common.Enum;
-using Alachisoft.NCache.Common.Util;
 
 namespace Alachisoft.NGroups.Protocols
 {
@@ -83,271 +67,6 @@ namespace Alachisoft.NGroups.Protocols
     /// </author>
     internal class TOTAL : Protocol
     {
-        /// <summary> The header processed by the TOTAL layer and intended for TOTAL
-        /// inter-stack communication
-        /// </summary>
-        [Serializable]
-        internal class HDR : Alachisoft.NGroups.Header, ICompactSerializable, IRentableObject
-        {
-            // HDR types
-            /// <summary>Null value for the tag </summary>
-            public const byte NULL_TYPE = 0;
-            /// <summary>Request to broadcast by the source </summary>
-            public const byte REQ = 1;
-            /// <summary>Reply to broadcast request. </summary>
-            public const byte REP = 2;
-            /// <summary>Unicast message </summary>
-            public const byte UCAST = 3;
-            /// <summary>Broadcast Message </summary>
-            public const byte BCAST = 4;
-            /// <summary>Multicast Message</summary>
-            public const byte MCAST = 5;
-            /// <summary>Request to multicast by the source.</summary>
-            public const byte REQMCAST = 6;
-            /// <summary>Reply to a multicast request.</summary>
-            public const byte REPMCAST = 7;
-
-            public int rentId;
-            /// <summary>The header's type tag </summary>
-            public byte type;
-            /// <summary> The ID used by the message source to match replies from the
-            /// sequencer
-            /// </summary>
-            public long localSeqID;
-
-            /// <summary>The ID imposing the total order of messages </summary>
-            public long seqID;
-
-            public int viewId;
-
-            /// <summary> used for externalization</summary>
-            public HDR()
-            {
-            }
-            /// <summary> Create a header for the TOTAL layer</summary>
-            /// <param name="type">the header's type
-            /// </param>
-            /// <param name="localSeqID">the ID used by the sender of broadcasts to match
-            /// requests with replies from the sequencer
-            /// </param>
-            /// <param name="seqID">the ID imposing the total order of messages
-            /// 
-            /// </param>
-            /// <throws>  IllegalArgumentException if the provided header type is unknown</throws>
-            /// <summary>
-            /// </summary>
-            public HDR(byte type, long localSeqID, long seqID, int viewId)
-                : base()
-            {
-                switch (type)
-                {
-                    case REQ:
-                    case REP:
-                    case UCAST:
-                    case BCAST:
-                    case MCAST:
-                    case REQMCAST:
-                    case REPMCAST: this.type = type; break;
-
-                    default:
-                        this.type = NULL_TYPE;
-                        throw new System.ArgumentException("Invalid header type.");
-                }
-                this.localSeqID = localSeqID;
-                this.seqID = seqID;
-                this.viewId = viewId;
-            }
-            public override object Clone(ObjectProvider provider)
-            {
-                HDR hdr = null;
-                if (provider != null)
-                    hdr = (HDR)provider.RentAnObject();
-                else
-                    hdr = new HDR();
-                hdr.type = this.type;
-                hdr.seqID = seqID;
-                hdr.localSeqID = localSeqID;
-                hdr.viewId = viewId;
-                return hdr;
-            }
-            /// <summary> For debugging purposes</summary>
-            public override string ToString()
-            {
-                System.Text.StringBuilder buffer = new System.Text.StringBuilder();
-                string typeName;
-                buffer.Append("[TOTAL.HDR");
-                switch (type)
-                {
-                    case REQ: typeName = "REQ"; break;
-                    case REQMCAST: typeName = "REQMCAST"; break;
-                    case REP: typeName = "REP"; break;
-                    case REPMCAST: typeName = "REPMCAST"; break;
-                    case UCAST: typeName = "UCAST"; break;
-                    case BCAST: typeName = "BCAST"; break;
-                    case MCAST: typeName = "MCAST"; break;
-                    case NULL_TYPE: typeName = "NULL_TYPE"; break;
-                    default: typeName = ""; break;
-                }
-                buffer.Append(", type=" + typeName);
-                buffer.Append(", " + "localID=" + localSeqID);
-                buffer.Append(", " + "seqID=" + seqID);
-                buffer.Append(", " + "viewId=" + viewId);
-                buffer.Append(']');
-
-                return (buffer.ToString());
-            }
-
-            public void Reset()
-            {
-                seqID = localSeqID = NULL_ID;
-                type = NULL_TYPE;
-            }
-            #region ICompactSerializable Members
-
-            public void Deserialize(CompactReader reader)
-            {
-                type = reader.ReadByte();
-                localSeqID = reader.ReadInt64();
-                seqID = reader.ReadInt64();
-                viewId = reader.ReadInt32();
-            }
-
-            public void Serialize(CompactWriter writer)
-            {
-                writer.Write(type);
-                writer.Write(localSeqID);
-                writer.Write(seqID);
-                writer.Write(viewId);
-            }
-            #endregion
-
-            public static HDR ReadTotalHeader(CompactReader reader)
-            {
-                byte isNull = reader.ReadByte();
-                if (isNull == 1)
-                    return null;
-                HDR newHdr = new HDR();
-                newHdr.Deserialize(reader);
-                return newHdr;
-            }
-
-            public static void WriteTotalHeader(CompactWriter writer, HDR hdr)
-            {
-                byte isNull = 1;
-                if (hdr == null)
-                    writer.Write(isNull);
-                else
-                {
-                    isNull = 0;
-                    writer.Write(isNull);
-                    hdr.Serialize(writer);
-                }
-                return;
-            }
-
-            #region IRentableObject Members
-
-            public int RentId
-            {
-                get
-                {
-                    return rentId;
-                }
-                set
-                {
-                    rentId = value;
-                }
-            }
-
-            #endregion
-
-            #region ICustomSerializable Members
-
-            public void DeserializeLocal(BinaryReader reader)
-            {
-                type = reader.ReadByte();
-                localSeqID = reader.ReadInt64();
-                seqID = reader.ReadInt64();
-                viewId = reader.ReadInt32();
-            }
-
-            public void SerializeLocal(BinaryWriter writer)
-            {
-                writer.Write(type);
-                writer.Write(localSeqID);
-                writer.Write(seqID);
-                writer.Write(viewId);
-            }
-
-            #endregion
-        }
-
-
-        /// <summary> The retransmission listener - It is called by the
-        /// <code>AckSenderWindow</code> when a retransmission should occur
-        /// </summary>
-        private class Command : AckSenderWindow.RetransmitCommand
-        {
-            private void InitBlock(TOTAL enclosingInstance)
-            {
-                this.enclosingInstance = enclosingInstance;
-            }
-            private TOTAL enclosingInstance;
-            public TOTAL Enclosing_Instance
-            {
-                get
-                {
-                    return enclosingInstance;
-                }
-
-            }
-            public Command(TOTAL enclosingInstance)
-            {
-                InitBlock(enclosingInstance);
-            }
-            public virtual void retransmit(long seqNo, Message msg)
-            {
-                Enclosing_Instance._retransmitBcastRequest(seqNo);
-            }
-        }
-
-        /// <summary> The retransmission listener - It is called by the
-        /// <code>AckSenderWindow</code> when a retransmission should occur
-        /// </summary>
-        private class MCastCommand : AckSenderWindow.RetransmitCommand
-        {
-            private void InitBlock(TOTAL enclosingInstance)
-            {
-                this.enclosingInstance = enclosingInstance;
-            }
-            private TOTAL enclosingInstance;
-            public TOTAL Enclosing_Instance
-            {
-                get
-                {
-                    return enclosingInstance;
-                }
-
-            }
-            public MCastCommand(TOTAL enclosingInstance)
-            {
-                InitBlock(enclosingInstance);
-            }
-            public virtual void retransmit(long seqNo, Message msg)
-            {
-                ArrayList mbrs = msg.Dests.Clone() as ArrayList;
-
-                string subGroupID = Enclosing_Instance._mbrsSubgroupMap[mbrs[0]] as string;
-
-               
-                ArrayList groupMbrs = (ArrayList)Enclosing_Instance._sequencerTbl[subGroupID] as ArrayList;
-                Address groupSequencerAddr = groupMbrs[0] as Address;
-                if (groupSequencerAddr != null)
-                    Enclosing_Instance._retransmitMcastRequest(seqNo, groupSequencerAddr);
-            }
-        }
-
-
         /// <summary>Protocol name </summary>
         private const string PROT_NAME = "TOTAL";
         /// <summary>Property names </summary>
@@ -373,8 +92,7 @@ namespace Alachisoft.NGroups.Protocols
         private const int FLUSH = 1;
         /// <summary>No message is sent to the layer below </summary>
         private const int BLOCK = 2;
-
-
+        
         /// <summary>The state lock allowing multiple reads or a single write </summary>
         private ReaderWriterLock stateLock = new ReaderWriterLock();
         /// <summary>Protocol layer message-sending state </summary>
@@ -413,8 +131,8 @@ namespace Alachisoft.NGroups.Protocols
         private long _mcastSequencerSeqID = NULL_ID;
         private long _mcastLocalSeqID = NULL_ID;
         private long _mcastSeqID = NULL_ID;
-        private Hashtable _sequencerTbl = new Hashtable();
-        private Hashtable _mbrsSubgroupMap;
+        internal Hashtable _sequencerTbl = new Hashtable();
+        internal Hashtable _mbrsSubgroupMap;
         private Hashtable _mcastUpTbl;
         private Hashtable _mcastReqTbl;
         private string subGroup_addr = null;
@@ -631,7 +349,6 @@ namespace Alachisoft.NGroups.Protocols
                 }
 
             } while (true);
-            
         }
 
         /// <summary> Extract as many messages as possible from the pending up queue and send
@@ -696,7 +413,6 @@ namespace Alachisoft.NGroups.Protocols
                 }
 
             } while (true);
-            
         }
 
 
@@ -723,7 +439,7 @@ namespace Alachisoft.NGroups.Protocols
                     msg = (Message)it.Value;
                     if (!msg.Src.Equals(addr))
                     {
-                        if (Stack.NCacheLog.IsInfoEnabled) Stack.NCacheLog.Info("During replay: " + "discarding BCAST[" + ((TOTAL.HDR)msg.getHeader(HeaderType.TOTAL)).seqID + "] from " + _addrToString(msg.Src));
+                        if (Stack.NCacheLog.IsInfoEnabled) Stack.NCacheLog.Info("During replay: " + "discarding BCAST[" + ((HDR)msg.getHeader(HeaderType.TOTAL)).seqID + "] from " + _addrToString(msg.Src));
                         continue;
                     }
 
@@ -734,7 +450,7 @@ namespace Alachisoft.NGroups.Protocols
                 }
                 start_time_bcast = 0;
                 upTbl.Clear();
-            } // synchronized(upTbl)
+            } 
         }
 
         /// <summary> Add all undelivered mcasts sent by this member in the req queue and then
@@ -751,10 +467,30 @@ namespace Alachisoft.NGroups.Protocols
             if (Stack.NCacheLog.IsInfoEnabled) Stack.NCacheLog.Info("TOTAL._replayBcast()", "upTabl size = " + _mcastUpTbl.Count.ToString());
             lock (_mcastUpTbl.SyncRoot)
             {
-               
+                // i.	temporarily commenting this code. 
+
+                /*if (_mcastUpTbl.Count > 0)
+                    if(stack.nTrace.isInfoEnabled) stack.nTrace.info("Replaying undelivered bcasts");
+
+                IDictionaryEnumerator it = _mcastUpTbl.GetEnumerator();
+                while (it.MoveNext())
+                {
+                    msg = (Message)it.Value;
+                    if (!msg.Src.Equals(addr))
+                    {
+                        if(stack.nTrace.isInfoEnabled) stack.nTrace.info("During replay: " + "discarding MCAST[" + ((TOTAL.HDR)msg.getHeader(HeaderType.TOTAL)).seqID + "] from " + _addrToString(msg.Src));
+                        continue;
+                    }
+
+                    header = (HDR)msg.removeHeader(HeaderType.TOTAL);
+                    if (header.localSeqID == NULL_ID)
+                        continue;
+                    _sendMcastRequest(msg, header.localSeqID);
+                 }
+                 */
                 start_time = 0;
                 _mcastUpTbl.Clear();
-            }
+            } 
         }
 
 
@@ -861,14 +597,12 @@ namespace Alachisoft.NGroups.Protocols
                 }
                 //Rent the event
                 Event evt = null;
-               
                 evt = new Event();
                 evt.Type = Event.MSG;
                 evt.Priority = msg.Priority;
                 evt.Arg = msg;
 
                 //Rent the header
-                
                 HDR hdr = new HDR();
                 hdr.type = HDR.MCAST;
                 hdr.localSeqID = id;
@@ -878,7 +612,7 @@ namespace Alachisoft.NGroups.Protocols
 
                 msg.putHeader(HeaderType.TOTAL, hdr);
 
-                //msg.Dest = null;
+              
                 //===================================================
                 //now the message will contain a list of addrs in case of multicast.
                 //=======================================================
@@ -887,7 +621,6 @@ namespace Alachisoft.NGroups.Protocols
                 if (Stack.NCacheLog.IsInfoEnabled) Stack.NCacheLog.Info("TOTAL._sendMcastRequest()", "shortcut mcast seq# " + seqid);
                 return;
             }
-           
             request_lock.AcquireWriterLock(Timeout.Infinite);
             try
             {
@@ -932,15 +665,13 @@ namespace Alachisoft.NGroups.Protocols
                     stateLock.ReleaseReaderLock();
                 }
                 //Rent the event
-                Event evt = null;
-               
+                Event evt = null;                
                 evt = new Event();
                 evt.Type = Event.MSG;
                 evt.Priority = msg.Priority;
                 evt.Arg = msg;
 
                 //Rent the header
-              
                 HDR hdr = new HDR();
                 hdr.type = HDR.BCAST;
                 hdr.localSeqID = id;
@@ -954,7 +685,6 @@ namespace Alachisoft.NGroups.Protocols
                 if (Stack.NCacheLog.IsInfoEnabled) Stack.NCacheLog.Info("TOTAL._sendBcastRequest()", "shortcut bcast seq# " + seqid);
                 return;
             }
-            
             request_lock.AcquireWriterLock(Timeout.Infinite);
             try
             {
@@ -992,7 +722,6 @@ namespace Alachisoft.NGroups.Protocols
             if (state == BLOCK)
                 return;
 
-           
             request_lock.AcquireReaderLock(Timeout.Infinite);
             try
             {
@@ -1006,12 +735,14 @@ namespace Alachisoft.NGroups.Protocols
             {
                 request_lock.ReleaseReaderLock();
             }
-
+            
+            //Rent the message
             reqMsg = new Message();
             reqMsg.Dest = sequencerAddr;
             reqMsg.Src = addr;
             reqMsg.setBuffer(new byte[0]);
            
+            //Rent the header
             HDR hdr = new HDR();
             hdr.type = HDR.REQ;
             hdr.localSeqID = seqID;
@@ -1020,7 +751,7 @@ namespace Alachisoft.NGroups.Protocols
             reqMsg.putHeader(HeaderType.TOTAL, hdr);
             reqMsg.IsUserMsg = true;
             reqMsg.Type = MsgType.TOKEN_SEEKING;
-           
+            //rent the event
             Event evt = new Event();
             evt.Type = Event.MSG;
             evt.Arg = reqMsg;
@@ -1051,7 +782,6 @@ namespace Alachisoft.NGroups.Protocols
             if (state == BLOCK)
                 return;
 
-            
             request_lock.AcquireReaderLock(Timeout.Infinite);
             try
             {
@@ -1066,13 +796,12 @@ namespace Alachisoft.NGroups.Protocols
                 request_lock.ReleaseReaderLock();
             }
 
-           
+            //Rent the message
             reqMsg = new Message();
-          
             reqMsg.Dest = groupSequencerAddr;
             reqMsg.Src = addr;
             reqMsg.setBuffer(new byte[0]);
-            
+            //Rent the header
             HDR hdr = new HDR();
             hdr.type = HDR.REQMCAST;
             hdr.localSeqID = seqID;
@@ -1084,7 +813,7 @@ namespace Alachisoft.NGroups.Protocols
             reqMsg.IsUserMsg = true;
             reqMsg.Type = MsgType.TOKEN_SEEKING;
 
-          
+            //rent the event
             Event evt = new Event();
             evt.Type = Event.MSG;
             evt.Arg = reqMsg;
@@ -1144,7 +873,6 @@ namespace Alachisoft.NGroups.Protocols
                 }
                 upTbl[(long)header.seqID] = msg;
             }
-            
             _deliverBcast();
         }
 
@@ -1181,7 +909,6 @@ namespace Alachisoft.NGroups.Protocols
                     if (header.viewId > existingViewId)
                     {
                         //this messages is of latest view therefore we put it into the table.
-                       
                         lock (_undeliveredMessages.SyncRoot)
                         {
                             _undeliveredMessages.Add(new Event(Event.MSG, msg, msg.Priority));
@@ -1201,6 +928,8 @@ namespace Alachisoft.NGroups.Protocols
                 }
                 _mcastUpTbl[(long)header.seqID] = msg;
             }
+
+            if (Stack.NCacheLog.IsInfoEnabled) Stack.NCacheLog.Info("muds: delivering mcast a message with seq : " + header.seqID);
             _deliverMcast();
         }
 
@@ -1329,7 +1058,6 @@ namespace Alachisoft.NGroups.Protocols
                 if (Stack.NCacheLog.IsInfoEnabled) Stack.NCacheLog.Info("Blocked, discard bcast rep");
                 return;
             }
-         
             request_lock.AcquireWriterLock(Timeout.Infinite);
             try
             {
@@ -1355,7 +1083,7 @@ namespace Alachisoft.NGroups.Protocols
             }
 
 
-            
+            //Rent the header
             HDR hdr = new HDR();
             hdr.type = HDR.BCAST;
             hdr.localSeqID = id;
@@ -1365,7 +1093,7 @@ namespace Alachisoft.NGroups.Protocols
             msg.putHeader(HeaderType.TOTAL, hdr);
             msg.IsUserMsg = true;
             msg.Type = MsgType.SEQUENCED;
-           
+            //rent the event
             Event evt = new Event();
             evt.Type = Event.MSG;
             evt.Arg = msg;
@@ -1402,7 +1130,7 @@ namespace Alachisoft.NGroups.Protocols
                 if (Stack.NCacheLog.IsInfoEnabled) Stack.NCacheLog.Info("Blocked, discard mcast rep");
                 return;
             }
-           
+            //lock (reqTbl.SyncRoot)
             request_lock.AcquireWriterLock(Timeout.Infinite);
             try
             {
@@ -1444,7 +1172,7 @@ namespace Alachisoft.NGroups.Protocols
             }
 
 
-           
+            //Rent the header
             HDR hdr = new HDR();
             hdr.type = HDR.MCAST;
             hdr.localSeqID = id;
@@ -1455,7 +1183,7 @@ namespace Alachisoft.NGroups.Protocols
             msg.putHeader(HeaderType.TOTAL, hdr);
             msg.IsUserMsg = true;
             msg.Type = MsgType.SEQUENCED;
-           
+            //rent the event
             Event evt = new Event();
             evt.Type = Event.MSG;
             evt.Arg = msg;
@@ -1470,7 +1198,7 @@ namespace Alachisoft.NGroups.Protocols
         /// </summary>
         /// <param name="seqID">the local sequence id of the
         /// </param>
-        private void _retransmitBcastRequest(long seqID)
+        internal void _retransmitBcastRequest(long seqID)
         {
             // *** Get a shared lock
             try
@@ -1499,7 +1227,7 @@ namespace Alachisoft.NGroups.Protocols
         /// </summary>
         /// <param name="seqID">the local sequence id of the
         /// </param>
-        private void _retransmitMcastRequest(long seqID, Address groupSequencerAddr)
+        internal void _retransmitMcastRequest(long seqID, Address groupSequencerAddr)
         {
             // *** Get a shared lock
             try
@@ -1576,8 +1304,6 @@ namespace Alachisoft.NGroups.Protocols
             // *** Get a shared lock
             try
             {
-
-               
                 try
                 {
                     msg = (Message)evt.Arg;
@@ -1611,9 +1337,9 @@ namespace Alachisoft.NGroups.Protocols
                     // (BCAST) A broadcast message - Handle specially
                     // (REQ) A broadcast request - Handle specially
                     // (REP) A broadcast reply from the sequencer - Handle specially
-                    if (!((obj = msg.getHeader(HeaderType.TOTAL)) is TOTAL.HDR))
+                    if (!((obj = msg.getHeader(HeaderType.TOTAL)) is HDR))
                     {
-                        
+                   
                     }
                     else
                     {
@@ -1623,30 +1349,28 @@ namespace Alachisoft.NGroups.Protocols
                         {
 
                             case HDR.UCAST:
-                                _recvUcast(msg);
-                              
+                                _recvUcast(msg);                                
                                 return (true);
 
                             case HDR.BCAST:
-                                _recvBcast(msg);
-                                
+                                _recvBcast(msg);                               
                                 return (false);
 
                             case HDR.MCAST:
+                                if (Stack.NCacheLog.IsInfoEnabled) Stack.NCacheLog.Info("muds: a command for mcast from " + msg.Src + " to me[" + addr + "],  local-seq : " + header.localSeqID + " seq : " + header.seqID);
                                 _recvMcast(msg);
                                 return (false);
 
                             case HDR.REQ:
-                                _recvBcastRequest(msg);
-                               
+                                _recvBcastRequest(msg);                              
                                 return (false);
 
                             case HDR.REP:
-                                _recvBcastReply(header, msg);
-                                
+                                _recvBcastReply(header, msg);                                
                                 return (false);
 
                             case HDR.REQMCAST:
+                                if (Stack.NCacheLog.IsInfoEnabled) Stack.NCacheLog.Info("muds: recieved mcast request " + " local-seq : " + header.localSeqID + " seq : " + header.seqID);
                                 _recvMcastRequest(msg);
                                 return (false);
 
@@ -1664,7 +1388,7 @@ namespace Alachisoft.NGroups.Protocols
                 }
                 finally
                 {
-                   
+                    //stateLock.ReleaseReaderLock();
                 }
             }
             catch (ThreadInterruptedException ex)
@@ -1682,7 +1406,6 @@ namespace Alachisoft.NGroups.Protocols
         {
             try
             {
-                
                 lock (_undeliveredMessages.SyncRoot)
                 {
                     if (_undeliveredMessages.Count > 0)
@@ -1701,8 +1424,6 @@ namespace Alachisoft.NGroups.Protocols
             ArrayList pendingMessages = msgs as ArrayList;
             if (pendingMessages != null)
             {
-               
-
                 for (int i = 0; i < pendingMessages.Count; i++)
                 {
                     try
@@ -1835,7 +1556,7 @@ namespace Alachisoft.NGroups.Protocols
                     _replayBcast();
 
                     if (Stack.NCacheLog.IsInfoEnabled) Stack.NCacheLog.Info("Total.upViewChange()", "VIEW_CHANGE_OK");
-                    Event viewEvt = new Event(Event.VIEW_CHANGE_OK, null, Priority.Critical);
+                    Event viewEvt = new Event(Event.VIEW_CHANGE_OK, null, Priority.High);
                     passDown(viewEvt);
 
                     // *** Revoke the exclusive lock
@@ -1848,8 +1569,7 @@ namespace Alachisoft.NGroups.Protocols
             catch (ThreadInterruptedException ex)
             {
                 Stack.NCacheLog.Error("Protocols.TOTAL._upViewChange", ex.ToString());
-            }
-          
+            }           
             return (true);
         }
 
@@ -1900,7 +1620,6 @@ namespace Alachisoft.NGroups.Protocols
             {
                 Stack.NCacheLog.Error("Protocols.TOTAL._upResetSequence", ex.ToString());
             }
-           
             return (true);
         }
 
@@ -1965,7 +1684,6 @@ namespace Alachisoft.NGroups.Protocols
             // *** Get a shared lock
             try
             {
-               
                 try
                 {
 
@@ -1974,13 +1692,11 @@ namespace Alachisoft.NGroups.Protocols
                     if (state == NULL_STATE)
                     {
                         Stack.NCacheLog.Error("TOTAL._downMsg()", "Discard msg in NULL_STATE");
-                       
                         return (false);
                     }
                     if (state == BLOCK)
                     {
                         Stack.NCacheLog.Error("TOTAL._downMsg()", "Blocked, discard msg");
-                       
                         return (false);
                     }
 
@@ -1994,7 +1710,7 @@ namespace Alachisoft.NGroups.Protocols
                             //if it is a unicast msg with a single destination.
                             if (msg.Dests == null)
                             {
-                               
+                                //msg = _sendUcast(msg);
                                 evt.Arg = msg;
                             }
                             // if it is a multicast msg with multiple destinations.
@@ -2019,7 +1735,7 @@ namespace Alachisoft.NGroups.Protocols
                 }
                 finally
                 {
-                    //stateLock.ReleaseReaderLock();
+                  
                 }
             }
             catch (ThreadInterruptedException ex)
@@ -2041,7 +1757,9 @@ namespace Alachisoft.NGroups.Protocols
             // protocol in our case. For udp stack we'll fail.
             transport = Stack.findProtocol("TCP");
 
-            
+            //timer = stack != null?stack.timer:null;
+            //if (timer == null)
+            //    throw new System.Exception("TOTAL.start(): timer is null");
 
             reqTbl = Hashtable.Synchronized(new Hashtable());
             upTbl = Hashtable.Synchronized(new Hashtable());
@@ -2051,7 +1769,7 @@ namespace Alachisoft.NGroups.Protocols
             _mcastUpTbl = Hashtable.Synchronized(new Hashtable());
             //======================================================
 
-            
+            //NewTrace nTrace = stack.nTrace;
             retransmitter = new AckSenderWindow(new Command(this), AVG_RETRANSMIT_INTERVAL, stack.NCacheLog);
             _mcastRetransmitter = new AckSenderWindow(new MCastCommand(this), AVG_MCAST_RETRANSMIT_INTERVAL, stack.NCacheLog);
         }
@@ -2114,7 +1832,6 @@ namespace Alachisoft.NGroups.Protocols
                 case Event.MSG:
                     if (!_upMsg(evt))
                     {
-                        
                         return;
                     }
                     break;
@@ -2162,7 +1879,6 @@ namespace Alachisoft.NGroups.Protocols
                 case Event.MSG:
                     if (!_downMsg(evt))
                     {
-                       
                         return;
                     }
                     break;
@@ -2180,7 +1896,6 @@ namespace Alachisoft.NGroups.Protocols
             passDown(evt);
         }
 
-       
         /// <summary> Create the TOTAL layer</summary>
         public TOTAL()
         {

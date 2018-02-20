@@ -13,11 +13,8 @@
 // limitations under the License.
 
 using System;
-using System.Collections;
-using System.Text;
 using Alachisoft.NCache.Common.Configuration;
 using Alachisoft.NCache.Runtime.Serialization;
-using Runtime = Alachisoft.NCache.Runtime;
 
 namespace Alachisoft.NCache.Config.Dom
 {
@@ -40,6 +37,7 @@ namespace Alachisoft.NCache.Config.Dom
         public object Clone()
         {
             QueryIndex indexes = new QueryIndex();
+            //indexes.IndexForAll = IndexForAll;
             indexes.Classes = Classes != null ? (Class[])Classes.Clone(): null;
             return indexes;
         }

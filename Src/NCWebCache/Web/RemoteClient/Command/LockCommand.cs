@@ -14,21 +14,14 @@
 
 using System;
 
-using Alachisoft.NCache.Common;
-using System.IO;
-
-using Alachisoft.NCache.Common.Protobuf.Util;
-using Alachisoft.NCache.Web.Caching.Util;
-
-using Alachisoft.NCache.Web.Communication;
-
 namespace Alachisoft.NCache.Web.Command
 {
     internal sealed class LockCommand : CommandBase
     {
         private Alachisoft.NCache.Common.Protobuf.LockCommand _lockCommand;
+        private int _methodOverload;
 
-        public LockCommand(string key, TimeSpan lockTimeout)
+        public LockCommand(string key, TimeSpan lockTimeout, int threadId, int methodOverload)
         {
             base.name = "LockCommand";
             base.key = key;
@@ -37,6 +30,8 @@ namespace Alachisoft.NCache.Web.Command
             _lockCommand.key = key;
             _lockCommand.lockTimeout = lockTimeout.Ticks;
             _lockCommand.requestId = base.RequestId;
+            _lockCommand.threadId = threadId;
+            _methodOverload = methodOverload;
         }
 
         internal override CommandType CommandType
@@ -49,13 +44,19 @@ namespace Alachisoft.NCache.Web.Command
             get { return RequestType.AtomicWrite; }
         }
 
+        internal override bool IsSafe
+        {
+            get { return false; }
+        }
+
+
         protected override void CreateCommand()
         {
             base._command = new Alachisoft.NCache.Common.Protobuf.Command();
             base._command.requestID = base.RequestId;
             base._command.lockCommand = _lockCommand;
             base._command.type = Alachisoft.NCache.Common.Protobuf.Command.Type.LOCK;
-
+            base._command.MethodOverload = _methodOverload;
         }
     }
 }

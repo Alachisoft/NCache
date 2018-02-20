@@ -19,7 +19,9 @@ using System.Threading;
 using Alachisoft.NCache.Common.Threading;
 using Alachisoft.NCache.Common.Net;
 using Alachisoft.NCache.Runtime.Serialization;
+
 using Alachisoft.NCache.Runtime.Serialization.IO;
+
 
 namespace Alachisoft.NCache.Common.DataStructures
 {
@@ -29,12 +31,13 @@ namespace Alachisoft.NCache.Common.DataStructures
     /// its owner.
     /// </summary>
 
-    public class HashMapBucket : ICompactSerializable,ICloneable
+
+    public class HashMapBucket : ICompactSerializable, ICloneable
     {
         private int _bucketId;
         private Address _tempAddress;
         private Address _permanentAddress;
-        
+
         private Latch _stateTxfrLatch = new Latch(BucketStatus.Functional);
         private object _status_wait_mutex = new object();
         public HashMapBucket(Address address, int id)
@@ -44,7 +47,7 @@ namespace Alachisoft.NCache.Common.DataStructures
             _stateTxfrLatch = new Latch(BucketStatus.Functional);
         }
         public HashMapBucket(Address address, int id, byte status)
-            :this(address,id)
+            : this(address, id)
         {
             Status = status;
         }
@@ -110,7 +113,7 @@ namespace Alachisoft.NCache.Common.DataStructures
                         //these are valid status,we allow them to be set.
                         byte oldStatus = _stateTxfrLatch.Status.Data;
                         if (oldStatus == value) return;
-                        _stateTxfrLatch.SetStatusBit(value,oldStatus);
+                        _stateTxfrLatch.SetStatusBit(value, oldStatus);
                         break;
                 }
             }
@@ -141,6 +144,7 @@ namespace Alachisoft.NCache.Common.DataStructures
 
         void ICompactSerializable.Deserialize(CompactReader reader)
         {
+            //Trace.error("HashMapBucket.Deserialize", "Deserialize Called");
             _bucketId = reader.ReadInt32();
             _tempAddress = (Address)reader.ReadObject();
             _permanentAddress = (Address)reader.ReadObject();
@@ -151,6 +155,7 @@ namespace Alachisoft.NCache.Common.DataStructures
 
         void ICompactSerializable.Serialize(CompactWriter writer)
         {
+            //Trace.error("HashMapBucket.Serialize", "Serialize Called");
             writer.Write(_bucketId);
             writer.WriteObject(_tempAddress);
             writer.WriteObject(_permanentAddress);
@@ -167,7 +172,7 @@ namespace Alachisoft.NCache.Common.DataStructures
             sb.Append("owner = " + _permanentAddress + " ; ");
             sb.Append("temp = " + _tempAddress + " ; ");
             string status = null;
-            // object can be zero object(initialization without default values), which may cause exception.
+            //object can be zero object(initialization without default values), which may cause exception.
             if (_stateTxfrLatch != null)
                 status = BucketStatus.StatusToString(_stateTxfrLatch.Status.Data);
             sb.Append(status + " ]");

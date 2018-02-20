@@ -72,8 +72,7 @@ namespace Alachisoft.NCache.Caching.Util
                 bool isClustered = false;
                 if (_class != null)
                 {
-                    if (System.String.Compare(_class, "replicated-server", System.StringComparison.CurrentCultureIgnoreCase) == 0
-                        || System.String.Compare(_class, "partitioned-server", System.StringComparison.CurrentCultureIgnoreCase) == 0)
+                    if (_class.CompareTo("replicated-server") == 0|| _class.CompareTo("partitioned-server") == 0 )
                         isClustered = true;
                 }
                 return isClustered;

@@ -10,9 +10,9 @@
 // distributed under the License is distributed on an "AS IS" BASIS,
 // WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
 // See the License for the specific language governing permissions and
-// limitations under the License.
+// limitations under the License
 
-﻿﻿using System;
+﻿using System;
 using System.Collections.Generic;
 using System.Text;
 using System.Collections;
@@ -33,6 +33,7 @@ namespace Alachisoft.NCache.Common.Util
         private static object _stringLock = new object();
         private static object _providerLock = new object();
 
+
         /// <summary>
         /// Gets a string from the pool.
         /// </summary>
@@ -40,6 +41,7 @@ namespace Alachisoft.NCache.Common.Util
         public static String PoolString(String str)
         {
             if (String.IsNullOrEmpty(str)) return null;
+
             lock (_stringLock)
             {
                 if (!_stringPool.Contains(str))
@@ -63,7 +65,7 @@ namespace Alachisoft.NCache.Common.Util
                 {
                     _providerNamesPool[++_providerID] = providerName;
                     _providerIDsPool[providerName] = _providerID;
-                }
+                }               
             }
         }
 
@@ -72,8 +74,8 @@ namespace Alachisoft.NCache.Common.Util
         /// </summary>
         /// <returns></returns>
         public static ushort GetProviderID(String providerName)
-        {
-            if (!String.IsNullOrEmpty(providerName) && _providerIDsPool.ContainsKey(providerName))
+        {           
+            if (!String.IsNullOrEmpty(providerName)&& _providerIDsPool.ContainsKey(providerName))
             {
                 return _providerIDsPool[providerName];
             }
@@ -96,8 +98,9 @@ namespace Alachisoft.NCache.Common.Util
             return String.Empty;
         }
 
+
         /// <summary>
-        /// Releases all the strings.
+        /// Releases all the Strings.
         /// </summary>
         public static void Clear()
         {

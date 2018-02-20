@@ -12,13 +12,12 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-
 using Alachisoft.NCache.Common.Net;
-
+using System.Collections;
 
 namespace Alachisoft.NCache.SocketServer.EventTask
 {
-	internal sealed class NodeJoinedEvent : IEventTask
+    internal sealed class NodeJoinedEvent : IEventTask
 	{
 		private string _cacheId;
 		private Address _clusterAddress;
@@ -39,7 +38,6 @@ namespace Alachisoft.NCache.SocketServer.EventTask
         {
             ClientManager clientManager = null;
 
-
             lock (ConnectionManager.ConnectionTable) clientManager = (ClientManager)ConnectionManager.ConnectionTable[_clientId];
             if (clientManager != null)
             {
@@ -55,12 +53,10 @@ namespace Alachisoft.NCache.SocketServer.EventTask
                 response.nodeJoined = nodeJoined;
                 response.responseType = Alachisoft.NCache.Common.Protobuf.Response.Type.NODE_JOINED_EVENT;
 
-                byte[] serializedResponse = Alachisoft.NCache.Common.Util.ResponseHelper.SerializeResponse(response);
+                IList serializedResponse = Alachisoft.NCache.Common.Util.ResponseHelper.SerializeResponse(response);
 
-                ConnectionManager.AssureSend(clientManager, serializedResponse, Alachisoft.NCache.Common.Enum.Priority.Critical);
+                ConnectionManager.AssureSend(clientManager, serializedResponse, Alachisoft.NCache.Common.Enum.Priority.High);
             }
         }
 	}
-
-	
 }

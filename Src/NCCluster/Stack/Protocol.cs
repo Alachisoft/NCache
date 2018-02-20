@@ -10,216 +10,34 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 // $Id: Protocol.java,v 1.18 2004/07/05 14:17:33 belaban Exp $
-
 using System;
-using System.Threading;
 using System.Collections;
-
-using Alachisoft.NGroups;
-using Alachisoft.NGroups.Util;
 using Alachisoft.NCache.Common.Util;
-using Alachisoft.NCache.Common;
 
 namespace Alachisoft.NGroups.Stack
 {
-	/// <summary> The Protocol class provides a set of common services for protocol layers. Each layer has to
-	/// be a subclass of Protocol and override a number of methods (typically just <code>up()</code>,
-	/// <code>Down</code> and <code>getName</code>. Layers are stacked in a certain order to form
-	/// a protocol stack. <a href=org.jgroups.Event.html>Events</a> are passed from lower
-	/// layers to upper ones and vice versa. E.g. a Message received by the UDP layer at the bottom
-	/// will be passed to its higher layer as an Event. That layer will in turn pass the Event to
-	/// its layer and so on, until a layer handles the Message and sends a response or discards it,
-	/// the former resulting in another Event being passed down the stack.<p>
-	/// Each layer has 2 FIFO queues, one for up Events and one for down Events. When an Event is
-	/// received by a layer (calling the internal upcall <code>ReceiveUpEvent</code>), it is placed
-	/// in the up-queue where it will be retrieved by the up-handler thread which will invoke method
-	/// <code>Up</code> of the layer. The same applies for Events traveling down the stack. Handling
-	/// of the up-handler and down-handler threads and the 2 FIFO queues is donw by the Protocol
-	/// class, subclasses will almost never have to override this behavior.<p>
-	/// The important thing to bear in mind is that Events have to passed on between layers in FIFO
-	/// order which is guaranteed by the Protocol implementation and must be guranteed by subclasses
-	/// implementing their on Event queuing.<p>
-	/// <b>Note that each class implementing interface Protocol MUST provide an empty, public
-	/// constructor !</b>
-	/// </summary>
-	internal abstract class Protocol
+    /// <summary> The Protocol class provides a set of common services for protocol layers. Each layer has to
+    /// be a subclass of Protocol and override a number of methods (typically just <code>up()</code>,
+    /// <code>Down</code> and <code>getName</code>. Layers are stacked in a certain order to form
+    /// a protocol stack. <a href=org.jgroups.Event.html>Events</a> are passed from lower
+    /// layers to upper ones and vice versa. E.g. a Message received by the UDP layer at the bottom
+    /// will be passed to its higher layer as an Event. That layer will in turn pass the Event to
+    /// its layer and so on, until a layer handles the Message and sends a response or discards it,
+    /// the former resulting in another Event being passed down the stack.<p>
+    /// Each layer has 2 FIFO queues, one for up Events and one for down Events. When an Event is
+    /// received by a layer (calling the internal upcall <code>ReceiveUpEvent</code>), it is placed
+    /// in the up-queue where it will be retrieved by the up-handler thread which will invoke method
+    /// <code>Up</code> of the layer. The same applies for Events traveling down the stack. Handling
+    /// of the up-handler and down-handler threads and the 2 FIFO queues is donw by the Protocol
+    /// class, subclasses will almost never have to override this behavior.<p>
+    /// The important thing to bear in mind is that Events have to passed on between layers in FIFO
+    /// order which is guaranteed by the Protocol implementation and must be guranteed by subclasses
+    /// implementing their on Event queuing.<p>
+    /// <b>Note that each class implementing interface Protocol MUST provide an empty, public
+    /// constructor !</b>
+    /// </summary>
+    internal abstract class Protocol
 	{
-		internal class UpHandler:ThreadClass
-		{
-            private Alachisoft.NCache.Common.DataStructures.Queue mq;
-			private Protocol			handler;
-            int id;
-            DateTime time;
-            TimeSpan worsTime = new TimeSpan(0,0,0);
-
-
-            public UpHandler(Alachisoft.NCache.Common.DataStructures.Queue mq, Protocol handler)
-			{
-				this.mq = mq;
-				this.handler = handler;
-				if (handler != null)
-				{
-					Name = "UpHandler (" + handler.Name + ')';
-				}
-				else
-				{
-					Name = "UpHandler";
-				}
-				IsBackground = true;
-			}
-
-            public UpHandler(Alachisoft.NCache.Common.DataStructures.Queue mq, Protocol handler, string name, int id)
-            {
-                this.mq = mq;
-                this.handler = handler;
-                if(name != null)
-                    Name = name;
-                IsBackground = true;
-                this.id = id;
-            }
-		
-		
-			/// <summary>Removes events from mq and calls handler.up(evt) </summary>
-			override public void  Run()
-			{
-                if (handler.Stack.NCacheLog.IsInfoEnabled) handler.Stack.NCacheLog.Info(Name, "---> Started!");
-				try
-				{
-					while (!mq.Closed)
-					{
-						try
-						{
-							Event evt = (Event) mq.remove();
-							if (evt == null)
-							{
-                                handler.Stack.NCacheLog.Warn("Protocol", "removed null event");
-								continue;
-							}
-
-                            if (handler.enableMonitoring)
-                            {
-                                handler.PublishUpQueueStats(mq.Count,id);
-                            }
-
-                            time = DateTime.Now;
-							handler.up(evt);
-                            DateTime now = DateTime.Now;
-                            TimeSpan ts = now - time;
-
-                            if (ts.TotalMilliseconds > worsTime.TotalMilliseconds)
-                                worsTime = ts;
-						}
-						catch (QueueClosedException e)
-						{
-                            handler.Stack.NCacheLog.Error(Name, e.ToString());
-							break;
-						}
-						catch (ThreadInterruptedException ex)
-						{
-                            handler.Stack.NCacheLog.Error(Name, ex.ToString());
-							break;
-						}
-						catch (System.Exception e)
-						{
-                            handler.Stack.NCacheLog.Error(Name, " exception: " + e.ToString());					
-						}
-					}
-				}
-				catch (ThreadInterruptedException ex)
-				{
-                    handler.Stack.NCacheLog.Error(Name, ex.ToString());
-				}
-                if (handler.Stack.NCacheLog.IsInfoEnabled) handler.Stack.NCacheLog.Info(Name + "    ---> Stopped!");
-			}
-		}
-	
-	
-		internal class DownHandler:ThreadClass
-		{
-            private Alachisoft.NCache.Common.DataStructures.Queue mq;
-			private Protocol handler;
-            int id;
-
-            public DownHandler(Alachisoft.NCache.Common.DataStructures.Queue mq, Protocol handler)
-			{
-				this.mq = mq;
-				this.handler = handler;
-                string name = null;
-				if (handler != null)
-				{
-                    Name = "DownHandler (" + handler.Name + ')';
-				}
-				else
-				{
-                    Name = "DownHandler";
-				}
-
-				IsBackground = true;
-			}
-            public DownHandler(Alachisoft.NCache.Common.DataStructures.Queue mq, Protocol handler, string name, int id)
-            {
-                this.mq = mq;
-                this.handler = handler;
-                Name = name;
-                IsBackground = true;
-                this.id = id;
-            }
-		
-		
-			/// <summary>Removes events from mq and calls handler.down(evt) </summary>
-			override public void  Run()
-			{
-				try
-				{
-					while (!mq.Closed)
-					{
-						try
-						{
-							Event evt = (Event) mq.remove();
-							if (evt == null)
-							{
-                                handler.Stack.NCacheLog.Warn("Protocol", "removed null event");
-								continue;
-							}
-			
-							int type = evt.Type;
-							if (type == Event.ACK || type == Event.START || type == Event.STOP)
-							{
-								if (handler.handleSpecialDownEvent(evt) == false)
-									continue;
-							}
-
-                            if (handler.enableMonitoring)
-                            {
-                                handler.PublishDownQueueStats(mq.Count,id);
-                            }
-
-							handler.down(evt);
-						}
-						catch (QueueClosedException e)
-						{
-                            handler.Stack.NCacheLog.Error(Name, e.ToString());
-							break;
-						}
-						catch (ThreadInterruptedException e)
-						{
-                            handler.Stack.NCacheLog.Error(Name, e.ToString());
-							break;
-						}
-						catch (System.Exception e)
-						{
-                            handler.Stack.NCacheLog.Warn(Name, " exception is " + e.ToString());
-						}
-					}
-				}
-				catch (ThreadInterruptedException e)
-				{
-                    handler.Stack.NCacheLog.Error("DownHandler.Run():3", "exception=" + e.ToString());
-				}
-			}
-		}
-	
-
 		public abstract string Name{get;}
 
         public Alachisoft.NCache.Common.DataStructures.Queue UpQueue { get { return up_queue; } }
@@ -256,8 +74,8 @@ namespace Alachisoft.NGroups.Stack
 		protected bool down_thread = false; // determines whether the down_handler thread should be started
 		protected bool up_thread = true; // determines whether the up_handler thread should be started
 
-		protected UpHandler up_handler;
-		protected DownHandler down_handler;
+		protected ProtocolUpHandler up_handler;
+		protected ProtocolDownHandler down_handler;
         protected bool _printMsgHdrs = false;
         internal bool enableMonitoring;
         protected bool useAvgStats = false;
@@ -305,10 +123,7 @@ namespace Alachisoft.NGroups.Stack
 
             enableMonitoring = ServiceConfiguration.EnableDebuggingCounters;
 
-            if (System.Configuration.ConfigurationSettings.AppSettings["useAvgStats"] != null)
-            {
-                useAvgStats = Convert.ToBoolean(System.Configuration.ConfigurationSettings.AppSettings["useAvgStats"]);
-            }
+            useAvgStats = ServiceConfiguration.UseAvgStats;
 
 			return setProperties(props);
 		}
@@ -416,7 +231,7 @@ namespace Alachisoft.NGroups.Stack
 				if (up_handler == null)
 				{
                     up_queue = new Alachisoft.NCache.Common.DataStructures.Queue();
-					up_handler = new UpHandler(up_queue, this);
+					up_handler = new ProtocolUpHandler(up_queue, this);
 					if (up_thread_prio >= 0)
 					{
 						try
@@ -444,7 +259,7 @@ namespace Alachisoft.NGroups.Stack
 				if (down_handler == null)
 				{
                     down_queue = new Alachisoft.NCache.Common.DataStructures.Queue();
-					down_handler = new DownHandler(down_queue, this);
+					down_handler = new ProtocolDownHandler(down_queue, this);
 					if (down_thread_prio >= 0)
 					{
 						try
@@ -544,7 +359,6 @@ namespace Alachisoft.NGroups.Stack
 			}
 			try
 			{
-
                 if (stack.NCacheLog.IsInfoEnabled) stack.NCacheLog.Info(Name + ".receiveUpEvent()", "RentId :" + evt.RentId + "up queue count : " + up_queue.Count);
 				up_queue.add(evt, evt.Priority);
 			}
@@ -620,7 +434,13 @@ namespace Alachisoft.NGroups.Stack
 		{
 			if (up_prot != null)
 			{
-
+#if DEBUG
+				if(evt.Type == Event.MSG)
+				{
+					Message msg = (Message)evt.Arg;
+                    if (stack.NCacheLog.IsInfoEnabled) stack.NCacheLog.Info(Name + ".passUp()", "hdr: " + Global.CollectionToString(msg.Headers));
+				}
+#endif
 				up_prot.receiveUpEvent(evt);
 			}
 			else
@@ -634,7 +454,13 @@ namespace Alachisoft.NGroups.Stack
 		{
 			if (down_prot != null)
 			{
-
+#if DEBUG
+				if(evt.Type == Event.MSG)
+				{
+					Message msg = (Message)evt.Arg;
+                    if (stack.NCacheLog.IsInfoEnabled) stack.NCacheLog.Info(Name + ".passDown()", "hdr: " + Global.CollectionToString(msg.Headers));
+				}
+#endif
 				down_prot.receiveDownEvent(evt);
 			}
 			else
@@ -667,12 +493,11 @@ namespace Alachisoft.NGroups.Stack
 			passDown(evt);
 		}
 		
-		
 		/// <summary>These are special internal events that should not be handled by protocols</summary>
 		/// <returns> boolean True: the event should be passed further down the stack. False: the event should
 		/// be discarded (not passed down the stack)
 		/// </returns>
-		protected  virtual bool handleSpecialDownEvent(Event evt)
+		internal virtual bool handleSpecialDownEvent(Event evt)
 		{
 			switch (evt.Type)
 			{

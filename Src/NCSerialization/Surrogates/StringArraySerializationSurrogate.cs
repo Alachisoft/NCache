@@ -10,7 +10,7 @@
 // distributed under the License is distributed on an "AS IS" BASIS,
 // WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
 // See the License for the specific language governing permissions and
-// limitations under the License.
+// limitations under the License
 
 using System;
 using System.Text;
@@ -44,6 +44,7 @@ namespace Alachisoft.NCache.Serialization.Surrogates
                 byte[] stream = new byte[length];
                 stream = reader.ReadBytes(length);
                 array[i] =  UTF8Encoding.UTF8.GetString(stream);
+                
             }
             return array;
         }
@@ -54,9 +55,10 @@ namespace Alachisoft.NCache.Serialization.Surrogates
             writer.Write(array.Length);
             for (int i = 0; i < array.Length; i++)
             {
+                
                 if (array[i] != null)
                 {
-                    writer.Write((short)1);                   
+                    writer.Write((short)1);
                     byte[] stream = UTF8Encoding.UTF8.GetBytes(array[i] as string);
                     writer.Write(stream.Length);
                     writer.Write(stream); 
@@ -64,7 +66,9 @@ namespace Alachisoft.NCache.Serialization.Surrogates
                 else
                 {
                     writer.Write((short)0);
+                   
                 }
+              
             }
         }
 

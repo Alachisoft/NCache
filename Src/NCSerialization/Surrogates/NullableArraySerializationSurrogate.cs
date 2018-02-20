@@ -10,7 +10,7 @@
 // distributed under the License is distributed on an "AS IS" BASIS,
 // WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
 // See the License for the specific language governing permissions and
-// limitations under the License.
+// limitations under the License
 
 using Alachisoft.NCache.IO;
 
@@ -31,6 +31,10 @@ namespace Alachisoft.NCache.Serialization.Surrogates
 
             // Find an appropriate surrogate by handle
             ISerializationSurrogate typeSurr = TypeSurrogateSelector.GetSurrogateForTypeHandle(handle,null);
+            if (typeSurr == null)
+            {
+                typeSurr = TypeSurrogateSelector.GetSurrogateForSubTypeHandle(handle, reader.ReadInt16(), reader.Context.CacheContext);
+            }
 
             int length = reader.ReadInt32();
 
@@ -73,6 +77,10 @@ namespace Alachisoft.NCache.Serialization.Surrogates
 
             // Find an appropriate surrogate by handle
             ISerializationSurrogate typeSurr = TypeSurrogateSelector.GetSurrogateForTypeHandle(handle, null);
+            if (typeSurr == null)
+            {
+                typeSurr = TypeSurrogateSelector.GetSurrogateForSubTypeHandle(handle, reader.ReadInt16(), reader.Context.CacheContext);
+            }
 
             int length = reader.ReadInt32();
             T?[] array = new T?[length];
@@ -83,6 +91,8 @@ namespace Alachisoft.NCache.Serialization.Surrogates
 
                 typeSurr.Skip(reader);
             }
-        }       
+        }
+
+        
     }
 }

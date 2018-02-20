@@ -17,7 +17,6 @@ using Alachisoft.NCache.Common.DataReader;
 using Alachisoft.NCache.Runtime.Exceptions;
 
 namespace Alachisoft.NCache.Web.Caching
-
 {
     /// <summary>
     /// To read query results contained in RecordSet. Suppresses hidden columns.
@@ -42,10 +41,7 @@ namespace Alachisoft.NCache.Web.Caching
         /// </summary>
         public int FieldCount
         {
-            get
-            {
-                return _columns == null ? 0 : _columns.Count - _hiddenColumnCount;
-            }
+            get { return _columns == null ? 0 : _columns.Count - _hiddenColumnCount; }
         }
 
         public void Close()
@@ -54,7 +50,7 @@ namespace Alachisoft.NCache.Web.Caching
                 _recordSetEnumerator.Dispose();
         }
 
-        
+
         [System.Runtime.CompilerServices.IndexerName("Item")]
         public object this[int index]
         {
@@ -63,8 +59,8 @@ namespace Alachisoft.NCache.Web.Caching
                 object obj = _currentRow[index];
                 if (obj == null)
                     throw new ArgumentException("Invalid index. Specified index does not exist in RecordSet.");
-                if (obj != null && obj is Alachisoft.NCache.Common.Queries.AverageResult)
-                    return ((Alachisoft.NCache.Common.Queries.AverageResult)obj).Average;
+                if (obj is Alachisoft.NCache.Common.Queries.AverageResult)
+                    return ((Alachisoft.NCache.Common.Queries.AverageResult) obj).Average;
                 else
                     return obj;
             }
@@ -78,13 +74,13 @@ namespace Alachisoft.NCache.Web.Caching
                 object obj = _currentRow[columnName];
                 if (obj == null)
                     throw new ArgumentException("Invalid columnName. Specified column does not exist in RecordSet.");
-                if (obj != null && obj is Alachisoft.NCache.Common.Queries.AverageResult)
-                    return ((Alachisoft.NCache.Common.Queries.AverageResult)obj).Average;
+                if (obj is Alachisoft.NCache.Common.Queries.AverageResult)
+                    return ((Alachisoft.NCache.Common.Queries.AverageResult) obj).Average;
                 else
                     return obj;
             }
         }
-        
+
         public bool Read()
         {
             if (_recordSetEnumerator == null) return false;
@@ -92,7 +88,6 @@ namespace Alachisoft.NCache.Web.Caching
             if (next)
                 _currentRow = _recordSetEnumerator.Current;
             return next;
-
         }
 
         public bool GetBoolean(int index)
@@ -117,7 +112,6 @@ namespace Alachisoft.NCache.Web.Caching
             }
             else
                 throw new ArgumentException("Invalid index. Specified index does not exist in RecordSet.");
-
         }
 
         public decimal GetDecimal(int index)
@@ -135,7 +129,7 @@ namespace Alachisoft.NCache.Web.Caching
         public double GetDouble(int index)
         {
             if (_currentRow == null)
-                throw new OperationFailedException("Operation is not valid due to the current state of the object");            
+                throw new OperationFailedException("Operation is not valid due to the current state of the object");
             if (index >= 0 && index < FieldCount)
             {
                 return Convert.ToDouble(_currentRow[index]);
@@ -154,7 +148,6 @@ namespace Alachisoft.NCache.Web.Caching
             }
             else
                 throw new ArgumentException("Invalid index. Specified index does not exist in RecordSet.");
-            
         }
 
         public int GetInt32(int index)
@@ -167,7 +160,6 @@ namespace Alachisoft.NCache.Web.Caching
             }
             else
                 throw new ArgumentException("Invalid index. Specified index does not exist in RecordSet.");
-           
         }
 
         public long GetInt64(int index)
@@ -180,7 +172,6 @@ namespace Alachisoft.NCache.Web.Caching
             }
             else
                 throw new ArgumentException("Invalid index. Specified index does not exist in RecordSet.");
-           
         }
 
         public object GetValue(int index)
@@ -194,7 +185,7 @@ namespace Alachisoft.NCache.Web.Caching
                 if (!(_currentRow.Columns[index].IsHidden))
                 {
                     if (obj is Alachisoft.NCache.Common.Queries.AverageResult)
-                        return ((Alachisoft.NCache.Common.Queries.AverageResult)obj).Average;
+                        return ((Alachisoft.NCache.Common.Queries.AverageResult) obj).Average;
                     else
                         return obj;
                 }
@@ -203,7 +194,6 @@ namespace Alachisoft.NCache.Web.Caching
             }
             else
                 throw new ArgumentException("Invalid index. Specified index does not exist in RecordSet.");
-
         }
 
         private object GetValue(string columnName)
@@ -216,7 +206,7 @@ namespace Alachisoft.NCache.Web.Caching
                 if (!_currentRow.Columns[columnName].IsHidden)
                 {
                     if (obj is Alachisoft.NCache.Common.Queries.AverageResult)
-                        return ((Alachisoft.NCache.Common.Queries.AverageResult)obj).Average;
+                        return ((Alachisoft.NCache.Common.Queries.AverageResult) obj).Average;
                     else
                         return obj;
                 }
@@ -233,22 +223,15 @@ namespace Alachisoft.NCache.Web.Caching
                 throw new ArgumentNullException("objects");
             if (objects.Length == 0)
                 throw new ArgumentException("Index was outside the bounds of the array.");
-            
-            //for (int i = 0; i < objects.Length; i++)
-            //{
-            //    if (objects[i] == null)
-            //        throw new ArgumentNullException("objects");
-            //    else if (objects[i].Equals(""))
-            //        throw new ArgumentException("object contain empty string");
-            //}
-            //if (objects.Length > this.FieldCount)
-            //    throw new ArgumentException("Objects length is outside the bounds of array");
+
+
             if (objects.Length < this.FieldCount)
             {
                 for (int i = 0; i < objects.Length; i++)
                 {
                     objects[i] = this.GetSingleValue(i);
                 }
+
                 return objects.Length;
             }
             else
@@ -257,14 +240,14 @@ namespace Alachisoft.NCache.Web.Caching
                 {
                     objects[i] = this.GetSingleValue(i);
                 }
+
                 return this.FieldCount;
             }
-           
         }
 
         private object GetSingleValue(int index)
         {
-            if (_currentRow == null)               
+            if (_currentRow == null)
                 throw new OperationFailedException("Operation is not valid due to the current state of the object");
             if (index >= 0 && index < FieldCount)
             {
@@ -272,21 +255,19 @@ namespace Alachisoft.NCache.Web.Caching
                 if (!_currentRow.Columns[index].IsHidden)
                 {
                     if (obj is Alachisoft.NCache.Common.Queries.AverageResult)
-                        return ((Alachisoft.NCache.Common.Queries.AverageResult)obj).Average;
+                        return ((Alachisoft.NCache.Common.Queries.AverageResult) obj).Average;
                     else
                         return obj;
                 }
-                return null;
 
+                return null;
             }
             else
                 throw new ArgumentException("Invalid index. Specified index does not exist in RecordSet.");
-          
         }
 
         public string GetName(int columnIndex)
         {
-
             if (_columns == null)
                 return null;
             if (columnIndex >= 0 && columnIndex < FieldCount)
@@ -298,7 +279,6 @@ namespace Alachisoft.NCache.Web.Caching
             }
             else
                 throw new ArgumentException("Invalid index. Specified index does not exist in RecordSet.");
-
         }
 
         public int GetOrdinal(string columnName)
@@ -313,7 +293,6 @@ namespace Alachisoft.NCache.Web.Caching
             }
             else
                 throw new ArgumentException("Invalid columnName. Specified column does not exist in RecordSet.");
-
         }
 
 
@@ -333,8 +312,28 @@ namespace Alachisoft.NCache.Web.Caching
             }
             else
                 throw new ArgumentException("Invalid index. Specified index does not exist in RecordSet.");
-            
         }
 
+        private void Dispose(bool disposing)
+        {
+            Close();
+            _currentRow = null;
+            _columns = null;
+            if (disposing)
+            {
+                GC.SuppressFinalize(this);
+            }
+        }
+
+
+        public void Dispose()
+        {
+            Dispose(true);
+        }
+
+        ~CacheDataReader()
+        {
+            Dispose(false);
+        }
     }
 }

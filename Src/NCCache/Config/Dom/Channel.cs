@@ -13,11 +13,8 @@
 // limitations under the License.
 
 using System;
-using System.Collections;
-using System.Text;
 using Alachisoft.NCache.Common.Configuration;
 using Alachisoft.NCache.Runtime.Serialization;
-using Runtime = Alachisoft.NCache.Runtime;
 
 namespace Alachisoft.NCache.Config.Dom
 {
@@ -25,7 +22,7 @@ namespace Alachisoft.NCache.Config.Dom
     public class Channel: ICloneable,ICompactSerializable
     {
         int tcpPort, numInitHosts, connectionRetries = 2, connectionRetryInterval = 2;
-        int portRange = 1; // default port-range is '1' 
+        int portRange = 1; //default port-range is '1' 
         string initialHosts;
 
         int joinRetryInterval = 5;
@@ -75,15 +72,13 @@ namespace Alachisoft.NCache.Config.Dom
             get { return numInitHosts; }
             set { numInitHosts = value; }
         }
-
-        [ConfigurationAttribute("join_retry_count")]
+        
         public int JoinRetries
         {
             get { return joinRetries; }
             set { joinRetries = value; }
         }
-
-        [ConfigurationAttribute("join_retry_timeout")]
+        
         public int JoinRetryInterval
         {
             get { return joinRetryInterval; }
@@ -117,8 +112,10 @@ namespace Alachisoft.NCache.Config.Dom
             connectionRetryInterval = reader.ReadInt32();
             portRange = reader.ReadInt32();
             initialHosts = reader.ReadObject() as string;
+
             joinRetryInterval = reader.ReadInt32();
             joinRetries = reader.ReadInt32();            
+
         }
 
         public void Serialize(Runtime.Serialization.IO.CompactWriter writer)
@@ -129,8 +126,10 @@ namespace Alachisoft.NCache.Config.Dom
             writer.Write(connectionRetryInterval);
             writer.Write(portRange);
             writer.WriteObject(initialHosts);
+
             writer.Write(joinRetryInterval);
             writer.Write(joinRetries);
+
         }
 
         #endregion

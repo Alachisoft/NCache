@@ -1,0 +1,11 @@
+
+option java_outer_classname="ReadFromStreamCommandProtocol";
+package Alachisoft.NCache.Common.Protobuf;
+message ReadFromStreamCommand 
+{
+	optional string key = 1;
+	optional string lockHandle = 2;
+	optional int32 offset = 3;
+	optional int32 length = 4;
+	optional int64 requestId = 5;
+}

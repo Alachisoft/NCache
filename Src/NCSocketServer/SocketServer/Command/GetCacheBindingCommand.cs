@@ -13,11 +13,7 @@
 // limitations under the License.
 
 using System;
-using System.Collections.Generic;
-using System.Text;
-using Alachisoft.NCache.SocketServer.Command;
 using Alachisoft.NCache.Common.Util;
-using Alachisoft.NCache.Config.Dom;
 using Alachisoft.NCache.Common.Protobuf;
 
 namespace Alachisoft.NCache.SocketServer.Command
@@ -26,17 +22,24 @@ namespace Alachisoft.NCache.SocketServer.Command
     {
         private struct CommandInfo
         {
-
             public string RequestId;
             public string CacheId;
+            public string UserName;
+            public string Password;
+            public byte[] UserNameBinary;
+            public byte[] PasswordBinary;
             public bool IsJavaClient;
 
-            public CommandInfo clone()
+            public CommandInfo clone() 
             {
                 CommandInfo varCopy = new CommandInfo();
 
                 varCopy.RequestId = this.RequestId;
                 varCopy.CacheId = this.CacheId;
+                varCopy.UserName = this.UserName;
+                varCopy.Password = this.Password;
+                varCopy.UserNameBinary = this.UserNameBinary;
+                varCopy.PasswordBinary = this.PasswordBinary;
                 varCopy.IsJavaClient = this.IsJavaClient;
 
                 return varCopy;
@@ -54,35 +57,29 @@ namespace Alachisoft.NCache.SocketServer.Command
             {
                 if (!base.immatureId.Equals("-2"))
                 {
-                    _serializedResponsePackets.Add(ResponseHelper.SerializeExceptionResponse(exc, command.requestID));
+                    _serializedResponsePackets.Add(ResponseHelper.SerializeExceptionResponse(exc, command.requestID, command.commandID));
                 }
                 return;
             }
             try
             {
-
-                int port = 0;
-
-                port = ServiceConfiguration.Port;
-                
-                bool isRunning = CacheProvider.Provider.IsRunning(cmdInfo.CacheId);
+                int port = ServiceConfiguration.Port; 
                 string bindIP = ServiceConfiguration.BindToIP.ToString();
-
                 Alachisoft.NCache.Common.Protobuf.Response response = new Alachisoft.NCache.Common.Protobuf.Response();
                 GetCacheBindingResponse getCacheBindingResponse = new GetCacheBindingResponse();
-                getCacheBindingResponse.isRunning = isRunning;
+                getCacheBindingResponse.isRunning = true;
                 getCacheBindingResponse.port = port;
                 getCacheBindingResponse.server = bindIP;
                 response.requestId = Convert.ToInt64(cmdInfo.RequestId);
+                response.commandID = command.commandID;
                 response.responseType = Alachisoft.NCache.Common.Protobuf.Response.Type.GET_CACHE_BINDING;
                 response.getCacheBindingResponse = getCacheBindingResponse;
-                
                 _serializedResponsePackets.Add(ResponseHelper.SerializeResponse(response));
 
             }
             catch (System.Exception ex)
             {
-                _serializedResponsePackets.Add(ResponseHelper.SerializeExceptionResponse(ex, command.requestID));
+                _serializedResponsePackets.Add(ResponseHelper.SerializeExceptionResponse(ex, command.requestID, command.commandID));
             }
         }
 
@@ -94,6 +91,9 @@ namespace Alachisoft.NCache.SocketServer.Command
             cmdInfo.CacheId = getCacheBindingCommand.cacheId;
             cmdInfo.IsJavaClient = getCacheBindingCommand.isJavaClient;
             cmdInfo.RequestId = command.requestID.ToString();
+          
+            cmdInfo.PasswordBinary = getCacheBindingCommand.binaryPassword;
+            cmdInfo.UserNameBinary = getCacheBindingCommand.binaryUserId;
 
             return cmdInfo;
         }

@@ -1,0 +1,33 @@
+<Project Sdk="Microsoft.NET.Sdk">
+
+  <PropertyGroup>
+    <TargetFramework>netcoreapp2.0</TargetFramework>
+  </PropertyGroup>
+
+  <PropertyGroup>
+    <GenerateAssemblyInfo>false</GenerateAssemblyInfo>
+    <AssemblyName>Alachisoft.NCache.SessionStoreProvider</AssemblyName>
+  </PropertyGroup>
+
+  <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Debug|AnyCPU'">
+    <DefineConstants>TRACE;DEBUG;CLIENT;NETCORE</DefineConstants>
+  </PropertyGroup>
+
+  <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Release|AnyCPU'">
+    <DefineConstants>TRACE;RELEASE;CLIENT;NETCORE</DefineConstants>
+  </PropertyGroup>
+
+  <ItemGroup>
+    <Compile Remove="ASPEnvironmentContext.cs" />
+    <Compile Remove="AssemblyInfo.cs" />
+    <Compile Remove="LegacyProvider.cs" />
+    <Compile Remove="NSessionStoreProvider.cs" />
+    <Compile Remove="SessionHelper.cs" />
+    <Compile Remove="SessionSerializationUtil.cs" />
+    <Compile Remove="SessionStore.cs" />
+  </ItemGroup>
+
+  <ItemGroup>
+    <ProjectReference Include="..\NCSessionStateManagement\NCSessionStateManagement.Client.NetCore.csproj" />
+  </ItemGroup>
+</Project>

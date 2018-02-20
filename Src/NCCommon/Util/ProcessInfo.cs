@@ -12,14 +12,14 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
+
 namespace Alachisoft.NCache.Common.Util
 {
-
     public class ProcessInfo
     {
-        public int port_number { get { return port_number; } set { port_number = value; } }
-        public int pid { get { return pid; } set { pid = value; } }
-        public string process_name { get { return process_name; } set { process_name = value; } }
-        public string protocol { get { return protocol; } set { protocol = value; } }
+        public int port_number { get; set; }
+        public int pid { get; set; }
+        public string process_name { get; set; }
+        public string protocol { get; set; }
     }
 }

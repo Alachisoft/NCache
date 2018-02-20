@@ -10,21 +10,18 @@
 // distributed under the License is distributed on an "AS IS" BASIS,
 // WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
 // See the License for the specific language governing permissions and
-// limitations under the License.
+// limitations under the License
 
 using System;
 using Alachisoft.NCache.Management.RPC;
 using Alachisoft.NCache.ServiceControl;
-
 using Alachisoft.NCache.Runtime.Exceptions;
-
 
 namespace Alachisoft.NCache.Management.ServiceControl
 {
     public class RPCService : CacheService
     {
         public int retries = 1;
-
         static RPCService() { Alachisoft.NCache.Management.CacheServer.RegisterCompactTypes(); }
 
         public RPCService(string serivceName, string address, int port) : base(serivceName, address, port) 
@@ -62,14 +59,14 @@ namespace Alachisoft.NCache.Management.ServiceControl
             }
         }
 
+       
+
         public override ICacheServer GetCacheServer(TimeSpan timeout)
         {
             cacheServer = new RemoteCacheServer(ServerName, (int)Port);
             TryIntializeServer(timeout);
             return cacheServer;
         }
-    }
-
-  
+    }  
 
 }

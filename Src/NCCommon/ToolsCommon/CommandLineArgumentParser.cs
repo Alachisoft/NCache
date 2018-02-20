@@ -10,11 +10,18 @@
 // distributed under the License is distributed on an "AS IS" BASIS,
 // WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
 // See the License for the specific language governing permissions and
-// limitations under the License.
+// limitations under the License
 
 using System;
+using System.Collections.Generic;
+using System.Text;
+using System.Globalization;
 using System.Reflection;
+using System.Collections;
+
 using Alachisoft.NCache.Common.Configuration;
+using System.Management.Automation;
+using Alachisoft.NCache.Common.Enum;
 
 namespace Alachisoft.NCache.Tools.Common
 {
@@ -43,22 +50,38 @@ namespace Alachisoft.NCache.Tools.Common
                     {
                         propInfo = objProps[j];
                         customParams = propInfo.GetCustomAttributes(typeof(ArgumentAttribute), false);
+
                         if (customParams != null && customParams.Length > 0)
                         {
                             ArgumentAttribute param = customParams[0] as ArgumentAttribute;
                             try
                             {
-                                if (param != null && (param.ShortNotation==args[i] || param.FullName.ToLower() == args[i].ToLower()))
+                                if (param != null && (param.ShortNotation==args[i] || param.FullName.ToLower() == args[i].ToLower() || param.ShortNotation2 == args[i] || param.FullName2.ToLower() == args[i].ToLower()))
                                 {
-                                    if (propInfo.PropertyType.FullName == "System.Boolean")
+                                    if (propInfo.PropertyType.FullName == "System.Boolean" || propInfo.PropertyType.FullName == "System.Management.Automation.SwitchParameter")
                                     {
-                                        bool value = (bool)param.DefaultValue;
-
-                                        if (value)
-                                            propInfo.SetValue(obj, false, null);
+                                        bool value = false;
+                                        if (propInfo.PropertyType.FullName == "System.Management.Automation.SwitchParameter")
+                                        {
+                                            object objvalue = param.DefaultValue;
+                                            value = Convert.ToBoolean(objvalue);
+                                            objvalue = !value;
+                                            SwitchParameter paramSwitch = new SwitchParameter(!value);
+                                            propInfo.SetValue(obj, paramSwitch, null);
+                                            isAssigned = true;
+                                            break;
+                                        }
                                         else
-                                            propInfo.SetValue(obj, true, null);
-                                        isAssigned = true;
+                                        {
+                                             value = (bool)param.DefaultValue;
+
+                                            if (value)
+                                                propInfo.SetValue(obj, false, null);
+                                            else
+                                                propInfo.SetValue(obj, true, null);
+                                            isAssigned = true;
+                                        }
+                                        
                                         break;
                                     }
                                     else
@@ -66,7 +89,26 @@ namespace Alachisoft.NCache.Tools.Common
                                         int index = i + 1;
                                         if (index <= (args.Length - 1))
                                         {
-                                            object value = configBuilder.ConvertToPrimitive(propInfo.PropertyType, args[++i], null);
+                                            
+                                            object value;
+                                             if (propInfo.PropertyType.FullName .Contains((new CacheTopologyParam()).GetType().ToString() ))
+                                             {
+                                                 value = GetTopologyType(args[++i]);
+                                             }
+                                             else if (propInfo.PropertyType.FullName.Contains ((new ReplicationStrategyParam()).GetType().ToString()))
+                                             {
+                                                 value = GetReplicatedStrategy(args[++i]);
+                                             }
+                                             else if (propInfo.PropertyType.FullName.Contains( (new EvictionPolicyParam()).GetType().ToString()))
+                                             {
+                                                 value = GetEvictinPolicy(args[++i]);
+                                             }
+                                             
+
+                                             else
+                                             {
+                                                 value = configBuilder.ConvertToPrimitive(propInfo.PropertyType, args[++i], null);
+                                             }
                                             if (propInfo.PropertyType.IsAssignableFrom(value.GetType()))
                                             {
                                                 propInfo.SetValue(obj, value, null);
@@ -76,7 +118,7 @@ namespace Alachisoft.NCache.Tools.Common
                                         }
                                     }
                                 }
-                                else if (param != null && (string.IsNullOrEmpty(param.ShortNotation) && string.IsNullOrEmpty(param.FullName)))
+                                else if (param != null && ((string.IsNullOrEmpty(param.ShortNotation) && string.IsNullOrEmpty(param.FullName)) || (string.IsNullOrEmpty(param.ShortNotation2) && string.IsNullOrEmpty(param.FullName2))))
                                 {
                                     if (orphanAttribute == null && !isAssigned)
                                     {
@@ -109,6 +151,69 @@ namespace Alachisoft.NCache.Tools.Common
                 }
             }
         }
+        private static object GetReplicatedStrategy(string value)
+        {
+            if (value.ToLower().Equals("sync"))
+            {
+                return ReplicationStrategyParam.Sync;
+            }
+            else if (value.ToLower().Equals("async"))
+            {
+                return ReplicationStrategyParam.Async;
+            }
+            else
+            {
+                return null;
+            }
 
+
+        }
+
+        private static object GetEvictinPolicy(string evictionPolicy)
+        {
+            object evictionType =null;
+
+            switch (evictionPolicy.ToLower())
+            {
+
+                case "priority":
+                    evictionType = EvictionPolicyParam.Priority;
+                    break;
+
+                case "none":
+                    evictionType = EvictionPolicyParam.None;
+                    break;
+
+
+                default:
+                    evictionType = null;
+                    break;
+            }
+            return evictionType;
+        }
+        private static object GetTopologyType(string topologyName)
+        {
+
+            CacheTopologyParam?   topology = new CacheTopologyParam();
+            switch (topologyName.ToLower())
+            {
+                case "local":
+                    topology = CacheTopologyParam.Local;
+                    return topology;
+
+                case "replicated":
+                    topology = CacheTopologyParam.Replicated;
+                    return topology;
+
+                case "partitioned":
+                    topology = CacheTopologyParam.Partitioned;
+                    return topology;
+
+
+                default:
+                    return null;
+
+            }
+        }
     }
 }

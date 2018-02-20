@@ -12,17 +12,14 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-using System.Text;
-using Alachisoft.NCache.Common.Net;
-using Alachisoft.NCache.Common.Util;
-using Alachisoft.NCache.Caching.Queries;
+
 
 namespace Alachisoft.NCache.Caching.Topologies.Local
 {
     public class OperationInfo
     {
         private object _key;
-        private CacheEntry _entry;
+        private object _entry;
         private OperationType _opType;
 
         public OperationInfo(object key, OperationType type)
@@ -31,7 +28,7 @@ namespace Alachisoft.NCache.Caching.Topologies.Local
             _opType = type;
         }
 
-        internal OperationInfo(object key, CacheEntry entry, OperationType type)
+        internal OperationInfo(object key, object entry, OperationType type)
             : this(key, type)
         {
             _entry = entry;
@@ -42,7 +39,7 @@ namespace Alachisoft.NCache.Caching.Topologies.Local
             get { return _key; }
         }
 
-        internal CacheEntry Entry
+        internal object Entry
         {
             get { return _entry; }
         }
@@ -51,9 +48,6 @@ namespace Alachisoft.NCache.Caching.Topologies.Local
         {
             get { return _opType; }
         }
+
     }
-
-    #region/                ---Enum LogMode ---          /
-
-    #endregion
 }

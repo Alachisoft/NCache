@@ -13,8 +13,6 @@
 // limitations under the License.
 
 using System;
-using System.Collections.Generic;
-using System.Text;
 using Alachisoft.NCache.Common.Threading;
 using Alachisoft.NCache.Web.Caching;
 using Alachisoft.NCache.Common;
@@ -22,7 +20,7 @@ using Alachisoft.NCache.Web.Communication;
 using Alachisoft.NCache.Common.Stats;
 using Alachisoft.NCache.Runtime.Events;
 
-namespace Alachisoft.NCache.Web.AsyncTask 
+namespace Alachisoft.NCache.Web.AsyncTask
 {
     class ItemRemoveCallBackTask : AsyncProcessor.IAsyncTask
     {
@@ -37,7 +35,9 @@ namespace Alachisoft.NCache.Web.AsyncTask
         private EventCacheItem _item;
         private EventDataFilter _dataFilter;
 
-        public ItemRemoveCallBackTask(Broker parent, string key, short callBackId, object value, CacheItemRemovedReason reason, BitSet flag, bool notifyAsync, EventCacheItem item,EventDataFilter dataFilter)
+        public ItemRemoveCallBackTask(Broker parent, string key, short callBackId, object value,
+            CacheItemRemovedReason reason, BitSet flag, bool notifyAsync, EventCacheItem item,
+            EventDataFilter dataFilter)
         {
             this._parent = parent;
             this._key = key;
@@ -58,16 +58,17 @@ namespace Alachisoft.NCache.Web.AsyncTask
                 {
                     _stats = new UsageStats();
                     _stats.BeginSample();
-                    _parent._cache.EventListener.OnCustomRemoveCallback(_callBackId, _key, _value, _reason, _flag, _notifyAsync, _item,_dataFilter);
+                    _parent._cache.EventListener.OnCustomRemoveCallback(_callBackId, _key, _value, _reason, _flag,
+                        _notifyAsync, _item, _dataFilter);
 
                     _stats.EndSample();
                     _parent._perfStatsColl2.IncrementAvgEventProcessingSample(_stats.Current);
                 }
-
             }
             catch (Exception ex)
             {
-                if (_parent.Logger.IsErrorLogsEnabled) _parent.Logger.NCacheLog.Error("Item Remove CallBack Task.Process", ex.ToString());
+                if (_parent.Logger.IsErrorLogsEnabled)
+                    _parent.Logger.NCacheLog.Error("Item Remove CallBack Task.Process", ex.ToString());
             }
         }
     }

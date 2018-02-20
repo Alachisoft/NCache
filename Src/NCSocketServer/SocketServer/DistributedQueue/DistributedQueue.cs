@@ -1,4 +1,4 @@
-// Copyright (c) 2018 Alachisoft
+﻿// Copyright (c) 2018 Alachisoft
 // 
 // Licensed under the Apache License, Version 2.0 (the "License");
 // you may not use this file except in compliance with the License.
@@ -14,24 +14,21 @@
 
 using System;
 using System.Collections.Generic;
-using System.Text;
-using System.Collections;
 using System.Threading;
 using Alachisoft.NCache.SocketServer.Statistics;
 
 namespace Alachisoft.NCache.SocketServer
 {
-    class DistributedQueue :IDistributedQueue
+    class DistributedQueue : IDistributedQueue
     {
         SortedDictionary<string, IQueue> _reqisteredQueues = new SortedDictionary<string, IQueue>();
         List<SlaveQueue> _qeueues = new List<SlaveQueue>();
         private PerfStatsCollector _perfStatsCollector;
 
-
         long _count;
-        int _currentQueueIndex =0;
+        int _currentQueueIndex = 0;
         bool _closed;
-       
+
         public DistributedQueue(PerfStatsCollector statsCollector)
         {
             _perfStatsCollector = statsCollector;
@@ -43,17 +40,14 @@ namespace Alachisoft.NCache.SocketServer
 
             do
             {
-
                 if (SocketServer.IsServerCounterEnabled)
                 {
                     if (_perfStatsCollector != null)
                         _perfStatsCollector.SettNotificationQueueSizeStats(ConnectionManager.CallbackQueue.Count);
                 }
-
-
                 lock (this)
                 {
-                    if (_qeueues.Count != 0 && _count >0)
+                    if (_qeueues.Count != 0 && _count > 0)
                     {
                         if (_currentQueueIndex >= _qeueues.Count)
                             _currentQueueIndex = 0;
@@ -79,17 +73,16 @@ namespace Alachisoft.NCache.SocketServer
                             }
                         }
                     }
-                    
+
                     if (item == null)
                         Monitor.Wait(this);
 
                     _currentQueueIndex++;
                 }
-            } while (item == null && !_closed);           
+            } while (item == null && !_closed);
 
             return item;
         }
-
 
         private QueuedItem DequeueInternal(int queueIndex)
         {
@@ -114,8 +107,6 @@ namespace Alachisoft.NCache.SocketServer
             return queuedItem;
         }
 
-
-
         public string RegisterSlaveQueue(IQueue queue, string clientId)
         {
             string queueId = Guid.NewGuid().ToString();
@@ -126,8 +117,8 @@ namespace Alachisoft.NCache.SocketServer
                 if (!_reqisteredQueues.ContainsKey(queueId))
                 {
                     _count += queue.Count;
-                    _reqisteredQueues.Add(queueId, queue); 
-                    
+                    _reqisteredQueues.Add(queueId, queue);
+
                     slaveQ.Queue = queue;
                     slaveQ.SlaveId = queueId;
                     slaveQ.RegisteredClientId = clientId;
@@ -142,7 +133,6 @@ namespace Alachisoft.NCache.SocketServer
         {
             lock (this)
             {
-
                 if (queueId == null) return;
 
                 if (_reqisteredQueues.ContainsKey(queueId))
@@ -155,7 +145,6 @@ namespace Alachisoft.NCache.SocketServer
             }
         }
 
-
         internal void RemoveSlaveQueue(string queueId)
         {
             for (int i = 0; i < _qeueues.Count; i++)
@@ -166,7 +155,6 @@ namespace Alachisoft.NCache.SocketServer
                 }
             }
         }
-
 
         public void Enqueue(object item, string queueId)
         {
@@ -185,7 +173,7 @@ namespace Alachisoft.NCache.SocketServer
                         _count++;
                     }
                 }
-                if(enqueued) Monitor.PulseAll(this);
+                if (enqueued) Monitor.PulseAll(this);
             }
         }
 

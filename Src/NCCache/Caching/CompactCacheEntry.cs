@@ -15,6 +15,7 @@
 using System;
 using System.Collections;
 using Alachisoft.NCache.Caching.AutoExpiration;
+using Alachisoft.NCache.Caching.CacheSynchronization;
 using Alachisoft.NCache.Common;
 using Alachisoft.NCache.Runtime.Serialization;
 using Alachisoft.NCache.Runtime.Serialization.IO;
@@ -27,45 +28,60 @@ namespace Alachisoft.NCache.Caching
         private object _value;
         private BitSet _flag;
         private ExpirationHint _dependency;
+
+        private Alachisoft.NCache.Caching.CacheSynchronization.CacheSyncDependency _syncDependency;
+
         private long _expiration;
         private byte _options;
         private object _itemRemovedCallback;
+        private string _group;
+        private string _subgroup;
         private int _rentId;
         private Hashtable _queryInfo;
+        private ArrayList _keysDependingOnMe;
         private object _lockId;
         private LockAccessType _accessType;
+        private ulong _version;
+        private string _providerName;
+        private string _resyncProviderName;
         /// <summary>
         /// 
         /// </summary>
         /// <param name="key"></param>
         /// <param name="value"></param>
-        /// <param name="dependency"></param>
-        /// <param name="expiration"></param>
-        /// <param name="options"></param>
-        /// <param name="itemRemovedCallback"></param>
-        /// <param name="queryInfo"></param>
-        /// <param name="Flag"></param>
-        /// <param name="lockId"></param>
-        /// <param name="accessType"></param>
-        /// <param name="providername"></param>
-        /// <param name="resyncProviderName"></param>
         /// <param name="exh"></param>
         /// <param name="priority"></param>
+        /// <param name="itemRemovedCallback"></param>
+        /// <param name="group"></param>
+        /// <param name="subgroup"></param>
+
         [CLSCompliant(false)]
         public CompactCacheEntry(object key, object value, ExpirationHint dependency, 
-            long expiration, 
-            byte options, object itemRemovedCallback, Hashtable queryInfo, BitSet Flag, object lockId, LockAccessType accessType)
+            Alachisoft.NCache.Caching.CacheSynchronization.CacheSyncDependency syncDependency, long expiration,
+            byte options, object itemRemovedCallback, string group, string subgroup, Hashtable queryInfo, BitSet Flag, object lockId, ulong version, LockAccessType accessType, string providername, string resyncProviderName)
         {
             _key = key;
             _flag = Flag;
             _value = value;
+            
             _dependency = dependency;
+            _syncDependency = syncDependency;
             _expiration = expiration;
             _options = options;
             _itemRemovedCallback = itemRemovedCallback;
+            if (group != null)
+            {
+                _group = group;
+                if (subgroup != null)
+                    _subgroup = subgroup;
+            }
             _queryInfo = queryInfo;
+
             _lockId = lockId;
             _accessType = accessType;
+            _version = version;
+            _providerName = providername;
+            _resyncProviderName = resyncProviderName;
         }
 
         public CompactCacheEntry() { }
@@ -99,6 +115,28 @@ namespace Alachisoft.NCache.Caching
             get { return _accessType; }
         }
 
+        public string ProviderName
+        {
+            get { return _providerName; }
+        }
+
+        public string ResyncProviderName
+        {
+            get { return _resyncProviderName; }
+        }
+
+        [CLSCompliant(false)]
+        public ulong Version
+        {
+            get { return _version; }
+        }
+
+        /// <summary>
+        /// 
+        /// </summary>
+        public ExpirationHint Dependency { get { return _dependency; } }
+        public CacheSyncDependency SyncDependency { get { return _syncDependency; } }
+
         /// <summary>
         /// 
         /// </summary>
@@ -109,8 +147,23 @@ namespace Alachisoft.NCache.Caching
         /// </summary>
         public object Callback { get { return _itemRemovedCallback; } }
 
+        /// <summary>
+        /// 
+        /// </summary>
+        public string Group { get { return _group; } }
+
+        /// <summary>
+        /// 
+        /// </summary>
+        public string SubGroup { get { return _subgroup; } }
 
         public Hashtable QueryInfo { get { return _queryInfo; } }
+
+        public ArrayList KeysDependingOnMe
+        {
+            get { return _keysDependingOnMe; }
+            set { _keysDependingOnMe = value; }
+        }
 
         #region ICompactSerializable Members
 
@@ -122,7 +175,10 @@ namespace Alachisoft.NCache.Caching
             _dependency = ExpirationHint.ReadExpHint(reader);//reader.ReadObject();
             _options = reader.ReadByte();
             _itemRemovedCallback = reader.ReadObject();
+            _group = (string)reader.ReadObject();
+            _subgroup = (string)reader.ReadObject();
             _queryInfo = (Hashtable)reader.ReadObject();
+            _keysDependingOnMe = (ArrayList)reader.ReadObject();
         }
 
         public void Serialize(CompactWriter writer)
@@ -135,7 +191,10 @@ namespace Alachisoft.NCache.Caching
                 ExpirationHint.WriteExpHint(writer, _dependency);
                 writer.Write(_options);
                 writer.WriteObject(_itemRemovedCallback);
+                writer.WriteObject(_group);
+                writer.WriteObject(_subgroup);
                 writer.WriteObject(_queryInfo);
+                writer.WriteObject(_keysDependingOnMe);
             }
             catch (Exception) { throw; }
         }
@@ -164,6 +223,8 @@ namespace Alachisoft.NCache.Caching
             _expiration = 0;
             _options = 0;
             _itemRemovedCallback = null;
+            _group = null;
+            _subgroup = null;
             _queryInfo = null;
 
         }

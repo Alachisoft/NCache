@@ -10,14 +10,16 @@
 // distributed under the License is distributed on an "AS IS" BASIS,
 // WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
 // See the License for the specific language governing permissions and
-// limitations under the License.
+// limitations under the License
 
 using System;
 using System.Text;
-
 using System.Collections.Generic;
+#if JAVA
+using Runtime = Alachisoft.TayzGrid.Runtime;
+#else
 using Runtime = Alachisoft.NCache.Runtime;
-
+#endif
 namespace Alachisoft.NCache.Common
 {
     /// <summary>
@@ -109,18 +111,19 @@ namespace Alachisoft.NCache.Common
         /// <returns>Logging status for that type</returns>
         public LogsStatus GetStatus(LoggingType type)
         {
-            return this._logMap[type]; 
+            return this._logMap[type];            
+
         }
 
         #region ICompactSerializable Members
         public void Deserialize(Runtime.Serialization.IO.CompactReader reader)
         {
-            _logMap=Common.Util.SerilizationUtility.DeserializeDictionary<LoggingType,LogsStatus>(reader);
+            _logMap=Common.Util.SerializationUtility.DeserializeDictionary<LoggingType,LogsStatus>(reader);
         }
 
         public void Serialize(Runtime.Serialization.IO.CompactWriter writer)
         {
-            Common.Util.SerilizationUtility.SerializeDictionary(_logMap,writer);
+            Common.Util.SerializationUtility.SerializeDictionary(_logMap,writer);
         } 
         #endregion
     }

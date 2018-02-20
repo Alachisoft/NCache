@@ -13,11 +13,9 @@
 // limitations under the License.
 
 using System;
-using System.Data;
 using System.Collections;
 
 using Alachisoft.NCache.Config;
-using Alachisoft.NCache.Runtime.Exceptions;
 using Alachisoft.NCache.Config.Dom; 
 
 namespace Alachisoft.NCache.Caching
@@ -29,7 +27,7 @@ namespace Alachisoft.NCache.Caching
 	public class CacheFactory : MarshalByRefObject
 	{
 		/// <summary>
-		/// Creates a cache object by reading in cofiguration parameters from a .NET XML file.
+		/// Creates a cache object by reading in configuration parameters from a .NET XML file.
 		/// </summary>
 		/// <param name="configFileName">Name and/or path of the configuration file.</param>
 		/// <param name="configSection">Name and/or ID of the section in the configuration file.</param>
@@ -37,11 +35,11 @@ namespace Alachisoft.NCache.Caching
 		static public Cache CreateFromXmlConfig(string configFileName, string configSection)
 		{
 			ConfigReader xmlReader = new XmlConfigReader(configFileName, configSection);
-			return CreateFromProperties(xmlReader.Properties, null,null);
+			return CreateFromProperties(xmlReader.Properties, null, null, null, null,null,null);
 		}
 
 		/// <summary>
-		/// Creates a cache object by reading in cofiguration parameters from a .NET XML file.
+		/// Creates a cache object by reading in configuration parameters from a .NET XML file.
 		/// </summary>
 		/// <param name="configFileName">Name and/or path of the configuration file.</param>
 		/// <param name="configSection">Name and/or ID of the section in the configuration file.</param>
@@ -53,34 +51,49 @@ namespace Alachisoft.NCache.Caching
 		/// <returns>return the Cache object</returns>
 		static public Cache CreateFromXmlConfig(string configFileName, 
 											string configSection,
+											ItemAddedCallback itemAdded,
+											ItemRemovedCallback itemRemoved,
+											ItemUpdatedCallback itemUpdated,
+											CacheClearedCallback cacheCleared,
                                             CustomRemoveCallback customRemove,
                                             CustomUpdateCallback customUpdate)
 		{
 			ConfigReader xmlReader = new XmlConfigReader(configFileName, configSection);
-			return CreateFromProperties(xmlReader.Properties,customRemove,customUpdate);
+			return CreateFromProperties(xmlReader.Properties, itemAdded, itemRemoved, itemUpdated, cacheCleared,customRemove,customUpdate);
 		}
 
-	    /// <summary>
-        /// This overload is used to call the Internal method that actually creates the cache.
+      
+        static public Cache CreateFromPropertyString(string propertyString )
+        {
+            return CreateFromPropertyString(propertyString, false);
+        }
+        
+        /// <summary>
+		/// This overload is used to pass on the security credentials of the user to the clustering layer
+		/// to avoid the possibility of joining a cluster to non-authorized nodes.
+		/// </summary>
+		/// <param name="propertyString"></param>
+		/// <returns></returns>
+		static public Cache CreateFromPropertyString(string propertyString,  bool isStartedAsMirror)
+		{
+			ConfigReader propReader = new PropsConfigReader(propertyString);
+           
+            return CreateFromProperties(propReader.Properties, null, null, null, null, null, null, null,  isStartedAsMirror, false);
+		}
+
+        /// <summary>
+        /// This overload is used to pass on the security credentials of the user to the clustering layer
+        /// to avoid the possibility of joining a cluster to non-authorized nodes.
         /// </summary>
         /// <param name="propertyString"></param>
         /// <returns></returns>
-        static public Cache CreateFromPropertyString(string propertyString,CacheServerConfig config, bool isStartedAsMirror, bool twoPhaseInitialization)
+        static public Cache CreateFromPropertyString(string propertyString,CacheServerConfig config,  bool isStartedAsMirror,bool twoPhaseInitialization)
         {
             ConfigReader propReader = new PropsConfigReader(propertyString);
-            return CreateFromProperties(propReader.Properties,config, null, null, isStartedAsMirror,twoPhaseInitialization);
+            return CreateFromProperties(propReader.Properties,config, null, null, null, null, null, null, isStartedAsMirror,twoPhaseInitialization);
         }
 
-		///// <summary>
-		///// Creates a cache object by parsing configuration string passed as parameter.
-		///// </summary>
-		///// <param name="propertyString">property string provided by the user </param>
-		///// <returns>return the Cache object</returns>
-		static public Cache CreateFromPropertyString(string propertyString)
-		{
-			ConfigReader propReader = new PropsConfigReader(propertyString);
-			return CreateFromProperties(propReader.Properties, null, null);
-		}
+	
 
 		/// <summary>
 		/// Creates a cache object by parsing configuration string passed as parameter.
@@ -93,13 +106,17 @@ namespace Alachisoft.NCache.Caching
 		/// <param name="cacheCleared">cache cleared handler</param>
 		/// <returns>return the Cache object</returns>
 		static public Cache CreateFromPropertyString(string propertyString,
+											ItemAddedCallback itemAdded,
+											ItemRemovedCallback itemRemoved,
+											ItemUpdatedCallback itemUpdated,
+											CacheClearedCallback cacheCleared,
                                             CustomRemoveCallback customRemove,
                                             CustomUpdateCallback customUpdate)
 		{
 			ConfigReader propReader = new PropsConfigReader(propertyString);
-			return CreateFromProperties(propReader.Properties, customRemove,customUpdate);
+			return CreateFromProperties(propReader.Properties, itemAdded, itemRemoved, itemUpdated, cacheCleared,customRemove,customUpdate);
 		}
-     
+
 		/// <summary>
 		/// Internal method that actually creates the cache. A HashMap containing the config parameters 
 		/// is passed to this method.
@@ -111,17 +128,37 @@ namespace Alachisoft.NCache.Caching
 		/// <param name="cacheMiss">cache miss handler</param>
 		/// <param name="cacheCleared">cache cleared handler</param>
 		/// <returns>return the Cache object</returns>
-        static private Cache CreateFromProperties(IDictionary properties,
+		static private Cache CreateFromProperties(IDictionary properties,
+										ItemAddedCallback itemAdded,
+										ItemRemovedCallback itemRemoved,
+										ItemUpdatedCallback itemUpdated,
+                                        CacheClearedCallback cacheCleared,
                                         CustomRemoveCallback customRemove,
                                         CustomUpdateCallback customUpdate)
-        {
-            return CreateFromProperties(properties,
-                null,
-                customRemove,
-                customUpdate,
-                false,
-                false);
-        }
+		{
+			Cache cache = new Cache();
+
+
+			if(itemAdded != null)
+				cache.ItemAdded += itemAdded;
+			if(itemRemoved != null)
+				cache.ItemRemoved += itemRemoved;
+			if(itemUpdated != null)
+				cache.ItemUpdated += itemUpdated;
+			if(cacheCleared != null)
+				cache.CacheCleared += cacheCleared;
+
+            if (customRemove != null)
+                cache.CustomRemoveCallbackNotif += customRemove;
+            if (customUpdate != null)
+                cache.CustomUpdateCallbackNotif += customUpdate;
+
+			cache.Initialize(properties,true);
+            return cache;
+		}
+
+        
+	
 
 		/// <summary>
 		/// Internal method that actually creates the cache. A HashMap containing the config parameters 
@@ -136,19 +173,35 @@ namespace Alachisoft.NCache.Caching
 		/// <returns>return the Cache object</returns>
 		static private Cache CreateFromProperties(IDictionary properties,
                                         CacheServerConfig config,
+										ItemAddedCallback itemAdded,
+										ItemRemovedCallback itemRemoved,
+										ItemUpdatedCallback itemUpdated,
+										CacheClearedCallback cacheCleared,
 										CustomRemoveCallback customRemove,
 										CustomUpdateCallback customUpdate,
+									
                                         bool isStartingAsMirror,
                                         bool twoPhaseInitialization)
 		{
 			Cache cache = new Cache();
             cache.Configuration = config;
+
+			if (itemAdded != null)
+				cache.ItemAdded += itemAdded;
+			if (itemRemoved != null)
+				cache.ItemRemoved += itemRemoved;
+			if (itemUpdated != null)
+				cache.ItemUpdated += itemUpdated;
+			if (cacheCleared != null)
+				cache.CacheCleared += cacheCleared;
+  
             if (customRemove != null)
                 cache.CustomRemoveCallbackNotif += customRemove;
             if (customUpdate != null)
                 cache.CustomUpdateCallbackNotif += customUpdate;
 
-            cache.Initialize(properties, true, isStartingAsMirror,twoPhaseInitialization);
+            cache.Initialize(properties, true,  isStartingAsMirror,twoPhaseInitialization);
+
 			return cache;
 		}
 	}

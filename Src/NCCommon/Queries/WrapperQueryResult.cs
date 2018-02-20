@@ -10,11 +10,15 @@
 // distributed under the License is distributed on an "AS IS" BASIS,
 // WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
 // See the License for the specific language governing permissions and
-// limitations under the License.
+// limitations under the License
+
+using System;
+using System.Linq;
+using System.Text;
+using System.Collections;
 using Alachisoft.NCache.Common.DataStructures;
 using Alachisoft.NCache.Common.DataStructures.Clustered;
-using Alachisoft.NCache.Common.Enum;
-using System.Collections;
+using Alachisoft.NCache.Common.Queries.Filters;
 
 namespace Alachisoft.NCache.Common.Queries
 {
@@ -27,12 +31,36 @@ namespace Alachisoft.NCache.Common.Queries
 
         public WrapperQueryResult(IQueryResult result)
         {
-            _wrappedResult = result;
+            _wrappedResult = result;           
+        }
+
+        public IKeyFilter KeyFilter 
+        {
+            get
+            {
+                return _wrappedResult.KeyFilter;
+            }
+            set
+            {
+                _wrappedResult.KeyFilter = value; 
+            }
+        }
+
+        public IKeyFilter CompoundFilter 
+        {
+            get
+            {
+                return _wrappedResult.CompoundFilter;
+            }
+            set
+            {
+                _wrappedResult.CompoundFilter = value; 
+            }
         }
 
         public int Count
         {
-            get { return _resultKeys.Count; }
+            get { return _resultKeys.Count; } 
         }
 
         public void AddExclusion(HashVector excludeResult)
@@ -47,13 +75,32 @@ namespace Alachisoft.NCache.Common.Queries
             }
         }
 
-        public void Add(IDictionary other, CollectionOperation op)
+        private Boolean EvaluateFilter(Object key, Boolean filter)
+        {
+            if (KeyFilter == null && CompoundFilter == null) return true;
+
+            if (!filter) return true;
+
+            if (KeyFilter != null && CompoundFilter != null)
+                return KeyFilter.Evaluate((String)key) && CompoundFilter.Evaluate((String)key);
+
+            if (KeyFilter != null)
+                return KeyFilter.Evaluate((String)key);
+
+            if (CompoundFilter != null)
+                return CompoundFilter.Evaluate((String)key);
+
+            return false;
+        }
+
+        public void Add(IDictionary other, CollectionOperation op, bool filterResult = true)
         {
             IDictionaryEnumerator ide = other.GetEnumerator();
 
             while (ide.MoveNext())
             {
-                AddObject(ide.Key, op);
+                if(EvaluateFilter(ide.Key,filterResult))
+                    AddObject(ide.Key, op);
             }
         }
 
@@ -91,7 +138,7 @@ namespace Alachisoft.NCache.Common.Queries
                 {
                     while (e.MoveNext())
                     {
-                        if (!_resultKeys.ContainsKey(e.Key))
+                        if(!_resultKeys.ContainsKey(e.Key))
                             _resultKeys.Add(e.Key, null);
                     }
                 }

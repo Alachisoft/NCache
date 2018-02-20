@@ -10,19 +10,25 @@
 // distributed under the License is distributed on an "AS IS" BASIS,
 // WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
 // See the License for the specific language governing permissions and
-// limitations under the License.
+// limitations under the License
 
 using System;
 using System.Collections.Generic;
+using System.Linq;
 using System.Text;
 using System.Net.Sockets;
 using System.Net;
-using System.Management;
+#if !NETCORE
+using System.Management; 
+#endif
 using System.Diagnostics;
-using System.Collections;
-using System.Text.RegularExpressions;
-using System.ServiceProcess;
 using Alachisoft.NCache.Tools.Common;
+using System.ComponentModel;
+using System.Collections;
+using System.ServiceProcess;
+using System.IO;
+using System.Text.RegularExpressions;
+
 
 namespace Alachisoft.NCache.Common.Util
 {
@@ -39,13 +45,17 @@ namespace Alachisoft.NCache.Common.Util
             set { ManagementPortHandler.runningcaches = value; }
         }
 
-          static public int GenerateManagementPort(ArrayList occupiedPorts)
+        static public int GenerateManagementPort(ArrayList occupiedPorts)
         {
             TcpListener ss = null;
             // Reset the start port everytime to make sure no ports are left unused.
             startPort = ServiceConfiguration.ManagementPortLower;
             if (startPort <= 0 || endPort <= 0)
+#if !NETCORE && !NETCOREAPP2_0
                 throw new ManagementException("Port range is not defined in Alachisoft.NCache.Service.exe.config located at 'NCache Installation'/bin/service");
+#elif NETCORE 
+                throw new Exception("Port range is not defined in Alachisoft.NCache.Service.exe.config located at 'NCache Installation'/bin/service"); //TODO: ALACHISOFT (System.Management has some issues)
+#endif 
             while (true)
             {
                 try
@@ -83,20 +93,22 @@ namespace Alachisoft.NCache.Common.Util
 
 
 
-          static void IncrementStartPort(TcpListener ss)
-          {
-              startPort++;
-              if (ss != null)
-              {
-                  try
-                  {
-                      ss.Stop();
-                  }
-                  catch (Exception e)
-                  {
-                  }
-              }
-          }
+        static void IncrementStartPort(TcpListener ss)
+        {
+            startPort++;
+            if (ss != null)
+            {
+                try
+                {
+                    ss.Stop();
+                }
+                catch (Exception e)
+                {
+                }
+            }
+        }
+
+
 
         static public Hashtable DiscoverCachesViaWMI()
         {
@@ -128,18 +140,19 @@ namespace Alachisoft.NCache.Common.Util
                                 cacheInfo = runningcaches[cParam.CacheName.ToLower()] as CacheHostInfo;
                                 cacheInfo.ProcessId = process.Id;
                                 cacheInfo.ManagementPort = cParam.ManagementPort;
+
                             }
                         }
                     }
                 }
                 catch (Exception ex)
                 {
-                    return null;
+                    return runningcaches;
                 }
                 return runningcaches;
             }
             else
-                return null;
+                return runningcaches;
         }
 
         static public List<ProcessInfo> DiscoverCachesViaNetStat()
@@ -187,7 +200,6 @@ namespace Alachisoft.NCache.Common.Util
                                 {
                                     ProcessInfo info = new ProcessInfo();
                                     info.protocol = localAddress.Contains("1.1.1.1") ? String.Format("{0}v6", tokens[1]) : String.Format("{0}v4", tokens[1]);
-                                    info.port_number = port;
                                     info.process_name = LookupProcess(Convert.ToInt16(tokens[5]));
                                     info.pid = Convert.ToInt16(tokens[5]);
                                     processInfoList.Add(info);
@@ -222,6 +234,7 @@ namespace Alachisoft.NCache.Common.Util
             StringBuilder commandLine = new StringBuilder(process.MainModule.FileName);
 
             commandLine.Append(" ");
+#if !NETCORE
             EnumerationOptions options = new EnumerationOptions();
             options.Timeout = new TimeSpan(0, 0, 5);
 
@@ -246,10 +259,12 @@ namespace Alachisoft.NCache.Common.Util
             {
                 throw;
             }
+#elif NETCORE
+            //TODO: ALACHISOFT (System.Management has some issues)
+            throw new NotImplementedException();
+#endif
+
             return null;
         }
     }
-
-
-
 }

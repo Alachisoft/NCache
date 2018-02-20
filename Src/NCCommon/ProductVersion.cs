@@ -10,16 +10,13 @@
 // distributed under the License is distributed on an "AS IS" BASIS,
 // WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
 // See the License for the specific language governing permissions and
-// limitations under the License.
+// limitations under the License
 
 using System;
-using System.Collections.Generic;
-
-using Runtime = Alachisoft.NCache.Runtime;
 
 namespace Alachisoft.NCache.Common
 {
-       //This class is to serve as the basis for live upgrades and cross version communication in future
+    //This class is to serve as the basis for live upgrades and cross version communication in future
 
     /// <summary>
     /// Returns the version of the NCache running on a particular Node. 
@@ -59,8 +56,8 @@ namespace Alachisoft.NCache.Common
                         if (_productInfo == null)
                         {
                             _productInfo = new ProductVersion();
-
-                            _productInfo._editionID = 34;
+#if COMMUNITY
+                            _productInfo._editionID = 32;
                             _productInfo._majorVersion1 = 4;
                             _productInfo._majorVersion2 = 3;
                             _productInfo._minorVersion1 = 0;
@@ -68,6 +65,16 @@ namespace Alachisoft.NCache.Common
                             _productInfo._productName = "NCACHE";
                             _productInfo._additionalData = new byte[0];
 
+#elif CLIENT
+                            _productInfo._editionID = 33;
+                            _productInfo._majorVersion1 = 4;
+                            _productInfo._majorVersion2 = 3;
+                            _productInfo._minorVersion1 = 0;
+                            _productInfo._minorVersion2 = 0;
+                            _productInfo._productName = "NCACHE";
+                            _productInfo._additionalData = new byte[0];
+
+#endif
                         }
                     }
                     
@@ -247,7 +254,6 @@ namespace Alachisoft.NCache.Common
                 }
                 else
                     result = -1;
-                // Suggestion- Incase of invalid type an exception should be thrown!!
 
             }
             return result;
@@ -255,5 +261,4 @@ namespace Alachisoft.NCache.Common
         #endregion
         
     }
-   
 }

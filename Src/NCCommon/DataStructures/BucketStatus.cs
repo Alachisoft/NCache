@@ -10,8 +10,7 @@
 // distributed under the License is distributed on an "AS IS" BASIS,
 // WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
 // See the License for the specific language governing permissions and
-// limitations under the License.
-
+// limitations under the License
 namespace Alachisoft.NCache.Common.DataStructures
 {
     /// <summary>
@@ -21,10 +20,10 @@ namespace Alachisoft.NCache.Common.DataStructures
     {
         /// <summary> The bucket is yet to be state transferred from the source node. </summary>
         public const byte NeedTransfer = 1;
-    
+
         /// <summary> The bucket is being transfered from the source node to some target node.</summary>
         public const byte UnderStateTxfr = 2;
-       
+
         /// <summary> The bucket is fully functional. </summary>
         public const byte Functional = 4;
 

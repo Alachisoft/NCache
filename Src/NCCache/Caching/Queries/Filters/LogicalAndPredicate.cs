@@ -16,7 +16,6 @@ using System;
 using Alachisoft.NCache.Common.Queries;
 using System.Collections;
 using Alachisoft.NCache.Common.DataStructures.Clustered;
-using Alachisoft.NCache.Common.Enum;
 
 namespace Alachisoft.NCache.Caching.Queries.Filters
 {
@@ -57,7 +56,7 @@ namespace Alachisoft.NCache.Caching.Queries.Filters
             SortedList tmpList = new SortedList(new QueryResultComparer(sortAscending));
 
             IQueryResult temp = queryContext.InternalQueryResult;
-            queryContext.InternalQueryResult = new Common.Queries.HashedQueryResult();
+            queryContext.InternalQueryResult = new Common.Queries.HashedQueryResult(queryContext.KeyFilter,queryContext.CompoundFilter);
             
             for (int i = 0; i < members.Count; i++)
             {

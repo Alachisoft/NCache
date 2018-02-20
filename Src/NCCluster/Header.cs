@@ -9,7 +9,6 @@
 // WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
 // See the License for the specific language governing permissions and
 // limitations under the License.
-
 using System;
 using System.Runtime.Serialization;
 using Alachisoft.NCache.Common;
@@ -36,9 +35,6 @@ namespace Alachisoft.NGroups
 		{
 			return HDR_OVERHEAD;
 		}
-
-		//public string	nextUp = String.Empty;
-		//public string	ID = String.Empty;
 
 		/// <summary>
 		/// Default String representation of the HDR

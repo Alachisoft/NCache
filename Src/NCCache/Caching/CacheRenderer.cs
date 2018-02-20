@@ -12,8 +12,12 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
+using System.Collections.Generic;
 using System.Net;
+using Alachisoft.NCache.Caching.Util;
 using Alachisoft.NCache.Common;
+using Alachisoft.NCache.Runtime.CacheManagement;
+using Alachisoft.NCache.Runtime.Caching;
 
 namespace Alachisoft.NCache.Caching
 {
@@ -22,7 +26,7 @@ namespace Alachisoft.NCache.Caching
     /// </summary>
     public abstract class CacheRenderer
     {
-        public delegate void ClientConnected(string client, string cacheId);
+        public delegate void ClientConnected(string client, string cacheId, ClientInfo cacheInfo);
         public delegate void ClientDisconnected(string client, string cacheId);
 
         private ClientConnected _clientConnected;
@@ -64,5 +68,12 @@ namespace Alachisoft.NCache.Caching
         /// <param name="status">Logging status to set</param>
         public abstract void SetLoggingStatus(LoggingInfo.LoggingSubsystem subsystem, LoggingInfo.LoggingType type, LoggingInfo.LogsStatus status);
 
+        public virtual List<Alachisoft.NCache.Common.Monitoring.ClientNode> GetClientList(string cacheId) { return null; }
+
+        public virtual List<Alachisoft.NCache.Common.Monitoring.ClientProcessStats> GetClientProcessStats(string cacheId) { return null; }
+
+        public virtual CacheHealth GetCacheHealth(string cacheId) { return null; }
+
+        public virtual Alachisoft.NCache.Common.DataStructures.RequestStatus GetRequestStatus(string clientId, long requestId, long commandId) { return null; }
     }
 }

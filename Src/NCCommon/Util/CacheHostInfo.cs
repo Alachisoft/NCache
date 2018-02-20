@@ -14,7 +14,6 @@
 
 namespace Alachisoft.NCache.Common.Util
 {
-
     public class CacheHostInfo
     {
         private int processId;

@@ -73,12 +73,12 @@ namespace Alachisoft.NCache.Caching.EvictionPolicies
             return _evctPolicy.CompatibleHint(eh);
         }
 
-        public void Execute(CacheBase cache, CacheRuntimeContext context, long count)
+        public long Execute(CacheBase cache, CacheRuntimeContext context, long count)
         {
             Sync.AcquireWriterLock(Timeout.Infinite);
             try
             {
-                _evctPolicy.Execute(cache,context, count);
+                return _evctPolicy.Execute(cache,context, count);
             }
             finally
             {
@@ -128,11 +128,11 @@ namespace Alachisoft.NCache.Caching.EvictionPolicies
             }
         }
 
+        #endregion
+
         public long IndexInMemorySize
         {
-            get { throw new NotImplementedException("EvictionPolicySyncWrapper.IndexInMemorySize"); }
+            get { throw new NotImplementedException("EvictionPolicySyncWrapper.IndexInMemorySize"); }            
         }
-
-        #endregion
     }
 }

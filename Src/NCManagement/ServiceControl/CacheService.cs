@@ -10,11 +10,12 @@
 // distributed under the License is distributed on an "AS IS" BASIS,
 // WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
 // See the License for the specific language governing permissions and
-// limitations under the License.
+// limitations under the License
 
 using System;
 using System.Net.Sockets;
 using Alachisoft.NCache.Management;
+using Alachisoft.NCache.Management.ServiceControl;
 using Alachisoft.NCache.Runtime.Exceptions;
 
 namespace Alachisoft.NCache.ServiceControl
@@ -28,7 +29,11 @@ namespace Alachisoft.NCache.ServiceControl
     {
         private string _serviceName;
         protected ICacheServer cacheServer;
-        
+
+        public event EventHandler<CredentialsEventArgs> OnGetSecurityCredentials = delegate { };
+        private string address;
+        private bool p;
+
         /// <summary>
         /// Overloaded Constructor
         /// </summary>
@@ -69,8 +74,6 @@ namespace Alachisoft.NCache.ServiceControl
             ICacheServer cm = null;
             try
             {
-                // Try to connect to cache manager first, saves time if the 
-                // service is already running.
                 cm = ConnectCacheServer();
             }
             catch (SocketException socketException)
@@ -82,7 +85,10 @@ namespace Alachisoft.NCache.ServiceControl
                 }
                 try
                 {
+                    // Check and start NCache service and then try again
+
                     Start(timeout);
+
                     cm = ConnectCacheServer();
 
                 }
@@ -99,7 +105,10 @@ namespace Alachisoft.NCache.ServiceControl
             {
                 try
                 {
+                    // Check and start NCache service and then try again
+
                     Start(timeout);
+
                     cm = ConnectCacheServer();
                  
                 }
@@ -114,6 +123,8 @@ namespace Alachisoft.NCache.ServiceControl
             }
             return cm;
         }
+
+
 
         public virtual void RestartSvcAfterNICChanged(TimeSpan timeout, string previousServerNode)
         {
@@ -158,6 +169,11 @@ namespace Alachisoft.NCache.ServiceControl
         public bool isRunning(TimeSpan timeout)
         {
             return isServiceRunning(timeout, _serviceName);
+        }
+
+        public void GetSecurityCredentials(object sender,CredentialsEventArgs e)
+        {
+            OnGetSecurityCredentials(sender, e);
         }
     }
 }

@@ -10,11 +10,13 @@
 // distributed under the License is distributed on an "AS IS" BASIS,
 // WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
 // See the License for the specific language governing permissions and
-// limitations under the License.
+// limitations under the License
 
 using System;
 using System.Reflection;
+#if !NETCORE
 using System.Runtime.Remoting;
+#endif
 
 namespace Alachisoft.NCache.Common
 {
@@ -50,9 +52,10 @@ namespace Alachisoft.NCache.Common
         /// <returns>A reference to the newly created instance.</returns>
         public static object CreateObject(string assembly, string classname, object[] args)
         {
-            ObjectHandle objHandle = null;
             try
             {
+#if !NETCORE
+                ObjectHandle objHandle = null;
                 objHandle = Activator.CreateInstance(
                     assembly,				// name of assembly
                     classname,				// fully qualified class name
@@ -68,6 +71,22 @@ namespace Alachisoft.NCache.Common
                 {
                     return objHandle.Unwrap();
                 }
+#elif NETCORE
+                //TODO: ALACHISOFT (Relection API has some changes in .Net Core thus code change was required)
+                var obj = Activator.CreateInstance(
+                    assembly.GetType(),             // type of assembly
+                    classname,				// fully qualified class name
+                    false,					// class name is case-sensitive
+                    BindingFlags.Default,	// no binding attributes	
+                    null,					// use default binder
+                    args,					// arguments to constructor,
+                    null,					// default culture
+                    null,					// default activation attributes
+                    null					// default security policy
+                    );
+                return obj;
+#endif
+
             }
             catch (Exception e)
             {

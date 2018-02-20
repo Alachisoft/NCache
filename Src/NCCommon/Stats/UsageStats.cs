@@ -10,7 +10,7 @@
 // distributed under the License is distributed on an "AS IS" BASIS,
 // WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
 // See the License for the specific language governing permissions and
-// limitations under the License.
+// limitations under the License
 
 using System;
 using System.IO;
@@ -19,15 +19,17 @@ using System.Net;
 using System.Text;
 using System.Collections;
 using System.Reflection;
-using System.Runtime.Remoting;
 using System.Runtime.InteropServices;
 using System.Runtime.Serialization.Formatters.Binary;
 using System.Threading;
 
 using Alachisoft.NCache.Common.Util;
 using Alachisoft.NCache.Common.Interop;
+#if JAVA
+using Runtime = Alachisoft.TayzGrid.Runtime;
+#else
 using Runtime = Alachisoft.NCache.Runtime;
-
+#endif
 namespace Alachisoft.NCache.Common.Stats
 {
 	/// <summary>
@@ -70,21 +72,24 @@ namespace Alachisoft.NCache.Common.Stats
 		/// </summary>
 		public void BeginSample()
 		{
-			Win32.QueryPerformanceCounter(ref _lastStart);
+            _lastStart = Stopwatch.GetTimestamp();
 		}
 
+			
 		/// <summary>
 		/// Timestamps the end of interval and calculates the sample time
 		/// </summary>
 		public void EndSample()
 		{
-			Win32.QueryPerformanceCounter(ref _lastStop);
+            _lastStop = Stopwatch.GetTimestamp();
 		}
 
         public void Deserialize(Runtime.Serialization.IO.CompactReader reader)
         {
             _lastStart = reader.ReadInt64();
             _lastStop = reader.ReadInt64();
+
+
         }
 
         public void Serialize(Runtime.Serialization.IO.CompactWriter writer)

@@ -19,12 +19,9 @@ namespace Alachisoft.NCache.SocketServer.Command
 {
     class GetLogginInfoCommand : CommandBase
     {
-
         public override void ExecuteCommand(ClientManager clientManager, Alachisoft.NCache.Common.Protobuf.Command command)
         {
-            ///Command:
-            /// GETLOGGINGINFO "requestId"
-            /// 
+
             string requestId = string.Empty;
 
             Alachisoft.NCache.Common.Protobuf.GetLoggingInfoCommand getLoggingInfoCommand = command.getLoggingInfoCommand;
@@ -41,6 +38,7 @@ namespace Alachisoft.NCache.SocketServer.Command
                 Alachisoft.NCache.Common.Protobuf.Response response = new Alachisoft.NCache.Common.Protobuf.Response();
                 Alachisoft.NCache.Common.Protobuf.GetLoggingInfoResponse loggingInfoResponse = new Alachisoft.NCache.Common.Protobuf.GetLoggingInfoResponse();
                 response.requestId = command.requestID;
+                response.commandID = command.commandID;
                 loggingInfoResponse.errorsEnabled = errorEnabled;
                 loggingInfoResponse.detailedErrorsEnabled = detailedEnabled;
 
@@ -51,7 +49,7 @@ namespace Alachisoft.NCache.SocketServer.Command
             }
             catch (Exception exc)
             {
-                _serializedResponsePackets.Add(Alachisoft.NCache.Common.Util.ResponseHelper.SerializeExceptionResponse(exc, command.requestID));
+                _serializedResponsePackets.Add(Alachisoft.NCache.Common.Util.ResponseHelper.SerializeExceptionResponse(exc, command.requestID, command.commandID));
             }
         }
     }

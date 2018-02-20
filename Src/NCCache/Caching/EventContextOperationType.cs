@@ -16,6 +16,6 @@ namespace Alachisoft.NCache.Caching
 {
     public enum EventContextOperationType
     {
-        CacheOperation
+        CacheOperation = 1
     }
 }

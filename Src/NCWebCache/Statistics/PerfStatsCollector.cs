@@ -15,37 +15,38 @@
 using System;
 using System.Diagnostics;
 
-using Alachisoft.NCache.Util;
-using System.Threading;
-using Alachisoft.NCache.Common.Interop;
-
-
 namespace Alachisoft.NCache.Web.Statistics
+
 {
-	/// <summary>
-	/// Summary description for PerfStatsCollector.
-	/// </summary>
-	internal class PerfStatsCollector : IDisposable
-	{
-		/// <summary> Instance name. </summary>
-		private string					_instanceName;
+    /// <summary>
+    /// Summary description for PerfStatsCollector.
+    /// </summary>
+    internal class PerfStatsCollector : IDisposable
+    {
+        /// <summary> Instance name. </summary>
+        private string _instanceName;
+
         /// <summary> Port number. </summary>
-        private string                     _port;
+        private string _port;
 
-
+        ///// <summary> performance counter for bytes sent per second. </summary>
         /// <summary> performance counter for cache requests per second by the client. </summary>
         private PerformanceCounter _pcClientRequestsPerSec = null;
+
         /// <summary> performance counter for cache responses per second by the client. </summary>
         private PerformanceCounter _pcClientResponsesPerSec = null;
+
         /// <summary> performance counter for cache requests per second by all the clients. </summary>
         private PerformanceCounter _pcTotalClientRequestsPerSec = null;
+
         /// <summary> performance counter for cache responses per second by the all clients. </summary>
         private PerformanceCounter _pcTotalClientResponsesPerSec = null;
 
-        private bool                    _isEnabled = false;
+        private bool _isEnabled = false;
 
-		/// <summary> Category name of counter performance data.</summary>
-        private const string            PC_CATEGORY = "NCache";
+        /// <summary> Category name of counter performance data.</summary>
+        private const string PC_CATEGORY = "NCache";
+
 
         /// <summary>
         /// Constructor
@@ -58,55 +59,55 @@ namespace Alachisoft.NCache.Web.Statistics
             _instanceName = instanceName;
         }
 
-		/// <summary>
-		/// Returns true if the current user has the rights to read/write to performance counters
-		/// under the category of object cache.
-		/// </summary>
-		public string InstanceName
-		{
-			get { return _instanceName; }
-			set { _instanceName = value; }
-		}
+        /// <summary>
+        /// Returns true if the current user has the rights to read/write to performance counters
+        /// under the category of object cache.
+        /// </summary>
+        public string InstanceName
+        {
+            get { return _instanceName; }
+            set { _instanceName = value; }
+        }
 
 
-		/// <summary>
-		/// Returns true if the current user has the rights to read/write to performance counters
-		/// under the category of object cache.
-		/// </summary>
-		public bool UserHasAccessRights
-		{
-			get
-			{
-				try
-				{
-					PerformanceCounterPermission permissions = new
-						PerformanceCounterPermission(PerformanceCounterPermissionAccess.Instrument,
-						".", PC_CATEGORY);
-					permissions.Demand();
+        /// <summary>
+        /// Returns true if the current user has the rights to read/write to performance counters
+        /// under the category of object cache.
+        /// </summary>
+        public bool UserHasAccessRights
+        {
+            get
+            {
+                try
+                {
+                    PerformanceCounterPermission permissions = new
+                        PerformanceCounterPermission(PerformanceCounterPermissionAccess.Instrument,
+                            ".", PC_CATEGORY);
+                    permissions.Demand();
 
-					if(!PerformanceCounterCategory.Exists(PC_CATEGORY, "."))
-					{
-						return false;
-					}
-				}
-				catch(Exception e)
-				{
-					return false;
-				}
-				return true;
-			}
-		}
+                    if (!PerformanceCounterCategory.Exists(PC_CATEGORY, "."))
+                    {
+                        return false;
+                    }
+                }
+                catch (Exception e)
+                {
+                    return false;
+                }
+
+                return true;
+            }
+        }
 
 
+        #region	/                 --- IDisposable ---           /
 
-		#region	/                 --- IDisposable ---           /
-
-		/// <summary>
-		/// Performs application-defined tasks associated with freeing, releasing, or 
-		/// resetting unmanaged resources.
-		/// </summary>
-		public void Dispose()
-		{
+        /// <summary>
+        /// Performs application-defined tasks associated with freeing, releasing, or 
+        /// resetting unmanaged resources.
+        /// </summary>
+        public void Dispose()
+        {
             lock (this)
             {
                 if (_pcClientRequestsPerSec != null)
@@ -115,38 +116,39 @@ namespace Alachisoft.NCache.Web.Statistics
                     _pcClientRequestsPerSec.Dispose();
                     _pcClientRequestsPerSec = null;
                 }
+
                 if (_pcClientResponsesPerSec != null)
                 {
                     _pcClientResponsesPerSec.RemoveInstance();
                     _pcClientResponsesPerSec.Dispose();
                     _pcClientResponsesPerSec = null;
                 }
+
                 if (_pcTotalClientRequestsPerSec != null)
                 {
                     _pcTotalClientRequestsPerSec.RemoveInstance();
                     _pcTotalClientRequestsPerSec.Dispose();
                     _pcTotalClientRequestsPerSec = null;
                 }
+
                 if (_pcTotalClientResponsesPerSec != null)
                 {
                     _pcTotalClientResponsesPerSec.RemoveInstance();
                     _pcTotalClientResponsesPerSec.Dispose();
                     _pcTotalClientResponsesPerSec = null;
                 }
-
             }
-		}
+        }
 
+        #endregion
 
-		#endregion
+        #region	/                 --- Initialization ---           /
 
-		#region	/                 --- Initialization ---           /
-
-		/// <summary>
-		/// Initializes the counter instances and category.
-		/// </summary>
-		public void InitializePerfCounters()
-		{
+        /// <summary>
+        /// Initializes the counter instances and category.
+        /// </summary>
+        public void InitializePerfCounters()
+        {
             try
             {
                 if (!UserHasAccessRights)
@@ -154,31 +156,35 @@ namespace Alachisoft.NCache.Web.Statistics
 
                 lock (this)
                 {
-                    _pcClientRequestsPerSec = new PerformanceCounter(PC_CATEGORY, "Client Requests/sec", _instanceName, false);
-                    _pcClientResponsesPerSec = new PerformanceCounter(PC_CATEGORY, "Client Responses/sec", _instanceName, false);
-                    _pcTotalClientRequestsPerSec = new PerformanceCounter(PC_CATEGORY, "Client Requests/sec", "_Total_ client stats", false);
-                    _pcTotalClientResponsesPerSec = new PerformanceCounter(PC_CATEGORY, "Client Responses/sec", "_Total_ client stats", false);
+                    _pcClientRequestsPerSec =
+                        new PerformanceCounter(PC_CATEGORY, "Client Requests/sec", _instanceName, false);
+                    _pcClientResponsesPerSec =
+                        new PerformanceCounter(PC_CATEGORY, "Client Responses/sec", _instanceName, false);
+                    _pcTotalClientRequestsPerSec = new PerformanceCounter(PC_CATEGORY, "Client Requests/sec",
+                        "_Total_ client stats", false);
+                    _pcTotalClientResponsesPerSec = new PerformanceCounter(PC_CATEGORY, "Client Responses/sec",
+                        "_Total_ client stats", false);
                 }
+
                 _isEnabled = true;
             }
             catch (Exception e)
             {
             }
+        }
 
-		}
-
-
-		#endregion
+        #endregion
 
         /// <summary>
         /// Gets or Sets the value indicating whether Performance Stats collection is enabled or not.
-        /// On initialize Performance Colloection is enabled.
+        /// On initialize Performance Collection is enabled.
         /// </summary>
         public bool IsEnabled
         {
             get { return _isEnabled; }
             set { _isEnabled = value; }
         }
+
 
         /// <summary> 
         /// Increment the performance counter for Requests Per second by client. 
@@ -237,5 +243,5 @@ namespace Alachisoft.NCache.Web.Statistics
                 }
             }
         }
-	}
+    }
 }

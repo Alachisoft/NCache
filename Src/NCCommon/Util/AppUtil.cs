@@ -1,3 +1,5 @@
+// Copyright (c) 2018 Alachisoft
+// 
 // Licensed under the Apache License, Version 2.0 (the "License");
 // you may not use this file except in compliance with the License.
 // You may obtain a copy of the License at
@@ -8,14 +10,17 @@
 // distributed under the License is distributed on an "AS IS" BASIS,
 // WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
 // See the License for the specific language governing permissions and
-// limitations under the License.
-
+// limitations under the License
 
 using System;
 using System.Diagnostics;
 using Alachisoft.NCache.Common.Interop;
 using Microsoft.Win32;
 using System.IO;
+#if NETCORE
+using System.Runtime.InteropServices;
+#endif
+using Alachisoft.NCache.Common.Util;
 
 namespace Alachisoft.NCache.Common
 {
@@ -28,28 +33,36 @@ namespace Alachisoft.NCache.Common
         static string installDir = null;
 
         public readonly static string DeployedAssemblyDir = "deploy\\";
+        public readonly static string serviceLogsPath = "log-files" + Path.DirectorySeparatorChar + "service.log";
 
         static int s_logLevel = 7;
         static string javaLibDir = null;
+        static int _bucketSize;
+        static string logDir = null;
+
         static AppUtil()
         {
             try
             {
+                _bucketSize = (int)Math.Ceiling(((long)int.MinValue * -1) / (double)1000);
+#if !NETCORE
                 isRunningAsWow64 = Win32.InternalCheckIsWow64();
+#endif
             }
             catch (Exception ex)
             {
                 LogEvent("Win32.InternalCheckIsWow64() Error " + ex.Message, EventLogEntryType.Error);
             }
             installDir = GetInstallDir();
+            logDir = GetLogDir();
 
             javaLibDir = GetJavaLibDir();
             DeployedAssemblyDir = Path.Combine(installDir, DeployedAssemblyDir);
-            string logLevel = System.Configuration.ConfigurationSettings.AppSettings["NCacheServer.EventLogLevel"];
 
-            if (logLevel != null && logLevel != "")
+
+            if (ServiceConfiguration.EventLogLevel != null && ServiceConfiguration.EventLogLevel != "")
             {
-                logLevel = logLevel.ToLower();
+                string logLevel = ServiceConfiguration.EventLogLevel.ToLower();
                 switch (logLevel)
                 {
                     case "error":
@@ -67,6 +80,7 @@ namespace Alachisoft.NCache.Common
             }
         }
 
+
         public static bool IsRunningAsWow64
         {
             get { return isRunningAsWow64; }
@@ -80,21 +94,88 @@ namespace Alachisoft.NCache.Common
             {
                 return installPath;
             }
-            string path = System.Environment.CurrentDirectory + "\\";
+            string path = System.Environment.CurrentDirectory + Path.DirectorySeparatorChar;
 
             try
             {
+#if NETCORE
+                if (!System.Runtime.InteropServices.RuntimeInformation.IsOSPlatform(System.Runtime.InteropServices.OSPlatform.Windows))
+                {
+                    Registry.NetCore.RegistryUtil.RegUtil.LoadRegistry();
+                    if (Registry.NetCore.RegistryUtil.RegUtil.LicenseProperties != null ||
+                        Registry.NetCore.RegistryUtil.RegUtil.LicenseProperties.Product != null ||
+                        !string.IsNullOrEmpty(Registry.NetCore.RegistryUtil.RegUtil.LicenseProperties.Product.InstallDir))
+                        path = Registry.NetCore.RegistryUtil.RegUtil.LicenseProperties.Product.InstallDir;
+                }
+                else
+                    path = GetAppSetting("InstallDir");
+#elif !NETCORE
                 path = GetAppSetting("InstallDir");
+#endif
             }
             catch (Exception)
             {
+#if CLIENT
+    //ignore this exception as in case of Nuget client package, nclicense.dll is not shipped with
+#else
                 throw;
+#endif
             }
             if (path == null || path.Length == 0)
+#if CLIENT
+                path = System.Environment.CurrentDirectory + Path.DirectorySeparatorChar;
+#else
                 return null;
+#endif
 
             return path;
         }
+
+        private static string GetLogDir()
+        {
+            string installPath = System.Configuration.ConfigurationSettings.AppSettings["NCache.LogPath"];
+            if (installPath != null && installPath != string.Empty)
+            {
+                return installPath;
+            }
+            string path = System.Environment.CurrentDirectory + Path.DirectorySeparatorChar;
+
+            try
+            {
+#if NETCORE
+                if (!System.Runtime.InteropServices.RuntimeInformation.IsOSPlatform(System.Runtime.InteropServices.OSPlatform.Windows))
+                {
+                    Registry.NetCore.RegistryUtil.RegUtil.LoadRegistry();
+                    if (Registry.NetCore.RegistryUtil.RegUtil.LicenseProperties != null ||
+                        Registry.NetCore.RegistryUtil.RegUtil.LicenseProperties.Product != null ||
+                        !string.IsNullOrEmpty(Registry.NetCore.RegistryUtil.RegUtil.LicenseProperties.Product.InstallDir))
+                        path = Registry.NetCore.RegistryUtil.RegUtil.LicenseProperties.Product.InstallDir;
+                }
+                else
+                    path = GetAppSetting("InstallDir");
+#elif !NETCORE
+                path = GetAppSetting("InstallDir");
+#endif 
+            }
+            catch (Exception)
+            {
+#if CLIENT
+                //ignore this exception as in case of Nuget client package, nclicense.dll is not shipped with
+#else
+                throw;
+#endif
+            }
+            if (path == null || path.Length == 0)
+#if CLIENT
+                path = System.Environment.CurrentDirectory + Path.DirectorySeparatorChar;
+#else
+                return null;
+#endif
+
+            return path;
+        }
+
+
 
 
         /// <summary>
@@ -105,8 +186,19 @@ namespace Alachisoft.NCache.Common
         /// <returns>Data of the value.</returns>
         public static string GetAppSetting(string key)
         {
+            if (key == "InstallDir" && IsRunningAsWow64)
+            {
+                string installDir = Environment.ExpandEnvironmentVariables("%NCHOME%");
+                if (!string.IsNullOrEmpty(installDir) && !installDir.EndsWith(@"\"))
+                    installDir = installDir + Path.DirectorySeparatorChar;
+
+                return installDir;
+            }
+
             return GetAppSetting("", key);
         }
+
+
 
         /// <summary>
         /// Reads the value/data pair from the NCache registry key.
@@ -120,14 +212,13 @@ namespace Alachisoft.NCache.Common
             if (!IsRunningAsWow64)
                 section = RegHelper.ROOT_KEY + section;
 
-            object tempVal = RegHelper.GetRegValue(section, key,0);
-            if (! (tempVal is String))
+            object tempVal = RegHelper.GetRegValue(section, key, 0);
+            if (!(tempVal is String))
             {
                 return Convert.ToString(tempVal);
             }
             return (String)tempVal;
         }
-
 
         /// <summary>
         /// Get decrypted value from section.
@@ -137,10 +228,9 @@ namespace Alachisoft.NCache.Common
         /// <param name="key">key</param>
         /// <returns>value retrieved</returns>
         public static string GetDecryptedAppSetting(string section, string key)
-        {
+        {          
             section = RegHelper.ROOT_KEY + section;
-
-            return (string)RegHelper.GetDecryptedRegValue(section, key,0);
+            return (string)RegHelper.GetDecryptedRegValue(section, key, 0);
         }
 
         /// <summary>
@@ -153,8 +243,7 @@ namespace Alachisoft.NCache.Common
         public static void SetAppSetting(string section, string key, string value, short prodId)
         {
             section = RegHelper.ROOT_KEY + section;
-
-            RegHelper.SetRegValue(section, key, value,prodId);
+            RegHelper.SetRegValue(section, key, value, prodId);
         }
 
         /// <summary>
@@ -167,7 +256,6 @@ namespace Alachisoft.NCache.Common
         public static void SetEncryptedAppSetting(string section, string key, string value)
         {
             section = RegHelper.ROOT_KEY + section;
-      
             RegHelper.SetEncryptedRegValue(section, key, value);
         }
 
@@ -180,7 +268,7 @@ namespace Alachisoft.NCache.Common
         {
             return section.StartsWith("\\") ? section : "\\" + section;
         }
-        
+
         /// <summary>
         /// Gets the install directory of NCache.
         /// Returns null if registry key does not exist.
@@ -190,6 +278,10 @@ namespace Alachisoft.NCache.Common
             get { return installDir; }
         }
 
+        public static string LogDir
+        {
+            get { return logDir; }
+        }
 
         private static string GetJavaLibDir()
         {
@@ -209,17 +301,47 @@ namespace Alachisoft.NCache.Common
         {
             try
             {
-                int level = (int)type;
-                if ((level & s_logLevel) == level)
+                OSInfo currentOS = OSInfo.Windows;
+#if NETCORE
+                if (RuntimeInformation.IsOSPlatform(OSPlatform.Linux))
+                    currentOS = OSInfo.Unix;
+#endif
+                if (currentOS == OSInfo.Windows)
                 {
-                    using (EventLog ncLog = new EventLog("Application"))
+                    try
                     {
-                        ncLog.Source = source;
-                        ncLog.WriteEntry(msg, type, eventId);
+                        int level = (int)type;
+                        if ((level & s_logLevel) == level)
+                        {
+                            using (EventLog ncLog = new EventLog("Application"))
+                            {
+                                ncLog.Source = source;
+                                ncLog.WriteEntry(msg, type, eventId);
+                            }
+                        }
+                    }
+                    catch (Exception) { }
+                }
+                else
+                {
+                    //To log events on Linux related to daemon only. 
+                    if (eventId == EventID.ServiceFailure || eventId == EventID.ServiceStart || eventId == EventID.ServiceStop)
+                    {
+                    try
+                    {
+                        using (StreamWriter streamWriter = new StreamWriter(GetInstallDir() + Path.DirectorySeparatorChar + serviceLogsPath, true))
+                        {
+                            string errorInformation = " Source: " + source + " == EventLogEntryType: " + type.ToString() + " == EventID: " + eventId + " == Message: " + msg;
+                            streamWriter.WriteLine(DateTime.Now.ToString() + " == " + errorInformation);
+                            streamWriter.WriteLine(" ");
+                        }
+                    }
+                    catch (Exception) { }
                     }
                 }
+
             }
-            catch (Exception) { }
+            catch { }
         }
 
 
@@ -231,8 +353,11 @@ namespace Alachisoft.NCache.Common
         /// <param name="type">One of the <c>EventLogEntryType</c> values.</param>
         public static void LogEvent(string msg, EventLogEntryType type)
         {
-            string cacheserver="NCache";
-
+#if JAVA
+            string cacheserver="TayzGrid";
+#else
+            string cacheserver = "NCache";
+#endif
             if (type == EventLogEntryType.Information)
                 LogEvent(cacheserver, msg, type, EventCategories.Information, EventID.GeneralInformation);
             else
@@ -258,6 +383,7 @@ namespace Alachisoft.NCache.Common
         /// <summary>
         /// Store all date time values as a difference to this time
         /// </summary>
+        //private static DateTime START_DT = new DateTime(2004, 12, 31).ToUniversalTime();
         private static DateTime START_DT = new DateTime(2004, 12, 31, 0, 0, 0, 0, DateTimeKind.Utc);
 
         /// <summary>
@@ -267,7 +393,7 @@ namespace Alachisoft.NCache.Common
         /// <param name="dt"></param>
         /// <returns></returns>
         public static int DiffSeconds(DateTime dt)
-        {
+        {            
             dt = dt.ToUniversalTime();
             TimeSpan interval = dt - START_DT;
             return (int)interval.TotalSeconds;
@@ -296,8 +422,27 @@ namespace Alachisoft.NCache.Common
         public static DateTime GetDateTime(int absoluteTime)
         {
             DateTime dt = new DateTime(START_DT.Ticks, DateTimeKind.Utc);
-
             return dt.AddSeconds(absoluteTime);
+        }
+
+        public static int DiffMinutes(DateTime dt)
+        {
+            dt = dt.ToUniversalTime();
+            TimeSpan interval = dt - START_DT;
+            return (int)interval.TotalMinutes;
+        }
+
+
+        /// <summary>
+        /// Convert DateTime to integer taking 31-12-2004 as base
+        /// and removing millisecond information
+        /// </summary>
+        /// <param name="dt"></param>
+        /// <returns></returns>
+        public static DateTime AddMinutes(int minutes)
+        {
+            DateTime dt = new DateTime(START_DT.Ticks, DateTimeKind.Utc);
+            return dt.AddMinutes(minutes);
         }
 
         /// <summary>
@@ -306,9 +451,9 @@ namespace Alachisoft.NCache.Common
         /// </summary>
         public static bool IsVSIdeInstalled()
         {
-            RegistryKey rKey8 = Registry.LocalMachine.OpenSubKey("SOFTWARE\\Microsoft\\VisualStudio\\8.0");
-            RegistryKey rKey9 = Registry.LocalMachine.OpenSubKey("SOFTWARE\\Microsoft\\VisualStudio\\9.0");
-
+            //Check VS.Net 2005
+            RegistryKey rKey8 = Microsoft.Win32.Registry.LocalMachine.OpenSubKey("SOFTWARE\\Microsoft\\VisualStudio\\8.0");
+            RegistryKey rKey9 = Microsoft.Win32.Registry.LocalMachine.OpenSubKey("SOFTWARE\\Microsoft\\VisualStudio\\9.0");
             if (rKey8 != null)
             {
                 if (rKey8.GetValue("InstallDir", "").ToString().Length != 0)
@@ -320,7 +465,6 @@ namespace Alachisoft.NCache.Common
                 if (rKey9.GetValue("InstallDir", "").ToString().Length != 0)
                     return true;
             }
-
             return false;
         }
 
@@ -350,6 +494,20 @@ namespace Alachisoft.NCache.Common
                 }
                 return (num + (num2 * 0x5d588b65));
             }
-        }       
+
+        }
+
+
+
+        public static int GetBucketId(string key)
+        {
+            int hashCode = GetHashCode(key);
+            int bucketId = hashCode / _bucketSize;
+
+            if (bucketId < 0)
+                bucketId *= -1;
+            return bucketId;
+        }
+
     }
 }

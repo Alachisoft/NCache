@@ -12,17 +12,12 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-using System;
 using System.Collections;
-using System.Threading;
 using Alachisoft.NCache.Common.DataStructures;
 using Alachisoft.NCache.Common;
-using Alachisoft.NCache.Web.RemoteClient.Config;
 using System.Collections.Generic;
 using System.Text;
 using Alachisoft.NCache.Common.Net;
-
-
 
 namespace Alachisoft.NCache.Web.Communication
 {
@@ -33,15 +28,20 @@ namespace Alachisoft.NCache.Web.Communication
     internal sealed class ConnectionPool
     {
         private Hashtable _connections;
+        private QueueDictionary<Address> loadBalancerQueue;
         private Hashtable _hashMap;
+        private ArrayList _hashMapMember;
         private int _bucketSize = 0;
         private long _lastViewId = -1;
 
-        public ConnectionPool() : this(null) { }
+        public ConnectionPool() : this(null)
+        {
+        }
 
         public ConnectionPool(Hashtable hashMap)
         {
             this._connections = Hashtable.Synchronized(new Hashtable(5));
+            this.loadBalancerQueue = new QueueDictionary<Address>();
             if (hashMap != null)
             {
                 this._hashMap = (!hashMap.IsSynchronized) ? Hashtable.Synchronized(hashMap) : hashMap;
@@ -49,9 +49,10 @@ namespace Alachisoft.NCache.Web.Communication
             else
             {
                 this._hashMap = Hashtable.Synchronized(new Hashtable());
+                _hashMapMember = new ArrayList();
             }
         }
-         
+
         /// <summary>
         /// Get or set connection in connection pool
         /// </summary>
@@ -59,8 +60,18 @@ namespace Alachisoft.NCache.Web.Communication
         /// <returns>connection object</returns>
         public Connection this[Alachisoft.NCache.Common.Net.Address ip]
         {
-            get { lock (this._connections.SyncRoot) return this._connections[ip] as Connection; }
-            set { lock (this._connections.SyncRoot) this._connections[ip] = value; }
+            get
+            {
+                lock (this._connections.SyncRoot) return this._connections[ip] as Connection;
+            }
+            set
+            {
+                lock (this._connections.SyncRoot)
+                {
+                    this._connections[ip] = value;
+                    this.loadBalancerQueue.Enqueue(ip);
+                }
+            }
         }
 
         /// <summary>
@@ -77,7 +88,10 @@ namespace Alachisoft.NCache.Web.Communication
         /// </summary>
         public int Count
         {
-            get { lock (this._connections.SyncRoot) return this._connections.Count; }
+            get
+            {
+                lock (this._connections.SyncRoot) return this._connections.Count;
+            }
         }
 
         public Hashtable Connections
@@ -101,11 +115,13 @@ namespace Alachisoft.NCache.Web.Communication
         /// <param name="key">key of item</param>
         /// <returns>connection to server on which item is residing</returns>
         public Connection GetConnection(string key)
-        {            
+        {
             object ip = GetIpInternal(key);
             Connection connection = null;
-            
-            if (ip != null) lock (this._connections.SyncRoot) connection = this._connections[ip] as Connection;
+
+            if (ip != null)
+                lock (this._connections.SyncRoot)
+                    connection = this._connections[ip] as Connection;
             return connection;
         }
 
@@ -141,15 +157,10 @@ namespace Alachisoft.NCache.Web.Communication
             return connection;
         }
 
-        /// <summary>
-        /// 
-        /// </summary>
-        /// <param name="key"></param>
-        /// <returns></returns>
         private object GetIpInternal(string key)
         {
             if (key == null || key == string.Empty) return null;
-            if (this._hashMap == null || this._bucketSize == 0) return null;            
+            if (this._hashMap == null || this._bucketSize == 0) return null;
             int hashCode = AppUtil.GetHashCode(key);
             int index = hashCode / this._bucketSize;
             if (index < 0) index = index * -1;
@@ -162,12 +173,10 @@ namespace Alachisoft.NCache.Web.Communication
         /// </summary>
         /// <param name="key">key</param>
         /// <returns>ip address of server</returns>
-
         public Address GetIp(string key)
         {
             return GetIpInternal(key) as Address;
         }
-
 
         /// <summary>
         /// Set new hashmap to this new hashmap
@@ -176,7 +185,15 @@ namespace Alachisoft.NCache.Web.Communication
         public void SetHashmap(NewHashmap hashMap)
         {
             this._lastViewId = hashMap.LastViewId;
-            lock (this._hashMap.SyncRoot) this._hashMap = (!hashMap.Map.IsSynchronized) ? Hashtable.Synchronized(hashMap.Map) : hashMap.Map;
+            lock (this._hashMap.SyncRoot)
+            {
+                this._hashMap = (!hashMap.Map.IsSynchronized) ? Hashtable.Synchronized(hashMap.Map) : hashMap.Map;
+            }
+
+            lock (this._connections.SyncRoot)
+            {
+                _hashMapMember = hashMap.Members;
+            }
         }
 
         /// <summary>
@@ -187,7 +204,11 @@ namespace Alachisoft.NCache.Web.Communication
         /// <param name="connection">connection object</param>
         public void Add(Address ip, Connection connection)
         {
-            lock (this._connections.SyncRoot) this._connections[ip] = connection;
+            lock (this._connections.SyncRoot)
+            {
+                this._connections[ip] = connection;
+                this.loadBalancerQueue.Enqueue(ip);
+            }
         }
 
         /// <summary>
@@ -196,12 +217,13 @@ namespace Alachisoft.NCache.Web.Communication
         /// <param name="ip">ip address of machine to which connection is made</param>
         public void Remove(Alachisoft.NCache.Common.Net.Address ip)
         {
-            lock (this._connections.SyncRoot) this._connections.Remove(ip);
+            lock (this._connections.SyncRoot)
+            {
+                this._connections.Remove(ip);
+                this.loadBalancerQueue.Remove(ip);
+            }
         }
 
-       
-        
-       
 
         /// <summary>
         /// Check whether connection pool contains specified connection
@@ -228,6 +250,7 @@ namespace Alachisoft.NCache.Web.Communication
             {
                 lock (this._connections.SyncRoot)
                 {
+                    if (_hashMapMember.Count != _connections.Count) return false;
                     foreach (Connection conn in _connections.Values)
                     {
                         if (!conn.IsConnected)
@@ -235,6 +258,7 @@ namespace Alachisoft.NCache.Web.Communication
                             return false;
                         }
                     }
+
                     return true;
                 }
             }
@@ -253,6 +277,7 @@ namespace Alachisoft.NCache.Web.Communication
                             return false;
                         }
                     }
+
                     return true;
                 }
             }
@@ -261,16 +286,79 @@ namespace Alachisoft.NCache.Web.Communication
         public override string ToString()
         {
             StringBuilder builder = new StringBuilder();
-            builder.Append("{ ("); builder.Append(this._lastViewId); builder.Append(") ");
+            builder.Append("{ (");
+            builder.Append(this._lastViewId);
+            builder.Append(") ");
             builder.Append("[");
             foreach (Address ip in _connections.Keys)
             {
                 builder.Append(ip.IpAddress.ToString());
                 builder.Append(",");
             }
+
             builder.Remove(builder.Length - 1, 1);
             builder.Append("] }");
             return builder.ToString();
+        }
+
+        internal Address GetNextAddress()
+        {
+            lock (this._connections.SyncRoot)
+            {
+                var node = loadBalancerQueue.Dequeue();
+
+                if (node == null)
+                {
+                    var connection = GetAnyConnection();
+
+                    if (connection == null || !connection.IsConnected)
+                    {
+                        return null;
+                    }
+                    else
+                    {
+                        foreach (Address ad in this._connections.Keys)
+                        {
+                            loadBalancerQueue.Enqueue(ad);
+                        }
+                    }
+                }
+
+                Connection conn = _connections[node] as Connection;
+
+                if (conn == null || !conn.IsConnected)
+                {
+                    conn = GetAnyConnection();
+
+                    if (conn == null || !conn.IsConnected)
+                        return null;
+                }
+                else
+                {
+                    loadBalancerQueue.Enqueue(node);
+                }
+
+                return conn.ServerAddress;
+            }
+        }
+
+        internal void MarkConnectionsIdle()
+        {
+            lock (_connections.SyncRoot)
+                foreach (Connection conn in _connections.Values)
+                    conn.IsIdle = true;
+        }
+
+        internal List<Connection> GetIdleConnections()
+        {
+            var conList = new List<Connection>();
+
+            lock (_connections.SyncRoot)
+                foreach (Connection conn in _connections.Values)
+                    if (conn.IsIdle)
+                        conList.Add(conn);
+
+            return conList;
         }
     }
 }

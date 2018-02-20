@@ -11,15 +11,11 @@
 // WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
 // See the License for the specific language governing permissions and
 // limitations under the License.
-
 using System;
 using System.Collections.Generic;
-using System.Text;
 using Alachisoft.NCache.Common.Configuration;
 using System.Collections;
 using Alachisoft.NCache.Runtime.Serialization;
-using System.Net;
-using Runtime = Alachisoft.NCache.Runtime;
 
 namespace Alachisoft.NCache.Config
 {
@@ -75,7 +71,6 @@ namespace Alachisoft.NCache.Config
             }
         }
 
-      
         #region ICloneable Members
 
         public Object Clone()

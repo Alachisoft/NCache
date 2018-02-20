@@ -12,27 +12,26 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-using Alachisoft.NCache.Common.DataStructures;
 using Alachisoft.NCache.Common;
+using Alachisoft.NCache.Common.DataStructures;
 
 namespace Alachisoft.NCache.Caching.Queries
 {
-    public class IndexStoreInformation : ISizableIndex
+    public class IndexStoreInformation:ISizableIndex
     {
         private IIndexStore _store;
         private INodeReference _rbnodes;
         private string _storeName;
 
-        // Since an object takes 24 bits, it also saves 8 bits of members in these 24 bits. This makes the total size: object size + members size - 8  = 24 + (8*3) -8 = 40
+       //Since an object takes 24 bits, it also saves 8 bits of members in these 24 bits. This makes the total size: object size + members size - 8  = 24 + (8*3) -8 = 40
         private const int RefSize = 40; 
-
 
         public IndexStoreInformation()
         {
             _rbnodes = new RedBlackNodeReference<int>();
         }
 
-        public IndexStoreInformation(string storeName, IIndexStore store, INodeReference node)
+        public IndexStoreInformation(string storeName,IIndexStore store, INodeReference node)
         {
             _rbnodes = node;
             _store = store;
@@ -58,13 +57,13 @@ namespace Alachisoft.NCache.Caching.Queries
             set { _rbnodes = value; }
         }
 
+
         public long IndexInMemorySize
         {
-            get
+            get 
             {
-                return RefSize;
+                return RefSize; 
             }
         }
-
     }
 }

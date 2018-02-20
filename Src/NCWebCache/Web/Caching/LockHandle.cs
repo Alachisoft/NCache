@@ -25,7 +25,9 @@ namespace Alachisoft.NCache.Web.Caching
         private DateTime _lockDate;
 
         /// <exclude/>
-        public LockHandle() { }
+        public LockHandle()
+        {
+        }
 
         /// <exclude/>
         public LockHandle(string lockId, DateTime lockDate)

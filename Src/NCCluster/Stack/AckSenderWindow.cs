@@ -9,7 +9,6 @@
 // WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
 // See the License for the specific language governing permissions and
 // limitations under the License.
-
 using System;
 using System.Collections;
 
@@ -29,14 +28,14 @@ namespace Alachisoft.NGroups.Stack
 	/// </summary>
 	/// <author>  Bela Ban
 	/// </author>
-	internal class AckSenderWindow : Retransmitter.RetransmitCommand
+	internal class AckSenderWindow : RetransmitCommand
 	{
 		private void  InitBlock()
 		{
 			retransmitter = new Retransmitter(null, this);
 		}
 		
-		internal AckSenderWindow.RetransmitCommand retransmit_command = null; // called to request XMIT of msg
+		internal RetransmitCommand retransmit_command = null; // called to request XMIT of msg
 		internal System.Collections.Hashtable msgs = new System.Collections.Hashtable(); // keys: seqnos (Long), values: Messages
 
 		internal long[] interval = new long[]{1000, 2000, 3000, 4000};
@@ -48,21 +47,13 @@ namespace Alachisoft.NGroups.Stack
 		internal int min_threshold = - 1;
 		internal bool use_sliding_window = false, queueing = false;
 		internal Protocol transport = null; // used to send messages
-		
-        //private NewTrace nTrace = null;
-        //string _cacheName;
+	
         private ILogger _ncacheLog;
 
         private ILogger NCacheLog
         {
             get { return _ncacheLog; }
         }
-
-		internal interface RetransmitCommand
-		{
-			void  retransmit(long seqno, Message msg);
-		}
-		
 		
 		/// <summary> Creates a new instance. Thre retransmission thread has to be started separately with
 		/// <code>start()</code>.
@@ -70,9 +61,8 @@ namespace Alachisoft.NGroups.Stack
 		/// <param name="com">If not null, its method <code>retransmit()</code> will be called when a message
 		/// needs to be retransmitted (called by the Retransmitter).
 		/// </param>
-        public AckSenderWindow(AckSenderWindow.RetransmitCommand com, ILogger NCacheLog)
+        public AckSenderWindow(RetransmitCommand com, ILogger NCacheLog)
 		{
-            //this.nTrace = nTrace;
             _ncacheLog = NCacheLog;
 
 			InitBlock();
@@ -81,7 +71,7 @@ namespace Alachisoft.NGroups.Stack
 		}
 
 
-        public AckSenderWindow(AckSenderWindow.RetransmitCommand com, long[] interval, ILogger NCacheLog)
+        public AckSenderWindow(RetransmitCommand com, long[] interval, ILogger NCacheLog)
 		{
             //this.nTrace = nTrace;
             _ncacheLog = NCacheLog;
@@ -94,9 +84,8 @@ namespace Alachisoft.NGroups.Stack
 		/// <summary> This constructor whould be used when we want AckSenderWindow to send the message added
 		/// by add(), rather then ourselves.
 		/// </summary>
-        public AckSenderWindow(AckSenderWindow.RetransmitCommand com, long[] interval, Protocol transport, ILogger NCacheLog)
+        public AckSenderWindow(RetransmitCommand com, long[] interval, Protocol transport, ILogger NCacheLog)
 		{
-            //this.nTrace = nTrace;
             _ncacheLog = NCacheLog;
             InitBlock();
 			retransmit_command = com;
@@ -161,8 +150,6 @@ namespace Alachisoft.NGroups.Stack
 				if (msgs.ContainsKey(seqno))
 					return ;
 				
-				
-				
 				if (!use_sliding_window)
 				{
 					addMessage(seqno, msg);
@@ -197,7 +184,7 @@ namespace Alachisoft.NGroups.Stack
 		/// </summary>
 		public virtual void  ack(long seqno)
 		{
-			Entry entry;
+            AckSenderWindowEntry entry;
 			
 			lock (msgs.SyncRoot)
 			{
@@ -253,8 +240,7 @@ namespace Alachisoft.NGroups.Stack
 					if ((msg = (Message) msgs[(long) i]) != null)
 					{
 						// find the message to retransmit
-						retransmit_command.retransmit(i, msg);
-						
+						retransmit_command.retransmit(i, msg);						
 					}
 				}
 			}
@@ -278,7 +264,7 @@ namespace Alachisoft.NGroups.Stack
 		{
 			try
 			{
-				msg_queue.add(new Entry(this, seqno, msg));
+				msg_queue.add(new AckSenderWindowEntry(this, seqno, msg));
 			}
 			catch (System.Exception ex)
 			{
@@ -286,11 +272,11 @@ namespace Alachisoft.NGroups.Stack
 			}
 		}
 		
-		internal virtual Entry removeFromQueue()
+		internal virtual AckSenderWindowEntry removeFromQueue()
 		{
 			try
 			{
-				return msg_queue.Count == 0?null:(Entry) msg_queue.remove();
+				return msg_queue.Count == 0?null:(AckSenderWindowEntry) msg_queue.remove();
 			}
 			catch (System.Exception ex)
 			{
@@ -299,37 +285,19 @@ namespace Alachisoft.NGroups.Stack
 				return null;
 			}
 		}
-		/* ------------------------------ End of Private methods ------------------------------------ */
-		
-		
-		
-		
-		/// <summary>Struct used to store message alongside with its seqno in the message queue </summary>
-		internal class Entry
-		{
-			private void  InitBlock(AckSenderWindow enclosingInstance)
-			{
-				this.enclosingInstance = enclosingInstance;
-			}
-			private AckSenderWindow enclosingInstance;
-			public AckSenderWindow Enclosing_Instance
-			{
-				get
-				{
-					return enclosingInstance;
-				}
-				
-			}
-			internal long seqno;
-			internal Message msg;
-			
-			internal Entry(AckSenderWindow enclosingInstance, long seqno, Message msg)
-			{
-				InitBlock(enclosingInstance);
-				this.seqno = seqno;
-				this.msg = msg;
-			}
-		}
-	}
+
+        public void retransmit(long seqno, Message msg, Address dest)
+        {
+            // No implementation
+        }
+
+        public void retransmit(long seqno, Message msg)
+        {
+            // No implementation
+        }
+        /* ------------------------------ End of Private methods ------------------------------------ */
+
+
+    }
 }
 

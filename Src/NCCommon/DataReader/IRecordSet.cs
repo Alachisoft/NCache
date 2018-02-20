@@ -12,7 +12,6 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-
 namespace Alachisoft.NCache.Common.DataReader
 {
     public interface IRecordSet
@@ -78,5 +77,14 @@ namespace Alachisoft.NCache.Common.DataReader
             get;
             set;
         }
+
+        /// <summary>
+        /// Returns <see cref="Alachisoft.NCache.Common.DataStructures.RowCollection"/> present in current <see cref="Alachisoft.NCache.Common.DataStructures.RecordSet"/>
+        /// </summary>
+        RowCollection Rows
+        {
+            get;
+        }
+
     }
 }

@@ -10,8 +10,7 @@
 // distributed under the License is distributed on an "AS IS" BASIS,
 // WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
 // See the License for the specific language governing permissions and
-// limitations under the License.
-
+// limitations under the License
 using Alachisoft.NCache.Common.Net;
 
 namespace Alachisoft.NCache.Common.DataStructures
@@ -23,6 +22,7 @@ namespace Alachisoft.NCache.Common.DataStructures
         ManualDistType _manualDistType;
         int _percentToMove;
         Address _source;
+        //ArrayList _affectedNodes;
         PartNodeInfo _affectedNode;
         Address[] _destinations;
 

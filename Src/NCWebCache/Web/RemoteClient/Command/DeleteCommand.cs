@@ -12,14 +12,8 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-using System;
 using Alachisoft.NCache.Common;
 using Alachisoft.NCache.Caching;
-using Alachisoft.NCache.Web.Caching;
-using System.IO;
-using Alachisoft.NCache.Web.Communication;
-using Alachisoft.NCache.Common.Protobuf.Util;
-using Alachisoft.NCache.Web.Caching.Util;
 
 namespace Alachisoft.NCache.Web.Command
 {
@@ -28,27 +22,44 @@ namespace Alachisoft.NCache.Web.Command
         private Alachisoft.NCache.Common.Protobuf.DeleteCommand _deleteCommand;
 
         private byte _flag;
+        private short _itemRemoved;
         private short _onDsItemRemovedId;
         private object _lockId;
-       private LockAccessType _accessType;
+        private ulong _version;
+        private string _providername;
+        private LockAccessType _accessType;
 
+        private int _methodOverload;
 
-
-        public DeleteCommand(string key, BitSet flagMap, object lockId, LockAccessType accessType)
+        public DeleteCommand(string key, BitSet flagMap, short itemRemoved, bool isAsync, short onDsItemRemovedId,
+            object lockId, ulong version, LockAccessType accessType, string providerName, int methodOverload)
         {
             base.name = "DeleteCommand";
+            base.asyncCallbackSpecified = isAsync && itemRemoved != -1 ? true : false;
+            base.isAsync = isAsync;
             base.key = key;
 
             _deleteCommand = new Alachisoft.NCache.Common.Protobuf.DeleteCommand();
             _deleteCommand.key = key;
+            _deleteCommand.isAsync = isAsync;
+            _deleteCommand.providerName = providerName;
 
             flagMap.SetBit(BitSetConstants.LockedItem);
             _deleteCommand.flag = flagMap.Data;
+
+            _deleteCommand.datasourceItemRemovedCallbackId = onDsItemRemovedId;
             if (lockId != null) _deleteCommand.lockId = lockId.ToString();
-            _deleteCommand.lockAccessType = (int)accessType;
+            _deleteCommand.lockAccessType = (int) accessType;
+            _deleteCommand.version = version;
             _deleteCommand.requestId = base.RequestId;
+            _methodOverload = methodOverload;
+            _itemRemoved = itemRemoved;
         }
 
+        internal short AsyncItemRemovedOpComplete
+        {
+            get { return this._itemRemoved; }
+        }
 
         internal override CommandType CommandType
         {
@@ -66,8 +77,7 @@ namespace Alachisoft.NCache.Web.Command
             base._command.requestID = base.RequestId;
             base._command.deleteCommand = _deleteCommand;
             base._command.type = Alachisoft.NCache.Common.Protobuf.Command.Type.DELETE;
-
-           
+            base._command.MethodOverload = _methodOverload;
         }
     }
 }

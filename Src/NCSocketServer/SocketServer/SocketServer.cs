@@ -16,37 +16,67 @@ using System;
 using System.Net;
 using Alachisoft.NCache.Caching;
 using Alachisoft.NCache.Common;
+
+#if JAVA
+using Alachisoft.TayzGrid.Web.Util;
+#else
 using Alachisoft.NCache.Web.Util;
+#endif
+#if JAVA
+using Alachisoft.TayzGrid.Web.Synchronization;
+#else
+#endif
 
 using Alachisoft.NCache.SocketServer.Statistics;
+using System.Collections.Generic;
+using System.Collections;
+using Alachisoft.NCache.Common.Net;
+using Alachisoft.NCache.Common.Monitoring;
 using Alachisoft.NCache.Common.Util;
 using Alachisoft.NCache.Common.Logger;
-
+#if JAVA
+using Runtime = Alachisoft.TayzGrid.Runtime;
+#else
+using Alachisoft.NCache.Management;
+#endif
 namespace Alachisoft.NCache.SocketServer
 {
+#if COMMUNITY
+#endif
     /// <summary>
     /// An object of this class is called when Ncache service starts and stops
+    /// as well as when NCache Bridge service starts and stops.
     /// </summary>
     public sealed class  SocketServer: CacheRenderer
     {
         int _serverPort;
         int _sendBuffer;
         int _recieveBuffer;
+        decimal _clusterHealthDetectionInterval = 3;
+        int _managementServerPort;
+        string _managementServerIP;
+#if JAVA
+        public const int DEFAULT_SOCK_SERVER_PORT = 9600;
+        public const int DEFAULT_MANAGEMENT_PORT = 8270;  
+#else
         public const int DEFAULT_SOCK_SERVER_PORT = 9800;
-        public const int DEFAULT_MANAGEMENT_PORT = 8250;  
-        public const int DEFAULT_SOCK_BUFFER_SIZE = 32768;
+        public const int DEFAULT_MANAGEMENT_PORT = 8250;
+#endif
+        public const int DEFAULT_SOCK_BUFFER_SIZE = 32768; 
 
-        //Size is specified in bytes (.net stream if grow more then 1.9GB will give memory exception that's why
-        //we send multiple responses each containing objects of specified size.
+        // Size is specified in bytes (.net stream if grow more then 1.9GB will give memory exception that's why
+        // we send multiple responses each containing objects of specified size.
         // 1 GB = 1 * 1024 * 1024 * 1024 = 1073741824
         // 1 GB = 1 * MB * KB * Bytes = 1073741824
         // If not specified in Service config then we will consider 1GB packeting
-        public static long CHUNK_SIZE_FOR_OBJECT = 1073741824;    
+        public static long CHUNK_SIZE_FOR_OBJECT = 35*1024 ;//1073741824;    
 
         static Logs _logger = new Logs();        
 
         static bool _enableCacheServerCounters = true;
+#if !MONO
         PerfStatsCollector _perfStatsColl = null;
+#endif
         static LoggingInfo _serverLoggingInfo = new LoggingInfo();
 
         /// <summary>
@@ -58,11 +88,7 @@ namespace Alachisoft.NCache.SocketServer
 
         LoggerNames _loggerName;
 
-
-        private IConnectionManager _hostClientConnectionManager;
-        decimal _clusterHealthDetectionInterval = 3;
-        int _managementServerPort;
-        string _managementServerIP;
+        private static IConnectionManager _hostClientConnectionManager;
 
         private string cacheName;
 
@@ -71,11 +97,10 @@ namespace Alachisoft.NCache.SocketServer
             set { cacheName = value; }
         }
 
-        public  IConnectionManager HostClientConnectionManager
+        public static IConnectionManager HostClientConnectionManager
         {
             get { return _hostClientConnectionManager; }
         }
-
 
         /// <summary>
         /// Initializes the socket server with the given port.
@@ -88,8 +113,18 @@ namespace Alachisoft.NCache.SocketServer
             _serverPort = port;
             _sendBuffer = sendBufferSize;
             _recieveBuffer = recieveBufferSize;
+
+		   if (ServiceConfiguration.ClusterHealthDetectionInterval != 3)
+                _clusterHealthDetectionInterval = ServiceConfiguration.ClusterHealthDetectionInterval;
+#if JAVA
+            if (System.Configuration.ConfigurationSettings.AppSettings.Get("CacheServer.ResponseDataSize") != null)
+            {
+                CHUNK_SIZE_FOR_OBJECT = Convert.ToInt64(System.Configuration.ConfigurationSettings.AppSettings.Get("CacheServer.ResponseDataSize"));
+            }
+#endif
+            
         }
-        
+
         /// <summary>
         /// Gets the socket server port.
         /// </summary>
@@ -112,6 +147,7 @@ namespace Alachisoft.NCache.SocketServer
         {
             get { return _logger; }
         }
+
         /// <summary>
         /// Gets the receive buffer size of connected client socket.
         /// </summary>
@@ -157,8 +193,12 @@ namespace Alachisoft.NCache.SocketServer
             else
                 _loggerName = loggerName;
             InitializeLogging();
-        
-            _perfStatsColl = new PerfStatsCollector("NCache Server", _serverPort);
+            
+#if JAVA
+            _perfStatsColl = new PerfStatsCollector("TayzGrid Server", _serverPort);
+#else
+            _perfStatsColl = new PerfStatsCollector(cacheName, _serverPort);
+#endif
             _conManager = new ConnectionManager(_perfStatsColl);
             
             _conManager.Start(bindIP, _serverPort, _sendBuffer, _recieveBuffer, _logger, cmdMgrType, conMgrType);
@@ -168,9 +208,8 @@ namespace Alachisoft.NCache.SocketServer
                 _hostClientConnectionManager = _conManager;
             }
             
-
-            //We initialize PerfstatsCollector only for SocketServer's instance for client.
-            //Management socket server has just DUMMY stats collector.
+            // We initialize PerfstatsCollector only for SocketServer's instance for client.
+            // Management socket server has just DUMMY stats collector.
             if (conMgrType == ConnectionManagerType.HostClient)
                 _perfStatsColl.InitializePerfCounters();
         }
@@ -185,7 +224,6 @@ namespace Alachisoft.NCache.SocketServer
 
             try
             {
-
                 enable_logs = ServiceConfiguration.EnableLogs;
                 detailed_logs = ServiceConfiguration.EnableDetailedLogs;
 
@@ -205,7 +243,7 @@ namespace Alachisoft.NCache.SocketServer
             {
                 if (errorOnly || detailed)
                 {
-                    Logs localLogger=new Logs();
+                    Logs localLogger = new Logs();
                     localLogger.NCacheLog = new NCacheLogger();
                     localLogger.NCacheLog.Initialize(LoggerNames.SocketServerLogs);
 
@@ -220,7 +258,7 @@ namespace Alachisoft.NCache.SocketServer
                     }
                     localLogger.NCacheLog.Info("SocketServer.Start", "server started successfully");
 
-                    ///Set logging status
+                    // Set logging status
                     if (errorOnly)
                         _serverLoggingInfo.SetStatus(LoggingInfo.LoggingType.Error, LoggingInfo.LogsStatus.Enable);
                     if (detailed)
@@ -229,8 +267,7 @@ namespace Alachisoft.NCache.SocketServer
                     localLogger.IsDetailedLogsEnabled = detailed;
                     localLogger.IsErrorLogsEnabled = errorOnly;
 
-                    _logger= localLogger;
-                   
+                    _logger = localLogger;
                 }
                 else
                 {
@@ -260,6 +297,7 @@ namespace Alachisoft.NCache.SocketServer
             if (_conManager != null)
                 _conManager.StopListening();
         }
+
         ~SocketServer()
         {
             if (_conManager != null)
@@ -273,7 +311,6 @@ namespace Alachisoft.NCache.SocketServer
                 _perfStatsColl.Dispose();
                 _perfStatsColl = null;
             }
-
         }
 
         /// <summary>
@@ -370,9 +407,7 @@ namespace Alachisoft.NCache.SocketServer
                 switch (status)
                 {
                     case LoggingInfo.LogsStatus.Disable:
-
-                       
-                        ///If error logs are disabled, then disable both
+                        // If error logs are disabled, then disable both
                         if (type == LoggingInfo.LoggingType.Error ||
                             type == (LoggingInfo.LoggingType.Error | LoggingInfo.LoggingType.Detailed))
                         {
@@ -382,7 +417,6 @@ namespace Alachisoft.NCache.SocketServer
                         {
                             this.InitializeLogging(Logger.IsErrorLogsEnabled, false);
                         }
-
                         break;
 
                     case LoggingInfo.LogsStatus.Enable:
@@ -424,6 +458,72 @@ namespace Alachisoft.NCache.SocketServer
             {
                 if (SocketServer.Logger.IsErrorLogsEnabled) SocketServer.Logger.NCacheLog.Error( "SocketServer.StartGCTimer", e.ToString());
             }
+        }
+
+        public override List<Alachisoft.NCache.Common.Monitoring.ClientNode> GetClientList(string cacheId)
+        {
+            List<ClientNode> clients = new List<ClientNode>();
+
+            lock (ConnectionManager.ConnectionTable)
+            {
+                IDictionaryEnumerator ide = ConnectionManager.ConnectionTable.GetEnumerator();
+
+                while (ide.MoveNext())
+                {
+                    ClientManager clientManager = ide.Value as ClientManager;
+                    
+                    if (!clientManager.IsDisposed && clientManager.CmdExecuter != null && clientManager.CmdExecuter.ID.ToLower() == cacheId.ToLower())
+                    {
+                        ClientNode client = new ClientNode();
+                        IPEndPoint endPoint = clientManager.ClientSocket.RemoteEndPoint as IPEndPoint;
+                        client.Address = new Address(endPoint.Address, endPoint.Port);
+                        client.ClientID = clientManager.ClientID;
+                        if (clientManager.IsDotNetClient)
+                        {
+                            client.ClientContext = RtContextValue.NCACHE;
+                        }
+                        else
+                        {
+                            client.ClientContext = RtContextValue.JVCACHE;
+                        }
+                        clients.Add(client);
+                    }
+                }
+            }
+            return clients;
+        }
+
+		// CLIENTSTATS : Add method in CacheRenderer as virtual
+
+		public override List<Alachisoft.NCache.Common.Monitoring.ClientProcessStats> GetClientProcessStats(string cacheId)
+		{
+			List<ClientProcessStats> clientProcessStats = new List<ClientProcessStats>();
+
+			lock (ConnectionManager.ConnectionTable)
+			{
+				IDictionaryEnumerator ide = ConnectionManager.ConnectionTable.GetEnumerator();
+
+				while (ide.MoveNext())
+				{
+					ClientManager clientManager = ide.Value as ClientManager;
+					if (clientManager.CmdExecuter != null && clientManager.CmdExecuter.ID.ToLower() == cacheId.ToLower())
+					{
+						IPEndPoint endPoint = clientManager.ClientSocket.RemoteEndPoint as IPEndPoint;
+						Address address = new Address(endPoint.Address, endPoint.Port);
+
+						ClientProcessStats cpStats = new ClientProcessStats(clientManager.ClientID, address, clientManager.ClientsBytesSent, clientManager.ClientsBytesRecieved, ConnectionManager.ServerIpAddress);
+
+						clientProcessStats.Add(cpStats);
+					}
+				}
+			}
+			return clientProcessStats;
+		}
+
+
+        public override Alachisoft.NCache.Common.DataStructures.RequestStatus GetRequestStatus(string clientId, long requestId, long commandId)
+        {
+            return _conManager.GetRequestStatus(clientId, requestId, commandId);
         }
 	}
 }

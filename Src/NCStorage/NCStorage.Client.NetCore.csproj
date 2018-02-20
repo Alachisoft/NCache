@@ -1,0 +1,36 @@
+<Project Sdk="Microsoft.NET.Sdk">
+
+  <PropertyGroup>
+    <TargetFramework>netstandard2.0</TargetFramework>
+  </PropertyGroup>
+
+  <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Debug|AnyCPU'">
+    <AllowUnsafeBlocks>True</AllowUnsafeBlocks>
+    <DefineConstants>TRACE;DEBUG;CLIENT;VS2005;NETCORE</DefineConstants>
+  </PropertyGroup>
+
+  <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Release|AnyCPU'">
+    <AllowUnsafeBlocks>True</AllowUnsafeBlocks>
+    <DefineConstants>TRACE;RELEASE;CLIENT;VS2005;NETCORE</DefineConstants>
+  </PropertyGroup>
+  
+   <PropertyGroup>
+    <GenerateAssemblyInfo>false</GenerateAssemblyInfo>
+    <AssemblyName>Alachisoft.NCache.Storage</AssemblyName>
+    <RootNamespace>Alachisoft.NCache.Storage</RootNamespace>
+  </PropertyGroup>
+  
+   <ItemGroup>
+     <Compile Remove="Dictionary\**" />
+     <EmbeddedResource Remove="Dictionary\**" />
+     <None Remove="Dictionary\**" />
+   </ItemGroup>
+  
+   <ItemGroup>
+     <Compile Remove="StorageProviders\Mmf\ViewRef.cs" />
+   </ItemGroup>
+  
+   <ItemGroup>
+     <ProjectReference Include="..\NCSerialization\NCSerialization.Client.NetCore.csproj" />
+   </ItemGroup>
+</Project>

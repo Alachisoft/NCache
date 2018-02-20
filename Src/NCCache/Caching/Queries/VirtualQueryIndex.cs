@@ -12,8 +12,8 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-using System.Collections;
 using System;
+using System.Collections;
 
 namespace Alachisoft.NCache.Caching.Queries
 {
@@ -36,7 +36,7 @@ namespace Alachisoft.NCache.Caching.Queries
         public void Clear() { }
         public IndexInformation GetIndexInformation(object key) { return null; }
 
-        public IDictionaryEnumerator GetEnumerator(string typeName)
+        public IDictionaryEnumerator GetEnumerator(string typeName, bool forTag)
         {
             if (_cache == null)
                 return null;
@@ -70,7 +70,7 @@ namespace Alachisoft.NCache.Caching.Queries
             lock (_mutex)
             {
                 if (_cache != null)
-                    return _cache.GetEnumerator() as IDictionaryEnumerator; 
+                    return _cache.GetEnumerator() as IDictionaryEnumerator;
             }
             return null;
         }

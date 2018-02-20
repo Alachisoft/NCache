@@ -18,15 +18,17 @@ using System.Collections;
 using Alachisoft.NGroups;
 using Alachisoft.NGroups.Util;
 using Alachisoft.NCache.Caching.Statistics;
+
 using Alachisoft.NCache.Runtime.Exceptions;
-using Alachisoft.NCache.Caching;
+
 using Alachisoft.NCache.Caching.Topologies;
 using Alachisoft.NCache.Common.Net;
-using Alachisoft.NCache.Serialization.Formatters;
 using Alachisoft.NCache.Common;
+using Alachisoft.NCache.Caching.Topologies.Clustered.Results;
 using Alachisoft.NCache.Common.Logger;
 using Alachisoft.NCache.Common.DataStructures;
-using Runtime = Alachisoft.NCache.Runtime;
+using Alachisoft.NCache.Common.DataStructures.Clustered;
+using System.Collections.Generic;
 
 namespace Alachisoft.NCache.Caching.Util
 {
@@ -35,9 +37,11 @@ namespace Alachisoft.NCache.Caching.Util
     /// </summary>
     internal class ClusterHelper
     {
-        public static void ValidateResponses(RspList results, Type type, string serializationContext, bool throwSuspected = false)
+        public static ILogger NCacheLogger { get; set; }
+        public static void ValidateResponses(RspList results, Type type, string serializationContext, Boolean throwSuspected = false)
         {
             if (results == null) return;
+
 
 
             ArrayList parserExceptions = new ArrayList();
@@ -52,6 +56,7 @@ namespace Alachisoft.NCache.Caching.Util
                     continue;
                 }
 
+
                 if (!rsp.wasReceived())
                 {
                     continue;
@@ -60,7 +65,6 @@ namespace Alachisoft.NCache.Caching.Util
                 if (rsp.Value != null)
                 {
                     object rspValue = rsp.Value;
-
                     if ((rspValue as Exception) is Alachisoft.NCache.Runtime.Exceptions.InvalidReaderException)
                     {
                         Exception invlidReader = rspValue as Exception;
@@ -72,11 +76,13 @@ namespace Alachisoft.NCache.Caching.Util
                         parserExceptions.Add((Exception)rspValue);
                         continue;
                     }
+
                     if (((rspValue as Exception) is Alachisoft.NCache.Parser.AttributeIndexNotDefined) || ((rspValue as Exception) is Alachisoft.NCache.Parser.TypeIndexNotDefined))
                     {
                         parserExceptions.Add((Exception)rspValue);
                         continue;
-                    }        
+                    }
+
                     if (rspValue is Exception)
                     {
                         exceptions.Add((Exception)rspValue);
@@ -85,24 +91,36 @@ namespace Alachisoft.NCache.Caching.Util
 
                     if (type != null && !rspValue.GetType().Equals(type))
                     {
-                        exceptions.Add(new BadResponseException("bad response returned by group member " + rsp.Sender));
+                        exceptions.Add(new Alachisoft.NCache.Runtime.Exceptions.BadResponseException("bad response returned by group member " + rsp.Sender));
                         continue;
                     }
                 }
             }
+
             //in case or partitioned caches search requests are broadcasted.
             //it is possible that tag index are defined on one node but not defined on some other node.
             //we will throw the exception back only if we receive exception from every node.
-            if (parserExceptions.Count == results.size())
+            try
             {
-                Exception e = parserExceptions[0] as Exception;
-                throw e;
+                if (parserExceptions.Count == results.size())
+                {
+                    Exception e = parserExceptions[0] as Exception;
+                    throw e;
+                }
+            }
+            catch (Exception e)
+            {
+                if (NCacheLogger != null && NCacheLogger.IsErrorEnabled)
+                {
+                    NCacheLogger.Error("ClusterHelper.ValidateResponses()", "parserExceptions Count: " + parserExceptions.Count + " results Count: " + results.size() + " Error: " + e.ToString());
+                }
+                throw;
             }
 
             if (exceptions.Count == 1)
             {
                 Exception e = exceptions[0] as Exception;
-                if (e is CacheException) 
+                if (e is CacheException)
                     throw e;
                 else
                     throw new RemoteException((Exception)exceptions[0]);
@@ -112,7 +130,7 @@ namespace Alachisoft.NCache.Caching.Util
                 for (int i = 0; i < exceptions.Count; i++)
                 {
                     Exception e = exceptions[i] as Exception;
-                    if (e is LockingException) 
+                    if (e is LockingException)
                         throw e;
                     else if (e is CacheException)
                         continue;
@@ -213,13 +231,17 @@ namespace Alachisoft.NCache.Caching.Util
             {
                 Rsp rsp = (Rsp)results.elementAt(i);
 
+
                 if (!rsp.wasReceived() && !rsp.wasSuspected())
                 {
+                    //throw new Alachisoft.NGroups.TimeoutException();
+                    //failedNodes += rsp.Sender + ";";
                     timeoutCount++;
                     continue;
                 }
                 if (rsp.wasSuspected())
                 {
+                    //throw new Alachisoft.NGroups.SuspectedException(rsp.Sender);
                     suspectedCount++;
                     continue;
                 }
@@ -237,16 +259,20 @@ namespace Alachisoft.NCache.Caching.Util
             }
             if (timeoutCount > 0 && (timeoutCount + successCount == results.size()))
             {
+
                 throw new Runtime.Exceptions.TimeoutException("Operation Timeout");
+
             }
             if (timeoutCount > 0 && suspectedCount > 0)
             {
+
                 throw new Runtime.Exceptions.TimeoutException("Operation Timeout");
 
             }
 
             return retRsp;
         }
+
 
         public static LockOptions FindAtomicIsLockedStatusReplicated(RspList results, ref object lockId, ref DateTime lockDate)
         {
@@ -274,6 +300,7 @@ namespace Alachisoft.NCache.Caching.Util
             }
             return lockInfo;
         }
+
 
         public static bool FindAtomicLockStatusReplicated(RspList results, ref object lockId, ref DateTime lockDate)
         {
@@ -367,7 +394,7 @@ namespace Alachisoft.NCache.Caching.Util
         /// </summary>
         /// <param name="results">responses collected from all members of cluster.</param>
         /// <returns>list of nodes where the operation succeeded</returns>
-        public static bool FindAtomicAddHintReplicated(RspList results)
+        public static bool FindAtomicResponseReplicated(RspList results)
         {
             bool res = false;
             if (results == null) return res;
@@ -380,6 +407,7 @@ namespace Alachisoft.NCache.Caching.Util
                     continue;
 
                 res = (bool)rsp.Value;
+                //if(nTrace.isInfoEnabled) Trace.info("FindAtomicAddHintReplicated", "Sender = " + rsp.Sender + ", result = " + res);
                 if (res == false)
                 {
                     return res;
@@ -388,6 +416,8 @@ namespace Alachisoft.NCache.Caching.Util
             return res;
         }
 
+
+
         /// <summary>
         /// Returns the array of keys for which Bulk operation failed.
         /// </summary>
@@ -395,6 +425,7 @@ namespace Alachisoft.NCache.Caching.Util
         /// <returns>list of nodes where the operation succeeded</returns>
         public static object[] FindAtomicBulkOpStatusReplicated(RspList results, Address local)
         {
+            //CacheAddResult res = CacheAddResult.Failure;
             Hashtable failedKeys = new Hashtable();
 
             object[] result = null;
@@ -406,12 +437,12 @@ namespace Alachisoft.NCache.Caching.Util
 
                 if (rsp.wasSuspected())
                 {
-                    
+                    //throw new Alachisoft.NGroups.SuspectedException(rsp.Sender);
                     continue;
                 }
                 if (!rsp.wasReceived())
                 {
-                    
+                    //throw new Alachisoft.NGroups.TimeoutException();
                     continue;
                 }
 
@@ -424,6 +455,7 @@ namespace Alachisoft.NCache.Caching.Util
                         failedKeys[result[j]] = result[j];
                     }
                 }
+
             }
 
             object[] failed = new object[failedKeys.Count];
@@ -451,16 +483,20 @@ namespace Alachisoft.NCache.Caching.Util
             for (int i = 0; i < results.size(); i++)
             {
                 Rsp rsp = (Rsp)results.elementAt(i);
+                //				if(local != null && local.CompareTo(rsp.Sender) == 0)
+                //				{
+                //					continue;
+                //				}
                 if (!rsp.wasReceived() && !rsp.wasSuspected())
                 {
-                    
+                    //throw new Alachisoft.NGroups.TimeoutException();
                     timeoutCount++;
                     continue;
                 }
 
                 if (rsp.wasSuspected())
                 {
-                    
+                    //throw new Alachisoft.NGroups.SuspectedException(rsp.Sender);
                     suspectedCount++;
                     continue;
                 }
@@ -473,6 +509,7 @@ namespace Alachisoft.NCache.Caching.Util
                 }
                 if (res.Result != CacheInsResult.Success && res.Result != CacheInsResult.SuccessOverwrite && res.Result != CacheInsResult.NeedsEviction)
                 {
+                    //return res;
                 }
 
                 /* If all the nodes in the Cluster return NeedsEviction response then we do not need to remove */
@@ -491,6 +528,7 @@ namespace Alachisoft.NCache.Caching.Util
             if (suspectedCount > 0 && successCount > 0 && (suspectedCount + successCount == results.size()))
             {
                 //as operation is successfull on all other nodes other than suspected node(s).
+                //res.Result = CacheInsResult.Success;
             }
             if (timeoutCount > 0 && (timeoutCount + successCount == results.size()))
             {
@@ -522,6 +560,7 @@ namespace Alachisoft.NCache.Caching.Util
             return res;
         }
 
+
         /// <summary>
         /// Returns the set of nodes where the insertion was performed as an atomic operation.
         /// </summary>
@@ -541,12 +580,12 @@ namespace Alachisoft.NCache.Caching.Util
 
                 if (rsp.wasSuspected())
                 {
-                    
+                    //throw new Alachisoft.NGroups.SuspectedException(rsp.Sender);
                     continue;
                 }
                 if (!rsp.wasReceived())
                 {
-                    
+                    //throw new Alachisoft.NGroups.TimeoutException();
                     continue;
                 }
 
@@ -573,6 +612,7 @@ namespace Alachisoft.NCache.Caching.Util
             }
             return insertedKeys;
         }
+
 
         /// <summary>
         /// Find first entry in the response list that is not null and didnt timeout.
@@ -678,21 +718,21 @@ namespace Alachisoft.NCache.Caching.Util
         /// <param name="results">response list</param>
         /// <param name="type">type of response to fetch</param>
         /// <returns>List of entries found</returns>
-        public static ArrayList GetAllNonNullRsp(RspList results, Type type)
+        public static IList GetAllNonNullRsp(RspList results, Type type)
         {
-            ArrayList list = new ArrayList();
+            IList list = new ClusteredArrayList();
             if (results == null)
                 return null;
 
             Rsp rsp = null;
-            ArrayList removeRsps = null;
+            IList<Rsp> removeRsps = null;
             for (int i = 0; i < results.size(); i++)
             {
                 rsp = (Rsp)results.elementAt(i);
 
                 if (rsp.wasSuspected() || !rsp.wasReceived())
                 {
-                    if (removeRsps == null) removeRsps = new ArrayList();
+                    if (removeRsps == null) removeRsps = new List<Rsp>();
                     removeRsps.Add(rsp);
                     continue;
                 }
@@ -721,7 +761,9 @@ namespace Alachisoft.NCache.Caching.Util
         /// <returns>list of nodes where the operation succeeded</returns>
         public static Hashtable FindAtomicBulkRemoveStatusReplicated(RspList results, Address local)
         {
+            //Hashtable removedKeys = new Hashtable();
             Hashtable result = null;
+            //Hashtable lastRes = null;
 
             if (results == null) return new Hashtable();
 
@@ -731,12 +773,12 @@ namespace Alachisoft.NCache.Caching.Util
 
                 if (rsp.wasSuspected())
                 {
-                    
+                    //throw new Alachisoft.NGroups.SuspectedException(rsp.Sender);
                     continue;
                 }
                 if (!rsp.wasReceived())
                 {
-                    
+                    //throw new Alachisoft.NGroups.TimeoutException();
                     continue;
                 }
 
@@ -746,43 +788,11 @@ namespace Alachisoft.NCache.Caching.Util
                 {
                     return result;
                 }
-
             }
 
             return result;
         }
 
-
-        /// <summary>
-        /// Combines the collected statistics of the nodes, in a partitioned environment.
-        /// </summary>
-        /// <returns></returns>
-        public static CacheStatistics CombinePartitionReplicasStatistics(ClusterCacheStatistics s)
-        {
-            CacheStatistics stats = new CacheStatistics();
-            if (s.Nodes == null) return stats;
-
-            bool zeroSeen = false;
-            for (int i = 0; i < s.Nodes.Count; i++)
-            {
-                NodeInfo info = s.Nodes[i] as NodeInfo;
-                if (info == null || info.Statistics == null ||
-                    !info.Status.IsAnyBitSet(NodeStatus.Coordinator | NodeStatus.SubCoordinator)) continue;
-
-                stats.HitCount += info.Statistics.HitCount;
-                stats.MissCount += info.Statistics.MissCount;
-                stats.UpdateCount(stats.Count + info.Statistics.Count);
-                stats.MaxCount += info.Statistics.MaxCount;
-                if (info.Statistics.MaxCount == 0)
-                    zeroSeen = true;
-            }
-
-            stats.MaxSize = s.LocalNode.Statistics.MaxSize;
-
-            if (zeroSeen)
-                stats.MaxCount = 0;
-            return stats;
-        }
 
         /// <summary>
         /// Combines the collected statistics of the nodes, in a partitioned environment.
@@ -803,6 +813,7 @@ namespace Alachisoft.NCache.Caching.Util
                 stats.MissCount += info.Statistics.MissCount;
                 stats.UpdateCount(stats.Count + info.Statistics.Count);
                 stats.MaxCount += info.Statistics.MaxCount;
+                //if (info.Statistics.MaxSize >= 0) stats.MaxSize += info.Statistics.MaxSize;
                 if (info.Statistics.MaxCount == 0)
                     zeroSeen = true;
             }
@@ -835,34 +846,8 @@ namespace Alachisoft.NCache.Caching.Util
             stats.UpdateCount(s.LocalNode.Statistics.Count);
             stats.MaxCount = s.LocalNode.Statistics.MaxCount;
             stats.MaxSize = s.LocalNode.Statistics.MaxSize;
-            stats.SessionCount = s.LocalNode.Statistics.SessionCount;
+
             return stats;
-        }
-
-        public static Hashtable VerifyAllTrueResopnses(RspList results)
-        {
-            Hashtable res = new Hashtable();
-            if (results == null)
-                return res;
-            Rsp rsp = null;
-            for (int i = 0; i < results.size(); i++)
-            {
-                rsp = (Rsp)results.elementAt(i);
-
-                if (rsp.wasSuspected())
-                {
-                    throw new Alachisoft.NGroups.SuspectedException(rsp.Sender);
-                }
-
-                if (!rsp.wasReceived())
-                {
-                    throw new Runtime.Exceptions.TimeoutException("operation timeout");
-                }
-            }
-            if (rsp != null)
-                return (Hashtable)rsp.Value;
-            else
-                return null;
         }
 
         public static void VerifySuspectedResponses(RspList results)
@@ -882,7 +867,99 @@ namespace Alachisoft.NCache.Caching.Util
             }
         }
 
+        public static Hashtable VerifyAllTrueResopnses(RspList results)
+        {
+            Hashtable res = new Hashtable();
+            if (results == null)
+                return res;
+            Rsp rsp = null;
+            for (int i = 0; i < results.size(); i++)
+            {
+                rsp = (Rsp)results.elementAt(i);
+                if (rsp.wasSuspected())
+                {
+                    throw new Alachisoft.NGroups.SuspectedException(rsp.Sender);
+                }
 
+                if (!rsp.wasReceived())
+                {
+
+                    throw new Runtime.Exceptions.TimeoutException("operation timeout");
+
+                }
+            }
+            if (rsp != null)
+                return (Hashtable)rsp.Value;
+            else
+                return null;
+        }
+
+        public static ClusterOperationResult FindAtomicClusterOperationStatusReplicated(RspList results)
+        {
+            ClusterOperationResult res = null;
+            if (results == null) return res;
+            int timeoutCount = 0;
+            int suspectedCount = 0;
+            int successCount = 0;
+
+            for (int i = 0; i < results.size(); i++)
+            {
+                Rsp rsp = (Rsp)results.elementAt(i);
+
+                if (rsp.wasSuspected())
+                {
+                    //throw new Alachisoft.NGroups.SuspectedException(rsp.Sender);
+                    suspectedCount++;
+                    continue;
+                }
+                if (!rsp.wasReceived() && !rsp.wasSuspected())
+                {
+                    //throw new Alachisoft.NGroups.TimeoutException();
+                    timeoutCount++;
+                    continue;
+                }
+                res = rsp.Value as ClusterOperationResult;
+                if (res.ExecutionResult == ClusterOperationResult.Result.Completed)
+                {
+                    successCount++;
+                }
+            }
+            if (suspectedCount > 0 && successCount > 0 && (suspectedCount + successCount == results.size()))
+            {
+                //as operation is successfull on all other nodes other than suspected node(s).
+                return res;
+            }
+            if (timeoutCount > 0 && (timeoutCount + successCount == results.size()))
+            {
+                if (successCount > 0)
+                {
+                    //operation is not succeeded on some of the nodes; therefore we throw timeout exception.
+                    res.ExecutionResult = ClusterOperationResult.Result.ParitalTimeout;
+                    return res;
+                }
+                else
+                {
+                    //operation timed out on all of the node; no need to rollback.
+                    res = new OpenStreamResult(ClusterOperationResult.Result.FullTimeout, false);
+                    return res;
+                }
+            }
+            if (timeoutCount > 0 && suspectedCount > 0)
+            {
+                if (successCount > 0)
+                {
+                    res.ExecutionResult = ClusterOperationResult.Result.ParitalTimeout;
+                    return res;
+                }
+                else
+                {
+                    res = new OpenStreamResult(ClusterOperationResult.Result.FullTimeout, false);
+                    return res;
+                }
+            }
+
+            return res;
+        }
     }
 }
 

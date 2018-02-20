@@ -12,8 +12,8 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-using System.Collections;
 using System;
+using System.Collections;
 using Alachisoft.NCache.Common.DataStructures.Clustered;
 
 namespace Alachisoft.NCache.Caching.Queries
@@ -22,7 +22,7 @@ namespace Alachisoft.NCache.Caching.Queries
     {
         private HashVector _indexTable;
         private bool _indexForAll;
-        private readonly object _mutex = new object();
+        private readonly  object _mutex= new object();
 
         public TypeIndex(string type, bool indexForAll)
         {
@@ -54,7 +54,7 @@ namespace Alachisoft.NCache.Caching.Queries
                     {
                         tbl.Remove(key);
                     }
-                }
+                } 
             }
         }
 
@@ -74,11 +74,11 @@ namespace Alachisoft.NCache.Caching.Queries
                         Hashtable tbl = e.Value as Hashtable;
                         tbl.Clear();
                     }
-                }
+                } 
             }
         }
 
-        public IDictionaryEnumerator GetEnumerator(string typeName)
+        public IDictionaryEnumerator GetEnumerator(string typeName, bool forTag)
         {
             lock (_mutex)
             {
@@ -88,9 +88,9 @@ namespace Alachisoft.NCache.Caching.Queries
                 {
                     Hashtable tbl = en.Value as Hashtable;
                     return tbl.GetEnumerator();
-                } 
-            }
+                }
 
+            }
             return null;
         }
 
@@ -98,6 +98,7 @@ namespace Alachisoft.NCache.Caching.Queries
         public IndexInformation GetIndexInformation(object key) { return null; }
 
         public void RemoveFromIndex(object key) { }
+
 
         public long IndexInMemorySize
         {

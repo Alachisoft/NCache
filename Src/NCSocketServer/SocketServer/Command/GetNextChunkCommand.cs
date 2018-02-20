@@ -13,11 +13,11 @@
 // limitations under the License.
 
 using System;
-using System.Collections.Generic;
-using System.Text;
 using Alachisoft.NCache.Common.DataStructures;
 using Alachisoft.NCache.Caching;
 using Alachisoft.NCache.Common.Util;
+using Alachisoft.NCache.Common.Monitoring;
+using Alachisoft.NCache.SocketServer.RuntimeLogging;
 
 namespace Alachisoft.NCache.SocketServer.Command
 {
@@ -33,25 +33,32 @@ namespace Alachisoft.NCache.SocketServer.Command
         public override void ExecuteCommand(ClientManager clientManager, Alachisoft.NCache.Common.Protobuf.Command command)
         {
             CommandInfo cmdInfo;
+            int overload;
+            string exception = null;
+            System.Diagnostics.Stopwatch stopWatch = new System.Diagnostics.Stopwatch();
+            stopWatch.Start();
 
             try
             {
+                overload = command.MethodOverload;
                 cmdInfo = ParseCommand(command, clientManager);
             }
             catch (Exception exc)
             {
                 if (!base.immatureId.Equals("-2"))
-                    _serializedResponsePackets.Add(Alachisoft.NCache.Common.Util.ResponseHelper.SerializeExceptionResponse(exc, command.requestID));
+                    _serializedResponsePackets.Add(Alachisoft.NCache.Common.Util.ResponseHelper.SerializeExceptionResponse(exc, command.requestID, command.commandID));
 
                 return;
             }
 
+            int count = 0;
+            string keyPackage = null;
 
             try
             {
                 NCache nCache = clientManager.CmdExecuter as NCache;
                 EnumerationDataChunk nextChunk = nCache.Cache.GetNextChunk(cmdInfo.Pointer, cmdInfo.OperationContext);
-
+                stopWatch.Stop();
                 if (!clientManager.EnumerationPointers.ContainsKey(cmdInfo.Pointer.Id))
                 {
                     clientManager.EnumerationPointers.Add(cmdInfo.Pointer.Id, cmdInfo.Pointer);
@@ -64,6 +71,8 @@ namespace Alachisoft.NCache.SocketServer.Command
                 Alachisoft.NCache.Common.Protobuf.Response response = new Alachisoft.NCache.Common.Protobuf.Response();
                 Alachisoft.NCache.Common.Protobuf.GetNextChunkResponse getNextChunkResponse = new Alachisoft.NCache.Common.Protobuf.GetNextChunkResponse();
                 response.requestId = Convert.ToInt64(cmdInfo.RequestId);
+
+                response.commandID = command.commandID;
                 response.intendedRecipient = cmdInfo.OperationContext.GetValueByField(OperationContextFieldName.IntendedRecipient).ToString();
                 response.responseType = Alachisoft.NCache.Common.Protobuf.Response.Type.GET_NEXT_CHUNK;
                 response.getNextChunkResponse = getNextChunkResponse;                
@@ -77,7 +86,23 @@ namespace Alachisoft.NCache.SocketServer.Command
             }
             catch (Exception exc)
             {
-                _serializedResponsePackets.Add(Alachisoft.NCache.Common.Util.ResponseHelper.SerializeExceptionResponse(exc, command.requestID));
+                exception = exception.ToString();
+                _serializedResponsePackets.Add(Alachisoft.NCache.Common.Util.ResponseHelper.SerializeExceptionResponse(exc, command.requestID, command.commandID));
+            }
+            finally
+            {
+                TimeSpan executionTime = stopWatch.Elapsed;
+                try
+                {
+                    if (Alachisoft.NCache.Management.APILogging.APILogManager.APILogManger != null && Alachisoft.NCache.Management.APILogging.APILogManager.EnableLogging)
+                    {
+                        APILogItemBuilder log = new APILogItemBuilder(MethodsName.GetNextChunk.ToLower());
+                        log.GenerateGetEnumeratorAPILogItem(1, exception, executionTime, clientManager.ClientID.ToLower(), clientManager.ClientSocketId.ToString());
+                    }
+                }
+                catch
+                {
+                }
             }
         }
 
@@ -98,8 +123,4 @@ namespace Alachisoft.NCache.SocketServer.Command
             return cmdInfo;
         }
     }
-
-
 }
-
-

@@ -1,0 +1,10 @@
+
+option java_outer_classname="GetTagCommandProtocol";
+package Alachisoft.NCache.Common.Protobuf;
+
+message GetTagCommand 
+{
+	optional int32 tagComparisonType = 1;
+	repeated string tags = 2;
+	optional int64 requestId = 3;
+}

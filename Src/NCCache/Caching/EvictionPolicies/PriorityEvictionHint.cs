@@ -26,10 +26,9 @@ namespace Alachisoft.NCache.Caching.EvictionPolicies
     public class PriorityEvictionHint : EvictionHint, ICompactSerializable
     {
 
-
         new internal static int InMemorySize = 24;
 
-        static PriorityEvictionHint()
+        static PriorityEvictionHint() 
         {
             InMemorySize = Common.MemoryUtil.GetInMemoryInstanceSize(EvictionHint.InMemorySize + Common.MemoryUtil.NetEnumSize);
         }
@@ -43,6 +42,7 @@ namespace Alachisoft.NCache.Caching.EvictionPolicies
             get { return _priority; }
             set { _priority = value; }
         }
+
 
         /// <summary>
         /// Constructor.
@@ -98,7 +98,6 @@ namespace Alachisoft.NCache.Caching.EvictionPolicies
             writer.Write(Convert.ToInt16(_priority));
         }
 
-        #endregion
-       
+        #endregion       
     }
 }

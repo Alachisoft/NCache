@@ -1,0 +1,16 @@
+
+option java_outer_classname="MapReduceTaskCommandProtocol";
+package Alachisoft.NCache.Common.Protobuf;
+message MapReduceTaskCommand {
+	optional int64 requestId = 1;
+    optional int32 callbackId = 2;
+    optional int32 outputOption = 3;
+    optional string taskId = 4;
+    optional bytes mapper = 5;
+    optional bytes reducer = 6;
+    optional bytes combiner = 7;
+    optional bytes keyFilter = 8;
+    optional bytes inputProvider = 9;
+    optional string query = 10;
+    optional bytes queryParameters = 11;
+}

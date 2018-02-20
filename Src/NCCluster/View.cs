@@ -9,16 +9,13 @@
 // WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
 // See the License for the specific language governing permissions and
 // limitations under the License.
-
 using System;
 using System.Collections;
 using Alachisoft.NCache.Common.Net;
+
 using Alachisoft.NCache.Runtime.Serialization;
-
 using Alachisoft.NCache.Runtime.Serialization.IO;
-
 using Alachisoft.NCache.Common.DataStructures;
-
 using Alachisoft.NCache.Common.Mirroring;
 
 namespace Alachisoft.NGroups
@@ -76,17 +73,13 @@ namespace Alachisoft.NGroups
         private DistributionMaps _distributionMaps;
         private string _coordinatorGmsId;
 
+
         /// <summary>
         /// Map table or some serialized link list for dynamic mirroring.
         /// </summary>
         private CacheNode[] _mirrorMapping;
 
-        /// <summary>
-        /// This is the unique id used by each bridge source cache to communicate with bridge.
-        /// Because each node from one source cache communicate with bridge with this same unique id, 
-        /// bridge understands that multiple nodes from one cache are connected to it.
-        /// </summary>
-        private string _bridgeSourceCacheId;
+
 
         private Hashtable nodeGmsIds = new Hashtable();
 		/// <summary> creates an empty view, should not be used</summary>
@@ -145,18 +138,6 @@ namespace Alachisoft.NGroups
 
         public string CoordinatorGmsId { get { return _coordinatorGmsId; } set { _coordinatorGmsId = value; } }
 
-        //public ArrayList HashMap
-        //{
-        //    get { return _hashMap; }
-        //    set { _hashMap = value; }
-        //}
-
-        //public Hashtable BucketsOwnershipMap
-        //{
-        //    get { return _bucketsOwnershipMap; }
-        //    set { _bucketsOwnershipMap = value; }
-        //}
-
         public DistributionMaps DistributionMaps
         {
             get { return _distributionMaps; }
@@ -179,11 +160,6 @@ namespace Alachisoft.NGroups
 			set { this._mbrsSubgroupMap = value; }
 		}
 
-        public String BridgeSourceCacheId
-        {
-            get { return _bridgeSourceCacheId; }
-            set { _bridgeSourceCacheId = value; }
-        }
 
 		/// <summary> returns the creator of this view
 		/// if this view was created with the empty constructur, null will be returned
@@ -243,6 +219,7 @@ namespace Alachisoft.NGroups
 			
 		}
 
+
         /// <summary>
         /// Hashtable or some serialized object used for dynamic mirroring in 
         /// case of Partitioned Replica topology. This along with Distribution Map 
@@ -253,6 +230,7 @@ namespace Alachisoft.NGroups
             get { return _mirrorMapping; }
             set { _mirrorMapping = value; }
         }
+
 
 		/// <summary>
 		/// Returns true, if this view contains a certain member
@@ -295,15 +273,13 @@ namespace Alachisoft.NGroups
 				v.MbrsSubgroupMap = MbrsSubgroupMap.Clone() as Hashtable;
 
             v._coordinatorGmsId = _coordinatorGmsId;
-            
-
+           
             if (DistributionMaps != null)
                 v.DistributionMaps = DistributionMaps.Clone() as DistributionMaps;
 
             if (MirrorMapping != null)
                 v.MirrorMapping = MirrorMapping;
 
-            v._bridgeSourceCacheId = _bridgeSourceCacheId;
             if (nodeGmsIds != null) v.nodeGmsIds = nodeGmsIds.Clone() as Hashtable;
 
             return (v);
@@ -337,11 +313,14 @@ namespace Alachisoft.NGroups
 			_members = (ArrayList) reader.ReadObject();
 			_sequencerTbl = (Hashtable)reader.ReadObject();
 			_mbrsSubgroupMap = (Hashtable)reader.ReadObject();
+            //_hashMap = (ArrayList)reader.ReadObject();
+            //_bucketsOwnershipMap = reader.ReadObject() as Hashtable;
 
             _distributionMaps = (DistributionMaps)reader.ReadObject();
 
+
             _mirrorMapping = reader.ReadObject() as CacheNode[];
-            _bridgeSourceCacheId = reader.ReadObject() as string;
+            
             nodeGmsIds = reader.ReadObject() as Hashtable;
             _coordinatorGmsId = reader.ReadObject() as string;
 		}
@@ -352,11 +331,11 @@ namespace Alachisoft.NGroups
             writer.WriteObject(_members);
 			writer.WriteObject(_sequencerTbl);
 			writer.WriteObject(_mbrsSubgroupMap);
-
             writer.WriteObject(_distributionMaps);
+
+
             writer.WriteObject(_mirrorMapping);
 
-            writer.WriteObject(_bridgeSourceCacheId);
             writer.WriteObject(nodeGmsIds);
             writer.WriteObject(_coordinatorGmsId);
 		}

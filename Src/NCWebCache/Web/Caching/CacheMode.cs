@@ -14,40 +14,39 @@
 
 using System;
 
-
 namespace Alachisoft.NCache.Web.Caching
 {
-	/// <summary>
-	/// Specifies the startup mode (also known as isolation level) of <see cref="Cache"/>.
-	/// </summary>
-	/// <remarks>
-	/// This enumeration allows you to control the the startup mode of <see cref="Cache"/> programmatically. The startup 
-	/// mode <see cref="CacheMode.OutProc"/> corresponds to a High isolation level implying that 
-	/// the <see cref="Cache"/> runs in NCache service's process. 
-	/// Similarly <see cref="CacheMode.InProc"/> implies that <see cref="Cache"/> is inproc to the applications. 
-	/// <see cref="CacheMode.InProc"/> is equal to specfying no mode at all, and in that case the mode
-	/// specified in cache configuration is used.
-	/// <para>
-	/// An isolated cache can be shared between applications on the same node. Morever an isolated cache's lifetime 
-	/// is explicitly controlled by using NCache Manager application.
-	/// </para>
-	/// </remarks>
-	[Serializable]
-	public enum CacheMode
-	{
-		/// <summary>
-		/// Use the startup mode specified in the configuration.
-		/// </summary>
-		Default,
+    /// <summary>
+    /// Specifies the startup mode (also known as isolation level) of <see cref="Cache"/>.
+    /// </summary>
+    /// <remarks>
+    /// This enumeration allows you to control the startup mode of <see cref="Cache"/> programmatically. The startup 
+    /// mode <see cref="CacheMode.OutProc"/> corresponds to a High isolation level implying that 
+    /// the <see cref="Cache"/> runs in NCache service's process. 
+    /// Similarly <see cref="CacheMode.InProc"/> implies that <see cref="Cache"/> is inproc to the applications. 
+    /// <see cref="CacheMode.InProc"/> is equal to specifying no mode at all, and in that case the mode
+    /// specified in cache configuration is used.
+    /// <para>
+    /// An isolated cache can be shared between applications on the same node. Moreover an isolated cache's lifetime 
+    /// is explicitly controlled by using NCache Manager application.
+    /// </para>
+    /// </remarks>
+    [Serializable]
+    public enum CacheMode
+    {
+        /// <summary>
+        /// Use the startup mode specified in the configuration.
+        /// </summary>
+        Default,
 
-		/// <summary>
-		/// Start the cache inproc, i.e., with a low isolation level.
-		/// </summary>
-		InProc,
+        /// <summary>
+        /// Start the cache inproc, i.e., with a low isolation level.
+        /// </summary>
+        InProc,
 
-		/// <summary>
-		/// Start the cache outproc, i.e., with a high isolation level.
-		/// </summary>
-		OutProc
-	}
+        /// <summary>
+        /// Start the cache outproc, i.e., with a high isolation level.
+        /// </summary>
+        OutProc
+    }
 }

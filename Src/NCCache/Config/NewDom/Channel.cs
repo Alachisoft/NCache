@@ -11,13 +11,9 @@
 // WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
 // See the License for the specific language governing permissions and
 // limitations under the License.
-
 using System;
-using System.Collections;
-using System.Text;
 using Alachisoft.NCache.Common.Configuration;
 using Alachisoft.NCache.Runtime.Serialization;
-using Runtime = Alachisoft.NCache.Runtime;
 
 namespace Alachisoft.NCache.Config.NewDom
 {
@@ -25,10 +21,14 @@ namespace Alachisoft.NCache.Config.NewDom
     public class Channel : ICloneable, ICompactSerializable
     {
         int tcpPort, numInitHosts, connectionRetries = 2, connectionRetryInterval = 2;
-        int portRange = 1;  
+        int portRange = 1; //default port-range is '1' 
         string initialHosts;
+
         int joinRetryInterval = 5;
         int joinRetries = 24;
+
+
+
         public Channel() { }
         public Channel(int defaultPortRange) { portRange = defaultPortRange; }
 
@@ -65,26 +65,23 @@ namespace Alachisoft.NCache.Config.NewDom
             get { return initialHosts; }
             set { initialHosts = value; }
         }
-
+        
         public int NumInitHosts
         {
             get { return numInitHosts; }
             set { numInitHosts = value; }
         }
-
-        [ConfigurationAttribute("join_retry_count")]
+        
         public int JoinRetries
         {
             get { return joinRetries; }
-            set { joinRetries = value; }
         }
-
-        [ConfigurationAttribute("join_retry_timeout")]
+        
         public int JoinRetryInterval
         {
             get { return joinRetryInterval; }
-            set { joinRetryInterval = value; }
         }
+
 
         #region ICloneable Members
 
@@ -112,6 +109,8 @@ namespace Alachisoft.NCache.Config.NewDom
             portRange = reader.ReadInt32();
             initialHosts = reader.ReadObject() as String;
             joinRetryInterval = reader.ReadInt32();
+            joinRetries = reader.ReadInt32();
+
         }
 
         public void Serialize(Runtime.Serialization.IO.CompactWriter writer)
@@ -124,6 +123,7 @@ namespace Alachisoft.NCache.Config.NewDom
             writer.WriteObject(initialHosts);
             writer.Write(joinRetryInterval);
             writer.Write(joinRetries);
+
         }
         #endregion
     }

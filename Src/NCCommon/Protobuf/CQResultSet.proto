@@ -1,0 +1,13 @@
+import "KeyValuePackageResponse.proto";
+import "CQType.proto";
+
+option java_outer_classname="CQResultSetProtocol";
+
+package Alachisoft.NCache.Common.Protobuf;
+
+message CQResultSet {
+	repeated string searchKeyResults = 1;
+	optional KeyValuePackageResponse searchKeyEnteriesResult = 2;
+	optional CQType queryType = 3 [default = SEARCH_CQ_KEYS];
+	optional string CQUniqueId = 4;
+}

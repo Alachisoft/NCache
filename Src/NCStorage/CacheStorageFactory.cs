@@ -13,54 +13,61 @@
 // limitations under the License.
 
 using System;
-using System.Data;
 using System.Collections;
 using Alachisoft.NCache.Runtime.Exceptions;
 using Alachisoft.NCache.Common.Logger;
 
 namespace Alachisoft.NCache.Storage
 {
-	/// <summary>
-	/// Facotry object resonsible for creating mulitple types of stores. Used by the LocalCache.
-	/// sample property string for creation is.
-	/// </summary>
-	public class CacheStorageFactory
-	{
+    /// <summary>
+    /// Factory object responsible for creating multiple types of stores. Used by the LocalCache.
+    /// sample property string for creation is.
+    /// </summary>
+    public class CacheStorageFactory
+    {
+        /// <summary>
+        /// Internal method that creates a cache store. A HashMap containing the config parameters 
+        /// is passed to this method.
+        /// </summary>
+        public static ICacheStorage CreateStorageProvider(IDictionary properties, string cacheContext,
+            bool evictionEnabled, ILogger NCacheLog)
+        {
+            if (properties == null)
+                throw new ArgumentNullException("properties");
 
-		/// <summary>
-		/// Internal method that creates a cache store. A HashMap containing the config parameters 
-		/// is passed to this method.
-		/// </summary>
-		public static ICacheStorage CreateStorageProvider(IDictionary properties, string cacheContext, bool evictionEnabled, ILogger NCacheLog)
-		{
-			if(properties == null)
-				throw new ArgumentNullException("properties");
+            StorageProviderBase cacheStorage = null;
+            try
+            {
+                if (!properties.Contains("class"))
+                    throw new ConfigurationException("Missing cache store class.");
 
-			StorageProviderBase cacheStorage = null;
-			try
-			{
-                string scheme = "heap";
-                IDictionary schemeProps = (IDictionary)properties[scheme];
+                string scheme = Convert.ToString(properties["class"]).ToLower();
+
+                IDictionary schemeProps = (IDictionary) properties[scheme];
 
                 if (scheme.CompareTo("heap") == 0)
                 {
                     cacheStorage = new ClrHeapStorageProvider(schemeProps, evictionEnabled, NCacheLog);
                 }
+                else
+                {
+                    throw new ConfigurationException("Invalid cache store class: " + scheme);
+                }
 
                 if (cacheStorage != null) cacheStorage.CacheContext = cacheContext;
-			}
-			catch(ConfigurationException e)
-			{
+            }
+            catch (ConfigurationException e)
+            {
                 Trace.error("CacheStorageFactory.CreateCacheStore()", e.ToString());
-				throw;
-			}
-			catch(Exception e)
-			{
+                throw;
+            }
+            catch (Exception e)
+            {
                 Trace.error("CacheStorageFactory.CreateCacheStore()", e.ToString());
-				throw new ConfigurationException("Configuration Error: " + e.ToString(), e);
-			}
+                throw new ConfigurationException("Configuration Error: " + e.ToString(), e);
+            }
 
-			return cacheStorage;
-		}
-	}
+            return cacheStorage;
+        }
+    }
 }

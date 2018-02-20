@@ -14,9 +14,9 @@
 
 using System;
 using System.Text;
+using System.Net.Sockets;
 
 namespace Alachisoft.NCache.Web.Caching.Util
-
 {
     internal class HelperFxn
     {
@@ -27,17 +27,17 @@ namespace Alachisoft.NCache.Web.Caching.Util
         /// <returns></returns>
         internal static string ToString(byte[] buffer)
         {
-            return Encoding.UTF8.GetString(buffer);
+            return UTF8Encoding.UTF8.GetString(buffer);
         }
 
         internal static string ToStringUni(byte[] buffer)
         {
-            return Encoding.Unicode.GetString(buffer);
+            return UTF8Encoding.Unicode.GetString(buffer);
         }
 
         internal static string ToString(byte[] buffer, int offset, int size)
         {
-            return Encoding.UTF8.GetString(buffer, offset, size);
+            return UTF8Encoding.UTF8.GetString(buffer, offset, size);
         }
 
         /// <summary>
@@ -47,20 +47,26 @@ namespace Alachisoft.NCache.Web.Caching.Util
         /// <returns></returns>
         internal static byte[] ToBytes(string data)
         {
-            return Encoding.UTF8.GetBytes(data);
+            return UTF8Encoding.UTF8.GetBytes(data);
         }
 
         internal static byte[] ToBytesUni(string data)
         {
-            return Encoding.Unicode.GetBytes(data);
+            return UTF8Encoding.Unicode.GetBytes(data);
         }
-      
-        internal static int ToInt32(byte[] buffer, int offset, int size)
+
+        /// <summary>
+        /// Converts the specified byte array to int. 
+        /// It is callers responsibility to ensure that values can be converted to Int32
+        /// </summary>
+        /// <param name="buffer"></param>
+        /// <returns></returns>
+        internal static int ToInt32(byte[] buffer)
         {
             int cInt = 0;
             try
             {
-                cInt = Convert.ToInt32(Encoding.UTF8.GetString(buffer, offset, size));
+                cInt = Convert.ToInt32(UTF8Encoding.UTF8.GetString(buffer));
             }
             catch (Exception)
             {
@@ -70,12 +76,48 @@ namespace Alachisoft.NCache.Web.Caching.Util
             return cInt;
         }
 
-        internal static byte[] ParseToByteArray(byte value)
+        internal static int ToInt32(byte[] buffer, int offset, int size)
         {
-            byte[] tempArray = new byte[1];
-            tempArray[0] = value;
-            return tempArray;
+            int cInt = 0;
+            try
+            {
+                cInt = Convert.ToInt32(UTF8Encoding.UTF8.GetString(buffer, offset, size));
+            }
+            catch (Exception)
+            {
+                throw new InvalidCastException("Input endIndex is not in correct format.");
+            }
+
+            return cInt;
         }
 
+        internal static byte[] CopyTo(byte[] copyFrom, int startIndex, int endIndex)
+        {
+            byte[] copyIn = new byte[endIndex - startIndex];
+            int count = 0;
+
+            for (int i = startIndex; i < endIndex; i++)
+                copyIn[count++] = copyFrom[i];
+            return copyIn;
+        }
+
+        internal static byte[] CopySubArray(byte[] copyFrom, int startIndex, int length)
+        {
+            byte[] copyIn = new byte[length];
+            int count = 0;
+
+            for (int i = startIndex; i < length + startIndex; i++)
+                copyIn[count++] = copyFrom[i];
+            return copyIn;
+        }
+
+        private static void AssureRecieve(Socket client, ref byte[] buffer)
+        {
+            int bytesRecieved = 0;
+            do
+            {
+                bytesRecieved += client.Receive(buffer, bytesRecieved, buffer.Length - bytesRecieved, SocketFlags.None);
+            } while (bytesRecieved < buffer.Length);
+        }
     }
 }

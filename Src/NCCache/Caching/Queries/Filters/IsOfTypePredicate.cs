@@ -13,8 +13,8 @@
 // limitations under the License.
 
 using System;
-using Alachisoft.NCache.Parser;
 using Alachisoft.NCache.Common.Queries;
+using Alachisoft.NCache.Parser;
 
 namespace Alachisoft.NCache.Caching.Queries.Filters
 {
@@ -37,7 +37,7 @@ namespace Alachisoft.NCache.Caching.Queries.Filters
         {
             if (typename == "*")
                 throw new Parser.ParserException("Incorrect query format \'*\'.");
-
+            
             return o.GetType().Name == typename;
         }
 
@@ -48,13 +48,24 @@ namespace Alachisoft.NCache.Caching.Queries.Filters
 
             if (queryContext.IndexManager == null)
                 throw new TypeIndexNotDefined("Index is not defined for '" + typename.ToString() + "'");
-
+            
             queryContext.TypeName = typename;
 
             if (queryContext.Index == null) //try to get virtual index
             {
                 //we are not allowing queries 
                 //with out attribute-level indexes right now.
+
+                
+                if (queryContext.AttributeValues != null && queryContext.AttributeValues.Count == 1)
+                {
+                    
+                    if (queryContext.AttributeValues.Contains("$Tag$"))
+                    {
+                        queryContext.Index = new AttributeIndex(null, queryContext.Cache.Context.CacheRoot.Name, null);
+                        return;
+                    }
+                }
 
                 //in case of DisableException is true, exception will not be thrown, and return new attribute index.
                 if (QueryIndexManager.DisableException)
@@ -67,19 +78,22 @@ namespace Alachisoft.NCache.Caching.Queries.Filters
             }
             else
             {
-            
-                //populate the tree for normal queries...
+                 
+                //populate the tree for normal queries and for tag queries...
                 if (nextPredicate == null && queryContext.PopulateTree)
                 {
-                    queryContext.InternalQueryResult = new ListQueryResult();
-                    queryContext.InternalQueryResult.Populate(queryContext.Index.GetEnumerator(typename));
+                    
+                    queryContext.InternalQueryResult = new WrapperQueryResult(new ListQueryResult(queryContext.KeyFilter,queryContext.CompoundFilter));
+                    queryContext.InternalQueryResult.Populate(queryContext.Index.GetEnumerator(typename, false));
+                    queryContext.InternalQueryResult.Populate(queryContext.Index.GetEnumerator(typename, true));
+                    
                 }
                 else
                 {
                     if (nextPredicate is LogicalAndPredicate)
-                        queryContext.InternalQueryResult = new HashedQueryResult();
+                        queryContext.InternalQueryResult = new HashedQueryResult(queryContext.KeyFilter,queryContext.CompoundFilter);
                     else
-                        queryContext.InternalQueryResult = new ListQueryResult();
+                        queryContext.InternalQueryResult = new ListQueryResult(queryContext.KeyFilter,queryContext.CompoundFilter);
                     nextPredicate.Execute(queryContext, null);
                 }
             }

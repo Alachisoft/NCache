@@ -13,11 +13,10 @@
 // limitations under the License.
 
 using System;
-
+using System.Collections;
 using Alachisoft.NCache.Caching;
 using Alachisoft.NCache.Caching.AutoExpiration;
 using Alachisoft.NCache.Web.Caching;
-
 
 namespace Alachisoft.NCache.Web
 {
@@ -25,89 +24,108 @@ namespace Alachisoft.NCache.Web
     /// Summary description for Util.
     /// </summary>
     internal sealed class WebCacheHelper
-	{
-		
+    {
+        /// <summary>
+        /// Converts between NCache item remove reason and web item remove reason.
+        /// </summary>
+        /// <param name="reason"></param>
+        /// <returns></returns>
+        public static CacheItemRemovedReason GetWebItemRemovedReason(ItemRemoveReason reason)
+        {
+            switch (reason)
+            {
+                case ItemRemoveReason.DependencyChanged:
+                    return CacheItemRemovedReason.DependencyChanged;
 
-		/// <summary>
-		/// Converts between NCache item remove reason and web item remove reason.
-		/// </summary>
-		/// <param name="reason"></param>
-		/// <returns></returns>
-		public static CacheItemRemovedReason GetWebItemRemovedReason(ItemRemoveReason reason)
-		{
-			switch(reason)
-			{
-				case ItemRemoveReason.Expired:
-					return CacheItemRemovedReason.Expired;
+                case ItemRemoveReason.Expired:
+                    return CacheItemRemovedReason.Expired;
 
-				case ItemRemoveReason.Underused:
-					return CacheItemRemovedReason.Underused;
-			}
-			return CacheItemRemovedReason.Removed;
-		}
-		
+                case ItemRemoveReason.Underused:
+                    return CacheItemRemovedReason.Underused;
+            }
 
-		/// <summary>
-		/// combines the absolute and sliding expiry params and returns a single
-		/// expiration hint value.
-		/// </summary>
-		/// <param name="absoluteExpiration">the absolute expiration datatime</param>
-		/// <param name="slidingExpiration">the sliding expiration time</param>
-		/// <returns>expiration hint</returns>
-		/// <remarks>If you set the <paramref name="slidingExpiration"/> parameter to less than TimeSpan.Zero, 
-		/// or the equivalent of more than one year, an <see cref="ArgumentOutOfRangeException"/> is thrown. 
-		/// You cannot set both sliding and absolute expirations on the same cached item. 
-		/// If you do so, an <see cref="ArgumentException"/> is thrown.</remarks>
-		public static ExpirationHint MakeFixedIdleExpirationHint(DateTime absoluteExpiration, TimeSpan slidingExpiration)
-		{
-			if(Web.Caching.Cache.NoAbsoluteExpiration.Equals(absoluteExpiration) &&
-				Web.Caching.Cache.NoSlidingExpiration.Equals(slidingExpiration))
-			{
-				return null;
-			}
-			if(Web.Caching.Cache.NoAbsoluteExpiration.Equals(absoluteExpiration))
-			{
-				if(slidingExpiration.CompareTo(TimeSpan.Zero) < 0)
-					throw new ArgumentOutOfRangeException("slidingExpiration");
+            return CacheItemRemovedReason.Removed;
+        }
 
-				if(slidingExpiration.CompareTo(DateTime.Now.AddYears(1) - DateTime.Now) >= 0)
-					throw new ArgumentOutOfRangeException("slidingExpiration");
 
-				return new IdleExpiration(slidingExpiration);
-			}
-			if(Web.Caching.Cache.NoSlidingExpiration.Equals(slidingExpiration))
-			{
-				return new FixedExpiration(absoluteExpiration);
-			}
-			throw new ArgumentException("You cannot set both sliding and absolute expirations on the same cache item.");
-		}
+        /// <summary>
+        /// combines the absolute and sliding expiry params and returns a single
+        /// expiration hint value.
+        /// </summary>
+        /// <param name="absoluteExpiration">the absolute expiration datetime</param>
+        /// <param name="slidingExpiration">the sliding expiration time</param>
+        /// <returns>expiration hint</returns>
+        /// <remarks>If you set the <paramref name="slidingExpiration"/> parameter to less than TimeSpan.Zero, 
+        /// or the equivalent of more than one year, an <see cref="ArgumentOutOfRangeException"/> is thrown. 
+        /// You cannot set both sliding and absolute expirations on the same cached item. 
+        /// If you do so, an <see cref="ArgumentException"/> is thrown.</remarks>
+        public static ExpirationHint MakeFixedIdleExpirationHint(DateTime absoluteExpiration,
+            TimeSpan slidingExpiration)
+        {
+            if (Caching.Cache.DefaultAbsolute.Equals(absoluteExpiration) &&
+                Caching.Cache.NoSlidingExpiration.Equals(slidingExpiration))
+            {
+                return null;
+            }
+
+            if (Caching.Cache.DefaultAbsolute.Equals(absoluteExpiration))
+            {
+                if (slidingExpiration.CompareTo(TimeSpan.Zero) < 0)
+                    throw new ArgumentOutOfRangeException("slidingExpiration");
+
+                if (slidingExpiration.CompareTo(DateTime.Now.AddYears(1) - DateTime.Now) >= 0)
+                    throw new ArgumentOutOfRangeException("slidingExpiration");
+
+                return new IdleExpiration(slidingExpiration);
+            }
+
+            if (Caching.Cache.NoSlidingExpiration.Equals(slidingExpiration))
+            {
+                return new FixedExpiration(absoluteExpiration);
+            }
+
+            throw new ArgumentException("You cannot set both sliding and absolute expirations on the same cache item.");
+        }
+
+        public static void EvaluateTagsParameters(Hashtable queryInfo, string group)
+        {
+            if (queryInfo != null)
+            {
+                if (!String.IsNullOrEmpty(group) && queryInfo["tag-info"] != null)
+
+                    throw new ArgumentException("You cannot set both groups and tags on the same cache item.");
+            }
+        }
 
         public static byte EvaluateExpirationParameters(DateTime absoluteExpiration, TimeSpan slidingExpiration)
         {
-            if(Web.Caching.Cache.NoAbsoluteExpiration.Equals(absoluteExpiration) &&
-				Web.Caching.Cache.NoSlidingExpiration.Equals(slidingExpiration))
-			{
-				return 2;
-			}
+            if (Caching.Cache.NoAbsoluteExpiration.Equals(absoluteExpiration) &&
+                Caching.Cache.NoSlidingExpiration.Equals(slidingExpiration))
+            {
+                return 2;
+            }
 
-			if(Web.Caching.Cache.NoAbsoluteExpiration.Equals(absoluteExpiration))
-			{
-				if(slidingExpiration.CompareTo(TimeSpan.Zero) < 0)
-					throw new ArgumentOutOfRangeException("slidingExpiration");
+            if (Caching.Cache.NoAbsoluteExpiration.Equals(absoluteExpiration))
+            {
+                if (slidingExpiration != Caching.Cache.DefaultSliding &&
+                    slidingExpiration != Caching.Cache.DefaultSlidingLonger)
+                {
+                    if (slidingExpiration.CompareTo(TimeSpan.Zero) < 0)
+                        throw new ArgumentOutOfRangeException("slidingExpiration");
 
-				if(slidingExpiration.CompareTo(DateTime.Now.AddYears(1) - DateTime.Now) >= 0)
-					throw new ArgumentOutOfRangeException("slidingExpiration");
+                    if (slidingExpiration.CompareTo(DateTime.Now.AddYears(1) - DateTime.Now) >= 0)
+                        throw new ArgumentOutOfRangeException("slidingExpiration");
+                }
 
-				return 0;
-			}
+                return 0;
+            }
 
-			if(Web.Caching.Cache.NoSlidingExpiration.Equals(slidingExpiration))
-			{
-				return 1;
-			}
+            if (Caching.Cache.NoSlidingExpiration.Equals(slidingExpiration))
+            {
+                return 1;
+            }
 
-			throw new ArgumentException("You cannot set both sliding and absolute expirations on the same cache item.");
+            throw new ArgumentException("You cannot set both sliding and absolute expirations on the same cache item.");
         }
-
-	}
+    }
 }

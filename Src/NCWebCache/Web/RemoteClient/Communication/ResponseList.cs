@@ -14,6 +14,8 @@
 
 using System.Collections.Generic;
 using Alachisoft.NCache.Web.Command;
+using Alachisoft.NCache.Common.DataStructures.Clustered;
+using System.Collections;
 
 namespace Alachisoft.NCache.Web.Communication
 {
@@ -23,7 +25,19 @@ namespace Alachisoft.NCache.Web.Communication
 
         private long _requestId = -1;
         private Dictionary<int, CommandResponse> _responses = new Dictionary<int, CommandResponse>();
+
         private object _mutex = new object();
+        private CommandBase _command;
+
+        public ResponseList(CommandBase command)
+        {
+            _command = command;
+        }
+
+        internal CommandBase Command
+        {
+            get { return _command; }
+        }
 
         internal long RequestId
         {
@@ -31,9 +45,19 @@ namespace Alachisoft.NCache.Web.Communication
             set { _requestId = value; }
         }
 
-        internal Dictionary<int, CommandResponse> Responses
+        internal IList Responses
         {
-            get { return _responses; }
+            get
+            {
+                IList responses = new ClusteredArrayList();
+
+                for (int i = 1; i <= _responses.Count; i++)
+                {
+                    responses.Add(_responses[i]);
+                }
+
+                return responses;
+            }
         }
 
         internal bool IsComplete

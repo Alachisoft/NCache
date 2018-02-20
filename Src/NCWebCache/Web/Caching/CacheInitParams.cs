@@ -18,27 +18,35 @@ using Alachisoft.NCache.Web.RemoteClient.Config;
 
 namespace Alachisoft.NCache.Web.Caching
 {
-    public class CacheInitParams: ICloneable
-
+    public class CacheInitParams : ICloneable
     {
-        private CacheMode           _mode = CacheMode.Default;
-        private string              _server = null;
-        private int                 _port = 9800;
+        private CacheMode _mode = CacheMode.Default;
+        private string _server = null;
+
+        private int _port = 9800;
+
 
         /* no user choice should be given for client optimization i-e multiPartitionConnection will be true by defult */
-        private bool                _multiPartitionConnection = true;
-        private bool                _balanceNodes= true;
-       
-        internal int                _opTimeout = 90 * 1000;  //90 sec
-        internal int                _connectionTimeout = 5 * 1000;  //5 sec
-        private int                 _connectionRetries = 5;
-        internal int                _retryInterval = 1 * 1000;   //1 sec
+        private bool _multiPartitionConnection = true;
+        private bool _balanceNodes = true;
+        internal int _opTimeout = 90 * 1000; //90 sec
+        internal int _connectionTimeout = 5 * 1000; //5 sec
+        private int _connectionRetries = 5;
+        internal int _retryInterval = 1 * 1000; //1 sec
+        private int _commandRetries = 3;
+        private int _commandRetryInterval = 0;
+        private int _cachePort = -1;
+
+
+        private bool _enabeKeepAlive = false;
+        private int _keepAliveInterval = 30;
+
 
         internal int _retryConnectionDelay = 600 * 1000; //600 sec or 10 mins
 
-       
 
         private Hashtable _dirtyFlags = new Hashtable();
+
         //key for dirty flag hashtable: 
         internal const string OPTIMEOUT = "opTimeOut";
         internal const string CONNECTIONTIMEOUT = "connectionTimeOut";
@@ -46,14 +54,27 @@ namespace Alachisoft.NCache.Web.Caching
         internal const string RETRYINTERVAL = "retryInterval";
         internal const string LOADBALANCE = "balanceNodes";
         internal const string PORT = "port";
-       
-        internal const string RETRYCONNECTIONDELAY = "retryConnectionDelay"; 
+        internal const string CACHESYNCMODE = "cacheSyncMode";
+        internal const string RETRYCONNECTIONDELAY = "retryConnectionDelay"; //[KS: for connection retry delay]
+        internal const string DEFAULTREADTHRUPROVIDER = "defaultReadThruProvider";
+        internal const string DEFAULTWRITETHRUPROVIDER = "defaultWriteThruProvider";
         internal const string SERVERLIST = "serverlist";
         internal const string BINDIP = "bindIP";
+        internal const string COMMANDRETRIES = "commandRetries";
+        internal const string COMMANDRETRYINTERVAL = "commandRetryInterval";
+        internal const string APPNAME = "applicationName";
+        internal const string ENABLEKEEPALIVE = "enableKeepAlive";
+        internal const string KEEPALIVEINTERVAL = "keepAliveInterval";
+
+        private string _defaultReadThruProvider = string.Empty;
+        private string _defaultWriteThruProvider = string.Empty;
         private string _bindIP = string.Empty;
 
-       
+
         private ArrayList _serverList = new ArrayList();
+
+
+        private string _appName;
 
         /// <summary>
         /// Gets/Sets List of servers provided by the user
@@ -63,26 +84,24 @@ namespace Alachisoft.NCache.Web.Caching
             get
             {
                 CacheServerInfo[] _returnList = new CacheServerInfo[_serverList.Count];
-                int _serverCount=0;
+                int _serverCount = 0;
                 foreach (object temp in _serverList.ToArray())
                 {
                     _returnList[_serverCount] = new CacheServerInfo();
                     _returnList[_serverCount].ServerInfo = (RemoteServer)temp;
                     _serverCount++;
                 }
-                
+
                 return _returnList;
             }
 
-            set 
+            set
             {
-                // if user changes server list remove first one 
                 if (_serverList.Count > 0)
                 {
                     _serverList.Clear();
                 }
-                //using foreach instead of AddRange to ignore any duplicates
-                //in terms of RemoteServer provided
+
 
                 foreach (CacheServerInfo temp in value)
                 {
@@ -91,10 +110,26 @@ namespace Alachisoft.NCache.Web.Caching
                         _serverList.Add(temp.ServerInfo);
                     }
                 }
-                _dirtyFlags[SERVERLIST] = true;
 
+                _dirtyFlags[SERVERLIST] = true;
             }
         }
+
+
+        /// <summary>
+        /// Gets/Sets ID of DefaultReadThruProvider
+        /// </summary>
+        public string DefaultReadThruProvider
+        {
+            get { return _defaultReadThruProvider; }
+            set
+            {
+                _defaultReadThruProvider = value;
+                _dirtyFlags[DEFAULTREADTHRUPROVIDER] = true;
+            }
+        }
+
+
         /// <summary>
         /// Gets/Sets the IP for the client to be binded with
         /// </summary>
@@ -108,7 +143,21 @@ namespace Alachisoft.NCache.Web.Caching
             }
         }
 
-//_________________________End of new additions_______________________________________________
+        /// <summary>
+        /// Gets/Sets ID of DefaultWriteThruProvider
+        /// </summary>
+        public string DefaultWriteThruProvider
+        {
+            get { return _defaultWriteThruProvider; }
+            set
+            {
+                _defaultWriteThruProvider = value;
+                _dirtyFlags[DEFAULTWRITETHRUPROVIDER] = true;
+            }
+        }
+
+        //_________________________End of new additions_______________________________________________
+
 
         /// <summary>
         /// Gets/Sets the cache mode (inproc/outproc)
@@ -120,6 +169,17 @@ namespace Alachisoft.NCache.Web.Caching
         }
 
         /// <summary>
+        /// Gets/Sets the server clients will connect to.
+        /// </summary>
+        [Obsolete("This property is deprecated. Please use the 'ServerList' property instead.", false)]
+        public string Server
+        {
+            get { return _server; }
+            set { _server = value; }
+        }
+
+
+        /// <summary>
         /// When this flag is set, client tries to connect to the optimum server in terms of number of connected clients.
         /// This way almost equal number of clients are connected to every node in the clustered cache and no single node 
         /// is overburdened.
@@ -127,8 +187,8 @@ namespace Alachisoft.NCache.Web.Caching
         public bool LoadBalance
         {
             get { return _balanceNodes; }
-            set 
-            { 
+            set
+            {
                 _balanceNodes = value;
                 _dirtyFlags[LOADBALANCE] = true;
             }
@@ -137,7 +197,19 @@ namespace Alachisoft.NCache.Web.Caching
         /// <summary>
         /// Gets/Sets the port on which the clients will connect to a server.
         /// </summary>
-   
+        [Obsolete("This property is deprecated. Please use the 'ServerList' property instead.", false)]
+        public int Port
+        {
+            get { return _port; }
+            set
+            {
+                if (value > 0)
+                {
+                    _port = value;
+                    _dirtyFlags[PORT] = true;
+                }
+            }
+        }
 
         /// <summary>
         /// Clients operation timeout specified in seconds.
@@ -222,7 +294,72 @@ namespace Alachisoft.NCache.Web.Caching
             }
         }
 
-       
+        /// <summary>
+        /// Gets/Sets Enumeration to specify how the Client cache is synchronized with the cluster caches through events. 
+        /// </summary>
+        public int CommandRetries
+        {
+            get { return _commandRetries; }
+            set
+            {
+                if (value > 0)
+                {
+                    _commandRetries = value;
+                    _dirtyFlags[COMMANDRETRIES] = true;
+                }
+            }
+        }
+
+        public int CommandRetryInterval
+        {
+            get { return _commandRetryInterval; }
+            set
+            {
+                if (value > 0)
+                {
+                    _commandRetryInterval = value;
+                    _dirtyFlags[COMMANDRETRYINTERVAL] = true;
+                }
+            }
+        }
+
+        public bool EnableKeepAlive
+        {
+            get { return _enabeKeepAlive; }
+            set
+            {
+                _enabeKeepAlive = value;
+                _dirtyFlags[ENABLEKEEPALIVE] = true;
+            }
+        }
+
+        /// <summary>
+        /// Gets or Sets the KeepAliveInterval, which will be in effect if the EnabledKeepAlive is set 'true' or is specified 'true' from the client configuration.
+        /// Note: If the value to be set is lessar than 1 or is greater than 7200 (2 hours in seconds), it will resort back 30 seconds internally.
+        /// </summary>
+        public int KeepAliveInterval
+        {
+            get { return _keepAliveInterval; }
+            set
+            {
+                if (value < 1 || value > 2 * 60 * 60)
+                {
+                    _keepAliveInterval = 30;
+                    _dirtyFlags[KEEPALIVEINTERVAL] = true;
+                }
+                else
+                {
+                    _keepAliveInterval = value;
+                    _dirtyFlags[KEEPALIVEINTERVAL] = true;
+                }
+            }
+        }
+
+        public string AppName
+        {
+            get { return _appName; }
+            set { _appName = value; }
+        }
 
         internal bool IsSet(string paramId)
         {
@@ -236,6 +373,12 @@ namespace Alachisoft.NCache.Web.Caching
             return false;
         }
 
+        internal int CachePort
+        {
+            get { return _cachePort; }
+            set { _cachePort = value; }
+        }
+
         /// <summary>
         /// Creates Clone for deep copy of the initParam
         /// </summary>
@@ -245,22 +388,28 @@ namespace Alachisoft.NCache.Web.Caching
             CacheInitParams _cloneParam = new CacheInitParams();
             lock (this)
             {
-                _cloneParam._dirtyFlags = (Hashtable)this._dirtyFlags.Clone();// creating shallow copy of hashtable
-               
+                _cloneParam._dirtyFlags = (Hashtable)this._dirtyFlags.Clone(); // creating shallow copy of hashtable
                 _cloneParam.ClientRequestTimeOut = this.ClientRequestTimeOut;
                 _cloneParam.ConnectionRetries = this.ConnectionRetries;
                 _cloneParam.ConnectionTimeout = this.ConnectionTimeout;
+                _cloneParam.DefaultReadThruProvider = this.DefaultReadThruProvider;
+                _cloneParam.DefaultWriteThruProvider = this.DefaultWriteThruProvider;
                 _cloneParam.LoadBalance = this.LoadBalance;
                 _cloneParam.Mode = this.Mode;
-                
-                _cloneParam._retryConnectionDelay = this._retryConnectionDelay;
+                _cloneParam.Port = this.Port;
+                _cloneParam.RetryConnectionDelay = this.RetryConnectionDelay;
                 _cloneParam.RetryInterval = this.RetryInterval;
-               
+                _cloneParam.Server = this.Server;
                 _cloneParam.BindIP = this.BindIP;
-                _cloneParam.ServerList = (CacheServerInfo[])this.ServerList.Clone();// creating shallow copy of serverlist
+                _cloneParam._enabeKeepAlive = this.EnableKeepAlive;
+                _cloneParam._keepAliveInterval = this.KeepAliveInterval;
+                _cloneParam.ServerList =
+                    (CacheServerInfo[])this.ServerList.Clone(); // creating shallow copy of serverlist
             }
+
             return _cloneParam;
         }
+
         /// <summary>
         /// Reads the client.ncconf to set the parameters user has not provided values for.
         /// If the client.ncconf is not found or the values for some parameters are not set in client.ncconf,
@@ -269,9 +418,12 @@ namespace Alachisoft.NCache.Web.Caching
         internal void Initialize(string cacheId)
         {
             bool useDefault = false;
-            Web.RemoteClient.Config.ClientConfiguration config = new Web.RemoteClient.Config.ClientConfiguration(cacheId); 
+
+
+            RemoteClient.Config.ClientConfiguration config = new RemoteClient.Config.ClientConfiguration(cacheId);
+
             int retries = 3;
-            while(true)
+            while (true)
             {
                 try
                 {
@@ -285,6 +437,7 @@ namespace Alachisoft.NCache.Web.Caching
                         useDefault = true;
                         break;
                     }
+
                     System.Threading.Thread.Sleep(500);
                 }
             }
@@ -295,10 +448,16 @@ namespace Alachisoft.NCache.Web.Caching
                 if (!IsSet(CONNECTIONTIMEOUT)) this._connectionTimeout = config.ConnectionTimeout;
                 if (!IsSet(CONNECTIONRETRIES)) this._connectionRetries = config.ConnectionRetries;
                 if (!IsSet(RETRYINTERVAL)) this._retryInterval = config.RetryInterval;
-                if (!IsSet(RETRYCONNECTIONDELAY)) this._retryConnectionDelay = config.RetryConnectionDelay; 
-                if (!IsSet(BINDIP)) this._bindIP =config.BindIP;
-                if (!IsSet(PORT)) this._port = config.ServerPort;
+                if (!IsSet(RETRYCONNECTIONDELAY)) this._retryConnectionDelay = config.RetryConnectionDelay; //[KS]
+                if (!IsSet(BINDIP)) this._bindIP = config.BindIP;
+                if (!IsSet(DEFAULTREADTHRUPROVIDER)) this._defaultReadThruProvider = config.DefaultReadThru;
+                if (!IsSet(DEFAULTWRITETHRUPROVIDER)) this._defaultWriteThruProvider = config.DefaultWriteThru;
+                this._multiPartitionConnection = true;
+
                 if (!IsSet(LOADBALANCE)) this._balanceNodes = config.BalanceNodes;
+
+
+                if (!IsSet(PORT)) this._port = config.ServerPort;
             }
         }
     }

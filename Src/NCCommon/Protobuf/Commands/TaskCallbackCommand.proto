@@ -1,0 +1,9 @@
+option java_outer_classname="TaskCallbackCommand";
+
+package Alachisoft.NCache.Common.Protobuf;
+
+message TaskCallbackCommand {
+	optional int64 requestId = 1;
+    optional int32 callbackId = 2;
+    optional string taskId = 3;
+}

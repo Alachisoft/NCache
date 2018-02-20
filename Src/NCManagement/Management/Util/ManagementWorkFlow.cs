@@ -1,4 +1,4 @@
-// Copyright (c) 2018 Alachisoft
+﻿// Copyright (c) 2018 Alachisoft
 // 
 // Licensed under the Apache License, Version 2.0 (the "License");
 // you may not use this file except in compliance with the License.
@@ -10,25 +10,18 @@
 // distributed under the License is distributed on an "AS IS" BASIS,
 // WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
 // See the License for the specific language governing permissions and
-// limitations under the License.
+// limitations under the License
 
 using System;
 using System.Collections.Generic;
-using System.Text;
-using Alachisoft.NCache.Config.Dom;
 using Alachisoft.NCache.Management.ServiceControl;
 using System.Collections;
-using Alachisoft.NCache.Management.MappingConfiguration;
 using Alachisoft.NCache.Config;
-using Alachisoft.NCache.Common;
-using System.Diagnostics;
 
 namespace Alachisoft.NCache.Management.Management.Util
 {
     public class ManagementWorkFlow
     {
-        
-
         public static Mapping[] GetUpdatedMappingList(Mapping[] oldMapping, Mapping[] newMapping)
         {
             Dictionary<string, Mapping> updatedMappingDictionary = new Dictionary<string, Mapping>();
@@ -73,7 +66,7 @@ namespace Alachisoft.NCache.Management.Management.Util
 
         public static void UpdateServerMappingConfig(string[] nodes)
         {
-            UpdateServerMappings(GetServerMappings(nodes), nodes);
+            
         }
 
         private static MappingConfiguration.Dom.MappingConfiguration GetServerMappings(string[] nodes)
@@ -117,24 +110,5 @@ namespace Alachisoft.NCache.Management.Management.Util
             return null;
         }
 
-        private static void UpdateServerMappings(MappingConfiguration.Dom.MappingConfiguration mappingConfiguration,string[] nodes)
-        {
-            if (nodes != null && mappingConfiguration != null)
-            {
-                foreach (string node in nodes)
-                {
-                    try
-                    {
-                        NCacheRPCService NCache = new NCacheRPCService(node);
-                        ICacheServer cacheServer = NCache.GetCacheServer(new TimeSpan(0, 0, 0, 30));
-                        cacheServer.UpdateServerMappingConfig(mappingConfiguration);
-                        cacheServer.Dispose();
-                    }
-                    catch (Exception ex)
-                    {
-                    }
-                }
-            }
-        }
     }
 }

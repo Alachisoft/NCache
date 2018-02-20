@@ -15,7 +15,8 @@
 using System;
 using Alachisoft.NCache.Common.Monitoring;
 using Alachisoft.NCache.Caching;
-using System.Collections.Generic;
+using Alachisoft.NCache.SocketServer.RuntimeLogging;
+using System.Diagnostics;
 
 namespace Alachisoft.NCache.SocketServer.Command
 {
@@ -31,21 +32,23 @@ namespace Alachisoft.NCache.SocketServer.Command
         public override void ExecuteCommand(ClientManager clientManager, Alachisoft.NCache.Common.Protobuf.Command command)
         {
             CommandInfo cmdInfo;
-            
-            //TODO
+            int overload;
+            string exception = null;
+            Stopwatch stopWatch = new Stopwatch();
+            stopWatch.Start();
             byte[] data = null;
             
             try
             {
+                overload = command.MethodOverload; 
                 cmdInfo = ParseCommand(command, clientManager);
                 if (ServerMonitor.MonitorActivity) ServerMonitor.LogClientActivity("ContCmd.Exec", "cmd parsed");
-
             }
             catch (Exception exc)
             {
+
                 if (!base.immatureId.Equals("-2"))
-                    //PROTOBUF:RESPONSE
-                    _serializedResponsePackets.Add(Alachisoft.NCache.Common.Util.ResponseHelper.SerializeExceptionResponse(exc, command.requestID));
+                    _serializedResponsePackets.Add(Alachisoft.NCache.Common.Util.ResponseHelper.SerializeExceptionResponse(exc, command.requestID, command.commandID));
                 return;
             }
 
@@ -54,9 +57,11 @@ namespace Alachisoft.NCache.SocketServer.Command
             try
             {
                 bool exists = nCache.Cache.Contains(cmdInfo.Key, new OperationContext(OperationContextFieldName.OperationType, OperationContextOperationType.CacheOperation));
+                stopWatch.Stop();
                 Alachisoft.NCache.Common.Protobuf.Response response = new Alachisoft.NCache.Common.Protobuf.Response();
                 Alachisoft.NCache.Common.Protobuf.ContainResponse containsResponse = new Alachisoft.NCache.Common.Protobuf.ContainResponse();
-				response.requestId = Convert.ToInt64(cmdInfo.RequestId);
+                response.requestId = Convert.ToInt64(cmdInfo.RequestId);
+                response.commandID = command.commandID;
                 containsResponse.exists = exists;
                 response.responseType = Alachisoft.NCache.Common.Protobuf.Response.Type.CONTAINS;
                 response.contain = containsResponse;
@@ -65,12 +70,27 @@ namespace Alachisoft.NCache.SocketServer.Command
             }
             catch (Exception exc)
             {
-                _serializedResponsePackets.Add(Alachisoft.NCache.Common.Util.ResponseHelper.SerializeExceptionResponse(exc, command.requestID));
+                exception = exc.ToString();
+                _serializedResponsePackets.Add(Alachisoft.NCache.Common.Util.ResponseHelper.SerializeExceptionResponse(exc, command.requestID, command.commandID));
+            }
+            finally
+            {
+                TimeSpan executionTime = stopWatch.Elapsed;
+                try
+                {
+                    if (Alachisoft.NCache.Management.APILogging.APILogManager.APILogManger != null && Alachisoft.NCache.Management.APILogging.APILogManager.EnableLogging)
+                    {
+                        APILogItemBuilder log = new APILogItemBuilder(MethodsName.Contains.ToLower());
+                        log.GenerateContainsCommandAPILogItem(cmdInfo.Key, overload, exception, executionTime, clientManager.ClientID.ToLower(), clientManager.ClientSocketId.ToString());
+                    }
+                }
+                catch
+                {
+                }
             }
             if (ServerMonitor.MonitorActivity) ServerMonitor.LogClientActivity("ContCmd.Exec", "cmd executed on cache");
-
         }
-  
+
         //PROTOBUF
         private CommandInfo ParseCommand(Alachisoft.NCache.Common.Protobuf.Command command, ClientManager clientManager)
         {

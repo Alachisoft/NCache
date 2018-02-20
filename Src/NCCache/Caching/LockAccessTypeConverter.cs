@@ -34,6 +34,18 @@ namespace Alachisoft.NCache.Caching
 
                 case LockAccessType.IGNORE_LOCK:
                     return "5";
+
+                case LockAccessType.COMPARE_VERSION:
+                    return "6";
+
+                case LockAccessType.GET_VERSION:
+                    return "7";
+
+                case LockAccessType.MATCH_VERSION:
+                    return "8";
+
+                case LockAccessType.PRESERVE_VERSION:
+                    return "9";
             }
             return string.Empty;
         }
@@ -56,6 +68,18 @@ namespace Alachisoft.NCache.Caching
 
                 case "5":
                     return LockAccessType.IGNORE_LOCK;
+
+                case "6":
+                    return LockAccessType.COMPARE_VERSION;
+
+                case "7":
+                    return LockAccessType.GET_VERSION;
+
+                case "8":
+                    return LockAccessType.MATCH_VERSION;
+
+                case "9":
+                    return LockAccessType.PRESERVE_VERSION;
             }
             return LockAccessType.DEFAULT;
         }

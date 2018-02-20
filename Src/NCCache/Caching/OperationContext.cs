@@ -13,15 +13,13 @@
 // limitations under the License.
 
 using System;
-using System.Collections.Generic;
-using System.Text;
 using System.Collections;
 using Alachisoft.NCache.Runtime.Serialization;
-using Alachisoft.NCache.Common.DataStructures;
-using Runtime = Alachisoft.NCache.Runtime;
-
 namespace Alachisoft.NCache.Caching
 {
+
+   
+
     /// <summary>
     /// make it serializable coz cache operations performed through remoting will fail 
     /// otherwise.
@@ -33,6 +31,10 @@ namespace Alachisoft.NCache.Caching
         private static String s_operationUniqueID;
         private static long s_operationCounter;
         private static object s_lock = new object();
+        public static UInt64 _itemVersion = 0;
+
+        [ThreadStatic]
+        private static bool s_isReplicationOperaton; 
 
         static OperationContext()
         {
@@ -42,6 +44,15 @@ namespace Alachisoft.NCache.Caching
         public OperationContext() 
         {
             CreateOperationId();
+            
+            /*_fieldValueTable = new Hashtable();*/ 
+        }
+
+        
+        public static bool IsReplicationOperation
+        {
+            get { return s_isReplicationOperaton; }
+            set { s_isReplicationOperaton = value; }
         }
 
         public OperationContext(OperationContextFieldName fieldName, object fieldValue)
@@ -66,7 +77,15 @@ namespace Alachisoft.NCache.Caching
             get { return (OperationID)GetValueByField(OperationContextFieldName.OperationId); } 
         }
 
-      
+        public bool IsRemoveQueryOperation
+        {
+            get
+            {
+                if (GetValueByField(OperationContextFieldName.RemoveQueryOperation) != null)
+                    return (bool)GetValueByField(OperationContextFieldName.RemoveQueryOperation);
+                return false;
+            }
+        }
 
         public void Add(OperationContextFieldName fieldName, object fieldValue)
         {
@@ -114,6 +133,16 @@ namespace Alachisoft.NCache.Caching
             { return true; }
             return false;
         }
+        public static OperationContext CreateWith(OperationContextFieldName field, object value)
+        {
+            return new OperationContext().With(field, value);
+        }
+
+        public  OperationContext With(OperationContextFieldName field,object value)
+        {
+            Add(field, value);
+            return this;
+        }
 
         #region ICompactSerializable Members
 
@@ -158,5 +187,6 @@ namespace Alachisoft.NCache.Caching
 
         #endregion
     }
- 
+
+
 }

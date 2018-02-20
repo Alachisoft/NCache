@@ -38,10 +38,9 @@ namespace Alachisoft.NCache.Caching.Queries.Filters
             if (queryContext.InternalQueryResult.Count > 0)
             {
                 foreach (string key in queryContext.InternalQueryResult)
-                {
+                {          
                     CacheEntry cacheentry = queryContext.Cache.GetEntryInternal(key, false);
                     object attribValue = queryContext.Index.GetAttributeValue(key, AttributeName, cacheentry.IndexInfo);
-
                     if (attribValue != null)
                     {
                         Type type = attribValue.GetType();
@@ -63,10 +62,6 @@ namespace Alachisoft.NCache.Caching.Queries.Filters
             {
                 base.SetResult(queryContext, AggregateFunctionType.AVG, null);
             }
-        }
-
-        internal override void ExecuteInternal(QueryContext queryContext, CollectionOperation mergeType)
-        {
         }
 
         internal override AggregateFunctionType GetFunctionType()

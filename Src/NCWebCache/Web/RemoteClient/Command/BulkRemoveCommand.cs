@@ -12,32 +12,28 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-using System;
-using System.Text;
-
+using System.Collections.Generic;
 using Alachisoft.NCache.Common;
-using System.IO;
-
-using Alachisoft.NCache.Web.Communication;
-using Alachisoft.NCache.Common.Protobuf.Util;
-using Alachisoft.NCache.Web.Caching.Util;
-
-
 
 namespace Alachisoft.NCache.Web.Command
 {
     internal sealed class BulkRemoveCommand : CommandBase
     {
         Alachisoft.NCache.Common.Protobuf.BulkRemoveCommand _bulkRemoveCommand;
+        private int _methodOverload;
 
-        public BulkRemoveCommand(string[] keys, BitSet flagMap)
+        public BulkRemoveCommand(string[] keys, BitSet flagMap, string providerName, short onDsItemRemovedId,
+            int methodOverload)
         {
             base.name = "BulkRemoveCommand";
             base.BulkKeys = keys;
             _bulkRemoveCommand = new Alachisoft.NCache.Common.Protobuf.BulkRemoveCommand();
             _bulkRemoveCommand.keys.AddRange(keys);
+            _bulkRemoveCommand.datasourceItemRemovedCallbackId = onDsItemRemovedId;
             _bulkRemoveCommand.flag = flagMap.Data;
             _bulkRemoveCommand.requestId = base.RequestId;
+            _bulkRemoveCommand.providerName = providerName;
+            _methodOverload = methodOverload;
         }
 
         internal override CommandType CommandType
@@ -47,8 +43,14 @@ namespace Alachisoft.NCache.Web.Command
 
         internal override RequestType CommandRequestType
         {
-            get { return RequestType.BulkWrite; }
+            get { return RequestType.KeyBulkWrite; }
         }
+
+        internal override bool IsSafe
+        {
+            get { return false; }
+        }
+
 
         protected override void CreateCommand()
         {
@@ -59,6 +61,32 @@ namespace Alachisoft.NCache.Web.Command
             base._command.clientLastViewId = base.ClientLastViewId;
             base._command.intendedRecipient = base.IntendedRecipient;
             base._command.commandVersion = 1;
+            base._command.MethodOverload = _methodOverload;
+        }
+
+        protected override CommandBase GetMergedCommand(List<CommandBase> commands)
+        {
+            BulkRemoveCommand mergedCommand = null;
+            if (commands != null || commands.Count > 0)
+            {
+                foreach (CommandBase command in commands)
+                {
+                    if (command is BulkRemoveCommand)
+                    {
+                        BulkRemoveCommand bulkCommand = (BulkRemoveCommand) command;
+                        if (mergedCommand == null)
+                        {
+                            mergedCommand = bulkCommand;
+                        }
+                        else
+                        {
+                            mergedCommand._bulkRemoveCommand.keys.AddRange(bulkCommand._bulkRemoveCommand.keys);
+                        }
+                    }
+                }
+            }
+
+            return mergedCommand;
         }
     }
 }

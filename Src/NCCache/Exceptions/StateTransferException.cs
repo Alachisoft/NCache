@@ -13,19 +13,12 @@
 // limitations under the License.
 
 using System;
-using System.Collections;
-using System.Security.Permissions;
 using System.Runtime.Serialization;
+using System.Security.Permissions;
 using Alachisoft.NCache.Runtime.Exceptions;
 
 namespace Alachisoft.NCache.Caching.Exceptions
 {
-	/// <summary>
-	/// Thrown when an exception occurs during configuration. Likely causes are badly specified
-	/// configuration strings.
-	/// </summary>
-    /// 
-
     [Serializable]
     public class StateTransferException : CacheException, ISerializable
     {
@@ -67,7 +60,7 @@ namespace Alachisoft.NCache.Caching.Exceptions
         /// </summary>
         /// <param name="info"></param>
         /// <param name="context"></param>
-        [SecurityPermissionAttribute(SecurityAction.Demand, SerializationFormatter = true)]
+        [SecurityPermission(SecurityAction.Demand, SerializationFormatter = true)]
         void ISerializable.GetObjectData(SerializationInfo info, StreamingContext context)
         {
             base.GetObjectData(info, context);

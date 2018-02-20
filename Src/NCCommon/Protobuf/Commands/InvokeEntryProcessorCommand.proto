@@ -1,0 +1,13 @@
+option java_outer_classname="InvokeEntryProcessorProtocol";
+package Alachisoft.NCache.Common.Protobuf;
+
+
+message InvokeEntryProcessorCommand {	
+	repeated string keys = 1;
+	optional bytes entryprocessor=2;
+	repeated bytes arguments = 3; 		
+	optional int64 dsReadOption = 4;
+	optional string defaultReadThru = 5;
+	optional int64 dsWriteOption = 6;
+	optional string defaultWriteThru = 7;
+}

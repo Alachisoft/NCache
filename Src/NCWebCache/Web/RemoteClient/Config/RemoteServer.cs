@@ -19,11 +19,12 @@ namespace Alachisoft.NCache.Web.RemoteClient.Config
 {
     class RemoteServer : IComparable
     {
-        int _port;
+        int _port = 9800;
         string _name;
         IPAddress _ipAddress;
         short _portRange = 1;
         short _priority = 0;
+
         bool _userProvided;
 
         public RemoteServer(string name, int port)
@@ -32,12 +33,17 @@ namespace Alachisoft.NCache.Web.RemoteClient.Config
             _port = port;
         }
 
+
         public RemoteServer(IPAddress ip, int port)
         {
             IP = ip;
             _port = port;
         }
-        public RemoteServer() { }
+
+
+        public RemoteServer()
+        {
+        }
 
         public int Port
         {
@@ -48,13 +54,19 @@ namespace Alachisoft.NCache.Web.RemoteClient.Config
         public short PortRange
         {
             get { return _portRange; }
-            set { if (_portRange > 0) _portRange = value; }
+            set
+            {
+                if (_portRange > 0) _portRange = value;
+            }
         }
 
         public short Priority
         {
             get { return _priority; }
-            set { if (value > 0) _priority = value; }
+            set
+            {
+                if (value > 0) _priority = value;
+            }
         }
 
         public bool IsUserProvided
@@ -62,6 +74,7 @@ namespace Alachisoft.NCache.Web.RemoteClient.Config
             get { return _userProvided; }
             set { _userProvided = value; }
         }
+
 
         public string Name
         {
@@ -75,6 +88,7 @@ namespace Alachisoft.NCache.Web.RemoteClient.Config
                     _name = value;
             }
         }
+
         internal string IpString
         {
             get
@@ -111,14 +125,14 @@ namespace Alachisoft.NCache.Web.RemoteClient.Config
                             if (entry != null) _ipAddress = entry.AddressList[0];
                         }
                     }
-                    catch (Exception) { }
+                    catch (Exception)
+                    {
+                    }
                 }
+
                 return _ipAddress;
             }
-            set
-            {
-                _ipAddress = value;
-            }
+            set { _ipAddress = value; }
         }
 
         public override bool Equals(object obj)
@@ -127,6 +141,7 @@ namespace Alachisoft.NCache.Web.RemoteClient.Config
                 return false;
             return CompareReal(obj) == 0 ? true : false;
         }
+
         public override string ToString()
         {
             string ip = IP != null ? IP.ToString() : "";
@@ -162,12 +177,13 @@ namespace Alachisoft.NCache.Web.RemoteClient.Config
             int result = 0;
             if (obj != null && obj is RemoteServer)
             {
-                RemoteServer other = (RemoteServer)obj;
+                RemoteServer other = (RemoteServer) obj;
                 if (other.Priority > _priority)
                     result = -1;
                 else if (other.Priority < _priority)
                     result = 1;
             }
+
             return result;
         }
 

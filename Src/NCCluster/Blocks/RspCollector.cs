@@ -10,7 +10,6 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 // $Id: RspCollector.java,v 1.2 2004/03/30 06:47:12 belaban Exp $
-
 using System;
 using Message = Alachisoft.NGroups.Message;
 using View = Alachisoft.NGroups.View;

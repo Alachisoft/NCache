@@ -1,4 +1,4 @@
-// Copyright (c) 2018 Alachisoft
+﻿// Copyright (c) 2018 Alachisoft
 // 
 // Licensed under the Apache License, Version 2.0 (the "License");
 // you may not use this file except in compliance with the License.
@@ -12,16 +12,19 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-
 namespace Alachisoft.NCache.SocketServer
 {
     interface IDistributedQueue
-    {
+    {  
         object Dequeue();
+
         string RegisterSlaveQueue(IQueue queue,string clientId);
         void UnRegisterSlaveQueue(string queueId);
+
         void Enqueue(object item, string queueId);
+
         long Count { get; }
+
         void Close();
     }
 }

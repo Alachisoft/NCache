@@ -11,18 +11,10 @@
 // WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
 // See the License for the specific language governing permissions and
 // limitations under the License.
-
 using System;
-using System.Collections;
-using System.Text;
 using Alachisoft.NCache.Common.Configuration;
-using System.Collections.Generic;
-using Alachisoft.NCache.Common;
-using Alachisoft.NCache.Common.Net;
-using System.Text.RegularExpressions;
 using Alachisoft.NCache.Runtime.Serialization;
 using Alachisoft.NCache.Config.Dom;
-using Runtime = Alachisoft.NCache.Runtime;
 
 namespace Alachisoft.NCache.Config.NewDom
 {
@@ -31,14 +23,16 @@ namespace Alachisoft.NCache.Config.NewDom
     {
         int opTimeout = 60;
         int statsRepInterval;
-       
+        Alachisoft.NCache.Config.Dom.ReplicationStrategy _replicationStrategy;
         bool useHeartBeat;
+
         Channel channel;
 
         public Cluster()
         {
             channel = new Channel();
         }
+
 
         [ConfigurationAttribute("operation-timeout", true, false, "sec")]
         public int OpTimeout
@@ -47,6 +41,7 @@ namespace Alachisoft.NCache.Config.NewDom
             set { opTimeout = value; }
         }
 
+
         [ConfigurationAttribute("stats-repl-interval", true, false, "sec")]
         public int StatsRepInterval
         {
@@ -54,7 +49,16 @@ namespace Alachisoft.NCache.Config.NewDom
             set { statsRepInterval = value; }
         }
 
-       
+#if COMMUNITY|| CLIENT 
+        [ConfigurationSection("data-replication", true, false)]
+#endif
+        public Alachisoft.NCache.Config.Dom.ReplicationStrategy ReplicationStrategy
+        {
+            get { return _replicationStrategy; }
+            set { _replicationStrategy = value; }
+        }
+
+
         [ConfigurationAttribute("use-heart-beat", true, false, "")]
         public bool UseHeartbeat
         {
@@ -76,8 +80,9 @@ namespace Alachisoft.NCache.Config.NewDom
             Cluster cluster = new Cluster();
             cluster.OpTimeout = OpTimeout;
             cluster.StatsRepInterval = StatsRepInterval;
-            
+            cluster.ReplicationStrategy = ReplicationStrategy != null ? (Alachisoft.NCache.Config.Dom.ReplicationStrategy)ReplicationStrategy.Clone() : null;
             cluster.UseHeartbeat = UseHeartbeat;
+
             cluster.Channel = Channel != null ? (Channel)Channel.Clone() : null;
             return cluster;
         }
@@ -90,7 +95,8 @@ namespace Alachisoft.NCache.Config.NewDom
             opTimeout = reader.ReadInt32();
             statsRepInterval = reader.ReadInt32();
             useHeartBeat = reader.ReadBoolean();
-           channel = reader.ReadObject() as Channel;
+            this._replicationStrategy=reader.ReadObject() as ReplicationStrategy;
+            channel = reader.ReadObject() as Channel;
         }
 
         public void Serialize(Runtime.Serialization.IO.CompactWriter writer)
@@ -98,7 +104,8 @@ namespace Alachisoft.NCache.Config.NewDom
             writer.Write(opTimeout);
             writer.Write(statsRepInterval);
             writer.Write(useHeartBeat);
-           writer.WriteObject(channel);
+            writer.WriteObject(this._replicationStrategy);
+            writer.WriteObject(channel);
         }
         #endregion
     

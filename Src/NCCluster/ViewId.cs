@@ -12,14 +12,8 @@
 
 using System;
 
-
-
 using Alachisoft.NCache.Runtime.Serialization.IO;
-
-
 using Alachisoft.NCache.Runtime.Serialization;
-
-
 using Alachisoft.NCache.Common.Net;
 
 namespace Alachisoft.NGroups

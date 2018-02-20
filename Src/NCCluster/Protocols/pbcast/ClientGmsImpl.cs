@@ -10,35 +10,28 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 // $Id: ClientGmsImpl.java,v 1.12 2004/09/08 09:17:17 belaban Exp $
-
 using System;
 using System.Collections;
-
-using Alachisoft.NGroups;
-using Alachisoft.NGroups.Protocols;
-using Alachisoft.NGroups.Util;
-
 using Alachisoft.NCache.Common.Threading;
 using Alachisoft.NCache.Common.Net;
 using Alachisoft.NCache.Common.Enum;
-using Alachisoft.NCache.Common.Util;
 
 namespace Alachisoft.NGroups.Protocols.pbcast
 {
-	
-	
-	/// <summary> Client part of GMS. Whenever a new member wants to join a group, it starts in the CLIENT role.
-	/// No multicasts to the group will be received and processed until the member has been joined and
-	/// turned into a SERVER (either coordinator or participant, mostly just participant). This class
-	/// only implements <code>Join</code> (called by clients who want to join a certain group, and
-	/// <code>ViewChange</code> which is called by the coordinator that was contacted by this client, to
-	/// tell the client what its initial membership is.
-	/// </summary>
-	/// <author>  Bela Ban
-	/// </author>
-	/// <version>  $Revision: 1.12 $
-	/// </version>
-	internal class ClientGmsImpl:GmsImpl
+
+
+    /// <summary> Client part of GMS. Whenever a new member wants to join a group, it starts in the CLIENT role.
+    /// No multicasts to the group will be received and processed until the member has been joined and
+    /// turned into a SERVER (either coordinator or participant, mostly just participant). This class
+    /// only implements <code>Join</code> (called by clients who want to join a certain group, and
+    /// <code>ViewChange</code> which is called by the coordinator that was contacted by this client, to
+    /// tell the client what its initial membership is.
+    /// </summary>
+    /// <author>  Bela Ban
+    /// </author>
+    /// <version>  $Revision: 1.12 $
+    /// </version>
+    internal class ClientGmsImpl:GmsImpl
 	{
 		internal ArrayList initial_mbrs = ArrayList.Synchronized(new ArrayList(11));
 		internal bool initial_mbrs_received = false;
@@ -64,7 +57,7 @@ namespace Alachisoft.NGroups.Protocols.pbcast
 		/// </summary>
 		/// <param name="mbr">Our own address (assigned through SET_LOCAL_ADDRESS)
 		/// </param>
-		public override void  join(Address mbr, bool isStartedAsMirror)
+		public override void  join(Address mbr)
 		{
 			Address coord = null;
             Address last_tried_coord = null;
@@ -73,14 +66,10 @@ namespace Alachisoft.NGroups.Protocols.pbcast
 			leaving = false;
             int join_retries = 1;
 
-            
-
 			join_promise.Reset();
 			while (!leaving)
 			{
 				findInitialMembers();
-                
-
 				gms.Stack.NCacheLog.Debug("pb.ClientGmsImpl.join()",   "initial_mbrs are " + Global.CollectionToString(initial_mbrs));
 				if (initial_mbrs.Count == 0)
 				{
@@ -89,10 +78,10 @@ namespace Alachisoft.NGroups.Protocols.pbcast
                         gms.Stack.NCacheLog.Debug("pb.ClientGmsImpl.join()",   "received an initial membership of 0, but cannot become coordinator (disable_initial_coord=" + gms.disable_initial_coord + "), will retry fetching the initial membership");
 						continue;
 					}
-                    gms.Stack.NCacheLog.CriticalInfo("pb.ClientGmsImpl.join()",   "no initial members discovered: creating group as first member");
+                    gms.Stack.NCacheLog.CriticalInfo("ClientGmsImpl.Join",   "no initial members discovered: creating group as first member.");
                    
                     becomeSingletonMember(mbr);
-                    return ;
+					return ;
 				}
 				
 				coord = determineCoord(initial_mbrs);
@@ -104,7 +93,6 @@ namespace Alachisoft.NGroups.Protocols.pbcast
 				if (coord.CompareTo(gms.local_addr) == 0)
 				{
                     gms.Stack.NCacheLog.Error("pb.ClientGmsImpl.join()",   "coordinator anomaly. More members exist yet i am the coordinator " + Global.CollectionToString(initial_mbrs));
-                    
                     ArrayList members = new ArrayList();
                     for (int i = 0; i < initial_mbrs.Count; i++)
                     {
@@ -114,9 +102,7 @@ namespace Alachisoft.NGroups.Protocols.pbcast
                             members.Add(ping_rsp.OwnAddress);
                         }
                     }
-                    
                     gms.InformOthersAboutCoordinatorDeath(members, coord);
-                    
                     if (last_tried_coord == null)
                         last_tried_coord = coord;
                     else
@@ -131,7 +117,7 @@ namespace Alachisoft.NGroups.Protocols.pbcast
                     }
 
                     Util.Util.sleep(gms.join_timeout);
-                    continue;
+                    continue;                 
 				}
 				
 				try
@@ -151,11 +137,9 @@ namespace Alachisoft.NGroups.Protocols.pbcast
                         }
                     }
 
-                   
+					sendJoinMessage(coord, mbr, gms.subGroup_addr);
 
-					sendJoinMessage(coord, mbr, gms.subGroup_addr, isStartedAsMirror);
 					rsp = (JoinRsp) join_promise.WaitResult(gms.join_timeout);
-
 
                     gms._doReDiscovery = false; //block the re-discovery of members as we have found initial members
 
@@ -165,7 +149,7 @@ namespace Alachisoft.NGroups.Protocols.pbcast
                         {
                             gms.Stack.NCacheLog.Error("ClientGmsImpl.Join", "received no joining response after " + join_retries + " tries, so becoming a singlton member");
                             becomeSingletonMember(mbr);
-                            
+                            //Console.WriteLine("4");
                             return;
                         }
                         else
@@ -198,7 +182,6 @@ namespace Alachisoft.NGroups.Protocols.pbcast
                         {
                             gms.Stack.NCacheLog.Error("ClientGmsImpl.Join",   "joining request rejected by coordinator");
                             becomeSingletonMember(mbr);
-                            
                             return;
                         }
 
@@ -242,13 +225,11 @@ namespace Alachisoft.NGroups.Protocols.pbcast
 				}
 				catch (System.Exception e)
 				{
-                    gms.Stack.NCacheLog.Error("ClientGmsImpl.join()", "Error: "+  e.ToString() + ", retrying");					
+                    gms.Stack.NCacheLog.Error("ClientGmsImpl.join()",   "Message: "+e.Message+"  StackTrace: "+e.StackTrace + ", retrying");					
 				}
 				
 				Util.Util.sleep(gms.join_retry_timeout);
 			}
-
-            
 		}
 		
        
@@ -282,7 +263,7 @@ namespace Alachisoft.NGroups.Protocols.pbcast
 		}
 
 
-        public override JoinRsp handleJoin(Address mbr, string subGroup_name, bool isStartedAsMirror, string gmsId, ref bool acquireHashmap)
+        public override JoinRsp handleJoin(Address mbr, string subGroup_name,  string gmsId, ref bool acquireHashmap)
 		{
 			wrongMethod("handleJoin");
 			return null;
@@ -303,7 +284,7 @@ namespace Alachisoft.NGroups.Protocols.pbcast
 			{
                 gms.Stack.NCacheLog.Debug("pb.ClientGmsImpl.handleViewChange()",   "view " + Global.CollectionToString(new_view.Members) + " is discarded as we are not a participant");
 			}
-            gms.passDown(new Event(Event.VIEW_CHANGE_OK, new object(),Priority.Critical));
+            gms.passDown(new Event(Event.VIEW_CHANGE_OK, new object(),Priority.High));
 		}
 		
 		
@@ -343,11 +324,11 @@ namespace Alachisoft.NGroups.Protocols.pbcast
             if (nodes != null && nodes.Count > 0)
             {
                 if (gms.Stack.NCacheLog.IsInfoEnabled) gms.Stack.NCacheLog.Info("ClientGmsImp.handleConnectionFailure", "informing coordinator about connection failure with [" + Global.CollectionToString(nodes) + "]");
-                GMS.HDR header = new GMS.HDR(GMS.HDR.CAN_NOT_CONNECT_TO);
+                GmsHDR header = new GmsHDR(GmsHDR.CAN_NOT_CONNECT_TO);
                 header.nodeList = nodes;
                 Message msg = new Message(gms.determineCoordinator(), null, new byte[0]);
                 msg.putHeader(HeaderType.GMS, header);
-                gms.passDown(new Event(Event.MSG, msg, Priority.Critical));
+                gms.passDown(new Event(Event.MSG, msg, Priority.High));
             }
 
         }
@@ -381,29 +362,29 @@ namespace Alachisoft.NGroups.Protocols.pbcast
 		
 		
 		
-		internal virtual void  sendJoinMessage(Address coord, Address mbr, string subGroup_name, bool isStartedAsMirror)
+		internal virtual void  sendJoinMessage(Address coord, Address mbr, string subGroup_name)
 		{
 			Message msg;
-			GMS.HDR hdr;
+			GmsHDR hdr;
 
 			msg = new Message(coord, null, null);
-			hdr = new GMS.HDR(GMS.HDR.JOIN_REQ, mbr, subGroup_name, isStartedAsMirror);
+			hdr = new GmsHDR(GmsHDR.JOIN_REQ, mbr, subGroup_name);
             hdr.GMSId = gms.unique_id;
 			msg.putHeader(HeaderType.GMS, hdr);
-			gms.passDown(new Event(Event.MSG_URGENT, msg,Priority.Critical));
+			gms.passDown(new Event(Event.MSG_URGENT, msg,Priority.High));
 		}
 
         internal virtual void sendSpeicalJoinMessage(Address mbr, ArrayList dests)
         {
             Message msg;
-            GMS.HDR hdr;
+            GmsHDR hdr;
 
             msg = new Message(null, null, new byte[0]);
             msg.Dests = dests;
-            hdr = new GMS.HDR(GMS.HDR.SPECIAL_JOIN_REQUEST, mbr);
+            hdr = new GmsHDR(GmsHDR.SPECIAL_JOIN_REQUEST, mbr);
             hdr.GMSId = gms.unique_id;
             msg.putHeader(HeaderType.GMS, hdr);
-            gms.passDown(new Event(Event.MSG_URGENT, msg, Priority.Critical));
+            gms.passDown(new Event(Event.MSG_URGENT, msg, Priority.High));
         }
 		
 		
@@ -439,7 +420,6 @@ namespace Alachisoft.NGroups.Protocols.pbcast
 					ping_rsp = (PingRsp) initial_mbrs[i];
 					if (ping_rsp.OwnAddress != null && gms.local_addr != null && ping_rsp.OwnAddress.Equals(gms.local_addr))
 					{
-						
 						break;
 					}
                     if (!ping_rsp.IsStarted) initial_mbrs.RemoveAt(i);
@@ -450,13 +430,10 @@ namespace Alachisoft.NGroups.Protocols.pbcast
 		
 		/// <summary>The coordinator is determined by a majority vote. 
 		/// If there are an equal number of votes for more than 1 candidate, we determine the winner randomly.
-		/// 
-		/// This is bad!. I've changed the election process altogether. I guess i'm the new pervez musharaf here
 		/// Let everyone cast a vote and unlike the non-deterministic coordinator selection process of jgroups. Ours
 		/// is a deterministic one. First we find members with most vote counts. If there is a tie member with lowest
 		/// IP addres wins, if there is tie again member with low port value wins. 
-		/// 
-		/// This algortihm is determistic and ensures same results on every node icluding the coordinator. (shoaib)
+		/// This algortihm is determistic and ensures same results on every node icluding the coordinator. 
 		/// </summary>
 		internal virtual Address determineCoord(ArrayList mbrs)
 		{
@@ -480,7 +457,7 @@ namespace Alachisoft.NGroups.Protocols.pbcast
 					}
 
 					/// Find the maximum vote cast value. This will be used to resolve a
-					/// tie later on. 
+					/// tie later on.
 					if(((int) votes[mbr.CoordAddress]) > max_votecast)
 						max_votecast = ((int) votes[mbr.CoordAddress]);
 
@@ -497,7 +474,7 @@ namespace Alachisoft.NGroups.Protocols.pbcast
 			
 
 			/// Collect all the candidates with the highest but similar vote count.
-			/// Ideally there should only be one. 
+			/// Ideally there should only be one.
 			ArrayList candidates = new ArrayList(votes.Count);
 			for (IDictionaryEnumerator e = votes.GetEnumerator(); e.MoveNext(); )
 			{
@@ -516,9 +493,6 @@ namespace Alachisoft.NGroups.Protocols.pbcast
 			if (candidates.Count > 1)
                 gms.Stack.NCacheLog.Warn("pb.ClientGmsImpl.determineCoord()",   "there was more than 1 candidate for coordinator: " + Global.CollectionToString(candidates));
             gms.Stack.NCacheLog.CriticalInfo("pb.ClientGmsImpl.determineCoord()",   "election winner: " + winner + " with votes " + max_votecast);
-
-
-
 			return winner;
 		}
 		
@@ -546,7 +520,6 @@ namespace Alachisoft.NGroups.Protocols.pbcast
 			v.SequencerTbl = gms._subGroupMbrsMap.Clone() as Hashtable;
 			v.MbrsSubgroupMap = gms._mbrSubGroupMap.Clone() as Hashtable;
             v.AddGmsId(mbr, gms.unique_id);
-			
 			gms.installView(v);
 			gms.becomeCoordinator(); // not really necessary - installView() should do it
 			

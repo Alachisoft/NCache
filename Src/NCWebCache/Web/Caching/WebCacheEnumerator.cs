@@ -17,7 +17,6 @@ using System.Collections.Generic;
 using System.Collections;
 using Alachisoft.NCache.Common.DataStructures;
 
-
 namespace Alachisoft.NCache.Web.Caching
 {
     internal class WebCacheEnumerator : IDictionaryEnumerator, IDisposable
@@ -28,21 +27,29 @@ namespace Alachisoft.NCache.Web.Caching
         private object _currentValue;
 
         private string _serializationContext;
+        private string _group;
+        private string _subGroup;
         private DictionaryEntry _de;
 
-        internal WebCacheEnumerator(string serializationContext, Cache cache)
+        internal WebCacheEnumerator(string serializationContext, string group, string subGroup, Cache cache)
         {
             _cache = cache;
             _serializationContext = serializationContext;
+            _group = group;
+            _subGroup = subGroup;
             _de = new DictionaryEntry();
 
-            Initialize();
+            Initialize(_group, _subGroup);
         }
 
-        public void Initialize()
+        public void Initialize(string group, string subGroup)
         {
             List<EnumerationPointer> pointers = new List<EnumerationPointer>();
-            pointers.Add(new EnumerationPointer());
+
+            if (!String.IsNullOrEmpty(group))
+                pointers.Add(new GroupEnumerationPointer(group, subGroup));
+            else
+                pointers.Add(new EnumerationPointer());
 
             _currentChunks = _cache.GetNextChunk(pointers);
             List<string> data = new List<string>();
@@ -53,6 +60,7 @@ namespace Alachisoft.NCache.Web.Caching
                     data.AddRange(_currentChunks[i].Data);
                 }
             }
+
             _currentChunkEnumerator = data.GetEnumerator();
         }
 
@@ -69,7 +77,6 @@ namespace Alachisoft.NCache.Web.Caching
                 {
                     _currentChunks[i].Pointer.Reset();
                 }
-
             }
 
             if (_currentChunkEnumerator != null)
@@ -102,6 +109,7 @@ namespace Alachisoft.NCache.Web.Caching
                                 data.AddRange(_currentChunks[i].Data);
                             }
                         }
+
                         if (data != null && data.Count > 0)
                         {
                             _currentChunkEnumerator = data.GetEnumerator();
@@ -112,7 +120,8 @@ namespace Alachisoft.NCache.Web.Caching
                     {
                         List<EnumerationPointer> pointers = GetPointerList(_currentChunks);
                         if (pointers.Count > 0)
-                            _cache.GetNextChunk(pointers); //just an empty call to dispose enumerator for this particular list of pointer
+                            _cache.GetNextChunk(
+                                pointers); //just an empty call to dispose enumerator for this particular list of pointer
                     }
                 }
             }
@@ -123,12 +132,13 @@ namespace Alachisoft.NCache.Web.Caching
         private List<EnumerationPointer> GetPointerList(List<EnumerationDataChunk> chunks)
         {
             List<EnumerationPointer> pointers = new List<EnumerationPointer>();
-            
+
             for (int i = 0; i < chunks.Count; i++)
             {
                 if (!chunks[i].IsLastChunk)
                     pointers.Add(chunks[i].Pointer);
             }
+
             return pointers;
         }
 
@@ -150,10 +160,7 @@ namespace Alachisoft.NCache.Web.Caching
         /// </summary>
         public object Current
         {
-            get
-            {
-                return Entry;
-            }
+            get { return Entry; }
         }
 
         #endregion
@@ -214,6 +221,7 @@ namespace Alachisoft.NCache.Web.Caching
                             throw inner;
                         }
                     }
+
                     throw ex;
                 }
             }
@@ -230,12 +238,15 @@ namespace Alachisoft.NCache.Web.Caching
                 List<EnumerationPointer> pointerlist = GetPointerList(_currentChunks);
                 if (pointerlist.Count > 0)
                 {
-                    _cache.GetNextChunk(pointerlist); //just an empty call to dispose enumerator for this particular pointer
+                    _cache.GetNextChunk(
+                        pointerlist); //just an empty call to dispose enumerator for this particular pointer
                 }
             }
 
             _cache = null;
             _serializationContext = null;
+            _group = null;
+            _subGroup = null;
         }
 
         #endregion

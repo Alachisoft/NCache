@@ -11,7 +11,6 @@
 // WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
 // See the License for the specific language governing permissions and
 // limitations under the License.
-
 namespace Alachisoft.NCache.Caching.Topologies
 {
     /// <summary>
@@ -33,14 +32,6 @@ namespace Alachisoft.NCache.Caching.Topologies
         /// <param name="serverAddress">The server IP and Port of the leaving node</param>
         void OnMemberLeft(Alachisoft.NCache.Common.Net.Address clusterAddress, Alachisoft.NCache.Common.Net.Address serverAddress);
 
-
-        /// <summary>
-        /// In Express edition clients only from the cache nodes are allowed.
-        /// This event is fired to disconnect the clients when their cache node
-        /// leaves the cluster.
-        /// </summary>
-        /// <param name="invalidatedClientsList"></param>
-        void OnClientsInvalidated(System.Collections.ArrayList invalidatedClientsList);
 
     }
 }

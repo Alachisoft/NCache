@@ -16,8 +16,25 @@ namespace Alachisoft.NCache.Common.Enum
 {
     public enum NotificationsType
     {
-        RegNodeJoinedNotif=1,
+        RegAddNotif = 1,
+        RegUpdateNotif,
+        RegRemoveNotif,
+        RegClearNotif,
+        RegCustomNotif,
+        RegNodeJoinedNotif,
         RegNodeLeftNotif,
+        RegCacheStoppedNotif,
         RegHashmapChangedNotif,
+        UnregAddNotif = 100,
+        UnregUpdateNotif,
+        UnregRemoveNotif,
+        UnregClearNotif,
+        UnregCustomNotif,
+        UnregNodeJoinedNotif,
+        UnregNodeLeftNotif,
+        UnregCacheStoppedNotif,
+        UnregHashmapChangedNotif,
+        RegisterClientConnectivityNotif,
+        UnregisterClientConnectivityNotif,
     }
 }

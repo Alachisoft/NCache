@@ -22,7 +22,6 @@ namespace Alachisoft.NCache.Caching.Topologies
 
     [Serializable]
     internal enum CacheAddResult
-
     {
         /// <summary> The item was added. </summary>
         Success,

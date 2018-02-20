@@ -12,9 +12,6 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-using System;
-using System.Collections.Generic;
-using System.Text;
 using Alachisoft.NCache.Util;
 using Alachisoft.NCache.Common.RPCFramework;
 
@@ -22,10 +19,8 @@ namespace Alachisoft.NCache.SocketServer.Command
 {
     abstract class NCManagementCommandBase : CommandBase
     {
-
         public override void ExecuteCommand(ClientManager clientManager, Alachisoft.NCache.Common.Protobuf.Command command)
         {
-            //No need to implement this
         }
 
         abstract public void ExecuteCommand(ClientManager clientManager, Alachisoft.NCache.Common.Protobuf.ManagementCommand command);
@@ -40,6 +35,5 @@ namespace Alachisoft.NCache.SocketServer.Command
         {
             return SerializationUtil.CompactBinarySerialize(result, null);
         }
-
     }
 }

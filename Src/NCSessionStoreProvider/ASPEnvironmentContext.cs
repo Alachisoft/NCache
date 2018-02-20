@@ -10,13 +10,14 @@
 // distributed under the License is distributed on an "AS IS" BASIS,
 // WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
 // See the License for the specific language governing permissions and
-// limitations under the License.
+// limitations under the License
 
 using System.Web;
+using Alachisoft.NCache.Web.SessionState;
 
 namespace Alachisoft.NCache.Web.SessionState
 {
-    public class ASPEnvironmentContext: IAspEnvironmentContext
+    public class ASPEnvironmentContext : IAspEnvironmentContext
     {
         private const string LocationIdentifier = "New_Location";
 
@@ -26,8 +27,28 @@ namespace Alachisoft.NCache.Web.SessionState
         public ASPEnvironmentContext(HttpContext context)
         {
             _context = context;
+
             if (_context.Request.Cookies[LocationIdentifier] != null)
                 _locationCookie = _context.Request.Cookies[LocationIdentifier].Value;
+
+           
+            var responseCookieEnumerator = _context.Response.Cookies.Keys.GetEnumerator();
+            while (responseCookieEnumerator.MoveNext())
+            {
+                if (LocationIdentifier.Equals(responseCookieEnumerator.Current))
+                {
+                    if (!string.IsNullOrEmpty(_context.Response.Cookies[LocationIdentifier].Value))
+                    {
+                        _locationCookie = _context.Response.Cookies[LocationIdentifier].Value;
+                        break;
+                    }
+                    else
+                    {
+                        _context.Response.Cookies.Remove(LocationIdentifier);
+                    }
+                }
+            }
+
         }
 
         public object Unwrap()
@@ -76,10 +97,10 @@ namespace Alachisoft.NCache.Web.SessionState
             _locationCookie = null;
         }
 
-        public void Finalize()
+        public void FinalizeContext()
         {
             if (_locationCookie != null)
-                _context.Response.Cookies.Add(new HttpCookie(LocationIdentifier, _locationCookie));
+                _context.Response.Cookies.Set(new HttpCookie(LocationIdentifier, _locationCookie));
         }
     }
 }

@@ -1,4 +1,4 @@
-// Copyright (c) 2018 Alachisoft
+﻿// Copyright (c) 2018 Alachisoft
 // 
 // Licensed under the Apache License, Version 2.0 (the "License");
 // you may not use this file except in compliance with the License.
@@ -18,9 +18,11 @@ namespace Alachisoft.NCache.Web.Command
     {
         AtomicRead = 1,
         AtomicWrite = 2,
-        BulkRead = 3,
-        BulkWrite = 4,
+        NonKeyBulkRead = 3,
+        KeyBulkWrite = 4,
         InternalCommand = 5,
-        ChunkRead = 6
+        ChunkRead = 6,
+        NonKeyBulkWrite = 7,
+        KeyBulkRead = 8
     }
 }

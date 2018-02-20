@@ -22,7 +22,7 @@ namespace Alachisoft.NCache.Caching.Queries
         void AddToIndex(object key, object value);
         void RemoveFromIndex(object key, object value);
         void Clear();
-        IDictionaryEnumerator GetEnumerator(string typeName);
+        IDictionaryEnumerator GetEnumerator(string typeName, bool forTag);
         IndexInformation GetIndexInformation(object key);
     }
 }

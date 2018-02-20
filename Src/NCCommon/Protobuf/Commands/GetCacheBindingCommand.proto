@@ -2,8 +2,7 @@ option java_outer_classname="GetCacheBindingCommandProtocol";
 
 package Alachisoft.NCache.Common.Protobuf;
 
-message GetCacheBindingCommand 
-{
+message GetCacheBindingCommand {
 	optional int64 requestId = 1;
 	optional string cacheId = 2;
 	optional bool isRunning = 3; 

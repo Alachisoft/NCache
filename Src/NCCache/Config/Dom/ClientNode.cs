@@ -13,13 +13,10 @@
 // limitations under the License.
 
 using System;
-using System.Collections.Generic;
-using System.Text;
 using Alachisoft.NCache.Common.Configuration;
 using Alachisoft.NCache.Common.Enum;
 using Alachisoft.NCache.Runtime.Serialization;
 using Alachisoft.NCache.Common;
-using Runtime = Alachisoft.NCache.Runtime;
 
 namespace Alachisoft.NCache.Config.Dom
 {
@@ -27,31 +24,9 @@ namespace Alachisoft.NCache.Config.Dom
     public class ClientNode : ICloneable,ICompactSerializable
     {
         string name;
-        private ClientNodeStatus status =ClientNodeStatus.ClientCacheUnavailable ;
+        ClientNodeStatus status;
+        //NCache 4.3 SP1 Change by default the runtime context will be NCache 
         RtContextValue clientRuntimeContext= RtContextValue.NCACHE;
-        
-
-        [ConfigurationAttribute("ip")]//Changes for New Dom from name
-        public string Name
-        {
-            get { return name; }
-            set { name = value; }
-        }
-
-        public RtContextValue ClientRuntimeContext
-        {
-            get { return clientRuntimeContext; }
-            set { clientRuntimeContext = value; }
-        }
-
-        public string StatusString
-        {
-            get
-            {
-                return  "disabled"; 
-            }
-          
-        }
 
         public ClientNodeStatus Status
         {
@@ -59,7 +34,19 @@ namespace Alachisoft.NCache.Config.Dom
             set { status = value; }
         }
 
+        [ConfigurationAttribute("ip")]//Changes for New Dom from name
+        public string Name
+        {
+            get { return name; }
+            set { name = value; }
+        }
         
+        public RtContextValue ClientRuntimeContext
+        {
+            get { return clientRuntimeContext; }
+            set { clientRuntimeContext = value; }
+        }
+
         public string RuntimeContextString
         {
             get
@@ -91,7 +78,7 @@ namespace Alachisoft.NCache.Config.Dom
                 }
             }        
         }
-        
+
         public override int GetHashCode()
         {
             if (name == null) return String.Empty.GetHashCode(); 

@@ -13,9 +13,11 @@
     </SccProvider>
     <Configuration Condition=" '$(Configuration)' == '' ">Debug</Configuration>
     <Platform Condition=" '$(Platform)' == '' ">AnyCPU</Platform>
-    <ApplicationIcon>App.ico</ApplicationIcon>
+    <ApplicationIcon>ncache-service-32X32.ico</ApplicationIcon>
+    <AssemblyKeyContainerName>
+    </AssemblyKeyContainerName>
     <AssemblyName>Alachisoft.NCache.Service</AssemblyName>
-    <AssemblyOriginatorKeyFile>..\\..\\Resources\\ncache.snk</AssemblyOriginatorKeyFile>
+    <AssemblyOriginatorKeyFile>..\..\Resources\ncache.snk</AssemblyOriginatorKeyFile>
     <DefaultClientScript>JScript</DefaultClientScript>
     <DefaultHTMLPageLayout>Grid</DefaultHTMLPageLayout>
     <DefaultTargetSchema>IE50</DefaultTargetSchema>
@@ -32,10 +34,10 @@
     <SccAuxPath>
     </SccAuxPath>
     <TargetZone>Custom</TargetZone>
-    <GenerateManifests>true</GenerateManifests>
-    <TargetFrameworkVersion>v4.0</TargetFrameworkVersion>
+    <GenerateManifests>false</GenerateManifests>
     <OldToolsVersion>2.0</OldToolsVersion>
     <IsWebBootstrapper>false</IsWebBootstrapper>
+    <TargetFrameworkProfile />
     <PublishUrl>publish\</PublishUrl>
     <Install>true</Install>
     <InstallFrom>Disk</InstallFrom>
@@ -52,10 +54,16 @@
     <BootstrapperEnabled>true</BootstrapperEnabled>
   </PropertyGroup>
   <PropertyGroup Condition=" '$(Configuration)|$(Platform)' == 'Debug|AnyCPU' ">
-    <OutputPath>bin\4.0\debug\</OutputPath>
+    <TargetFrameworkVersion>v4.0</TargetFrameworkVersion>
+    <OutputPath>bin\4.0\debug.enterprise\</OutputPath>
     <AllowUnsafeBlocks>false</AllowUnsafeBlocks>
     <BaseAddress>285212672</BaseAddress>
-    <DefineConstants>TRACE;DEBUG;</DefineConstants>
+    <CheckForOverflowUnderflow>false</CheckForOverflowUnderflow>
+    <ConfigurationOverrideFile>
+    </ConfigurationOverrideFile>
+    <DefineConstants>TRACE;DEBUG;COMMUNITY;</DefineConstants>
+    <DocumentationFile>
+    </DocumentationFile>
     <DebugSymbols>true</DebugSymbols>
     <FileAlignment>4096</FileAlignment>
     <NoStdLib>false</NoStdLib>
@@ -69,18 +77,20 @@
     <DebugType>full</DebugType>
     <ErrorReport>prompt</ErrorReport>
     <PlatformTarget>AnyCPU</PlatformTarget>
+    <CodeAnalysisRuleSet>AllRules.ruleset</CodeAnalysisRuleSet>
   </PropertyGroup>
   <PropertyGroup Condition=" '$(Configuration)|$(Platform)' == 'Release|AnyCPU' ">
-    <OutputPath>bin\4.0\release\</OutputPath>
+    <TargetFrameworkVersion>v4.0</TargetFrameworkVersion>
+    <OutputPath>bin\4.0\release.enterprise\</OutputPath>
     <AllowUnsafeBlocks>false</AllowUnsafeBlocks>
     <BaseAddress>285212672</BaseAddress>
     <CheckForOverflowUnderflow>false</CheckForOverflowUnderflow>
     <ConfigurationOverrideFile>
     </ConfigurationOverrideFile>
-    <DefineConstants>TRACE;</DefineConstants>
+    <DefineConstants>TRACE;COMMUNITY;VS2005;</DefineConstants>
     <DocumentationFile>
     </DocumentationFile>
-    <DebugSymbols>false</DebugSymbols>
+    <DebugSymbols>true</DebugSymbols>
     <FileAlignment>4096</FileAlignment>
     <NoStdLib>false</NoStdLib>
     <NoWarn>
@@ -90,38 +100,20 @@
     <RemoveIntegerChecks>false</RemoveIntegerChecks>
     <TreatWarningsAsErrors>false</TreatWarningsAsErrors>
     <WarningLevel>4</WarningLevel>
-    <DebugType>none</DebugType>
+    <DebugType>pdbonly</DebugType>
     <ErrorReport>prompt</ErrorReport>
     <PlatformTarget>AnyCPU</PlatformTarget>
+    <CodeAnalysisRuleSet>AllRules.ruleset</CodeAnalysisRuleSet>
   </PropertyGroup>
   <PropertyGroup>
     <SignAssembly>true</SignAssembly>
   </PropertyGroup>
-  <PropertyGroup Condition="'$(Configuration)|$(Platform)' == 'Debug.2x|AnyCPU'">
-    <DebugSymbols>true</DebugSymbols>
-    <OutputPath>bin\2.0\debug\</OutputPath>
-    <DefineConstants>TRACE;DEBUG;</DefineConstants>
-    <BaseAddress>285212672</BaseAddress>
-    <FileAlignment>4096</FileAlignment>
-    <DebugType>full</DebugType>
-    <PlatformTarget>AnyCPU</PlatformTarget>
-    <TargetFrameworkVersion>v3.5</TargetFrameworkVersion>
-    <ErrorReport>prompt</ErrorReport>
-  </PropertyGroup>
-  <PropertyGroup Condition="'$(Configuration)|$(Platform)' == 'Release.2x|AnyCPU'">
-    <OutputPath>bin\2.0\release\</OutputPath>
-    <DefineConstants>TRACE;</DefineConstants>
-    <BaseAddress>285212672</BaseAddress>
-    <Optimize>true</Optimize>
-    <FileAlignment>4096</FileAlignment>
-    <PlatformTarget>AnyCPU</PlatformTarget>
-    <TargetFrameworkVersion>v3.5</TargetFrameworkVersion>
-    <ErrorReport>prompt</ErrorReport>
-  </PropertyGroup>
+  <PropertyGroup />
   <ItemGroup>
     <Reference Include="System">
       <Name>System</Name>
     </Reference>
+    <Reference Include="System.configuration" />
     <Reference Include="System.Configuration.Install">
       <Name>System.Configuration.Install</Name>
     </Reference>
@@ -140,6 +132,28 @@
     <Reference Include="System.Xml">
       <Name>System.XML</Name>
     </Reference>
+    <ProjectReference Include="..\NCCache\NCCache.csproj">
+      <Name>NCCache</Name>
+      <Project>{BF3BCF64-ADEB-455B-AD8A-39EE84EE300D}</Project>
+      <Package>{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}</Package>
+    </ProjectReference>
+    <ProjectReference Include="..\NCCommon\NCCommon.csproj">
+      <Project>{EC5A66B8-2272-4337-A4E2-248BDBD968B3}</Project>
+      <Name>NCCommon</Name>
+    </ProjectReference>
+    <ProjectReference Include="..\NCManagement\NCManagement.csproj">
+      <Name>NCManagement</Name>
+      <Project>{6E6E852E-1A3F-4E6B-999B-06EA6D4EAB49}</Project>
+      <Package>{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}</Package>
+    </ProjectReference>
+    <ProjectReference Include="..\NCRuntime\NCRuntime.csproj">
+      <Project>{E60E545B-1A03-45D1-BB06-4FBB4BE71FAD}</Project>
+      <Name>NCRuntime</Name>
+    </ProjectReference>
+    <ProjectReference Include="..\NCSocketServer\NCSocketServer.csproj">
+      <Project>{EAB8378D-35B0-4BE2-8845-2CA3B002B234}</Project>
+      <Name>NCSocketServer</Name>
+    </ProjectReference>
   </ItemGroup>
   <ItemGroup>
     <EmbeddedResource Include="App.ico" />
@@ -160,26 +174,7 @@
     </Compile>
   </ItemGroup>
   <ItemGroup>
-    <ProjectReference Include="..\NCCache\NCCache.csproj">
-      <Project>{BF3BCF64-ADEB-455B-AD8A-39EE84EE300D}</Project>
-      <Name>NCCache</Name>
-    </ProjectReference>
-    <ProjectReference Include="..\NCCommon\NCCommon.csproj">
-      <Project>{EC5A66B8-2272-4337-A4E2-248BDBD968B3}</Project>
-      <Name>NCCommon</Name>
-    </ProjectReference>
-    <ProjectReference Include="..\NCManagement\NCManagement.csproj">
-      <Project>{6E6E852E-1A3F-4E6B-999B-06EA6D4EAB49}</Project>
-      <Name>NCManagement</Name>
-    </ProjectReference>
-    <ProjectReference Include="..\NCRuntime\NCRuntime.csproj">
-      <Project>{E60E545B-1A03-45D1-BB06-4FBB4BE71FAD}</Project>
-      <Name>NCRuntime</Name>
-    </ProjectReference>
-    <ProjectReference Include="..\NCSocketServer\NCSocketServer.csproj">
-      <Project>{EAB8378D-35B0-4BE2-8845-2CA3B002B234}</Project>
-      <Name>NCSocketServer</Name>
-    </ProjectReference>
+    <None Include="app.config" />
   </ItemGroup>
   <ItemGroup>
     <BootstrapperPackage Include="Microsoft.Net.Client.3.5">
@@ -199,10 +194,10 @@
     </BootstrapperPackage>
   </ItemGroup>
   <ItemGroup>
-    <None Include="app.config" />
+    <Folder Include="Properties\" />
   </ItemGroup>
   <ItemGroup>
-    <Folder Include="Properties\" />
+    <Content Include="ncache-service-32X32.ico" />
   </ItemGroup>
   <ProjectExtensions>
     <VisualStudio>
@@ -210,14 +205,11 @@
     </VisualStudio>
   </ProjectExtensions>
   <Import Project="$(MSBuildBinPath)\Microsoft.CSharp.targets" />
-  <PropertyGroup Condition="'$(Configuration)|$(Platform)' == 'Release|AnyCPU' OR '$(Configuration)|$(Platform)' == 'Debug|AnyCPU'">
+  <PropertyGroup>
     <PreBuildEvent>
     </PreBuildEvent>
-    <PostBuildEvent>xcopy /Y "$(TargetPath)" "$(SolutionDir)build\Server\4x\"</PostBuildEvent>
-  </PropertyGroup>
-  <PropertyGroup Condition="'$(Configuration)|$(Platform)' == 'Release.2x|AnyCPU' OR '$(Configuration)|$(Platform)' == 'Debug.2x|AnyCPU'">
-    <PreBuildEvent>
-    </PreBuildEvent>
-    <PostBuildEvent>xcopy /Y "$(TargetPath)" "$(SolutionDir)build\Server\2x\"</PostBuildEvent>
+    <PostBuildEvent>copy "$(ProjectDir)App.4x.config" "$(TargetDir)$(TargetFileName).config"
+call $(SolutionDir)copy.bat $(SolutionDir) $(TargetName) $(TargetDir)
+xcopy /Y "$(TargetPath)" "$(SolutionDir)build\Server\4x\"</PostBuildEvent>
   </PropertyGroup>
 </Project>

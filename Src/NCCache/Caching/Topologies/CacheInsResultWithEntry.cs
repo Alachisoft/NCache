@@ -20,7 +20,6 @@ namespace Alachisoft.NCache.Caching.Topologies
 {
     [Serializable]
     internal class CacheInsResultWithEntry : ICompactSerializable
-
     {
         private CacheInsResult _result = CacheInsResult.Success;
         private CacheEntry _entry = null;

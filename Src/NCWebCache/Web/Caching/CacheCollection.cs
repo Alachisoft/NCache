@@ -23,6 +23,7 @@ namespace Alachisoft.NCache.Web.Caching
     /// interface.
     /// </remarks>
     public class CacheCollection : IEnumerable
+
     {
         private Hashtable _caches;
 
@@ -71,14 +72,12 @@ namespace Alachisoft.NCache.Web.Caching
 
         internal bool Contains(object key)
         {
-            return _caches.Contains(((string)key).ToLower());
+            return _caches.Contains(((string) key).ToLower());
         }
 
         internal void Remove(object key)
         {
-            _caches.Remove(((string)key).ToLower());
+            _caches.Remove(((string) key).ToLower());
         }
-
-       
     }
 }

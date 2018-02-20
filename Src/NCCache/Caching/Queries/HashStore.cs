@@ -14,9 +14,9 @@
 
 using System;
 using System.Collections;
-using Alachisoft.NCache.Common.Util;
 using Alachisoft.NCache.Common.Queries;
-using Alachisoft.NCache.Common.Enum;
+using Alachisoft.NCache.Common.Util;
+using Alachisoft.NCache.Common.DataStructures.Clustered;
 
 namespace Alachisoft.NCache.Caching.Queries
 {
@@ -67,7 +67,7 @@ namespace Alachisoft.NCache.Caching.Queries
         {
             get { return _store != null ? _store.Count : 0; }
         }
-
+        
         public void GetData(object key, ComparisonType comparisonType, IQueryResult result, CollectionOperation op)
         {
             IComparable keyToCompare = key as IComparable;
@@ -79,7 +79,6 @@ namespace Alachisoft.NCache.Caching.Queries
                     case ComparisonType.EQUALS:
                         if (_store.Contains(key))
                             result.AddObject(_store[key], op);
-
                         break;
 
                     case ComparisonType.NOT_EQUALS:
@@ -88,7 +87,6 @@ namespace Alachisoft.NCache.Caching.Queries
                             if (((IComparable)storedKey).CompareTo(keyToCompare) != 0)
                                 result.AddObject(_store[storedKey], op);
                         }
-
                         break;
 
                     case ComparisonType.LESS_THAN:
@@ -168,10 +166,17 @@ namespace Alachisoft.NCache.Caching.Queries
             writer.WriteObject(_store);
         }
 
+
+        public void GetTagData(object tag, HashVector finalResult)
+        {
+            throw new NotImplementedException("HashStore.GetTagData");
+        }
+
         public long IndexInMemorySize
         {
             get { throw new NotImplementedException("HashStore.IndexInMemorySize"); }
         }
+
 
         public string StoreDataType
         {
@@ -181,7 +186,10 @@ namespace Alachisoft.NCache.Caching.Queries
 
         public string Name
         {
-            get { throw new NotImplementedException(); }
+            get
+            {
+                throw new NotImplementedException();
+            }         
         }
     }
 }

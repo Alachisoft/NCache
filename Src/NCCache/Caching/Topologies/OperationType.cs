@@ -21,6 +21,7 @@ namespace Alachisoft.NCache.Caching.Topologies
     {
         Add,
         Insert,
-        Delete
+        Delete,
+        MessageOperation
     }
 }

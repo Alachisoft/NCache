@@ -11,7 +11,6 @@
 // WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
 // See the License for the specific language governing permissions and
 // limitations under the License.
-
 using System;
 using Alachisoft.NCache.Runtime.Serialization;
 
@@ -41,7 +40,7 @@ namespace Alachisoft.NCache.Caching
             get { return _opCounter; }
             set { _opCounter = value; }
         }
-
+     
         public void Deserialize(Runtime.Serialization.IO.CompactReader reader)
         {
             this._opCounter = reader.ReadInt64();

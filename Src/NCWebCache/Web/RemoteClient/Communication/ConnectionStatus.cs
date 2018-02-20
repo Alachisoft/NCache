@@ -21,13 +21,14 @@ namespace Alachisoft.NCache.Web.Communication
     {
         /// <summary> The connection is in initialization phase.</summary>
         public const byte Connecting = 1;
+
         /// <summary> The connection is fully functional. </summary>
         public const byte Connected = 2;
+
         /// <summary> The connection is disconnected. </summary>
         public const byte Disconnected = 4;
+
         /// <summary> This is in load balance state so dont wont queue up new request </summary>
         public const byte LoadBalance = 8;
-        
-
     }
 }

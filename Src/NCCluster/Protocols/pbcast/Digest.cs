@@ -10,36 +10,27 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 // $Id: Digest.java,v 1.6 2004/07/05 05:49:41 belaban Exp $
-
 using System;
-
-using Alachisoft.NGroups;
-
-
 using Alachisoft.NCache.Runtime.Serialization.IO;
-
-
 using Alachisoft.NCache.Runtime.Serialization;
-
-
 using Alachisoft.NCache.Common.Net;
 
 namespace Alachisoft.NGroups.Protocols.pbcast
 {
-	/// <summary> A message digest, which is used e.g. by the PBCAST layer for gossiping (also used by NAKACK for
-	/// keeping track of current seqnos for all members). It contains pairs of senders and a range of seqnos
-	/// (low and high), where each sender is associated with its highest and lowest seqnos seen so far.  That
-	/// is, the lowest seqno which was not yet garbage-collected and the highest that was seen so far and is
-	/// deliverable (or was already delivered) to the application.  A range of [0 - 0] means no messages have
-	/// been received yet. <p> April 3 2001 (bela): Added high_seqnos_seen member. It is used to disseminate
-	/// information about the last (highest) message M received from a sender P. Since we might be using a
-	/// negative acknowledgment message numbering scheme, we would never know if the last message was
-	/// lost. Therefore we periodically gossip and include the last message seqno. Members who haven't seen
-	/// it (e.g. because msg was dropped) will request a retransmission. See DESIGN for details.
-	/// </summary>
-	/// <author>  Bela Ban
-	/// </author>
-	[Serializable]
+    /// <summary> A message digest, which is used e.g. by the PBCAST layer for gossiping (also used by NAKACK for
+    /// keeping track of current seqnos for all members). It contains pairs of senders and a range of seqnos
+    /// (low and high), where each sender is associated with its highest and lowest seqnos seen so far.  That
+    /// is, the lowest seqno which was not yet garbage-collected and the highest that was seen so far and is
+    /// deliverable (or was already delivered) to the application.  A range of [0 - 0] means no messages have
+    /// been received yet. <p> April 3 2001 (bela): Added high_seqnos_seen member. It is used to disseminate
+    /// information about the last (highest) message M received from a sender P. Since we might be using a
+    /// negative acknowledgment message numbering scheme, we would never know if the last message was
+    /// lost. Therefore we periodically gossip and include the last message seqno. Members who haven't seen
+    /// it (e.g. because msg was dropped) will request a retransmission. See DESIGN for details.
+    /// </summary>
+    /// <author>  Bela Ban
+    /// </author>
+    [Serializable]
 	internal class Digest : ICompactSerializable
 	{
 		internal Address[] senders = null;
@@ -62,11 +53,11 @@ namespace Alachisoft.NGroups.Protocols.pbcast
 		{
 			if (index >= senders.Length)
 			{
-                return ;
+				return ;
 			}
 			if (sender == null)
 			{
-               return ;
+				return ;
 			}
 			senders[index] = sender;
 			low_seqnos[index] = low_seqno;
@@ -80,11 +71,11 @@ namespace Alachisoft.NGroups.Protocols.pbcast
 		{
 			if (index >= senders.Length)
 			{
-                return ;
+				return ;
 			}
 			if (sender == null)
-			{
-                return ;
+			{               
+				return ;
 			}
 			senders[index] = sender;
 			low_seqnos[index] = low_seqno;
@@ -123,7 +114,8 @@ namespace Alachisoft.NGroups.Protocols.pbcast
 			
 			if (d == null)
 			{
-               return ;
+                //Trace.error("Digest", "digest to be merged with is null");
+				return ;
 			}
 			for (int i = 0; i < d.size(); i++)
 			{
@@ -247,7 +239,8 @@ namespace Alachisoft.NGroups.Protocols.pbcast
 				return senders[index];
 			else
 			{
-                return null;
+                //Trace.error("Digest", "index " + index + " is out of bounds");
+				return null;
 			}
 		}
 		
@@ -264,7 +257,6 @@ namespace Alachisoft.NGroups.Protocols.pbcast
 				high_seqnos[index] = 0;
 				high_seqnos_seen[index] = - 1;
 			}
-           
 		}
 		
 		
@@ -286,7 +278,7 @@ namespace Alachisoft.NGroups.Protocols.pbcast
 				return low_seqnos[index];
 			else
 			{
-                return 0;
+				return 0;
 			}
 		}
 		
@@ -297,7 +289,8 @@ namespace Alachisoft.NGroups.Protocols.pbcast
 				return high_seqnos[index];
 			else
 			{
-               return 0;
+                //Trace.error("Digest", "index " + index + " is out of bounds");
+				return 0;
 			}
 		}
 		
@@ -307,7 +300,8 @@ namespace Alachisoft.NGroups.Protocols.pbcast
 				return high_seqnos_seen[index];
 			else
 			{
-               return 0;
+                //Trace.error("Digest", "index " + index + " is out of bounds");
+				return 0;
 			}
 		}
 		
@@ -347,7 +341,6 @@ namespace Alachisoft.NGroups.Protocols.pbcast
 			{
 				low_seqnos[index] = low_seqno;
 			}
-            
 		}
 		
 		
@@ -357,7 +350,6 @@ namespace Alachisoft.NGroups.Protocols.pbcast
 			{
 				high_seqnos[index] = high_seqno;
 			}
-            
 		}
 		
 		public void  setHighSeqnoSeenAt(int index, long high_seqno_seen)
@@ -366,7 +358,6 @@ namespace Alachisoft.NGroups.Protocols.pbcast
 			{
 				high_seqnos_seen[index] = high_seqno_seen;
 			}
-           
 		}
 		
 		
@@ -394,6 +385,7 @@ namespace Alachisoft.NGroups.Protocols.pbcast
 			Digest ret = new Digest(senders.Length);
 			
 			// changed due to JDK bug (didn't work under JDK 1.4.{1,2} under Linux, JGroups bug #791718
+			// ret.senders=(Address[])senders.clone();
 			if (senders != null)
 				Array.Copy(senders, 0, ret.senders, 0, senders.Length);
 			

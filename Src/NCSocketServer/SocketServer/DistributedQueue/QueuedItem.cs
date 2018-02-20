@@ -17,7 +17,7 @@ using System;
 namespace Alachisoft.NCache.SocketServer
 {
     [Serializable]
-    class QueuedItem:Runtime.Serialization.ICompactSerializable
+    class QueuedItem : Runtime.Serialization.ICompactSerializable
     {
         private string _slaveId;
         private long _count;
@@ -49,9 +49,10 @@ namespace Alachisoft.NCache.SocketServer
         }
 
         #region ICompact Serializable Members
+
         public void Deserialize(Runtime.Serialization.IO.CompactReader reader)
         {
-            _slaveId=(string) reader.ReadObject();
+            _slaveId = (string)reader.ReadObject();
             _count = reader.ReadInt64();
             _item = reader.ReadObject();
             _registeredClientId = (string)reader.ReadObject();
@@ -64,6 +65,7 @@ namespace Alachisoft.NCache.SocketServer
             writer.WriteObject(_item);
             writer.WriteObject(_registeredClientId);
         }
+
         #endregion
     }
 }

@@ -42,6 +42,7 @@ using System.Runtime.InteropServices;
 using System.Diagnostics.Contracts;
 #endif
 using System.IO;
+using System.Collections.Generic;
 
 #if FEATURE_ASYNC_IO
 using System.Threading;
@@ -141,6 +142,22 @@ namespace Alachisoft.NCache.Common.DataStructures.Clustered
         {
             int position = 0;
             foreach (byte[] bytes in buffer)
+            {
+                _buffer.CopyFrom(bytes, 0, position, bytes.Length);
+                position += bytes.Length;
+            }
+            _length = _capacity = position;
+            _writable = writable;
+            _expandable = false;
+            _origin = 0;
+            _isOpen = true;
+        }
+
+        public ClusteredMemoryStream(IList buffers, bool writable)
+        {
+            int position = 0;
+            _buffer = new ClusteredArray<byte>(0);
+            foreach (byte[] bytes in buffers)
             {
                 _buffer.CopyFrom(bytes, 0, position, bytes.Length);
                 position += bytes.Length;

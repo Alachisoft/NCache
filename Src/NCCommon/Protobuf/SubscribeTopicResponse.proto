@@ -1,0 +1,6 @@
+
+option java_outer_classname="SubscribeTopicResponseProtocol";
+package Alachisoft.NCache.Common.Protobuf;
+message SubscribeTopicResponse {
+	optional bool success = 1;
+}

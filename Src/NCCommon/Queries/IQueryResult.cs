@@ -12,17 +12,21 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
+using System;
 using System.Collections;
 using Alachisoft.NCache.Common.DataStructures.Clustered;
-using Alachisoft.NCache.Common.Enum;
+using Alachisoft.NCache.Common.Queries.Filters;
 
 namespace Alachisoft.NCache.Common.Queries
 {
     public interface IQueryResult : IEnumerable
     {
         int Count { get; }
+        IKeyFilter KeyFilter { set; get; }
+        IKeyFilter CompoundFilter { set; get; }
 
-        void Add(IDictionary other, CollectionOperation op);
+
+        void Add(IDictionary other, CollectionOperation op,Boolean filterResult=true);
 
         void AddObject(object obj, CollectionOperation op);
 
@@ -35,10 +39,4 @@ namespace Alachisoft.NCache.Common.Queries
         ClusteredArrayList GetArrayList();
  
     }
-
-   
-
-
-
-   
 }

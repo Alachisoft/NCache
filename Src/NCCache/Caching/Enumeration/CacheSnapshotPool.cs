@@ -14,11 +14,7 @@
 
 using System;
 using System.Collections.Generic;
-using System.Text;
 using System.Collections;
-using Alachisoft.NCache.Common.DataStructures;
-using Alachisoft.NCache.Common.DataStructures;
-using Alachisoft.NCache.Caching.Topologies.Local;
 using Alachisoft.NCache.Caching.Topologies;
 using Alachisoft.NCache.Common.Util;
 
@@ -30,12 +26,11 @@ namespace Alachisoft.NCache.Caching.Enumeration
     /// </summary>
     ///
 
-    internal class CacheSnapshotPool
 
+    internal class CacheSnapshotPool
     {
         static readonly CacheSnapshotPool instance = new CacheSnapshotPool();
 
-        
         /// <summary>
         /// Contains the mapping between cache id and pool specific to that cache.
         /// </summary>
@@ -48,7 +43,7 @@ namespace Alachisoft.NCache.Caching.Enumeration
 
         CacheSnapshotPool()
         {
-             _cachePoolMap = new Hashtable();
+            _cachePoolMap = new Hashtable();
         }
 
         public static CacheSnapshotPool Instance
@@ -110,7 +105,6 @@ namespace Alachisoft.NCache.Caching.Enumeration
 
         class CachePool
         {
-           
             /// <summary>
             /// The time on which a new snapshot was created and added to Snaphot Pool
             /// </summary>
@@ -149,7 +143,6 @@ namespace Alachisoft.NCache.Caching.Enumeration
 
             internal CachePool()
             {
-                
             }
 
             /// <summary>

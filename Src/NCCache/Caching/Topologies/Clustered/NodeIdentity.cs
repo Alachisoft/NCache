@@ -37,10 +37,7 @@ namespace Alachisoft.NCache.Caching.Topologies.Clustered
         private int _rendererPort = -1;
         private IPAddress _rendererAddress;
 
-        /// <summary>
-        /// True if this cache instance is started as mirror cache. otherwise false.
-        /// </summary>
-        private bool _isStartedAsMirror = false;
+ 
 
         /// <summary>
         /// Constructor
@@ -62,7 +59,7 @@ namespace Alachisoft.NCache.Caching.Topologies.Clustered
             HasStorage = hasStorage;
             _rendererPort = renderPort;
             _rendererAddress = renderAddress;
-            _isStartedAsMirror = isStartedAsMirror;
+  
         }
 
         /// <summary>
@@ -97,12 +94,7 @@ namespace Alachisoft.NCache.Caching.Topologies.Clustered
             set { _groupname = value; }
         }
 
-        /// <summary>
-        /// Get or Sets the value indicating weather this instance started as Mirror or not.
-        /// True if started as mirror otherwise false.
-        /// </summary>
-        public bool IsStartedAsMirror { get { return _isStartedAsMirror; } set { _isStartedAsMirror = value; } }
-
+        
         #region	/                 --- ICompactSerializable ---           /
 
         public void Deserialize(CompactReader reader)
@@ -111,7 +103,7 @@ namespace Alachisoft.NCache.Caching.Topologies.Clustered
             _status = new BitSet(reader.ReadByte());
             _rendererPort = reader.ReadInt32();
             _rendererAddress = reader.ReadObject() as IPAddress;
-            _isStartedAsMirror = reader.ReadBoolean();
+
         }
 
         public void Serialize(CompactWriter writer)
@@ -120,16 +112,11 @@ namespace Alachisoft.NCache.Caching.Topologies.Clustered
             writer.Write(_status.Data);
             writer.Write(_rendererPort);
             writer.WriteObject(_rendererAddress);
-            writer.Write(_isStartedAsMirror);
+
         }
 
         #endregion
 
-        public override string ToString()
-        {
-            return "NodeIdentity: (" + _groupname + ", " 
-                   + (IsStartedAsMirror? "IsMirror":"IsActive")
-                   + ", " + (HasStorage? "HasStorage":"NoStorage");
-        }
+        
     }
 }

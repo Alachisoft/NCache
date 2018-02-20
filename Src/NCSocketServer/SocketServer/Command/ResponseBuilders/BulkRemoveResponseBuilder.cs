@@ -13,14 +13,11 @@
 // limitations under the License.
 
 using System;
-using System.Collections.Generic;
-using System.Text;
 using System.Collections;
-using Alachisoft.NCache.Common.DataStructures.Clustered;
 
 namespace Alachisoft.NCache.SocketServer.Command.ResponseBuilders
 {
-    //Dated: July 20, 2011
+    // Dated: July 20, 2011
     /// <summary>
     /// This class is responsible for providing the responses based on the command Version specified.
     /// Main role of this class is to provide the backward compatibility. As different version of command can
@@ -29,19 +26,20 @@ namespace Alachisoft.NCache.SocketServer.Command.ResponseBuilders
     /// 
     /// This class only processes the different versions of BulkRemove command
     /// </summary>
-    class BulkRemoveResponseBuilder 
+    class BulkRemoveResponseBuilder : ResponseBuilderBase
     {
-        public static IList<byte[]> BuildResponse(Hashtable removeResult, int commandVersion, string RequestId, IList<byte[]> _serializedResponse)
+        public static IList BuildResponse(Hashtable removeResult, int commandVersion, string RequestId, IList _serializedResponse, int commandID, Caching.Cache cache)
         {
+            Alachisoft.NCache.SocketServer.Util.KeyPackageBuilder.Cache = cache;
             long requestId = Convert.ToInt64(RequestId);
             switch (commandVersion)
             {
-                case 0: //Versions earlier than NCache 4.1 because all of them expect responses as one chunck
+                case 0: // Versions earlier than NCache 4.1 because all of them expect responses as one chunck
                     {
                         Alachisoft.NCache.Common.Protobuf.Response response = new Alachisoft.NCache.Common.Protobuf.Response();
                         Alachisoft.NCache.Common.Protobuf.BulkRemoveResponse bulkRemoveResponse = new Alachisoft.NCache.Common.Protobuf.BulkRemoveResponse();
                         response.requestId = requestId;
-
+                        response.commandID = commandID;
                         bulkRemoveResponse.keyValuePackage = Alachisoft.NCache.SocketServer.Util.KeyPackageBuilder.PackageKeysValues(removeResult, bulkRemoveResponse.keyValuePackage);
 
                         response.responseType = Alachisoft.NCache.Common.Protobuf.Response.Type.REMOVE_BULK;
@@ -49,17 +47,18 @@ namespace Alachisoft.NCache.SocketServer.Command.ResponseBuilders
                         _serializedResponse.Add(Alachisoft.NCache.Common.Util.ResponseHelper.SerializeResponse(response));
                     }
                     break;
-                case 1: //Verion 4.1 or later
+                case 1: // Verion 4.1 or later
                     {
-                        List<Alachisoft.NCache.Common.Protobuf.KeyValuePackageResponse> keyValuesPackageChuncks = Alachisoft.NCache.SocketServer.Util.KeyPackageBuilder.PackageKeysValues(removeResult);
+                        IList keyValuesPackageChuncks = Alachisoft.NCache.SocketServer.Util.KeyPackageBuilder.PackageKeysValues(removeResult);
                         int sequenceId = 1;
                         Alachisoft.NCache.Common.Protobuf.Response response = new Alachisoft.NCache.Common.Protobuf.Response();
                         Alachisoft.NCache.Common.Protobuf.BulkRemoveResponse bulkRemoveResponse = new Alachisoft.NCache.Common.Protobuf.BulkRemoveResponse();
                         response.requestId = requestId;
+                        response.commandID = commandID;
                         response.numberOfChuncks = keyValuesPackageChuncks.Count;
                         response.responseType = Alachisoft.NCache.Common.Protobuf.Response.Type.REMOVE_BULK;
                         foreach (Alachisoft.NCache.Common.Protobuf.KeyValuePackageResponse package in keyValuesPackageChuncks)
-                        {                       
+                        {
                             response.sequenceId = sequenceId++;
                             bulkRemoveResponse.keyValuePackage = package;
                             response.bulkRemove = bulkRemoveResponse;
@@ -67,10 +66,8 @@ namespace Alachisoft.NCache.SocketServer.Command.ResponseBuilders
                         }
                     }
                     break;
-
             }
             return _serializedResponse;
         }
-        
     }
 }

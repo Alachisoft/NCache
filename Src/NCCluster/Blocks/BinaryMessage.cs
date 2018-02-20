@@ -9,24 +9,24 @@
 // WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
 // See the License for the specific language governing permissions and
 // limitations under the License.
-
 using System;
+using System.Collections;
 
 namespace Alachisoft.NGroups.Blocks
 {
     internal class BinaryMessage
     {
-        private byte[] buffer;
+        private IList buffer;
         private Array userPayLoad;
         private DateTime _time = DateTime.Now;
 
-        public BinaryMessage(byte[] buf, Array userpayLoad)
+        public BinaryMessage(IList buf, Array userpayLoad)
         {
             buffer = buf;
             userPayLoad = userpayLoad;
         }
 
-        public byte[] Buffer
+        public IList Buffer
         {
             get { return buffer; }
         }
@@ -40,7 +40,11 @@ namespace Alachisoft.NGroups.Blocks
             get
             {
                 int size = 0;
-                if (buffer != null) size += buffer.Length;
+                if (buffer != null)
+                {
+                    foreach(byte[] buff in buffer)
+                        size += buff.Length;
+                }
                 if (userPayLoad != null)
                 {
                     for (int i = 0; i < userPayLoad.Length; i++)

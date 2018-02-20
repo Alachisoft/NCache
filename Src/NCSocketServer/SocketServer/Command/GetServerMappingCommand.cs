@@ -13,8 +13,8 @@
 // limitations under the License.
 
 using System;
-
 using Alachisoft.NCache.Config;
+
 namespace Alachisoft.NCache.SocketServer.Command
 {
     class GetServerMappingCommand : CommandBase
@@ -37,13 +37,13 @@ namespace Alachisoft.NCache.SocketServer.Command
             catch (Exception exc)
             {
                 if (!base.immatureId.Equals("-2")) 
-                    _serializedResponsePackets.Add(Alachisoft.NCache.Common.Util.ResponseHelper.SerializeExceptionResponse(exc, command.requestID));
+                    _serializedResponsePackets.Add(Alachisoft.NCache.Common.Util.ResponseHelper.SerializeExceptionResponse(exc, command.requestID, command.commandID));
                 return;
             }
 
             try
             {
-                //Fetch mapped servers
+                // Fetch mapped servers
 
                 ServerMapping serverMapping = Management.MappingConfiguration.MappingConfigurationManager.GetMappingConfiguration().ClientIPMapping;
                 Mapping[] mappedServers = serverMapping.MappingServers;
@@ -56,15 +56,14 @@ namespace Alachisoft.NCache.SocketServer.Command
                     for (int i = 0; i < mappedServers.Length; i++)
                     {
                         Common.Protobuf.ServerMapping mappingObject = new Common.Protobuf.ServerMapping();
-                        //Map the server list to protobuf object
+                        // Map the server list to protobuf object
                         mappingObject.privateIp = mappedServers[i].PrivateIP;
                         mappingObject.privatePort = mappedServers[i].PrivatePort;
                         mappingObject.publicIp = mappedServers[i].PublicIP;
                         mappingObject.publicPort = mappedServers[i].PublicPort;
 
-                        //Adding to list to be sent as a response
+                        // Adding to list to be sent as a response
                         getServerMappingResponse.serverMapping.Add(mappingObject);
-
                     }
                 }
                 else
@@ -73,17 +72,17 @@ namespace Alachisoft.NCache.SocketServer.Command
                 response.getServerMappingResponse = getServerMappingResponse;
                 response.responseType = Alachisoft.NCache.Common.Protobuf.Response.Type.GET_SERVER_MAPPING;
                 response.requestId = command.requestID;
+                response.commandID = command.commandID;
                
                 _serializedResponsePackets.Add(Alachisoft.NCache.Common.Util.ResponseHelper.SerializeResponse(response));
                               
             }
             catch (Exception exc)
             {
-                _serializedResponsePackets.Add(Alachisoft.NCache.Common.Util.ResponseHelper.SerializeExceptionResponse(exc, command.requestID));
+                _serializedResponsePackets.Add(Alachisoft.NCache.Common.Util.ResponseHelper.SerializeExceptionResponse(exc, command.requestID, command.commandID));
             }
 
         }
-
 
         private CommandInfo ParseCommand(Alachisoft.NCache.Common.Protobuf.Command command, ClientManager clientManager)
         {

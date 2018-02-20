@@ -9,7 +9,6 @@
 // WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
 // See the License for the specific language governing permissions and
 // limitations under the License.
-
 using System;
 using System.Collections;
 using Alachisoft.NCache.Common.Net;
@@ -286,6 +285,7 @@ namespace Alachisoft.NGroups
 			return members.ToString();
 		}
 
+        //@UH
         public override bool Equals(object obj)
         {
             bool equal = true;

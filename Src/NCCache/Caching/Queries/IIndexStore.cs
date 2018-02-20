@@ -15,7 +15,7 @@
 using System.Collections;
 using Alachisoft.NCache.Common;
 using Alachisoft.NCache.Common.Queries;
-using Alachisoft.NCache.Common.Enum;
+using Alachisoft.NCache.Common.DataStructures.Clustered;
 
 namespace Alachisoft.NCache.Caching.Queries
 {
@@ -30,6 +30,7 @@ namespace Alachisoft.NCache.Caching.Queries
         IDictionaryEnumerator GetEnumerator();
         int Count { get; }
         void GetData(object key, ComparisonType comparisonType, IQueryResult result, CollectionOperation mergeType);
+        void GetTagData(object tag, HashVector finalResult);
         System.String StoreDataType { get; }
         string Name { get; }
 

@@ -1,0 +1,7 @@
+
+option java_outer_classname="GetStreamLengthResponseProtocol";
+package Alachisoft.NCache.Common.Protobuf;
+message GetStreamLengthResponse 
+{
+	optional int64 streamLength = 1;
+}

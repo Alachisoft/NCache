@@ -10,11 +10,11 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 // $Id: GmsImpl.java,v 1.4 2004/09/03 12:28:04 belaban Exp $
-
 using System;
 using Alachisoft.NGroups;
 using Alachisoft.NCache.Common.Net;
 using Alachisoft.NCache.Common.Util;
+using Alachisoft.NCache.Common.Enum;
 
 namespace Alachisoft.NGroups.Protocols.pbcast
 {
@@ -24,7 +24,7 @@ namespace Alachisoft.NGroups.Protocols.pbcast
 		internal GMS gms = null;
 		internal bool leaving = false;
 		
-		public abstract void  join(Address mbr, bool isStartedAsMirror);
+		public abstract void  join(Address mbr);
 		public abstract void  leave(Address mbr);
 		
 		public abstract void  handleJoinResponse(JoinRsp join_rsp);
@@ -60,7 +60,7 @@ namespace Alachisoft.NGroups.Protocols.pbcast
         } // only processed by participants
 
 
-        public abstract JoinRsp handleJoin(Address mbr, string subGroup_name, bool isStartedAsMirror, string gmsId, ref bool acquireHashmap);
+        public abstract JoinRsp handleJoin(Address mbr, string subGroup_name,  string gmsId, ref bool acquireHashmap);
 		public abstract void  handleLeave(Address mbr, bool suspected);
 		public abstract void  handleViewChange(View new_view, Digest digest);
 		public abstract void  handleSuspect(Address mbr);
@@ -70,11 +70,11 @@ namespace Alachisoft.NGroups.Protocols.pbcast
         public virtual void handleIsClusterInStateTransfer(Address sender)
         {
             Message msg = new Message(sender, null, new byte[0]);
-            GMS.HDR hdr = new GMS.HDR(GMS.HDR.IS_NODE_IN_STATE_TRANSFER_RSP);
+            GmsHDR hdr = new GmsHDR(GmsHDR.IS_NODE_IN_STATE_TRANSFER_RSP);
             gms.Stack.NCacheLog.Debug("gmsImpl.handleIsClusterInStateTransfer", "(state transfer request) sender: " + sender + " ->" + isInStateTransfer);
             hdr.arg = isInStateTransfer;
             msg.putHeader(HeaderType.GMS,hdr);
-            gms.passDown(new Event(Event.MSG,msg,Alachisoft.NCache.Common.Enum.Priority.Critical));
+            gms.passDown(new Event(Event.MSG,msg,Priority.High));
         }
 
         /// <summary>

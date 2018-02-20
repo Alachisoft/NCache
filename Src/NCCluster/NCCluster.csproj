@@ -13,8 +13,12 @@
     </SccProvider>
     <Configuration Condition=" '$(Configuration)' == '' ">Debug</Configuration>
     <Platform Condition=" '$(Platform)' == '' ">AnyCPU</Platform>
+    <ApplicationIcon>
+    </ApplicationIcon>
+    <AssemblyKeyContainerName>
+    </AssemblyKeyContainerName>
     <AssemblyName>Alachisoft.NCache.Cluster</AssemblyName>
-    <AssemblyOriginatorKeyFile>..\\..\\Resources\\ncache.snk</AssemblyOriginatorKeyFile>
+    <AssemblyOriginatorKeyFile>..\..\Resources\ncache.snk</AssemblyOriginatorKeyFile>
     <DefaultClientScript>JScript</DefaultClientScript>
     <DefaultHTMLPageLayout>Grid</DefaultHTMLPageLayout>
     <DefaultTargetSchema>IE50</DefaultTargetSchema>
@@ -30,9 +34,9 @@
     </UpgradeBackupLocation>
     <SccAuxPath>
     </SccAuxPath>
-    <TargetFrameworkVersion>v4.0</TargetFrameworkVersion>
     <OldToolsVersion>2.0</OldToolsVersion>
     <IsWebBootstrapper>false</IsWebBootstrapper>
+    <TargetFrameworkProfile />
     <PublishUrl>publish\</PublishUrl>
     <Install>true</Install>
     <InstallFrom>Disk</InstallFrom>
@@ -49,10 +53,16 @@
     <BootstrapperEnabled>true</BootstrapperEnabled>
   </PropertyGroup>
   <PropertyGroup Condition=" '$(Configuration)|$(Platform)' == 'Debug|AnyCPU' ">
-    <OutputPath>bin\4.0\debug\</OutputPath>
+    <TargetFrameworkVersion>v4.0</TargetFrameworkVersion>
+    <OutputPath>bin\4.0\debug.enterprise\</OutputPath>
     <AllowUnsafeBlocks>false</AllowUnsafeBlocks>
     <BaseAddress>285212672</BaseAddress>
-    <DefineConstants>TRACE;DEBUG;</DefineConstants>
+    <CheckForOverflowUnderflow>false</CheckForOverflowUnderflow>
+    <ConfigurationOverrideFile>
+    </ConfigurationOverrideFile>
+    <DefineConstants>TRACE;DEBUG;COMMUNITY;VS2005NET40;</DefineConstants>
+    <DocumentationFile>
+    </DocumentationFile>
     <DebugSymbols>true</DebugSymbols>
     <FileAlignment>4096</FileAlignment>
     <NoStdLib>false</NoStdLib>
@@ -66,18 +76,20 @@
     <DebugType>full</DebugType>
     <ErrorReport>prompt</ErrorReport>
     <PlatformTarget>AnyCPU</PlatformTarget>
+    <CodeAnalysisRuleSet>AllRules.ruleset</CodeAnalysisRuleSet>
   </PropertyGroup>
   <PropertyGroup Condition=" '$(Configuration)|$(Platform)' == 'Release|AnyCPU' ">
-    <OutputPath>bin\4.0\release\</OutputPath>
+    <TargetFrameworkVersion>v4.0</TargetFrameworkVersion>
+    <OutputPath>bin\4.0\release.enterprise\</OutputPath>
     <AllowUnsafeBlocks>false</AllowUnsafeBlocks>
     <BaseAddress>285212672</BaseAddress>
     <CheckForOverflowUnderflow>false</CheckForOverflowUnderflow>
     <ConfigurationOverrideFile>
     </ConfigurationOverrideFile>
-    <DefineConstants>TRACE;</DefineConstants>
+    <DefineConstants>TRACE;COMMUNITY;VS2005;NET40</DefineConstants>
     <DocumentationFile>
     </DocumentationFile>
-    <DebugSymbols>false</DebugSymbols>
+    <DebugSymbols>true</DebugSymbols>
     <FileAlignment>4096</FileAlignment>
     <NoStdLib>false</NoStdLib>
     <NoWarn>
@@ -87,35 +99,16 @@
     <RemoveIntegerChecks>false</RemoveIntegerChecks>
     <TreatWarningsAsErrors>false</TreatWarningsAsErrors>
     <WarningLevel>4</WarningLevel>
-    <DebugType>none</DebugType>
+    <DebugType>pdbonly</DebugType>
     <ErrorReport>prompt</ErrorReport>
     <PlatformTarget>AnyCPU</PlatformTarget>
+    <CodeAnalysisRuleSet>AllRules.ruleset</CodeAnalysisRuleSet>
   </PropertyGroup>
   <PropertyGroup>
     <SignAssembly>true</SignAssembly>
   </PropertyGroup>
-  <PropertyGroup Condition="'$(Configuration)|$(Platform)' == 'Debug.2x|AnyCPU'">
-    <DebugSymbols>true</DebugSymbols>
-    <OutputPath>bin\2.0\debug\</OutputPath>
-    <DefineConstants>TRACE;DEBUG;</DefineConstants>
-    <BaseAddress>285212672</BaseAddress>
-    <FileAlignment>4096</FileAlignment>
-    <DebugType>full</DebugType>
-    <PlatformTarget>AnyCPU</PlatformTarget>
-    <TargetFrameworkVersion>v3.5</TargetFrameworkVersion>
-    <ErrorReport>prompt</ErrorReport>
-  </PropertyGroup>
-  <PropertyGroup Condition="'$(Configuration)|$(Platform)' == 'Release.2x|AnyCPU'">
-    <OutputPath>bin\2.0\release\</OutputPath>
-    <DefineConstants>TRACE;</DefineConstants>
-    <BaseAddress>285212672</BaseAddress>
-    <Optimize>true</Optimize>
-    <FileAlignment>4096</FileAlignment>
-    <PlatformTarget>AnyCPU</PlatformTarget>
-    <TargetFrameworkVersion>v3.5</TargetFrameworkVersion>
-    <ErrorReport>prompt</ErrorReport>
-  </PropertyGroup>
   <ItemGroup>
+    <Reference Include="Microsoft.WindowsAzure.ServiceRuntime, Version=2.2.0.0, Culture=neutral, PublicKeyToken=31bf3856ad364e35, processorArchitecture=MSIL" />
     <Reference Include="System">
       <Name>System</Name>
     </Reference>
@@ -140,9 +133,9 @@
       <SubType>Code</SubType>
     </Compile>
     <Compile Include="Blocks\BinaryMessage.cs" />
-    <Compile Include="Blocks\ConnectInfo.cs">
-      <SubType>Code</SubType>
-    </Compile>
+    <Compile Include="Blocks\ConnectInfo.cs" />
+    <Compile Include="Blocks\Connection.cs" />
+    <Compile Include="Blocks\ConnectionListener.cs" />
     <Compile Include="Blocks\ConnectionTable.cs">
       <SubType>Code</SubType>
     </Compile>
@@ -155,9 +148,14 @@
     <Compile Include="Blocks\MsgDispatcher.cs">
       <SubType>Code</SubType>
     </Compile>
+    <Compile Include="Blocks\Receiver.cs" />
     <Compile Include="Blocks\RequestCorrelator.cs">
       <SubType>Code</SubType>
     </Compile>
+    <Compile Include="Blocks\RequestCorrelatorHDR.cs" />
+    <Compile Include="Blocks\RequestCorrelatorHeaderProvider.cs" />
+    <Compile Include="Blocks\RequestCorrelatorRequest.cs" />
+    <Compile Include="Blocks\RequestEntry.cs" />
     <Compile Include="Blocks\RequestHandler.cs">
       <SubType>Code</SubType>
     </Compile>
@@ -215,6 +213,12 @@
     <Compile Include="MessageTrace.cs" />
     <Compile Include="MsgType.cs" />
     <Compile Include="OperationResponse.cs" />
+    <Compile Include="Protocols\Command.cs" />
+    <Compile Include="Protocols\ConnectionKeepAlive.cs" />
+    <Compile Include="Protocols\HDR.cs" />
+    <Compile Include="Protocols\MCastCommand.cs" />
+    <Compile Include="Protocols\MPingBroadcast.cs" />
+    <Compile Include="Protocols\MPingReceiver.cs" />
     <Compile Include="Protocols\NodeStatus.cs" />
     <Compile Include="Protocols\pbcast\ClientGmsImpl.cs">
       <SubType>Code</SubType>
@@ -228,6 +232,7 @@
     <Compile Include="Protocols\pbcast\GMS.cs">
       <SubType>Code</SubType>
     </Compile>
+    <Compile Include="Protocols\pbcast\GmsHDR.cs" />
     <Compile Include="Protocols\pbcast\GmsImpl.cs">
       <SubType>Code</SubType>
     </Compile>
@@ -238,6 +243,7 @@
     <Compile Include="Protocols\pbcast\MergeData.cs">
       <SubType>Code</SubType>
     </Compile>
+    <Compile Include="Protocols\pbcast\MergeTask.cs" />
     <Compile Include="Protocols\pbcast\ParticipantGmsImpl.cs">
       <SubType>Code</SubType>
     </Compile>
@@ -255,38 +261,57 @@
     <Compile Include="Protocols\TCP.cs">
       <SubType>Code</SubType>
     </Compile>
+    <Compile Include="Protocols\TCPAsyncMulticast.cs" />
+    <Compile Include="Protocols\TCPAsnycUnicast.cs" />
     <Compile Include="Protocols\TcpHeader.cs">
       <SubType>Code</SubType>
     </Compile>
+    <Compile Include="Protocols\TCPHearBeat.cs" />
     <Compile Include="Protocols\TCPPING.cs">
       <SubType>Code</SubType>
     </Compile>
     <Compile Include="Protocols\TOTAL.cs">
       <SubType>Code</SubType>
     </Compile>
+    <Compile Include="Protocols\TotalHeaderProvider.cs" />
     <Compile Include="Protocols\VIEW_ENFORCER.cs">
+      <SubType>Code</SubType>
+    </Compile>
+    <Compile Include="Reaper.cs" />
+    <Compile Include="Stack\AckMcastSenderWindow.cs">
       <SubType>Code</SubType>
     </Compile>
     <Compile Include="Stack\AckSenderWindow.cs">
       <SubType>Code</SubType>
     </Compile>
+    <Compile Include="Stack\AckSenderWindowEntry.cs" />
     <Compile Include="Stack\Configurator.cs">
       <SubType>Code</SubType>
     </Compile>
+    <Compile Include="Stack\Entry.cs" />
     <Compile Include="Stack\Interval.cs">
       <SubType>Code</SubType>
     </Compile>
+    <Compile Include="Stack\Logs.cs" />
+    <Compile Include="Stack\MessageObjectProvider.cs" />
     <Compile Include="Stack\PerfStatsCollector.cs" />
     <Compile Include="Stack\Protocol.cs">
       <SubType>Code</SubType>
     </Compile>
+    <Compile Include="Stack\ProtocolConfiguration.cs" />
+    <Compile Include="Stack\ProtocolDownHandler.cs" />
+    <Compile Include="Stack\ProtocolReq.cs" />
     <Compile Include="Stack\ProtocolStack.cs">
       <SubType>Code</SubType>
     </Compile>
     <Compile Include="Stack\ProtocolStackType.cs" />
+    <Compile Include="Stack\ProtocolUpHandler.cs" />
+    <Compile Include="Stack\RetransmitCommand.cs" />
     <Compile Include="Stack\Retransmitter.cs">
       <SubType>Code</SubType>
     </Compile>
+    <Compile Include="Stack\RetransmitterEntry.cs" />
+    <Compile Include="Stack\Task.cs" />
     <Compile Include="SuspectedException.cs">
       <SubType>Code</SubType>
     </Compile>
@@ -296,9 +321,7 @@
     <Compile Include="ThreadClass.cs">
       <SubType>Code</SubType>
     </Compile>
-    <Compile Include="TimeoutException.cs">
-      <SubType>Code</SubType>
-    </Compile>
+    <Compile Include="TimeoutException.cs" />
     <Compile Include="Transport.cs">
       <SubType>Code</SubType>
     </Compile>
@@ -308,9 +331,15 @@
     <Compile Include="Util\BoundedList.cs">
       <SubType>Code</SubType>
     </Compile>
+    <Compile Include="Util\ClusterEvent.cs" />
     <Compile Include="Util\Command.cs">
       <SubType>Code</SubType>
     </Compile>
+    <Compile Include="Util\Element.cs" />
+    <Compile Include="Util\EventProcessor.cs" />
+    <Compile Include="Util\IEvent.cs" />
+    <Compile Include="Util\ListEnumerator.cs" />
+    <Compile Include="Util\EventThreadPool.cs" />
     <Compile Include="Util\QueueClosedException.cs">
       <SubType>Code</SubType>
     </Compile>
@@ -327,6 +356,10 @@
     <Compile Include="Util\Util.cs">
       <SubType>Code</SubType>
     </Compile>
+    <Compile Include="Version.cs">
+      <SubType>Code</SubType>
+    </Compile>
+    <Compile Include="VersionMismatchException.cs" />
     <Compile Include="View.cs">
       <SubType>Code</SubType>
     </Compile>
@@ -371,14 +404,9 @@
     </VisualStudio>
   </ProjectExtensions>
   <Import Project="$(MSBuildBinPath)\Microsoft.CSharp.targets" />
-  <PropertyGroup Condition="'$(Configuration)|$(Platform)' == 'Release|AnyCPU' OR '$(Configuration)|$(Platform)' == 'Debug|AnyCPU'">
+  <PropertyGroup>
     <PreBuildEvent>
     </PreBuildEvent>
     <PostBuildEvent>xcopy /Y "$(TargetPath)" "$(SolutionDir)build\Server\4x\"</PostBuildEvent>
-  </PropertyGroup>
-  <PropertyGroup Condition="'$(Configuration)|$(Platform)' == 'Release.2x|AnyCPU' OR '$(Configuration)|$(Platform)' == 'Debug.2x|AnyCPU'">
-    <PreBuildEvent>
-    </PreBuildEvent>
-    <PostBuildEvent>xcopy /Y "$(TargetPath)" "$(SolutionDir)build\Server\2x\"</PostBuildEvent>
   </PropertyGroup>
 </Project>

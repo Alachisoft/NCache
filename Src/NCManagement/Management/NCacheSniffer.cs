@@ -10,10 +10,9 @@
 // distributed under the License is distributed on an "AS IS" BASIS,
 // WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
 // See the License for the specific language governing permissions and
-// limitations under the License.
+// limitations under the License
 
 using System;
-using System.Collections.Generic;
 using System.Text;
 using System.Net;
 using System.Net.Sockets;
@@ -38,19 +37,16 @@ namespace Alachisoft.NCache.Management
 
             try
             {
-             
                 while (System.Threading.Thread.CurrentThread.IsAlive )
                 {
                     byte[] bytes = listener.Receive(ref groupEP);
-                    String strMsg = Encoding.ASCII.GetString(bytes, 0, bytes.Length);
-                   
+                    String strMsg = Encoding.ASCII.GetString(bytes, 0, bytes.Length);                   
                     if (strMsg.CompareTo("R_U_NCACHE_SERVER") == 0)
                     {
                         strMsg = "I_M_NCACHE_SERVER";
                         bytes = Encoding.ASCII.GetBytes(strMsg);
                         listener.Send(bytes, bytes.Length, new IPEndPoint(groupEP.Address, groupEP.Port));
                     }
-                    
                 }
 
             }
@@ -59,7 +55,7 @@ namespace Alachisoft.NCache.Management
                 if (e.Message.Equals("Thread was being aborted."))
                 { }
                 else
-                { }// Console.WriteLine(e.ToString());
+                { }
             }
             finally
             {

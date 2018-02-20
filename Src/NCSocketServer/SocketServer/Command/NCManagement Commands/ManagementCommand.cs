@@ -15,6 +15,9 @@
 using System;
 using Alachisoft.NCache.Common.Util;
 
+using Alachisoft.NCache.Runtime.Exceptions;
+
+
 namespace Alachisoft.NCache.SocketServer.Command
 {
     class ManagementCommand : NCManagementCommandBase
@@ -25,9 +28,9 @@ namespace Alachisoft.NCache.SocketServer.Command
             object result = null;
             try
             {
+               
                 if (command.objectName == ManagementUtil.ManagementObjectName.CacheServer)
                 {
-
                     result = CacheProvider.ManagementRpcService.InvokeMethodOnTarget(command.methodName,
                         command.overload,
                         GetTargetMethodParameters(command.arguments));
@@ -43,7 +46,7 @@ namespace Alachisoft.NCache.SocketServer.Command
             }
             catch (Exception exc)
             {                
-                _serializedResponsePackets.Add(Alachisoft.NCache.Common.Util.ResponseHelper.SerializeManagementExceptionResponse(exc, Convert.ToInt32(command.requestId)));
+                _serializedResponsePackets.Add(Alachisoft.NCache.Common.Util.ResponseHelper.SerializeExceptionResponse(exc, Convert.ToInt32(command.requestId),-1));
             }
         }
     }

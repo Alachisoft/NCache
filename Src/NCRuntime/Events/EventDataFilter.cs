@@ -10,15 +10,18 @@
 // distributed under the License is distributed on an "AS IS" BASIS,
 // WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
 // See the License for the specific language governing permissions and
-// limitations under the License.
+// limitations under the License
 
 using System;
 using System.Collections.Generic;
 using System.Text;
 
+#if JAVA
+namespace Alachisoft.TayzGrid.Runtime.Events
+#else
 namespace Alachisoft.NCache.Runtime.Events
+#endif
 {
-
     /// <summary>
     /// This enum is to describe when registering an event, upon raise how much data is 
     /// retrieved from cache when the event is raised.
@@ -39,6 +42,7 @@ namespace Alachisoft.NCache.Runtime.Events
         /// <summary>
         /// Item value with cache item required
         /// </summary>
-        DataWithMetadata = 0x3        
+        DataWithMetadata = 0x3
+        
     }
 }

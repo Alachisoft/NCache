@@ -10,7 +10,7 @@
 // distributed under the License is distributed on an "AS IS" BASIS,
 // WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
 // See the License for the specific language governing permissions and
-// limitations under the License.
+// limitations under the License
 
 using System;
 using System.Diagnostics;
@@ -25,11 +25,9 @@ namespace Alachisoft.NCache.Common.Threading
         /// stopwatch to calculate the elapsed time for an event.
         /// </summary>
         public Stopwatch stopwatch;
-        
         public QueuedEvent(TimeScheduler.Task task)
         {
             this.Task = task;
-           
             this.stopwatch = new Stopwatch();
             this.stopwatch.Start();
         }
@@ -45,7 +43,7 @@ namespace Alachisoft.NCache.Common.Threading
         public long Interval 
         {	
             get 
-            {
+            { 
                 return Task.GetNextInterval();
             } 
         }
@@ -53,8 +51,8 @@ namespace Alachisoft.NCache.Common.Threading
         public long ElapsedTime 
         { 
             get 
-            {
-                return stopwatch.ElapsedMilliseconds; 
+            { 
+                return stopwatch.ElapsedMilliseconds; 	
             }
         }
 
@@ -62,7 +60,6 @@ namespace Alachisoft.NCache.Common.Threading
         {
             stopwatch.Reset();
             stopwatch.Start();
-		
             return !Task.IsCancelled();
         }
     }

@@ -11,14 +11,9 @@
 // WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
 // See the License for the specific language governing permissions and
 // limitations under the License.
-
 using System;
-using System.Collections.Generic;
-using System.Text;
 using Alachisoft.NCache.Common.Configuration;
-using Alachisoft.NCache.Common.Enum;
 using Alachisoft.NCache.Runtime.Serialization;
-using Runtime = Alachisoft.NCache.Runtime;
 
 namespace Alachisoft.NCache.Config.NewDom
 {
@@ -26,12 +21,13 @@ namespace Alachisoft.NCache.Config.NewDom
     public class ServerNode : ICloneable,ICompactSerializable
     {
         string ip;
-       
+        bool activeMirrorNode=false;
 
         public ServerNode()
         {
 
         }
+        
         public ServerNode(string ip)
         {
             this.ip = ip;
@@ -43,7 +39,7 @@ namespace Alachisoft.NCache.Config.NewDom
             get { return ip; }
             set { ip = value; }
         }
-
+        
         public override bool Equals(object obj)
         {
             if (obj is ServerNode)

@@ -12,27 +12,23 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-using System;
-using System.IO;
-using Alachisoft.NCache.Common.Protobuf.Util;
-using Alachisoft.NCache.Web.Caching.Util;
-using Alachisoft.NCache.Web.Communication;
-
 namespace Alachisoft.NCache.Web.Command
 {
     internal sealed class ContainsCommand : CommandBase
-	{
+    {
         private Alachisoft.NCache.Common.Protobuf.ContainsCommand _containsCommand;
+        private int _methodOverload;
 
-		internal ContainsCommand(string key)
-		{
+        internal ContainsCommand(string key, int methodOverload)
+        {
             base.name = "ContainsCommand";
             base.key = key;
 
             _containsCommand = new Alachisoft.NCache.Common.Protobuf.ContainsCommand();
             _containsCommand.requestId = base.RequestId;
             _containsCommand.key = key;
-		}
+            _methodOverload = methodOverload;
+        }
 
         internal override CommandType CommandType
         {
@@ -45,13 +41,12 @@ namespace Alachisoft.NCache.Web.Command
         }
 
         protected override void CreateCommand()
-		{
+        {
             base._command = new Alachisoft.NCache.Common.Protobuf.Command();
             base._command.requestID = base.RequestId;
             base._command.containsCommand = _containsCommand;
             base._command.type = Alachisoft.NCache.Common.Protobuf.Command.Type.CONTAINS;
-
-
-		}
-	}
+            base._command.MethodOverload = _methodOverload;
+        }
+    }
 }

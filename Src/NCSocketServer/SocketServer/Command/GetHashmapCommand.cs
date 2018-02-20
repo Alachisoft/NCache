@@ -14,11 +14,8 @@
 
 using System;
 using System.Collections;
-using Alachisoft.NCache.Serialization.Formatters;
-using Alachisoft.NCache.SocketServer.Util;
-using Alachisoft.NCache.Web.Util;
+
 using Alachisoft.NCache.Common.DataStructures;
-using System.Collections.Generic;
 
 namespace Alachisoft.NCache.SocketServer.Command
 {
@@ -41,7 +38,7 @@ namespace Alachisoft.NCache.SocketServer.Command
             catch (Exception exc)
             {
                 if (!base.immatureId.Equals("-2")) 
-                    _serializedResponsePackets.Add(Alachisoft.NCache.Common.Util.ResponseHelper.SerializeExceptionResponse(exc, command.requestID));
+                    _serializedResponsePackets.Add(Alachisoft.NCache.Common.Util.ResponseHelper.SerializeExceptionResponse(exc, command.requestID, command.commandID));
                 return;
             }
 
@@ -50,7 +47,7 @@ namespace Alachisoft.NCache.SocketServer.Command
                 NCache nCache = clientManager.CmdExecuter as NCache;
                 int bucketSize = 0;
                 NewHashmap hashmap = nCache.Cache.GetOwnerHashMap(out bucketSize);
-                byte[] buffer = new byte[0];                              
+                byte[] buffer = new byte[0];
 
                 if (!nCache.IsDotnetClient)
                 {
@@ -66,6 +63,7 @@ namespace Alachisoft.NCache.SocketServer.Command
                 response.getHashmap = getHashmapResponse;
                 response.responseType = Alachisoft.NCache.Common.Protobuf.Response.Type.GET_HASHMAP;
                 response.requestId = command.requestID;
+                response.commandID = command.commandID;
 
                 if (hashmap != null)
                 {
@@ -90,8 +88,10 @@ namespace Alachisoft.NCache.SocketServer.Command
             }
             catch (Exception exc)
             {
-                _serializedResponsePackets.Add(Alachisoft.NCache.Common.Util.ResponseHelper.SerializeExceptionResponse(exc, command.requestID));
+                if (SocketServer.Logger.IsErrorLogsEnabled) SocketServer.Logger.NCacheLog.Error("GetHashmapCommand.Execute", clientManager.ClientSocket.RemoteEndPoint.ToString() + " : "+exc.ToString());
+                _serializedResponsePackets.Add(Alachisoft.NCache.Common.Util.ResponseHelper.SerializeExceptionResponse(exc, command.requestID, command.commandID));
             }
+
         }
 
         //PROTOBUF

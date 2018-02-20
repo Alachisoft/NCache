@@ -12,24 +12,20 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-
-using System.IO;
-using Alachisoft.NCache.Web.Communication;
-using Alachisoft.NCache.Common.Protobuf.Util;
-using Alachisoft.NCache.Web.Caching.Util;
-
 namespace Alachisoft.NCache.Web.Command
 {
     internal sealed class GetEnumeratorCommand : CommandBase
     {
         private Alachisoft.NCache.Common.Protobuf.GetEnumeratorCommand _getEnumeratorCommand;
+        private int _methodOverload;
 
-        internal GetEnumeratorCommand()
+        internal GetEnumeratorCommand(int methodOverload)
         {
             base.name = "GetEnumeratorCommand";
 
             _getEnumeratorCommand = new Alachisoft.NCache.Common.Protobuf.GetEnumeratorCommand();
             _getEnumeratorCommand.requestId = base.RequestId;
+            _methodOverload = methodOverload;
         }
 
         internal override CommandType CommandType
@@ -42,14 +38,19 @@ namespace Alachisoft.NCache.Web.Command
             get { return RequestType.AtomicRead; }
         }
 
+        internal override bool IsKeyBased
+        {
+            get { return false; }
+        }
+
         protected override void CreateCommand()
         {
             base._command = new Alachisoft.NCache.Common.Protobuf.Command();
             base._command.requestID = base.RequestId;
-            base._command.getEnumeratorCommand = _getEnumeratorCommand; ;
+            base._command.getEnumeratorCommand = _getEnumeratorCommand;
+            ;
             base._command.type = Alachisoft.NCache.Common.Protobuf.Command.Type.GET_ENUMERATOR;
-
-           
+            base._command.MethodOverload = _methodOverload;
         }
     }
 }

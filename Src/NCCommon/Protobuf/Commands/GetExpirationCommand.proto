@@ -1,0 +1,7 @@
+option java_outer_classname="GetExpirationCommandProtocol";
+package Alachisoft.NCache.Common.Protobuf;
+
+message GetExpirationCommand 
+{
+   optional int64 requestId = 1;
+}

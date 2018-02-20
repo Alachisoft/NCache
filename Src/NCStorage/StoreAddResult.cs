@@ -28,12 +28,10 @@ namespace Alachisoft.NCache.Storage
         /// <summary> The operation failed, since there is not enough space. </summary>
         NotEnoughSpace,
 
-        /// <summary> The operation is successfull but storage is almost full.</summary>
+        /// <summary> The operation is successful but storage is almost full.</summary>
         SuccessNearEviction,
 
         /// <summary> General failure. </summary>
         Failure,
-
-
     }
 }

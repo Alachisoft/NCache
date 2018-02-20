@@ -1,4 +1,4 @@
-// Copyright (c) 2018 Alachisoft
+﻿// Copyright (c) 2018 Alachisoft
 // 
 // Licensed under the Apache License, Version 2.0 (the "License");
 // you may not use this file except in compliance with the License.
@@ -13,8 +13,6 @@
 // limitations under the License.
 
 using System;
-using System.Collections.Generic;
-using System.Text;
 
 namespace Alachisoft.NCache.SocketServer.Command
 {
@@ -23,7 +21,10 @@ namespace Alachisoft.NCache.SocketServer.Command
         private struct CommandInfo
         {
             public string RequestId;
+            public string UserName;
+            public string Password;
         }
+
         public override void ExecuteCommand(ClientManager clientManager, Common.Protobuf.Command command)
         {
             CommandInfo cmdInfo;
@@ -34,7 +35,7 @@ namespace Alachisoft.NCache.SocketServer.Command
             catch (Exception exc)
             {
                 if (!base.immatureId.Equals("-2"))
-                    _serializedResponsePackets.Add(Alachisoft.NCache.Common.Util.ResponseHelper.SerializeExceptionResponse(exc, command.requestID));
+                    _serializedResponsePackets.Add(Alachisoft.NCache.Common.Util.ResponseHelper.SerializeExceptionResponse(exc, command.requestID, command.commandID));
                 return;
             }
             try
@@ -53,16 +54,15 @@ namespace Alachisoft.NCache.SocketServer.Command
                 getProductVersionResponse.productVersion.ProductName = _currentVersion.ProductName;
 
                 response.requestId = Convert.ToInt64(cmdInfo.RequestId);
+                response.commandID = command.commandID;
                 response.getProductVersionResponse = getProductVersionResponse;
                 response.responseType = Common.Protobuf.Response.Type.GET_PRODUCT_VERSION;
                 _serializedResponsePackets.Add(Alachisoft.NCache.Common.Util.ResponseHelper.SerializeResponse(response));
             }
             catch (Exception exc)
             {
-
-                _serializedResponsePackets.Add(Alachisoft.NCache.Common.Util.ResponseHelper.SerializeExceptionResponse(exc, command.requestID));
+                _serializedResponsePackets.Add(Alachisoft.NCache.Common.Util.ResponseHelper.SerializeExceptionResponse(exc, command.requestID, command.commandID));
             }
-
         }
 
         private CommandInfo ParseCommand(Alachisoft.NCache.Common.Protobuf.Command command, ClientManager clientManager)
@@ -71,13 +71,15 @@ namespace Alachisoft.NCache.SocketServer.Command
 
             Alachisoft.NCache.Common.Protobuf.GetProductVersionCommand getProductVersionCommand = command.getProductVersionCommand;
             
+            cmdInfo.Password = getProductVersionCommand.pwd;
             cmdInfo.RequestId = getProductVersionCommand.requestId.ToString();
+            cmdInfo.UserName = getProductVersionCommand.userId;
            
             return cmdInfo;
         }
 
         #region Helper Methods
-        //This function is needed to parse byte to byte[] because all values in protobuf.ProductVersion are byte[]
+        // This function is needed to parse byte to byte[] because all values in protobuf.ProductVersion are byte[]
         private byte[] ParseToByteArray(byte value)
         {
             byte[] tempArray = new byte[1];

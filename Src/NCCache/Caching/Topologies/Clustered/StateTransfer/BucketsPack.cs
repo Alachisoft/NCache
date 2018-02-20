@@ -56,6 +56,13 @@ namespace Alachisoft.NCache.Caching.Topologies.Clustered
             return false;
         }
 
+#if DEBUGSTATETRANSFER
+        public override string ToString()
+        {
+            return "{ [" + _owner + "] [" + Global.CollectionToString(_bucketIds) + "] }";
+        } 
+#endif
+
         public object Clone()
         {
             BucketsPack pack = new BucketsPack(new ArrayList(_bucketIds), (Address)_owner.Clone());

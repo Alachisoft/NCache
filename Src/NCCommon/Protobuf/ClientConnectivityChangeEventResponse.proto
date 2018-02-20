@@ -1,0 +1,8 @@
+import "Commands/ClientInfo.proto";
+option java_outer_classname="ClientConnectivityChangeEventResponseProtocol";
+package Alachisoft.NCache.Common.Protobuf;
+message ClientConnectivityChangeEventResponse{
+	optional string cacheId = 1;	
+	optional int32 status = 2;
+	optional ClientInfo clientInfo = 3;
+}

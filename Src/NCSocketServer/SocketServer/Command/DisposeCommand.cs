@@ -12,28 +12,57 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
+using Alachisoft.NCache.Common.Monitoring;
+using Alachisoft.NCache.SocketServer.RuntimeLogging;
 using System;
-using System.Collections.Generic;
 
 namespace Alachisoft.NCache.SocketServer.Command
 {
     class DisposeCommand : CommandBase
     {
-
         //PROTOBUF
         public override void ExecuteCommand(ClientManager clientManager, Alachisoft.NCache.Common.Protobuf.Command command)
         {
-            if (clientManager != null)
+            int overload;
+            string exception = null;
+            System.Diagnostics.Stopwatch stopWatch = new System.Diagnostics.Stopwatch();
+            stopWatch.Start();
+            try
             {
-                clientManager._leftGracefully = true;
-                clientManager.CmdExecuter.Dispose();
-
-                Alachisoft.NCache.Common.Protobuf.Response response = new Alachisoft.NCache.Common.Protobuf.Response();
-                response.requestId = command.requestID;                
-                response.disposeResponse = new Alachisoft.NCache.Common.Protobuf.DisposeResponse();
-                response.responseType = Alachisoft.NCache.Common.Protobuf.Response.Type.DISPOSE;
-
-                _serializedResponsePackets.Add(Alachisoft.NCache.Common.Util.ResponseHelper.SerializeResponse(response));
+                if (clientManager != null)
+                {
+                    clientManager._leftGracefully = true;
+                    NCache nCache = clientManager.CmdExecuter as NCache;
+                    if (nCache!=null)
+                        nCache.Dispose();
+                    stopWatch.Stop();
+                    Alachisoft.NCache.Common.Protobuf.Response response = new Alachisoft.NCache.Common.Protobuf.Response();
+                    response.requestId = command.requestID;
+                    response.commandID = command.commandID;
+                    response.disposeResponse = new Alachisoft.NCache.Common.Protobuf.DisposeResponse();
+                    
+                    response.responseType = Alachisoft.NCache.Common.Protobuf.Response.Type.DISPOSE;
+                    _serializedResponsePackets.Add(Alachisoft.NCache.Common.Util.ResponseHelper.SerializeResponse(response));
+                }
+            }
+            catch (Exception ex)
+            {
+                exception = ex.ToString();
+            }
+            finally
+            {
+                TimeSpan executionTime = stopWatch.Elapsed;
+                try
+                {
+                    if (Alachisoft.NCache.Management.APILogging.APILogManager.APILogManger != null && Alachisoft.NCache.Management.APILogging.APILogManager.EnableLogging)
+                    {
+                        APILogItemBuilder log = new APILogItemBuilder(MethodsName.Dispose.ToLower());
+                        log.GenerateDisposeAPILogItem(1, exception, executionTime, clientManager.ClientID.ToLower(), clientManager.ClientSocketId.ToString());
+                    }
+                }
+                catch
+                {
+                }
             }
         }
     }

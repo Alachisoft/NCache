@@ -1,6 +1,18 @@
+import "ItemAddedEventResponse.proto";
+import "ItemRemovedEventResponse.proto";
+import "ItemUpdatedEventResponse.proto";
+import "RaiseCustomEventResponse.proto";
+import "AsyncOperationCompletedCallbackResponse.proto";
+import "DSUpdatedCallbackResponse.proto";
+import "CustomEventResponse.proto";
 import "ItemRemoveCallbackResponse.proto";
 import "ItemUpdatedCallbackResponse.proto";
+import "CQCallbackResponse.proto";
+import "CacheClearedEventResponse.proto";
 import "CacheStoppedEventResponse.proto";
+import "TaskCallbackResponse.proto";
+import "PollNotifyEventResponse.proto";
+import "ClientConnectivityChangeEventResponse.proto";
 
 
 option java_outer_classname="BulkEventResponseProtocol";
@@ -8,13 +20,35 @@ package Alachisoft.NCache.Common.Protobuf;
 message BulkEventItemResponse {
 enum EventType 
 	{
-		ITEM_REMOVED_CALLBACK = 1;
-		ITEM_UPDATED_CALLBACK = 2;
-		CACHE_STOPPED_EVENT =3;
+		ITEM_ADDED_EVENT = 1;
+		ITEM_UPDATED_EVENT = 2;
+		ITEM_REMOVED_EVENT = 3;
+		RAISE_CUSTOM_EVENT = 4;
+		ASYNC_OP_COMPLETED_EVENT = 5;
+		ITEM_REMOVED_CALLBACK = 6;
+		ITEM_UPDATED_CALLBACK = 7;
+		CQ_CALLBACK = 8;
+		DS_UPDATED_CALLBACK = 9;
+		CACHE_CLEARED_EVENT = 10;
+		CACHE_STOPPED_EVENT =11;
+		POLL_NOTIFY_EVENT = 12;
+	        TASK_CALLBACK = 13;
+		CLIENT_CONNECTIVITY = 14;
 	}
 
 	optional EventType eventType = 1;
-	optional ItemRemoveCallbackResponse itemRemoveCallback = 2;
-	optional ItemUpdatedCallbackResponse ItemUpdatedCallback = 3;
-	optional CacheStoppedEventResponse cacheStoppedEvent = 4;
+	optional ItemRemovedEventResponse itemRemovedEvent = 2;
+	optional ItemUpdatedEventResponse itemUpdatedEvent = 3;
+	optional ItemAddedEventResponse itemAddedEvent = 4;
+	optional AsyncOperationCompletedCallbackResponse asyncOperationCompletedCallback = 5;
+	optional ItemRemoveCallbackResponse itemRemoveCallback = 6;
+	optional CQCallbackResponse CQCallback = 7;
+	optional DSUpdatedCallbackResponse DSUpdatedCallback = 8;
+	optional CustomEventResponse CustomEvent = 9;
+	optional ItemUpdatedCallbackResponse ItemUpdatedCallback = 10;
+	optional CacheClearedEventResponse cacheClearedEvent = 11;
+	optional CacheStoppedEventResponse cacheStoppedEvent = 12;
+	optional PollNotifyEventResponse pollNotifyEvent = 13;
+    optional TaskCallbackResponse TaskCallbackEvent = 14;
+	optional ClientConnectivityChangeEventResponse clientConnectivityChangeEvent = 15;
 }

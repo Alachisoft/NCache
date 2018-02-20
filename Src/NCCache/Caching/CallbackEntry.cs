@@ -33,6 +33,8 @@ namespace Alachisoft.NCache.Caching
     public class CallbackEntry : ICompactSerializable, ICloneable, ISizable
     {
         private object _value;
+        private object _onAsyncOperationCompleteCallback;
+        private object _onWriteBehindOperationCompletedCallback;
         private BitSet _flag;
         
         private ArrayList _itemRemovedListener = ArrayList.Synchronized(new ArrayList(2));
@@ -43,41 +45,40 @@ namespace Alachisoft.NCache.Caching
         /// <summary>
         /// Creates a CallBackEntry.
         /// </summary>
-        /// <param name="clientid"></param>
-        /// <param name="reqId"></param>
+        /// <param name="callerid">Caller id i.e. Client application id</param>
         /// <param name="value">Actual data</param>
         /// <param name="onCacheItemRemovedCallback">OnCacheItemRemovedCallback</param>
         /// <param name="onCacheItemUpdateCallback">OnCacheItemUpdateCallback</param>
-        /// <param name="Flag"></param>
-        /// <param name="updateDatafilter"></param>
-        /// <param name="removeDatafilter"></param>
-        /// <param name="callerid">Caller id i.e. Clietn application id</param>
-        public CallbackEntry(string clientid, int reqId, object value, short onCacheItemRemovedCallback, short onCacheItemUpdateCallback, BitSet Flag, EventDataFilter updateDatafilter, EventDataFilter removeDatafilter)
+        public CallbackEntry(string clientid, int reqId, object value, short onCacheItemRemovedCallback, short onCacheItemUpdateCallback, short onAsyncOperationCompleteCallback, short onWriteBehindOperationCompletedCallback, BitSet Flag, EventDataFilter updateDatafilter, EventDataFilter removeDatafilter, CallbackType callbackType = CallbackType.PushBasedNotification)
         {
             _value = value;
             _flag = Flag;
             if (onCacheItemUpdateCallback != -1)
             {
-                _itemUpdateListener.Add(new CallbackInfo(clientid, onCacheItemUpdateCallback, updateDatafilter));
+                _itemUpdateListener.Add(new CallbackInfo(clientid, onCacheItemUpdateCallback, updateDatafilter, callbackType));
             }
             if (onCacheItemRemovedCallback != -1)
             {
-                _itemRemovedListener.Add(new CallbackInfo(clientid, onCacheItemRemovedCallback, removeDatafilter));
+                _itemRemovedListener.Add(new CallbackInfo(clientid, onCacheItemRemovedCallback, removeDatafilter, callbackType));
+            }
+            if (onAsyncOperationCompleteCallback != -1)
+            {
+                _onAsyncOperationCompleteCallback = new AsyncCallbackInfo(reqId, clientid, onAsyncOperationCompleteCallback);
+            }
+            if (onWriteBehindOperationCompletedCallback != -1)
+            {
+                _onWriteBehindOperationCompletedCallback = new AsyncCallbackInfo(reqId, clientid, onWriteBehindOperationCompletedCallback);
             }
         }
 
         /// <summary>
         /// Creates a CallBackEntry.
         /// </summary>
-        /// <param name="clientid"></param>
-        /// <param name="reqId"></param>
+        /// <param name="callerid">Caller id i.e. Client application id</param>
         /// <param name="value">Actual data</param>
         /// <param name="onCacheItemRemovedCallback">OnCacheItemRemovedCallback</param>
         /// <param name="onCacheItemUpdateCallback">OnCacheItemUpdateCallback</param>
-        /// <param name="updateDatafilter"></param>
-        /// <param name="removeDatafilter"></param>
-        /// <param name="callerid">Caller id i.e. Clietn application id</param>
-        public CallbackEntry(string clientid, int reqId, object value, short onCacheItemRemovedCallback, short onCacheItemUpdateCallback, EventDataFilter updateDatafilter, EventDataFilter removeDatafilter)
+        public CallbackEntry(string clientid, int reqId, object value, short onCacheItemRemovedCallback, short onCacheItemUpdateCallback, short onAsyncOperationCompleteCallback, EventDataFilter updateDatafilter, EventDataFilter removeDatafilter/*, short onWriteBehindOperationCompletedCallback*/)
         {
             _value = value;
             if (onCacheItemUpdateCallback != -1)
@@ -88,6 +89,26 @@ namespace Alachisoft.NCache.Caching
             {
                 _itemRemovedListener.Add(new CallbackInfo(clientid, onCacheItemRemovedCallback, removeDatafilter));
             }
+            if (onAsyncOperationCompleteCallback != -1)
+            {
+                _onAsyncOperationCompleteCallback = new AsyncCallbackInfo(reqId, clientid, onAsyncOperationCompleteCallback);
+            }
+        }
+        /// <summary>
+        /// Creates a CallBackEntry.
+        /// </summary>
+        /// <param name="callerid">Caller id i.e. Client application id</param>
+        /// <param name="value">Actual data</param>
+        /// <param name="onCacheItemRemovedCallback">OnCacheItemRemovedCallback</param>
+        /// <param name="onCacheItemUpdateCallback">OnCacheItemUpdateCallback</param>
+        public CallbackEntry(object value, CallbackInfo onCacheItemRemovedCallback, CallbackInfo onCacheItemUpdateCallback, AsyncCallbackInfo onAsyncOperationCompleteCallback, AsyncCallbackInfo onWriteBehindOperationCompletedCallback)
+        {
+            _value = value;
+            if (onCacheItemRemovedCallback != null) _itemRemovedListener.Add(onCacheItemRemovedCallback);
+            if (onCacheItemUpdateCallback != null) _itemUpdateListener.Add(onCacheItemUpdateCallback);
+
+            _onAsyncOperationCompleteCallback = onAsyncOperationCompleteCallback;
+            _onWriteBehindOperationCompletedCallback = onWriteBehindOperationCompletedCallback;
         }
 
         public void AddItemRemoveCallback(string clientid, object callback, EventDataFilter datafilter)
@@ -160,7 +181,7 @@ namespace Alachisoft.NCache.Caching
         }
 
         /// <summary>
-        /// Gets Caller id i.e. Clietn application id
+        /// Gets Caller id i.e. Client application id
         /// </summary>
        
         /// <summary>
@@ -191,6 +212,17 @@ namespace Alachisoft.NCache.Caching
             set { _flag = value; }
         }
 
+        public object AsyncOperationCompleteCallback
+        {
+            get { return _onAsyncOperationCompleteCallback; }
+            set { _onAsyncOperationCompleteCallback = value; }
+        }
+
+        public object WriteBehindOperationCompletedCallback
+        {
+            get { return _onWriteBehindOperationCompletedCallback; }
+            set { _onWriteBehindOperationCompletedCallback = value; }
+        }
       
         #region ICompactSerializable Members
         /// <summary>
@@ -207,6 +239,9 @@ namespace Alachisoft.NCache.Caching
             list = reader.ReadObject() as ArrayList;
             if(list != null)
                 _itemRemovedListener = ArrayList.Synchronized(list);
+
+            _onAsyncOperationCompleteCallback = reader.ReadObject();
+            _onWriteBehindOperationCompletedCallback = reader.ReadObject();
         }
 
         /// <summary>
@@ -225,7 +260,8 @@ namespace Alachisoft.NCache.Caching
             {
                 writer.WriteObject(_itemRemovedListener);
             }
-           
+            writer.WriteObject(_onAsyncOperationCompleteCallback);
+            writer.WriteObject(_onWriteBehindOperationCompletedCallback);
         }
 
         #endregion
@@ -239,6 +275,8 @@ namespace Alachisoft.NCache.Caching
             cloned._value = this._value;
             cloned._itemRemovedListener = this._itemRemovedListener.Clone() as ArrayList;
             cloned._itemUpdateListener = this._itemUpdateListener.Clone() as ArrayList;
+            cloned._onAsyncOperationCompleteCallback = this._onAsyncOperationCompleteCallback;
+            cloned._onWriteBehindOperationCompletedCallback = this._onWriteBehindOperationCompletedCallback;
             return cloned;
         }
 
@@ -247,7 +285,7 @@ namespace Alachisoft.NCache.Caching
         #region ISizable Members
         public int Size
         {
-            get
+            get 
             {
                 return CallbackEntrySize;
             }
@@ -255,7 +293,7 @@ namespace Alachisoft.NCache.Caching
 
         public int InMemorySize
         {
-            get
+            get 
             {
                 return Common.MemoryUtil.GetInMemoryInstanceSize(this.Size);
             }
@@ -265,7 +303,7 @@ namespace Alachisoft.NCache.Caching
         {
             get
             {
-                int temp = 0;
+                int temp = 0;                
                 temp += Common.MemoryUtil.NetReferenceSize; // for _value
                 temp += Common.MemoryUtil.NetReferenceSize; // for _onAsyncOperationCompleteCallback
                 temp += Common.MemoryUtil.NetReferenceSize; // for _onWriteBehindOperationCompletedCallback
@@ -273,7 +311,7 @@ namespace Alachisoft.NCache.Caching
                 temp += Common.MemoryUtil.NetReferenceSize; // for _itemUpdatedLisetner
 
                 temp += BitSet.Size; // for _flag
-
+              
                 if (_itemRemovedListener != null)
                 {
                     temp += _itemRemovedListener.Count * Common.MemoryUtil.NetListOverHead;

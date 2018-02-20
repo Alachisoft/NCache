@@ -1,0 +1,6 @@
+
+option java_outer_classname="HybridBulkResponseProtocol";
+package Alachisoft.NCache.Common.Protobuf;
+message HybridBulkResponse {
+ optional bytes binaryResult = 1;
+}

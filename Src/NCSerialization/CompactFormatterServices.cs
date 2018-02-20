@@ -10,12 +10,20 @@
 // distributed under the License is distributed on an "AS IS" BASIS,
 // WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
 // See the License for the specific language governing permissions and
-// limitations under the License.
+// limitations under the License
 
 using System;
+using System.Collections;
 using Alachisoft.NCache.Serialization.Surrogates;
+
 using System.Collections.Generic;
+
+#if JAVA
+using Alachisoft.TayzGrid.Runtime.Serialization;
+#else
 using Alachisoft.NCache.Runtime.Serialization;
+#endif
+
 namespace Alachisoft.NCache.Serialization
 {
     /// <summary>
@@ -24,6 +32,7 @@ namespace Alachisoft.NCache.Serialization
     /// </summary>
     public sealed class CompactFormatterServices
     {
+        static object mutex = new object();
         #region /       ICompactSerializable specific        /
 
         /// <summary>
@@ -44,31 +53,14 @@ namespace Alachisoft.NCache.Serialization
             RegisterCompactType(type, typeHandle, true);
         }
 
-        /// <summary>
-        /// Registers a type that implements <see cref="ICompactSerializable"/> with the system. If the
-        /// type is an array of <see cref="ICompactSerializable"/>s appropriate surrogates for arrays
-        /// and the element type are also registered.
-        /// </summary>
-        /// <param name="type">type that implements <see cref="ICompactSerializable"/></param>
-        /// <exception cref="ArgumentNullException">If <param name="type"/> is null.
-        /// </exception>
-        /// <exception cref="ArgumentException">
-        /// If the <param name="type"/> is already registered or when no appropriate surrogate 
-        /// is found for the specified <param name="type"/>.
-        /// </exception>
-        static public void RegisterNonVersionCompatibleCompactType(Type type, short typeHandle)
-        {
-            RegisterCompactType(type, typeHandle, false);
-        }
-
         static private void RegisterCompactType(Type type, short typeHandle, bool versionCompatible)
         {
             if (type == null) throw new ArgumentNullException("type");
             ISerializationSurrogate surrogate = null;
 
-            if ((surrogate = TypeSurrogateSelector.GetSurrogateForTypeStrict(type)) != null)
+            if ((surrogate = TypeSurrogateSelector.GetSurrogateForTypeStrict(type,null)) != null)
             {
-                //No need to check subHandle since this funciton us not used by DataSharing
+                //No need to check subHandle since this funciton as not used by DataSharing
                 if (surrogate.TypeHandle == typeHandle)
                     return; //Type is already registered with same handle.
                 throw new ArgumentException("Type " + type.FullName + "is already registered with different handle");
@@ -85,7 +77,6 @@ namespace Alachisoft.NCache.Serialization
             {
                 surrogate = new ArraySerializationSurrogate(type);
             }
-       
             else if (typeof(List<>).Equals(type))
             {
                 if (type.IsGenericType)
@@ -108,12 +99,11 @@ namespace Alachisoft.NCache.Serialization
             if (surrogate == null)
                 throw new ArgumentException("No appropriate surrogate found for type " + type.FullName);
 
-            System.Diagnostics.Debug.WriteLine("Registered suurogate for type " + type.FullName);
+            System.Diagnostics.Debug.WriteLine("Registered surrogate for type " + type.FullName);
             TypeSurrogateSelector.RegisterTypeSurrogate(surrogate, typeHandle);
         }
 
-
-        /// <summary>
+       /// <summary>
        /// Unregisters all the compact types associated with the cache context.
        /// </summary>
        /// <param name="cacheContext">Cache context</param>

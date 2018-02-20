@@ -12,10 +12,8 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-using System;
-using System.Collections.Generic;
-using System.Text;
 using Alachisoft.NCache.Common.Logger;
+using Alachisoft.NCache.Common.Util;
 
 namespace Alachisoft.NCache.Caching.Statistics
 {
@@ -94,33 +92,52 @@ namespace Alachisoft.NCache.Caching.Statistics
 		/// Increment the performance counter for Cache hits per second. 
 		/// </summary>
 		void IncrementHitsPerSecStats();
+        void IncrementByHitsPerSecStats(long value);
 
 		/// <summary>
 		/// Increment the performance counter for Cache misses per second. 
 		/// </summary>
 		void IncrementMissPerSecStats();
+        void IncrementByMissPerSecStats(long value);
 
         void IncrementHitsRatioPerSecStats();
 
         void IncrementHitsRatioPerSecBaseStats();
 
+        void IncrementByHitsRatioPerSecStats(long value);
+
+        void IncrementByHitsRatioPerSecBaseStats(long value);
 		/// <summary> 
 		/// Increment the performance counter for Cache get operations per second. 
 		/// </summary>
 		void IncrementGetPerSecStats();
+        void IncrementByGetPerSecStats(long value);
 
 		/// <summary> 
 		/// Increment the performance counter for Cache add operations per second. 
 		/// </summary>
 		void IncrementAddPerSecStats();
 
+        /// <summary> 
+        /// Increment the performance counter for Cache add operations per second. 
+        /// </summary>
+        void IncrementByAddPerSecStats(long value);
+
 		/// <summary> 
 		/// Increment the performance counter for Cache update operations per second. 
 		/// </summary>
 		void IncrementUpdPerSecStats();
 
+        /// <summary> 
+        /// Increment the performance counter for Cache update operations per second. 
+        /// </summary>
+        void IncrementByUpdPerSecStats(long value);
+
 		/// <summary> Increment the performance counter for Cache remove operations per second. </summary>
 		void IncrementDelPerSecStats();
+
+        /// <summary> Increment the performance counter for Cache remove operations per second. </summary>
+        void IncrementByDelPerSecStats(long value);
 
         /// <summary> Increment the performance counter by value for Cache remove operations per second. </summary>
         void IncrementDelPerSecStats(int value);
@@ -131,7 +148,26 @@ namespace Alachisoft.NCache.Caching.Statistics
         /// <summary> Increment the performance counter for Cache expirations per second. </summary>
         void IncrementExpiryPerSecStats();
 
-      
+        /// <summary>
+        /// Increment the performance counter for read thru operation per sec
+        /// </summary>
+        void IncrementReadThruPerSec();
+
+        /// <summary>
+        /// Increment the performance counter for read thru operation per sec by given amount
+        /// </summary>
+        void IncrementReadThruPerSecBy(long value);
+
+        /// <summary>
+        /// Increment the performance counter for write thru operation per sec
+        /// </summary>
+        void IncrementWriteThruPerSec();
+
+        /// <summary>
+        /// Increment the performance counter for write thru operation per sec by given amount
+        /// </summary>
+        void IncrementWriteThruPerSecBy(long value);
+
         /// <summary> Increments the performance counter for Cache evictions per second by given value. </summary>
         void IncrementEvictPerSecStatsBy(long value);
 
@@ -191,41 +227,10 @@ namespace Alachisoft.NCache.Caching.Statistics
 
         /// <summary> Increment the performance counter for State Txfr's per second by given value. </summary>
         void IncrementStateTxfrPerSecStatsBy(long value);
-
-        /// <summary> Increment the performance counter for Data Balance per second. </summary>
-        void IncrementDataBalPerSecStats();
-
-        /// <summary> Increment the performance counter for Data Balance per second by given value. </summary>
-        void IncrementDataBalPerSecStatsBy(long value);
-
-
-        void IncrementCacheSizeBy(long value);
-        void IncrementCacheSize();
-        void SetCacheSize(long value);
-
-        void SetQueryIndexSize(long value);
-        void IncrementQueryIndexSizeBy(long value);
-        void IncrementQueryIndexSize();
-
-        void SetEvictionIndexSize(long value);
-        void IncrementEvictionIndexSizeBy(long value);
-        void IncrementEvictionIndexSize();
-
-        void SetExpirationIndexSize(long value);
-        void IncrementExpirationIndexSizeBy(long value);
-        void IncrementExpirationIndexSize();        
-
-        void SetQueryPerSec(long value);
-        void IncrementQueryPerSecBy(long value);
-        void IncrementQueryPerSec();
-
-        void MsecPerQueryExecutionTimeBeginSample();
-        void MsecPerQueryExecutionTimeEndSample();
-
-
-        void IncrementAvgQuerySize(long value);
-
-
+        /// <summary>
+        /// Increment the performance counter for write behind queue operation per sec by given value
+        /// </summary>
+        void SetWBQueueCounter(long value);
         /// <summary>
         /// Count of items that are expired till now
         /// </summary>
@@ -270,5 +275,92 @@ namespace Alachisoft.NCache.Caching.Statistics
 
         ILogger NCacheLog { get; set;}
 
+        void IncrementWriteBehindPerSec();
+        void IncrementWriteBehindPerSecBy(long value);
+
+        void SetWBFailureRetryCounter(long value);
+        void decrementWBFailureRetryCounter();
+
+        void IncrementWBEvictionRate();
+
+        void IncrementDSFailedOpsPerSec();
+
+        void IncrementDSFailedOpsPerSecBy(long value);
+
+        void IncrementDSUpdatePerSec();
+
+        void IncrementDSUpdatePerSecBy(long p);
+
+        void MsecPerDSWriteBeginSample();
+
+        void MsecPerDSWriteEndSample();
+
+        void MsecPerDSWriteEndSample(long bulkCount);
+
+        void MsecPerDSUpdBeginSample();
+
+        void MsecPerDSUpdEndSample();
+
+        void MsecPerDSUpdEndSample(long bulkCount);
+
+        void SetWBCurrentBatchOpsCounter(long value);
+
+        void IncrementCacheSizeBy(long value);
+        void IncrementCacheSize();
+        void SetCacheSize(long value);
+
+        void SetQueryIndexSize(long value);
+        void IncrementQueryIndexSizeBy(long value);
+        void IncrementQueryIndexSize();
+
+        void SetEvictionIndexSize(long value);
+        void IncrementEvictionIndexSizeBy(long value);
+        void IncrementEvictionIndexSize();
+
+        void SetExpirationIndexSize(long value);
+
+        void SetGroupIndexSize(long value);
+        void IncrementGroupIndexSizeBy(long value);
+        void IncrementGroupIndexSize();
+
+        void SetQueryPerSec(long value);
+        void IncrementQueryPerSecBy(long value);
+        void IncrementQueryPerSec();
+
+        void MsecPerQueryExecutionTimeBeginSample();
+        void MsecPerQueryExecutionTimeEndSample();
+
+    
+        void IncrementAvgQuerySize(long value);
+
+        //MapReduce Methods
+        void WaitingTasksCount(long value);
+        void IncrementWaitingTasks();
+        void DecrementWaitingTasks();
+        void IncrementWaitingTasksBy(long value);
+
+        void RunningTasksCount(long value);
+        void IncrementRunningTasks();
+        void DecrementRunningTasks();
+        void IncrementRunningTasksBy(long value);
+
+        void MappedPerSec(long value);
+        void IncrementMappedPerSecRate();
+
+        void CombinedPerSec(long value);
+        void IncrementCombinedPerSecRate();
+
+        void ReducedPerSec(long value);
+        void IncrementReducedPerSecRate();
+
+        void IncrementRunningReaders();
+        void DecrementRunningReaders();
+        void IncrementMsecPerMessagePublish(long count);
+        void PubSubCounterSetter(string counterType, PerformanceOperator counterOperation);
+        void SetPubSubCounter(long value, string counterType);
+        void IncrementMessagePublishedPerSec();
+        void IncrementMessageDeliverPerSec();
+        void IncrementMessageDeliverPerSec(long value);
+        void IncrementMessageExpiredPerSec(long value);
     }
 }

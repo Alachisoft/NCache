@@ -1,0 +1,21 @@
+import "KeyValue.proto";
+
+
+option java_outer_classname="ExecuteReaderCQCommandProtocol";
+package Alachisoft.NCache.Common.Protobuf;
+
+message ExecuteReaderCQCommand {
+    optional string query = 1;
+    repeated KeyValue values = 2;
+    optional bool getData = 3;
+    optional int64 chunkSize = 4;
+	optional bool notifyAdd = 5;
+	optional bool notifyUpdate = 6;
+	optional bool notifyRemove = 7;
+    optional bool searchEntries = 8;
+	optional string clientUniqueId = 9;
+	optional int64 requestId = 10;
+	optional int32 addDataFilter = 11;
+	optional int32 remvoeDataFilter = 12;
+	optional  int32 updateDataFilter = 13;
+}

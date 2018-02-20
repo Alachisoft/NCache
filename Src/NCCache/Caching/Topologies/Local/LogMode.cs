@@ -12,8 +12,17 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
+
+
+using System.Text;
+using Alachisoft.NCache.Common.Net;
+using Alachisoft.NCache.Common.Util;
+
 namespace Alachisoft.NCache.Caching.Topologies.Local
 {
+
+    #region/                ---Enum LogMode ---          /
+
     enum LogMode
     {
         /// <summary>This mode specifies that operation should be logged before an actual
@@ -26,4 +35,5 @@ namespace Alachisoft.NCache.Caching.Topologies.Local
         /// among partitions</summary>
         LogBeforeAfterActualOperation
     }
+    #endregion
 }

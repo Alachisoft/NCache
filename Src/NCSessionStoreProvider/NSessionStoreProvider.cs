@@ -10,13 +10,12 @@
 // distributed under the License is distributed on an "AS IS" BASIS,
 // WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
 // See the License for the specific language governing permissions and
-// limitations under the License.
+// limitations under the License
 
 using System;
 using System.Collections.Specialized;
 using System.Web;
 using System.Web.SessionState;
-using Alachisoft.NCache.Web.SessionState;
 using System.Web.Configuration;
 using System.Configuration;
 using Alachisoft.NCache.Web.SessionStateManagement;
@@ -35,7 +34,7 @@ namespace Alachisoft.NCache.Web.SessionState
             Configuration cfg = WebConfigurationManager.OpenWebConfiguration(appName);
             SessionStateSection sessionConfig = (SessionStateSection) cfg.GetSection("system.web/sessionState");
             config["defaultSessionTimeout"] = sessionConfig.Timeout.Minutes.ToString();
-            _store.Initialize(name, config);
+            _store.Initialize(name, config, NCacheSessionStateConfigReader.LoadSessionLocationSettings());
         }
 
         public override void Dispose()
@@ -57,7 +56,7 @@ namespace Alachisoft.NCache.Web.SessionState
             }
             finally
             {
-                newContext.Finalize();
+                newContext.FinalizeContext();
             }
         }
 
@@ -76,7 +75,7 @@ namespace Alachisoft.NCache.Web.SessionState
             }
             finally
             {
-                newContext.Finalize();
+                newContext.FinalizeContext();
             }
         }
 
@@ -96,7 +95,7 @@ namespace Alachisoft.NCache.Web.SessionState
             }
             finally
             {
-                newContext.Finalize();
+                newContext.FinalizeContext();
             }
         }
 
@@ -109,7 +108,7 @@ namespace Alachisoft.NCache.Web.SessionState
             }
             finally
             {
-                newContext.Finalize();
+                newContext.FinalizeContext();
             }
         }
 
@@ -123,7 +122,7 @@ namespace Alachisoft.NCache.Web.SessionState
             }
             finally
             {
-                newContext.Finalize();
+                newContext.FinalizeContext();
             }
         }
 
@@ -136,7 +135,7 @@ namespace Alachisoft.NCache.Web.SessionState
             }
             finally
             {
-                newContext.Finalize();
+                newContext.FinalizeContext();
             }
         }
 
@@ -149,7 +148,7 @@ namespace Alachisoft.NCache.Web.SessionState
             }
             finally
             {
-                newContext.Finalize();
+                newContext.FinalizeContext();
             }
         }
 
@@ -163,7 +162,7 @@ namespace Alachisoft.NCache.Web.SessionState
             }
             finally
             {
-                newContext.Finalize();
+                newContext.FinalizeContext();
             }
         }
 
@@ -176,7 +175,7 @@ namespace Alachisoft.NCache.Web.SessionState
             }
             finally
             {
-                newContext.Finalize();
+                newContext.FinalizeContext();
             }
         }
 
@@ -189,7 +188,7 @@ namespace Alachisoft.NCache.Web.SessionState
             }
             finally
             {
-                newContext.Finalize();
+                newContext.FinalizeContext();
             }
         }
 

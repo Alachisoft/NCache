@@ -10,8 +10,7 @@
 // distributed under the License is distributed on an "AS IS" BASIS,
 // WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
 // See the License for the specific language governing permissions and
-// limitations under the License.
-
+// limitations under the License
 using System;
 using Alachisoft.NCache.Common.Net;
 
@@ -32,11 +31,11 @@ namespace Alachisoft.NCache.Common.DataStructures
             _priorityIndex = -1;
         }
 
-        public PartNodeInfo(Address address, string subGroup, bool isCoordinator)
+        public PartNodeInfo(Address address, string subGroup)
         {
             _address = address;
             _subGroupId = subGroup;
-            _isCoordinator = isCoordinator;
+
         }
 
 
@@ -52,11 +51,7 @@ namespace Alachisoft.NCache.Common.DataStructures
             set { _subGroupId = value; }
         }
 
-        public bool IsCoordinator
-        {
-            get { return _isCoordinator; }
-            set { _isCoordinator = value; }
-        }
+      
 
         public int PriorityIndex
         {
@@ -75,9 +70,6 @@ namespace Alachisoft.NCache.Common.DataStructures
             return false;
         }
 
-        public override string ToString()
-        {
-            return "PartNodeInfo(" + NodeAddress.ToString() + ", " + SubGroup + "," + IsCoordinator.ToString() + ")";
-        }
+      
     }
 }

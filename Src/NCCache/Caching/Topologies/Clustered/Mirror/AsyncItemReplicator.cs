@@ -13,21 +13,20 @@
 // limitations under the License.
 
 using System;
-using System.Text;
 using System.Collections;
 using System.Threading;
-using Alachisoft.NCache.Caching.Statistics;
 using Alachisoft.NCache.Common.DataStructures;
 using Alachisoft.NCache.Common.Monitoring;
 using Alachisoft.NCache.Common.Util;
 using Alachisoft.NCache.Common.Threading;
+using Alachisoft.NCache.Common.DataStructures.Clustered;
 
 namespace Alachisoft.NCache.Caching.Topologies.Clustered
 {
 
     #region Queue replicator
 
-    public class AsyncItemReplicator : IDisposable
+    public class AsyncItemReplicator : IDisposable, IGRShutDown
     {
         CacheRuntimeContext _context = null;
         TimeSpan _interval = new TimeSpan(0, 0, 2);
@@ -40,6 +39,8 @@ namespace Alachisoft.NCache.Caching.Topologies.Clustered
 
         private bool stopped = true;
         private int _bulkKeysToReplicate = 300;
+        private Latch _shutdownStatusLatch = new Latch(ShutDownStatus.NONE);
+
 
 
         internal AsyncItemReplicator(CacheRuntimeContext context, TimeSpan interval)
@@ -47,6 +48,37 @@ namespace Alachisoft.NCache.Caching.Topologies.Clustered
             _bulkKeysToReplicate = ServiceConfiguration.BulkItemsToReplicate;
             this._context = context;
             this._interval = interval;
+        }
+
+
+        public void WindUpTask()
+        {
+            if (!stopped)
+            {
+                _context.NCacheLog.CriticalInfo("AsyncItemReplicator", "WindUp Task Started.");
+               
+                if (_queue != null)
+                    _context.NCacheLog.CriticalInfo("AsyncItemReplicator", "Async Replicator Queue Count: " + _queue.Count);
+                
+                _interval = new TimeSpan(0, 0, 0);
+                _shutdownStatusLatch.SetStatusBit(ShutDownStatus.SHUTDOWN_INPROGRESS, ShutDownStatus.NONE);
+                _context.NCacheLog.CriticalInfo("AsyncItemReplicator", "WindUp Task Ended.");
+            }
+        }
+        public void WaitForShutDown(long interval)
+        {
+            if (!stopped)
+            {
+                _context.NCacheLog.CriticalInfo("AsyncItemReplicator", "Waiting for shutdown task completion.");
+               
+                if(_queue.Count > 0)
+                    _shutdownStatusLatch.WaitForAny(ShutDownStatus.SHUTDOWN_COMPLETED, interval * 1000);
+                
+                if (_queue != null && _queue.Count > 0)
+                    _context.NCacheLog.CriticalInfo("AsyncItemReplicator", "Remaining Async Replicator operations: " + _queue.Count);
+                
+                _context.NCacheLog.CriticalInfo("AsyncItemReplicator", "Shutdown task completed.");
+            }
         }
 
         /// <summary>
@@ -74,7 +106,9 @@ namespace Alachisoft.NCache.Caching.Topologies.Clustered
             lock (_updateIndexKeys.SyncRoot)
             {
                 _updateIndexKeys[key] = null;
+
                 _context.PerfStatsColl.IncrementSlidingIndexQueueSizeStats(_updateIndexKeys.Count);
+
             }
         }
 
@@ -83,7 +117,9 @@ namespace Alachisoft.NCache.Caching.Topologies.Clustered
             lock (_updateIndexKeys.SyncRoot)
             {
                 _updateIndexKeys.Remove(key);
+
                 _context.PerfStatsColl.IncrementSlidingIndexQueueSizeStats(_updateIndexKeys.Count);
+
             }
         }
 
@@ -103,6 +139,7 @@ namespace Alachisoft.NCache.Caching.Topologies.Clustered
 
                 if (ServerMonitor.MonitorActivity)
                     ServerMonitor.LogClientActivity("AsyncReplicator.Enque", "queue_size :" + _queue.Count);
+
                 _context.PerfStatsColl.IncrementMirrorQueueSizeStats(_queue.Count);
 
             }
@@ -117,8 +154,11 @@ namespace Alachisoft.NCache.Caching.Topologies.Clustered
         /// </summary>
         public void Clear()
         {
+            //keysQue.Clear();
             _queue.Clear();
+
             _context.PerfStatsColl.IncrementMirrorQueueSizeStats(_queue.Count);
+
         }
 
         /// <summary>
@@ -126,6 +166,7 @@ namespace Alachisoft.NCache.Caching.Topologies.Clustered
         /// </summary>
         internal void EnqueueClear(ReplicationOperation operation)
         {
+            //keysQue.Clear();
             _queue.Clear();
             this.EnqueueOperation("NcAcHe$Cl@Ea%R", operation);
         }
@@ -164,19 +205,18 @@ namespace Alachisoft.NCache.Caching.Topologies.Clustered
         /// to maintain the symmetry in API.
         /// </summary>
         public void Run()
-        {
-            //reload threashold value from service config, consider the probability that values would have been changed by user
+		{            //reload threshold value from service config, consider the probability that values would have been changed by user
             _bulkKeysToReplicate = ServiceConfiguration.BulkItemsToReplicate;
-
-            ArrayList opCodesToBeReplicated = new ArrayList(_bulkKeysToReplicate);
-            ArrayList infoToBeReplicated = new ArrayList(_bulkKeysToReplicate);
-            ArrayList compilationInfo = new ArrayList(_bulkKeysToReplicate);
-            ArrayList userPayLoad = new ArrayList();            
-
+        
+            IList opCodesToBeReplicated = new ClusteredArrayList(_bulkKeysToReplicate);
+            IList infoToBeReplicated = new ClusteredArrayList(_bulkKeysToReplicate);
+            IList compilationInfo = new ClusteredArrayList(_bulkKeysToReplicate);
+            IList userPayLoad = new ClusteredArrayList();            
             try
             {
                 while (!stopped || _queue.Count > 0)
                 {
+                  
                     DateTime startedAt = DateTime.Now;
                     DateTime finishedAt = DateTime.Now;
 
@@ -186,13 +226,15 @@ namespace Alachisoft.NCache.Caching.Topologies.Clustered
                         {
                             IOptimizedQueueOperation operation = null;
                             operation = _queue.Dequeue();
-                            
+
                             DictionaryEntry entry = (DictionaryEntry)operation.Data;
                             opCodesToBeReplicated.Add(entry.Key);
                             infoToBeReplicated.Add(entry.Value);
 
                             if (operation.UserPayLoad != null)
                             {
+                                if (userPayLoad==null) 
+                                    userPayLoad = new ArrayList();
                                 for (int j = 0; j < operation.UserPayLoad.Length; j++)
                                 {
                                     userPayLoad.Add(operation.UserPayLoad.GetValue(j));
@@ -212,23 +254,23 @@ namespace Alachisoft.NCache.Caching.Topologies.Clustered
                                     opCodesToBeReplicated.Add((int)ClusterCacheBase.OpCodes.UpdateIndice);
                                     infoToBeReplicated.Add(updateIndexKeys);
                                 }
-
-                                _context.CacheImpl.ReplicateOperations(opCodesToBeReplicated.ToArray(), infoToBeReplicated.ToArray(), userPayLoad.ToArray(), compilationInfo, _context.CacheImpl.OperationSequenceId, _context.CacheImpl.CurrentViewId);
+                                _context.CacheImpl.ReplicateOperations(opCodesToBeReplicated, infoToBeReplicated, userPayLoad, compilationInfo, _context.CacheImpl.OperationSequenceId, _context.CacheImpl.CurrentViewId);
                             }
                         }
 
                         if (!stopped && _context.PerfStatsColl != null) _context.PerfStatsColl.IncrementMirrorQueueSizeStats(_queue.Count);
+
                     }
                     catch (Exception e)
                     {
-                        if (e.Message.IndexOf("operation timeout", StringComparison.OrdinalIgnoreCase) >= 0)
+                        if (e.Message.IndexOf("operation timeout", StringComparison.OrdinalIgnoreCase) >= 0 && !_shutdownStatusLatch.IsAnyBitsSet(ShutDownStatus.SHUTDOWN_INPROGRESS))
                         {
                             _context.NCacheLog.CriticalInfo("AsyncReplicator.Run", "Bulk operation timedout. Retrying the operation.");
                             try
                             {
                                 if (!stopped)
                                 {
-                                    _context.CacheImpl.ReplicateOperations(opCodesToBeReplicated.ToArray(), infoToBeReplicated.ToArray(), userPayLoad.ToArray(), compilationInfo, 0, 0);
+                                    _context.CacheImpl.ReplicateOperations(opCodesToBeReplicated, infoToBeReplicated, userPayLoad, compilationInfo, 0, 0);
                                     _context.NCacheLog.CriticalInfo("AsyncReplicator.Run", "RETRY is successfull.");
                                 }
                             }
@@ -245,12 +287,18 @@ namespace Alachisoft.NCache.Caching.Topologies.Clustered
                         opCodesToBeReplicated.Clear();
                         infoToBeReplicated.Clear();
                         compilationInfo.Clear();
-                        userPayLoad.Clear();
+                        if (userPayLoad != null)
+                                userPayLoad.Clear();
                         finishedAt = DateTime.Now;
                     }
 
                     if (_queue.Count > 0)
                         continue;
+                    else if (_queue.Count == 0 && _shutdownStatusLatch.IsAnyBitsSet(ShutDownStatus.SHUTDOWN_INPROGRESS))
+                    {
+                        _shutdownStatusLatch.SetStatusBit(ShutDownStatus.SHUTDOWN_COMPLETED, ShutDownStatus.SHUTDOWN_INPROGRESS);
+                        return;
+                    }
 
                     if ((finishedAt.Ticks - startedAt.Ticks) < _interval.Ticks)
                         Thread.Sleep(_interval.Subtract(finishedAt.Subtract(startedAt)));
@@ -260,9 +308,11 @@ namespace Alachisoft.NCache.Caching.Topologies.Clustered
             }
             catch (ThreadAbortException ta)
             {
+                //_context.CacheTrace.error("AsyncReplicator.RUN", "Async replicator stopped. " + ta.ToString());
             }
             catch (ThreadInterruptedException ti)
             {
+                //_context.CacheTrace.error("AsyncReplicator.RUN", "Async replicator stopped. " + ti.ToString());
             }
             catch (NullReferenceException)
             {
@@ -276,7 +326,7 @@ namespace Alachisoft.NCache.Caching.Topologies.Clustered
         }
 
         /// <summary>
-        /// Stops and disposes the Repliaction thread. The thread can be started using Start method.
+        /// Stops and disposes the Replication thread. The thread can be started using Start method.
         /// <param name="gracefulStop">If true then operations pending in the queue are performed
         /// on the passive node, otherwise stopped instantly </param>
         /// </summary>
@@ -329,5 +379,4 @@ namespace Alachisoft.NCache.Caching.Topologies.Clustered
         #endregion
     }
     #endregion
-  
 }

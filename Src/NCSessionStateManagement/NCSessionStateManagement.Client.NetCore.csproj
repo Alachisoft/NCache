@@ -1,0 +1,34 @@
+<Project Sdk="Microsoft.NET.Sdk">
+
+  <PropertyGroup>
+    <TargetFramework>netcoreapp2.0</TargetFramework>
+  </PropertyGroup>
+  
+   <PropertyGroup>
+    <GenerateAssemblyInfo>false</GenerateAssemblyInfo>
+    <AssemblyName>Alachisoft.NCache.SessionStateManagement</AssemblyName>
+  </PropertyGroup>
+  
+   <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Debug|AnyCPU'">
+     <DefineConstants>TRACE;DEBUG;CLIENT;NETCORE</DefineConstants>
+   </PropertyGroup>
+  
+   <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Release|AnyCPU'">
+     <DefineConstants>TRACE;RELEASE;NETCOREAPP2_0;NETCORE</DefineConstants>
+   </PropertyGroup>
+  
+   <ItemGroup>
+     <Compile Remove="CustomSessionIdManager.cs" />
+   </ItemGroup>
+  
+   <ItemGroup>
+     <PackageReference Include="Microsoft.AspNetCore.Session" Version="2.0.0-preview2-final" />
+   </ItemGroup>
+  
+   <ItemGroup>
+     <ProjectReference Include="..\NCCommon\NCCommon.Client.NetCore.csproj" />
+     <ProjectReference Include="..\NCRuntime\NCRuntime.Client.NetCore.csproj" />
+     <ProjectReference Include="..\NCWebCache\NCWebCache.Client.NetCore.csproj" />
+   </ItemGroup>
+
+</Project>

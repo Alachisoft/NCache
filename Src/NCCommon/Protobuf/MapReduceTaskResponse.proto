@@ -1,0 +1,7 @@
+
+option java_outer_classname="MapReduceTaskResponseProtocol";
+package Alachisoft.NCache.Common.Protobuf;
+message MapReduceTaskResponse 
+{
+	optional bytes taskResult = 1;
+}

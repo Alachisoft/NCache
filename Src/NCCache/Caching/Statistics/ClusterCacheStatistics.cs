@@ -13,15 +13,10 @@
 // limitations under the License.
 
 using System;
-using System.Net;
 using System.Collections;
-
 using Alachisoft.NCache.Runtime.Serialization.IO;
 using Alachisoft.NCache.Runtime.Serialization;
-
-using Alachisoft.NCache.Util;
 using Alachisoft.NCache.Common.Net;
-using System.IO;
 
 
 namespace Alachisoft.NCache.Caching.Statistics
@@ -245,6 +240,22 @@ namespace Alachisoft.NCache.Caching.Statistics
 			}
 			return null;
 		}
+
+	    internal NodeInfo[] GetNodesClone()
+	    {
+	        NodeInfo[] nodes = null;
+
+            lock (this)
+	        {
+	            if (_nodeInfos != null)
+	            {
+	                nodes = new NodeInfo[_nodeInfos.Count];
+                    _nodeInfos.CopyTo(nodes);
+	            }
+	        }
+	        return nodes;
+
+	    }
 		
 		/// <summary>
 		/// Sets the values of the server/member/other counts
@@ -293,9 +304,12 @@ namespace Alachisoft.NCache.Caching.Statistics
             base.Deserialize(reader);
             _groupName = reader.ReadObject() as string;
             _channelType = reader.ReadObject() as string;
+            //_groupName = reader.ReadString();
+            //_channelType = reader.ReadString();
             _memberCount = reader.ReadInt32();
             _serverCount = reader.ReadInt32();
             _otherCount = reader.ReadInt32();
+            //_localNode = (NodeInfo) reader.ReadObject();
             _localNode = NodeInfo.ReadNodeInfo(reader);
             _nodeInfos = (ArrayList)reader.ReadObject();
         }
@@ -308,6 +322,7 @@ namespace Alachisoft.NCache.Caching.Statistics
             writer.Write(_memberCount);
             writer.Write(_serverCount);
             writer.Write(_otherCount);
+            //writer.WriteObject(_localNode);
             NodeInfo.WriteNodeInfo(writer, _localNode);
             writer.WriteObject(_nodeInfos);
         }

@@ -12,21 +12,18 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-using System;
 using Alachisoft.NCache.Runtime.Events;
-using Alachisoft.NCache.Web.Caching;
 
 namespace Alachisoft.NCache.Web.Caching
 {
     /// <summary>
-    /// This object is recieved when an even is raised and delegate <see cref=" CacheDataNotificationCallback"/> is executed
+    /// This object is received when an even is raised and delegate <see cref=" CacheDataNotificationCallback"/> is executed
     /// CacheEventArg contains necessary information to identify the event and perform necessary actions accordingly.
     /// It inherits <see cref=" EventArg"/> which is also a parent of <see cref=" CQEventArg"/>
     /// This class is consistent for both selective and general events
     /// </summary>
     public class CacheEventArg : EventArg
     {
-
         private CacheItemRemovedReason _reason; //For remove only
         private CacheEventDescriptor _descriptor;
 
@@ -42,6 +39,7 @@ namespace Alachisoft.NCache.Web.Caching
 
         /// <summary>
         /// Only applicable for <see cref="EventType.ItemRemove"/>
+        /// Otherwise default value is DependencyChanged
         /// </summary>
         public CacheItemRemovedReason CacheItemRemovedReason
         {
@@ -49,19 +47,22 @@ namespace Alachisoft.NCache.Web.Caching
             internal set { _reason = value; }
         }
 
-        internal CacheEventArg(string key, string cachename, EventType eventType, EventCacheItem item, CacheEventDescriptor discriptor)
+        internal CacheEventArg(string key, string cachename, EventType eventType, EventCacheItem item,
+            CacheEventDescriptor discriptor)
             : base(cachename, eventType, item)
         {
             _descriptor = discriptor;
         }
 
-        internal CacheEventArg(string key, string cachename, EventType eventType, EventCacheItem item, CacheEventDescriptor discriptor, EventCacheItem olditem)
+        internal CacheEventArg(string key, string cachename, EventType eventType, EventCacheItem item,
+            CacheEventDescriptor discriptor, EventCacheItem olditem)
             : base(cachename, eventType, item, olditem)
         {
             _descriptor = discriptor;
         }
 
-        internal CacheEventArg(string key, string cachename, EventType eventType, EventCacheItem item, CacheEventDescriptor discriptor, CacheItemRemovedReason reason)
+        internal CacheEventArg(string key, string cachename, EventType eventType, EventCacheItem item,
+            CacheEventDescriptor discriptor, CacheItemRemovedReason reason)
             : base(cachename, eventType, item)
         {
             _reason = reason;

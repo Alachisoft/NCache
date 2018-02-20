@@ -12,15 +12,6 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-using System;
-using System.Text;
-
-using Alachisoft.NCache.Web.Caching;
-using System.IO;
-using Alachisoft.NCache.Web.Communication;
-using Alachisoft.NCache.Common.Protobuf.Util;
-using Alachisoft.NCache.Web.Caching.Util;
-
 namespace Alachisoft.NCache.Web.Command
 {
     class UnRegisterKeyNotificationCommand : CommandBase
@@ -55,7 +46,6 @@ namespace Alachisoft.NCache.Web.Command
             base._command.requestID = base.RequestId;
             base._command.unRegisterKeyNotifCommand = _unregisterKeyNotifCommand;
             base._command.type = Alachisoft.NCache.Common.Protobuf.Command.Type.UNREGISTER_KEY_NOTIF;
-
         }
     }
 }

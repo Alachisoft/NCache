@@ -12,18 +12,16 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-using Alachisoft.NCache.Common.Protobuf;
-
 namespace Alachisoft.NCache.Web.Command
 {
     internal sealed class GetRecordSetNextChunk : CommandBase
     {
-        private GetReaderNextChunkCommand _readerNextChunkCommand;
+        private Alachisoft.NCache.Common.Protobuf.GetReaderNextChunkCommand _readerNextChunkCommand;
 
         public GetRecordSetNextChunk(string readerID, string nodeIp, int nextIndex)
         {
-            name = "GetReaderNextChunkCommand";
-            _readerNextChunkCommand = new GetReaderNextChunkCommand();
+            base.name = "GetReaderNextChunkCommand";
+            _readerNextChunkCommand = new Alachisoft.NCache.Common.Protobuf.GetReaderNextChunkCommand();
             _readerNextChunkCommand.readerId = readerID;
             _readerNextChunkCommand.nextIndex = nextIndex;
             _readerNextChunkCommand.nodeIP = nodeIp;
@@ -36,17 +34,17 @@ namespace Alachisoft.NCache.Web.Command
 
         internal override RequestType CommandRequestType
         {
-            get { return RequestType.BulkRead; }
+            get { return RequestType.NonKeyBulkRead; }
         }
 
         protected override void CreateCommand()
         {
-            _command = new Common.Protobuf.Command();
-            _command.requestID = RequestId;
-            _command.getReaderNextChunkCommand = _readerNextChunkCommand;
-            _command.type = Common.Protobuf.Command.Type.GET_READER_CHUNK;
-            _command.commandVersion = 1;
-            _command.clientLastViewId = ClientLastViewId;
+            base._command = new Alachisoft.NCache.Common.Protobuf.Command();
+            base._command.requestID = base.RequestId;
+            base._command.getReaderNextChunkCommand = _readerNextChunkCommand;
+            base._command.type = Alachisoft.NCache.Common.Protobuf.Command.Type.GET_READER_CHUNK;
+            base._command.commandVersion = 1;
+            base._command.clientLastViewId = base.ClientLastViewId;
         }
     }
 }

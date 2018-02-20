@@ -10,7 +10,7 @@
 // distributed under the License is distributed on an "AS IS" BASIS,
 // WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
 // See the License for the specific language governing permissions and
-// limitations under the License.
+// limitations under the License
 
 using System;
 using Alachisoft.NCache.IO;
@@ -44,7 +44,7 @@ namespace Alachisoft.NCache.Serialization.Surrogates
                 graph = Instantiate(reader);
                 if (graph != null)
                 {
-                    reader.Context.RememberObject(graph,false);
+                    reader.Context.RememberObject(graph, false);
                     bKnown = true;
                 }
 
@@ -71,7 +71,7 @@ namespace Alachisoft.NCache.Serialization.Surrogates
 
                 if (!bKnown)
                 {
-                    reader.Context.RememberObject(graph,false);
+                    reader.Context.RememberObject(graph, false);
                 }
             }
             return graph;
@@ -86,7 +86,7 @@ namespace Alachisoft.NCache.Serialization.Surrogates
                 return;
             }
 
-            cookie = writer.Context.RememberObject(graph,true);
+            cookie = writer.Context.RememberObject(graph, true);
             writer.Write(cookie);
 
             if (VersionCompatible)

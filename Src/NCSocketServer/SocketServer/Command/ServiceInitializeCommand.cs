@@ -12,12 +12,12 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-
 using System;
+
 using Alachisoft.NCache.SocketServer.Util;
+using System.Collections;
 using Alachisoft.NCache.Common.DataStructures.Clustered;
 using System.IO;
-using Alachisoft.NCache.Common.Util;
 
 namespace Alachisoft.NCache.SocketServer.Command
 {
@@ -28,18 +28,17 @@ namespace Alachisoft.NCache.SocketServer.Command
         {
             public string RequestId;
             public string CacheId;
-            public bool IsDotNetClient;
-            public string ClientID;
             public int clientVersion;
-            public string clientIP;
-            public bool isAzureClient;
-        }
-        
-        private long _acknowledgmentId;
-        //PROTOBUF
+            
 
-        public ServiceInitializeCommand(long acknowledgementId)
+        }
+        private bool requestLoggingEnabled;
+
+        private long _acknowledgmentId;
+
+        public ServiceInitializeCommand(bool requestLoggingEnabled, long acknowledgementId)
         {
+            this.requestLoggingEnabled = requestLoggingEnabled;
             _acknowledgmentId = acknowledgementId;
         }
 
@@ -52,26 +51,23 @@ namespace Alachisoft.NCache.SocketServer.Command
             catch (Exception exc)
             {
                 if (SocketServer.Logger.IsErrorLogsEnabled) SocketServer.Logger.NCacheLog.Error("InitializeCommand.Execute", clientManager.ClientSocket.RemoteEndPoint.ToString() + " parsing error " + exc.ToString());
-
-                if (!base.immatureId.Equals("-2"))
                 {
-                    _serializedResponsePackets.Add(Alachisoft.NCache.Common.Util.ResponseHelper.SerializeExceptionResponse(exc, command.requestID));
+                    _serializedResponsePackets.Add(Alachisoft.NCache.Common.Util.ResponseHelper.SerializeExceptionResponse(exc, command.requestID, command.commandID));
                 }
                 return;
             }
 
             try
             {
-                clientManager.ClientVersion = cmdInfo.clientVersion;
                 SocketHelper.TransferConnection(clientManager, cmdInfo.CacheId, command, _acknowledgmentId);
             }
             catch (Exception exc)
             {
                 if (SocketServer.Logger.IsErrorLogsEnabled) SocketServer.Logger.NCacheLog.Error("InitializeCommand.Execute", clientManager.ClientSocket.RemoteEndPoint.ToString() + " : " + clientManager.ClientID + " failed to connect to " + cmdInfo.CacheId + " Error: " + exc.ToString());
-                _serializedResponsePackets.Add(ResponseHelper.SerializeExceptionResponse(exc, command.requestID));
+                _serializedResponsePackets.Add(GetOptimizedResponse(Alachisoft.NCache.Common.Util.ResponseHelper.SerializeExceptionResponse(exc, command.requestID, command.commandID)));
             }
         }
-       
+
         //PROTOBUF
         private CommandInfo ParseCommand(Alachisoft.NCache.Common.Protobuf.Command command, ClientManager clientManager)
         {
@@ -82,5 +78,38 @@ namespace Alachisoft.NCache.SocketServer.Command
             return cmdInfo;
         }
 
+
+        /// <summary>
+        /// Send Service Initialize Command respose on optimal path if exception occured only for newer clients 4610.
+        /// Backward compability handled for older version client. 
+        /// </summary>
+        /// <param name="unOptBuffer"></param>
+        /// <returns></returns>
+        private IList GetOptimizedResponse(IList unOptBuffer)
+        {
+            if (cmdInfo.clientVersion < 4610) return unOptBuffer;
+
+            using (ClusteredMemoryStream stream = new ClusteredMemoryStream())
+            {
+
+                byte[] dataSzBytes = new byte[ConnectionManager.MessageSizeHeader];
+                stream.Write(dataSzBytes, 0, ConnectionManager.MessageSizeHeader);
+
+                int len = 0;
+
+                foreach (byte[] buffBytes in unOptBuffer)
+                {
+                    stream.Write(buffBytes, 0, buffBytes.Length);
+                    len += buffBytes.Length;
+                }
+
+                byte[] lengthBytes = HelperFxn.ToBytes(len.ToString());
+
+                stream.Seek(0, SeekOrigin.Begin);
+                stream.Write(lengthBytes, 0, lengthBytes.Length);
+
+                return stream.GetInternalBuffer();
+            }
+        }
     }
 }

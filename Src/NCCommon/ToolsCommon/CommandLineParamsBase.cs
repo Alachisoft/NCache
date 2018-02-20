@@ -10,7 +10,18 @@
 // distributed under the License is distributed on an "AS IS" BASIS,
 // WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
 // See the License for the specific language governing permissions and
-// limitations under the License.
+// limitations under the License
+
+using System;
+using System.Collections.Generic;
+using System.Text;
+using System.Reflection;
+
+using Alachisoft.NCache.Common.Configuration;
+
+
+
+
 
 
 namespace Alachisoft.NCache.Tools.Common
@@ -24,21 +35,12 @@ namespace Alachisoft.NCache.Tools.Common
         static private bool _overwrite = false;
         static private bool _usage = false;
 
-        [ArgumentAttribute(@"/h", @"/hotapply", false)]
-        public bool IsHotApply
+        public CommandLineParamsBase()
         {
-            get { return _hotApply; }
-            set { _hotApply = value; }
+
         }
 
-        [ArgumentAttribute(@"/o", @"/overwrite", false)]
-        public bool IsOverWrite
-        {
-            get { return _overwrite; }
-            set { _overwrite = value; }
-        }
-
-        [ArgumentAttribute(@"/?", @"/help", false)]
+        [ArgumentAttribute(@"/?", @"/help", @"-?", @"--help", false)]
         public bool IsUsage
         {
             get { return _usage; }
@@ -46,21 +48,9 @@ namespace Alachisoft.NCache.Tools.Common
         }
 
 
-        [ArgumentAttribute(@"/U", @"/user-id")]
-        public string UserId
-        {
-            get { return _userId; }
-            set { _userId = value; }
-        }
+    
 
-        [ArgumentAttribute(@"/P", @"/password")]
-        public string Password
-        {
-            get { return _userPwd; }
-            set { _userPwd = value; }
-        }
-
-        [ArgumentAttribute(@"/nologo", @"/G", true)]
+        [ArgumentAttribute(@"/nologo", @"/G", @"--nologo", @"-G", true)]
         public bool IsLogo
         {
             get { return _printLogo; }

@@ -1,0 +1,6 @@
+
+option java_outer_classname="TaskEnumeratorResponseProtocol";
+package Alachisoft.NCache.Common.Protobuf;
+message TaskEnumeratorResponse {
+    repeated bytes TaskEnumeratorResult = 1;
+}

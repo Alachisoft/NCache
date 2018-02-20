@@ -13,15 +13,11 @@
 // limitations under the License.
 
 using System;
-using System.Text;
 using System.Collections;
-using Alachisoft.NCache.Caching.Queries.Filters;
-using Alachisoft.NCache.Serialization.Formatters;
-using Alachisoft.NCache.Runtime.Serialization;
-using Alachisoft.NCache.Common.Queries;
-using Alachisoft.NCache.Common.Enum;
-using Runtime = Alachisoft.NCache.Runtime;
 using Alachisoft.NCache.Common.DataReader;
+using Alachisoft.NCache.Common.Enum;
+using Alachisoft.NCache.Common.Queries;
+using Alachisoft.NCache.Runtime.Serialization;
 using Alachisoft.NCache.Common.DataStructures.Clustered;
 
 namespace Alachisoft.NCache.Caching.Queries
@@ -32,17 +28,34 @@ namespace Alachisoft.NCache.Caching.Queries
         private IDictionary _searchEntriesResult;
         private DictionaryEntry _aggregateFunctionResult;
         private bool _isInitialized = false;
-        private ArrayList _keysForUpdateIndices;
+        private IList _keysForUpdateIndices;
 
         private QueryType _queryType = QueryType.SearchKeys;
         private AggregateFunctionType _aggregateFunctionType = AggregateFunctionType.NOTAPPLICABLE;
         private ReaderResultSet _readerResult;
+
+        private string _cqId;
+
+        private RecordSet _groupByFunctionResult;
+
+        public RecordSet GroupByResult
+        {
+            get { return _groupByFunctionResult; }
+            set { _groupByFunctionResult = value; }
+        }
 
         public ReaderResultSet ReaderResult
         {
             get { return _readerResult; }
             set { _readerResult = value; }
         }
+
+        public string CQUniqueId
+        {
+            get { return _cqId; }
+            set { _cqId = value; }
+        }
+
         public bool IsInitialized
         {
             get { return _isInitialized; }
@@ -59,6 +72,7 @@ namespace Alachisoft.NCache.Caching.Queries
             get { return _aggregateFunctionType; }
             set { _aggregateFunctionType = value; }
         }
+
 
         public IList SearchKeysResult
         {
@@ -78,7 +92,7 @@ namespace Alachisoft.NCache.Caching.Queries
             set { _aggregateFunctionResult = value; }
         }
 
-        public ArrayList UpdateIndicesKeys 
+        public IList UpdateIndicesKeys 
         {
             get { return _keysForUpdateIndices; }
             set { _keysForUpdateIndices = value; }
@@ -253,7 +267,7 @@ namespace Alachisoft.NCache.Caching.Queries
                         }
                         else
                         {
-                            IEnumerator ienum = resultSet.SearchKeysResult.GetEnumerator();
+                            IEnumerator ienum=resultSet.SearchKeysResult.GetEnumerator();
 
                             while (ienum.MoveNext())
                             {
@@ -261,6 +275,7 @@ namespace Alachisoft.NCache.Caching.Queries
                             }
                         }
                     }
+
                     break;
 
                 case QueryType.SearchEntries:
@@ -271,10 +286,24 @@ namespace Alachisoft.NCache.Caching.Queries
                         IDictionaryEnumerator ide = resultSet.SearchEntriesResult.GetEnumerator();
                         while (ide.MoveNext())
                         {
-                            this.SearchEntriesResult[ide.Key]=ide.Value;
+                            try
+                            {
+                                this.SearchEntriesResult.Add(ide.Key, ide.Value);
+                            }
+                            catch (ArgumentException ex) //Overwrite entry with an updated one
+                            {
+                                CacheEntry entry = ide.Value as CacheEntry;
+                                CacheEntry existingEntry = this.SearchEntriesResult[ide.Key] as CacheEntry;
+                                if (entry != null && existingEntry != null)
+                                {
+                                    if (entry.Version > existingEntry.Version)
+                                    {
+                                        this.SearchEntriesResult[ide.Key] = entry;
+                                    }
+                                }
+                            }
                         }
                     }
-
                     break;
             }
         }
@@ -283,9 +312,11 @@ namespace Alachisoft.NCache.Caching.Queries
         {
             _aggregateFunctionResult = (DictionaryEntry)reader.ReadObject();
             _searchKeysResult = reader.ReadObject() as ClusteredArrayList;
-            _searchEntriesResult = reader.ReadObject() as HashVector;
+            _searchEntriesResult = reader.ReadObject() as IDictionary;
             _queryType = (QueryType)reader.ReadInt32();
             _aggregateFunctionType = (AggregateFunctionType)reader.ReadInt32();
+            _cqId = reader.ReadString();
+            _groupByFunctionResult = reader.ReadObject() as RecordSet;
         }
 
         void ICompactSerializable.Serialize(Runtime.Serialization.IO.CompactWriter writer)
@@ -295,6 +326,8 @@ namespace Alachisoft.NCache.Caching.Queries
             writer.WriteObject(_searchEntriesResult);
             writer.Write(Convert.ToInt32(_queryType));
             writer.Write(Convert.ToInt32(_aggregateFunctionType));
+            writer.Write(CQUniqueId);
+            writer.WriteObject(_groupByFunctionResult);
         }
     }
 }

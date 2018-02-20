@@ -11,15 +11,9 @@
 // WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
 // See the License for the specific language governing permissions and
 // limitations under the License.
-
 using System;
-using System.Collections.Generic;
-using System.Text;
 using Alachisoft.NCache.Common.Configuration;
-using Alachisoft.NCache.Common.Enum;
-using Alachisoft.NCache.Common;
 using Alachisoft.NCache.Runtime.Serialization;
-using Runtime = Alachisoft.NCache.Runtime;
 
 namespace Alachisoft.NCache.Config.NewDom
 {
@@ -28,11 +22,20 @@ namespace Alachisoft.NCache.Config.NewDom
     {
         Alachisoft.NCache.Config.Dom.ClientNodes clientNodes;
         ServersNodes serverNodes;
+        double depVersion = 0;
 
         public CacheDeployment()
         {
             serverNodes = new ServersNodes();
         }
+
+        [ConfigurationAttribute("deployment-version")]
+        public double DeploymentVersion
+        {
+            get { return depVersion; }
+            set { depVersion = value; }
+        }
+
 
         [ConfigurationSection("client-nodes")]
         public Alachisoft.NCache.Config.Dom.ClientNodes ClientNodes
@@ -48,6 +51,8 @@ namespace Alachisoft.NCache.Config.NewDom
             set { serverNodes = value; }
         }
 
+
+
         #region ICloneable Members
 
         public object Clone()
@@ -55,6 +60,7 @@ namespace Alachisoft.NCache.Config.NewDom
             CacheDeployment config = new CacheDeployment();
             config.clientNodes = clientNodes != null ? clientNodes.Clone() as Alachisoft.NCache.Config.Dom.ClientNodes : null;
             config.serverNodes = serverNodes != null ? serverNodes.Clone() as ServersNodes : null;
+            config.DeploymentVersion = depVersion;
             return config;
         }
 
@@ -65,12 +71,14 @@ namespace Alachisoft.NCache.Config.NewDom
         {
             clientNodes = (Alachisoft.NCache.Config.Dom.ClientNodes)reader.ReadObject();
             serverNodes = (ServersNodes)reader.ReadObject();
+            depVersion = (double)reader.ReadObject();
         }
 
         public void Serialize(Runtime.Serialization.IO.CompactWriter writer)
         {
             writer.WriteObject(clientNodes);
             writer.WriteObject(serverNodes);
+            writer.WriteObject(depVersion);
         }
         #endregion
     }

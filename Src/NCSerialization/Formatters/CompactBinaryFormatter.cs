@@ -10,12 +10,10 @@
 // distributed under the License is distributed on an "AS IS" BASIS,
 // WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
 // See the License for the specific language governing permissions and
-// limitations under the License.
+// limitations under the License
 
-using System;
-using System.Collections;
+
 using System.IO;
-
 using Alachisoft.NCache.IO;
 using Alachisoft.NCache.Serialization.Surrogates;
 using Alachisoft.NCache.Common;
@@ -53,7 +51,7 @@ namespace Alachisoft.NCache.Serialization.Formatters
 		/// <param name="graph">object to serialize</param>
 		/// <returns>binary form of object</returns>
 		static public byte[] ToByteBuffer(object graph,string cacheContext)
-		{
+        {
 			using(MemoryStream stream = new MemoryStream())
 			{
 				Serialize(stream, graph,cacheContext);
@@ -67,7 +65,7 @@ namespace Alachisoft.NCache.Serialization.Formatters
 		/// <param name="buffer">binary representation of the object</param>
 		/// <returns>deserialized object</returns>
 		static public object FromByteBuffer(byte[] buffer,string cacheContext)
-		{
+{
 			using(MemoryStream stream = new MemoryStream(buffer))
 			{
 				return Deserialize(stream,cacheContext);
@@ -98,7 +96,6 @@ namespace Alachisoft.NCache.Serialization.Formatters
             Serialize(writer, graph, cacheContext);
             writer.Dispose(closeStream);
         }
-
         /// <summary>
         /// Serializes an object into the specified stream.
         /// </summary>
@@ -111,7 +108,6 @@ namespace Alachisoft.NCache.Serialization.Formatters
             Serialize(writer, graph, cacheContext);
             writer.Dispose(closeStream);
         }
-
 		/// <summary>
 		/// Deserializes an object from the specified stream.
 		/// </summary>
@@ -124,7 +120,6 @@ namespace Alachisoft.NCache.Serialization.Formatters
 				return Deserialize(reader,cacheContext, false);
 			}
 		}
-
         /// <summary>
         /// Deserializes an object from the specified stream.
         /// </summary>
@@ -138,7 +133,6 @@ namespace Alachisoft.NCache.Serialization.Formatters
             reader.Dispose(closeStream);
             return obj;
         }
-
         /// <summary>
         /// Deserializes an object from the specified stream.
         /// </summary>
@@ -153,7 +147,6 @@ namespace Alachisoft.NCache.Serialization.Formatters
             reader.Dispose(closeStream);
             return obj;
         }
-
 		/// <summary>
 		/// Serializes an object into the specified compact binary writer.
 		/// </summary>
@@ -184,9 +177,15 @@ namespace Alachisoft.NCache.Serialization.Formatters
 			// Find an appropriate surrogate by handle
 			ISerializationSurrogate surrogate =
                 TypeSurrogateSelector.GetSurrogateForTypeHandle(handle,cacheContext);
+            
+            if (surrogate == null)
+            {
+                surrogate = TypeSurrogateSelector.GetSurrogateForSubTypeHandle(handle, reader.ReadInt16(), cacheContext);
+            }
 
 			if(surrogate == null)
 			{
+                
 				throw new CompactSerializationException("Type handle " + handle + "is not registered with Compact Serialization Framework");
 			}
             if (!skip)

@@ -12,6 +12,7 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
+using System.Collections;
 using Alachisoft.NCache.Caching.Util;
 
 namespace Alachisoft.NCache.SocketServer.EventTask
@@ -44,9 +45,9 @@ namespace Alachisoft.NCache.SocketServer.EventTask
                 response.configModified = configModified;
                 response.responseType = Alachisoft.NCache.Common.Protobuf.Response.Type.CONFIG_MODIFIED_EVENT;
 
-                byte[] serializedResponse = Alachisoft.NCache.Common.Util.ResponseHelper.SerializeResponse(response);
+                IList serializedResponse = Alachisoft.NCache.Common.Util.ResponseHelper.SerializeResponse(response);
 
-                ConnectionManager.AssureSend(clientManager, serializedResponse, Alachisoft.NCache.Common.Enum.Priority.Critical);
+                ConnectionManager.AssureSend(clientManager, serializedResponse, Alachisoft.NCache.Common.Enum.Priority.High);
             }
         }
     }

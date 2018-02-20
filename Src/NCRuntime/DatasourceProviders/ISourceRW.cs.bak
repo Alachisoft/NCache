@@ -1,0 +1,151 @@
+using System;
+using System.Collections;
+using System.Collections.Generic;
+#if !EXPRESS || (EXPRESS && PROFESSIONAL)
+using Alachisoft.NCache.Runtime.Dependencies;
+using Alachisoft.NCache.Runtime;
+using Alachisoft.NCache.Runtime.Caching;
+#else
+using Alachisoft.NCacheExpress.Runtime.Dependencies;
+using Alachisoft.NCacheExpress.Runtime;
+using Alachisoft.NCacheExpress.Runtime.Caching;
+#endif
+
+#if !EXPRESS || (EXPRESS && PROFESSIONAL)
+namespace Alachisoft.NCache.Runtime.DatasourceProviders
+#else
+namespace Alachisoft.NCacheExpress.Runtime.DatasourceProviders
+#endif
+{
+	/// <summary>
+	/// Contains methods used to read an object by its key from the master data source. 
+	/// Must be implemented by read-through components.
+	/// </summary>
+#if DEBUG
+	public interface IReadThruProvider
+#else
+#if !EXPRESS || (EXPRESS && PROFESSIONAL)
+	public interface IReadThruProvider
+#else
+    internal interface IReadThruProvider
+#endif
+#endif
+	{
+		/// <summary>
+		/// Perform tasks like allocating resources or acquiring connections etc.
+		/// </summary>
+		/// <param name="parameters">Startup paramters defined in the configuration</param>
+		void Start(IDictionary parameters);
+
+		/// <summary>
+		/// Responsible for loading the object from the data source. Key is passed as parameter.
+		/// </summary>
+		/// <param name="key">key used to refernece object</param>
+		/// <param name="CacheItem">cache item to be inserted</param>
+		/// 
+		void LoadFromSource(string key, out ProviderCacheItem cacheItem);
+		//object LoadFromSource(string key, out CacheDependency dependency, out DateTime absoluteExpiration, out TimeSpan slidingExpiration, out CacheItemPriority priority, out bool resyncOnExpiration, out string group, out string subGroup);
+
+        /// <summary>
+        /// Responsible for loading array of objects from the data source. Keys are passed as parameter.
+        /// </summary>
+        /// <param name="keys">array of keys</param>
+		/// <param name="CacheItem">cache item to be inserted</param>
+		/// 
+		Dictionary<string, ProviderCacheItem> LoadFromSource(string[] keys);
+		/// <summary>
+		/// Perform tasks associated with freeing, releasing, or resetting resources.
+		/// </summary>
+		void Stop();
+	}
+
+	/// <summary>
+	/// Contains methods used to save/update an object to the master data source. Must be 
+	/// implemented by write-through components.
+	/// </summary>
+#if DEBUG
+	public interface IWriteThruProvider//: IDisposable
+#else
+#if !EXPRESS || (EXPRESS && PROFESSIONAL)
+    public interface IWriteThruProvider//: IDisposable
+#else
+    internal interface IWriteThruProvider//: IDisposable
+#endif
+#endif
+	{
+		/// <summary>
+		/// Perform tasks like allocating resources or acquiring connections etc.
+		/// </summary>
+		/// <param name="parameters">Startup paramters defined in the configuration</param>
+		void Start(IDictionary parameters);
+
+		/// <summary>
+		/// Responsible for updating/inserting an object to the data source. The Key and the 
+		/// object are passed as parameter.
+		/// </summary>
+        //long SaveToSource(object key, object val);
+
+        /// <summary>
+        /// Responsible for adding object in data source.
+        /// Object will not be added to cache if it fails to add in data source.
+        /// </summary>
+        /// <param name="key">key used to reference the object</param>
+        /// <param name="value">object</param>
+        /// <returns>true if add operation is successful, false otherwise</returns>
+        bool AddToSource(string key, object value);
+
+        /// <summary>
+        /// Responsible for updating object in data source.
+        /// Object will not be updated in cache if it fails to update in data source.
+        /// </summary>
+        /// <param name="key">key used to reference the object</param>
+        /// <param name="value">updated value</param>
+        /// <returns>true if update operation is successful, false otherwise</returns>
+        bool UpdateSource(string key, object value);
+
+        /// <summary>
+        /// Responsible for removing object in data source.
+        /// Object will not be removed from cache if it fails is not removed from data source.
+        /// </summary>
+        /// <param name="key">key used to reference the object</param>
+        /// <returns>true if remove operation is successful, false otherwise</returns>
+        bool RemoveFromSource(string key);
+        
+        /// <summary>
+        /// Clears data source. Cache will not be cleared if data source is not cleared
+        /// </summary>
+        /// <returns>true if clear operation is successful, false otherwise</returns>
+        bool Clear();
+
+        /// <summary>
+        /// Responsible for adding array of objects in data source.
+        /// Objects, who failed to add, will not be added in cache
+        /// </summary>
+        /// <param name="keys">array of keys</param>
+        /// <param name="vals">array of objects</param>
+        /// <returns>dictionary of keys, that failed, and exception</returns>
+        Hashtable AddToSource(string[] keys, object[] vals);
+
+        /// <summary>
+        /// Responsible for updating array of objects in data source.
+        /// Objects, who failed to update, will not be updated in cache
+        /// </summary>
+        /// <param name="keys">array of keys</param>
+        /// <param name="vals">array of objects</param>
+        /// <returns>dictionary of keys, that failed, and exception</returns>
+        Hashtable UpdateSource(string[] keys, object[] vals);
+
+        /// <summary>
+        /// Responsible for removing array of objects from data source.
+        /// Objects, who failed to remove, will not be removed in cache
+        /// </summary>
+        /// <param name="keys">array of keys</param>
+        /// <returns>dictionary of keys, that failed, and exception</returns>
+        Hashtable RemoveFromSource(string[] keys);
+
+		/// <summary>
+		/// Perform tasks associated with freeing, releasing, or resetting resources.
+		/// </summary>
+		void Stop();
+	}
+}

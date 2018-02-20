@@ -1,7 +1,11 @@
 import "QueryInfo.proto";
+import "TagInfo.proto";
+import "NamedTagInfo.proto";
 
 option java_outer_classname="ObjectQueryInfoProtocol";
 package Alachisoft.NCache.Common.Protobuf;
 message ObjectQueryInfo {
-	optional QueryInfo queryInfo = 1;	
+	optional NamedTagInfo namedTagInfo = 1;
+	optional TagInfo tagInfo = 2;
+	optional QueryInfo queryInfo = 3;	
 }

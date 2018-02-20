@@ -10,11 +10,12 @@
 // distributed under the License is distributed on an "AS IS" BASIS,
 // WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
 // See the License for the specific language governing permissions and
-// limitations under the License.
+// limitations under the License
 
 using Alachisoft.NCache.Common.Interop;
 using Alachisoft.NCache.Runtime.Serialization;
 using Alachisoft.NCache.Runtime.Serialization.IO;
+using System.Diagnostics;
 
 namespace Alachisoft.NCache.Common.Stats
 {
@@ -32,11 +33,11 @@ namespace Alachisoft.NCache.Common.Stats
         private long _lastStop;
         /// <summary> Total time spent in sampling, i.e., acrued sample time. </summary>
         private double _totalTime;
-        /// <summary> Best time interval mesaured during sampling. </summary>
+        /// <summary> Best time interval measured during sampling. </summary>
         private double _bestTime;
-        /// <summary> Worst time interval mesaured during sampling. </summary>
+        /// <summary> Worst time interval measured during sampling. </summary>
         private double _worstTime;
-        /// <summary> Avg. time interval mesaured during sampling. </summary>
+        /// <summary> Avg. time interval measured during sampling. </summary>
         private double _avgTime;
         /// <summary> Total number of samples collected for the statistics. </summary>
         private long _totalRunCount;
@@ -51,9 +52,9 @@ namespace Alachisoft.NCache.Common.Stats
         static HPTimeStats()
         {
             long freq = 0;
-            Win32.QueryPerformanceFrequency(ref freq);
+            //Win32.QueryPerformanceFrequency(ref freq);
+            freq = Stopwatch.Frequency;
             _frequency = (double)freq / (double)1000;
-
         }
         /// <summary>
         /// Constructor
@@ -92,7 +93,7 @@ namespace Alachisoft.NCache.Common.Stats
         }
 
         /// <summary>
-        /// Gets the number of total worst cases occured.
+        /// Gets the number of total worst cases occurred.
         /// </summary>
         public long TotalWorstCases
         {
@@ -116,7 +117,7 @@ namespace Alachisoft.NCache.Common.Stats
         }
 
         /// <summary>
-        /// Returns the best time interval mesaured during sampling
+        /// Returns the best time interval measured during sampling
         /// </summary>
         public double Best
         {
@@ -124,7 +125,7 @@ namespace Alachisoft.NCache.Common.Stats
         }
 
         /// <summary>
-        /// Returns the avg. time interval mesaured during sampling
+        /// Returns the avg. time interval measured during sampling
         /// </summary>
         public double Avg
         {
@@ -136,7 +137,7 @@ namespace Alachisoft.NCache.Common.Stats
             get { lock (this) { return _avgCummulativeOperations; } }
         }
         /// <summary>
-        /// Returns the worst time interval mesaured during sampling
+        /// Returns the worst time interval measured during sampling
         /// </summary>
         public double Worst
         {
@@ -149,6 +150,7 @@ namespace Alachisoft.NCache.Common.Stats
         public void Reset()
         {
             _runCount = 0;
+            //_lastStart = _lastStop = 0;
             _totalTime = _bestTime = _worstTime = _worstOccurance = 0;
             _avgTime = 0;
             _avgCummulativeOperations = 0;
@@ -159,9 +161,7 @@ namespace Alachisoft.NCache.Common.Stats
         /// </summary>
         public void BeginSample()
         {
-            Win32.QueryPerformanceCounter(ref _lastStart);
-            _lastStart = _lastStart;
-
+            _lastStart = Stopwatch.GetTimestamp();
         }
 
 
@@ -172,8 +172,7 @@ namespace Alachisoft.NCache.Common.Stats
         {
             lock (this)
             {
-                Win32.QueryPerformanceCounter(ref _lastStop);
-                _lastStop = _lastStop;
+                _lastStop = Stopwatch.GetTimestamp();
                 AddSampleTime(Current);
             }
         }
@@ -185,8 +184,7 @@ namespace Alachisoft.NCache.Common.Stats
         {
             lock (this)
             {
-                Win32.QueryPerformanceCounter(ref _lastStop);
-                _lastStop = _lastStop;
+                _lastStop = Stopwatch.GetTimestamp();
                 AddSampleTime(Current, runcount);
             }
         }

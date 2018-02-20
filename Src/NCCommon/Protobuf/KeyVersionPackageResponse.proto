@@ -1,0 +1,7 @@
+option java_outer_classname="KeyVersionPackageResponseProtocol";
+package Alachisoft.NCache.Common.Protobuf;
+message KeyVersionPackageResponse 
+{
+	repeated string keys = 1;
+	repeated uint64 versions = 2;	
+}

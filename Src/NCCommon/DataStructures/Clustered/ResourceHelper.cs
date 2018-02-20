@@ -1,5 +1,5 @@
-﻿﻿/*
-* Copyright (c) 2015, Alachisoft. All Rights Reserved.
+﻿/*
+* Copyright (c) 2018, Alachisoft. All Rights Reserved.
 *
 * Licensed under the Apache License, Version 2.0 (the "License");
 * you may not use this file except in compliance with the License.
@@ -14,7 +14,10 @@
 * limitations under the License.
 */
 
-
+using System;
+using System.Collections.Generic;
+using System.Linq;
+using System.Text;
 using System.Globalization;
 using System.Resources;
 using System.Reflection;
@@ -40,7 +43,6 @@ namespace Alachisoft.NCache.Common.DataStructures.Clustered
         {
             return s_resourceManager.GetString(name, culture);
         }
-
 
     }
 }

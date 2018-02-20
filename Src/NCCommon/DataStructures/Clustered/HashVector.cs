@@ -40,13 +40,12 @@ using System.Runtime.Serialization;
 using System.Diagnostics;
 using System.Threading;
 using System.Runtime.ConstrainedExecution;
+using System.Collections;
 #if DEBUG
 using System.Diagnostics.Contracts;
 #endif
-using System.Collections;
-using System.Diagnostics.Contracts;
-using System.Collections.Generic;
-using System.Diagnostics.Contracts;
+
+
 
 namespace Alachisoft.NCache.Common.DataStructures.Clustered
 {
@@ -96,7 +95,7 @@ namespace Alachisoft.NCache.Common.DataStructures.Clustered
     [DebuggerTypeProxy(typeof(VectorDebugView))]
 #endif
     [Serializable]
-    public class HashVector : IDictionary, ISizableIndex, ISerializable, IDeserializationCallback, ICloneable
+    public class HashVector : ISizableIndex, ISerializable, IDeserializationCallback, ICloneable, IDictionary
     {
         /*
           Implementation Notes:
@@ -174,8 +173,11 @@ namespace Alachisoft.NCache.Common.DataStructures.Clustered
             public Object val;
             public int hash_coll;   // Store hash code; sign bit means there was a collision.
         }
-
+#if !NETCORE
         private static int sizeOfReference = System.Runtime.InteropServices.Marshal.SizeOf(typeof(bucket));
+#elif NETCORE
+        private static int sizeOfReference = 24; //TODO: ALACHISOFT (Find alternative later)
+#endif
         private static int lengthThreshold = (81920 / sizeOfReference);
         private int bucketCount;
         private bucket[][] buckets;
@@ -1319,8 +1321,6 @@ namespace Alachisoft.NCache.Common.DataStructures.Clustered
                 }
                 bn = (int)(((long)bn + incr) % (uint)bucketCount);
             } while (b.hash_coll < 0 && ++ntry < bucketCount);
-
-            //throw new ArgumentException(ResourceHelper.GetResourceString("Arg_RemoveArgNotFound"));
         }
 
         // Returns the object to synchronize on for this hash table.
@@ -1423,7 +1423,7 @@ namespace Alachisoft.NCache.Common.DataStructures.Clustered
                 return;
             }
 
-            SerializationInfo siInfo;
+            SerializationInfo siInfo= null;
             HashHelpers.SerializationInfoTable.TryGetValue(this, out siInfo);
 
             if (siInfo == null)
@@ -2068,117 +2068,6 @@ namespace Alachisoft.NCache.Common.DataStructures.Clustered
         }
     }
 
-    [DebuggerDisplay("{value}", Name = "[{key}]", Type = "")]
-    public class KeyValuePairs
-    {
-        [DebuggerBrowsable(DebuggerBrowsableState.Never)]
-        private object key;
-        [DebuggerBrowsable(DebuggerBrowsableState.Never)]
-        private object value;
-        public object Key
-        {
-#if DEBUG
-            [TargetedPatchingOptOut("Performance critical to inline this type of method across NGen image boundaries")]
-#endif
-            get
-            {
-                return this.key;
-            }
-        }
-        public object Value
-        {
-#if DEBUG
-            [TargetedPatchingOptOut("Performance critical to inline this type of method across NGen image boundaries")]
-#endif
-            get
-            {
-                return this.value;
-            }
-        }
-#if DEBUG
-        [TargetedPatchingOptOut("Performance critical to inline this type of method across NGen image boundaries")]
-#endif
-        public KeyValuePairs(object key, object value)
-        {
-            this.value = value;
-            this.key = key;
-        }
-    }
-
-    public class CompatibleComparer : IEqualityComparer
-    {
-        private IComparer _comparer;
-        private IHashCodeProvider _hcp;
-        internal IComparer Comparer
-        {
-#if DEBUG
-            [TargetedPatchingOptOut("Performance critical to inline this type of method across NGen image boundaries")]
-#endif
-            get
-            {
-                return this._comparer;
-            }
-        }
-        internal IHashCodeProvider HashCodeProvider
-        {
-#if DEBUG
-            [TargetedPatchingOptOut("Performance critical to inline this type of method across NGen image boundaries")]
-#endif
-            get
-            {
-                return this._hcp;
-            }
-        }
-#if DEBUG
-        [TargetedPatchingOptOut("Performance critical to inline this type of method across NGen image boundaries")]
-#endif
-        internal CompatibleComparer(IComparer comparer, IHashCodeProvider hashCodeProvider)
-        {
-            this._comparer = comparer;
-            this._hcp = hashCodeProvider;
-        }
-        public int Compare(object a, object b)
-        {
-            if (a == b)
-            {
-                return 0;
-            }
-            if (a == null)
-            {
-                return -1;
-            }
-            if (b == null)
-            {
-                return 1;
-            }
-            if (this._comparer != null)
-            {
-                return this._comparer.Compare(a, b);
-            }
-            IComparable comparable = a as IComparable;
-            if (comparable != null)
-            {
-                return comparable.CompareTo(b);
-            }
-            throw new ArgumentException(ResourceHelper.GetResourceString("Argument_ImplementIComparable"));
-        }
-        public new bool Equals(object a, object b)
-        {
-            return this.Compare(a, b) == 0;
-        }
-        public int GetHashCode(object obj)
-        {
-            if (obj == null)
-            {
-                throw new ArgumentNullException("obj");
-            }
-            if (this._hcp != null)
-            {
-                return this._hcp.GetHashCode(obj);
-            }
-            return obj.GetHashCode();
-        }
-    }
     [DebuggerDisplay("Count = {Count}")]
     [Serializable]
 #if DEBUG
@@ -2187,7 +2076,7 @@ namespace Alachisoft.NCache.Common.DataStructures.Clustered
     [System.Runtime.InteropServices.ComVisible(false)]
     public class HashVector<TKey, TValue> : IDictionary<TKey, TValue>, IDictionary, ISerializable, IDeserializationCallback
     {
-        private struct Entry : ISizable
+        private struct Entry : IMemSizable
         {
             public int hashCode;    // Lower 31 bits of hash code, -1 if unused
             public int next;        // Index of next entry, -1 if last
@@ -2218,12 +2107,6 @@ namespace Alachisoft.NCache.Common.DataStructures.Clustered
                     return size;
 
                 }
-            }
-
-
-            public int InMemorySize
-            {
-                get { throw new NotImplementedException(); }
             }
         }
 
@@ -2299,7 +2182,9 @@ namespace Alachisoft.NCache.Common.DataStructures.Clustered
         {
             get
             {
+#if DEBUG
                 Contract.Ensures(Contract.Result<VectorKeyCollection>() != null);
+#endif
                 if (keys == null) keys = new VectorKeyCollection(this);
                 return keys;
             }
@@ -2317,7 +2202,9 @@ namespace Alachisoft.NCache.Common.DataStructures.Clustered
         {
             get
             {
-                Contract.Ensures(Contract.Result<VectorValueCollection>() != null);
+#if DEBUG
+                Contract.Ensures(Contract.Result<VectorValueCollection>() != null); 
+#endif
                 if (values == null) values = new VectorValueCollection(this);
                 return values;
             }
@@ -2583,7 +2470,7 @@ namespace Alachisoft.NCache.Common.DataStructures.Clustered
 
         public virtual void OnDeserialization(Object sender)
         {
-            SerializationInfo siInfo;
+            SerializationInfo siInfo=null;
             HashHelpers.SerializationInfoTable.TryGetValue(this, out siInfo);
 
             if (siInfo == null)
@@ -2639,7 +2526,9 @@ namespace Alachisoft.NCache.Common.DataStructures.Clustered
 
         private void Resize(int newSize, bool forceNewHashCodes)
         {
-            Contract.Assert(newSize >= entries.Length);
+#if DEBUG
+            Contract.Assert(newSize >= entries.Length); 
+#endif
             var newBuckets = new ClusteredArray<int>(newSize);
             for (int i = 0; i < newBuckets.Length; i++) newBuckets[i] = -1;
             var newEntries = new ClusteredArray<Entry>(newSize);
@@ -3805,226 +3694,5 @@ namespace Alachisoft.NCache.Common.DataStructures.Clustered
         }
     }
 
-#if DEBUG
-    [DebuggerTypeProxy(typeof(VectorDebugView))]
-#endif
-    public class DoubleVector<k, v> : IDictionary<k, v>
-    {
-        private HashVector<k, v> _keyToValue;
-        private HashVector<v, k> _valueToKey;
 
-        public DoubleVector()
-        {
-            _keyToValue = new HashVector<k, v>(3);
-            _valueToKey = new HashVector<v, k>(3);
-        }
-
-        public DoubleVector(IDictionary<k, v> dictionary)
-            : this()
-        {
-            foreach (var kvp in dictionary)
-            {
-                _keyToValue.Add(kvp.Key, kvp.Value);
-                _valueToKey.Add(kvp.Value, kvp.Key);
-            }
-        }
-
-        public void Add(k key, v value)
-        {
-            _keyToValue.Add(key, value);
-            _valueToKey.Add(value, key);
-        }
-
-        public bool ContainsKey(k key)
-        {
-            return _keyToValue.ContainsKey(key);
-        }
-
-        public bool ContainsValue(v value)
-        {
-            return _valueToKey.ContainsKey(value);
-        }
-
-        public ICollection<k> Keys
-        {
-            get { return _keyToValue.Keys; }
-        }
-
-        public bool Remove(k key)
-        {
-            v value;
-            if ((_keyToValue.TryGetValue(key, out value)))
-            {
-                _keyToValue.Remove(key);
-                _valueToKey.Remove(value);
-                return true;
-            }
-            return false;
-        }
-
-        public bool Remove(v value)
-        {
-            k key;
-            if (_valueToKey.TryGetValue(value, out key))
-            {
-                _valueToKey.Remove(value);
-                _keyToValue.Remove(key);
-                return true;
-            }
-            return false;
-        }
-
-        public bool TryGetValue(k key, out v value)
-        {
-            return _keyToValue.TryGetValue(key, out value);
-        }
-
-        public bool TryGetKey(v value, out k key)
-        {
-            return _valueToKey.TryGetValue(value, out key);
-        }
-
-        public ICollection<v> Values
-        {
-            get { return _keyToValue.Values; }
-        }
-
-        public v this[k key]
-        {
-            get
-            {
-                return _keyToValue[key];
-            }
-            set
-            {
-                v oldValue;
-                if (_keyToValue.TryGetValue(key, out oldValue))
-                    _valueToKey.Remove(oldValue);
-                _keyToValue[key] = value;
-                _valueToKey[value] = key;
-            }
-        }
-
-        public k this[v val]
-        {
-            get { return _valueToKey[val]; }
-            set
-            {
-                k oldKey;
-                if (_valueToKey.TryGetValue(val, out oldKey)) _keyToValue.Remove(oldKey);
-                _valueToKey[val] = value;
-                _keyToValue[value] = val;
-            }
-        }
-
-        public void Add(KeyValuePair<k, v> item)
-        {
-            _keyToValue.Add(item.Key, item.Value);
-            _valueToKey.Add(item.Value, item.Key);
-        }
-
-        public void Clear()
-        {
-            _keyToValue.Clear();
-            _valueToKey.Clear();
-        }
-
-        public bool Contains(KeyValuePair<k, v> item)
-        {
-            return _keyToValue.ContainsKey(item.Key) && _valueToKey.ContainsKey(item.Value);
-        }
-
-        public void CopyTo(KeyValuePair<k, v>[] array, int arrayIndex)
-        {
-            if (arrayIndex >= array.Length)
-                throw new ArgumentOutOfRangeException("The specified array index is out of the length of the array. ");
-            foreach (var kvp in _keyToValue)
-            {
-                if (arrayIndex == array.Length)
-                    return;
-                array[arrayIndex++] = kvp;
-            }
-        }
-
-        public int Count
-        {
-            get { return _keyToValue.Count; }
-        }
-
-        public bool IsReadOnly
-        {
-            get { return false; }
-        }
-
-        public bool Remove(KeyValuePair<k, v> item)
-        {
-            _keyToValue.Remove(item.Key);
-            return _valueToKey.Remove(item.Value);
-        }
-
-        public IEnumerator<KeyValuePair<k, v>> GetEnumerator()
-        {
-            return _keyToValue.GetEnumerator();
-        }
-
-        IEnumerator IEnumerable.GetEnumerator()
-        {
-            return _keyToValue.GetEnumerator();
-        }
-
-        public IEnumerator<KeyValuePair<v, k>> GetValueEnumerator()
-        {
-            return _valueToKey.GetEnumerator();
-        }
-    }
-
-    internal sealed class VectorDebugView
-    {
-        private IDictionary dictionary;
-
-        internal class DebugBucket
-        {
-            private object _key;
-            private object _value;
-
-            public DebugBucket(object key, object value)
-            {
-                _key = key;
-                _value = value;
-            }
-
-            public object Key
-            {
-                get { return _key; }
-            }
-
-            public object Value
-            {
-                get { return _value; }
-            }
-
-            public override string ToString()
-            {
-                return _key.ToString() + " : " + _value.ToString();
-            }
-        }
-
-        public VectorDebugView(IDictionary vector)
-        {
-            dictionary = vector;
-        }
-
-        [DebuggerBrowsable(DebuggerBrowsableState.RootHidden)]
-        public IEnumerable<DebugBucket> Values
-        {
-            get
-            {
-                foreach (object key in dictionary.Keys)
-                {
-                    yield return new DebugBucket(key, dictionary[key]);
-                }
-            }
-        }
-    }
-   
 }

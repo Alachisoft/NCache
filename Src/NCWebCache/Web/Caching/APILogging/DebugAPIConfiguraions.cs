@@ -13,15 +13,13 @@
 // limitations under the License.
 
 using System;
-using System.Collections.Generic;
-using System.Text;
 
 namespace Alachisoft.NCache.Web.Caching.APILogging
 {
     internal class DebugAPIConfiguraions
     {
-        private static int  s_timeBeforeLoggingStart = 0;
-        private static int s_numberOfIterations = 0;
+        private static int s_timeBeforeLoggingStart = 0;
+        private static int s_numberOfIterations = 1;
         private static int s_durationOfEachIteration = 0;
         private static int s_intervalBetweenIterations = 0;
         private static bool s_loggingEnabled = false;
@@ -31,6 +29,7 @@ namespace Alachisoft.NCache.Web.Caching.APILogging
         /// Indicates that all logging intervals has been passed.
         /// </summary>
         private bool _loggingExpired = false;
+
         private DateTime _loggingStartTime;
 
         static DebugAPIConfiguraions()
@@ -86,7 +85,6 @@ namespace Alachisoft.NCache.Web.Caching.APILogging
         {
             get { return s_loggingEnabled; }
             set { s_loggingEnabled = value; }
-
         }
 
         /// <summary>
@@ -110,56 +108,80 @@ namespace Alachisoft.NCache.Web.Caching.APILogging
         {
             try
             {
-
-                if (!string.IsNullOrEmpty(System.Configuration.ConfigurationManager.AppSettings["CacheClient.EnableAPILogging"]))
-                    s_loggingEnabled = bool.Parse(System.Configuration.ConfigurationManager.AppSettings["CacheClient.EnableAPILogging"]);
+                if (!string.IsNullOrEmpty(
+                    System.Configuration.ConfigurationManager.AppSettings["CacheClient.EnableAPILogging"]))
+                    s_loggingEnabled =
+                        bool.Parse(
+                            System.Configuration.ConfigurationManager.AppSettings["CacheClient.EnableAPILogging"]);
             }
             catch (Exception)
-            { }
+            {
+            }
+
             try
             {
-                if (!string.IsNullOrEmpty(System.Configuration.ConfigurationManager.AppSettings["CacheClient.TimeBeforeLoggingStart"]))
+                if (!string.IsNullOrEmpty(
+                    System.Configuration.ConfigurationManager.AppSettings["CacheClient.TimeBeforeLoggingStart"]))
                 {
-                    string time = System.Configuration.ConfigurationManager.AppSettings["CacheClient.TimeBeforeLoggingStart"];
-                    string [] splitted = time.Split(':');
+                    string time =
+                        System.Configuration.ConfigurationManager.AppSettings["CacheClient.TimeBeforeLoggingStart"];
+                    string[] splitted = time.Split(':');
                     if (splitted.Length == 3)
-                        s_timeBeforeLoggingStart = int.Parse(splitted[0]) * 3600 + int.Parse(splitted[1]) * 60 + int.Parse(splitted[2]);
+                        s_timeBeforeLoggingStart = int.Parse(splitted[0]) * 3600 + int.Parse(splitted[1]) * 60 +
+                                                   int.Parse(splitted[2]);
                 }
             }
             catch (Exception)
-            { }
+            {
+            }
 
             try
             {
-                if (!string.IsNullOrEmpty(System.Configuration.ConfigurationManager.AppSettings["CacheClient.APILogIteraions"]))
-                    s_numberOfIterations = int.Parse(System.Configuration.ConfigurationManager.AppSettings["CacheClient.APILogIteraions"]);
+                if (!string.IsNullOrEmpty(
+                    System.Configuration.ConfigurationManager.AppSettings["CacheClient.APILogIterations"]))
+                    s_numberOfIterations =
+                        int.Parse(System.Configuration.ConfigurationManager.AppSettings[
+                            "CacheClient.APILogIterations"]);
             }
             catch (Exception)
-            { }
+            {
+            }
 
             try
             {
-                if (!string.IsNullOrEmpty(System.Configuration.ConfigurationManager.AppSettings["CacheClient.APILogIterationLength"]))
-                    s_durationOfEachIteration = int.Parse(System.Configuration.ConfigurationManager.AppSettings["CacheClient.APILogIterationLength"]);
+                if (!string.IsNullOrEmpty(
+                    System.Configuration.ConfigurationManager.AppSettings["CacheClient.APILogIterationLength"]))
+                    s_durationOfEachIteration =
+                        int.Parse(System.Configuration.ConfigurationManager.AppSettings[
+                            "CacheClient.APILogIterationLength"]);
             }
             catch (Exception)
-            { }
+            {
+            }
 
             try
             {
-                if (!string.IsNullOrEmpty(System.Configuration.ConfigurationManager.AppSettings["CacheClient.APILogDelayBetweenIteration"]))
-                    s_intervalBetweenIterations = int.Parse(System.Configuration.ConfigurationManager.AppSettings["CacheClient.APILogDelayBetweenIteration"]);
+                if (!string.IsNullOrEmpty(
+                    System.Configuration.ConfigurationManager.AppSettings["CacheClient.APILogDelayBetweenIteration"]))
+                    s_intervalBetweenIterations =
+                        int.Parse(System.Configuration.ConfigurationManager.AppSettings[
+                            "CacheClient.APILogDelayBetweenIteration"]);
             }
             catch (Exception)
-            { }
+            {
+            }
 
             try
             {
-                if (!string.IsNullOrEmpty(System.Configuration.ConfigurationManager.AppSettings["CacheClient.LoggerThreadLoggingInterval"]))
-                    s_loggerThreadLoggingInterval = int.Parse(System.Configuration.ConfigurationManager.AppSettings["CacheClient.LoggerThreadLoggingInterval"]);
+                if (!string.IsNullOrEmpty(
+                    System.Configuration.ConfigurationManager.AppSettings["CacheClient.LoggerThreadLoggingInterval"]))
+                    s_loggerThreadLoggingInterval =
+                        int.Parse(System.Configuration.ConfigurationManager.AppSettings[
+                            "CacheClient.LoggerThreadLoggingInterval"]);
             }
             catch (Exception)
-            { }
+            {
+            }
         }
 
 
@@ -185,7 +207,7 @@ namespace Alachisoft.NCache.Web.Caching.APILogging
 
             double fraction = normalizedSeconds - Convert.ToInt32(Math.Floor(normalizedSeconds));
             int normalizedToInterval = Convert.ToInt32(Math.Floor(normalizedSeconds)) % completeIntervalLength;
-            double timePassedInCurrentIteration = (double)normalizedToInterval + fraction;
+            double timePassedInCurrentIteration = (double) normalizedToInterval + fraction;
             if (timePassedInCurrentIteration >= s_durationOfEachIteration)
                 return false;
             return true;
@@ -201,7 +223,7 @@ namespace Alachisoft.NCache.Web.Caching.APILogging
             TimeSpan normalizedCurrentInstance = _loggingStartTime.Subtract(loggingTime);
             double normalizedSeconds = normalizedCurrentInstance.TotalSeconds;
             double loggingInterval = s_durationOfEachIteration + s_intervalBetweenIterations;
-            return (int)Math.Round(normalizedSeconds / loggingInterval);
+            return (int) Math.Round(normalizedSeconds / loggingInterval);
         }
     }
 }

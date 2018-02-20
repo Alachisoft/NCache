@@ -9,7 +9,6 @@
 // WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
 // See the License for the specific language governing permissions and
 // limitations under the License.
-
 // $Id: Queue.java,v 1.13 2004/03/30 06:47:28 belaban Exp $
 using System;
 using System.Collections;
@@ -17,9 +16,11 @@ using System.Threading;
 using Alachisoft.NCache.Common.Enum;
 
 using TimeoutException = Alachisoft.NCache.Common.Exceptions.TimeoutException;
-
+#if JAVA
+using Runtime = Alachisoft.TayzGrid.Runtime;
+#else
 using Runtime = Alachisoft.NCache.Runtime;
-
+#endif
 namespace Alachisoft.NCache.Common.DataStructures
 {
     /// <summary> Elements are added at the tail and removed from the head. Class is thread-safe in that
@@ -60,7 +61,7 @@ namespace Alachisoft.NCache.Common.DataStructures
         /// <summary> creates an empty queue</summary>
         public Queue()
         {
-            _queues[(int)Priority.Critical] = new System.Collections.Queue(11, 1.0f);
+            _queues[(int)Priority.High] = new System.Collections.Queue(11, 1.0f);
             _queues[(int)Priority.Normal] = new System.Collections.Queue(11, 1.0f);
             _queues[(int)Priority.Low] = new System.Collections.Queue(11, 1.0f);
         }
@@ -113,6 +114,9 @@ namespace Alachisoft.NCache.Common.DataStructures
             {
                 return;
             }
+            if (priority == Priority.Critical)
+                priority = Priority.High;
+
             lock (mutex)
             {
                 if (closed)
@@ -195,8 +199,8 @@ namespace Alachisoft.NCache.Common.DataStructures
         protected virtual Object RemoveItemFromQueue()
         {
             Object retval = null;
-            if (_queues[(int)Priority.Critical].Count > 0)
-                retval = removeInternal(_queues[(int)Priority.Critical]);
+            if (_queues[(int)Priority.High].Count > 0)
+                retval = removeInternal(_queues[(int)Priority.High]);
             else if (_queues[(int)Priority.Normal].Count > 0)
                 retval = removeInternal(_queues[(int)Priority.Normal]);
             else if (_queues[(int)Priority.Low].Count > 0)
@@ -267,8 +271,8 @@ namespace Alachisoft.NCache.Common.DataStructures
         private object peekInternal()
         {
             object retval = null;
-            if (_queues[(int)Priority.Critical].Count > 0)
-                retval = _queues[(int)Priority.Critical].Peek();
+            if (_queues[(int)Priority.High].Count > 0)
+                retval = _queues[(int)Priority.High].Peek();
             else if (_queues[(int)Priority.Normal].Count > 0)
                 retval = _queues[(int)Priority.Normal].Peek();
             else if (_queues[(int)Priority.Low].Count > 0)
@@ -297,6 +301,7 @@ namespace Alachisoft.NCache.Common.DataStructures
                     }
                     catch (QueueClosedException ex)
                     {
+                        //Trace.error("Queue.close()", "exception=" + ex.Message);
                     }
                     return;
                 }
@@ -319,7 +324,7 @@ namespace Alachisoft.NCache.Common.DataStructures
 
                 size = 0;
 
-                _queues[(int)Priority.Critical].Clear();
+                _queues[(int)Priority.High].Clear();
                 _queues[(int)Priority.Normal].Clear();
                 _queues[(int)Priority.Low].Clear();
 

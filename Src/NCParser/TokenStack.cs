@@ -9,21 +9,18 @@
 // Delphi engine by Alexandre Rai (riccio@gmx.at)
 // C# engine by Marcus Klimstra (klimstra@home.nl)
 
-using System;
 using System.Collections;
 
 // C# Translation of GoldParser, by Marcus Klimstra <klimstra@home.nl>.
 // Based on GOLDParser by Devin Cook <http://www.devincook.com/goldparser>.
 namespace Alachisoft.NCache.Parser
 {
-	///
-	public class TokenStack
+    public class TokenStack
 	{
 		private ArrayList	m_items;
 		
 		/* constructor */
 		
-		///
 		internal TokenStack()
 		{
 			m_items = new ArrayList();

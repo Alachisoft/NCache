@@ -1,0 +1,16 @@
+
+option java_outer_classname="TaskEnumeratorCommandProtocol";
+
+package Alachisoft.NCache.Common.Protobuf;
+
+message TaskEnumeratorCommand
+{
+	//Pointer
+    optional string ClientId = 1;
+    optional string ClientIp = 2;
+    optional int32 ClientPort = 3;
+    optional string ClusterIp = 4;
+    optional int32 ClusterPort = 5;
+    optional int32 CallbackId = 6;
+    optional string TaskId = 7;
+}

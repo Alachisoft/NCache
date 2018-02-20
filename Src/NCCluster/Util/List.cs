@@ -10,22 +10,12 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 // $Id: List.java,v 1.6 2004/07/05 14:17:35 belaban Exp $
-
 using System;
-
-
-
 using Alachisoft.NCache.Runtime.Serialization.IO;
-
-
 using Alachisoft.NCache.Runtime.Serialization;
-
-
 
 namespace Alachisoft.NGroups.Util
 {
-	
-	
 	/// <summary> Doubly-linked list. Elements can be added at head or tail and removed from head/tail.
 	/// This class is tuned for element access at either head or tail, random access to elements
 	/// is not very fast; in this case use Vector. Concurrent access is supported: a thread is blocked
@@ -60,32 +50,6 @@ namespace Alachisoft.NGroups.Util
 		protected internal int _size = 0;
 		protected internal object mutex = new object();
 		
-		[Serializable]
-		protected internal class Element
-		{
-			private void  InitBlock(List enclosingInstance)
-			{
-				this.enclosingInstance = enclosingInstance;
-			}
-			private List enclosingInstance;
-			public List Enclosing_Instance
-			{
-				get
-				{
-					return enclosingInstance;
-				}
-				
-			}
-			internal object obj = null;
-			internal Element next = null;
-			internal Element prev = null;
-			
-			internal Element(List enclosingInstance, object o)
-			{
-				InitBlock(enclosingInstance);
-				obj = o;
-			}
-		}
 		
 		
 		public List()
@@ -356,68 +320,6 @@ namespace Alachisoft.NGroups.Util
 			return copy();
 		}
 		
-		
-		internal class ListEnumerator : System.Collections.IEnumerator
-		{
-			private void  InitBlock(List enclosingInstance)
-			{
-				this.enclosingInstance = enclosingInstance;
-			}
-			private object tempAuxObj;
-			public bool MoveNext()
-			{
-				bool result = hasMoreElements();
-				if (result)
-				{
-					tempAuxObj = nextElement();
-				}
-				return result;
-			}
-			public void  Reset()
-			{
-				tempAuxObj = null;
-			}
-			public object Current
-			{
-				get
-				{
-					return tempAuxObj;
-				}
-				
-			}
-			private List enclosingInstance;
-			public List Enclosing_Instance
-			{
-				get
-				{
-					return enclosingInstance;
-				}
-				
-			}
-			internal Element curr = null;
-			
-			internal ListEnumerator(List enclosingInstance, Element start)
-			{
-				InitBlock(enclosingInstance);
-				curr = start;
-			}
-			
-			public bool hasMoreElements()
-			{
-				return curr != null;
-			}
-			
-			public object nextElement()
-			{
-				object retval;
-				
-				if (curr == null)
-					throw new System.ArgumentOutOfRangeException();
-				retval = curr.obj;
-				curr = curr.next;
-				return retval;
-			}
-		}
 
 		#region ICompactSerializable Members
 

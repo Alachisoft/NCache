@@ -13,7 +13,6 @@
 // limitations under the License.
 
 using System;
-using Alachisoft.NCache.Util;
 using Alachisoft.NCache.Common;
 using Alachisoft.NCache.Runtime.Serialization;
 using Alachisoft.NCache.Runtime.Serialization.IO;
@@ -26,9 +25,10 @@ namespace Alachisoft.NCache.Caching.AutoExpiration
 	[Serializable]
 	public class FixedExpiration : ExpirationHint, ICompactSerializable
 	{
-        /// <summary> FixedExpiration instance Size include _absoluteTime plus _milliseconds </summary>
-        private const int FixedExpirationSize = 2 * Common.MemoryUtil.NetIntSize;
-		/// <summary> The absolute time when this hint expires. </summary>
+
+        private const int FixedExpirationSize = 2*Common.MemoryUtil.NetIntSize;
+
+        /// <summary> The absolute time when this hint expires. </summary>
 		private int _absoluteTime;
         private int _milliseconds;
 
@@ -56,6 +56,7 @@ namespace Alachisoft.NCache.Caching.AutoExpiration
 			}
 		}
 
+
 		/// <summary>
 		/// virtual method that returns true when the expiration has taken place, returns 
 		/// false otherwise.
@@ -68,9 +69,9 @@ namespace Alachisoft.NCache.Caching.AutoExpiration
             if (_absoluteTime < AppUtil.DiffSeconds(DateTime.Now))
                 this.NotifyExpiration(this, null);
 
-
 			return HasExpired;
 		}
+
         public DateTime AbsoluteTime
         {
             get { 
@@ -119,8 +120,8 @@ namespace Alachisoft.NCache.Caching.AutoExpiration
 
                 return inMemorySize;
             }
-        }
+        }      
 
         #endregion
-	}
+    }
 }

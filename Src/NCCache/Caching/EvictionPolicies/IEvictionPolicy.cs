@@ -29,7 +29,6 @@ namespace Alachisoft.NCache.Caching.EvictionPolicies
         /// <param name="key"></param>
         /// <param name="oldHint"></param>
         /// <param name="newHint"></param>
-        //void UpdateIndex(object key, EvictionHint oldHint, EvictionHint newHint);
         void Notify(object key, EvictionHint oldhint, EvictionHint newHint);
 
         /// <summary>
@@ -50,8 +49,7 @@ namespace Alachisoft.NCache.Caching.EvictionPolicies
         /// </summary>
         /// <param name="size">size of data in store, in bytes</param>
         /// <returns>list of items selected for eviction.</returns>
-        //ArrayList SelectItemsForEviction(long count);
-        void Execute(CacheBase cache,CacheRuntimeContext context, long size);
+        long Execute(CacheBase cache,CacheRuntimeContext context, long size);
 
         /// <summary>
         /// Remove the specified key from the index.

@@ -22,7 +22,7 @@ using Alachisoft.NCache.Runtime.Exceptions;
 
 namespace Alachisoft.NCache.Common.DataReader
 {
-    public class PartitionRSEnumerator : IRecordSetEnumerator
+    public class PartitionRSEnumerator : IRecordSetEnumerator,IPartitionInfo
     {
         IRecordSetEnumerator _recordSetEnumerator;
         string _nodeIP;
@@ -30,19 +30,43 @@ namespace Alachisoft.NCache.Common.DataReader
         int _nextIndex;
         IRecordSetLoader _cacheImpl;
         private bool isValid = true;
-        private IRecordSetEnumerator rse;
-
+        private int _port;
+        private String  uniqueId=String.Empty;
         public PartitionRSEnumerator(IRecordSetEnumerator recordSetEnumerator, string readerId, string nodeIP, int nextIdex, IRecordSetLoader cacheImpl) 
         {
             _recordSetEnumerator = recordSetEnumerator;
-            _readerId = readerId;
-            _nodeIP = nodeIP;
+            _readerId = readerId;            
             _nextIndex = nextIdex;
             _cacheImpl = cacheImpl;
+            uniqueId = Guid.NewGuid().ToString();
+            ParseAddress(nodeIP);
         }
 
+        public String Server
+        {
+            get { return _nodeIP; }
+        }
 
-       
+        private void ParseAddress(string address)
+        {
+            if (!string.IsNullOrEmpty(address))
+            {
+                string[] hostPort = address.Split(':');
+                _nodeIP = hostPort[0];
+
+                if (hostPort.Length > 1)
+                {
+                    try
+                    {
+                        _port = Convert.ToInt32(hostPort[1]);
+                    }
+                    catch (Exception) { }
+                }
+            }
+        }
+        private String Reciepent { get { return _port > 0 ? _nodeIP + ":" + _port : _nodeIP; } }
+
+        public string ReaderId { get { return _readerId; } }
 
         public bool IsValid
         {
@@ -56,8 +80,8 @@ namespace Alachisoft.NCache.Common.DataReader
            {
                if (!isValid)
                    throw new InvalidReaderException("Reader state has been lost.");
-               readerChunk = _cacheImpl.GetRecordSet(_readerId, _nodeIP, _nextIndex);
 
+               readerChunk = _cacheImpl.GetRecordSet(_readerId, _nextIndex,_nodeIP,Reciepent);
            }
 
            if (readerChunk != null && readerChunk.RecordSet != null && readerChunk.RecordSet.RowCount > 0)
@@ -97,6 +121,22 @@ namespace Alachisoft.NCache.Common.DataReader
                _cacheImpl.DisposeReader(_readerId, _nodeIP);
            _recordSetEnumerator.Dispose();
            _cacheImpl = null;
+       }
+
+       public override int GetHashCode()
+       {
+           return uniqueId.GetHashCode();
+       }
+
+       public override bool Equals(object obj)
+       {
+           if (obj == null) return false;
+
+           var pr = obj as PartitionRSEnumerator;
+
+           if (pr == null) return false;
+
+           return uniqueId.Equals(pr.uniqueId);
        }
     }
 }

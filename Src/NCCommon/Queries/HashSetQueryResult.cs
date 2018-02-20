@@ -12,21 +12,29 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-
-using Alachisoft.NCache.Common.DataStructures;
-using Alachisoft.NCache.Common.DataStructures.Clustered;
-using Alachisoft.NCache.Common.Enum;
 using System;
 using System.Collections;
 using System.Collections.Generic;
+using Alachisoft.NCache.Common.DataStructures;
+using Alachisoft.NCache.Common.DataStructures.Clustered;
+using Alachisoft.NCache.Common.Queries.Filters;
 
 namespace Alachisoft.NCache.Common.Queries
 {
-
     public class HashSetQueryResult : IQueryResult
     {
         private HashSet<object> _resultKeys = new HashSet<object>();
         private HashSet<object> _temp = new HashSet<object>();
+
+        public HashSetQueryResult(IKeyFilter kf,IKeyFilter cf)
+        {
+            this.KeyFilter = kf;
+            this.CompoundFilter = cf;
+        }
+
+        public IKeyFilter KeyFilter { get; set; }
+
+        public IKeyFilter CompoundFilter { get; set; }
 
         public int Count
         { get { return _resultKeys.Count; } }
@@ -39,7 +47,7 @@ namespace Alachisoft.NCache.Common.Queries
                     _resultKeys.Add(obj);
                     break;
                 case CollectionOperation.Intersection:
-                    if (_resultKeys.Contains(obj))
+                    if(_resultKeys.Contains(obj))
                         _temp.Add(obj);
                     break;
                 case CollectionOperation.Subtract:
@@ -48,26 +56,53 @@ namespace Alachisoft.NCache.Common.Queries
             }
         }
 
-        public void Add(IDictionary other, CollectionOperation mergeType)
+        private Boolean EvaluateFilter(Object key, Boolean filter)
+        {
+            if (KeyFilter == null && CompoundFilter == null) return true;
+
+            if (!filter) return true;
+
+            if (KeyFilter != null && CompoundFilter != null)
+                return KeyFilter.Evaluate((String)key) && CompoundFilter.Evaluate((String)key);
+
+            if (KeyFilter != null)
+                return KeyFilter.Evaluate((String)key);
+
+            if (CompoundFilter != null)
+                return CompoundFilter.Evaluate((String)key);
+
+            return false;
+        }
+
+        public void Add(IDictionary other, CollectionOperation mergeType, bool filterResult = true)
         {
             IDictionaryEnumerator ide = other.GetEnumerator();
             switch (mergeType)
             {
                 case CollectionOperation.Union:
                     while (ide.MoveNext())
-                        _resultKeys.Add(ide.Key);
+                    {
+                        if(EvaluateFilter(ide.Key,filterResult))
+                            _resultKeys.Add(ide.Key);
+                    }
                     break;
                 case CollectionOperation.Intersection:
                     while (ide.MoveNext())
                     {
-                        if (_resultKeys.Contains(ide.Key))
-                            _temp.Add(ide.Key);
+                        if (EvaluateFilter(ide.Key, filterResult))
+                        {
+                            if (_resultKeys.Contains(ide.Key))
+                                _temp.Add(ide.Key);
+                        }
                     }
                     break;
                 case CollectionOperation.Subtract:
                     while (ide.MoveNext())
                     {
-                        _resultKeys.Remove(ide.Key);
+                        if (EvaluateFilter(ide.Key, filterResult))
+                        {
+                            _resultKeys.Remove(ide.Key);
+                        }
                     }
                     break;
             }
@@ -154,7 +189,7 @@ namespace Alachisoft.NCache.Common.Queries
         public ClusteredArrayList GetArrayList()
         {
             ClusteredArrayList al = new ClusteredArrayList(this._resultKeys.Count);
-            foreach (object obj in this._resultKeys)
+            foreach(object obj in this._resultKeys)
                 al.Add(obj);
             return al;
         }

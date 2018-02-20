@@ -13,12 +13,9 @@
 // limitations under the License.
 
 using System;
-using System.Text;
-
 using Alachisoft.NCache.Common;
 using Alachisoft.NCache.Runtime.Serialization;
 using Alachisoft.NCache.Runtime.Serialization.IO;
-
 
 namespace Alachisoft.NCache.Caching.AutoExpiration
 {
@@ -41,13 +38,27 @@ namespace Alachisoft.NCache.Caching.AutoExpiration
             _lastTimeStamp = AppUtil.DiffTicks(DateTime.Now);
         }
 
-        private long SortKey { get { return _lastTimeStamp + _lockTTL; } }
+        private long SortKey 
+        {
+            get 
+            {
+                long total = _lastTimeStamp + _lockTTL;
+                // if overflown...
+                if (total < 0) { total = DateTime.MaxValue.Ticks; }
+                return total;
+            } 
+        }
 
         public bool HasExpired()
         {
             if (SortKey.CompareTo(AppUtil.DiffTicks(DateTime.Now)) < 0)
                 return true;
             return false;
+        }
+
+        public TimeSpan TTL
+        {
+            get { return _ttl; }
         }
 
         #region ICompactSerializable Members

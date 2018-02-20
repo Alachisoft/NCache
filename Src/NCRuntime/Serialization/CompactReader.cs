@@ -10,7 +10,7 @@
 // distributed under the License is distributed on an "AS IS" BASIS,
 // WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
 // See the License for the specific language governing permissions and
-// limitations under the License.
+// limitations under the License
 
 using System;
 using System.Text;
@@ -20,7 +20,11 @@ using System.Reflection;
 /// The namespace provides the CompactReader and CompactWriter that are required 
 /// while implementing the Serialize and Deserialize methods of ICompactSerializable interface.
 /// </summary>
+#if JAVA
+namespace Alachisoft.TayzGrid.Runtime.Serialization.IO
+#else
 namespace Alachisoft.NCache.Runtime.Serialization.IO
+#endif
 {
     /// <summary>
     /// CompactReader is the  base class for CompactBinaryReader.
@@ -29,6 +33,7 @@ namespace Alachisoft.NCache.Runtime.Serialization.IO
     /// This Feature is Not Available in Express
     /// </remark>
 
+ 
     public abstract class CompactReader
     {
         /// <summary>

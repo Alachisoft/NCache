@@ -10,8 +10,7 @@
 // distributed under the License is distributed on an "AS IS" BASIS,
 // WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
 // See the License for the specific language governing permissions and
-// limitations under the License.
-
+// limitations under the License
 using System;
 using System.Text;
 using System.Collections;
@@ -65,11 +64,19 @@ namespace Alachisoft.NCache.Common.Monitoring
 
                 if (filepath == null || filepath == string.Empty)
                 {
+#if JAVA
+                    if (!DirectoryUtil.SearchGlobalDirectory("log", false, out filepath))
+                    {
+                        try
+                        {
+                            DirectoryUtil.SearchLocalDirectory("log", true, out filepath);
+#else
                     if (!DirectoryUtil.SearchGlobalDirectory("log-files", false, out filepath))
                     {
                         try
                         {
                             DirectoryUtil.SearchLocalDirectory("log-files", true, out filepath);
+#endif
                         }
                         catch (Exception ex)
                         {

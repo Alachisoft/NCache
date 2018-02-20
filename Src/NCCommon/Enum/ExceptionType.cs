@@ -12,19 +12,26 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
+
 namespace Alachisoft.NCache.Common.Enum
 {
     public enum ExceptionType
     {
         OPERATIONFAILED = 0,
-        AGGREGATE,
-        CONFIGURATION,
-        GENERALFAILURE,
-        NOTSUPPORTED,
-        MAX_CLIENTS_REACHED,
-        TYPE_INDEX_NOT_FOUND,
-        ATTRIBUTE_INDEX_NOT_FOUND,
-        STATE_TRANSFER_EXCEPTION,
-        INVALID_READER_EXCEPTION
+        AGGREGATE=1,
+        CONFIGURATION=2,
+        GENERALFAILURE=3,
+        NOTSUPPORTED=5,
+        MAX_CLIENTS_REACHED=6,
+        STREAM_ALREADY_LOCKED=7,
+        STREAM_CLOSED=8,
+        STREAM_EXC=9,
+        STREAM_INVALID_LOCK=10,
+        STREAM_NOT_FOUND=11,
+        TYPE_INDEX_NOT_FOUND=12,
+        ATTRIBUTE_INDEX_NOT_FOUND=13,
+        STATE_TRANSFER_EXCEPTION=14,
+        INVALID_READER_EXCEPTION=15,
+        LICENSING_EXCEPION=16
     }
 }

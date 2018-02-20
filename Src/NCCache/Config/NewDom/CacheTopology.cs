@@ -11,15 +11,9 @@
 // WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
 // See the License for the specific language governing permissions and
 // limitations under the License.
-
 using System;
-using System.Collections.Generic;
-using System.Text;
 using Alachisoft.NCache.Common.Configuration;
-using Alachisoft.NCache.Common.Enum;
-using Alachisoft.NCache.Common;
 using Alachisoft.NCache.Runtime.Serialization;
-using Runtime = Alachisoft.NCache.Runtime;
 
 namespace Alachisoft.NCache.Config.NewDom
 {
@@ -63,9 +57,12 @@ namespace Alachisoft.NCache.Config.NewDom
                     value = value.ToLower();
                     switch (value)
                     {
-                        case "partitioned": return "partitioned";
                         case "replicated": return "replicated";
+                        case "partitioned": return "partitioned";
+                        case "partition-replica": return "partitioned-replica";
+                        case "mirror": return "mirrored";
                         case "local": return "local-cache";
+                        case "client-cache": return "client-cache";
                     }
                 }
                 return value;

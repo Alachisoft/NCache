@@ -10,14 +10,22 @@
 // distributed under the License is distributed on an "AS IS" BASIS,
 // WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
 // See the License for the specific language governing permissions and
-// limitations under the License.
+// limitations under the License
 
 using System;
 using System.Text;
-
 using Alachisoft.NCache.Common.Interop;
+#if JAVA
+using Alachisoft.TayzGrid.Runtime.Serialization.IO;
+#else
 using Alachisoft.NCache.Runtime.Serialization.IO;
+using System.Diagnostics;
+#endif
+#if JAVA
+using Alachisoft.TayzGrid.Runtime.Serialization;
+#else
 using Alachisoft.NCache.Runtime.Serialization;
+#endif
 using Alachisoft.NCache.Common.Util;
 
 namespace Alachisoft.NCache.Common.Stats
@@ -47,11 +55,8 @@ namespace Alachisoft.NCache.Common.Stats
         {
             lock (_synObj)
             {
-                using (ProcessorAffinity.BeginAffinity(0))
-                {
-                    Win32.QueryPerformanceFrequency(ref _frequency);
-                    Win32.QueryPerformanceCounter(ref _baseTicks);
-                }
+                    _frequency = Stopwatch.Frequency;
+                    _baseTicks = Stopwatch.GetTimestamp();
             }
         }
 
@@ -113,20 +118,16 @@ namespace Alachisoft.NCache.Common.Stats
         {
             get
             {
-                using (ProcessorAffinity.BeginAffinity(0))
-                {
-
                     double rem = 0;
                     long currentTicks = 0;
                     long diff;
 
                     HPTime time = new HPTime();
-         
-                    Win32.QueryPerformanceCounter(ref currentTicks);
+                    currentTicks = Stopwatch.GetTimestamp();
 
                     diff = currentTicks - _baseTicks;
                     rem = ((double)diff / (double)_frequency) * 1000;
-
+            
                     _baseTime = rem;
                     time._baseTime = rem;
                     rem += _baseRem;
@@ -146,7 +147,7 @@ namespace Alachisoft.NCache.Common.Stats
                     time._micSec = (int)rem;
 
                     return time;
-                }
+                //}
             }
         }
 
@@ -162,8 +163,8 @@ namespace Alachisoft.NCache.Common.Stats
                 long diff;
 
                 HPTime time = new HPTime();
-         
-                Win32.QueryPerformanceCounter(ref currentTicks);
+                currentTicks = Stopwatch.GetTimestamp();
+                
 
                 diff = currentTicks - _baseTicks;
                 rem = ((double)diff / (double)_frequency) * 1000;
@@ -231,7 +232,7 @@ namespace Alachisoft.NCache.Common.Stats
                 }
                 return result;
             }
-            throw new ArgumentException("Object is not HPTime");
+            return 1;
         }
 
         #endregion

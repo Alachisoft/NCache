@@ -9,7 +9,6 @@
 // WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
 // See the License for the specific language governing permissions and
 // limitations under the License.
-
 using System;
 using System.Collections;
 using System.Threading;
@@ -56,30 +55,11 @@ namespace Alachisoft.NGroups.Stack
 		/// <summary>Default retransmit thread suspend timeout (ms) </summary>
 		private const long SUSPEND_TIMEOUT = 2000;
 		
-		private Address sender = null;
+		internal Address sender = null;
 		private System.Collections.ArrayList msgs = new System.Collections.ArrayList();
-		private Retransmitter.RetransmitCommand cmd = null;
+		internal RetransmitCommand cmd = null;
 		private bool retransmitter_owned;
 		private TimeScheduler retransmitter = null;
-		
-		
-		/// <summary>Retransmit command (see Gamma et al.) used to retrieve missing messages </summary>
-		internal interface RetransmitCommand
-		{
-			/// <summary> Get the missing messages between sequence numbers
-			/// <code>first_seqno</code> and <code>last_seqno</code>. This can either be done by sending a
-			/// retransmit message to destination <code>sender</code> (nak-based scheme), or by
-			/// retransmitting the missing message(s) to <code>sender</code> (ack-based scheme).
-			/// </summary>
-			/// <param name="first_seqno">The sequence number of the first missing message
-			/// </param>
-			/// <param name="last_seqno"> The sequence number of the last missing message
-			/// </param>
-			/// <param name="sender">The destination of the member to which the retransmit request will be sent
-			/// (nak-based scheme), or to which the message will be retransmitted (ack-based scheme).
-			/// </param>
-			void  retransmit(long first_seqno, long last_seqno, Address sender);
-		}
 		
 		
 		/// <summary> Create a new Retransmitter associated with the given sender address</summary>
@@ -89,7 +69,7 @@ namespace Alachisoft.NGroups.Stack
 		/// </param>
 		/// <param name="sched">retransmissions scheduler
 		/// </param>
-		public Retransmitter(Address sender, Retransmitter.RetransmitCommand cmd, TimeScheduler sched)
+		public Retransmitter(Address sender, RetransmitCommand cmd, TimeScheduler sched)
 		{
 			init(sender, cmd, sched, false);
 		}
@@ -100,7 +80,7 @@ namespace Alachisoft.NGroups.Stack
 		/// </param>
 		/// <param name="cmd">the retransmission callback reference
 		/// </param>
-		public Retransmitter(Address sender, Retransmitter.RetransmitCommand cmd)
+		public Retransmitter(Address sender, RetransmitCommand cmd)
 		{
 			init(sender, cmd, new TimeScheduler(30 * 1000), true);
 		}
@@ -116,7 +96,7 @@ namespace Alachisoft.NGroups.Stack
 		/// </summary>
 		public virtual void  add(long first_seqno, long last_seqno)
 		{
-			Entry e;
+            RetransmitterEntry e;
 			
 			if (first_seqno > last_seqno)
 			{
@@ -126,7 +106,7 @@ namespace Alachisoft.NGroups.Stack
 			}
 			lock (msgs.SyncRoot)
 			{
-				e = new Entry(this, first_seqno, last_seqno, RETRANSMIT_TIMEOUTS);
+				e = new RetransmitterEntry(this, first_seqno, last_seqno, RETRANSMIT_TIMEOUTS);
 				msgs.Add(e);
 				retransmitter.AddTask(e);
 			}
@@ -143,7 +123,7 @@ namespace Alachisoft.NGroups.Stack
 			{
 				for (int index = 0; index < msgs.Count; index++)
 				{
-					Entry e = (Entry) msgs[index];
+					RetransmitterEntry e = (RetransmitterEntry) msgs[index];
 					lock (e)
 					{
 						if (seqno < e.low || seqno > e.high)
@@ -169,7 +149,7 @@ namespace Alachisoft.NGroups.Stack
 			{
 				for (int index = 0; index < msgs.Count; index++)
 				{
-					Entry entry = (Entry) msgs[index];
+                    RetransmitterEntry entry = (RetransmitterEntry) msgs[index];
 					entry.cancel();
 				}
 				msgs.Clear();
@@ -198,14 +178,13 @@ namespace Alachisoft.NGroups.Stack
 					}
 					catch (System.Threading.ThreadInterruptedException ex)
 					{
-						//Trace.error("Retransmitter.stop()",ex.ToString());
 					}
 				}
 				else
 				{
 					for (int index = 0; index < msgs.Count; index++)
 					{
-						Entry e = (Entry) msgs[index];
+                        RetransmitterEntry e = (RetransmitterEntry) msgs[index];
 						e.cancel();
 					}
 				}
@@ -237,7 +216,7 @@ namespace Alachisoft.NGroups.Stack
 		/// <param name="sched_owned">whether the scheduler parameter is owned by this
 		/// object or is externally provided
 		/// </param>
-		private void  init(Address sender, Retransmitter.RetransmitCommand cmd, TimeScheduler sched, bool sched_owned)
+		private void  init(Address sender, RetransmitCommand cmd, TimeScheduler sched, bool sched_owned)
 		{
 			this.sender = sender;
 			this.cmd = cmd;
@@ -261,13 +240,13 @@ namespace Alachisoft.NGroups.Stack
 				this.intervals = new Interval(intervals);
 				this.isCancelled = false;
 			}
-
-			public override long GetNextInterval()
+			
+			public virtual long GetNextInterval()
 			{
 				return (intervals.next());
 			}
-
-            public override bool IsCancelled()
+			
+			public virtual bool IsCancelled()
 			{
 				return (isCancelled);
 			}
@@ -277,132 +256,10 @@ namespace Alachisoft.NGroups.Stack
 				isCancelled = true;
 			}
 
-            public override void Run() { }
+			public virtual void Run() {}
 		}
 		
 		
-		/// <summary> The entry associated with an initial group of missing messages
-		/// with contiguous sequence numbers and with all its subgroups.<br>
-		/// E.g.
-		/// - initial group: [5-34]
-		/// - msg 12 is acknowledged, now the groups are: [5-11], [13-34]
-		/// <p>
-		/// Groups are stored in a list as long[2] arrays of the each group's
-		/// bounds. For speed and convenience, the lowest & highest bounds of
-		/// all the groups in this entry are also stored separately
-		/// </summary>
-		private class Entry:Task
-		{
-			private Retransmitter enclosingInstance;
-			public System.Collections.ArrayList list;
-			public long low;
-			public long high;
-			
-			public Entry(Retransmitter enclosingInstance, long low, long high, long[] intervals):base(intervals)
-			{
-				this.enclosingInstance = enclosingInstance;
-				this.low = low;
-				this.high = high;
-				list = new System.Collections.ArrayList();
-				list.Add(low);
-				list.Add(high);
-			}
-			
-			/// <summary> Remove the given seqno and resize or partition groups as
-			/// necessary. The algorithm is as follows:<br>
-			/// i. Find the group with low <= seqno <= high
-			/// ii. If seqno == low,
-			/// a. if low == high, then remove the group
-			/// Adjust global low. If global low was pointing to the group
-			/// deleted in the previous step, set it to point to the next group.
-			/// If there is no next group, set global low to be higher than
-			/// global high. This way the entry is invalidated and will be removed
-			/// all together from the pending msgs and the task scheduler
-			/// iii. If seqno == high, adjust high, adjust global high if this is
-			/// the group at the tail of the list
-			/// iv. Else low < seqno < high, break [low,high] into [low,seqno-1]
-			/// and [seqno+1,high]
-			/// 
-			/// </summary>
-			/// <param name="seqno">the sequence number to remove
-			/// </param>
-			public virtual void  remove(long seqno)
-			{
-				int i;
-				long loBound = -1;
-				long hiBound = -1;
-
-				lock (this)
-				{
-					for (i = 0; i < list.Count; i+=2)
-					{
-						loBound = (long) list[i];
-						hiBound = (long) list[i+1];
-
-						if (seqno < loBound || seqno > hiBound)
-							continue;
-						break;
-					}
-					if (i == list.Count)
-						return ;
-					
-					if (seqno == loBound)
-					{
-						if (loBound == hiBound)
-						{
-							list.RemoveAt(i);
-							list.RemoveAt(i);
-						}
-						else
-							list[i] = ++loBound;
-
-						if (i == 0)
-							low = list.Count == 0 ? high + 1:loBound;
-					}
-					else if (seqno == hiBound)
-					{
-						list[i+1] = --hiBound;
-						if (i == list.Count - 1)
-							high = hiBound;
-					}
-					else
-					{
-						list[i+1] = seqno - 1;
-
-						list.Insert(i + 2, hiBound);
-						list.Insert(i + 2, seqno + 1);
-					}
-				}
-			}
-			
-			/// <summary> Retransmission task:<br>
-			/// For each interval, call the retransmission callback command
-			/// </summary>
-			public override void  Run()
-			{
-				ArrayList cloned;
-				lock (this)
-				{
-					cloned = (ArrayList) list.Clone();
-				}
-				for (int i = 0; i < cloned.Count; i+=2)
-				{
-					long loBound = (long) cloned[i];
-					long hiBound = (long) cloned[i+1];
-					enclosingInstance.cmd.retransmit(loBound, hiBound, enclosingInstance.sender);
-				}
-			}
-			
-			public override string ToString()
-			{
-				System.Text.StringBuilder sb = new System.Text.StringBuilder();
-				if (low == high)
-					sb.Append(low);
-				else
-					sb.Append(low).Append(':').Append(high);
-				return sb.ToString();
-			}
-		} // end class Entry
 		
 		
 		internal static void  sleep(long timeout)

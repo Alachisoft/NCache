@@ -12,14 +12,6 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-using System;
-using System.Text;
-
-using Alachisoft.NCache.Web.Caching;
-using System.IO;
-using Alachisoft.NCache.Web.Communication;
-using Alachisoft.NCache.Common.Protobuf.Util;
-using Alachisoft.NCache.Web.Caching.Util;
 using Alachisoft.NCache.Runtime.Events;
 
 namespace Alachisoft.NCache.Web.Command
@@ -29,9 +21,10 @@ namespace Alachisoft.NCache.Web.Command
         Alachisoft.NCache.Common.Protobuf.RegisterKeyNotifCommand _registerKeyNotifCommand;
         short _updateCallbackId;
         short _removeCallabackId;
-       
 
-        public RegisterKeyNotificationCommand(string key, short updateCallbackid, short removeCallbackid,bool notifyOnItemExpiration)
+
+        public RegisterKeyNotificationCommand(string key, short updateCallbackid, short removeCallbackid,
+            bool notifyOnItemExpiration, CallbackType callbackType = CallbackType.PushBasedNotification)
         {
             base.name = "RegisterKeyNotificationCommand";
             base.key = key;
@@ -40,16 +33,19 @@ namespace Alachisoft.NCache.Web.Command
             _registerKeyNotifCommand.key = key;
 
             _registerKeyNotifCommand.removeCallbackId = removeCallbackid;
-            _registerKeyNotifCommand.updateCallbackId = updateCallbackid; 
+            _registerKeyNotifCommand.updateCallbackId = updateCallbackid;
             _registerKeyNotifCommand.notifyOnExpiration = notifyOnItemExpiration;
+            _registerKeyNotifCommand.callbackType = (int) callbackType;
 
             _registerKeyNotifCommand.requestId = base.RequestId;
         }
 
-        public RegisterKeyNotificationCommand(string key, short update, short remove, EventDataFilter dataFilter, bool notifyOnItemExpiration)
-            :this(key,update,remove,notifyOnItemExpiration)
+        public RegisterKeyNotificationCommand(string key, short update, short remove, EventDataFilter dataFilter,
+            bool notifyOnItemExpiration, CallbackType callbackType = CallbackType.PushBasedNotification)
+            : this(key, update, remove, notifyOnItemExpiration, callbackType)
+
         {
-            _registerKeyNotifCommand.datafilter = (int)dataFilter;
+            _registerKeyNotifCommand.datafilter = (int) dataFilter;
         }
 
 
@@ -69,7 +65,6 @@ namespace Alachisoft.NCache.Web.Command
             base._command.requestID = base.RequestId;
             base._command.registerKeyNotifCommand = _registerKeyNotifCommand;
             base._command.type = Alachisoft.NCache.Common.Protobuf.Command.Type.REGISTER_KEY_NOTIF;
-
         }
     }
 }

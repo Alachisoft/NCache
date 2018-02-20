@@ -30,16 +30,23 @@ namespace Alachisoft.NCache.Caching.Topologies.Clustered
         /// <returns></returns>
         DistributionMaps GetDistributionMaps(DistributionInfoData distInfo);
 
-        ArrayList HashMap { get; set; }
+        ArrayList HashMap
+        {
+            get;
+            set;
+        }
 
-        Hashtable BucketsOwnershipMap { get; set; }
+        Hashtable BucketsOwnershipMap
+        {
+            get;
+            set;
+        }
 
         void EmptyBucket(int bucketId);
 
         void InstallHashMap(DistributionMaps distributionMaps, ArrayList leftMbrs);
-        
+
         void InstallMirrorMap(CacheNode[] nodes);
-        
         CacheNode[] GetMirrorMap();
 
         /// <summary>

@@ -1,0 +1,24 @@
+<Project Sdk="Microsoft.NET.Sdk">
+
+  <PropertyGroup>
+    <OutputType>Exe</OutputType>
+    <TargetFramework>netcoreapp2.0</TargetFramework>
+    <AssemblyName>Alachisoft.NCache.Daemon</AssemblyName>
+    <RootNamespace>Alachisoft.NCache.Daemon</RootNamespace>
+    <Version>4.9.0</Version>
+    <NoWin32Manifest>true</NoWin32Manifest>
+    <Description>Daemon for Linux</Description>
+    <Company>Alachisoft</Company>
+    <Product>Alachisoft® NCache Open Source</Product>
+    <Copyright>Copyright © 2005-2018 Alachisoft</Copyright>
+  </PropertyGroup>
+
+  <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Release|AnyCPU'">
+    <DefineConstants>TRACE;RELEASE;NETCOREAPP2_0;NETCORE</DefineConstants>
+  </PropertyGroup>
+
+  <ItemGroup>
+    <ProjectReference Include="..\NCSocketServer\NCSocketServer.Client.NetCore.csproj" />
+  </ItemGroup>
+
+</Project>

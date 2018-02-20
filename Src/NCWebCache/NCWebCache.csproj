@@ -13,8 +13,12 @@
     </SccProvider>
     <Configuration Condition=" '$(Configuration)' == '' ">Debug</Configuration>
     <Platform Condition=" '$(Platform)' == '' ">AnyCPU</Platform>
-    <AssemblyOriginatorKeyFile>..\\..\\Resources\\ncache.snk</AssemblyOriginatorKeyFile>
+    <ApplicationIcon>
+    </ApplicationIcon>
+    <AssemblyKeyContainerName>
+    </AssemblyKeyContainerName>
     <AssemblyName>Alachisoft.NCache.Web</AssemblyName>
+    <AssemblyOriginatorKeyFile>..\..\Resources\ncache.snk</AssemblyOriginatorKeyFile>
     <DefaultClientScript>JScript</DefaultClientScript>
     <DefaultHTMLPageLayout>Grid</DefaultHTMLPageLayout>
     <DefaultTargetSchema>IE50</DefaultTargetSchema>
@@ -30,7 +34,6 @@
     </UpgradeBackupLocation>
     <SccAuxPath>
     </SccAuxPath>
-    <TargetFrameworkVersion>v4.0</TargetFrameworkVersion>
     <OldToolsVersion>2.0</OldToolsVersion>
     <IsWebBootstrapper>false</IsWebBootstrapper>
     <PublishUrl>publish\</PublishUrl>
@@ -47,12 +50,18 @@
     <ApplicationVersion>1.0.0.%2a</ApplicationVersion>
     <UseApplicationTrust>false</UseApplicationTrust>
     <BootstrapperEnabled>true</BootstrapperEnabled>
+    <TargetFrameworkProfile />
   </PropertyGroup>
   <PropertyGroup Condition=" '$(Configuration)|$(Platform)' == 'Debug|AnyCPU' ">
-    <OutputPath>bin\4.0\debug\</OutputPath>
+    <TargetFrameworkVersion>v4.0</TargetFrameworkVersion>
+    <OutputPath>bin\4.0\debug.enterprise\</OutputPath>
     <AllowUnsafeBlocks>false</AllowUnsafeBlocks>
     <BaseAddress>285212672</BaseAddress>
-    <DefineConstants>TRACE;DEBUG;</DefineConstants>
+    <CheckForOverflowUnderflow>false</CheckForOverflowUnderflow>
+    <ConfigurationOverrideFile>
+    </ConfigurationOverrideFile>
+    <DefineConstants>TRACE;DEBUG;COMMUNITY;VS2005;NET40;</DefineConstants>
+    <DocumentationFile>webcache.enterprise.xml</DocumentationFile>
     <DebugSymbols>true</DebugSymbols>
     <FileAlignment>4096</FileAlignment>
     <NoStdLib>false</NoStdLib>
@@ -66,18 +75,19 @@
     <DebugType>full</DebugType>
     <ErrorReport>prompt</ErrorReport>
     <PlatformTarget>AnyCPU</PlatformTarget>
+    <CodeAnalysisRuleSet>AllRules.ruleset</CodeAnalysisRuleSet>
   </PropertyGroup>
   <PropertyGroup Condition=" '$(Configuration)|$(Platform)' == 'Release|AnyCPU' ">
-    <OutputPath>bin\4.0\release\</OutputPath>
+    <TargetFrameworkVersion>v4.0</TargetFrameworkVersion>
+    <OutputPath>bin\4.0\release.enterprise\</OutputPath>
     <AllowUnsafeBlocks>false</AllowUnsafeBlocks>
     <BaseAddress>285212672</BaseAddress>
     <CheckForOverflowUnderflow>false</CheckForOverflowUnderflow>
     <ConfigurationOverrideFile>
     </ConfigurationOverrideFile>
-    <DefineConstants>TRACE;</DefineConstants>
-    <DocumentationFile>
-    </DocumentationFile>
-    <DebugSymbols>false</DebugSymbols>
+    <DefineConstants>TRACE;COMMUNITY;VS2005;NET40;</DefineConstants>
+    <DocumentationFile>webcache.enterprise.xml</DocumentationFile>
+    <DebugSymbols>true</DebugSymbols>
     <FileAlignment>4096</FileAlignment>
     <NoStdLib>false</NoStdLib>
     <NoWarn>
@@ -87,33 +97,13 @@
     <RemoveIntegerChecks>false</RemoveIntegerChecks>
     <TreatWarningsAsErrors>false</TreatWarningsAsErrors>
     <WarningLevel>4</WarningLevel>
-    <DebugType>none</DebugType>
+    <DebugType>pdbonly</DebugType>
     <ErrorReport>prompt</ErrorReport>
     <PlatformTarget>AnyCPU</PlatformTarget>
+    <CodeAnalysisRuleSet>AllRules.ruleset</CodeAnalysisRuleSet>
   </PropertyGroup>
   <PropertyGroup>
     <SignAssembly>true</SignAssembly>
-  </PropertyGroup>
-  <PropertyGroup Condition="'$(Configuration)|$(Platform)' == 'Debug.2x|AnyCPU'">
-    <DebugSymbols>true</DebugSymbols>
-    <OutputPath>bin\2.0\debug\</OutputPath>
-    <DefineConstants>TRACE;DEBUG;</DefineConstants>
-    <BaseAddress>285212672</BaseAddress>
-    <FileAlignment>4096</FileAlignment>
-    <DebugType>full</DebugType>
-    <PlatformTarget>AnyCPU</PlatformTarget>
-    <TargetFrameworkVersion>v3.5</TargetFrameworkVersion>
-    <ErrorReport>prompt</ErrorReport>
-  </PropertyGroup>
-  <PropertyGroup Condition="'$(Configuration)|$(Platform)' == 'Release.2x|AnyCPU'">
-    <OutputPath>bin\2.0\release\</OutputPath>
-    <DefineConstants>TRACE;</DefineConstants>
-    <BaseAddress>285212672</BaseAddress>
-    <Optimize>true</Optimize>
-    <FileAlignment>4096</FileAlignment>
-    <PlatformTarget>AnyCPU</PlatformTarget>
-    <TargetFrameworkVersion>v3.5</TargetFrameworkVersion>
-    <ErrorReport>prompt</ErrorReport>
   </PropertyGroup>
   <ItemGroup>
     <Reference Include="protobuf-net, Version=1.0.0.262, Culture=neutral, PublicKeyToken=257b51d87d2e4d67, processorArchitecture=MSIL">
@@ -125,21 +115,38 @@
     </Reference>
     <Reference Include="System.configuration" />
     <Reference Include="System.Configuration.Install" />
-    <Reference Include="System.Data">
-      <Name>System.Data</Name>
-    </Reference>
-    <Reference Include="System.Runtime.Remoting">
-      <Name>System.Runtime.Remoting</Name>
-    </Reference>
-    <Reference Include="System.ServiceProcess">
-      <Name>System.ServiceProcess</Name>
-    </Reference>
+    <Reference Include="System.Numerics" />
     <Reference Include="System.Web">
       <Name>System.Web</Name>
     </Reference>
     <Reference Include="System.Xml">
       <Name>System.XML</Name>
     </Reference>
+    <ProjectReference Include="..\NCCache\NCCache.csproj">
+      <Name>NCCache</Name>
+      <Project>{BF3BCF64-ADEB-455B-AD8A-39EE84EE300D}</Project>
+      <Package>{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}</Package>
+      <Private>True</Private>
+    </ProjectReference>
+    <ProjectReference Include="..\NCCommon\NCCommon.csproj">
+      <Project>{EC5A66B8-2272-4337-A4E2-248BDBD968B3}</Project>
+      <Name>NCCommon</Name>
+      <Private>True</Private>
+    </ProjectReference>
+    <ProjectReference Include="..\NCManagement\NCManagement.csproj">
+      <Project>{6E6E852E-1A3F-4E6B-999B-06EA6D4EAB49}</Project>
+      <Name>NCManagement</Name>
+    </ProjectReference>
+    <ProjectReference Include="..\NCRuntime\NCRuntime.csproj">
+      <Project>{E60E545B-1A03-45D1-BB06-4FBB4BE71FAD}</Project>
+      <Name>NCRuntime</Name>
+      <Private>True</Private>
+    </ProjectReference>
+    <ProjectReference Include="..\NCSerialization\NCSerialization.csproj">
+      <Project>{F428CFDD-F259-404C-BE95-2D35B17751A1}</Project>
+      <Name>NCSerialization</Name>
+      <Private>True</Private>
+    </ProjectReference>
   </ItemGroup>
   <ItemGroup>
     <Compile Include="AssemblyInfo.cs">
@@ -150,24 +157,80 @@
     </Compile>
     <Compile Include="Statistics\PerfStatsCollector.cs" />
     <Compile Include="Statistics\PerfStatsCollector2.cs" />
+    <Compile Include="Web\Aggregation\Aggregators\BigIntegerAggregator.cs" />
+    <Compile Include="Web\Aggregation\Aggregators\CountAggregator.cs" />
+    <Compile Include="Web\Aggregation\Aggregators\DateAggregator.cs" />
+    <Compile Include="Web\Aggregation\Aggregators\DecimalAggregator.cs" />
+    <Compile Include="Web\Aggregation\Aggregators\DistinctAggregator.cs" />
+    <Compile Include="Web\Aggregation\Aggregators\DoubleAggregator.cs" />
+    <Compile Include="Web\Aggregation\Aggregators\FloatAggregator.cs" />
+    <Compile Include="Web\Aggregation\Aggregators\IntegerAggregator.cs" />
+    <Compile Include="Web\Aggregation\Aggregators\LongAggregator.cs" />
+    <Compile Include="Web\Aggregation\Aggregators\ShortAggregator.cs" />
+    <Compile Include="Web\Aggregation\Aggregators\StringAggregator.cs" />
+    <Compile Include="Web\Aggregation\Calculation.cs" />
+    <Compile Include="Web\Caching\AsyncCacheClearedCallback.cs" />
+    <Compile Include="Web\Caching\AsyncItemAddedCallback.cs" />
+    <Compile Include="Web\Caching\AsyncItemRemovedCallback.cs" />
+    <Compile Include="Web\Caching\AsyncItemUpdatedCallback.cs" />
+    <Compile Include="Web\Caching\CacheClearedCallback.cs" />
+    <Compile Include="Web\Caching\CacheDataNotificationCallback.cs" />
+    <Compile Include="Web\Caching\CacheEssentials\CacheAsyncEventsListenerBase.cs" />
+    <Compile Include="Web\Caching\CacheEssentials\CacheEventsListenerBase.cs" />
+    <Compile Include="Web\Caching\CacheEssentials\GeneralDataNotificationWrapper.cs" />
+    <Compile Include="Web\Caching\CacheItemRemovedCallback.cs" />
+    <Compile Include="Web\Caching\CacheItemUpdatedCallback.cs" />
+    <Compile Include="Web\Caching\CacheStoppedCallback.cs" />
+    <Compile Include="Web\Caching\ClientRecordSetEnumerator.cs" />
+    <Compile Include="Web\Caching\ContinuousQueryClearCallback.cs" />
+    <Compile Include="Web\Caching\ContinuousQueryItemAddedCallback.cs" />
+    <Compile Include="Web\Caching\ContinuousQueryItemRemovedCallback.cs" />
+    <Compile Include="Web\Caching\ContinuousQueryItemUpdatedCallback.cs" />
+    <Compile Include="Web\Caching\CustomEventCallback.cs" />
+    <Compile Include="Web\Caching\DataSourceClearedCallback.cs" />
+    <Compile Include="Web\Caching\DataSourceItemsAddedCallback.cs" />
+    <Compile Include="Web\Caching\DataSourceItemsRemovedCallback.cs" />
+    <Compile Include="Web\Caching\DataSourceItemsUpdatedCallback.cs" />
+    <Compile Include="Web\Caching\DataSourceOpResult.cs" />
+    <Compile Include="Web\Caching\DSWriteOption.cs" />
+    <Compile Include="Web\Caching\IClientRecordSetEnumerator.cs" />
+    <Compile Include="Web\Caching\IMessagingService.cs" />
+    <Compile Include="Web\Caching\InprocCacheEssentials\InprocCacheAsyncEventsListener.cs" />
+    <Compile Include="Web\Caching\InprocCacheEssentials\InprocCacheEventsListener.cs" />
+    <Compile Include="Web\Caching\ItemCallbacksWrapper.cs" />
+    <Compile Include="Web\Caching\MessagingService.cs" />
+    <Compile Include="Synchronization\SyncCache.cs" />
+    <Compile Include="Util\AddressUtil.cs" />
     <Compile Include="Util\DirectoryUtil.cs" />
     <Compile Include="Util\HashtableUtil.cs" />
     <Compile Include="Util\Logs.cs" />
-    <Compile Include="Util\Search.cs" />
-    <Compile Include="Util\WebCacheHelper.cs">
+    <Compile Include="Util\Search.cs">
       <SubType>Code</SubType>
     </Compile>
+    <Compile Include="Util\WebCacheHelper.cs" />
+    <Compile Include="Web\Aggregation\AggregatorCombiner.cs" />
+    <Compile Include="Web\Aggregation\AggregatorCombinerFactory.cs" />
+    <Compile Include="Web\Aggregation\AggregatorMapper.cs" />
+    <Compile Include="Web\Aggregation\AggregatorReducer.cs" />
+    <Compile Include="Web\Aggregation\AggregatorReducerFactory.cs" />
+    <Compile Include="Web\Aggregation\AggregatorTask.cs" />
+    <Compile Include="Web\Aggregation\BuiltInAggregator.cs" />
     <Compile Include="Web\Caching\APILogging\APILogger.cs" />
     <Compile Include="Web\Caching\APILogging\APILogItem.cs" />
     <Compile Include="Web\Caching\APILogging\DebugAPIConfiguraions.cs" />
     <Compile Include="Web\Caching\APILogging\RuntimeAPILogItem.cs" />
+    <Compile Include="Web\Caching\PollNotificationCallback.cs" />
+    <Compile Include="Web\Caching\QueryDataNotificationCallback.cs" />
+    <Compile Include="Web\Caching\RemoteCacheEssentials\CacheAsyncEventsListener.cs" />
+    <Compile Include="Web\Caching\RemoteCacheEssentials\CacheEventsListener.cs" />
+    <Compile Include="Web\Caching\TargetMethodAttribute.cs" />
     <Compile Include="Web\Caching\Cache.cs">
       <SubType>Code</SubType>
     </Compile>
     <Compile Include="Web\Caching\CacheCollection.cs" />
     <Compile Include="Web\Caching\CacheCollectionEnumerator.cs" />
-    <Compile Include="Web\Caching\CacheDataNotificationCallback.cs" />
     <Compile Include="Web\Caching\CacheDataReader.cs" />
+    <Compile Include="Web\Caching\CacheHelper.cs" />
     <Compile Include="Web\Caching\CacheImplBase.cs" />
     <Compile Include="Web\Caching\CacheInitParams.cs" />
     <Compile Include="Web\Caching\CacheItem.cs">
@@ -176,56 +239,139 @@
     <Compile Include="Web\Caching\CacheItemRemovedReason.cs">
       <SubType>Code</SubType>
     </Compile>
+    <Compile Include="Web\Caching\CacheItemVersion.cs" />
     <Compile Include="Web\Caching\CacheMode.cs">
       <SubType>Code</SubType>
     </Compile>
     <Compile Include="Web\Caching\CacheServerInfo.cs" />
-    <Compile Include="Web\Caching\CacheStoppedCallback.cs" />
+    <Compile Include="Web\Caching\CacheStream.cs" />
+    <Compile Include="Web\Caching\CacheSyncDependency.cs" />
+    <Compile Include="Web\Caching\ContinuousQuery.cs" />
+    <Compile Include="Web\Caching\ContinuousQueryManager.cs" />
+    <Compile Include="Web\Caching\DSReadOption.cs" />
+    <Compile Include="Web\Caching\CacheItemAddedCallback.cs">
+      <SubType>Code</SubType>
+    </Compile>
     <Compile Include="Web\Caching\ICacheReader.cs" />
     <Compile Include="Web\Caching\InprocCache.cs" />
     <Compile Include="Web\Caching\LockHandle.cs" />
     <Compile Include="Web\Caching\NCache.cs">
       <SubType>Code</SubType>
     </Compile>
+    <Compile Include="Web\Caching\QueryChangeType.cs" />
+    <Compile Include="Web\Caching\QueryMethod.cs" />
+    <Compile Include="Web\Caching\QueryMode.cs" />
     <Compile Include="Web\Caching\RemoteCache.cs" />
+    <Compile Include="Web\Caching\RemoteCacheDependency\CacheKeyStats.cs" />
+    <Compile Include="Web\Caching\RemoteCacheDependency\RemoteCache.cs" />
+    <Compile Include="Web\Caching\RemoteCacheDependency\RemoteCacheKeyDependency.cs" />
+    <Compile Include="Web\Caching\RemoteCacheDependency\RemoteCacheKeyDependencyManager.cs" />
+    <Compile Include="Web\Caching\RemoteCacheDependency\ThreadTask.cs" />
+    <Compile Include="Web\Caching\StreamMetadata.cs" />
+    <Compile Include="Web\Caching\StreamMode.cs" />
+    <Compile Include="Web\Caching\TransientBuffer.cs" />
     <Compile Include="Web\Caching\WebCacheEnumerator.cs" />
     <Compile Include="Web\Caching\WrapperCache.cs" />
-    <Compile Include="Web\Events\CacheEventArg.cs" />
+    <Compile Include="Web\Caching\ClientDataReader.cs" />
     <Compile Include="Web\Events\CacheEventDescriptor.cs" />
+    <Compile Include="Web\Events\CacheEventArg.cs" />
     <Compile Include="Web\Events\EventArg.cs" />
     <Compile Include="Web\Events\EventCacheItem.cs" />
     <Compile Include="Web\Events\EventHandle.cs" />
     <Compile Include="Web\Events\EventManager.cs" />
+    <Compile Include="Web\Events\EventRegistrationInfo.cs" />
     <Compile Include="Web\Events\EventUtil.cs" />
+    <Compile Include="Web\Events\PollEventDiscriptor.cs" />
+    <Compile Include="Web\Events\Query\CQEventArg.cs" />
+    <Compile Include="Web\Events\SelectiveRemoveCallbackWrapper.cs" />
+    <Compile Include="Web\Events\SelectiveUpdateCallbackWrapper.cs" />
+    <Compile Include="Web\MapReduce\TaskListener.cs" />
+    <Compile Include="Web\MapReduce\ITaskManagement.cs" />
+    <Compile Include="Web\MapReduce\MapReduceTaskResult.cs" />
+    <Compile Include="Web\MapReduce\MROutputOption.cs" />
+    <Compile Include="Web\MapReduce\TaskEnumerator.cs" />
+    <Compile Include="Web\MapReduce\TaskEnumeratorHandler.cs" />
+    <Compile Include="Web\MapReduce\TaskPartitionedEnumerator.cs" />
+    <Compile Include="Web\MapReduce\TaskResult.cs" />
+    <Compile Include="Web\Messaging\MessageItem.cs" />
+    <Compile Include="Web\Messaging\ReregisteredTopicCallback.cs" />
+    <Compile Include="Web\Messaging\Shorter.cs" />
+    <Compile Include="Web\Messaging\TopicSubscription.cs" />
+    <Compile Include="Web\Messaging\Topic.cs" />
+    <Compile Include="Web\Messaging\MessageManager.cs" />
     <Compile Include="Web\Net\NodeInfo.cs" />
+    <Compile Include="Web\Persistence\PersistenceManager.cs" />
+    <Compile Include="Web\RemoteClient\AsyncTask\AsyncOperationCompletedEventTask.cs" />
+    <Compile Include="Web\RemoteClient\AsyncTask\CacheClearEventTask.cs" />
+    <Compile Include="Web\RemoteClient\AsyncTask\ClientConnectivityChangeTask.cs" />
+    <Compile Include="Web\RemoteClient\AsyncTask\CQCallBackTask.cs" />
+    <Compile Include="Web\RemoteClient\AsyncTask\CustomEventTask.cs" />
+    <Compile Include="Web\RemoteClient\AsyncTask\DSUpdateEventTask.cs" />
+    <Compile Include="Web\RemoteClient\AsyncTask\ItemAddedTask.cs" />
     <Compile Include="Web\RemoteClient\AsyncTask\ItemRemoveCallBackTask.cs" />
+    <Compile Include="Web\RemoteClient\AsyncTask\ItemRemoveEventTask.cs" />
     <Compile Include="Web\RemoteClient\AsyncTask\ItemUpdateCallbackTask.cs" />
+    <Compile Include="Web\RemoteClient\AsyncTask\ItemUpdatedTask.cs" />
+    <Compile Include="Web\RemoteClient\AsyncTask\TaskCallbackTask.cs" />
+    <Compile Include="Web\RemoteClient\Cache\Util\CommandHelper.cs" />
+    <Compile Include="Web\RemoteClient\Cache\Util\ConfigReader.cs" />
     <Compile Include="Web\RemoteClient\Cache\Util\HelperFxn.cs" />
     <Compile Include="Web\RemoteClient\Command\AddAttributeCommand.cs" />
     <Compile Include="Web\RemoteClient\Command\AddCommand.cs" />
+    <Compile Include="Web\RemoteClient\Command\AddDependencyCommand.cs" />
+    <Compile Include="Web\RemoteClient\Command\AddSyncDependencyCommand.cs" />
     <Compile Include="Web\RemoteClient\Command\BulkAddCommand.cs" />
     <Compile Include="Web\RemoteClient\Command\BulkDeleteCommand.cs" />
     <Compile Include="Web\RemoteClient\Command\BulkGetCommand.cs" />
     <Compile Include="Web\RemoteClient\Command\BulkInsertCommand.cs" />
     <Compile Include="Web\RemoteClient\Command\BulkRemoveCommand.cs" />
     <Compile Include="Web\RemoteClient\Command\ClearCommand.cs" />
+    <Compile Include="Web\RemoteClient\Command\CloseStreamCommand.cs" />
     <Compile Include="Web\RemoteClient\Command\CommandBase.cs" />
     <Compile Include="Web\RemoteClient\Command\CommandOptions.cs" />
     <Compile Include="Web\RemoteClient\Command\CommandResponse.cs" />
     <Compile Include="Web\RemoteClient\Command\CommandType.cs" />
     <Compile Include="Web\RemoteClient\Command\ContainsCommand.cs" />
-    <Compile Include="Web\RemoteClient\Command\DeleteCommand.cs" />
-    <Compile Include="Web\RemoteClient\Command\DisposeReader.cs" />
+    <Compile Include="Web\RemoteClient\Command\GetCacheHostPort.cs" />
+    <Compile Include="Web\RemoteClient\Command\GetServerMappingCommand.cs" />
+    <Compile Include="Web\RemoteClient\Command\GetTopicCommand.cs" />
+    <Compile Include="Web\RemoteClient\Command\GetMessageCommand.cs" />
+    <Compile Include="Web\RemoteClient\Command\InquiryRequestCommand.cs" />
+    <Compile Include="Web\RemoteClient\Command\MesasgeAcknowledgmentCommand.cs" />
+    <Compile Include="Web\RemoteClient\Command\MessagePublishCommand.cs" />
+    <Compile Include="Web\RemoteClient\Command\PingCommand.cs" />
+    <Compile Include="Web\RemoteClient\Command\RemoveTopicCommand.cs" />
+    <Compile Include="Web\RemoteClient\Command\RequestType.cs" />
+    <Compile Include="Web\RemoteClient\Command\SubscribeTopicCommand.cs" />
+    <Compile Include="Web\RemoteClient\Command\TouchCommand.cs" />
+    <Compile Include="Web\RemoteClient\Command\DeleteQueryCommand.cs" />
+    <Compile Include="Web\RemoteClient\Command\DisposeReaderCommand.cs" />
     <Compile Include="Web\RemoteClient\Command\ExecuteReader.cs" />
+    <Compile Include="Web\RemoteClient\Command\ExecuteReaderCQ.cs" />
     <Compile Include="Web\RemoteClient\Command\GetCacheBinding.cs" />
-    <Compile Include="Web\RemoteClient\Command\GetHashmapCommand.cs" />
+    <Compile Include="Web\RemoteClient\Command\GetConnectedClientsCommand.cs" />
+    <Compile Include="Web\RemoteClient\Command\GetExpirationCommand.cs" />
+    <Compile Include="Web\RemoteClient\Command\GetGroupNextChunkCommand.cs" />
     <Compile Include="Web\RemoteClient\Command\GetLogginInfoCommand.cs" />
-    <Compile Include="Web\RemoteClient\Command\GetNextChunkCommand.cs" />
-    <Compile Include="Web\RemoteClient\Command\GetOptimalServerCommand.cs" />
     <Compile Include="Web\RemoteClient\Command\GetProductVersionCommand.cs" />
     <Compile Include="Web\RemoteClient\Command\GetRecordSetNextChunk.cs" />
+    <Compile Include="Web\RemoteClient\Command\GetRunningTasksCommand.cs" />
+    <Compile Include="Web\RemoteClient\Command\InvokeEntryProcessorCommand.cs" />
+    <Compile Include="Web\RemoteClient\Command\IsLockedCommand.cs" />
+    <Compile Include="Web\RemoteClient\Command\MapReduceTaskCommand.cs" />
+    <Compile Include="Web\RemoteClient\Command\PollCommand.cs" />
+    <Compile Include="Web\RemoteClient\Command\ReadFromStreamCommandInfo.cs" />
+    <Compile Include="Web\RemoteClient\Command\RegisterBulkKeyNotificationCommand.cs" />
+    <Compile Include="Web\RemoteClient\Command\RegisterPollingNotificationCommand.cs" />
+    <Compile Include="Web\RemoteClient\Command\SyncEventsCommand.cs" />
+    <Compile Include="Web\RemoteClient\Command\DeleteCommand.cs" />
+    <Compile Include="Web\RemoteClient\Command\GetHashmapCommand.cs" />
+    <Compile Include="Web\RemoteClient\Command\GetKeysByTagCommand.cs" />
+    <Compile Include="Web\RemoteClient\Command\GetNextChunkCommand.cs" />
+    <Compile Include="Web\RemoteClient\Command\GetOptimalServerCommand.cs" />
     <Compile Include="Web\RemoteClient\Command\GetRunningServersCommand.cs" />
-    <Compile Include="Web\RemoteClient\Command\GetServerMappingCommand.cs" />
+    <Compile Include="Web\RemoteClient\Command\GetStreamLengthCommand.cs" />
+    <Compile Include="Web\RemoteClient\Command\GetTagCommand.cs" />
     <Compile Include="Web\RemoteClient\Command\GetThresholdCommand.cs" />
     <Compile Include="Web\RemoteClient\Command\GetTypeInfoMapCommand.cs" />
     <Compile Include="Web\RemoteClient\Command\CountCommand.cs" />
@@ -233,56 +379,57 @@
     <Compile Include="Web\RemoteClient\Command\GetCacheItemCommand.cs" />
     <Compile Include="Web\RemoteClient\Command\GetCommand.cs" />
     <Compile Include="Web\RemoteClient\Command\GetEnumeratorCommand.cs" />
+    <Compile Include="Web\RemoteClient\Command\GetGroupCommand.cs" />
     <Compile Include="Web\RemoteClient\Command\InitCommand.cs" />
     <Compile Include="Web\RemoteClient\Command\InitSecondarySocketCommand.cs" />
     <Compile Include="Web\RemoteClient\Command\InsertCommand.cs" />
-    <Compile Include="Web\RemoteClient\Command\IsLockedCommand.cs" />
     <Compile Include="Web\RemoteClient\Command\LockCommand.cs" />
+    <Compile Include="Web\RemoteClient\Command\TaskCallbackCommand.cs" />
+    <Compile Include="Web\RemoteClient\Command\TaskCancelCommand.cs" />
+    <Compile Include="Web\RemoteClient\Command\TaskEnumeratorCommand.cs" />
+    <Compile Include="Web\RemoteClient\Command\TaskNextRecordCommand.cs" />
+    <Compile Include="Web\RemoteClient\Command\TaskProgressCommand.cs" />
+    <Compile Include="Web\RemoteClient\Command\UnSubscribeTopicCommand.cs" />
     <Compile Include="Web\RemoteClient\Command\VerifyLockCommand.cs" />
-    <Compile Include="Web\RemoteClient\Command\RegisterBulkKeyNotificationCommand.cs" />
+    <Compile Include="Web\RemoteClient\Command\OpenStreamCommand.cs" />
+    <Compile Include="Web\RemoteClient\Command\RaiseCustomEventCommand.cs" />
+    <Compile Include="Web\RemoteClient\Command\ReadFromStreamCommand.cs" />
+    <Compile Include="Web\RemoteClient\Command\RegisterCQCommand.cs" />
     <Compile Include="Web\RemoteClient\Command\RegisterKeyNotificationCommand.cs" />
     <Compile Include="Web\RemoteClient\Command\RegisterNotificationCommand.cs" />
+    <Compile Include="Web\RemoteClient\Command\RemoveByTagCommand.cs" />
     <Compile Include="Web\RemoteClient\Command\RemoveCommand.cs" />
-    <Compile Include="Web\RemoteClient\Command\RequestType.cs" />
+    <Compile Include="Web\RemoteClient\Command\RemoveGroupCommand.cs" />
     <Compile Include="Web\RemoteClient\Command\SearchCommand.cs" />
+    <Compile Include="Web\RemoteClient\Command\SearchCQCommand.cs" />
     <Compile Include="Web\RemoteClient\Command\UnLockCommand.cs" />
     <Compile Include="Web\RemoteClient\Command\UnRegisterBulkKeyNotificationCommand.cs" />
+    <Compile Include="Web\RemoteClient\Command\UnRegisterCQCommand.cs" />
     <Compile Include="Web\RemoteClient\Command\UnRegisterKeyNotificationCommand.cs" />
+    <Compile Include="Web\RemoteClient\Command\WriteToStreamCommand.cs" />
+    <Compile Include="Web\RemoteClient\Communication\ActivityBlockedException.cs" />
     <Compile Include="Web\RemoteClient\Communication\Broker.cs" />
     <Compile Include="Web\RemoteClient\Communication\Connection.cs" />
     <Compile Include="Web\RemoteClient\Communication\ConnectionPool.cs" />
     <Compile Include="Web\RemoteClient\Communication\ConnectionStatus.cs" />
-    <Compile Include="Web\RemoteClient\Communication\OnCommandRecieved.cs" />
-    <Compile Include="Web\RemoteClient\Communication\NagglingManager.cs" />
+    <Compile Include="Web\RemoteClient\Communication\Connectivity\HashMapStatus.cs" />
+    <Compile Include="Web\RemoteClient\Communication\Connectivity\ReconnectTask.cs" />
+    <Compile Include="Web\RemoteClient\Communication\Connectivity\SynchronizeEventsTask.cs" />
+    <Compile Include="Web\RemoteClient\Communication\ExType.cs" />
     <Compile Include="Web\RemoteClient\Communication\OnServerLost.cs" />
+    <Compile Include="Web\RemoteClient\Communication\SendContextClient.cs" />
+    <Compile Include="Web\RemoteClient\Communication\OnCommandRecieved.cs" />
+    <Compile Include="Web\RemoteClient\Communication\NodeRequestStatus.cs" />
     <Compile Include="Web\RemoteClient\Communication\Request.cs" />
+    <Compile Include="Web\RemoteClient\Communication\RequestLogManager.cs" />
+    <Compile Include="Web\RemoteClient\Communication\RequestModerator.cs" />
     <Compile Include="Web\RemoteClient\Communication\ResponseIntegrator.cs" />
     <Compile Include="Web\RemoteClient\Communication\ResponseList.cs" />
-    <Compile Include="Web\RemoteClient\Communication\SendContextClient.cs" />
+    <Compile Include="Web\RemoteClient\Communication\ShutDownServerInfo.cs" />
     <Compile Include="Web\RemoteClient\Config\ClientConfiguration.cs" />
     <Compile Include="Web\RemoteClient\Config\RemoteServer.cs" />
-  </ItemGroup>
-  <ItemGroup>
-    <ProjectReference Include="..\NCCache\NCCache.csproj">
-      <Project>{BF3BCF64-ADEB-455B-AD8A-39EE84EE300D}</Project>
-      <Name>NCCache</Name>
-    </ProjectReference>
-    <ProjectReference Include="..\NCCommon\NCCommon.csproj">
-      <Project>{EC5A66B8-2272-4337-A4E2-248BDBD968B3}</Project>
-      <Name>NCCommon</Name>
-    </ProjectReference>
-    <ProjectReference Include="..\NCManagement\NCManagement.csproj">
-      <Project>{6E6E852E-1A3F-4E6B-999B-06EA6D4EAB49}</Project>
-      <Name>NCManagement</Name>
-    </ProjectReference>
-    <ProjectReference Include="..\NCRuntime\NCRuntime.csproj">
-      <Project>{E60E545B-1A03-45D1-BB06-4FBB4BE71FAD}</Project>
-      <Name>NCRuntime</Name>
-    </ProjectReference>
-    <ProjectReference Include="..\NCSerialization\NCSerialization.csproj">
-      <Project>{F428CFDD-F259-404C-BE95-2D35B17751A1}</Project>
-      <Name>NCSerialization</Name>
-    </ProjectReference>
+    <Compile Include="Web\RemoteClient\Config\UserProvidedBooleanParameters.cs" />
+    <Compile Include="Web\RemoteClient\Communication\RequestLogger.cs" />
   </ItemGroup>
   <ItemGroup>
     <EmbeddedResource Include="Statistics\PerfInstaller.resx">
@@ -307,20 +454,17 @@
       <Install>true</Install>
     </BootstrapperPackage>
   </ItemGroup>
+  <ItemGroup />
   <ProjectExtensions>
     <VisualStudio>
       <UserProperties tArchitectProject="False" />
     </VisualStudio>
   </ProjectExtensions>
   <Import Project="$(MSBuildBinPath)\Microsoft.CSharp.targets" />
-  <PropertyGroup Condition="'$(Configuration)|$(Platform)' == 'Release|AnyCPU' OR '$(Configuration)|$(Platform)' == 'Debug|AnyCPU'">
+  <PropertyGroup>
     <PreBuildEvent>
     </PreBuildEvent>
-    <PostBuildEvent>xcopy /Y "$(TargetPath)" "$(SolutionDir)build\Server\4x\"</PostBuildEvent>
-  </PropertyGroup>
-  <PropertyGroup Condition="'$(Configuration)|$(Platform)' == 'Release.2x|AnyCPU' OR '$(Configuration)|$(Platform)' == 'Debug.2x|AnyCPU'">
-    <PreBuildEvent>
-    </PreBuildEvent>
-    <PostBuildEvent>xcopy /Y "$(TargetPath)" "$(SolutionDir)build\Server\2x\"</PostBuildEvent>
+    <PostBuildEvent>call $(SolutionDir)copy.bat $(SolutionDir) $(TargetName) $(TargetDir)
+xcopy /Y "$(TargetPath)" "$(SolutionDir)build\Server\4x\"</PostBuildEvent>
   </PropertyGroup>
 </Project>

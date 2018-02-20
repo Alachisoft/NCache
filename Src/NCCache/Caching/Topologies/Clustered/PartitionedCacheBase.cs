@@ -12,33 +12,30 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
+
+
 using System;
 using System.Collections;
 
-using Alachisoft;
-using Alachisoft.NCache.Caching.AutoExpiration;
-using Alachisoft.NCache.Caching.Exceptions;
-using Alachisoft.NGroups;
-using Alachisoft.NGroups.Blocks;
-using Alachisoft.NGroups.Stack;
-using Alachisoft.NGroups.Util;
+
+
 using Alachisoft.NCache.Runtime.Serialization;
+
 using Alachisoft.NCache.Runtime.Serialization.IO;
-using Alachisoft.NCache.Caching.Topologies;
-using Alachisoft.NCache.Caching.Topologies.Local;
-using Alachisoft.NCache.Caching.Statistics;
+
+using Alachisoft.NCache.Caching.DataGrouping;
 using Alachisoft.NCache.Runtime.Exceptions;
-using Alachisoft.NCache.Util;
 using Alachisoft.NCache.Caching.Util;
 using Alachisoft.NCache.Common.Net;
-using Alachisoft.NCache.Common.DataStructures;
+using Alachisoft.NCache.Caching.AutoExpiration;
+using Alachisoft.NCache.Caching.Exceptions;
 using System.Net;
 using Alachisoft.NCache.Common.Monitoring;
 using Alachisoft.NCache.Caching.Queries;
-using Alachisoft.NCache.Common.Util;
-using System.Collections.Generic;
-using Runtime = Alachisoft.NCache.Runtime;
-
+using Alachisoft.NGroups.Blocks;
+using Alachisoft.NGroups.Util;
+using Alachisoft.NGroups;
+using Alachisoft.NCache.Common.DataStructures.Clustered;
 
 namespace Alachisoft.NCache.Caching.Topologies.Clustered
 {
@@ -107,7 +104,6 @@ namespace Alachisoft.NCache.Caching.Topologies.Clustered
 
         #endregion
 
-        #region /                 --- Partitioned State Transfer Methods ---           /
         /// <summary>
         /// Authenticate the client and see if it is allowed to join the list of valid members.
         /// </summary>
@@ -146,6 +142,7 @@ namespace Alachisoft.NCache.Caching.Topologies.Clustered
             }
             catch (Exception ex)
             {
+                //Trace.error("PartitionedCacheBase.Clustered_LockBuckets", ex.ToString());
                 throw;
             }
         }
@@ -159,6 +156,7 @@ namespace Alachisoft.NCache.Caching.Topologies.Clustered
             }
             catch (CacheException e)
             {
+                //Trace.error("ParitionedCache.Clustered_AckStateTxfrCompleted()", e.ToString());
                 throw;
             }
             catch (Exception e)
@@ -166,10 +164,293 @@ namespace Alachisoft.NCache.Caching.Topologies.Clustered
                 throw new GeneralFailureException(e.Message, e);
             }
         }
-        
+
+        #region	/                 --- Partitioned ICache.GetKeys ---           /
+
+        /// <summary>
+        /// Retrieve the list of keys fron the cache for the given group or sub group.
+        /// </summary>
+        protected ArrayList Clustered_GetKeys(ArrayList dests, string group, string subGroup)
+        {
+            ArrayList list = new ArrayList();
+            try
+            {
+                Function func = new Function((int)OpCodes.GetKeys, new object[] { group, subGroup }, true);
+                RspList results = Cluster.Multicast(dests, func, GroupRequest.GET_ALL, false);
+                if (results == null)
+                {
+                    return null;
+                }
+
+                ClusterHelper.ValidateResponses(results, typeof(ArrayList), Name);
+                IList rspList = ClusterHelper.GetAllNonNullRsp(results, typeof(ClusteredArrayList));
+
+                if (rspList.Count <= 0)
+                {
+                    return null;
+                }
+                else
+                {
+                    IEnumerator im = rspList.GetEnumerator();
+                    while (im.MoveNext())
+                    {
+                        Rsp rsp = (Rsp)im.Current;
+                        ArrayList cList = (ArrayList)rsp.Value;
+                        if (cList != null) list.AddRange(cList);
+                    }
+                }
+            }
+            catch (CacheException e)
+            {
+                throw;
+            }
+            catch (Exception e)
+            {
+                throw new GeneralFailureException(e.Message, e);
+            }
+            return list;
+        }
+
+        /// <summary>
+        /// Retrieve the list of keys fron the cache for the given group or sub group.
+        /// </summary>
+        protected HashVector Clustered_GetData(string group, string subGroup, OperationContext operationContext)
+        {
+            HashVector table = new HashVector();
+            try
+            {
+                Function func = new Function((int)OpCodes.GetData, new object[] { group, subGroup, operationContext }, true);
+                RspList results = Cluster.BroadcastToServers(func, GroupRequest.GET_ALL, false);
+                if (results == null)
+                {
+                    return null;
+                }
+
+                ClusterHelper.ValidateResponses(results, typeof(HashVector), Name);
+                IList rspList = ClusterHelper.GetAllNonNullRsp(results, typeof(HashVector));
+
+                if (rspList.Count <= 0)
+                {
+                    return null;
+                }
+                else
+                {
+                    IEnumerator im = rspList.GetEnumerator();
+                    while (im.MoveNext())
+                    {
+                        Rsp rsp = (Rsp)im.Current;
+                        HashVector cTable = (HashVector)rsp.Value;
+                        if (cTable != null)
+                        {
+                            IDictionaryEnumerator ide = cTable.GetEnumerator();
+                            while (ide.MoveNext())
+                            {
+                                table[ide.Key] = ide.Value;
+                            }
+                        }
+                    }
+                }
+            }
+            catch (CacheException e)
+            {
+                throw;
+            }
+            catch (Exception e)
+            {
+                throw new GeneralFailureException(e.Message, e);
+            }
+
+            return table;
+        }
+
         #endregion
-        
-        #region	/                 --- Partitioned ICache.Clear ---           /
+
+
+        #region	/                 --- Partitioned ICache.Get ---           /
+
+        protected Hashtable Clustered_GetTag(ArrayList dests, string[] tags, TagComparisonType comparisonType, bool excludeSelf, OperationContext operationContext)
+        {
+            Hashtable keyValues = new Hashtable();
+
+            try
+            {
+                Function func = new Function((int)OpCodes.GetTag, new object[] { tags, comparisonType, operationContext }, excludeSelf);
+                RspList results = Cluster.BroadcastToMultiple(dests, func, GroupRequest.GET_ALL, false);
+                if (results == null)
+                {
+                    return null;
+                }
+
+                ClusterHelper.ValidateResponses(results, typeof(HashVector), Name);
+                IList rspList = ClusterHelper.GetAllNonNullRsp(results, typeof(HashVector));
+
+                if (rspList.Count <= 0)
+                {
+                    return null;
+                }
+                else
+                {
+                    IEnumerator im = rspList.GetEnumerator();
+                    while (im.MoveNext())
+                    {
+                        Rsp rsp = (Rsp)im.Current;
+                        IDictionary entries = (IDictionary)rsp.Value;
+                        if (entries != null)
+                        {
+                            IDictionaryEnumerator ide = entries.GetEnumerator();
+                            while (ide.MoveNext())
+                            {
+                                keyValues[ide.Key] = ide.Value;
+                            }
+                        }
+                    }
+                }
+
+                return keyValues;
+            }
+            catch (CacheException e)
+            {
+                throw;
+            }
+            catch (Exception e)
+            {
+                throw new GeneralFailureException(e.Message, e);
+            }
+        }
+
+        protected ArrayList Clustered_GetKeysByTag(ArrayList dests, string[] tags, TagComparisonType comparisonType, bool excludeSelf, OperationContext operationContext)
+        {
+            ArrayList keys = new ArrayList();
+
+            try
+            {
+                Function func = new Function((int)OpCodes.GetKeysByTag, new object[] { tags, comparisonType, operationContext }, excludeSelf);
+                RspList results = Cluster.Multicast(dests, func, GroupRequest.GET_ALL, false, Cluster.Timeout * 10);
+                if (results == null)
+                {
+                    return null;
+                }
+
+                ClusterHelper.ValidateResponses(results, typeof(ArrayList), Name);
+                IList rspList = ClusterHelper.GetAllNonNullRsp(results, typeof(ClusteredArrayList));
+
+                if (rspList.Count <= 0)
+                {
+                    return null;
+                }
+                else
+                {
+                    IEnumerator im = rspList.GetEnumerator();
+                    while (im.MoveNext())
+                    {
+                        Rsp rsp = (Rsp)im.Current;
+                        ICollection entries = (ICollection)rsp.Value;
+                        if (entries != null)
+                        {
+                            IEnumerator ide = entries.GetEnumerator();
+                            while (ide.MoveNext())
+                            {
+                                keys.Add(ide.Current);
+                            }
+                        }
+                    }
+                }
+
+                return keys;
+            }
+            catch (CacheException e)
+            {
+                throw;
+            }
+            catch (Exception e)
+            {
+                throw new GeneralFailureException(e.Message, e);
+            }
+        }
+
+        /// <summary>
+        /// Retrieve the list of keys fron the cache for the given group or sub group.
+        /// </summary>
+        protected Hashtable Clustered_GetData(ArrayList dests, string group, string subGroup, OperationContext operationContext)
+        {
+            Hashtable table = new Hashtable();
+            try
+            {
+                Function func = new Function((int)OpCodes.GetData, new object[] { group, subGroup, operationContext }, true);
+                RspList results = Cluster.Multicast(dests, func, GroupRequest.GET_ALL, false);
+                if (results == null)
+                {
+                    return null;
+                }
+
+                ClusterHelper.ValidateResponses(results, typeof(HashVector), Name);
+                IList rspList = ClusterHelper.GetAllNonNullRsp(results, typeof(HashVector));
+
+                if (rspList.Count <= 0)
+                {
+                    return null;
+                }
+                else
+                {
+                    IEnumerator im = rspList.GetEnumerator();
+                    while (im.MoveNext())
+                    {
+                        Rsp rsp = (Rsp)im.Current;
+                        Hashtable cTable = (Hashtable)rsp.Value;
+                        if (cTable != null)
+                        {
+                            IDictionaryEnumerator ide = cTable.GetEnumerator();
+                            while (ide.MoveNext())
+                            {
+                                table[ide.Key] = ide.Value;
+                            }
+                        }
+                    }
+                }
+            }
+            catch (CacheException e)
+            {
+                throw;
+            }
+            catch (Exception e)
+            {
+                throw new GeneralFailureException(e.Message, e);
+            }
+
+            return table;
+        }
+
+        #endregion
+
+        #region /                       ---PartitionedCacheBase.Clustered_GetGroupInfo ---          /
+
+        /// <summary>
+        /// Gets the data group info of the item. Node containing the item will return the
+        /// data group information.
+        /// </summary>
+        /// <param name="key"></param>
+        /// <returns>Result of the operation</returns>
+        /// <remarks>On the other ndoe handleGetGroupInfo is called</remarks>
+        public ClusteredOperationResult Clustered_GetGroupInfo(object key, OperationContext operationContext)
+        {
+            return Clustered_GetGroupInfo(Cluster.Servers, key, true, operationContext);
+        }
+
+        /// <summary>
+        /// Gets the data group info the items. Node containing items will return a table
+        /// of Data grop information.
+        /// </summary>
+        /// <param name="keys"></param>
+        /// <returns></returns>
+        /// /// <remarks>On the other ndoe handleGetGroupInfo is called</remarks>
+        public ICollection Clustered_GetGroupInfoBulk(object[] keys, OperationContext operationContext)
+        {
+            return Clustered_GetGroupInfoBulk(Cluster.Servers, keys, true, operationContext);
+        }
+
+        #endregion
+
+        #region	/                 --- Partitioned ICache.Insert ---           /
 
         /// <summary>
         /// Removes all entries from the cluster.
@@ -177,11 +458,11 @@ namespace Alachisoft.NCache.Caching.Topologies.Clustered
         /// <remarks>
         /// This method invokes <see cref="handleClear"/> on every server node in the cluster.
         /// </remarks>
-        protected void Clustered_Clear(CallbackEntry cbEntry, bool excludeSelf, OperationContext operationContext)
+        protected void Clustered_Clear(CallbackEntry cbEntry, string taskId, bool excludeSelf, OperationContext operationContext)
         {
             try
             {
-                Function func = new Function((int)OpCodes.Clear, new object[] { cbEntry, operationContext }, excludeSelf);
+                Function func = new Function((int)OpCodes.Clear, new object[] { cbEntry, taskId, operationContext }, excludeSelf);
                 Cluster.BroadcastToServers(func, GroupRequest.GET_ALL, false);
             }
             catch (Exception e)
@@ -197,32 +478,21 @@ namespace Alachisoft.NCache.Caching.Topologies.Clustered
         /// <summary>
         /// Add the object to specfied node in the cluster. 
         /// </summary>
-        /// <param name="dest"></param>
         /// <param name="key">key of the entry.</param>
-        /// <param name="cacheEntry"></param>
-        /// <param name="operationContext"></param>
         /// <returns>cache entry.</returns>
         /// <remarks>
         /// This method either invokes <see cref="handleAdd"/> on every server-node in the cluster.
         /// </remarks>
-        protected CacheAddResult Clustered_Add(Address dest, object key, CacheEntry cacheEntry, OperationContext operationContext)
+        protected CacheAddResult Clustered_Add(Address dest, object key, CacheEntry cacheEntry, string taskId, OperationContext operationContext)
         {
             if (ServerMonitor.MonitorActivity) ServerMonitor.LogClientActivity("PartCacheBase.Add_1", "");
             CacheAddResult retVal = CacheAddResult.Success;
             try
             {
-                Function func = new Function((int)OpCodes.Add, new object[] { key, cacheEntry.CloneWithoutValue(), operationContext });
-                Array userPayLoad = null;
-                if (cacheEntry.Value is CallbackEntry)
-                {
-                    CallbackEntry cbEntry = ((CallbackEntry)cacheEntry.Value);
-                    userPayLoad = cbEntry.UserData;
-                }
-                else
-                {
-                    userPayLoad = cacheEntry.UserData;
-                }
+                CacheEntry cloneValue; Array userPayLoad; long payLoadSize;
+                _context.CachingSubSystemDataService.GetEntryClone(cacheEntry, out cloneValue, out userPayLoad, out payLoadSize);
 
+                Function func = new Function((int)OpCodes.Add, new object[] { key, cloneValue, taskId, operationContext });
                 func.UserPayload = userPayLoad;
                 object result = Cluster.SendMessage(dest, func, GroupRequest.GET_FIRST);
                 if (result == null)
@@ -230,7 +500,7 @@ namespace Alachisoft.NCache.Caching.Topologies.Clustered
                     return retVal;
                 }
                 if (result is CacheAddResult)
-                    retVal = (CacheAddResult)result;
+                    retVal = (CacheAddResult)result; //retvals[0];
                 else if (result is System.Exception)
                     throw (Exception)result;
             }
@@ -240,6 +510,7 @@ namespace Alachisoft.NCache.Caching.Topologies.Clustered
             }
             catch (Runtime.Exceptions.TimeoutException te)
             {
+                 
                 throw;
             }
             catch (CacheException e)
@@ -272,7 +543,7 @@ namespace Alachisoft.NCache.Caching.Topologies.Clustered
                 {
                     return retVal;
                 }
-                retVal = (bool)result; 
+                retVal = (bool)result; //retvals[0];
             }
             catch (StateTransferException e)
             {
@@ -290,34 +561,70 @@ namespace Alachisoft.NCache.Caching.Topologies.Clustered
         }
 
         /// <summary>
-        /// Add the object to specfied node in the cluster. 
+        /// Add the ExpirationHint to a specfied node in the cluster. 
         /// </summary>
-        /// <param name="dest"></param>
-        /// <param name="keys"></param>
-        /// <param name="cacheEntries"></param>
-        /// <param name="operationContext"></param>
         /// <param name="key">key of the entry.</param>
         /// <returns>cache entry.</returns>
         /// <remarks>
         /// This method either invokes <see cref="handleAdd"/> on every server-node in the cluster.
         /// </remarks>
-        protected Hashtable Clustered_Add(Address dest, object[] keys, CacheEntry[] cacheEntries, OperationContext operationContext)
+        protected bool Clustered_Add(Address dest, object key, CacheSynchronization.CacheSyncDependency syncDependency, OperationContext operationContext)
+        {
+            if (ServerMonitor.MonitorActivity) ServerMonitor.LogClientActivity("PartCacheBase.Add_2", "");
+
+            bool retVal = false;
+            try
+            {
+                Function func = new Function((int)OpCodes.AddSyncDependency, new object[] { key, syncDependency, operationContext });
+                object result = Cluster.SendMessage(dest, func, GroupRequest.GET_FIRST);
+                if (result == null)
+                {
+                    return retVal;
+                }
+                retVal = (bool)result; //retvals[0];
+            }
+            catch (StateTransferException e)
+            {
+                throw;
+            }
+            catch (CacheException e)
+            {
+                throw;
+            }
+            catch (Exception e)
+            {
+                throw new GeneralFailureException(e.Message, e);
+            }
+            return retVal;
+        }
+
+
+        /// <summary>
+        /// Add the object to specfied node in the cluster. 
+        /// </summary>
+        /// <param name="key">key of the entry.</param>
+        /// <returns>cache entry.</returns>
+        /// <remarks>
+        /// This method either invokes <see cref="handleAdd"/> on every server-node in the cluster.
+        /// </remarks>
+        protected Hashtable Clustered_Add(Address dest, object[] keys, CacheEntry[] cacheEntries, string taskId, OperationContext operationContext)
         {
             if (ServerMonitor.MonitorActivity) ServerMonitor.LogClientActivity("PartCacheBase.AddBlk", "");
 
             Hashtable retVal = null;
             try
             {
-                Function func = new Function((int)OpCodes.Add, new object[] { keys, cacheEntries, operationContext });
+                Function func = new Function((int)OpCodes.Add, new object[] { keys, cacheEntries, taskId, operationContext });
                 object result = Cluster.SendMessage(dest, func, GroupRequest.GET_FIRST);
                 if (result == null)
                 {
                     return retVal;
                 }
-                retVal = (Hashtable)result; 
+                retVal = (Hashtable)result; //retvals[0];
             }
             catch (Runtime.Exceptions.TimeoutException te)
             {
+                 
                 throw;
             }
             catch (Runtime.Exceptions.SuspectedException se)
@@ -338,7 +645,77 @@ namespace Alachisoft.NCache.Caching.Topologies.Clustered
 
         #endregion
 
-        #region /                 --- Partitioned ICache.Search ---           /
+
+        /// <summary>
+        /// Verifies that joining node has no data integrity conflicts with other nodes of the 
+        /// cluster.
+        /// </summary>
+        /// <returns>True, if no data integrity conflicts found, other wise false</returns>
+        /// <remarks>Each partitioned node can have his data affinity. Data groups other than the
+        /// strongly affiliated groups can be loadbalanced to any of the existing node. In such a
+        /// situaltion if a new node joins and it has strong affinity with the groups whose data 
+        /// was previously distributed evenly, then a data integrity conflict arises. To avoid such
+        /// conflicts each joining node first varifes that no other node on the cluster has data
+        /// of his groups. If it is so, then he has to leave the cluster.</remarks>
+        public bool VerifyDataIntegrity()
+        {
+            bool integrityVarified = true;
+            bool integrityIssue = false;
+
+
+            try
+            {
+                if (Cluster.Servers.Count > 1)
+                {
+                    if (_stats != null && _stats.LocalNode.DataAffinity != null)
+                    {
+                        DataAffinity affinity = _stats.LocalNode.DataAffinity;
+
+                        if (affinity.Groups != null && affinity.Groups.Count > 0)
+                        {
+                            Function fun = new Function((int)OpCodes.VerifyDataIntegrity, (object)affinity.Groups, false);
+                            RspList results = Cluster.BroadcastToServers(fun, GroupRequest.GET_ALL, false);
+
+                            if (results != null)
+                            {
+                                ClusterHelper.ValidateResponses(results, typeof(bool), Name);
+                                Rsp response;
+                                for (int i = 0; i < results.size(); i++)
+                                {
+                                    response = (Rsp)results.elementAt(i);
+                                    if (response.wasReceived())
+                                    {
+                                        integrityIssue = Convert.ToBoolean(response.Value);
+                                        if (integrityIssue)
+                                        {
+                                            Context.NCacheLog.Error("PartitionedCacheBase.Verifydataintegrity()", "data integrity issue from " + response.Sender.ToString());
+                                            integrityVarified = false;
+                                        }
+                                    }
+                                    else
+                                    {
+                                        Context.NCacheLog.Error("PartitionedCacheBase.Verifydataintegrity()", "data integrity varification not received from " + response.Sender.ToString());
+                                        integrityVarified = false;
+                                        break;
+                                    }
+                                }
+                            }
+
+                        }
+                    }
+                }
+            }
+            catch (Exception e)
+            {
+                if (Context != null)
+                {
+                    Context.NCacheLog.Error("PartitionedCacheBase.Verifydataintegrity()", e.ToString());
+                }
+                integrityVarified = false;
+            }
+
+            return integrityVarified;
+        }
 
         protected QueryResultSet Clustered_Search(ArrayList dests, string queryText, IDictionary values, bool excludeSelf, OperationContext operationContext)
         {
@@ -353,7 +730,7 @@ namespace Alachisoft.NCache.Caching.Topologies.Clustered
                     return null;
 
                 ClusterHelper.ValidateResponses(results, typeof(QueryResultSet), Name);
-                ArrayList rspList = ClusterHelper.GetAllNonNullRsp(results, typeof(QueryResultSet));
+                IList rspList = ClusterHelper.GetAllNonNullRsp(results, typeof(QueryResultSet));
 
                 if (rspList.Count <= 0)
                 {
@@ -367,6 +744,7 @@ namespace Alachisoft.NCache.Caching.Topologies.Clustered
                         Rsp rsp = (Rsp)im.Current;
                         QueryResultSet cRestultSet = (QueryResultSet)rsp.Value;
                         resultSet.Compile(cRestultSet);
+                        //if (cList != null) resultSet.AddRange(cList);
                     }
                 }
 
@@ -396,7 +774,7 @@ namespace Alachisoft.NCache.Caching.Topologies.Clustered
                 }
 
                 ClusterHelper.ValidateResponses(results, typeof(QueryResultSet), Name);
-                ArrayList rspList = ClusterHelper.GetAllNonNullRsp(results, typeof(QueryResultSet));
+                IList rspList = ClusterHelper.GetAllNonNullRsp(results, typeof(QueryResultSet));
 
                 if (rspList.Count <= 0)
                 {
@@ -410,7 +788,6 @@ namespace Alachisoft.NCache.Caching.Topologies.Clustered
                         Rsp rsp = (Rsp)im.Current;
                         QueryResultSet cResultSet = (QueryResultSet)rsp.Value;
                         resultSet.Compile(cResultSet);
-
                     }
                 }
 
@@ -425,43 +802,27 @@ namespace Alachisoft.NCache.Caching.Topologies.Clustered
                 throw new GeneralFailureException(e.Message, e);
             }
         }
-        
-        #endregion
-       
         #region	/                 --- Partitioned ICache.Insert ---           /
 
         /// <summary>
         /// Updates or Adds the object to the cluster. 
         /// </summary>
-        /// <param name="dest"></param>
         /// <param name="key">key of the entry.</param>
-        /// <param name="cacheEntry"></param>
-        /// <param name="lockId"></param>
-        /// <param name="accessType"></param>
-        /// <param name="operationContext"></param>
         /// <returns>cache entry.</returns>
         /// <remarks>
         /// This method invokes <see cref="handleInsert"/> on the specified node.
         /// </remarks>
-        protected CacheInsResultWithEntry Clustered_Insert(Address dest, object key, CacheEntry cacheEntry, object lockId, LockAccessType accessType, OperationContext operationContext)
+        protected CacheInsResultWithEntry Clustered_Insert(Address dest, object key, CacheEntry cacheEntry, string taskId, object lockId, ulong version, LockAccessType accessType, OperationContext operationContext)
         {
             if (ServerMonitor.MonitorActivity) ServerMonitor.LogClientActivity("PartCacheBase.Insert", "");
 
             CacheInsResultWithEntry retVal = new CacheInsResultWithEntry();
             try
             {
-                Function func = new Function((int)OpCodes.Insert, new object[] { key, cacheEntry.CloneWithoutValue(), lockId, accessType, operationContext });
-                Array userPayLoad = null;
-                if (cacheEntry.Value is CallbackEntry)
-                {
-                    CallbackEntry cbEntry = ((CallbackEntry)cacheEntry.Value);
-                    userPayLoad = cbEntry.UserData;
-                }
-                else
-                {
-                    userPayLoad = cacheEntry.UserData;
-                }
+                CacheEntry cloneValue; Array userPayLoad; long payLoadSize;
+                _context.CachingSubSystemDataService.GetEntryClone(cacheEntry, out cloneValue, out userPayLoad, out payLoadSize);
 
+                Function func = new Function((int)OpCodes.Insert, new object[] { key, cloneValue, taskId, lockId, accessType, version, operationContext });
                 func.UserPayload = userPayLoad;
                 func.ResponseExpected = true;
                 object result = Cluster.SendMessage(dest, func, GroupRequest.GET_FIRST, false);
@@ -471,7 +832,7 @@ namespace Alachisoft.NCache.Caching.Topologies.Clustered
                 }
 
                 retVal = (CacheInsResultWithEntry)((OperationResponse)result).SerializablePayload;
-                if (retVal.Entry != null)
+                if (retVal.Entry != null && ((OperationResponse)result).UserPayload!=null)
                     retVal.Entry.Value = ((OperationResponse)result).UserPayload;
             }
             catch (Runtime.Exceptions.SuspectedException se)
@@ -496,22 +857,20 @@ namespace Alachisoft.NCache.Caching.Topologies.Clustered
         /// <summary>
         /// Updates or Adds the objects to the cluster. 
         /// </summary>
-        /// <param name="dest"></param>
         /// <param name="keys">keys of the entries.</param>
         /// <param name="cacheEntries">cache entries.</param>
-        /// <param name="operationContext"></param>
         /// <returns>failed keys</returns>
         /// <remarks>
         /// This method invokes <see cref="handleInsert"/> on the specified node.
         /// </remarks>
-        protected Hashtable Clustered_Insert(Address dest, object[] keys, CacheEntry[] cacheEntries, OperationContext operationContext)
+        protected Hashtable Clustered_Insert(Address dest, object[] keys, CacheEntry[] cacheEntries, string taskId, OperationContext operationContext)
         {
             if (ServerMonitor.MonitorActivity) ServerMonitor.LogClientActivity("PartCacheBase.InsertBlk", "");
 
             Hashtable inserted = null;
             try
             {
-                Function func = new Function((int)OpCodes.Insert, new object[] { keys, cacheEntries, operationContext });
+                Function func = new Function((int)OpCodes.Insert, new object[] { keys, cacheEntries, taskId, operationContext });
                 object result = Cluster.SendMessage(dest, func, GroupRequest.GET_FIRST, false);
                 if (result == null)
                 {
@@ -521,18 +880,22 @@ namespace Alachisoft.NCache.Caching.Topologies.Clustered
             }
             catch (Runtime.Exceptions.TimeoutException te)
             {
+                //nTrace.error("PartitionedCache.Clustered_Insert()", te.ToString());
                 throw;
             }
             catch (Runtime.Exceptions.SuspectedException se)
             {
+                //nTrace.error("PartitionedCache.Clustered_Insert()", se.ToString());
                 throw;
             }
             catch (CacheException e)
             {
+                //nTrace.error("PartitionedCache.Clustered_Insert()", e.ToString());
                 throw;
             }
             catch (Exception e)
             {
+                //nTrace.error("PartitionedCache.Clustered_Insert()", e.ToString());
                 throw new GeneralFailureException(e.Message, e);
             }
             return inserted;
@@ -545,43 +908,46 @@ namespace Alachisoft.NCache.Caching.Topologies.Clustered
         /// <summary>
         /// Remove the object from the cluster. 
         /// </summary>
-        /// <param name="dest"></param>
         /// <param name="key">key of the entry.</param>
         /// <returns>cache entry.</returns>
         /// <remarks>
         /// This method invokes <see cref="handleRemove"/> on every server node in the cluster.
         /// </remarks>
-        protected CacheEntry Clustered_Remove(Address dest, object key, ItemRemoveReason ir, CallbackEntry cbEntry, bool notify, object lockId, LockAccessType accessType, OperationContext operationContext)
+        protected CacheEntry Clustered_Remove(Address dest, object key, ItemRemoveReason ir, CallbackEntry cbEntry, string taskId, string providerName, bool notify, object lockId, ulong version, LockAccessType accessType, OperationContext operationContext)
         {
             if (ServerMonitor.MonitorActivity) ServerMonitor.LogClientActivity("PartCacheBase.Remove", "");
 
             CacheEntry retVal = null;
             try
             {
-                Function func = new Function((int)OpCodes.Remove, new object[] { key, ir, notify, cbEntry, lockId, accessType, operationContext }, false);
+                Function func = new Function((int)OpCodes.Remove, new object[] { key, ir, notify, cbEntry, taskId, lockId, accessType, version, providerName, operationContext }, false);
                 func.ResponseExpected = true;
                 object result = Cluster.SendMessage(dest, func, GroupRequest.GET_FIRST, false);
                 if (result != null)
                 {
                     retVal = ((OperationResponse)result).SerializablePayload as CacheEntry;
-                    if (retVal != null)
+                    if (retVal != null && ((OperationResponse)result).UserPayload!=null)
                         retVal.Value = ((OperationResponse)result).UserPayload;
                 }
             }
             catch (Runtime.Exceptions.SuspectedException se)
             {
+                //nTrace.error("PartitionedCache.Clustered_Insert()", se.ToString());
                 throw;
             }
             catch (Runtime.Exceptions.TimeoutException te)
             {
+                //nTrace.error("PartitionedCache.Clustered_Insert()", te.ToString());
                 throw;
             }
             catch (CacheException e)
             {
+                //nTrace.error("ParitionedCache.Clustered_Remove()", e.ToString());
                 throw;
             }
             catch (Exception e)
             {
+                //nTrace.error("ParitionedCache.Clustered_Remove()", e.ToString());
                 throw new GeneralFailureException(e.Message, e);
             }
             return retVal;
@@ -590,17 +956,12 @@ namespace Alachisoft.NCache.Caching.Topologies.Clustered
         /// <summary>
         /// Remove the objects from the cluster. 
         /// </summary>
-        /// <param name="dest"></param>
         /// <param name="keys">keys of the entries.</param>
-        /// <param name="ir"></param>
-        /// <param name="cbEntry"></param>
-        /// <param name="notify"></param>
-        /// <param name="operationContext"></param>
         /// <returns>list of failed keys</returns>
         /// <remarks>
         /// This method invokes <see cref="handleRemove"/> on every server node in the cluster.
         /// </remarks>
-        protected Hashtable Clustered_Remove(Address dest, object[] keys, ItemRemoveReason ir, CallbackEntry cbEntry, bool notify, OperationContext operationContext)
+        protected Hashtable Clustered_Remove(Address dest, object[] keys, ItemRemoveReason ir, CallbackEntry cbEntry, string taskId, string providerName, bool notify, OperationContext operationContext)
         {
             if (ServerMonitor.MonitorActivity) ServerMonitor.LogClientActivity("PartCacheBase.RemoveBlk", "");
 
@@ -609,7 +970,7 @@ namespace Alachisoft.NCache.Caching.Topologies.Clustered
             dests.Add(dest);
             try
             {
-                Function func = new Function((int)OpCodes.Remove, new object[] { keys, ir, notify, cbEntry, operationContext }, false);
+                Function func = new Function((int)OpCodes.Remove, new object[] { keys, ir, notify, cbEntry, taskId, providerName, operationContext }, false);
                 RspList results = Cluster.Multicast(dests, func, GetFirstResponse, false);
 
                 if (results == null)
@@ -617,6 +978,7 @@ namespace Alachisoft.NCache.Caching.Topologies.Clustered
                     return removedEntries;
                 }
 
+                 
                 if (results.SuspectedMembers.Count == dests.Count)
                 {
                     //All the members of this group has gone down. 
@@ -625,7 +987,63 @@ namespace Alachisoft.NCache.Caching.Topologies.Clustered
                 }
 
                 ClusterHelper.ValidateResponses(results, typeof(Hashtable), Name);
-                ArrayList rspList = ClusterHelper.GetAllNonNullRsp(results, typeof(Hashtable));
+                IList rspList = ClusterHelper.GetAllNonNullRsp(results, typeof(Hashtable));
+
+                if (rspList.Count <= 0)
+                {
+                    return removedEntries;
+                }
+
+                IEnumerator ia = rspList.GetEnumerator();
+                while (ia.MoveNext())
+                {
+                    Rsp rsp = (Rsp)ia.Current;
+                    Hashtable removed = (Hashtable)rsp.Value;
+
+                    IDictionaryEnumerator ide = removed.GetEnumerator();
+                    while (ide.MoveNext())
+                    {
+                        if(!removedEntries.ContainsKey(ide.Key))
+                            removedEntries.Add(ide.Key, ide.Value);
+                    }
+                }
+            }
+            catch (CacheException e)
+            {
+                //Trace.error("PoRServer.Clustered_Remove()", e.ToString());
+                throw;
+            }
+            catch (Exception e)
+            {
+                //Trace.error("PoRServer.Clustered_Remove()", e.ToString());
+                throw new GeneralFailureException(e.Message, e);
+            }
+            return removedEntries;
+        }
+
+        /// <summary>
+        /// Remove the objects from the cluster. 
+        /// </summary>
+        /// <param name="keys">keys of the entries.</param>
+        /// <returns>list of failed keys</returns>
+        /// <remarks>
+        /// This method invokes <see cref="handleRemove"/> on every server node in the cluster.
+        /// </remarks>
+        protected Hashtable Clustered_RemoveGroup(string group, string subGroup, bool notify, OperationContext operationContext)
+        {
+            Hashtable removedEntries = new Hashtable();
+            try
+            {
+                Function func = new Function((int)OpCodes.RemoveGroup, new object[] { group, subGroup, notify, operationContext }, false);
+                RspList results = Cluster.BroadcastToServers(func, GroupRequest.GET_ALL, false);
+
+                if (results == null)
+                {
+                    return removedEntries;
+                }
+
+                ClusterHelper.ValidateResponses(results, typeof(Hashtable), Name);
+                IList rspList = ClusterHelper.GetAllNonNullRsp(results, typeof(Hashtable));
 
                 if (rspList.Count <= 0)
                 {
@@ -653,11 +1071,133 @@ namespace Alachisoft.NCache.Caching.Topologies.Clustered
             {
                 throw new GeneralFailureException(e.Message, e);
             }
+
             return removedEntries;
         }
 
 
-       
+        protected Hashtable Clustered_RemoveByTag(ArrayList dests, string[] tags, TagComparisonType comparisonType, bool notify, bool excludeSelf, OperationContext operationContext)
+        {
+            Hashtable removedEntries = new Hashtable();
+            try
+            {
+                Function func = new Function((int)OpCodes.RemoveByTag, new object[] { tags, comparisonType, notify, operationContext }, excludeSelf);
+                RspList results = Cluster.BroadcastToMultiple(dests, func, GroupRequest.GET_ALL, false);
+
+                if (results == null)
+                {
+                    return removedEntries;
+                }
+
+                ClusterHelper.ValidateResponses(results, typeof(Hashtable), Name);
+                IList rspList = ClusterHelper.GetAllNonNullRsp(results, typeof(Hashtable));
+
+                if (rspList.Count <= 0)
+                {
+                    return removedEntries;
+                }
+
+                IEnumerator ia = rspList.GetEnumerator();
+                while (ia.MoveNext())
+                {
+                    Rsp rsp = (Rsp)ia.Current;
+                    Hashtable removed = (Hashtable)rsp.Value;
+
+                    IDictionaryEnumerator ide = removed.GetEnumerator();
+                    while (ide.MoveNext())
+                    {
+                        removedEntries.Add(ide.Key, ide.Value);
+                    }
+                }
+            }
+            catch (CacheException e)
+            {
+                //nTrace.error("ParitionedCache.Clustered_Remove()", e.ToString());
+                throw;
+            }
+            catch (Exception e)
+            {
+                //nTrace.error("ParitionedCache.Clustered_Remove()", e.ToString());
+                throw new GeneralFailureException(e.Message, e);
+            }
+            return removedEntries;
+        }
+        #endregion
+
+        #region /               --- Cascaded Dependencies ---                   /
+
+        protected Hashtable Clustered_AddDepKeyList(Address dest, Hashtable table, OperationContext operationContext)
+        {
+            Hashtable retVal = null;
+            try
+            {
+                Function func = new Function((int)OpCodes.AddDepKeyList, new object[] { table, operationContext });
+                object result = Cluster.SendMessage(dest, func, GroupRequest.GET_FIRST);
+                if (result == null)
+                {
+                    return retVal;
+                }
+                retVal = (Hashtable)result; //retvals[0];
+            }
+            catch (Runtime.Exceptions.SuspectedException se)
+            {
+                //nTrace.error("PartitionedCache.Clustered_AddDepKeyList()", se.ToString());
+                throw;
+            }
+            catch (Runtime.Exceptions.TimeoutException te)
+            {
+                //nTrace.error("PartitionedCache.Clustered_AddDepKeyList()", te.ToString());
+                throw;
+            }
+            catch (CacheException e)
+            {
+                //nTrace.error("PartitionedCache.Clustered_AddDepKeyList()", e.ToString());
+                throw;
+            }
+            catch (Exception e)
+            {
+                //nTrace.error("PartitionedCache.Clustered_AddDepKeyList()", e.ToString());
+                throw new GeneralFailureException(e.Message, e);
+            }
+            return retVal;
+        }
+
+        protected Hashtable Clustered_RemoveDepKeyList(Address dest, Hashtable table, OperationContext operationContext)
+        {
+            Hashtable retVal = null;
+            try
+            {
+                Function func = new Function((int)OpCodes.RemoveDepKeyList, new object[] { table, operationContext });
+                object result = Cluster.SendMessage(dest, func, GroupRequest.GET_ALL);
+                if (result == null)
+                {
+                    return retVal;
+                }
+                retVal = (Hashtable)result; //retvals[0];
+            }
+            catch (Runtime.Exceptions.SuspectedException se)
+            {
+                //nTrace.error("PartitionedCache.Clustered_RemoveDepKeyList()", se.ToString());
+                throw;
+            }
+            catch (Runtime.Exceptions.TimeoutException te)
+            {
+                //nTrace.error("PartitionedCache.Clustered_RemoveDepKeyList()", te.ToString());
+                throw;
+            }
+            catch (CacheException e)
+            {
+                //nTrace.error("PartitionedCache.Clustered_RemoveDepKeyList()", e.ToString());
+                throw;
+            }
+            catch (Exception e)
+            {
+                //nTrace.error("PartitionedCache.Clustered_RemoveDepKeyList()", e.ToString());
+                throw new GeneralFailureException(e.Message, e);
+            }
+            return retVal;
+        }
+
         #endregion
 
         #region	/                 --- Partitioned ICache.GetEnumerator ---           /
@@ -762,10 +1302,12 @@ namespace Alachisoft.NCache.Caching.Topologies.Clustered
             }
             catch (CacheException e)
             {
+                //nTrace.error("PoRServer.GetSubClusterEnumerator()", e.ToString());
                 throw;
             }
             catch (Exception e)
             {
+                //nTrace.error("PoRServer.GetSubClusterEnumerator()", e.ToString());
                 throw new GeneralFailureException(e.Message, e);
             }
         }
@@ -824,18 +1366,146 @@ namespace Alachisoft.NCache.Caching.Topologies.Clustered
             }
             catch (CacheException e)
             {
+                //nTrace.error("PoRServer.GetEnumerator()", e.ToString());
                 throw;
             }
             catch (Exception e)
             {
+                //nTrace.error("PoRServer.GetEnumerator()", e.ToString());
                 throw new GeneralFailureException(e.Message, e);
             }
             return retVal;
         }
 
         #endregion
-    }
 
+        protected void Clustered_UnRegisterCQ(ArrayList dests, string serverUniqueId, string clientUniqueId, string clientId, bool excludeSelf)
+        {
+            try
+            {
+                Function func = new Function((int)OpCodes.UnRegisterCQ, new object[] { serverUniqueId, clientUniqueId, clientId }, excludeSelf);
+                RspList results = Cluster.BroadcastToMultiple(dests, func, GroupRequest.GET_ALL, false);
+                ClusterHelper.ValidateResponses(results, null, Name);
+            }
+            catch (CacheException e)
+            {
+                //Trace.error("PartitionedCache.Clustered_Search()", e.ToString());
+                throw;
+            }
+            catch (Exception e)
+            {
+                //Trace.error("PartitionedCache.Clustered_Search()", e.ToString());
+                throw new GeneralFailureException(e.Message, e);
+            }
+        }
+
+        protected void Clustered_RegisterCQ(ArrayList dests, ContinuousQuery query, string clientUniqueId, string clientId, bool notifyAdd, bool notifyUpdate, bool notifyRemove, bool excludeSelf, OperationContext operationContext, QueryDataFilters datafilters)
+        {
+            try
+            {
+                Function func = new Function((int)OpCodes.RegisterCQ, new object[] { query, clientId, clientUniqueId, notifyAdd, notifyUpdate, notifyRemove, operationContext, datafilters }, excludeSelf);
+                RspList results = Cluster.BroadcastToMultiple(dests, func, GroupRequest.GET_ALL, false);
+                ClusterHelper.ValidateResponses(results, null, Name);
+            }
+            catch (CacheException e)
+            {
+                //Trace.error("PartitionedCache.Clustered_Search()", e.ToString());
+                throw;
+            }
+            catch (Exception e)
+            {
+                //Trace.error("PartitionedCache.Clustered_Search()", e.ToString());
+                throw new GeneralFailureException(e.Message, e);
+            }
+        }
+
+        protected QueryResultSet Clustered_SearchCQ(ArrayList dests, ContinuousQuery query, string clientUniqueId, string clientId, bool notifyAdd, bool notifyUpdate, bool notifyRemove, bool excludeSelf, OperationContext operationContext, QueryDataFilters datafilters)
+        {
+            QueryResultSet resultSet = new QueryResultSet();
+
+            try
+            {
+                Function func = new Function((int)OpCodes.SearchCQ, new object[] { query, clientId, clientUniqueId, notifyAdd, notifyUpdate, notifyRemove, operationContext, datafilters }, excludeSelf);
+                RspList results = Cluster.BroadcastToMultiple(dests, func, GroupRequest.GET_ALL, false);
+
+                if (results == null)
+                    return null;
+
+                ClusterHelper.ValidateResponses(results, typeof(QueryResultSet), Name);
+                IList rspList = ClusterHelper.GetAllNonNullRsp(results, typeof(QueryResultSet));
+
+                if (rspList.Count <= 0)
+                    return null;
+                else
+                {
+                    IEnumerator im = rspList.GetEnumerator();
+                    while (im.MoveNext())
+                    {
+                        Rsp rsp = (Rsp)im.Current;
+                        QueryResultSet cResultSet = (QueryResultSet)rsp.Value;
+                        resultSet.Compile(cResultSet);
+                        //if (cList != null) resultSet.AddRange(cList);
+                    }
+                }
+
+                return resultSet;
+            }
+            catch (CacheException e)
+            {
+                //Trace.error("PartitionedCache.Clustered_Search()", e.ToString());
+                throw;
+            }
+            catch (Exception e)
+            {
+                //Trace.error("PartitionedCache.Clustered_Search()", e.ToString());
+                throw new GeneralFailureException(e.Message, e);
+            }
+        }
+
+        protected QueryResultSet Clustered_SearchEntriesCQ(ArrayList dests, ContinuousQuery query, string clientUniqueId, string clientId, bool notifyAdd, bool notifyUpdate, bool notifyRemove, bool excludeSelf, OperationContext operationContext, QueryDataFilters datafilters)
+        {
+            QueryResultSet resultSet = new QueryResultSet();
+
+            try
+            {
+                Function func = new Function((int)OpCodes.SearchEntriesCQ, new object[] { query, clientId, clientUniqueId, notifyAdd, notifyUpdate, notifyRemove, operationContext, datafilters }, excludeSelf);
+                RspList results = Cluster.BroadcastToMultiple(dests, func, GroupRequest.GET_ALL, false);
+
+                if (results == null)
+                    return null;
+
+                ClusterHelper.ValidateResponses(results, typeof(QueryResultSet), Name);
+                IList rspList = ClusterHelper.GetAllNonNullRsp(results, typeof(QueryResultSet));
+
+                if (rspList.Count <= 0)
+                    return null;
+                else
+                {
+                    IEnumerator im = rspList.GetEnumerator();
+                    while (im.MoveNext())
+                    {
+                        Rsp rsp = (Rsp)im.Current;
+                        QueryResultSet cResultSet = (QueryResultSet)rsp.Value;
+                        resultSet.Compile(cResultSet);
+                        //if (cList != null) resultSet.AddRange(cList);
+                    }
+                }
+
+                return resultSet;
+            }
+            catch (CacheException e)
+            {
+                //Trace.error("PartitionedCache.Clustered_Search()", e.ToString());
+                throw;
+            }
+            catch (Exception e)
+            {
+                //Trace.error("PartitionedCache.Clustered_Search()", e.ToString());
+                throw new GeneralFailureException(e.Message, e);
+            }
+        }
+
+    }
 }
 
 

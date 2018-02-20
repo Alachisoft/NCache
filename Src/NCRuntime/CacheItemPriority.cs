@@ -10,11 +10,15 @@
 // distributed under the License is distributed on an "AS IS" BASIS,
 // WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
 // See the License for the specific language governing permissions and
-// limitations under the License.
+// limitations under the License
 
 using System;
 
+#if JAVA
+namespace Alachisoft.TayzGrid.Runtime
+#else
 namespace Alachisoft.NCache.Runtime
+#endif
 {
 	/// <summary>
 	/// Specifies the relative priority of items stored in the <see cref="Cache"/>.
@@ -40,8 +44,15 @@ namespace Alachisoft.NCache.Runtime
 	/// <constraint>This member is not available in SessionState edition.</constraint> 
 	/// </requirements>
 	[Serializable]
-	public enum CacheItemPriority: byte
+	public enum CacheItemPriority:byte
 	{
+        /// <summary>
+        /// Cache items with this priority level are likely to be deleted from the 
+        /// cache as the server frees system memory only after those items with Low 
+        /// or BelowNormal priority. This is the default.
+        /// </summary>
+        Normal,
+
         /// <summary>
 		/// Cache items with this priority level are the most likely to be deleted 
 		/// from the cache as the server frees system memory.
@@ -52,14 +63,7 @@ namespace Alachisoft.NCache.Runtime
 		/// Cache items with this priority level are more likely to be deleted from 
 		/// the cache as the server frees system memory than items assigned a Normal priority.
 		/// </summary>
-		BelowNormal,
-
-		/// <summary>
-		/// Cache items with this priority level are likely to be deleted from the 
-		/// cache as the server frees system memory only after those items with Low 
-		/// or BelowNormal priority. This is the default.
-		/// </summary>
-		Normal,
+		BelowNormal,		
 
 		/// <summary>
 		/// Cache items with this priority level are less likely to be deleted as 

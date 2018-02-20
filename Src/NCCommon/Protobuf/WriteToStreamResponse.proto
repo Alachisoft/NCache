@@ -1,0 +1,5 @@
+
+option java_outer_classname="WriteToStreamResponseProtocol";
+package Alachisoft.NCache.Common.Protobuf;
+message WriteToStreamResponse {
+}

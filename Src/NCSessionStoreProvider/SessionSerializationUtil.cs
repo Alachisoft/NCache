@@ -10,7 +10,7 @@
 // distributed under the License is distributed on an "AS IS" BASIS,
 // WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
 // See the License for the specific language governing permissions and
-// limitations under the License.
+// limitations under the License
 
 using System.IO;
 using System.Web;
@@ -33,7 +33,7 @@ namespace Alachisoft.NCache.Web.SessionState
                 stream = new MemoryStream();
                 BinaryWriter writer = new BinaryWriter(stream);
 
-                if (sessionData.Items != null)
+                if (sessionData.Items != null /*&& sessionData.Items.Count != 0*/)
                 {
                     sessionFlag = (byte)(sessionFlag | SESSION_ITEMS);
                 }

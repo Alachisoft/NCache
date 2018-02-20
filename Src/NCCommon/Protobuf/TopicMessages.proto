@@ -1,0 +1,8 @@
+import "Message.proto";
+
+option java_outer_classname="TopicMessages";
+package Alachisoft.NCache.Common.Protobuf;
+message TopicMessages {
+	optional string topic = 1;
+	repeated Message messageList = 2;
+}

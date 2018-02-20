@@ -14,25 +14,24 @@
 
 using System;
 using System.Collections.Generic;
-using System.Text;
 using Alachisoft.NCache.Common.Configuration;
-using Alachisoft.NCache.Common.Enum;
 using Alachisoft.NCache.Runtime.Serialization;
 using System.Collections;
 using Alachisoft.NCache.Common;
 using Alachisoft.NCache.Common.Net;
-using Alachisoft.NCache.Config.Dom;
-using Runtime = Alachisoft.NCache.Runtime;
 
 namespace Alachisoft.NCache.Config.NewDom
 {
     [Serializable]
-    public class ServersNodes : ICloneable,ICompactSerializable
+    public class ServersNodes : ICloneable, ICompactSerializable
     {
         ArrayList nodesList;
+
         Dictionary<Alachisoft.NCache.Config.Dom.NodeIdentity, StatusInfo> nodes;
+
         public ServersNodes()
         {
+
             nodes = new Dictionary<Alachisoft.NCache.Config.Dom.NodeIdentity, StatusInfo>();
             nodesList = new ArrayList();
         }
@@ -44,7 +43,6 @@ namespace Alachisoft.NCache.Config.NewDom
             {
                 ServerNode[] serverNode = new ServerNode[nodesList.Count];
                 nodesList.CopyTo(serverNode, 0);
-
 
                 return serverNode;
             }
@@ -64,8 +62,6 @@ namespace Alachisoft.NCache.Config.NewDom
             set { nodesList = value; }
         }
 
-        
-
         public Dictionary<Alachisoft.NCache.Config.Dom.NodeIdentity, StatusInfo> Nodes
         {
             get { return nodes; }
@@ -82,7 +78,7 @@ namespace Alachisoft.NCache.Config.NewDom
             }
         }
 
-           public bool FindNode(string ip)
+        public bool FindNode(string ip)
         {
             foreach (ServerNode server in nodesList)
             {
@@ -155,11 +151,13 @@ namespace Alachisoft.NCache.Config.NewDom
             serverNode.ServerNodeList = ServerNodeList.Clone() as ServerNode[];
             if (nodes != null)
             {
+
                 serverNode.nodes = new Dictionary<Alachisoft.NCache.Config.Dom.NodeIdentity, StatusInfo>();
                 foreach (KeyValuePair<Alachisoft.NCache.Config.Dom.NodeIdentity, StatusInfo> pair in nodes)
                 {
                     serverNode.nodes.Add(pair.Key, pair.Value);
                 }
+
             }
             return serverNode;
         }
@@ -171,21 +169,24 @@ namespace Alachisoft.NCache.Config.NewDom
         #region ICompactSerializable Members
         public void Deserialize(Runtime.Serialization.IO.CompactReader reader)
         {
-           if (this.nodesList == null) {
-            this.nodesList = new ArrayList();
-        }
-        
-        this.nodesList =reader.ReadObject() as ArrayList;
-        
-        bool nodeExists = reader.ReadBoolean();
-        if (nodeExists) {
-            this.nodes = new Dictionary<Alachisoft.NCache.Config.Dom.NodeIdentity, StatusInfo>();
-            
-            int count = reader.ReadInt32();
-            for (int index = 0; index < count; index++) {
-                nodes.Add(reader.ReadObject() as Alachisoft.NCache.Config.Dom.NodeIdentity, reader.ReadObject() as StatusInfo);
+            if (this.nodesList == null)
+            {
+                this.nodesList = new ArrayList();
             }
-        }
+
+            this.nodesList = reader.ReadObject() as ArrayList;
+
+            bool nodeExists = reader.ReadBoolean();
+            if (nodeExists)
+            {
+                this.nodes = new Dictionary<Alachisoft.NCache.Config.Dom.NodeIdentity, StatusInfo>();
+
+                int count = reader.ReadInt32();
+                for (int index = 0; index < count; index++)
+                {
+                    nodes.Add(reader.ReadObject() as Alachisoft.NCache.Config.Dom.NodeIdentity, reader.ReadObject() as StatusInfo);
+                }
+            }
         }
 
         public void Serialize(Runtime.Serialization.IO.CompactWriter writer)

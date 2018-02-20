@@ -15,6 +15,7 @@
 using System;
 using System.Collections;
 using System.Collections.Generic;
+using Alachisoft.NCache.Common.DataStructures;
 using Alachisoft.NCache.Runtime.Serialization.IO;
 
 namespace Alachisoft.NCache.Caching
@@ -25,7 +26,7 @@ namespace Alachisoft.NCache.Caching
     /// It is designed to handle the large objects.
     /// </summary>
     [Serializable]
-    public class SmallUserBinaryObject : UserBinaryObject
+    public class SmallUserBinaryObject :UserBinaryObject
     {
         byte[] _data;
         public SmallUserBinaryObject(int noOfChunks)
@@ -53,7 +54,7 @@ namespace Alachisoft.NCache.Caching
             return binaryObject;
         }
 
-        public static SmallUserBinaryObject CreateUserBinaryObject(Array data)
+        public static SmallUserBinaryObject CreateUserBinaryObject(ICollection data)
         {
             SmallUserBinaryObject binaryObject = null;
             foreach (byte[] buffer in data)
@@ -135,13 +136,30 @@ namespace Alachisoft.NCache.Caching
 
         #endregion
 
+        #region IStreamItem Members
+
+        public override VirtualArray Read(int offset, int length)
+        {
+            throw new Exception("The method or operation is not implemented.");         
+        }
+
+        public override void Write(VirtualArray vBuffer, int srcOffset, int dstOffset, int length)
+        {
+            throw new Exception("The method or operation is not implemented.");
+        }
+
         public override int Length
         {
             get
             {
                 return _data.Length;
             }
+            set
+            {
+            }
         }
+
+        #endregion
 
     }
 }

@@ -39,7 +39,6 @@ namespace Alachisoft.NCache.Parser
 			m_kind = p_kind;
 		}
 		
-		///
 		internal protected Symbol()
 		:	this(-1, "", SymbolType.Error)
 		{			
@@ -91,7 +90,7 @@ namespace Alachisoft.NCache.Parser
 			if (m_kind == SymbolType.NonTerminal)
 				result.Append("<").Append(m_name).Append(">");
 			else if (m_kind == SymbolType.Terminal)
-				/* PatternFormat(m_name, result); */ result.Append(m_name);
+				result.Append(m_name);
 			else
 				result.Append("(").Append(m_name).Append(")");
 				
@@ -100,7 +99,6 @@ namespace Alachisoft.NCache.Parser
 
 		/* private methods */		
 
-		///
 		private void PatternFormat(String p_source, StringBuilder p_target)
 		{
 			for (int i = 0; i < p_source.Length; i++)
@@ -115,7 +113,6 @@ namespace Alachisoft.NCache.Parser
 			}
 		}
 		
-		///
 		internal protected void CopyData(Symbol p_symbol)
 		{
 			m_name = p_symbol.Name;

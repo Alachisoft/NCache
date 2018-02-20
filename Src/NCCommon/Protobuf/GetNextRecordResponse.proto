@@ -1,0 +1,26 @@
+
+option java_outer_classname="GetNextRecordResponseProtocol";
+
+package Alachisoft.NCache.Common.Protobuf;
+
+message GetNextRecordResponse
+{
+    //Entry
+	optional bytes Key = 1;
+    optional bytes Value = 2;
+
+    //Pointer
+    optional string ClientId = 3;
+    optional string ClientIp = 4;
+    optional int32 ClientPort = 5;
+    optional string ClusterIp = 6;
+    optional int32 ClusterPort = 7;
+    optional int32 CallbackId = 8;
+    optional string TaskId = 9;
+
+    //Result
+    optional bool IsLastResult = 10;
+    optional string NodeAddress = 11;
+
+
+}

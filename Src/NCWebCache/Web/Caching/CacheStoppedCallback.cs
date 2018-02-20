@@ -20,7 +20,7 @@ namespace Alachisoft.NCache.Web.Caching
     /// <param name="cacheId">The Identification of the cache being stopped. It is helpful as multiple cache instances 
     /// can exists with in the same application.</param>
     /// <remarks>This handler is invoked when a <see cref="Cache"/> is stopped.</remarks>
-    /// <example>The following example demonstrates how to use the <see cref="CacheStoppedCallback"/> class to notifiy 
+    /// <example>The following example demonstrates how to use the <see cref="CacheStoppedCallback"/> class to notify 
     /// an application when a cache is stopped. You could include this 
     /// code in a code declaration block in the Web Forms page, or in a page code-behind file.
     /// <code>
@@ -44,5 +44,5 @@ namespace Alachisoft.NCache.Web.Caching
     ///	
     /// </code>
     /// </example>
-    internal delegate void CacheStoppedCallback(string cacheId);
+    public delegate void CacheStoppedCallback(string cacheId);
 }

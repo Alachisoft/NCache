@@ -14,12 +14,7 @@
 
 using System;
 using Alachisoft.NCache.Common;
-using Alachisoft.NCache.Util;
 using Alachisoft.NCache.Caching;
-using System.IO;
-using Alachisoft.NCache.Common.Protobuf.Util;
-using Alachisoft.NCache.Web.Caching.Util;
-using Alachisoft.NCache.Web.Communication;
 
 namespace Alachisoft.NCache.Web.Command
 {
@@ -27,11 +22,15 @@ namespace Alachisoft.NCache.Web.Command
     {
         private Alachisoft.NCache.Common.Protobuf.GetCacheItemCommand _getCacheItemCommand;
 
+        private string _group;
+        private string _subGroup;
         private LockAccessType _accessType;
         private object _lockId;
         private TimeSpan _lockTimeout;
+        private int _methodOverload;
 
-        public GetCacheItemCommand(string key, BitSet flagMap, LockAccessType accessType, object lockId, TimeSpan lockTimeout)
+        public GetCacheItemCommand(string key, BitSet flagMap, string group, string subGroup, LockAccessType accessType,
+            object lockId, TimeSpan lockTimeout, ulong version, string providerName, int methodOverload)
         {
             base.name = "GetCacheItemCommand";
             base.key = key;
@@ -39,14 +38,18 @@ namespace Alachisoft.NCache.Web.Command
             _getCacheItemCommand = new Alachisoft.NCache.Common.Protobuf.GetCacheItemCommand();
             _getCacheItemCommand.key = key;
             _getCacheItemCommand.requestId = base.RequestId;
+            _getCacheItemCommand.group = group;
+            _getCacheItemCommand.subGroup = subGroup;
             _getCacheItemCommand.flag = flagMap.Data;
 
             _getCacheItemCommand.lockInfo = new Alachisoft.NCache.Common.Protobuf.LockInfo();
-            _getCacheItemCommand.lockInfo.lockAccessType = (int)accessType;
-            if (lockId != null)  _getCacheItemCommand.lockInfo.lockId = lockId.ToString();
+            _getCacheItemCommand.lockInfo.lockAccessType = (int) accessType;
+            if (lockId != null) _getCacheItemCommand.lockInfo.lockId = lockId.ToString();
             _getCacheItemCommand.lockInfo.lockTimeout = lockTimeout.Ticks;
-
-            }
+            _methodOverload = methodOverload;
+            _getCacheItemCommand.version = version;
+            _getCacheItemCommand.providerName = providerName;
+        }
 
         internal override CommandType CommandType
         {
@@ -64,8 +67,7 @@ namespace Alachisoft.NCache.Web.Command
             base._command.requestID = base.RequestId;
             base._command.getCacheItemCommand = _getCacheItemCommand;
             base._command.type = Alachisoft.NCache.Common.Protobuf.Command.Type.GET_CACHE_ITEM;
-
-            
+            base._command.MethodOverload = _methodOverload;
         }
     }
 }

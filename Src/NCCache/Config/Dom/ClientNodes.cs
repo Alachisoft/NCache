@@ -14,11 +14,8 @@
 
 using System;
 using System.Collections.Generic;
-using System.Text;
 using Alachisoft.NCache.Common.Configuration;
-using Alachisoft.NCache.Common.Enum;
 using Alachisoft.NCache.Runtime.Serialization;
-using Runtime = Alachisoft.NCache.Runtime;
 
 namespace Alachisoft.NCache.Config.Dom
 {
@@ -26,7 +23,7 @@ namespace Alachisoft.NCache.Config.Dom
     public class ClientNodes : ICloneable,ICompactSerializable
     {
         List<ClientNode> nodesList = new List<ClientNode>();
-      
+    
 
         [ConfigurationSection("client-node")]//Changes for New Dom from node
         public ClientNode[] Nodes
@@ -48,7 +45,7 @@ namespace Alachisoft.NCache.Config.Dom
                     nodesList.AddRange(value);
                 }
             }
-       }
+        }
 
         public List<ClientNode> NodesList
         {
@@ -61,8 +58,10 @@ namespace Alachisoft.NCache.Config.Dom
         public object Clone()
         {
             ClientNodes clientNodes = new ClientNodes();
-           clientNodes.Nodes = Nodes != null ? (ClientNode[])Nodes.Clone() : null;
-           return clientNodes;
+           
+            clientNodes.Nodes = Nodes != null ? (ClientNode[])Nodes.Clone() : null;
+            //clientNodes.Nodes = Nodes.Clone() as ClientNode[];
+            return clientNodes;
         }
 
         #endregion
@@ -72,12 +71,14 @@ namespace Alachisoft.NCache.Config.Dom
         public void Deserialize(Runtime.Serialization.IO.CompactReader reader)
         {
             Nodes = reader.ReadObject() as ClientNode[];
-           }
+         
+        }
 
         public void Serialize(Runtime.Serialization.IO.CompactWriter writer)
         {
             writer.WriteObject(Nodes);
-           }
+
+        }
 
         #endregion
     }

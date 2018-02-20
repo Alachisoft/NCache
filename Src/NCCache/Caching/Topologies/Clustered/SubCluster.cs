@@ -12,12 +12,15 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
+
+
 using System;
 using System.Collections;
-using Alachisoft.NGroups.Blocks;
-using Alachisoft.NGroups.Util;
+
 using Alachisoft.NCache.Common.Logger;
 using Alachisoft.NCache.Common.Net;
+using Alachisoft.NGroups.Util;
+using Alachisoft.NGroups.Blocks;
 
 namespace Alachisoft.NCache.Caching.Topologies.Clustered
 {
@@ -27,7 +30,6 @@ namespace Alachisoft.NCache.Caching.Topologies.Clustered
         private string _groupid;
 
         private ClusterService _service;
-
         private ILogger _ncacheLog;
         ILogger NCacheLog
         {
@@ -127,7 +129,7 @@ namespace Alachisoft.NCache.Caching.Topologies.Clustered
             NCacheLog.Warn("SubCluster.OnMemberJoined()",   "Memeber " + address + " added to sub-cluster " + _groupid);
 
             _members.Add(address);
-            if (identity.HasStorage && !identity.IsStartedAsMirror)
+            if (identity.HasStorage)
                 _servers.Add(address);
             return _members.Count;
         }

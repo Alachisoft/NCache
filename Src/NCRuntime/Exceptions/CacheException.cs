@@ -10,7 +10,7 @@
 // distributed under the License is distributed on an "AS IS" BASIS,
 // WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
 // See the License for the specific language governing permissions and
-// limitations under the License.
+// limitations under the License
 
 using System;
 using System.Security.Permissions;
@@ -21,7 +21,11 @@ using System.Runtime.Serialization;
 /// are defined in this namespace. These exceptions can be caught in the client applications
 /// and properly dealt with once this namespace is referenced.
 ///</summary>
+#if JAVA
+namespace Alachisoft.TayzGrid.Runtime.Exceptions
+#else
 namespace Alachisoft.NCache.Runtime.Exceptions
+#endif
 {
 
     /// <summary>
@@ -45,6 +49,7 @@ namespace Alachisoft.NCache.Runtime.Exceptions
     [Serializable]
     public class CacheException : Exception
     {
+        
         /// <summary> 
         /// default constructor. 
         /// </summary>
@@ -68,6 +73,8 @@ namespace Alachisoft.NCache.Runtime.Exceptions
         {
         }
 
+      
+
         #region /                 --- ISerializable ---           /
 
         /// <summary> 
@@ -90,6 +97,8 @@ namespace Alachisoft.NCache.Runtime.Exceptions
         }
 
         #endregion
+
+
     }
 }
 

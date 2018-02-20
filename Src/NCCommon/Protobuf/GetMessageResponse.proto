@@ -1,0 +1,7 @@
+import "TopicMessages.proto";
+
+option java_outer_classname="GetMessageResponseProtocol";
+package Alachisoft.NCache.Common.Protobuf;
+message GetMessageResponse {
+	repeated TopicMessages topicMessages = 1;
+}

@@ -1,0 +1,8 @@
+import "EventInfo.proto";
+
+option java_outer_classname="SyncEventsResponseProtocol";
+package Alachisoft.NCache.Common.Protobuf;
+message SyncEventsResponse {
+
+	repeated EventInfo eventInfo = 1;
+}

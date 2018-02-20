@@ -10,7 +10,6 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 // $Id: ChannelException.java,v 1.4 2004/08/04 14:26:34 belaban Exp $
-
 using System;
 using System.Runtime.Serialization;
 

@@ -1,0 +1,6 @@
+option java_outer_classname="PingCommandProtocol";
+package Alachisoft.NCache.Common.Protobuf;
+message PingCommand {	
+	optional int64 requestId = 1;
+	optional bool  hasResponse= 2;
+}

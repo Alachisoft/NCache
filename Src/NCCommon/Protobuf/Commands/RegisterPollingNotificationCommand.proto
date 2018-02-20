@@ -1,0 +1,8 @@
+
+option java_outer_classname="RegisterPollingNotificationCommandProtocol";
+package Alachisoft.NCache.Common.Protobuf;
+
+message RegisterPollingNotificationCommand {
+	optional int64 requestId = 1;
+	optional sint32 callbackId = 2;
+}

@@ -13,28 +13,23 @@
 // limitations under the License.
 
 using Alachisoft.NCache.Common.Enum;
-
-using Alachisoft.NCache.Web.Caching;
-using System.IO;
-using Alachisoft.NCache.Web.Communication;
-using Alachisoft.NCache.Common.Protobuf.Util;
-using Alachisoft.NCache.Web.Caching.Util;
 using Alachisoft.NCache.Runtime.Events;
 
 namespace Alachisoft.NCache.Web.Command
 {
-	internal sealed class RegisterNotificationCommand : CommandBase
+    internal sealed class RegisterNotificationCommand : CommandBase
     {
         private Alachisoft.NCache.Common.Protobuf.RegisterNotifCommand _registerNotificationCommand;
         private NotificationsType _notifMask;
 
-        public RegisterNotificationCommand(NotificationsType notifMask, EventDataFilter datafilter, short sequenceNumber)
+        public RegisterNotificationCommand(NotificationsType notifMask, EventDataFilter datafilter,
+            short sequenceNumber)
         {
             base.name = "RegisterNotificationCommand";
             _registerNotificationCommand = new Alachisoft.NCache.Common.Protobuf.RegisterNotifCommand();
-            _registerNotificationCommand.notifMask = (int)notifMask;
+            _registerNotificationCommand.notifMask = (int) notifMask;
             _registerNotificationCommand.requestId = base.RequestId;
-            _registerNotificationCommand.datafilter = (int)datafilter;
+            _registerNotificationCommand.datafilter = (int) datafilter;
             _registerNotificationCommand.sequence = sequenceNumber;
         }
 
@@ -43,7 +38,11 @@ namespace Alachisoft.NCache.Web.Command
         {
         }
 
-      
+        [System.Obsolete]
+        public RegisterNotificationCommand(NotificationsType notifMask)
+            : this(notifMask, -1)
+        {
+        }
 
         internal override CommandType CommandType
         {
@@ -55,13 +54,18 @@ namespace Alachisoft.NCache.Web.Command
             get { return RequestType.AtomicWrite; }
         }
 
+        internal override bool IsKeyBased
+        {
+            get { return false; }
+        }
+
+
         protected override void CreateCommand()
         {
             base._command = new Alachisoft.NCache.Common.Protobuf.Command();
             base._command.requestID = base.RequestId;
             base._command.registerNotifCommand = _registerNotificationCommand;
             base._command.type = Alachisoft.NCache.Common.Protobuf.Command.Type.REGISTER_NOTIF;
-
         }
     }
 }

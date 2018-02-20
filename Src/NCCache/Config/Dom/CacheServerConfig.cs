@@ -13,51 +13,65 @@
 // limitations under the License.
 
 using System;
-using System.Collections;
-using System.Text;
 using Alachisoft.NCache.Common.Configuration;
 using Alachisoft.NCache.Common.Enum;
 using Alachisoft.NCache.Common;
 using Alachisoft.NCache.Runtime.Serialization;
-using Runtime = Alachisoft.NCache.Runtime;
 
 namespace Alachisoft.NCache.Config.Dom
 {
     [Serializable]
     [ConfigurationRoot("cache-config")]
-    public class CacheServerConfig: ICloneable,ICompactSerializable
+    public class CacheServerConfig : ICloneable, ICompactSerializable
     {
         bool cacheIsRunning = false;
         bool cacheIsRegistered = false;
         bool licenseIsExpired = false;
+        //bool autoStartCacheOnServiceStartup = false;
         string name;
         bool inproc;
-        double configID;
-        string lastModified;
+       
         RtContextValue _runtimeContextValue;
         /// <summary>
-        /// This helps to differentiate between a local-cache, and clustered-cache
+        /// This helps to differentiate between a local-cache, client-cache and clustered-cache
         /// </summary>
-        string cacheType; 
-        
+        string cacheType;
         Log log;
         PerfCounters perfCounters;
+        ClientDeathDetection deathDetection;
         QueryIndex indexes;
+        BackingSource backingSource;
+        Notifications notifications;
         Cleanup cleanup;
         Storage storage;
         EvictionPolicy evictionPolicy;
+        ExpirationPolicy expirationPolicy;
         Cluster cluster;
+        ReplicationStrategy _replicationStrategy;
+
         AutoLoadBalancing autoBalancing;
         ClientNodes clientNodes;
-        ClientDeathDetection deathDetection;
+        ClientActivityNotification clientActivityNotification;
+        SQLDependencyConfig _sqlDependencyConfig;
+        private TaskConfiguration _taskConfiguration;
 
         private ServerMapping _serverMapping;
+        private DataFormat _dataFormat;
+        SynchronizationStrategy _synchronizationStrategy;
 
-        public CacheServerConfig() 
+        public CacheServerConfig()
+
         {
             log = new Log();
+
+            notifications = new Notifications();
+            _taskConfiguration = new TaskConfiguration();
             deathDetection = new ClientDeathDetection();
-           
+            clientActivityNotification = new ClientActivityNotification();
+            autoBalancing = new AutoLoadBalancing();
+            expirationPolicy = new ExpirationPolicy();
+            _synchronizationStrategy = new SynchronizationStrategy();
+
         }
 
         public bool IsRegistered
@@ -72,16 +86,17 @@ namespace Alachisoft.NCache.Config.Dom
             set { _runtimeContextValue = value; }
         }
 
-       
+
 
         public bool IsRunning
         {
-            get 
+            get
             {
                 bool isRunning = cacheIsRunning;
 
                 if (this.CacheType == "clustered-cache")
                 {
+
                     foreach (StatusInfo cacheStatus in cluster.Nodes.Values)
                     {
                         if (cacheStatus.Status == CacheStatus.Running)
@@ -90,15 +105,16 @@ namespace Alachisoft.NCache.Config.Dom
                             break;
                         }
                     }
+
                 }
 
-                return isRunning; 
+                return isRunning;
             }
 
-            set 
+            set
             {
-                if (this.CacheType == "local-cache")
-                    cacheIsRunning = value;
+                cacheIsRunning = value; //bug 8081 fix
+
             }
         }
 
@@ -114,32 +130,20 @@ namespace Alachisoft.NCache.Config.Dom
             get { return name; }
             set { name = value; }
         }
-
+       
         [ConfigurationAttribute("inproc")]
         public bool InProc
         {
             get { return inproc; }
             set { inproc = value; }
         }
-
-        [ConfigurationAttribute("config-id")]
-        public double ConfigID
-        {
-            get { return configID; }
-            set { configID = value; }
-        }
-
-        [ConfigurationAttribute("last-modified")]
-        public string LastModified
-        {
-            get { return lastModified; }
-            set { lastModified = value; }
-        }
-
+        
         [ConfigurationAttribute("type")]
         public string CacheType
         {
-            get 
+
+            get
+
             {
                 string type = this.cacheType;
                 if (type == null)
@@ -154,7 +158,7 @@ namespace Alachisoft.NCache.Config.Dom
             }
             set { cacheType = value; }
         }
-         
+
         [ConfigurationSection("log")]
         public Log Log
         {
@@ -169,7 +173,20 @@ namespace Alachisoft.NCache.Config.Dom
             set { perfCounters = value; }
         }
 
+
+
+#if COMMUNITY || CLIENT
+        [ConfigurationSection("replication-strategy")]
+#endif
+        public ReplicationStrategy ReplicationStrategy
+        {
+            get { return _replicationStrategy; }
+            set { _replicationStrategy = value; }
+        }
+
+#if COMMUNITY
         [ConfigurationSection("data-load-balancing")]
+#endif
         public AutoLoadBalancing AutoLoadBalancing
         {
             get { return autoBalancing; }
@@ -183,11 +200,37 @@ namespace Alachisoft.NCache.Config.Dom
             set { clientNodes = value; }
         }
 
-        [ConfigurationSection("indexes")]  
+        public ClientDeathDetection ClientDeathDetection
+        {
+            get { return deathDetection; }
+            set { deathDetection = value; }
+        }
+
+
+
+        [ConfigurationSection("indexes")]
+
         public QueryIndex QueryIndices
         {
             get { return indexes; }
             set { indexes = value; }
+        }
+
+
+        [ConfigurationSection("backing-source")]
+
+        public BackingSource BackingSource
+        {
+            get { return backingSource; }
+            set { backingSource = value; }
+        }
+
+        [ConfigurationSection("notifications")]
+
+        public Notifications Notifications
+        {
+            get { return notifications; }
+            set { notifications = value; }
         }
 
 
@@ -212,6 +255,20 @@ namespace Alachisoft.NCache.Config.Dom
             set { evictionPolicy = value; }
         }
 
+        [ConfigurationSection("synchronization")]
+        public SynchronizationStrategy SynchronizationStrategy
+        {
+            set { _synchronizationStrategy = value; }
+            get { return _synchronizationStrategy; }
+        }
+
+        [ConfigurationSection("expiration-policy")]
+        public ExpirationPolicy ExpirationPolicy
+        {
+            get { return expirationPolicy; }
+            set { expirationPolicy = value; }
+        }
+
         [ConfigurationSection("cluster")]
         public Cluster Cluster
         {
@@ -219,12 +276,39 @@ namespace Alachisoft.NCache.Config.Dom
             set { cluster = value; }
         }
 
-        [ConfigurationSection("client-death-detection")]
-        public ClientDeathDetection ClientDeathDetection
+
+
+        [ConfigurationSection("sql-dependency")]
+        public SQLDependencyConfig SQLDependencyConfig
         {
-            get { return deathDetection; }
-            set { deathDetection = value; }
+            get { return _sqlDependencyConfig; }
+            set { _sqlDependencyConfig = value; }
         }
+
+        [ConfigurationSection("tasks-config")]
+        public TaskConfiguration TaskConfiguration
+        {
+            get { return _taskConfiguration; }
+            set { _taskConfiguration = value; }
+        }
+
+        public string DataFormat
+        {
+            get { return _dataFormat.ToString(); }
+            set
+            {
+                _dataFormat = Common.Enum.DataFormat.Binary;
+            }
+        }
+
+        [ConfigurationSection("client-activity-notification")]
+        public ClientActivityNotification ClientActivityNotification
+        {
+            get { return clientActivityNotification; }
+            set { clientActivityNotification = value; }
+        }
+
+
 
 
         #region ICloneable Members
@@ -232,26 +316,51 @@ namespace Alachisoft.NCache.Config.Dom
         public object Clone()
         {
             CacheServerConfig config = new CacheServerConfig();
-            config.Name = Name != null ? (string) Name.Clone(): null;
+            config.Name = Name != null ? (string)Name.Clone() : null;
             config.cacheType = this.cacheType;
+
             config.InProc = InProc;
-            config.ConfigID = ConfigID;
-            config.LastModified = LastModified != null ? (string) LastModified.Clone() : null;
-            
+           
             config.clientNodes = clientNodes != null ? clientNodes.Clone() as ClientNodes : null;
-            config.Log = Log != null ? (Log) Log.Clone(): null;
-            config.PerfCounters = PerfCounters != null ? (PerfCounters) PerfCounters.Clone(): null;
-            config.autoBalancing = this.autoBalancing != null ? (AutoLoadBalancing)this.autoBalancing.Clone() : null; 
+            config.Log = Log != null ? (Log)Log.Clone() : null;
+            config.PerfCounters = PerfCounters != null ? (PerfCounters)PerfCounters.Clone() : null;
+
+
+#if COMMUNITY || CLIENT
+
+            config.ReplicationStrategy = ReplicationStrategy != null ? (ReplicationStrategy)ReplicationStrategy.Clone() : null;
+            config.autoBalancing = this.autoBalancing != null ? (AutoLoadBalancing)this.autoBalancing.Clone() : null;
+
+#endif
+
             config.Cleanup = Cleanup != null ? (Cleanup)Cleanup.Clone() : null;
             config.Storage = Storage != null ? (Storage)Storage.Clone() : null;
             config.EvictionPolicy = EvictionPolicy != null ? (EvictionPolicy)EvictionPolicy.Clone() : null;
+            config.ExpirationPolicy = ExpirationPolicy != null ? (ExpirationPolicy)ExpirationPolicy.Clone() : null;
+
             config.Cluster = Cluster != null ? (Cluster)Cluster.Clone() : null;
+
+
+            config.backingSource = this.backingSource != null ? (BackingSource)this.backingSource.Clone() : null;
+
+
             config.QueryIndices = QueryIndices != null ? (QueryIndex)QueryIndices.Clone() : null;
+            config.Notifications = Notifications != null ? (Notifications)Notifications.Clone() : null;
+
+            config.SQLDependencyConfig = SQLDependencyConfig != null ? (SQLDependencyConfig)SQLDependencyConfig.Clone() : null;
+            config.TaskConfiguration = TaskConfiguration != null ? (TaskConfiguration)TaskConfiguration.Clone() : null;
+            config.ClientDeathDetection = ClientDeathDetection != null ? (ClientDeathDetection)ClientDeathDetection.Clone() : null;
+            config.SynchronizationStrategy = SynchronizationStrategy != null ? (SynchronizationStrategy)SynchronizationStrategy.Clone() : null;
+
+            config.ClientActivityNotification = ClientActivityNotification != null
+                ? (ClientActivityNotification)ClientActivityNotification.Clone()
+                : null;
             config.IsRegistered = this.IsRegistered;
             config.IsRunning = this.IsRunning;
             config.licenseIsExpired = this.licenseIsExpired;
             config.RuntimeContext = this.RuntimeContext;
-            config.ClientDeathDetection = this.deathDetection;
+            config.DataFormat = this.DataFormat;
+
             return config;
         }
 
@@ -260,53 +369,74 @@ namespace Alachisoft.NCache.Config.Dom
         #region ICompactSerializable Members
 
         public void Deserialize(Runtime.Serialization.IO.CompactReader reader)
-        {           
-            cacheIsRunning=  reader.ReadBoolean();
+        {
+            cacheIsRunning = reader.ReadBoolean();
             cacheIsRegistered = reader.ReadBoolean();
             licenseIsExpired = reader.ReadBoolean();
+
             name = reader.ReadObject() as string;
             inproc = reader.ReadBoolean();
-            configID = reader.ReadDouble();
-            lastModified = reader.ReadObject() as string;
             cacheType = reader.ReadObject() as string;
             log = reader.ReadObject() as Log;
             perfCounters = reader.ReadObject() as PerfCounters;
-            autoBalancing = reader.ReadObject() as AutoLoadBalancing;
+
             indexes = reader.ReadObject() as QueryIndex;
+            backingSource = reader.ReadObject() as BackingSource;
+            notifications = reader.ReadObject() as Notifications;
             cleanup = reader.ReadObject() as Cleanup;
             storage = reader.ReadObject() as Storage;
             evictionPolicy = reader.ReadObject() as EvictionPolicy;
-            cluster = reader.ReadObject() as Cluster;            
+            expirationPolicy = reader.ReadObject() as ExpirationPolicy;
+            cluster = reader.ReadObject() as Cluster;
+            _replicationStrategy = reader.ReadObject() as ReplicationStrategy;
+
+            autoBalancing = reader.ReadObject() as AutoLoadBalancing;
             clientNodes = reader.ReadObject() as ClientNodes;
+            _sqlDependencyConfig = reader.ReadObject() as SQLDependencyConfig;
+            _taskConfiguration = reader.ReadObject() as TaskConfiguration;
             deathDetection = reader.ReadObject() as ClientDeathDetection;
             _runtimeContextValue = reader.ReadObject() as string == "1" ? RtContextValue.JVCACHE : RtContextValue.NCACHE;
+            _synchronizationStrategy = reader.ReadObject() as SynchronizationStrategy;
 
+            string temp = reader.ReadObject() as String;
+            _dataFormat = Common.Enum.DataFormat.Binary;
+            clientActivityNotification = reader.ReadObject() as ClientActivityNotification;
+            
         }
+
 
         public void Serialize(Runtime.Serialization.IO.CompactWriter writer)
         {
-           
+
             writer.Write(cacheIsRunning);
             writer.Write(cacheIsRegistered);
             writer.Write(licenseIsExpired);
             writer.WriteObject(name);
             writer.Write(inproc);
-            writer.Write(configID);
-            writer.WriteObject(lastModified);
             writer.WriteObject(cacheType);
             writer.WriteObject(log);
             writer.WriteObject(perfCounters);
-            writer.WriteObject(autoBalancing);
             writer.WriteObject(indexes);
+            writer.WriteObject(backingSource);
+            writer.WriteObject(notifications);
             writer.WriteObject(cleanup);
             writer.WriteObject(storage);
             writer.WriteObject(evictionPolicy);
+            writer.WriteObject(expirationPolicy);
             writer.WriteObject(cluster);
+            writer.WriteObject(_replicationStrategy);
+
+            writer.WriteObject(autoBalancing);
             writer.WriteObject(clientNodes);
+            writer.WriteObject(_sqlDependencyConfig);
+            writer.WriteObject(_taskConfiguration);
             writer.WriteObject(deathDetection);
             writer.WriteObject(_runtimeContextValue == RtContextValue.JVCACHE ? "1" : "0");
+            writer.WriteObject(_synchronizationStrategy);
+            writer.WriteObject(_dataFormat.ToString());
+            writer.WriteObject(clientActivityNotification);
+         
         }
-
         #endregion
     }
 }

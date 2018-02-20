@@ -19,6 +19,22 @@ namespace Alachisoft.NCache.Caching.AutoExpiration
         NULL = -1,
         Parent = 0,
         FixedExpiration,
-        IdleExpiration
+        TTLExpiration,        
+        TTLIdleExpiration,
+        FixedIdleExpiration,
+        FileDependency,
+        KeyDependency,
+        NodeExpiration,
+        SqlCacheDependency,
+        Sql7CacheDependency,
+        SqlYukonCacheDependency,
+        IdleExpiration,        
+        AggregateExpirationHint,
+        DBCacheDependency,
+        DependencyHint,
+        OleDbCacheDependency,
+        OracleCacheDependency,
+        ExtensibleDependency,
+        NosDBCacheDependency
     };
 }

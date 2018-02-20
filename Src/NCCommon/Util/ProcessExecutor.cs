@@ -10,11 +10,22 @@
 // distributed under the License is distributed on an "AS IS" BASIS,
 // WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
 // See the License for the specific language governing permissions and
-// limitations under the License.
+// limitations under the License
 
 using System;
+using System.Collections.Generic;
+using System.Linq;
+using System.Text;
 using System.IO;
 using System.Diagnostics;
+using System.Collections;
+using System.Collections.Specialized;
+using System.Configuration;
+using Alachisoft.NCache.Common.Stats;
+using System.Threading;
+#if NETCORE
+using System.Runtime.InteropServices;
+#endif
 
 namespace Alachisoft.NCache.Common.Util
 {
@@ -33,16 +44,37 @@ namespace Alachisoft.NCache.Common.Util
         {
             Process process = null;
             try {
-                
-                process = new Process();
-                process.StartInfo = new ProcessStartInfo();
+
+                process = new Process
+                {
+                    StartInfo = new ProcessStartInfo(),
+                };
+                process.StartInfo.WorkingDirectory = ".";
+                process.StartInfo.WindowStyle = ProcessWindowStyle.Hidden;
+#if NETCORE
+                if (RuntimeInformation.IsOSPlatform(OSPlatform.Windows))
+                {
+                    ExecuteOnWindows(process.StartInfo);
+                }
+                if (RuntimeInformation.IsOSPlatform(OSPlatform.Linux))
+                {
+                    ExecuteOnLinux(process.StartInfo);
+                }
+#elif !NETCORE
                 process.StartInfo.Arguments = command;
-                process.StartInfo.WorkingDirectory=".";
-                process.StartInfo.WindowStyle=ProcessWindowStyle.Hidden;
-                string part1 = Path.Combine(AppUtil.InstallDir, "bin");
-                string part2 = Path.Combine(part1, "service");
-                string part3 = Path.Combine(part2, "Alachisoft.NCache.CacheHost.exe");
-                process.StartInfo.FileName = part3;                                  
+                string configPath = ConfigurationSettings.AppSettings["CacheHostPath"];
+                if (configPath != null)
+                {
+                    process.StartInfo.FileName = Path.Combine(configPath, "Alachisoft.NCache.CacheHost.exe");
+                }
+                else
+                {
+                    string part1 = Path.Combine(AppUtil.InstallDir, "bin");
+                    string part2 = Path.Combine(part1, "service");
+                    string part3 = Path.Combine(part2, "Alachisoft.NCache.CacheHost.exe");
+                    process.StartInfo.FileName = part3;
+                }
+#endif
                 if (!process.Start())
                 {
                     throw new Alachisoft.NCache.Runtime.Exceptions.ManagementException("Unable to start Cache Process");
@@ -55,6 +87,46 @@ namespace Alachisoft.NCache.Common.Util
             return process;
         }
 
+        public void ExecuteOnWindows(ProcessStartInfo processStartInfo)
+        {
+            processStartInfo.FileName = "cmd.exe";
+            string configPath = ConfigurationSettings.AppSettings["CacheHostPath"];
+            if (configPath != null)
+            {
+                processStartInfo.Arguments = "/C " + Path.Combine(configPath, "Alachisoft.NCache.CacheHost.dll")+ " " + command;
+            }
+            else
+            {
+                string part1 = Path.Combine(AppUtil.InstallDir, "bin");
+                string part2 = Path.Combine(part1, "service");
+                string part3 = Path.Combine(part2, "Alachisoft.NCache.CacheHost.dll");
+                part3 = "\""+part3+"\"";
+                processStartInfo.Arguments = "/C dotnet " + part3 + " " + command;
+            }
+            
+        }
+
+#if NETCORE
+        public void ExecuteOnLinux(ProcessStartInfo processStartInfo)
+        {
+            processStartInfo.FileName = "dotnet";
+            string configPath = ConfigurationSettings.AppSettings["CacheHostPath"];
+            string arguments = "";
+            if (configPath != null)
+            {
+                arguments = Path.Combine(configPath, "Alachisoft.NCache.CacheHost.dll") + " " + command;
+            }
+            else
+            {
+                string part1 = Path.Combine(AppUtil.InstallDir, "bin");
+                string part2 = Path.Combine(part1, "service");
+                string part3 = Path.Combine(part2, "Alachisoft.NCache.CacheHost.dll");
+                arguments = part3 + " " + command;
+            }
+            processStartInfo.Arguments = arguments;
+            processStartInfo.UseShellExecute = false;
+        }
+#endif
         public static void KillProcessByID(int pID)
         {
             try

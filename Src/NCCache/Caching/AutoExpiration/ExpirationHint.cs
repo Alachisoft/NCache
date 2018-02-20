@@ -14,37 +14,42 @@
 
 using System;
 using System.Threading;
-using Alachisoft.NCache.Util;
+using Alachisoft.NCache.Common;
 using Alachisoft.NCache.Runtime.Serialization;
 using Alachisoft.NCache.Runtime.Serialization.IO;
 using Alachisoft.NCache.Common.Logger;
+
 using Runtime = Alachisoft.NCache.Runtime;
-using Alachisoft.NCache.Common;
 
 namespace Alachisoft.NCache.Caching.AutoExpiration
 {
     /// <summary>
 	/// Abstract base class that defines an interface used by the Cache. Different sort of 
-	/// expiration policies must derive from this class.
+	/// expiration policies must derive from this class including the complex CacheDependency 
+	/// classes in Web.Caching package.
 	/// </summary>	
     [Serializable]
-    public abstract class ExpirationHint : IComparable, IDisposable, ICompactSerializable, ISizable
+	public abstract class ExpirationHint : IComparable, IDisposable, ICompactSerializable,ISizable
 	{
-		public const int EXPIRED = 1;
-		public const int NEEDS_RESYNC = 2;
-		public const int IS_VARIANT = 4;
-		public const int NON_ROUTABLE = 8;
-		public const int DISPOSED = 16;
+		public const int 				EXPIRED = 1;
+		public const int 				NEEDS_RESYNC = 2;
+		public const int 				IS_VARIANT = 4;
+		public const int 				NON_ROUTABLE = 8;
+		public const int 				DISPOSED = 16;
+       
+        // _cacheKey + _bits + _objNotify + _hintType
         public const int ExpirationHintSize = 24;
 
-        private string _cacheKey;
-		private int	_bits;
-		private IExpirationEventSink _objNotify;
+        private string                  _cacheKey;
+		private int						_bits;
+		private IExpirationEventSink	_objNotify;
+//		private DateTime				_utcLastModified;
 		[CLSCompliant(false)]
-        public ExpirationHintType _hintType;
+        public ExpirationHintType       _hintType;
 		protected ExpirationHint()
 		{            
             _hintType = ExpirationHintType.Parent;
+            //			_utcLastModified = DateTime.UtcNow;
 		}
 
 		#region	/                 --- IDisposable ---           /
@@ -75,6 +80,7 @@ namespace Alachisoft.NCache.Caching.AutoExpiration
 		/// <summary> key to compare expiration hints. </summary>
 		internal abstract int SortKey { get; }
 
+        //[NonSerialized] internal NewTrace nTrace = null;
         [NonSerialized] internal ILogger _ncacheLog = null;
 
         public ILogger NCacheLog
@@ -89,11 +95,12 @@ namespace Alachisoft.NCache.Caching.AutoExpiration
 		public bool NeedsReSync { get { return IsBitSet(NEEDS_RESYNC); } }
 		/// <summary> Return if hint is to be updated on Reset </summary>
 		public bool IsVariant { get { return IsBitSet(IS_VARIANT); } }
-			/// <summary> Returns true if the hint can be routed to other nodes, otherwise returns false.</summary>
+		/// <summary> Returns true if the hint can be routed to other nodes, otherwise returns false.</summary>
+		public bool IsRoutable { get { return !IsBitSet(NON_ROUTABLE); } }
+		/// <summary> Returns true if the hint can be routed to other nodes, otherwise returns false.</summary>
 		public bool IsDisposed { get { return IsBitSet(DISPOSED); } }
         /// <summary> Returns true if the hint is indexable in expiration manager, otherwise returns false.</summary>
-        virtual public bool IsIndexable { get { return true; } }
-
+        virtual public bool IsIndexable { get { return true; } }        
 
         virtual public string CacheKey { set { _cacheKey = value; } get { return _cacheKey; } }
 
@@ -127,7 +134,7 @@ namespace Alachisoft.NCache.Caching.AutoExpiration
 			_bits &= ~EXPIRED;
             if (_ncacheLog == null)
                 _ncacheLog = context.NCacheLog;
-			            return true;
+			return true;
 		}
 
         internal virtual void ResetVariant(CacheRuntimeContext context)
@@ -137,6 +144,7 @@ namespace Alachisoft.NCache.Caching.AutoExpiration
                 Reset(context);
             }
         }
+
 
 		protected internal void SetExpirationEventSink(IExpirationEventSink objNotify)
 		{
@@ -221,10 +229,85 @@ namespace Alachisoft.NCache.Caching.AutoExpiration
                     ((ICompactSerializable)fe).Deserialize(reader);
                     return (ExpirationHint)fe;                    
                 
+                case ExpirationHintType.TTLExpiration:
+                    TTLExpiration ttle = new TTLExpiration();
+                    ((ICompactSerializable)ttle).Deserialize(reader);
+                    return (ExpirationHint)ttle;                    
+                
+                case ExpirationHintType.TTLIdleExpiration:
+                    TTLIdleExpiration ttlie = new TTLIdleExpiration();
+                    ((ICompactSerializable)ttlie).Deserialize(reader);
+                    return (ExpirationHint)ttlie;                    
+                
+                case ExpirationHintType.FixedIdleExpiration:
+                    FixedIdleExpiration fie = new FixedIdleExpiration();
+                    ((ICompactSerializable)fie).Deserialize(reader);
+                    return (ExpirationHint)fie;                    
+                
+                case ExpirationHintType.FileDependency:
+                    FileDependency fd = new FileDependency();
+                    ((ICompactSerializable)fd).Deserialize(reader);
+                    return (ExpirationHint)fd;
+                    
+                case ExpirationHintType.KeyDependency:
+                    KeyDependency kd = new KeyDependency();
+                    ((ICompactSerializable)kd).Deserialize(reader);
+                    return (ExpirationHint)kd;
+                    
+#if !( DEVELOPMENT || CLIENT)
+                case ExpirationHintType.NodeExpiration:
+                    NodeExpiration ne = new NodeExpiration();
+                    ((ICompactSerializable)ne).Deserialize(reader);
+                    return (ExpirationHint)ne;
+#endif
+                case ExpirationHintType.Sql7CacheDependency:
+                    Sql7CacheDependency s7cd = new Sql7CacheDependency();
+                    ((ICompactSerializable)s7cd).Deserialize(reader);
+                    return (ExpirationHint)s7cd;
+
+                case ExpirationHintType.OleDbCacheDependency:
+                    OleDbCacheDependency oledbDependency = new OleDbCacheDependency();
+                    ((ICompactSerializable)oledbDependency).Deserialize(reader);
+                    return (ExpirationHint)oledbDependency;
+
+                case ExpirationHintType.SqlYukonCacheDependency:
+                    SqlYukonCacheDependency sycd = new SqlYukonCacheDependency();
+                    ((ICompactSerializable)sycd).Deserialize(reader);
+                    return (ExpirationHint)sycd;
+
+                case ExpirationHintType.OracleCacheDependency:
+                    OracleCacheDependency orclcd = new OracleCacheDependency();
+                    ((ICompactSerializable)orclcd).Deserialize(reader);
+                    return (ExpirationHint)orclcd;
+
+
                 case ExpirationHintType.IdleExpiration:
                     IdleExpiration ie = new IdleExpiration();
                     ((ICompactSerializable)ie).Deserialize(reader);
                     return (ExpirationHint)ie;
+                    
+                case ExpirationHintType.AggregateExpirationHint:
+                    AggregateExpirationHint aeh = new AggregateExpirationHint();
+                    ((ICompactSerializable)aeh).Deserialize(reader);
+                    return (ExpirationHint)aeh;
+
+                case ExpirationHintType.DBCacheDependency:
+                    DBCacheDependency dbcd = new DBCacheDependency();
+                    ((ICompactSerializable)dbcd).Deserialize(reader);
+                    return (ExpirationHint)dbcd;                    
+
+                case ExpirationHintType.ExtensibleDependency:
+                    ExtensibleDependency ed = new ExtensibleDependency();
+                    ed = (ExtensibleDependency)reader.ReadObject();
+                    return (ExpirationHint)ed;
+
+                case ExpirationHintType.NosDBCacheDependency:
+                    NosDBCacheDependency nosDbd = new NosDBCacheDependency();
+                    ((ICompactSerializable)nosDbd).Deserialize(reader);
+                    return nosDbd;
+
+                case ExpirationHintType.DependencyHint:                    
+                    break;
                 
                 default:
                     break;            
@@ -242,11 +325,18 @@ namespace Alachisoft.NCache.Caching.AutoExpiration
             }
 
             writer.Write((short)expHint._hintType);
-            ((ICompactSerializable)expHint).Serialize(writer);
+            if (expHint._hintType == ExpirationHintType.ExtensibleDependency)
+                writer.WriteObject(expHint);
+            else
+                ((ICompactSerializable)expHint).Serialize(writer);
+            
+            return;        
         }
 
         /// <summary>
         /// Override this method for hints that should be reinitialized when they are moved to another partition.
+        /// e.g SqlYukondependency Hint must be reinitialized after state transfer so that its listeners are created on 
+        /// new subcoordinator.
         /// </summary>
         /// <param name="context">CacheRuntimeContex for required contextual information.</param>
         /// <returns>True if reinitialization was successfull.</returns>
@@ -281,7 +371,7 @@ namespace Alachisoft.NCache.Caching.AutoExpiration
 
         public virtual int Size
         {
-            get
+            get 
             {
                 return ExpirationHintSize;
             }

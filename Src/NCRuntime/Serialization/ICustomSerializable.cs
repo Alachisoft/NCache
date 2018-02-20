@@ -10,7 +10,7 @@
 // distributed under the License is distributed on an "AS IS" BASIS,
 // WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
 // See the License for the specific language governing permissions and
-// limitations under the License.
+// limitations under the License
 
 using System;
 using System.IO;
@@ -21,7 +21,11 @@ using System.IO;
 /// not the .NET  and Compact Serialization framework, must implement this interface.
 /// </summary>
 
+#if JAVA
+namespace Alachisoft.TayzGrid.Runtime.Serialization
+#else
 namespace Alachisoft.NCache.Runtime.Serialization
+#endif
 {
     /// <summary> 
     /// Implementations of ICompactSerializable can add their state directly to the output stream, 

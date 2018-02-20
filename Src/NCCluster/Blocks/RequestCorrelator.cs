@@ -10,30 +10,16 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 // $Id: RequestCorrelator.java,v 1.12 2004/09/05 04:54:21 ovidiuf Exp $
-
 using System;
 using System.IO;
-using Alachisoft.NGroups;
 using Alachisoft.NGroups.Stack;
 using Alachisoft.NGroups.Util;
-
-
-using Alachisoft.NCache.Runtime.Serialization;
-
-
-using Alachisoft.NCache.Runtime.Serialization.IO;
-
-
 using Alachisoft.NCache.Serialization.Formatters;
-using Alachisoft.NCache.Common;
 using Alachisoft.NCache.Common.Net;
 using Alachisoft.NCache.Common.Stats;
 using System.Threading;
 using System.Collections;
-using Alachisoft.NCache.Common.Util;
 using Alachisoft.NCache.Common.Logger;
-
-using Runtime = Alachisoft.NCache.Runtime;
 
 namespace Alachisoft.NGroups.Blocks
 {
@@ -116,7 +102,8 @@ namespace Alachisoft.NGroups.Blocks
 		/// <summary>makes the instance unique (together with IDs) </summary>
 		protected internal string name = null;
 		
-
+		/// <summary>The dispatching thread pool </summary>
+//		protected internal Scheduler scheduler = null;
 		
 		
 		/// <summary>The address of this group member </summary>
@@ -137,7 +124,7 @@ namespace Alachisoft.NGroups.Blocks
 		/// <summary> This field is used only if deadlock detection is enabled.
 		/// It sets the calling stack for to that for the currently running request
 		/// </summary>
-
+//		protected internal CallStackSetter call_stack_setter = null;
 		
 		/// <summary>Process items on the queue concurrently (Scheduler). The default is to wait until the processing of an item
 		/// has completed before fetching the next item from the queue. Note that setting this to true
@@ -193,7 +180,7 @@ namespace Alachisoft.NGroups.Blocks
 			this.transport = transport;
 			request_handler = handler;
             this._ncacheLog = NCacheLog;
-            
+            //this.nTrace = nTrace;
 			start();
 		}
 		
@@ -205,7 +192,6 @@ namespace Alachisoft.NGroups.Blocks
 			this.local_addr = local_addr;
 			request_handler = handler;
             this._ncacheLog = NCacheLog;
-            
 			start();
 		}
 
@@ -299,7 +285,7 @@ namespace Alachisoft.NGroups.Blocks
 
         public virtual void sendRequest(long id, System.Collections.ArrayList dest_mbrs, Message msg, RspCollector coll)
         {
-            sendRequest(id, dest_mbrs, msg, coll, HDR.REQ);
+            sendRequest(id, dest_mbrs, msg, coll, RequestCorrelatorHDR.REQ);
         }
 
 		/// <summary> Send a request to a group. If no response collector is given, no
@@ -324,7 +310,7 @@ namespace Alachisoft.NGroups.Blocks
 		/// </param>
 		public virtual void  sendRequest(long id, System.Collections.ArrayList dest_mbrs, Message msg, RspCollector coll, byte hdrType)
 		{
-			HDR hdr = null;
+			RequestCorrelatorHDR hdr = null;
 			
 			if (transport == null)
 			{
@@ -339,10 +325,10 @@ namespace Alachisoft.NGroups.Blocks
 			// iii. If deadlock detection is enabled, set/update the call stack
 			// iv. Pass the msg down to the protocol layer below
 
-            hdr = msg.getHeader(HeaderType.REQUEST_COORELATOR) as RequestCorrelator.HDR;
+            hdr = msg.getHeader(HeaderType.REQUEST_COORELATOR) as RequestCorrelatorHDR;
             if (hdr == null)
             {
-                hdr = new HDR();
+                hdr = new RequestCorrelatorHDR();
                 hdr.type = hdrType;
                 hdr.id = id;
                 hdr.rsp_expected = coll != null ? true : false;
@@ -370,7 +356,6 @@ namespace Alachisoft.NGroups.Blocks
 			{
                 if (transport is Protocol)
                 {
-                   
                     Event evt = new Event();
                     evt.Type = Event.MSG;
                     evt.Arg = msg;
@@ -389,7 +374,7 @@ namespace Alachisoft.NGroups.Blocks
 
         public virtual void sendNHopRequest(long id, System.Collections.ArrayList dest_mbrs, Message msg, RspCollector coll)
         {
-            sendRequest(id, dest_mbrs, msg, coll, HDR.NHOP_REQ);
+            sendRequest(id, dest_mbrs, msg, coll, RequestCorrelatorHDR.NHOP_REQ);
         }
 
 		/// <summary> Used to signal that a certain request may be garbage collected as
@@ -480,7 +465,6 @@ namespace Alachisoft.NGroups.Blocks
 		
 		protected virtual void  startScheduler()
         {
-			
 		}
 		
 		public virtual void  stop()
@@ -493,7 +477,11 @@ namespace Alachisoft.NGroups.Blocks
                 try
                 {
                     NCacheLog.Flush();
+#if !NETCORE
                     _statusCleanerThread.Abort();
+#else
+                    _statusCleanerThread.Interrupt();
+#endif
                 }
                 catch (Exception) { }
             }
@@ -503,7 +491,6 @@ namespace Alachisoft.NGroups.Blocks
 		
 		protected virtual void  stopScheduler()
 		{
-			
 		}
 		
 		
@@ -697,7 +684,7 @@ namespace Alachisoft.NGroups.Blocks
             Hashtable result = new Hashtable();
             if (nodes != null && nodes.Count > 0)
             {
-                HDR hdr = new HDR(HDR.GET_REQ_STATUS, NextRequestId,true, null);
+                RequestCorrelatorHDR hdr = new RequestCorrelatorHDR(RequestCorrelatorHDR.GET_REQ_STATUS, NextRequestId,true, null);
                 hdr.status_reqId = reqId;
                 Message msg = new Message();
                 msg.putHeader(HeaderType.REQUEST_COORELATOR, hdr);
@@ -756,6 +743,7 @@ namespace Alachisoft.NGroups.Blocks
 			System.Collections.ArrayList copy;
 			ArrayList oldMembers = new ArrayList();
 			// copy so we don't run into bug #761804 - Bela June 27 2003
+			//lock (requests.SyncRoot)
             req_lock.AcquireReaderLock(Timeout.Infinite);
             try
 			{
@@ -806,7 +794,7 @@ namespace Alachisoft.NGroups.Blocks
 		public virtual bool receiveMessage(Message msg)
 		{
 			object tmpHdr;
-			HDR hdr;
+			RequestCorrelatorHDR hdr;
 			RspCollector coll;
 			System.Collections.IList dests;
 			
@@ -816,10 +804,10 @@ namespace Alachisoft.NGroups.Blocks
 			// the same name (there may be multiple request correlators in the same
 			// protocol stack...)
 			tmpHdr = msg.getHeader(HeaderType.REQUEST_COORELATOR);
-			if (!(tmpHdr is HDR))
+			if (!(tmpHdr is RequestCorrelatorHDR))
 				return (true);
 			
-			hdr = (HDR) tmpHdr;
+			hdr = (RequestCorrelatorHDR) tmpHdr;
 			
 			// If the header contains a destination list, and we are not part of it, then we discard the
 			// request (was addressed to other members)
@@ -848,32 +836,36 @@ namespace Alachisoft.NGroups.Blocks
 			// <tt>RspCollector</tt> that a reply has been received
 			switch (hdr.type)
 			{
-                case HDR.GET_REQ_STATUS:
-				case HDR.REQ: 
+                case RequestCorrelatorHDR.GET_REQ_STATUS:
+				case RequestCorrelatorHDR.REQ: 
 					if (request_handler == null)
 						return (false);
 
                     //In case of NHop requests, the response is not sent to the sender of the request. Instead, 
                     //response is sent back to a node whose address is informed by the sender.
-                   
+                    //if (hdr.whomToReply != null)
+                    //    msg.Src = hdr.whomToReply;
 
 					handleRequest(msg,hdr.whomToReply);
                     break;
 
-                case HDR.NHOP_REQ:        
+                case RequestCorrelatorHDR.NHOP_REQ:        
                     handleNHopRequest(msg);
                     break;
 
-				case HDR.RSP:
+				case RequestCorrelatorHDR.RSP:
                     msg.removeHeader(HeaderType.REQUEST_COORELATOR);
 					coll = findEntry(hdr.id);
 					if (coll != null)
 					{
+
 						coll.receiveResponse(msg);
+
 					}
 					break;
 
-                case HDR.NHOP_RSP:                    
+                case RequestCorrelatorHDR.NHOP_RSP:
+                    //nTrace.criticalInfo("", "msg from : " + msg.Src.ToString());
                     msg.removeHeader(HeaderType.REQUEST_COORELATOR);
                     coll = findEntry(hdr.id);
 
@@ -888,7 +880,6 @@ namespace Alachisoft.NGroups.Blocks
                                 groupRequest.AddNHopDefaultStatus(hdr.expectResponseFrom);
                             }
                         }
-                       
                         coll.receiveResponse(msg);
                     }
                     break;
@@ -910,7 +901,7 @@ namespace Alachisoft.NGroups.Blocks
             {
                 lock (req_mutex)
                 {
-                    //TAIM: Request id ranges from 0 to long.Max. If it reaches the max we
+                    //Request id ranges from 0 to long.Max. If it reaches the max we
                     //re-initialize it to -1;
                     if (last_req_id == long.MaxValue) last_req_id = -1;
                     long result = ++last_req_id;
@@ -926,7 +917,6 @@ namespace Alachisoft.NGroups.Blocks
 		private void  addEntry(long id, RequestEntry entry,ArrayList dests)
 		{
 			System.Int64 id_obj = (long) id;
-			
             req_lock.AcquireWriterLock(Timeout.Infinite);
             try
             {
@@ -964,7 +954,7 @@ namespace Alachisoft.NGroups.Blocks
 			// changed by bela Feb 28 2003 (bug fix for 690606)
 			// changed back to use synchronization by bela June 27 2003 (bug fix for #761804),
 			// we can do this because we now copy for iteration (viewChange() and suspect())
-			
+			//lock (requests.SyncRoot)
             req_lock.AcquireWriterLock(Timeout.Infinite);
             try
             {
@@ -1008,7 +998,8 @@ namespace Alachisoft.NGroups.Blocks
         {
             object retval = null;
             byte[] rsp_buf = null;
-            HDR hdr, rsp_hdr, replicaMsg_hdr;
+            IList rsp_buffers = null;
+            RequestCorrelatorHDR hdr, rsp_hdr, replicaMsg_hdr;
             Message rsp;
 
             Address destination = null;
@@ -1020,7 +1011,7 @@ namespace Alachisoft.NGroups.Blocks
             // ii. If a reply is expected, pack the return value from the request
             // handler to a reply msg and send it back. The reply msg has the same
             // ID as the request and the name of the sender request correlator
-            hdr = (HDR)req.removeHeader(HeaderType.REQUEST_COORELATOR);
+            hdr = (RequestCorrelatorHDR)req.removeHeader(HeaderType.REQUEST_COORELATOR);
 
             if (NCacheLog.IsInfoEnabled) NCacheLog.Info("RequestCorrelator.handleNHopRequest()", "calling (" + (request_handler != null ? request_handler.GetType().FullName : "null") + ") with request " + hdr.id);
 
@@ -1036,7 +1027,7 @@ namespace Alachisoft.NGroups.Blocks
                     request_handler.handle(req);
                     return;
                 }
-                if (hdr.type == HDR.NHOP_REQ)
+                if (hdr.type == RequestCorrelatorHDR.NHOP_REQ)
                 {
                     MarkRequestArrived(hdr.id, req.Src);
                     retval = request_handler.handleNHopRequest(req, out destination, out replicationMsg);
@@ -1061,8 +1052,8 @@ namespace Alachisoft.NGroups.Blocks
             //   this node will send the response to original node.
             if (replicationMsg != null)
             {
-                replicaMsg_hdr = new HDR();
-                replicaMsg_hdr.type = HDR.REQ;
+                replicaMsg_hdr = new RequestCorrelatorHDR();
+                replicaMsg_hdr.type = RequestCorrelatorHDR.REQ;
                 replicaMsg_hdr.id = hdr.id;
                 replicaMsg_hdr.rsp_expected = true;
                 replicaMsg_hdr.whomToReply = req.Src;
@@ -1089,7 +1080,9 @@ namespace Alachisoft.NGroups.Blocks
                     NCacheLog.Error("RequestCorrelator.handleRequest()", e.ToString());
                 }
             }
-            
+            //else
+            //    nTrace.criticalInfo("RequestCorrelator.handleRequest()", "replication msg is null");
+
             //2. send reply back to original node
             //   and inform the original node that it must expect another response 
             //   from the replica node. (the response of the request sent in part 1)
@@ -1099,12 +1092,21 @@ namespace Alachisoft.NGroups.Blocks
             {
                 if (retval is OperationResponse)
                 {
-                    rsp_buf = (byte[])((OperationResponse)retval).SerializablePayload;
+                    
+                    if(((OperationResponse)retval).SerializablePayload is byte[])
+                        rsp_buf = (byte[])((OperationResponse)retval).SerializablePayload;
+                    else if (((OperationResponse)retval).SerializablePayload is IList)
+                        rsp_buffers = (IList)((OperationResponse)retval).SerializablePayload;
+
                     rsp.Payload = ((OperationResponse)retval).UserPayload;
                     rsp.responseExpected = true;
                 }
+
                 else if (retval is Byte[])
                     rsp_buf = (byte[])retval;
+                else if (retval is IList)
+                    rsp_buffers = (IList)retval;
+
                 else
                     rsp_buf = CompactBinaryFormatter.ToByteBuffer(retval, null); // retval could be an exception, or a real value
             }
@@ -1124,9 +1126,11 @@ namespace Alachisoft.NGroups.Blocks
 
             if (rsp_buf != null)
                 rsp.setBuffer(rsp_buf);
+            if (rsp_buffers != null)
+                rsp.Buffers = rsp_buffers;
 
-            rsp_hdr = new HDR();
-            rsp_hdr.type = HDR.NHOP_RSP;
+            rsp_hdr = new RequestCorrelatorHDR();
+            rsp_hdr.type = RequestCorrelatorHDR.NHOP_RSP;
             rsp_hdr.id = hdr.id;
             rsp_hdr.rsp_expected = false;
 
@@ -1134,7 +1138,7 @@ namespace Alachisoft.NGroups.Blocks
             {
                 rsp_hdr.expectResponseFrom = destination;
             }
-            
+           
             rsp.putHeader(HeaderType.REQUEST_COORELATOR, rsp_hdr);
 
             if (NCacheLog.IsInfoEnabled) NCacheLog.Info("RequestCorrelator.handleRequest()", "sending rsp for " + rsp_hdr.id + " to " + rsp.Dest);
@@ -1166,11 +1170,12 @@ namespace Alachisoft.NGroups.Blocks
 		/// </summary>
 		/// <param name="req">the request msg
 		/// </param>
-		private void  handleRequest(Message req,Address replyTo)
+		internal void  handleRequest(Message req,Address replyTo)
 		{
 			object retval;
 			byte[] rsp_buf = null;
-			HDR hdr, rsp_hdr;
+            IList rsp_buffers = null;
+			RequestCorrelatorHDR hdr, rsp_hdr;
 			Message rsp;
 			
 			// i. Remove the request correlator header from the msg and pass it to
@@ -1179,7 +1184,7 @@ namespace Alachisoft.NGroups.Blocks
 			// ii. If a reply is expected, pack the return value from the request
 			// handler to a reply msg and send it back. The reply msg has the same
 			// ID as the request and the name of the sender request correlator
-			hdr = (HDR) req.removeHeader(HeaderType.REQUEST_COORELATOR);
+			hdr = (RequestCorrelatorHDR) req.removeHeader(HeaderType.REQUEST_COORELATOR);
 			
 			if(NCacheLog.IsInfoEnabled) NCacheLog.Info("RequestCorrelator.handleRequest()", "calling (" + (request_handler != null?request_handler.GetType().FullName:"null") + ") with request " + hdr.id);
 
@@ -1198,7 +1203,7 @@ namespace Alachisoft.NGroups.Blocks
                     request_handler.handle(req);
                     return;
                 }
-                if (hdr.type == HDR.GET_REQ_STATUS)
+                if (hdr.type == RequestCorrelatorHDR.GET_REQ_STATUS)
                 {
                     if(NCacheLog.IsInfoEnabled) NCacheLog.Info("ReqCorrelator.handleRequet", hdr.status_reqId + " receive RequestStatus request from " + req.Src);
                     retval = GetRequestStatus(hdr.status_reqId, req.Src);
@@ -1213,6 +1218,7 @@ namespace Alachisoft.NGroups.Blocks
                 //request is being handled asynchronously, so response will be send by
                 //the the user itself.
                 
+
 			}
 			catch (System.Exception t)
 			{
@@ -1240,17 +1246,22 @@ namespace Alachisoft.NGroups.Blocks
                     if (((OperationResponse)retval).SerilizationStream != null)
                     {
                         rsp.SerlizationStream = ((OperationResponse)retval).SerilizationStream;
-                        //MemoryStream stream=((MemoryStream)((OperationResponse)retval).SerilizationStream);
-                        //rsp_buf = stream.ToArray();
-                        //stream.Seek(0, SeekOrigin.Begin);
                     }
                     else
-                        rsp_buf = (byte[])((OperationResponse)retval).SerializablePayload;
+                    {
+                        if(((OperationResponse)retval).SerializablePayload is byte[])
+                            rsp_buf = (byte[])((OperationResponse)retval).SerializablePayload;
+                        else if(((OperationResponse)retval).SerializablePayload is IList)
+                            rsp_buffers = (IList)((OperationResponse)retval).SerializablePayload;
+                    }
+                    
                     rsp.Payload = ((OperationResponse)retval).UserPayload;
                     rsp.responseExpected = true;
                 }
                 else if(retval is Byte[])
 					rsp_buf = (byte[])retval;
+                else if (retval is IList)
+                    rsp_buffers = (IList)retval;
 				else
 					rsp_buf = CompactBinaryFormatter.ToByteBuffer(retval,null); // retval could be an exception, or a real value
 			}
@@ -1271,19 +1282,20 @@ namespace Alachisoft.NGroups.Blocks
             if (rsp_buf != null)
 				rsp.setBuffer(rsp_buf);
 
+            if (rsp_buffers != null)
+                rsp.Buffers = rsp_buffers;
+
             if (rsp.Dest.Equals(local_addr))
-            {                
+            {
                 //we need not to put our response on the stack.
                 rsp.Src = local_addr;
                 ReceiveLocalResponse(rsp,hdr.id);
                 return;
             }
-            
-            rsp_hdr = new HDR();
-            rsp_hdr.type = HDR.RSP;
+            rsp_hdr = new RequestCorrelatorHDR();
+            rsp_hdr.type = RequestCorrelatorHDR.RSP;
             rsp_hdr.id = hdr.id;
             rsp_hdr.rsp_expected = false;
-
 
 			rsp.putHeader(HeaderType.REQUEST_COORELATOR, rsp_hdr);
 			
@@ -1294,7 +1306,6 @@ namespace Alachisoft.NGroups.Blocks
                
                 if (transport is Protocol)
                 {
-                    
                     Event evt = new Event();
                     evt.Type = Event.MSG;
                     evt.Arg = rsp;
@@ -1316,7 +1327,7 @@ namespace Alachisoft.NGroups.Blocks
         {
             object retval;
             byte[] rsp_buf = null;
-            HDR hdr, rsp_hdr;
+            RequestCorrelatorHDR hdr, rsp_hdr;
             Message rsp;
 
             // i. Remove the request correlator header from the msg and pass it to
@@ -1325,7 +1336,7 @@ namespace Alachisoft.NGroups.Blocks
             // ii. If a reply is expected, pack the return value from the request
             // handler to a reply msg and send it back. The reply msg has the same
             // ID as the request and the name of the sender request correlator
-            hdr = (HDR)req.removeHeader(HeaderType.REQUEST_COORELATOR);
+            hdr = (RequestCorrelatorHDR)req.removeHeader(HeaderType.REQUEST_COORELATOR);
 
             if (NCacheLog.IsInfoEnabled) NCacheLog.Info("RequestCorrelator.handleStatusRequest()", "calling (" + (request_handler != null ? request_handler.GetType().FullName : "null") + ") with request " + hdr.id);
 
@@ -1337,8 +1348,8 @@ namespace Alachisoft.NGroups.Blocks
             }
             RequestStatus status = GetRequestStatus(hdr.id, req.Src);
 
-            rsp_hdr = new HDR();
-            rsp_hdr.type = HDR.GET_REQ_STATUS_RSP;
+            rsp_hdr = new RequestCorrelatorHDR();
+            rsp_hdr.type = RequestCorrelatorHDR.GET_REQ_STATUS_RSP;
             rsp_hdr.id = hdr.id;
             rsp_hdr.rsp_expected = false;
             rsp_hdr.reqStatus = status;
@@ -1361,7 +1372,6 @@ namespace Alachisoft.NGroups.Blocks
 
                 if (transport is Protocol)
                 {
-                    
                     Event evt = new Event();
                     evt.Type = Event.MSG;
                     evt.Arg = rsp;
@@ -1392,8 +1402,8 @@ namespace Alachisoft.NGroups.Blocks
                 return;
             }
 
-            HDR rsp_hdr = new HDR();
-            rsp_hdr.type = HDR.RSP;
+            RequestCorrelatorHDR rsp_hdr = new RequestCorrelatorHDR();
+            rsp_hdr.type = RequestCorrelatorHDR.RSP;
             rsp_hdr.id = resp_id;
             rsp_hdr.rsp_expected = false;
 
@@ -1404,7 +1414,6 @@ namespace Alachisoft.NGroups.Blocks
 
                 if (transport is Protocol)
                 {
-                    
                     Event evt = new Event();
                     evt.Type = Event.MSG;
                     evt.Arg = response;
@@ -1420,18 +1429,6 @@ namespace Alachisoft.NGroups.Blocks
                 NCacheLog.Error("RequestCorrelator.handleRequest()", e.ToString());
             }
         }
-		// .......................................................................
-		
-		/// <summary> Associates an ID with an <tt>RspCollector</tt></summary>
-		private class RequestEntry
-		{
-			public RspCollector coll = null;
-			
-			public RequestEntry(RspCollector coll)
-			{
-				this.coll = coll;
-			}
-		}
 
         private void ReceiveLocalResponse(Message rsp, long req_id)
         {
@@ -1440,295 +1437,11 @@ namespace Alachisoft.NGroups.Blocks
             {
 
                 coll.receiveResponse(rsp);
+
             }
         }
 		
 		
-		/// <summary> The header for <tt>RequestCorrelator</tt> messages</summary>
-		[Serializable]
-		internal class HDR: Alachisoft.NGroups.Header, ICompactSerializable , IRentableObject
-		{
-			public const byte REQ = 0;
-			public const byte RSP = 1;
-            public const byte GET_REQ_STATUS = 3;
-            public const byte GET_REQ_STATUS_RSP = 4;
-            public const byte NHOP_REQ = 5;
-            public const byte NHOP_RSP = 6;
-
-            public int rentid;
-			/// <summary>Type of header: request or reply </summary>
-			public byte type = REQ;
-
-			/// <summary> The id of this request to distinguish among other requests from
-			/// the same <tt>RequestCorrelator</tt>
-			/// </summary>
-			public long id = 0;
-			
-			/// <summary>msg is synchronous if true </summary>
-			public bool rsp_expected = true;
-			
-			/// <summary>The unique name of the associated <tt>RequestCorrelator</tt> </summary>
-			//public string name = null;
-			
-			/// <summary>Contains senders (e.g. P --> Q --> R) </summary>
-			public System.Collections.ArrayList call_stack = null;
-			
-			/// <summary>Contains a list of members who should receive the request (others will drop). Ignored if null </summary>
-            public System.Collections.ArrayList dest_mbrs = null;
-
-            public bool serializeFlag = true;
-            public RequestStatus reqStatus;
-            public long status_reqId;
-            public Address whomToReply;
-            public Address expectResponseFrom;
-
-            public bool doProcess = true;
-			/// <summary> Used for externalization</summary>
-			public HDR()
-			{
-			}
-			
-			/// <param name="type">type of header (<tt>REQ</tt>/<tt>RSP</tt>)
-			/// </param>
-			/// <param name="id">id of this header relative to ids of other requests
-			/// originating from the same correlator
-			/// </param>
-			/// <param name="rsp_expected">whether it's a sync or async request
-			/// </param>
-			/// <param name="name">the name of the <tt>RequestCorrelator</tt> from which
-			/// this header originates
-			/// </param>
-			public HDR(byte type, long id, bool rsp_expected, string name)
-			{
-				this.type = type;
-				this.id = id;
-				this.rsp_expected = rsp_expected;
-				
-			}
-
-            /// <param name="type">type of header (<tt>REQ</tt>/<tt>RSP</tt>)
-            /// </param>
-            /// <param name="id">id of this header relative to ids of other requests
-            /// originating from the same correlator
-            /// </param>
-            /// <param name="rsp_expected">whether it's a sync or async request
-            /// </param>
-            /// <param name="name">the name of the <tt>RequestCorrelator</tt> from which
-            /// this header originates
-            /// <param name="apptimeTaken">Time taken to complete an operation by the receiving application.</param>
-            /// </param>
-            public HDR(byte type, long id, bool rsp_expected, string name,long apptimeTaken)
-            {
-                this.type = type;
-                this.id = id;
-                this.rsp_expected = rsp_expected;
-               
-            }
-
-			public override string ToString()
-			{
-				System.Text.StringBuilder ret = new System.Text.StringBuilder();
-				
-                string typeStr = "<unknown>";
-                switch (type)
-                {
-                    case REQ:
-                        typeStr = "REQ";
-                        break;
-
-                    case RSP:
-                        typeStr = "RSP";
-                        break;
-
-                    case GET_REQ_STATUS:
-                        typeStr = "GET_REQ_STATUS";
-                        break;
-
-                    case GET_REQ_STATUS_RSP:
-                        typeStr = "GET_REQ_STATUS_RSP";
-                        break;
-
-
-                }
-				ret.Append(typeStr);
-				ret.Append(", id=" + id);
-				ret.Append(", rsp_expected=" + rsp_expected + ']');
-				if (dest_mbrs != null)
-					ret.Append(", dest_mbrs=").Append(dest_mbrs);
-				return ret.ToString();
-			}
-            public void DeserializeLocal(BinaryReader reader)
-            {
-                type = reader.ReadByte();
-                id = reader.ReadInt64();
-                rsp_expected = reader.ReadBoolean();
-                doProcess = reader.ReadBoolean();
-
-                bool getWhomToReply = reader.ReadBoolean();
-
-                if (getWhomToReply)
-                {
-                    this.whomToReply = new Address();
-                    this.whomToReply.DeserializeLocal(reader);
-                }
-
-                bool getExpectResponseFrom = reader.ReadBoolean();
-                if (getExpectResponseFrom)
-                {
-                    this.expectResponseFrom = new Address();
-                    this.expectResponseFrom.DeserializeLocal(reader);
-                }
-            }
-
-            public void SerializeLocal(BinaryWriter writer)
-            {
-                writer.Write(type);
-                writer.Write(id);
-                writer.Write(rsp_expected);
-                writer.Write(doProcess);
-
-                if (whomToReply != null)
-                {
-                    writer.Write(true);
-                    whomToReply.SerializeLocal(writer);
-                }
-                else
-                    writer.Write(false);
-
-                if (expectResponseFrom != null)
-                {
-                    writer.Write(true);
-                    expectResponseFrom.SerializeLocal(writer);
-                }
-                else
-                    writer.Write(false);
-            }
-			
-			#region ICompactSerializable Members
-
-            public void Deserialize(CompactReader reader)
-			{
-				type = reader.ReadByte();
-				id = reader.ReadInt64();
-				rsp_expected = reader.ReadBoolean();
-                reqStatus = reader.ReadObject() as RequestStatus;
-                status_reqId = reader.ReadInt64();
-				
-                dest_mbrs = (System.Collections.ArrayList)reader.ReadObject();
-                doProcess = reader.ReadBoolean();
-                whomToReply = (Address)reader.ReadObject();
-                expectResponseFrom = (Address)reader.ReadObject();
-			}
-
-			public void Serialize(CompactWriter writer)
-			{
-				writer.Write(type);
-				writer.Write(id);
-				writer.Write(rsp_expected);
-                writer.WriteObject(reqStatus);
-                writer.Write(status_reqId);
-				
-                if (serializeFlag)
-                    writer.WriteObject(dest_mbrs);
-                else
-                    writer.WriteObject(null);
-
-                writer.Write(doProcess);
-                writer.WriteObject(whomToReply);
-                writer.WriteObject(expectResponseFrom);
-
-			}
-
-            public static HDR ReadCorHeader(CompactReader reader)
-            {
-                byte isNull = reader.ReadByte();
-                if (isNull == 1)
-                    return null;
-                HDR newHdr = new HDR();
-                newHdr.Deserialize(reader);
-                return newHdr;
-            }
-
-            public static void WriteCorHeader(CompactWriter writer, HDR hdr)
-            {
-                byte isNull = 1;
-                if (hdr == null)
-                    writer.Write(isNull);
-                else
-                {
-                    isNull = 0;
-                    writer.Write(isNull);
-                    hdr.Serialize(writer);
-                }
-                return;
-            }  	
-
-
-            public void Reset()
-            {
-                 dest_mbrs =  call_stack = null;
-                 doProcess =  rsp_expected = true;
-
-                 type = RequestCorrelator.HDR.REQ;
-            }
-			#endregion
-
-            #region IRentableObject Members
-
-            public int RentId
-            {
-                get
-                {
-                    return rentid;
-                }
-                set
-                {
-                    rentid = value;
-                }
-            }
-
-            #endregion
-        }
-		
-		
-		
-		/// <summary> The runnable for an incoming request which is submitted to the
-		/// dispatcher
-		/// </summary>
-		private class Request : IThreadRunnable
-		{
-			private RequestCorrelator enclosingInstance;
-			public RequestCorrelator Enclosing_Instance
-			{
-				get
-				{
-					return enclosingInstance;
-				}
-				
-			}
-			public Message req;
-			
-			public Request(RequestCorrelator enclosingInstance, Message req)
-			{
-				this.enclosingInstance = enclosingInstance;
-				this.req = req;
-			}
-
-			public virtual void  Run()
-			{
-				Enclosing_Instance.handleRequest(req,null);
-			}
-			
-			public override string ToString()
-			{
-				System.Text.StringBuilder sb = new System.Text.StringBuilder();
-				if (req != null)
-				{
-					sb.Append("req=" + req + ", headers=" + Global.CollectionToString(req.Headers));
-				}
-				return sb.ToString();
-			}
-		}
 
 	}
 }

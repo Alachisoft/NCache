@@ -1,0 +1,9 @@
+option java_outer_classname="MessageEventResponseProtocol";
+package Alachisoft.NCache.Common.Protobuf;
+message MessageEventResponse 
+{
+	optional string MessageId = 1;
+	optional int32 failureReason= 2;
+	optional int32 pubsubType= 3;
+	repeated string subscriberIds = 4;
+}

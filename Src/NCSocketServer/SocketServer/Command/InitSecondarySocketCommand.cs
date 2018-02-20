@@ -14,6 +14,7 @@
 
 using System;
 
+
 namespace Alachisoft.NCache.SocketServer.Command
 {
     class InitSecondarySocketCommand : CommandBase
@@ -41,7 +42,7 @@ namespace Alachisoft.NCache.SocketServer.Command
                 if (!base.immatureId.Equals("-2"))
                 {
                     //PROTOBUF:RESPONSE
-                    _serializedResponsePackets.Add(Alachisoft.NCache.Common.Util.ResponseHelper.SerializeExceptionResponse(exc, command.requestID));
+                    _serializedResponsePackets.Add(Alachisoft.NCache.Common.Util.ResponseHelper.SerializeExceptionResponse(exc, command.requestID, command.commandID));
                 }
                 return;
             }
@@ -58,12 +59,11 @@ namespace Alachisoft.NCache.SocketServer.Command
                         clientManager.CmdExecuter = cmgr.CmdExecuter;
                     }
                 }
-
             }
             catch (Exception exc)
             {
                 //PROTOBUF:RESPONSE
-                _serializedResponsePackets.Add(Alachisoft.NCache.Common.Util.ResponseHelper.SerializeExceptionResponse(exc, command.requestID));
+                _serializedResponsePackets.Add(Alachisoft.NCache.Common.Util.ResponseHelper.SerializeExceptionResponse(exc, command.requestID, command.commandID));
             }
         }
 
@@ -71,6 +71,6 @@ namespace Alachisoft.NCache.SocketServer.Command
         private CommandInfo ParseCommand(Alachisoft.NCache.Common.Protobuf.Command command, ClientManager clientManager)
         {
             return new CommandInfo();
-        }     
+        }
     }
 }

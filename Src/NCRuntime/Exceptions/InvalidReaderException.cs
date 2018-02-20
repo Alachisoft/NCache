@@ -10,9 +10,11 @@
 // distributed under the License is distributed on an "AS IS" BASIS,
 // WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
 // See the License for the specific language governing permissions and
-// limitations under the License.
+// limitations under the License
 
 using System;
+using System.Runtime.Serialization;
+using System.Security.Permissions;
 
 namespace Alachisoft.NCache.Runtime.Exceptions
 {
@@ -44,5 +46,24 @@ namespace Alachisoft.NCache.Runtime.Exceptions
             : base(reason, inner, false)
         {
         }
+
+        #region /                 --- ISerializable ---           /
+        public InvalidReaderException(SerializationInfo info, StreamingContext context)
+            : base(info, context)
+        {
+        }
+
+        /// <summary>
+        /// manual serialization
+        /// </summary>
+        /// <param name="info"></param>
+        /// <param name="context"></param>
+        [SecurityPermission(SecurityAction.Demand, SerializationFormatter = true)]
+        public override void GetObjectData(SerializationInfo info, StreamingContext context)
+        {
+            base.GetObjectData(info, context);
+        }
+
+        #endregion
     }
 }

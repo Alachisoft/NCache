@@ -1,0 +1,6 @@
+
+option java_outer_classname="RegisterPollNotifResponseProtocol";
+package Alachisoft.NCache.Common.Protobuf;
+
+message RegisterPollNotifResponse {
+}

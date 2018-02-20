@@ -1,0 +1,11 @@
+
+option java_outer_classname="SyncDependencyProtocol";
+package Alachisoft.NCache.Common.Protobuf;
+message SyncDependency {
+	optional string cacheId = 1;
+	optional string key = 2;
+	optional string server = 3;
+	optional int32 port = 4;
+	optional string userId =5;
+	optional bytes password = 6;
+}

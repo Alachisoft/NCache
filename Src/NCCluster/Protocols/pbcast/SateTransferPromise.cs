@@ -9,7 +9,6 @@
 // WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
 // See the License for the specific language governing permissions and
 // limitations under the License.
-
 using System;
 using System.Threading;
 
@@ -77,7 +76,7 @@ namespace Alachisoft.NGroups.Protocols.pbcast
 
 
 
-                // SAL: Cosider Trace
+                // Cosider Trace
                 if (_result != null && ((_countExpected == _countReceived) || (bool)_result == true))
                 {
                     ret = _result;

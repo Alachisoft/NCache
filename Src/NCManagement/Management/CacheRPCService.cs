@@ -10,10 +10,9 @@
 // distributed under the License is distributed on an "AS IS" BASIS,
 // WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
 // See the License for the specific language governing permissions and
-// limitations under the License.
+// limitations under the License
 
 using System;
-
 using Alachisoft.NCache.ServiceControl;
 using Alachisoft.NCache.Management.RPC;
 
@@ -21,9 +20,16 @@ namespace Alachisoft.NCache.Management.Management
 {
     class CacheRPCService: CacheService
     {
-        public CacheRPCService(String address): base(address, true){ }
+        public CacheRPCService(String address): base(address, true)
+        {
+           ;
+        }
 
-        public CacheRPCService(String address, int port): base(address, port, true) { }
+        public CacheRPCService(String address, int port): base(address, port, true)
+        {
+            ;
+        }
+
    
         public override ICacheServer GetCacheServer(TimeSpan timeout)
         {

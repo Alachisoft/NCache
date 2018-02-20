@@ -10,17 +10,11 @@
 // distributed under the License is distributed on an "AS IS" BASIS,
 // WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
 // See the License for the specific language governing permissions and
-// limitations under the License.
+// limitations under the License
 
 using System;
-using System.Collections.Generic;
-using System.Text;
 using Alachisoft.NCache.Common.Configuration;
-
 using Alachisoft.NCache.Runtime.Serialization;
-
-
-using Runtime = Alachisoft.NCache.Runtime;
 
 namespace Alachisoft.NCache.Management.ClientConfiguration.Dom
 {
@@ -29,20 +23,12 @@ namespace Alachisoft.NCache.Management.ClientConfiguration.Dom
     {
         private string _serverName;
         private int _priority;
-        private short _serverPriority = 1;
 
         [ConfigurationAttribute("name")]
         public string ServerName
         {
             get { return _serverName; }
             set { _serverName = value; }
-        }
-
-       
-        public short ServerPriority
-        {
-            get { return _serverPriority; }
-            set { _serverPriority = Convert.ToInt16(value); }
         }
 
         public int Priority

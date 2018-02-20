@@ -12,12 +12,11 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-
-using Alachisoft.NCache.Common.DataStructures;
-using Alachisoft.NCache.Common.DataStructures.Clustered;
-using Alachisoft.NCache.Common.Enum;
 using System;
 using System.Collections;
+using Alachisoft.NCache.Common.DataStructures;
+using Alachisoft.NCache.Common.DataStructures.Clustered;
+using Alachisoft.NCache.Common.Queries.Filters;
 
 namespace Alachisoft.NCache.Common.Queries
 {
@@ -25,14 +24,20 @@ namespace Alachisoft.NCache.Common.Queries
     {
         ClusteredArrayList _resultKeys = new ClusteredArrayList();
 
-        public ListQueryResult()
+        public ListQueryResult(IKeyFilter kf,IKeyFilter cf)
         {
+            KeyFilter = kf;
+            CompoundFilter = cf;
         }
 
-        public ListQueryResult(IList result)
+        public ListQueryResult(IKeyFilter kf,IKeyFilter cf,IList result):this(kf,cf)
         {
-            _resultKeys.AddRange(result);
+            _resultKeys.AddRange(result);           
         }
+
+        public IKeyFilter KeyFilter { get; set; }
+
+        public IKeyFilter CompoundFilter { get; set; }
 
         public int Count
         {
@@ -48,22 +53,54 @@ namespace Alachisoft.NCache.Common.Queries
                     break;
                 case CollectionOperation.Intersection:
                     throw new NotImplementedException();
+                    break;
                 case CollectionOperation.Subtract:
                     throw new NotImplementedException();
+                    break;
             }
         }
 
-        public void Add(IDictionary other, CollectionOperation op)
+        private Boolean EvaluateFilter(Object key, Boolean filter)
+        {
+            if (KeyFilter == null && CompoundFilter == null) return true;
+
+            if (!filter) return true;
+
+            if (KeyFilter != null && CompoundFilter != null)
+                return KeyFilter.Evaluate((String)key) && CompoundFilter.Evaluate((String)key);
+
+            if (KeyFilter != null)
+                return KeyFilter.Evaluate((String)key);
+
+            if (CompoundFilter != null)
+                return CompoundFilter.Evaluate((String)key);
+
+            return false;
+        }
+
+        public void Add(IDictionary other, CollectionOperation op, bool filterResult = true)
         {
             switch (op)
             {
                 case CollectionOperation.Union:
-                    _resultKeys.AddRange(other.Keys);
+                {
+                    if (other != null && other.Keys != null)
+                    {
+                        IEnumerator ienum = other.Keys.GetEnumerator();
+                        while (ienum.MoveNext())
+                        {
+                            if (EvaluateFilter(ienum.Current, filterResult))
+                                _resultKeys.Add(ienum.Current); //AddRange(other.Keys);
+                        }
+                    }
+                }
                     break;
                 case CollectionOperation.Intersection:
                     throw new NotImplementedException();
+                    break;
                 case CollectionOperation.Subtract:
                     throw new NotImplementedException();
+                    break;
             }
         }
 

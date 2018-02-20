@@ -21,6 +21,9 @@ namespace Alachisoft.NCache.Caching.Topologies.Clustered
 
         public RowsBalanceResult()
         {
+            //
+            // TODO: Add constructor logic here
+            //
         }
 
         public int[] ResultIndicies

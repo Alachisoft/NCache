@@ -1,0 +1,14 @@
+option java_outer_classname="GetExpirationResponseProtocol";
+package Alachisoft.NCache.Common.Protobuf;
+
+message GetExpirationResponse
+{
+	optional int64 absDefault = 1;
+	optional int64 sldDefault = 2;
+	optional int64 absLonger = 3; 
+	optional int64 sldLonger = 4; 
+	optional bool absDefaultEnabled = 5;
+	optional bool absLongerEnabled = 6;
+	optional bool sldDefaultEnabled = 7; 
+	optional bool sldLongerEnabled = 8; 
+}

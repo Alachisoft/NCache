@@ -11,7 +11,6 @@
 // WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
 // See the License for the specific language governing permissions and
 // limitations under the License.
-
 using System;
 using System.Collections.Generic;
 using System.Linq;
@@ -22,8 +21,8 @@ namespace Alachisoft.NCache.Common.DataReader
 {
     public class DistributedGroupedRSEnumerator : DistributedOrderedRSEnumerator
     {
-        public DistributedGroupedRSEnumerator(List<IRecordSetEnumerator> partitionRecordSets, List<OrderByArgument> orderByArguments)
-            : base(partitionRecordSets, orderByArguments)
+        public DistributedGroupedRSEnumerator(List<IRecordSetEnumerator> partitionRecordSets, List<OrderByArgument> orderByArguments, Dictionary<string, Dictionary<IRecordSetEnumerator,Object>> validReaders)
+            : base(partitionRecordSets, orderByArguments,validReaders)
         { }
 
         public override bool MoveNext()
@@ -44,6 +43,7 @@ namespace Alachisoft.NCache.Common.DataReader
                 foreach (IRecordSetEnumerator rse in emptyRSE)
                 {
                     _partitionRecordSets.Remove(rse);
+                    RemoveFromValidReaders(rse);
                 }
 
                 return true;

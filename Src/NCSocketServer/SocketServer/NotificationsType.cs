@@ -16,11 +16,25 @@ namespace Alachisoft.NCache.SocketServer
 {
     public enum NotificationsType
     {
-        RegNodeJoinedNotif=1,
+        RegAddNotif = 1,
+        RegUpdateNotif,
+        RegRemoveNotif,
+        RegClearNotif,
+        RegCustomNotif,
+        RegNodeJoinedNotif,
         RegNodeLeftNotif,
+        RegCacheStoppedNotif,
         RegHashmapChangedNotif,
-        UnregNodeJoinedNotif=100,
+        UnregAddNotif = 100,
+        UnregUpdateNotif,
+        UnregRemoveNotif,
+        UnregClearNotif,
+        UnregCustomNotif,
+        UnregNodeJoinedNotif,
         UnregNodeLeftNotif,
-        UnregHashmapChangedNotif
+        UnregCacheStoppedNotif,
+        UnregHashmapChangedNotif,
+        RegisterClientConnectivityNotif,
+        UnregisterClientConnectivityNotif,
     }
 }

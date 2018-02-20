@@ -13,15 +13,13 @@
 // limitations under the License.
 
 using System;
+using System.Collections.Generic;
 using System.IO;
-using Alachisoft.NCache.Web.Caching;
+using System.Net;
 using Alachisoft.NCache.Web.Communication;
-using Alachisoft.NCache.Runtime.Exceptions;
 using Alachisoft.NCache.Web.Caching.Util;
-using Alachisoft.NCache.Caching.AutoExpiration;
 using System.Collections;
 using Alachisoft.NCache.Common.Net;
-using Alachisoft.NCache.Common.DataStructures;
 
 namespace Alachisoft.NCache.Web.Command
 {
@@ -44,9 +42,39 @@ namespace Alachisoft.NCache.Web.Command
         internal protected bool isAsync = false;
         internal protected bool asyncCallbackSpecified = false;
         internal protected string ipAddress = string.Empty;
+        protected internal bool inquiryEnabled;
 
         protected Alachisoft.NCache.Common.Protobuf.Command _command;
-       
+
+        protected int _commandID = 0;
+
+        public int CommandID
+        {
+            get { return _commandID; }
+            set { _commandID = value; }
+        }
+
+        private Address _finalDestinationAddress;
+
+        /// <summary>
+        /// Final address where this command has been sent. Set after response for that command has been initialized
+        /// </summary>
+        public Address FinalDestinationAddress
+        {
+            get { return _finalDestinationAddress; }
+            set { _finalDestinationAddress = value; }
+        }
+
+        private bool _isRetry;
+
+        /// <summary>
+        /// Indicates wehter the command is a retry command (if first attempt has been failed)
+        /// </summary>
+        public bool IsRetry
+        {
+            get { return _isRetry; }
+            set { _isRetry = value; }
+        }
 
         private Request _parent;
 
@@ -56,15 +84,15 @@ namespace Alachisoft.NCache.Web.Command
             set { _parent = value; }
         }
 
-        internal abstract RequestType CommandRequestType
+        internal bool IsInternalCommand
         {
-            get;
+            get { return CommandRequestType == RequestType.InternalCommand; }
         }
 
-        internal abstract CommandType CommandType
-        {
-            get;
-        }
+
+        internal abstract RequestType CommandRequestType { get; }
+
+        internal abstract CommandType CommandType { get; }
 
         internal Alachisoft.NCache.Common.Protobuf.Command.Type Type
         {
@@ -77,16 +105,24 @@ namespace Alachisoft.NCache.Web.Command
             set { requestId = value; }
         }
 
+        internal virtual bool SupportsAacknowledgement
+        {
+            get { return true; }
+        }
+
+
         internal protected long ClientLastViewId
         {
             get { return this.clientLastViewId; }
             set { this.clientLastViewId = value; }
         }
+
         internal protected string IntendedRecipient
         {
             get { return this.intendedRecipient; }
             set { this.intendedRecipient = value; }
         }
+
         internal protected CommandResponse Response
         {
             get { return _result; }
@@ -116,14 +152,33 @@ namespace Alachisoft.NCache.Web.Command
             get { return name; }
         }
 
+        /// <summary>
+        /// Indicates of command is safe to reexecute if failed while executing.
+        /// Safe commands return same result if reexecuted with same parameters
+        /// </summary>
+        internal virtual bool IsSafe
+        {
+            get { return true; }
+        }
+
+        /// <summary>
+        /// Indicades if the command is a key-based operation.
+        /// This flags helps in sending command to appropriate server if more than one servers are available.
+        /// </summary>
+
+        internal virtual bool IsKeyBased
+        {
+            get { return true; }
+        }
+
         internal protected void ConstructCommand(string cmdString, byte[] data)
         {
             byte[] command = HelperFxn.ToBytes(cmdString);
-            _commandBytes = new byte[2 * (Connection.CmdSizeHolderBytesCount + Connection.ValSizeHolderBytesCount) + command.Length + data.Length];
+            _commandBytes = new byte[2 * (Connection.CmdSizeHolderBytesCount + Connection.ValSizeHolderBytesCount) +
+                                     command.Length + data.Length];
 
             byte[] commandSize = HelperFxn.ToBytes(command.Length.ToString());
             byte[] dataSize = HelperFxn.ToBytes(data.Length.ToString());
-
 
             commandSize.CopyTo(_commandBytes, 0);
             dataSize.CopyTo(_commandBytes, Connection.CmdSizeHolderBytesCount);
@@ -137,32 +192,50 @@ namespace Alachisoft.NCache.Web.Command
 
         protected abstract void CreateCommand();
 
-        public virtual byte[] ToByte()
+        internal virtual byte[] ToByte(long acknowledgement, bool inquiryEnabledOnConnection)
         {
-            if (_commandBytes == null)
+            if (_commandBytes == null || inquiryEnabled != inquiryEnabledOnConnection)
             {
+                inquiryEnabled = inquiryEnabledOnConnection;
                 this.CreateCommand();
+                _command.commandID = this._commandID;
                 this.SerializeCommand();
             }
+
+            if (SupportsAacknowledgement && inquiryEnabled)
+            {
+                byte[] acknowledgementBuffer = HelperFxn.ToBytes(acknowledgement.ToString());
+                MemoryStream stream = new MemoryStream(_commandBytes, 0, _commandBytes.Length, true, true);
+                stream.Seek(0, SeekOrigin.Begin);
+                stream.Write(acknowledgementBuffer, 0, acknowledgementBuffer.Length);
+                _commandBytes = stream.GetBuffer();
+            }
+
             return _commandBytes;
         }
 
-        public virtual void SerializeCommand()
+        protected virtual void SerializeCommand()
         {
             using (MemoryStream stream = new MemoryStream())
             {
-                ///Write discarding buffer that socketserver reads
-                byte[] discardingBuffer = new byte[20];
-                stream.Write(discardingBuffer, 0, discardingBuffer.Length);
+                //Writes a section for acknowledgment buffer.
+                byte[] acknowledgementBuffer =
+                    (SupportsAacknowledgement && inquiryEnabled) ? new byte[20] : new byte[0];
+                stream.Write(acknowledgementBuffer, 0, acknowledgementBuffer.Length);
 
+                //Writes a section for the command size.
                 byte[] size = new byte[Connection.CmdSizeHolderBytesCount];
                 stream.Write(size, 0, size.Length);
 
-                ProtoBuf.Serializer.Serialize<Alachisoft.NCache.Common.Protobuf.Command>(stream, this._command);
-                int messageLen = (int)stream.Length - (size.Length + discardingBuffer.Length);
+                //Writes the command.
+                ProtoBuf.Serializer.Serialize(stream, _command);
+
+                int messageLen = (int) stream.Length - (size.Length + acknowledgementBuffer.Length);
 
                 size = HelperFxn.ToBytes(messageLen.ToString());
-                stream.Position = discardingBuffer.Length;
+
+                stream.Position = 0;
+                stream.Position += acknowledgementBuffer.Length;
                 stream.Write(size, 0, size.Length);
 
                 this._commandBytes = stream.ToArray();
@@ -170,11 +243,66 @@ namespace Alachisoft.NCache.Web.Command
             }
         }
 
-        public void ResetBytes()
+        /// <summary>
+        /// Resets command by resetting command bytes and assigns a new commandID
+        /// </summary>
+        public void ResetCommand()
         {
-            _commandBytes = null;
+            this._commandBytes = null;
+            this._commandID = this._parent.GetNextCommandID();
         }
 
+        /// <summary>
+        /// Create a dedicated command by merging all commands provided to the function
+        /// </summary>
+        /// <param name="commands">Commands needed to be merged to create dedicated command</param>
+        /// <returns>Dedicated command</returns>
+        public static CommandBase GetDedicatedCommand(IEnumerable<CommandBase> commands)
+        {
+            /*
+             *
+             * This function will be called only for bulk commands
+             * If commands are non-key commands, each command in passed commands will be the same,
+             * If commands are key based bulk command, each command will have seperate set of keys. Need to merge all keys to create a dedicated command.
+             */
+            CommandBase dedicatedCommand = null;
+            List<CommandBase> commandsList = new List<CommandBase>(commands);
+            dedicatedCommand = commandsList[0].GetMergedCommand(commandsList);
+            dedicatedCommand._commandBytes = null;
+            dedicatedCommand.ClientLastViewId = Broker.ForcedViewId;
+            dedicatedCommand.Parent.Commands.Clear();
+            dedicatedCommand.Parent.AddCommand(new Address(IPAddress.Any, 9800), dedicatedCommand);
+            return dedicatedCommand;
+        }
+
+        protected virtual CommandBase GetMergedCommand(List<CommandBase> commands)
+        {
+            return commands != null && commands.Count > 0 ? commands[0] : null;
+        }
+
+        protected string RebuildCommandWithTagInfo(Hashtable tagInfo)
+        {
+            System.Text.StringBuilder cmdString = new System.Text.StringBuilder();
+
+            cmdString.AppendFormat("{0}\"", tagInfo["type"] as string);
+            ArrayList tagsList = tagInfo["tags-list"] as ArrayList;
+            cmdString.AppendFormat("{0}\"", tagsList.Count);
+
+            IEnumerator tagsEnum = tagsList.GetEnumerator();
+            while (tagsEnum.MoveNext())
+            {
+                if (tagsEnum.Current != null)
+                {
+                    cmdString.AppendFormat("{0}\"", tagsEnum.Current);
+                }
+                else
+                {
+                    cmdString.AppendFormat("{0}\"", NC_NULL_VAL);
+                }
+            }
+
+            return cmdString.ToString();
+        }
 
         protected string RebuildCommandWithQueryInfo(Hashtable queryInfo)
         {
@@ -184,18 +312,18 @@ namespace Alachisoft.NCache.Web.Command
             while (queryInfoDic.MoveNext())
             {
                 cmdString.AppendFormat("{0}\"", queryInfoDic.Key);
-                ArrayList values = (ArrayList)queryInfoDic.Value;
+                ArrayList values = (ArrayList) queryInfoDic.Value;
                 cmdString.AppendFormat("{0}\"", values.Count);
 
                 IEnumerator valuesEnum = values.GetEnumerator();
                 while (valuesEnum.MoveNext())
                 {
-                    if (valuesEnum.Current != null) // (Remove confusion between a null value and empty value
+                    if (valuesEnum.Current != null)
                     {
                         if (valuesEnum.Current is System.DateTime)
                         {
                             System.Globalization.CultureInfo enUs = new System.Globalization.CultureInfo("en-US");
-                            cmdString.AppendFormat("{0}\"", ((DateTime)valuesEnum.Current).ToString(enUs));
+                            cmdString.AppendFormat("{0}\"", ((DateTime) valuesEnum.Current).ToString(enUs));
                         }
                         else
                             cmdString.AppendFormat("{0}\"", valuesEnum.Current);
@@ -206,6 +334,7 @@ namespace Alachisoft.NCache.Web.Command
                     }
                 }
             }
+
             return cmdString.ToString();
         }
     }

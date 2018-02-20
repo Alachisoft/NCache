@@ -82,7 +82,6 @@ namespace Alachisoft.NCache.Parser
 			}
 		}
 
-		///
 		internal bool ContainsOneNonTerminal
 		{
 			get 
@@ -111,7 +110,6 @@ namespace Alachisoft.NCache.Parser
 		
 		// equals ?
 
-		///
 		internal void AddItem(Symbol p_symbol)
 		{
 			m_ruleSymbols.Add(p_symbol);

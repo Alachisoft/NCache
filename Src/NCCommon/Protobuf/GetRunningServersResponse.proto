@@ -5,5 +5,4 @@ package Alachisoft.NCache.Common.Protobuf;
 
 message GetRunningServersResponse {
 	repeated KeyValuePair keyValuePair = 1;
-	repeated KeyValuePair connectedClients = 2;
 }

@@ -11,10 +11,8 @@
 // WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
 // See the License for the specific language governing permissions and
 // limitations under the License.
-
 using System;
 using System.Collections.Generic;
-using System.Linq;
 using System.Text;
 using Alachisoft.NCache.Runtime.Serialization;
 using Alachisoft.NCache.Common.DataStructures;
@@ -33,14 +31,19 @@ namespace Alachisoft.NCache.Common.DataReader
         private bool _getData = true;
         private List<OrderByArgument> _orderbyArguments = null;
         private bool _isGrouped = false;
-        private string _clientID = null;
         private int _nextIndex = 0;
-
+        private string _clientID = null;
+        private DateTime _lastAccessTime;
         public ReaderResultSet() { }
         public IRecordSet RecordSet
         {
             get { return _recordSet; }
             set { _recordSet = value; }
+        }
+
+        public string ClientID {
+            get { return _clientID; }
+            set { _clientID = value; }
         }
 
         public string NodeAddress
@@ -55,12 +58,6 @@ namespace Alachisoft.NCache.Common.DataReader
             set { _readerId = value; }
         }
 
-        public string ClientID
-        {
-            get { return _clientID; }
-            set { _clientID = value; }
-        }
-
         public int ChunkSize
         {
             get { return _chunkSize; }
@@ -71,8 +68,6 @@ namespace Alachisoft.NCache.Common.DataReader
             get { return _getData; }
             set { _getData = value; }
         }
-        
-
         public List<OrderByArgument> OrderByArguments
         {
             get { return _orderbyArguments; }
@@ -89,6 +84,12 @@ namespace Alachisoft.NCache.Common.DataReader
             get { return _nextIndex; }
             set { _nextIndex = value; }
         }
+        public DateTime LastAccessTime
+        {
+            get { return _lastAccessTime; }
+            set { _lastAccessTime = value; }
+        } 
+        
 
         #region---------------ICompactSerializable------------------------
         public void Deserialize(Runtime.Serialization.IO.CompactReader reader)
@@ -108,6 +109,7 @@ namespace Alachisoft.NCache.Common.DataReader
                 }
             }
             _isGrouped = reader.ReadBoolean();
+            _lastAccessTime = (DateTime)reader.ReadObject();
         }
 
         public void Serialize(Runtime.Serialization.IO.CompactWriter writer)
@@ -126,6 +128,7 @@ namespace Alachisoft.NCache.Common.DataReader
                 }
             }
             writer.Write(_isGrouped);
+            writer.WriteObject(_lastAccessTime);
         }
         #endregion
     }

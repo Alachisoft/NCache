@@ -292,56 +292,7 @@ namespace Alachisoft.NCache.Common.DataStructures.Clustered
         {
             InsertRange(_size, c);
         }
-        //   Usman: Search requires sort and sort is a bit problem at the moment, given our whole clustered array scenario.
-
-        //// Searches a section of the list for a given element using a binary search
-        //// algorithm. Elements of the list are compared to the search value using
-        //// the given IComparer interface. If comparer is null, elements of
-        //// the list are compared to the search value using the IComparable
-        //// interface, which in that case must be implemented by all elements of the
-        //// list and the given search value. This method assumes that the given
-        //// section of the list is already sorted; if this is not the case, the
-        //// result will be incorrect.
-        ////
-        //// The method returns the index of the given value in the list. If the
-        //// list does not contain the given value, the method returns a negative
-        //// integer. The bitwise complement operator (~) can be applied to a
-        //// negative result to produce the index of the first element (if any) that
-        //// is larger than the given search value. This is also the index at which
-        //// the search value should be inserted into the list in order for the list
-        //// to remain sorted.
-        //// 
-        //// The method uses the Array.BinarySearch method to perform the
-        //// search.
-        //// 
-        //public virtual int BinarySearch(int index, int count, Object value, IComparer comparer)
-        //{
-        //    if (index < 0)
-        //        throw new ArgumentOutOfRangeException("index", ResourceHelper.GetResourceString("ArgumentOutOfRange_NeedNonNegNum"));
-        //    if (count < 0)
-        //        throw new ArgumentOutOfRangeException("count", ResourceHelper.GetResourceString("ArgumentOutOfRange_NeedNonNegNum"));
-        //    if (_size - index < count)
-        //        throw new ArgumentException(ResourceHelper.GetResourceString("Argument_InvalidOffLen"));
-        //    Contract.Ensures(Contract.Result<int>() < Count);
-        //    Contract.Ensures(Contract.Result<int>() < index + count);
-        //    Contract.EndContractBlock();
-
-        //    return Array.BinarySearch((Array)_items, index, count, value, comparer);
-        //}
-
-        //public virtual int BinarySearch(Object value)
-        //{
-        //    Contract.Ensures(Contract.Result<int>() < Count);
-        //    return BinarySearch(0, Count, value, null);
-        //}
-
-        //public virtual int BinarySearch(Object value, IComparer comparer)
-        //{
-        //    Contract.Ensures(Contract.Result<int>() < Count);
-        //    return BinarySearch(0, Count, value, comparer);
-        //}
-
-
+       
         // Clears the contents of ArrayList.
         public virtual void Clear()
         {
@@ -373,7 +324,7 @@ namespace Alachisoft.NCache.Common.DataStructures.Clustered
         // item.Equals().
         //
         // Changelog:
-        // Usman: Optimized for clustered array through its internal calls.
+        // Optimized for clustered array through its internal calls.
         public virtual bool Contains(Object item)
         {
             int i = _items.IndexOf(item);
@@ -393,8 +344,7 @@ namespace Alachisoft.NCache.Common.DataStructures.Clustered
         // Copies this ArrayList into array, which must be of a 
         // compatible array type.  
         //
-        // Changelog:
-        // Usman: Optimized for clustered array through its internal calls.
+        // Optimized for clustered array through its internal calls.
         public virtual void CopyTo(Array array, int arrayIndex)
         {
             if ((array != null) && (array.Rank != 1))
@@ -535,9 +485,7 @@ namespace Alachisoft.NCache.Common.DataStructures.Clustered
         // This method uses the Array.IndexOf method to perform the
         // search.
         //
-        // Changelog:
-        // Usman: Modified for clustered array through its internal calls.
-
+        
         public virtual int IndexOf(Object value, int startIndex)
         {
             if (startIndex > _size)
@@ -560,9 +508,7 @@ namespace Alachisoft.NCache.Common.DataStructures.Clustered
         // 
         // This method uses the Array.IndexOf method to perform the
         // search.
-        //
-        // Changelog:
-        // Usman: Modified for clustered array through its internal calls.
+       
         public virtual int IndexOf(Object value, int startIndex, int count)
         {
             if (startIndex > _size)
@@ -610,7 +556,7 @@ namespace Alachisoft.NCache.Common.DataStructures.Clustered
             if (c == null)
                 throw new ArgumentNullException("c", ResourceHelper.GetResourceString("ArgumentNull_Collection"));
             if (index < 0 || index > _size) throw new ArgumentOutOfRangeException("index", ResourceHelper.GetResourceString("ArgumentOutOfRange_Index"));
-            //Contract.Ensures(Count == Contract.OldValue(Count) + c.Count);
+           
 #if DEBUG
 
             Contract.EndContractBlock();
@@ -753,10 +699,9 @@ namespace Alachisoft.NCache.Common.DataStructures.Clustered
         // 
         public virtual void RemoveAt(int index)
         {
-            if (index < 0 /*|| index >= _size*/) throw new ArgumentOutOfRangeException("index", ResourceHelper.GetResourceString("ArgumentOutOfRange_Index"));
+            if (index < 0) throw new ArgumentOutOfRangeException("index", ResourceHelper.GetResourceString("ArgumentOutOfRange_Index"));
 #if DEBUG
             Contract.Ensures(Count >= 0);
-            //Contract.Ensures(Count == Contract.OldValue(Count) - 1);
             Contract.EndContractBlock();
 #endif
             _size--;
@@ -812,34 +757,6 @@ namespace Alachisoft.NCache.Common.DataStructures.Clustered
             return list;
         }
 
-        // Usman: Not sure if reversal is necessary
-        // Reverses the elements in this list.
-        //public virtual void Reverse()
-        //{
-        //    Reverse(0, Count);
-        //}
-
-        // Reverses the elements in a range of this list. Following a call to this
-        // method, an element in the range given by index and count
-        // which was previously located at index i will now be located at
-        // index index + (index + count - i - 1).
-        // 
-        // This method uses the Array.Reverse method to reverse the
-        // elements.
-        // 
-        //public virtual void Reverse(int index, int count)
-        //{
-        //    if (index < 0)
-        //        throw new ArgumentOutOfRangeException("index", ResourceHelper.GetResourceString("ArgumentOutOfRange_NeedNonNegNum"));
-        //    if (count < 0)
-        //        throw new ArgumentOutOfRangeException("count", ResourceHelper.GetResourceString("ArgumentOutOfRange_NeedNonNegNum"));
-        //    if (_size - index < count)
-        //        throw new ArgumentException(ResourceHelper.GetResourceString("Argument_InvalidOffLen"));
-        //    Contract.EndContractBlock();
-        //    Array.Reverse(_items, index, count);
-        //    _version++;
-        //}
-
         // Sets the elements starting at the given index to the elements of the
         // given collection.
         //
@@ -873,44 +790,6 @@ namespace Alachisoft.NCache.Common.DataStructures.Clustered
 #endif
             return new Range(this, index, count);
         }
-
-
-        // Usman: Need an algorithm to sort clustered data.
-        // Sorts the elements in this list.  Uses the default comparer and 
-        // Array.Sort.
-        //public virtual void Sort()
-        //{
-        //    Sort(0, Count, Comparer.Default);
-        //}
-
-        // Sorts the elements in this list.  Uses Array.Sort with the
-        // provided comparer.
-        //public virtual void Sort(IComparer comparer)
-        //{
-        //    Sort(0, Count, comparer);
-        //}
-
-        // Sorts the elements in a section of this list. The sort compares the
-        // elements to each other using the given IComparer interface. If
-        // comparer is null, the elements are compared to each other using
-        // the IComparable interface, which in that case must be implemented by all
-        // elements of the list.
-        // 
-        // This method uses the Array.Sort method to sort the elements.
-        // 
-        //public virtual void Sort(int index, int count, IComparer comparer)
-        //{
-        //    if (index < 0)
-        //        throw new ArgumentOutOfRangeException("index", ResourceHelper.GetResourceString("ArgumentOutOfRange_NeedNonNegNum"));
-        //    if (count < 0)
-        //        throw new ArgumentOutOfRangeException("count", ResourceHelper.GetResourceString("ArgumentOutOfRange_NeedNonNegNum"));
-        //    if (_size - index < count)
-        //        throw new ArgumentException(ResourceHelper.GetResourceString("Argument_InvalidOffLen"));
-        //    Contract.EndContractBlock();
-
-        //    Array.Sort(_items, index, count, comparer);
-        //    _version++;
-        //}
 
         // Returns a thread-safe wrapper around an IList.
         //
@@ -1068,36 +947,6 @@ namespace Alachisoft.NCache.Common.DataStructures.Clustered
             {
                 InsertRange(Count, c);
             }
-
-            // Other overloads with automatically work
-            //public override int BinarySearch(int index, int count, Object value, IComparer comparer)
-            //{
-            //    if (index < 0 || count < 0)
-            //        throw new ArgumentOutOfRangeException((index < 0 ? "index" : "count"), ResourceHelper.GetResourceString("ArgumentOutOfRange_NeedNonNegNum"));
-            //    if (this.Count - index < count)
-            //        throw new ArgumentException(ResourceHelper.GetResourceString("Argument_InvalidOffLen"));
-            //    Contract.EndContractBlock();
-            //    if (comparer == null)
-            //        comparer = Comparer.Default;
-
-            //    int lo = index;
-            //    int hi = index + count - 1;
-            //    int mid;
-            //    while (lo <= hi)
-            //    {
-            //        mid = (lo + hi) / 2;
-            //        int r = comparer.Compare(value, _list[mid]);
-            //        if (r == 0)
-            //            return mid;
-            //        if (r < 0)
-            //            hi = mid - 1;
-            //        else
-            //            lo = mid + 1;
-            //    }
-            //    // return bitwise complement of the first element greater than value.
-            //    // Since hi is less than lo now, ~lo is the correct item.
-            //    return ~lo;
-            //}
 
             public override void Clear()
             {
@@ -1311,25 +1160,6 @@ namespace Alachisoft.NCache.Common.DataStructures.Clustered
                 }
             }
 
-            //public override void Reverse(int index, int count)
-            //{
-            //    if (index < 0 || count < 0)
-            //        throw new ArgumentOutOfRangeException((index < 0 ? "index" : "count"), ResourceHelper.GetResourceString("ArgumentOutOfRange_NeedNonNegNum"));
-            //    Contract.EndContractBlock();
-            //    if (_list.Count - index < count)
-            //        throw new ArgumentException(ResourceHelper.GetResourceString("Argument_InvalidOffLen"));
-
-            //    int i = index;
-            //    int j = index + count - 1;
-            //    while (i < j)
-            //    {
-            //        Object tmp = _list[i];
-            //        _list[i++] = _list[j];
-            //        _list[j--] = tmp;
-            //    }
-            //    _version++;
-            //}
-
             public override void SetRange(int index, ICollection c)
             {
                 if (c == null)
@@ -1367,23 +1197,6 @@ namespace Alachisoft.NCache.Common.DataStructures.Clustered
                     throw new ArgumentException(ResourceHelper.GetResourceString("Argument_InvalidOffLen"));
                 return new Range(this, index, count);
             }
-
-            //public override void Sort(int index, int count, IComparer comparer)
-            //{
-            //    if (index < 0 || count < 0)
-            //        throw new ArgumentOutOfRangeException((index < 0 ? "index" : "count"), ResourceHelper.GetResourceString("ArgumentOutOfRange_NeedNonNegNum"));
-            //    Contract.EndContractBlock();
-            //    if (_list.Count - index < count)
-            //        throw new ArgumentException(ResourceHelper.GetResourceString("Argument_InvalidOffLen"));
-
-            //    Object[] array = new Object[count];
-            //    CopyTo(index, array, 0, count);
-            //    Array.Sort(array, 0, count, comparer);
-            //    for (int i = 0; i < count; i++)
-            //        _list[i + index] = array[i];
-
-            //    _version++;
-            //}
 
 
             public override Object[] ToArray()
@@ -1577,31 +1390,7 @@ namespace Alachisoft.NCache.Common.DataStructures.Clustered
                 }
             }
 
-            //public override int BinarySearch(Object value)
-            //{
-            //    lock (_root)
-            //    {
-            //        return _list.BinarySearch(value);
-            //    }
-            //}
-
-            //public override int BinarySearch(Object value, IComparer comparer)
-            //{
-            //    lock (_root)
-            //    {
-            //        return _list.BinarySearch(value, comparer);
-            //    }
-            //}
-
-            //[SuppressMessage("Microsoft.Contracts", "CC1055")]  // Skip extra error checking to avoid *potential* AppCompat problems.
-            //public override int BinarySearch(int index, int count, Object value, IComparer comparer)
-            //{
-            //    lock (_root)
-            //    {
-            //        return _list.BinarySearch(index, count, value, comparer);
-            //    }
-            //}
-
+       
             public override void Clear()
             {
                 lock (_root)
@@ -1763,13 +1552,7 @@ namespace Alachisoft.NCache.Common.DataStructures.Clustered
             }
 
             [SuppressMessage("Microsoft.Contracts", "CC1055")]  // Skip extra error checking to avoid *potential* AppCompat problems.
-            //public override void Reverse(int index, int count)
-            //{
-            //    lock (_root)
-            //    {
-            //        _list.Reverse(index, count);
-            //    }
-            //}
+          
 
             [SuppressMessage("Microsoft.Contracts", "CC1055")]  // Skip extra error checking to avoid *potential* AppCompat problems.
             public override void SetRange(int index, ICollection c)
@@ -1788,31 +1571,6 @@ namespace Alachisoft.NCache.Common.DataStructures.Clustered
                     return _list.GetRange(index, count);
                 }
             }
-
-            //public override void Sort()
-            //{
-            //    lock (_root)
-            //    {
-            //        _list.Sort();
-            //    }
-            //}
-
-            //public override void Sort(IComparer comparer)
-            //{
-            //    lock (_root)
-            //    {
-            //        _list.Sort(comparer);
-            //    }
-            //}
-
-            //[SuppressMessage("Microsoft.Contracts", "CC1055")]  // Skip extra error checking to avoid *potential* AppCompat problems.
-            //public override void Sort(int index, int count, IComparer comparer)
-            //{
-            //    lock (_root)
-            //    {
-            //        _list.Sort(index, count, comparer);
-            //    }
-            //}
 
             public override Object[] ToArray()
             {
@@ -2124,11 +1882,7 @@ namespace Alachisoft.NCache.Common.DataStructures.Clustered
             }
 
             [SuppressMessage("Microsoft.Contracts", "CC1055")]  // Skip extra error checking to avoid *potential* AppCompat problems.
-            //public override int BinarySearch(int index, int count, Object value, IComparer comparer)
-            //{
-            //    return _list.BinarySearch(index, count, value, comparer);
-            //}
-
+      
             public override int Capacity
             {
                 get { return _list.Capacity; }
@@ -2255,19 +2009,6 @@ namespace Alachisoft.NCache.Common.DataStructures.Clustered
                 return new Range(this, index, count);
             }
 
-            //[SuppressMessage("Microsoft.Contracts", "CC1055")]  // Skip extra error checking to avoid *potential* AppCompat problems.
-            //public override void Reverse(int index, int count)
-            //{
-            //    _list.Reverse(index, count);
-            //    _version = _list._version;
-            //}
-
-            //[SuppressMessage("Microsoft.Contracts", "CC1055")]  // Skip extra error checking to avoid *potential* AppCompat problems.
-            //public override void Sort(int index, int count, IComparer comparer)
-            //{
-            //    _list.Sort(index, count, comparer);
-            //    _version = _list._version;
-            //}
 
             public override Object[] ToArray()
             {
@@ -2451,12 +2192,7 @@ namespace Alachisoft.NCache.Common.DataStructures.Clustered
                 throw new NotSupportedException(ResourceHelper.GetResourceString("NotSupported_ReadOnlyCollection"));
             }
 
-            //[SuppressMessage("Microsoft.Contracts", "CC1055")]  // Skip extra error checking to avoid *potential* AppCompat problems.
-            //public override int BinarySearch(int index, int count, Object value, IComparer comparer)
-            //{
-            //    return _list.BinarySearch(index, count, value, comparer);
-            //}
-
+           
 
             public override int Capacity
             {
@@ -2582,18 +2318,6 @@ namespace Alachisoft.NCache.Common.DataStructures.Clustered
 #endif
                 return new Range(this, index, count);
             }
-
-            //[SuppressMessage("Microsoft.Contracts", "CC1055")]  // Skip extra error checking to avoid *potential* AppCompat problems.
-            //public override void Reverse(int index, int count)
-            //{
-            //    throw new NotSupportedException(ResourceHelper.GetResourceString("NotSupported_ReadOnlyCollection"));
-            //}
-
-            //[SuppressMessage("Microsoft.Contracts", "CC1055")]  // Skip extra error checking to avoid *potential* AppCompat problems.
-            //public override void Sort(int index, int count, IComparer comparer)
-            //{
-            //    throw new NotSupportedException(ResourceHelper.GetResourceString("NotSupported_ReadOnlyCollection"));
-            //}
 
             public override Object[] ToArray()
             {
@@ -2740,21 +2464,6 @@ namespace Alachisoft.NCache.Common.DataStructures.Clustered
                     _baseSize += count;
                 }
             }
-
-            // Other overloads with automatically work 
-            //public override int BinarySearch(int index, int count, Object value, IComparer comparer)
-            //{
-            //    if (index < 0 || count < 0)
-            //        throw new ArgumentOutOfRangeException((index < 0 ? "index" : "count"), ResourceHelper.GetResourceString("ArgumentOutOfRange_NeedNonNegNum"));
-            //    if (_baseSize - index < count)
-            //        throw new ArgumentException(ResourceHelper.GetResourceString("Argument_InvalidOffLen"));
-            //    Contract.EndContractBlock();
-            //    InternalUpdateRange();
-
-            //    int i = _baseList.BinarySearch(_baseIndex + index, count, value, comparer);
-            //    if (i >= 0) return i - _baseIndex;
-            //    return i + _baseIndex;
-            //}
 
             public override int Capacity
             {
@@ -3047,19 +2756,6 @@ namespace Alachisoft.NCache.Common.DataStructures.Clustered
                 }
             }
 
-            //public override void Reverse(int index, int count)
-            //{
-            //    if (index < 0 || count < 0)
-            //        throw new ArgumentOutOfRangeException((index < 0 ? "index" : "count"), ResourceHelper.GetResourceString("ArgumentOutOfRange_NeedNonNegNum"));
-            //    if (_baseSize - index < count)
-            //        throw new ArgumentException(ResourceHelper.GetResourceString("Argument_InvalidOffLen"));
-            //    Contract.EndContractBlock();
-
-            //    InternalUpdateRange();
-            //    _baseList.Reverse(_baseIndex + index, count);
-            //    InternalUpdateVersion();
-            //}
-
             [SuppressMessage("Microsoft.Contracts", "CC1055")]  // Skip extra error checking to avoid *potential* AppCompat problems.
             public override void SetRange(int index, ICollection c)
             {
@@ -3071,20 +2767,7 @@ namespace Alachisoft.NCache.Common.DataStructures.Clustered
                     InternalUpdateVersion();
                 }
             }
-
-            //public override void Sort(int index, int count, IComparer comparer)
-            //{
-            //    if (index < 0 || count < 0)
-            //        throw new ArgumentOutOfRangeException((index < 0 ? "index" : "count"), ResourceHelper.GetResourceString("ArgumentOutOfRange_NeedNonNegNum"));
-            //    if (_baseSize - index < count)
-            //        throw new ArgumentException(ResourceHelper.GetResourceString("Argument_InvalidOffLen"));
-            //    Contract.EndContractBlock();
-
-            //    InternalUpdateRange();
-            //    _baseList.Sort(_baseIndex + index, count, comparer);
-            //    InternalUpdateVersion();
-            //}
-
+            
             public override Object this[int index]
             {
                 get
@@ -3109,19 +2792,7 @@ namespace Alachisoft.NCache.Common.DataStructures.Clustered
                 return list.ToArray();
             }
 
-            //[SecuritySafeCritical]
-            //public override Array ToArray(Type type)
-            //{
-            //    if (type == null)
-            //        throw new ArgumentNullException("type");
-            //    Contract.EndContractBlock();
-
-            //    InternalUpdateRange();
-            //    Array array = Array.UnsafeCreateInstance(type, _baseSize);
-            //    _baseList.CopyTo(_baseIndex, array, 0, _baseSize);
-            //    return array;
-            //}
-
+         
             public override void TrimToSize()
             {
                 throw new NotSupportedException(ResourceHelper.GetResourceString("NotSupported_RangeCollection"));

@@ -13,23 +13,19 @@
 // limitations under the License.
 
 using System;
-using System.Text;
 using System.Collections;
-using System.Reflection;
-using Alachisoft.NCache.Serialization.Formatters;
+using Alachisoft.NCache.Common.DataStructures.Clustered;
 using Alachisoft.NCache.Common.Threading;
 using Alachisoft.NCache.Common.Util;
-using Alachisoft.NCache.Caching.Queries;
-using Alachisoft.NCache.Serialization;
-using Alachisoft.NCache.Serialization.Surrogates;
 using System.Collections.Generic;
-using Runtime = Alachisoft.NCache.Runtime;
 using Alachisoft.NCache.Common;
 
 namespace Alachisoft.NCache.Caching.Queries
 {
-    internal class QueryIndexManager : ISizableIndex
+    internal class QueryIndexManager:ISizableIndex
     {
+        string TAG_INDEX_KEY = "$Tag$";
+        string NAMED_TAG_PREFIX = "$NamedTagAttribute$";
         static bool disableException = false;
         //in case of DisableException is true, exception will not be thrown, and return new attribute index. 
 
@@ -37,10 +33,7 @@ namespace Alachisoft.NCache.Caching.Queries
         {
             get
             {
-                String str = System.Configuration.ConfigurationSettings.AppSettings["NCacheServer.DisableIndexNotDefinedException"];
-                if (!string.IsNullOrEmpty(str))
-                    disableException = Convert.ToBoolean(str);
-
+                disableException = ServiceConfiguration.DisableIndexNotDefinedException;
                 return disableException;
             }
         }
@@ -87,21 +80,25 @@ namespace Alachisoft.NCache.Caching.Queries
 
         private AsyncProcessor _asyncProcessor;
         private bool _indexForAll;
-        private Topologies.Local.IndexedLocalCache _cache;
+        protected Topologies.Local.IndexedLocalCache _cache;
         private IDictionary _props;
         protected string _cacheName;
 
         protected TypeInfoMap _typeMap;
-        protected Hashtable _indexMap;
+        protected HashVector _indexMap;
+        protected Dictionary<String, AttributeIndex> _sharedAttributeIndex;
         protected long _queryIndexMemorySize;
+
+              
 
         public QueryIndexManager(IDictionary props, Topologies.Local.IndexedLocalCache cache, string cacheName)
         {
-            _indexMap = new Hashtable();
+            _indexMap = new HashVector();
             _cache = cache;
             _props = props;
             _cacheName = cacheName;
         }
+        
 
         public TypeInfoMap TypeInfoMap
         {
@@ -118,13 +115,262 @@ namespace Alachisoft.NCache.Caching.Queries
             get { return _indexForAll; }
         }
 
-        public Hashtable IndexMap
+        public HashVector IndexMap
         {
             get { return _indexMap; }
         }
 
-        internal virtual bool Initialize()
+        public Boolean CheckForSameClassNames(Hashtable knownSharedClasses) 
+        {           
+            ICollection coll=knownSharedClasses.Values;
+
+            Array values = Array.CreateInstance(typeof(System.Object), coll.Count);
+            
+            coll.CopyTo(values,0);
+
+            for (int outer = 0; outer < values.Length-1; outer++)
+            {
+                Hashtable outerValue = (Hashtable)values.GetValue(outer);
+                
+                string name = (string)outerValue["name"];
+                string[] temp = name.Split(':');
+                string outerTypeName = temp[0];
+
+                for (int inner = outer + 1; inner < values.Length; inner++)
+                {
+                    Hashtable innerValue = (Hashtable)values.GetValue(inner);
+                    
+                    string name1 = (string)innerValue["name"];
+                    string[] temp1 = name1.Split(':');
+                    string innerTypeName = temp1[0];
+
+                    if (outerTypeName.Equals(innerTypeName))
+                        return false;
+                }
+            }
+                return true;
+        }
+
+        public void createSharedTypeAttributeIndex(Hashtable knownSharedClasses, Hashtable indexedClasses)
         {
+            Hashtable commonRBStore = new Hashtable();
+            Dictionary<string, AttributeIndex> sharedAttributeIndexMap = new Dictionary<string, AttributeIndex>();
+            IEnumerator iteouterSharedTypes = knownSharedClasses.GetEnumerator();
+            Type genericType = typeof(RBStore<>).MakeGenericType(Common.MemoryUtil.GetDataType(Common.MemoryUtil.Net_System_String));
+            IIndexStore store = (IIndexStore)Activator.CreateInstance(genericType, new object[] { _cacheName, Common.MemoryUtil.Net_System_String, this.TAG_INDEX_KEY });
+
+            commonRBStore.Add(this.TAG_INDEX_KEY, store);
+
+            while (iteouterSharedTypes.MoveNext())
+            {
+                DictionaryEntry outerEntry = (DictionaryEntry)iteouterSharedTypes.Current;
+                Hashtable outerEntryValue = (Hashtable)outerEntry.Value;
+                string name = (string)outerEntryValue["name"];
+                string[] temp = StringHelperClass.StringSplit(name, ":", true);
+                string outerTypeName = temp[0];
+                //Create Attribute Index even if not queryindexed
+                sharedAttributeIndexMap.Add(outerTypeName, new AttributeIndex(_cacheName, outerTypeName));
+
+                sharedAttributeIndexMap[outerTypeName].TypeMap = _typeMap;
+
+                if (indexedClasses.Count > 0 && isQueryindexed(outerTypeName, indexedClasses))
+                {
+                    Hashtable outerTypeAttributes = (Hashtable)outerEntryValue["attribute"];
+                    if (outerTypeAttributes != null)
+                    {
+                        IEnumerator iteOuterTypeAttribute = outerTypeAttributes.GetEnumerator();
+                        while (iteOuterTypeAttribute.MoveNext())
+                        {
+                            DictionaryEntry tempEntry = (DictionaryEntry)iteOuterTypeAttribute.Current;
+                            Hashtable outerAttributeMeta = (Hashtable)tempEntry.Value;
+
+                            string outerOrderNo = (string)outerAttributeMeta["order"];
+                            string outerAttributeName = (string)outerAttributeMeta["name"];
+                            if (isQueryindexedAttribute(outerTypeName, outerAttributeName, indexedClasses))
+                            {
+                                IEnumerator iteInnerSharedTypes = knownSharedClasses.GetEnumerator();
+                                while (iteInnerSharedTypes.MoveNext())
+                                {
+                                    DictionaryEntry innerEntry = (DictionaryEntry)iteInnerSharedTypes.Current;
+
+                                    Hashtable innerEntryValue = (Hashtable)innerEntry.Value;
+                                    string name1 = (string)innerEntryValue["name"];
+                                    string[] temp1 = StringHelperClass.StringSplit(name1, ":", true);
+                                    string innerTypeName = temp1[0];
+                                    if (!outerTypeName.Equals(innerTypeName) && isQueryindexed(innerTypeName, indexedClasses))
+                                    {
+                                        Hashtable innerTypeAttributes = (Hashtable)((Hashtable)innerEntry.Value)["attribute"];
+
+                                        IEnumerator iteInnerTypeAttribute = innerTypeAttributes.GetEnumerator();
+                                        while (iteInnerTypeAttribute.MoveNext())
+                                        {
+
+                                            DictionaryEntry tempEntry1 = (DictionaryEntry)iteInnerTypeAttribute.Current;
+                                            Hashtable innerAttributeMeta = (Hashtable)tempEntry1.Value;
+
+                                            string innerorderNo = (string)innerAttributeMeta["order"];
+                                            string innerAttributeName = (string)innerAttributeMeta["name"];
+                                            if (innerorderNo.Equals(outerOrderNo) && isQueryindexedAttribute(innerTypeName, innerAttributeName, indexedClasses))
+                                            {
+                                                if (commonRBStore.ContainsKey(outerTypeName + ":" + outerAttributeName))
+                                                {
+                                                    if (!commonRBStore.ContainsKey(innerTypeName + ":" + innerAttributeName))
+                                                    {
+                                                        IIndexStore commonRB = (IIndexStore)commonRBStore[outerTypeName + ":" + outerAttributeName];
+                                                        commonRBStore.Add(innerTypeName + ":" + innerAttributeName, commonRB);
+                                                    }
+                                                    break;
+                                                }
+                                                else
+                                                {
+                                                    String storeDataType = TypeInfoMap.GetAttributeType(innerTypeName, innerAttributeName);
+                                                    genericType = typeof(RBStore<>).MakeGenericType(Common.MemoryUtil.GetDataType(storeDataType));
+                                                    IIndexStore commonRB = (IIndexStore)Activator.CreateInstance(genericType, new object[] { _cacheName, storeDataType, innerAttributeName });                    
+                        
+                                                    commonRBStore.Add(innerTypeName + ":" + innerAttributeName, commonRB);
+                                                    commonRBStore.Add(outerTypeName + ":" + outerAttributeName, commonRB);
+                                                    break;
+
+                                                }
+                                            }
+                                        }
+                                    }
+                                }
+                            }
+                        }
+                    }
+                }
+            }
+
+
+            if (sharedAttributeIndexMap.Count > 0)
+            {
+                IEnumerator iteSharedIndexMap = sharedAttributeIndexMap.GetEnumerator();
+                while (iteSharedIndexMap.MoveNext())
+                {
+                    List<AttributeIndex> sharedTypes = new List<AttributeIndex>();
+                    System.Collections.Generic.KeyValuePair<string, AttributeIndex> outerEntry = (System.Collections.Generic.KeyValuePair<string, AttributeIndex>)iteSharedIndexMap.Current;
+                    string outerTypeName = (string)outerEntry.Key;
+                    AttributeIndex outerSharedIndex = (AttributeIndex)outerEntry.Value;
+                    foreach (System.Collections.Generic.KeyValuePair<string,AttributeIndex> innerEntry in sharedAttributeIndexMap)
+                    {
+                        string innerTypeName = (string)innerEntry.Key;
+                        if (!innerTypeName.Equals(outerTypeName))
+                        {
+                            AttributeIndex innerSharedIndex = (AttributeIndex)innerEntry.Value;
+                            sharedTypes.Add(innerSharedIndex);
+                        }
+                    }
+                    outerSharedIndex.CommonRBStores = commonRBStore;
+                    _sharedAttributeIndex.Add(outerTypeName, outerSharedIndex);
+                }
+            }
+        }
+
+        public bool isQueryindexed(string typeName, Hashtable indexedClasses)
+        {
+            IEnumerator ie = indexedClasses.GetEnumerator();
+            while (ie.MoveNext())
+            {
+                DictionaryEntry current_1 = (DictionaryEntry)ie.Current;
+                Hashtable innerProps = (Hashtable)((current_1.Value is Hashtable) ? current_1.Value : null);
+                string queryIndexedTypename = "";
+
+                if (innerProps != null)
+                {
+                    queryIndexedTypename = (string)innerProps["id"];
+                    if (typeName.Equals(queryIndexedTypename))
+                    {
+                        return true;
+                    }
+                }
+            }
+            return false;
+        }
+
+        public bool isQueryindexedAttribute(string typeName, string attributeName, Hashtable indexedClasses)
+        {
+            IEnumerator ie = indexedClasses.GetEnumerator();
+            while (ie.MoveNext())
+            {
+                DictionaryEntry current_1 = (DictionaryEntry)ie.Current;
+                Hashtable innerProps = (Hashtable)((current_1.Value is Hashtable) ? current_1.Value : null);
+                string queryIndexedTypeName = "";
+                if (innerProps != null)
+                {
+                    queryIndexedTypeName = (string)innerProps["id"];
+                    if (typeName.Equals(queryIndexedTypeName))
+                    {
+                        ArrayList attribList = new ArrayList();
+                        IEnumerator en = innerProps.GetEnumerator();
+                        while (en.MoveNext())
+                        {
+                            DictionaryEntry current_2 = (DictionaryEntry)en.Current;
+                            Hashtable attribs = (Hashtable)((current_2.Value is Hashtable) ? current_2.Value : null);
+                            if (attribs != null)
+                            {
+                                IEnumerator ide = attribs.GetEnumerator();
+                                while (ide.MoveNext())
+                                {
+                                    DictionaryEntry current_3 = (DictionaryEntry)ide.Current;
+                                    Hashtable attrib = (Hashtable)((current_3.Value is Hashtable) ? current_3.Value : null);
+                                    if (attrib != null)
+                                    {
+                                        string tempAttrib = (string)attrib["id"];
+                                        if (attributeName.Equals(tempAttrib))
+                                        {
+                                            return true;
+                                        }
+                                    }
+                                }
+                            }
+                        }
+                    }
+                }
+            }
+            return false;
+        }
+
+        //----------------------------------------------------------------------------------------
+        //	Copyright � 2007 - 2012 Tangible Software Solutions Inc.
+        //    This class can be used by anyone provided that the copyright notice remains intact.
+
+        //    This class is used to replace most calls to the Java String.split method.
+        //----------------------------------------------------------------------------------------
+        internal static class StringHelperClass
+        {
+            //------------------------------------------------------------------------------------
+            //	This method is used to replace most calls to the Java String.split method.
+            //------------------------------------------------------------------------------------
+            internal static string[] StringSplit(string source, string regexDelimiter, bool trimTrailingEmptyStrings)
+            {
+                string[] splitArray = System.Text.RegularExpressions.Regex.Split(source, regexDelimiter);
+
+                if (trimTrailingEmptyStrings)
+                {
+                    if (splitArray.Length > 1)
+                    {
+                        for (int i = splitArray.Length; i > 0; i--)
+                        {
+                            if (splitArray[i - 1].Length > 0)
+                            {
+                                if (i < splitArray.Length)
+                                    System.Array.Resize(ref splitArray, i);
+
+                                break;
+                            }
+                        }
+                    }
+                }
+
+                return splitArray;
+            }
+        }
+
+
+        internal virtual bool Initialize(Hashtable _dataSharingKnownTypes)
+        {
+            
             bool indexedDefined = false;
             if (_props != null)
             {
@@ -170,7 +416,9 @@ namespace Alachisoft.NCache.Caching.Queries
                             //attrib level index.
                             if (attribList.Count > 0)
                             {
-                                _indexMap[typename] = new AttributeIndex(attribList, _cacheName, typename, _typeMap);
+                                AttributeIndex index = new AttributeIndex(attribList, _cacheName, typename, _typeMap);
+                                 _indexMap[typename] = index;
+                                
                             }
                             //just a key level index.
                             else
@@ -179,7 +427,6 @@ namespace Alachisoft.NCache.Caching.Queries
                         }
 
                     }
-
                 }
             }
             else
@@ -209,12 +456,11 @@ namespace Alachisoft.NCache.Caching.Queries
             _cache = null;
         }
 
-        public virtual void AddToIndex(object key, object value, OperationContext operationContext)
+        public virtual void AddToIndex(object key, object value,OperationContext operationContext)
         {
+          
             CacheEntry entry = (CacheEntry)value;
-            if(entry==null ) return;
             Hashtable queryInfo = entry.QueryInfo["query-info"] as Hashtable;
-
             if (queryInfo == null) return;
 
 
@@ -238,11 +484,14 @@ namespace Alachisoft.NCache.Caching.Queries
                         {
                             string attribute = attribList[i].ToString();
                             string val = _typeMap.GetAttributes(handleId)[attribList[i]] as string;
-                           
+                            if (Common.Util.JavaClrTypeMapping.JavaToClr(val)!=null)
+                            {
+                                val = Common.Util.JavaClrTypeMapping.JavaToClr(val);
+                            }
                             Type t1 =Type.GetType(val, true, true);
 
                             object obj = null;
-                            
+
                             if (values[i] != null)
                             {
                                 try
@@ -270,13 +519,18 @@ namespace Alachisoft.NCache.Caching.Queries
                             metaInfoAttribs.Add(attribute, obj);
                         }
 
-                        
+                        MetaInformation metaInformation = new MetaInformation(metaInfoAttribs);                        
+                        metaInformation.CacheKey = key as string;
+                        metaInformation.Type = _typeMap.GetTypeName(handleId);
 
-                        entry.ObjectType = _typeMap.GetTypeName(handleId);
-                        IQueryIndex index = (IQueryIndex)_indexMap[type];
+                        operationContext.Add(OperationContextFieldName.IndexMetaInfo,metaInformation);
                         
+                        entry.ObjectType = _typeMap.GetTypeName(handleId);
+
+                        IQueryIndex index = (IQueryIndex)_indexMap[type];
                         long prevSize = index.IndexInMemorySize;
                         index.AddToIndex(key, new QueryItemContainer(entry, indexAttribs));
+
                         this._queryIndexMemorySize += index.IndexInMemorySize - prevSize;
                     }
                 }
@@ -289,10 +543,11 @@ namespace Alachisoft.NCache.Caching.Queries
         {
             lock (_asyncProcessor)
             {
-                _asyncProcessor.Enqueue(new IndexAddTask(this, key, value, operationContext));
+                _asyncProcessor.Enqueue(new IndexAddTask(this, key, value,operationContext));
             }
         }
 
+ 
         public virtual void RemoveFromIndex(object key, object value)
         {
             if (value == null)
@@ -307,6 +562,7 @@ namespace Alachisoft.NCache.Caching.Queries
                 this._queryIndexMemorySize += index.IndexInMemorySize - prevSize;
             }
         }
+
 
         public void AsyncRemoveFromIndex(object key, CacheEntry value)
         {
@@ -337,59 +593,100 @@ namespace Alachisoft.NCache.Caching.Queries
         {
             Hashtable queryInfo = new Hashtable();
             Hashtable queryIndex = new Hashtable();
+            Hashtable namedTagInfo = new Hashtable();
+            Hashtable namedTagsList = new Hashtable();
+
+            Hashtable tagInfo = new Hashtable();
+            ArrayList tagsList = new ArrayList();
             CacheEntry entry = (CacheEntry)value;
             if (entry.ObjectType == null)
                 return queryInfo;
             IQueryIndex index = (IQueryIndex)_indexMap[entry.ObjectType];
-            IndexInformation indexInformation = _cache.GetInternal(key).IndexInfo;
+            IndexInformation indexInformation = entry.IndexInfo;
             lock (_indexMap.SyncRoot)
             {
-                if (_typeMap != null && indexInformation != null)
+                if (indexInformation != null)
                 {
-                    int handleId = _typeMap.GetHandleId(entry.ObjectType);
-                    if (handleId > -1)
+                    if (_typeMap != null)
                     {
-                        ArrayList attributes = _typeMap.GetAttribList(handleId);
-
-                        ArrayList attributeValues = new ArrayList();
-
-                        for (int i = 0; i < attributes.Count; i++)
+                        int handleId = _typeMap.GetHandleId(entry.ObjectType);
+                        if (handleId > -1)
                         {
-                            foreach (IndexStoreInformation indexStoreInfo in indexInformation.IndexStoreInformations)
+                            ArrayList attributes = _typeMap.GetAttribList(handleId);
+
+                            ArrayList attributeValues = new ArrayList();
+
+                            for (int i = 0; i < attributes.Count; i++)
                             {
-
-                                if (attributes[i].ToString() == indexStoreInfo.StoreName)
+                                foreach (IndexStoreInformation indexStoreInfo in indexInformation.IndexStoreInformations)
                                 {
-                                    if (indexStoreInfo.IndexPosition == null)
-                                        attributeValues.Add(null);
-                                    else
+
+                                    if (attributes[i].ToString() == indexStoreInfo.StoreName)
                                     {
-                                        object val = indexStoreInfo.IndexPosition.GetKey();
-
-                                        string objValue = null;
-
-                                        if (val is DateTime)
-                                        {
-                                            objValue = ((DateTime)val).Ticks.ToString();
-                                        }
+                                        if (indexStoreInfo.IndexPosition == null)
+                                            attributeValues.Add(null);
                                         else
                                         {
-                                            objValue = val.ToString();
+                                            object val = indexStoreInfo.IndexPosition.GetKey();
+
+                                            string objValue = null;
+
+                                            if (val is DateTime)
+                                            {
+                                                objValue = ((DateTime)val).Ticks.ToString();
+                                            }
+                                            else
+                                            {
+                                                objValue = val.ToString();
+                                            }
+
+                                            attributeValues.Add(objValue);
                                         }
-
-                                        attributeValues.Add(objValue);
+                                        break;
                                     }
-                                    break;
                                 }
-                            }
 
+                            }
+                            queryIndex.Add(handleId, attributeValues);
+                            queryInfo["query-info"] = queryIndex;
                         }
-                        queryIndex.Add(handleId, attributeValues);
-                        queryInfo["query-info"] = queryIndex;
                     }
-                } 
+                }
+
+
+                if (indexInformation != null)
+                {
+                    foreach (IndexStoreInformation indexStoreinfo in indexInformation.IndexStoreInformations)
+                    {
+                        if (AttributeIndex.IsNamedTagKey(indexStoreinfo.StoreName))
+                        {
+                            if (indexStoreinfo.IndexPosition != null)
+                                namedTagsList.Add(ConvertToNamedTag(indexStoreinfo.StoreName.ToString()), indexStoreinfo.IndexPosition.GetKey());
+                        }
+                        else if (indexStoreinfo.StoreName.Equals(TAG_INDEX_KEY))
+                        {
+                            if (indexStoreinfo.IndexPosition != null)
+                                tagsList.Add(indexStoreinfo.IndexPosition.GetKey());
+                        }
+
+                    }
+                }
+                namedTagInfo["type"] = entry.ObjectType;
+                namedTagInfo["named-tags-list"] = namedTagsList;
+                queryInfo["named-tag-info"] = namedTagInfo;
+
+                tagInfo["type"] = entry.ObjectType;
+                tagInfo["tags-list"] = tagsList;
+                queryInfo["tag-info"] = tagInfo;
             }
             return queryInfo;
+
+        }
+
+        public string ConvertToNamedTag(string indexKey)
+        {
+            string namedTagKey = indexKey.Replace(NAMED_TAG_PREFIX, "");
+            return namedTagKey;
         }
 
         #region ISizable Impelementation
@@ -398,7 +695,7 @@ namespace Alachisoft.NCache.Caching.Queries
         {
             get { return _queryIndexMemorySize; }
         }
-
-        #endregion      
+       
+        #endregion       
     }
 }

@@ -10,10 +10,9 @@
 // distributed under the License is distributed on an "AS IS" BASIS,
 // WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
 // See the License for the specific language governing permissions and
-// limitations under the License.
+// limitations under the License
 
 using System;
-using System.Runtime.Serialization.Formatters.Binary;
 using System.Web;
 using Alachisoft.NCache.IO;
 
@@ -25,6 +24,7 @@ namespace Alachisoft.NCache.Serialization.Surrogates
     /// </summary>
     sealed class SessionStateStaticObjectCollectionSerializationSurrogate : SerializationSurrogate
     {
+        
         public SessionStateStaticObjectCollectionSerializationSurrogate(Type t) : base(t) { }
 
         /// <summary>
@@ -39,8 +39,9 @@ namespace Alachisoft.NCache.Serialization.Surrogates
             object custom = reader.Context.GetObject(cookie);
             if (custom == null)
             {
+              
                 custom = HttpStaticObjectsCollection.Deserialize(reader.BaseReader);
-                reader.Context.RememberObject(custom,false);
+                reader.Context.RememberObject(custom, false);
             }
             return custom;
         }
@@ -60,9 +61,10 @@ namespace Alachisoft.NCache.Serialization.Surrogates
                 return;
             }
 
-            cookie = writer.Context.RememberObject(graph,true);
+            cookie = writer.Context.RememberObject(graph, true);
             writer.Write(cookie);
             ((HttpStaticObjectsCollection)graph).Serialize(writer.BaseWriter);
+          
         }
 
         public override void Skip(CompactBinaryReader reader)
@@ -71,8 +73,9 @@ namespace Alachisoft.NCache.Serialization.Surrogates
             object custom = reader.Context.GetObject(cookie);
             if (custom == null)
             {
+               
                 custom = HttpStaticObjectsCollection.Deserialize(reader.BaseReader);
-                reader.Context.RememberObject(custom,false);
+                reader.Context.RememberObject(custom, false);
             }
         }
     }

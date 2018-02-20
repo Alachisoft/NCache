@@ -10,7 +10,7 @@
     <AppDesignerFolder>Properties</AppDesignerFolder>
     <RootNamespace>Alachisoft.NCache.Runtime</RootNamespace>
     <AssemblyName>Alachisoft.NCache.Runtime</AssemblyName>
-    <AssemblyOriginatorKeyFile>..\\..\\Resources\\ncache.snk</AssemblyOriginatorKeyFile>
+    <AssemblyOriginatorKeyFile>..\..\Resources\ncache.snk</AssemblyOriginatorKeyFile>
     <SccProjectName>
     </SccProjectName>
     <SccLocalPath>
@@ -19,12 +19,12 @@
     </SccAuxPath>
     <SccProvider>
     </SccProvider>
-    <TargetFrameworkVersion>v4.0</TargetFrameworkVersion>
     <FileUpgradeFlags>
     </FileUpgradeFlags>
     <OldToolsVersion>2.0</OldToolsVersion>
     <UpgradeBackupLocation />
     <IsWebBootstrapper>false</IsWebBootstrapper>
+    <TargetFrameworkProfile />
     <PublishUrl>publish\</PublishUrl>
     <Install>true</Install>
     <InstallFrom>Disk</InstallFrom>
@@ -41,111 +41,164 @@
     <BootstrapperEnabled>true</BootstrapperEnabled>
   </PropertyGroup>
   <PropertyGroup Condition=" '$(Configuration)|$(Platform)' == 'Debug|AnyCPU' ">
-    <OutputPath>bin\4.0\debug\</OutputPath>
-    <AllowUnsafeBlocks>false</AllowUnsafeBlocks>
-    <BaseAddress>285212672</BaseAddress>
-    <DefineConstants>TRACE;DEBUG;</DefineConstants>
+    <TargetFrameworkVersion>v4.0</TargetFrameworkVersion>
     <DebugSymbols>true</DebugSymbols>
-    <FileAlignment>4096</FileAlignment>
-    <NoStdLib>false</NoStdLib>
-    <NoWarn>
-    </NoWarn>
-    <Optimize>false</Optimize>
-    <RegisterForComInterop>false</RegisterForComInterop>
-    <RemoveIntegerChecks>false</RemoveIntegerChecks>
-    <TreatWarningsAsErrors>false</TreatWarningsAsErrors>
-    <WarningLevel>4</WarningLevel>
     <DebugType>full</DebugType>
+    <Optimize>false</Optimize>
+    <OutputPath>bin\4.0\debug.enterprise\</OutputPath>
+    <DefineConstants>TRACE;DEBUG;COMMUNITY;VS2005;</DefineConstants>
     <ErrorReport>prompt</ErrorReport>
+    <WarningLevel>4</WarningLevel>
     <PlatformTarget>AnyCPU</PlatformTarget>
+    <CodeAnalysisRuleSet>AllRules.ruleset</CodeAnalysisRuleSet>
+    <DocumentationFile>bin\4.0\debug.enterprise\Alachisoft.NCache.Runtime.XML</DocumentationFile>
   </PropertyGroup>
   <PropertyGroup Condition=" '$(Configuration)|$(Platform)' == 'Release|AnyCPU' ">
-    <OutputPath>bin\4.0\release\</OutputPath>
-    <AllowUnsafeBlocks>false</AllowUnsafeBlocks>
-    <BaseAddress>285212672</BaseAddress>
-    <CheckForOverflowUnderflow>false</CheckForOverflowUnderflow>
-    <ConfigurationOverrideFile>
-    </ConfigurationOverrideFile>
-    <DefineConstants>TRACE;</DefineConstants>
-    <DocumentationFile>
-    </DocumentationFile>
-    <DebugSymbols>false</DebugSymbols>
-    <FileAlignment>4096</FileAlignment>
-    <NoStdLib>false</NoStdLib>
-    <NoWarn>
-    </NoWarn>
+    <TargetFrameworkVersion>v4.0</TargetFrameworkVersion>
+    <DebugType>pdbonly</DebugType>
     <Optimize>true</Optimize>
-    <RegisterForComInterop>false</RegisterForComInterop>
-    <RemoveIntegerChecks>false</RemoveIntegerChecks>
-    <TreatWarningsAsErrors>false</TreatWarningsAsErrors>
-    <WarningLevel>4</WarningLevel>
-    <DebugType>none</DebugType>
+    <OutputPath>bin\4.0\release.enterprise\</OutputPath>
+    <DefineConstants>TRACE;COMMUNITY;VS2005;</DefineConstants>
     <ErrorReport>prompt</ErrorReport>
+    <WarningLevel>4</WarningLevel>
+    <DocumentationFile>runtime.enterprise.xml</DocumentationFile>
     <PlatformTarget>AnyCPU</PlatformTarget>
+    <CodeAnalysisRuleSet>AllRules.ruleset</CodeAnalysisRuleSet>
   </PropertyGroup>
   <PropertyGroup>
     <SignAssembly>true</SignAssembly>
   </PropertyGroup>
-  <PropertyGroup Condition="'$(Configuration)|$(Platform)' == 'Debug.2x|AnyCPU'">
-    <DebugSymbols>true</DebugSymbols>
-    <OutputPath>bin\2.0\debug\</OutputPath>
-    <DefineConstants>TRACE;DEBUG;</DefineConstants>
-    <BaseAddress>285212672</BaseAddress>
-    <FileAlignment>4096</FileAlignment>
-    <DebugType>full</DebugType>
-    <PlatformTarget>AnyCPU</PlatformTarget>
-    <TargetFrameworkVersion>v3.5</TargetFrameworkVersion>
-    <ErrorReport>prompt</ErrorReport>
-  </PropertyGroup>
-  <PropertyGroup Condition="'$(Configuration)|$(Platform)' == 'Release.2x|AnyCPU'">
-    <OutputPath>bin\2.0\release\</OutputPath>
-    <DefineConstants>TRACE;</DefineConstants>
-    <BaseAddress>285212672</BaseAddress>
-    <Optimize>true</Optimize>
-    <FileAlignment>4096</FileAlignment>
-    <PlatformTarget>AnyCPU</PlatformTarget>
-    <TargetFrameworkVersion>v3.5</TargetFrameworkVersion>
-    <ErrorReport>prompt</ErrorReport>
-  </PropertyGroup>
   <ItemGroup>
+    <Reference Include="protobuf-net, Version=1.0.0.262, Culture=neutral, PublicKeyToken=257b51d87d2e4d67, processorArchitecture=MSIL">
+      <SpecificVersion>False</SpecificVersion>
+      <HintPath>..\..\Resources\protobufdotnet\x32\protobuf-net.dll</HintPath>
+    </Reference>
     <Reference Include="System" />
     <Reference Include="System.Data" />
+    <Reference Include="System.Runtime.Serialization" />
     <Reference Include="System.Xml" />
   </ItemGroup>
   <ItemGroup>
+    <Compile Include="Aggregation\IAggregator.cs" />
+    <Compile Include="Aggregation\IValueExtractor.cs" />
     <Compile Include="AssemblyInfo.cs" />
     <Compile Include="CacheItemPriority.cs" />
+    <Compile Include="CacheManagement\CacheClient.cs" />
+    <Compile Include="CacheManagement\CacheContext.cs" />
+    <Compile Include="CacheManagement\CacheHealth.cs" />
+    <Compile Include="CacheManagement\CacheStatus.cs" />
+    <Compile Include="CacheManagement\CacheTopology.cs" />
+    <Compile Include="CacheManagement\ConnectivityStatus.cs" />
+    <Compile Include="CacheManagement\NodeStatus.cs" />
+    <Compile Include="CacheManagement\ServerNode.cs" />
     <Compile Include="Caching\CacheItemAttributes.cs" />
+    <Compile Include="Caching\ClientInfo.cs" />
+    <Compile Include="Caching\ConnectivityStatus.cs" />
+    <Compile Include="Caching\CacheClientConnectivityChangedCallback.cs" />
+    <Compile Include="Caching\NamedTagsDictionary.cs" />
+    <Compile Include="DatasourceProviders\IWriteThruProvider.cs" />
+    <Compile Include="DatasourceProviders\OperationResult.cs" />
+    <Compile Include="DatasourceProviders\WriteOperation.cs" />
+    <Compile Include="DatasourceProviders\WriteOperationType.cs" />
+    <Compile Include="DatasourceProviders\IReadThruProvider.cs" />
+    <Compile Include="Dependencies\AggregateCacheDependency.cs" />
+    <Compile Include="Dependencies\CmdParamsDbType.cs" />
+    <Compile Include="Dependencies\CmdParamsType.cs" />
+    <Compile Include="Dependencies\DBDependencyFactory.cs" />
+    <Compile Include="Dependencies\DBDependencyType.cs" />
+    <Compile Include="Dependencies\IDependencyListener.cs" />
+    <Compile Include="Dependencies\IDependencyProvider.cs" />
+    <Compile Include="Dependencies\NosDbDependency.cs" />
+    <Compile Include="Dependencies\OracleCacheDependency.cs" />
+    <Compile Include="Dependencies\OracleCmdParams.cs" />
+    <Compile Include="Dependencies\OracleCmdParamsType.cs" />
+    <Compile Include="Dependencies\OracleCommandType.cs" />
+    <Compile Include="Dependencies\OracleParameterDirection.cs" />
+    <Compile Include="Dependencies\SqlCmdParams.cs" />
+    <Compile Include="Dependencies\SqlCmpOptions.cs" />
+    <Compile Include="Dependencies\SqlCommandType.cs" />
+    <Compile Include="Dependencies\SqlDataRowVersion.cs" />
+    <Compile Include="Dependencies\SqlParamDirection.cs" />
+    <Compile Include="Events\CallbackType.cs" />
     <Compile Include="Events\EventDataFilter.cs" />
     <Compile Include="Events\EventType.cs" />
     <Compile Include="Exceptions\AggregateException.cs" />
+    <Compile Include="Exceptions\VersionException.cs" />
+    <Compile Include="Exceptions\APILoggingException.cs" />
     <Compile Include="Exceptions\AttributeIndexNotDefined.cs" />
     <Compile Include="Exceptions\BadResponseException.cs" />
     <Compile Include="Exceptions\BucketTransferredException.cs" />
+    <Compile Include="Exceptions\ClusterMembershipChangingException.cs" />
     <Compile Include="Exceptions\ConfigurationException.cs" />
     <Compile Include="Exceptions\ConnectionException.cs" />
     <Compile Include="Exceptions\CacheException.cs" />
+    <Compile Include="Dependencies\CacheDependency.cs" />
+    <Compile Include="Dependencies\DBCacheDependency.cs" />
+    <Compile Include="Dependencies\ExtensibleDependency.cs" />
+    <Compile Include="Dependencies\FileDependency.cs" />
+    <Compile Include="Dependencies\KeyDependency.cs" />
+    <Compile Include="Dependencies\SqlCacheDependency.cs" />
     <Compile Include="Exceptions\GeneralFailureException.cs" />
+    <Compile Include="Exceptions\InternalCommandException.cs" />
     <Compile Include="Exceptions\InvalidReaderException.cs" />
+    <Compile Include="Exceptions\InvalidTaskEnumeratorException.cs" />
     <Compile Include="Exceptions\LockingException.cs" />
     <Compile Include="Exceptions\ManagementException.cs" />
+    <Compile Include="Exceptions\MaxClientReachedException.cs" />
     <Compile Include="Exceptions\OperationFailedException.cs" />
     <Compile Include="Exceptions\OperationNotSupportedException.cs" />
     <Compile Include="Exceptions\ParserException.cs" />
     <Compile Include="Exceptions\RemoteException.cs" />
     <Compile Include="Exceptions\StateTransferInProgressException.cs" />
+    <Compile Include="Exceptions\StreamAlreadyLockedException.cs" />
+    <Compile Include="Exceptions\StreamCloseException.cs" />
+    <Compile Include="Exceptions\StreamException.cs" />
+    <Compile Include="Exceptions\StreamInvalidLockException.cs" />
+    <Compile Include="Exceptions\StreamNotFoundException.cs" />
     <Compile Include="Exceptions\SuspectedException.cs" />
     <Compile Include="Exceptions\TimeoutException.cs" />
     <Compile Include="Exceptions\TypeIndexNotDefined.cs" />
-    <Compile Include="Processor\EntryProcessorException.cs" />
+    <Compile Include="GenericTypesProvider\IGenericTypeProvider.cs" />
+    <Compile Include="ISizable.cs" />
+    <Compile Include="MapReduce\MapReduceCallback.cs" />
+    <Compile Include="MapReduce\ICombiner.cs" />
+    <Compile Include="MapReduce\ICombinerFactory.cs" />
+    <Compile Include="MapReduce\IKeyFilter.cs" />
+    <Compile Include="MapReduce\IMapper.cs" />
+    <Compile Include="MapReduce\IReducer.cs" />
+    <Compile Include="MapReduce\IReducerFactory.cs" />
+    <Compile Include="MapReduce\ITaskResult.cs" />
+    <Compile Include="MapReduce\ITrackableTask.cs" />
+    <Compile Include="MapReduce\KeyValuePair.cs" />
+    <Compile Include="MapReduce\MapReduceInput.cs" />
+    <Compile Include="MapReduce\MapReduceOutput.cs" />
+    <Compile Include="MapReduce\MapReduceTask.cs" />
+    <Compile Include="MapReduce\IOutputMap.cs" />
+    <Compile Include="MapReduce\TaskCompletionStatus.cs" />
+    <Compile Include="MapReduce\TaskStatus.cs" />
+    <Compile Include="Messaging\DeliveryOption.cs" />
+    <Compile Include="Messaging\ITopicSubscription.cs" />
+    <Compile Include="Messaging\IMessage.cs" />
+    <Compile Include="Messaging\ITopic.cs" />
+    <Compile Include="Messaging\Message.cs" />
+    <Compile Include="Messaging\MessageDeliveryFailureCallback.cs" />
+    <Compile Include="Messaging\TopicDeleteEventArgs.cs" />
+    <Compile Include="Messaging\MessageEventArgs.cs" />
+    <Compile Include="Messaging\MessageFailedEventArgs.cs" />
+    <Compile Include="Messaging\TopicDeletedCallback.cs" />
+    <Compile Include="Messaging\MessageReceivedCallback.cs" />
+    <Compile Include="Messaging\MessgeFailureReason.cs" />
     <Compile Include="Processor\IEntry.cs" />
     <Compile Include="Processor\IEntryProcessor.cs" />
+    <Compile Include="Processor\EntryProcessorException.cs" />
     <Compile Include="Processor\IEntryProcessorResult.cs" />
     <Compile Include="Processor\IMutableEntry.cs" />
-    <Compile Include="Serialization\CompactReader.cs" />
     <Compile Include="Serialization\CompactWriter.cs" />
     <Compile Include="Serialization\ICompactSerializable.cs" />
+    <Compile Include="Serialization\CompactReader.cs" />
     <Compile Include="Serialization\ICustomSerializable.cs" />
+    <Compile Include="Caching\ProviderCacheItem.cs" />
+    <Compile Include="Caching\Tag.cs" />
   </ItemGroup>
   <ItemGroup>
     <Folder Include="Properties\" />
@@ -168,16 +221,6 @@
     </BootstrapperPackage>
   </ItemGroup>
   <Import Project="$(MSBuildBinPath)\Microsoft.CSharp.targets" />
-  <PropertyGroup Condition="'$(Configuration)|$(Platform)' == 'Release|AnyCPU' OR '$(Configuration)|$(Platform)' == 'Debug|AnyCPU'">
-    <PreBuildEvent>
-    </PreBuildEvent>
-    <PostBuildEvent>xcopy /Y "$(TargetPath)" "$(SolutionDir)build\Server\4x\"</PostBuildEvent>
-  </PropertyGroup>
-  <PropertyGroup Condition="'$(Configuration)|$(Platform)' == 'Release.2x|AnyCPU' OR '$(Configuration)|$(Platform)' == 'Debug.2x|AnyCPU'">
-    <PreBuildEvent>
-    </PreBuildEvent>
-    <PostBuildEvent>xcopy /Y "$(TargetPath)" "$(SolutionDir)build\Server\2x\"</PostBuildEvent>
-  </PropertyGroup>
   <!-- To modify your build process, add your task inside one of the targets below and uncomment it. 
        Other similar extension points exist, see Microsoft.Common.targets.
   <Target Name="BeforeBuild">
@@ -185,4 +228,7 @@
   <Target Name="AfterBuild">
   </Target>
   -->
+  <PropertyGroup>
+    <PostBuildEvent>xcopy /Y "$(TargetPath)" "$(SolutionDir)build\Server\4x\"</PostBuildEvent>
+  </PropertyGroup>
 </Project>

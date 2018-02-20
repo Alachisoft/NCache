@@ -12,14 +12,10 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
+
 using System;
-
-using Alachisoft.NCache.Runtime.Serialization;
-using Alachisoft.NCache.Common.Queries;
 using Alachisoft.NCache.Common.Enum;
-using Runtime = Alachisoft.NCache.Runtime;
-
-
+using Alachisoft.NCache.Runtime.Serialization;
 
 namespace Alachisoft.NCache.Common.DataReader
 {
@@ -116,7 +112,4 @@ namespace Alachisoft.NCache.Common.DataReader
             writer.Write(_isHidden);
         }
     }
-
-   
-    
-   }
+}

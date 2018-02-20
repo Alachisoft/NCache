@@ -15,8 +15,9 @@
 using System;
 using System.Collections;
 using Alachisoft.NCache.Common.DataStructures;
+using Alachisoft.NCache.Common;
 using Alachisoft.NCache.Common.Queries;
-using Alachisoft.NCache.Common.Enum;
+using Alachisoft.NCache.Common.DataStructures.Clustered;
 
 namespace Alachisoft.NCache.Caching.Queries
 {
@@ -24,7 +25,6 @@ namespace Alachisoft.NCache.Caching.Queries
     {
         private RedBlack<T> _rbTree;
         private String _storeDataType = String.Empty;
-
         private string storeName;
 
         public string Name
@@ -32,19 +32,27 @@ namespace Alachisoft.NCache.Caching.Queries
             get { return storeName; }
         }
 
-
-        public String StoreDataType
+        public String StoreDataType 
         {
             get { return _storeDataType; }
         }
 
-        public RBStore(string cacheName, string storeDataType,string name)
+        public RBStore(string cacheName, string storeDataType, string name, bool haveDuplicateKeys)
         {
             this._storeDataType = storeDataType;
-            storeName = name;
+            this.storeName = name;
+            _rbTree = new RedBlack<T>(cacheName, Common.MemoryUtil.GetAttributeTypeSize(storeDataType));
+            _rbTree.CanHaveDuplicateKeys = haveDuplicateKeys;
+        }
+
+        public RBStore(string cacheName,string storeDataType, string name)
+        {
+            this._storeDataType = storeDataType;
+            this.storeName = name;
             _rbTree = new RedBlack<T>(cacheName, Common.MemoryUtil.GetAttributeTypeSize(storeDataType));
         }
 
+       
         public object Add(object key, object value)
         {
             object node = new object();
@@ -52,6 +60,7 @@ namespace Alachisoft.NCache.Caching.Queries
                 node = _rbTree.Add((T)key, value);
             return node;
         }
+
 
         public bool Remove(object value, object indexPosition)
         {
@@ -64,7 +73,7 @@ namespace Alachisoft.NCache.Caching.Queries
         public void Clear()
         {
             if (_rbTree != null)
-                _rbTree.Clear();
+                _rbTree.Clear();            
         }
 
         public IDictionaryEnumerator GetEnumerator()
@@ -116,11 +125,9 @@ namespace Alachisoft.NCache.Caching.Queries
                         break;
                 }
                 if (key is T)
-                    _rbTree.GetData((T)key, compare, result, mergeType);
-                else 
-                    throw new InvalidCastException("Object must be of type " + typeof(T).Name);
+                    _rbTree.GetData((T) key, compare, result, mergeType);
+                else throw new InvalidCastException("Object must be of type " + typeof (T).Name);
             }
-
         }
 
         public int Count
@@ -128,10 +135,14 @@ namespace Alachisoft.NCache.Caching.Queries
             get { return _rbTree != null ? _rbTree.Count : 0; }
         }
 
+        public void GetTagData(object tag, HashVector finalResult)
+        {
+            _rbTree.GetTagData((T)tag, finalResult);
+        }
+
         public long IndexInMemorySize
         {
             get { return this._rbTree.IndexInMemorySize; }
         }
-
     }
 }

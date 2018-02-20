@@ -14,6 +14,8 @@
 
 using System;
 using System.Collections;
+using Alachisoft.NCache.SocketServer.RuntimeLogging;
+using Alachisoft.NCache.Common.Monitoring;
 
 namespace Alachisoft.NCache.SocketServer.Command
 {
@@ -24,19 +26,26 @@ namespace Alachisoft.NCache.SocketServer.Command
             public string RequestId;
         }
 
+        //TODO:KeyPackage
+        //PROTOBUF
         public override void ExecuteCommand(ClientManager clientManager, Alachisoft.NCache.Common.Protobuf.Command command)
         {
             CommandInfo cmdInfo;
-
+            int overload;
+            string exception = null;
+            System.Diagnostics.Stopwatch stopWatch = new System.Diagnostics.Stopwatch();
+            stopWatch.Start();
             try
             {
+                overload = command.MethodOverload;
                 cmdInfo = ParseCommand(command, clientManager);
             }
             catch (Exception exc)
             {
 				if (!base.immatureId.Equals("-2"))
 				{
-                    _serializedResponsePackets.Add(Alachisoft.NCache.Common.Util.ResponseHelper.SerializeExceptionResponse(exc, command.requestID));
+					//PROTOBUF:RESPONSE
+                    _serializedResponsePackets.Add(Alachisoft.NCache.Common.Util.ResponseHelper.SerializeExceptionResponse(exc, command.requestID, command.commandID));
 				}
                 return;
             }
@@ -48,26 +57,41 @@ namespace Alachisoft.NCache.SocketServer.Command
             {
                 NCache nCache = clientManager.CmdExecuter as NCache;
 				IDictionaryEnumerator dicEnu = (IDictionaryEnumerator)nCache.Cache.GetEnumerator();
-
+                stopWatch.Stop();
 				//PROTOBUF:RESPONSE
 				Alachisoft.NCache.Common.Protobuf.Response response = new Alachisoft.NCache.Common.Protobuf.Response();
 				Alachisoft.NCache.Common.Protobuf.GetEnumeratorResponse getEnumeratorResponse = new Alachisoft.NCache.Common.Protobuf.GetEnumeratorResponse();
-				response.requestId = Convert.ToInt64(cmdInfo.RequestId);
+                response.requestId = Convert.ToInt64(cmdInfo.RequestId);
+                response.commandID = command.commandID;
 				response.responseType = Alachisoft.NCache.Common.Protobuf.Response.Type.GET_ENUMERATOR;
 				response.getEnum = getEnumeratorResponse;
 
 				Alachisoft.NCache.SocketServer.Util.KeyPackageBuilder.PackageKeys(dicEnu, getEnumeratorResponse.keys);
 
 				_serializedResponsePackets.Add(Alachisoft.NCache.Common.Util.ResponseHelper.SerializeResponse(response));
-
             }
             catch (Exception exc)
             {
 				//PROTOBUF:RESPONSE
-                _serializedResponsePackets.Add(Alachisoft.NCache.Common.Util.ResponseHelper.SerializeExceptionResponse(exc, command.requestID));
+                _serializedResponsePackets.Add(Alachisoft.NCache.Common.Util.ResponseHelper.SerializeExceptionResponse(exc, command.requestID, command.commandID));
+            }
+            finally
+            {
+                TimeSpan executionTime = stopWatch.Elapsed;
+                try
+                {
+                    if (Alachisoft.NCache.Management.APILogging.APILogManager.APILogManger != null && Alachisoft.NCache.Management.APILogging.APILogManager.EnableLogging)
+                    {
+                        APILogItemBuilder log = new APILogItemBuilder(MethodsName.GetEnumerator.ToLower());
+                        log.GenerateGetEnumeratorAPILogItem(overload, exception, executionTime, clientManager.ClientID.ToLower(), clientManager.ClientSocketId.ToString());
+                    }
+                }
+                catch
+                {
+                }
             }
         }
-     
+
         //PROTOBUF
 
         private CommandInfo ParseCommand(Alachisoft.NCache.Common.Protobuf.Command command, ClientManager clientManager)
@@ -79,6 +103,6 @@ namespace Alachisoft.NCache.SocketServer.Command
             cmdInfo.RequestId = getEnumeratorCommand.requestId.ToString();
 
             return cmdInfo;
-        }       
+        }
     }
 }

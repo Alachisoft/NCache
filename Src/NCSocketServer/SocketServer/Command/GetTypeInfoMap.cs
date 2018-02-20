@@ -13,15 +13,11 @@
 // limitations under the License.
 
 using System;
-using System.Text;
-using System.Collections;
-using System.Collections.Generic;
 
 namespace Alachisoft.NCache.SocketServer.Command
 {
     class GetTypeInfoMap : CommandBase
     {
-
         protected struct CommandInfo
         {
             public string RequestId;
@@ -40,7 +36,7 @@ namespace Alachisoft.NCache.SocketServer.Command
             catch (Exception exc)
             {
                 if (!base.immatureId.Equals("-2")) 
-                    _serializedResponsePackets.Add(Alachisoft.NCache.Common.Util.ResponseHelper.SerializeExceptionResponse(exc, command.requestID));
+                    _serializedResponsePackets.Add(Alachisoft.NCache.Common.Util.ResponseHelper.SerializeExceptionResponse(exc, command.requestID, command.commandID));
                 return;
             }
 
@@ -56,17 +52,19 @@ namespace Alachisoft.NCache.SocketServer.Command
                 Alachisoft.NCache.Common.Protobuf.GetTypeMapResponse getTypeMapResponse = new Alachisoft.NCache.Common.Protobuf.GetTypeMapResponse();
                 getTypeMapResponse.map = typeInfoMap;
                 response.getTypemap = getTypeMapResponse;
-				response.requestId = Convert.ToInt64(cmdInfo.RequestId);
+                response.requestId = Convert.ToInt64(cmdInfo.RequestId);
+
+                response.commandID = command.commandID;
                 response.responseType = Alachisoft.NCache.Common.Protobuf.Response.Type.GET_TYPEINFO_MAP;
 
                 _serializedResponsePackets.Add(Alachisoft.NCache.Common.Util.ResponseHelper.SerializeResponse(response));
             }
             catch (Exception exc)
             {
-                _serializedResponsePackets.Add(Alachisoft.NCache.Common.Util.ResponseHelper.SerializeExceptionResponse(exc, command.requestID));
+                _serializedResponsePackets.Add(Alachisoft.NCache.Common.Util.ResponseHelper.SerializeExceptionResponse(exc, command.requestID, command.commandID));
             }
         }
-        
+
         //PROTOBUF
         private CommandInfo ParseCommand(Alachisoft.NCache.Common.Protobuf.Command command, ClientManager clientManager)
         {

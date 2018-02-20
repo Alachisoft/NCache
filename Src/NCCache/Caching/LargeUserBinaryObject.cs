@@ -15,6 +15,7 @@
 using System;
 using System.Collections;
 using System.Collections.Generic;
+using Alachisoft.NCache.Common.DataStructures;
 using Alachisoft.NCache.Runtime.Serialization.IO;
 
 namespace Alachisoft.NCache.Caching
@@ -36,9 +37,9 @@ namespace Alachisoft.NCache.Caching
             _noOfChunks = noOfChunks;
         }
 
-        public LargeUserBinaryObject(Array data)
+        public LargeUserBinaryObject(ICollection data)
         {
-            _noOfChunks = data.Length;
+            _noOfChunks = data.Count;
             foreach (byte[] buffer in data)
                 _data.Add(buffer);
         }
@@ -86,7 +87,7 @@ namespace Alachisoft.NCache.Caching
             return binaryObject;
         }
 
-        public static LargeUserBinaryObject CreateUserBinaryObject(Array data)
+        public static LargeUserBinaryObject CreateUserBinaryObject(ICollection data)
         {
             LargeUserBinaryObject binaryObject = null;
             if (data != null)
@@ -95,7 +96,7 @@ namespace Alachisoft.NCache.Caching
             }
             return binaryObject;
         }
-
+        
         public override Array Data
         {
             get { return _data.ToArray(); }
@@ -113,7 +114,7 @@ namespace Alachisoft.NCache.Caching
             }
         }
         /// <summary>
-        /// Re-assemle the individual binary chunks into a byte array.
+        /// Re-assemble the individual binary chunks into a byte array.
         /// This method should not be called unless very necessary.
         /// </summary>
         /// <returns></returns>
@@ -191,6 +192,38 @@ namespace Alachisoft.NCache.Caching
 
         #endregion
 
+        #region IStreamItem Members
+
+        public override VirtualArray Read(int offset, int length)
+        {
+            VirtualArray vBuffer = null;
+            int streamLength = Length;
+
+            if (offset >= streamLength) return new VirtualArray(0);
+            if (offset + length > streamLength)
+            {
+                length -= (offset + length - streamLength);
+            }
+
+            VirtualArray vSrc = new VirtualArray(_data);
+            vBuffer = new VirtualArray(length);
+            VirtualIndex vSrcIndex = new VirtualIndex(offset);
+            VirtualIndex vDstIndex = new VirtualIndex();
+            VirtualArray.CopyData(vSrc, vSrcIndex, vBuffer, vDstIndex, length);
+
+            return vBuffer;
+        }
+
+        public override void Write(VirtualArray vBuffer, int srcOffset, int dstOffset, int length)
+        {
+            if (vBuffer == null) return;
+            {
+                VirtualArray vDstArray = new VirtualArray(_data);
+                VirtualArray.CopyData(vBuffer, new VirtualIndex(srcOffset), vDstArray, new VirtualIndex(dstOffset), length, true);
+                _noOfChunks = _data.Count;
+            }
+        }
+
         public override int Length
         {
             get
@@ -202,7 +235,12 @@ namespace Alachisoft.NCache.Caching
                 }
                 return dataSize;
             }
-            
+            set
+            {
+            }
         }
+
+        #endregion
+
     }
 }

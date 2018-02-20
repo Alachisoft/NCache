@@ -14,38 +14,42 @@
 
 using System;
 using System.Collections;
-using System.Threading;
-using System.IO;
 
-using Alachisoft.NCache.Util;
-using Alachisoft.NCache.Caching.Topologies;
-using Alachisoft.NCache.Caching.Topologies.Local;
-using Alachisoft.NCache.Caching.Statistics;
 using Alachisoft.NCache.Runtime.Exceptions;
+
 using Alachisoft.NCache.Config;
-using Alachisoft.NCache.Common.Stats;
 using Alachisoft.NCache.Common;
 using Alachisoft.NCache.Common.Threading;
 using Alachisoft.NCache.Common.DataStructures;
 using Alachisoft.NCache.Serialization.Formatters;
 using Alachisoft.NCache.Common.Net;
+
 using Alachisoft.NGroups;
 using Alachisoft.NGroups.Blocks;
 using Alachisoft.NGroups.Stack;
 using Alachisoft.NGroups.Util;
 using Alachisoft.NCache.Common.Enum;
 using Alachisoft.NCache.Common.Monitoring;
-using Alachisoft.NCache.Common.Util;
 using Alachisoft.NCache.Common.Logger;
-using Runtime = Alachisoft.NCache.Runtime;
+
+
 using Alachisoft.NCache.Common.Mirroring;
+
+#if DEBUGSTATETRANSFER
+using Alachisoft.NCache.Caching.Topologies.History;
+#endif
+
+using Alachisoft.NCache.Common.DataStructures.Clustered;
+
+using OpCodes = Alachisoft.NCache.Caching.Topologies.Clustered.ClusterCacheBase.OpCodes;
+
 
 namespace Alachisoft.NCache.Caching.Topologies.Clustered
 {
     /// <summary>
     /// Hold cluster stats
     /// </summary>
-    
+
 
     /// <summary>
     /// A class to serve as the base for all clustered cache implementations.
@@ -201,6 +205,8 @@ namespace Alachisoft.NCache.Caching.Topologies.Clustered
         /// <summary>controls the priority of the events </summary>
         protected Priority _eventPriority = Priority.Normal;
 
+        private MessageObjectProvider _msgProvider = new MessageObjectProvider(50);
+
         private ClusterOperationSynchronizer _asynHandler;
 
         private Hashtable _membersRenders = Hashtable.Synchronized(new Hashtable());
@@ -208,12 +214,24 @@ namespace Alachisoft.NCache.Caching.Topologies.Clustered
         private long _lastViewId;
 
         private object viewMutex = new object();
+
+        private readonly object _mutex = new object();
+
+        private string _reasonOfNonFunctionality;
+
+
         private const int MAX_CLUSTER_MBRS = 2;
+
+#if COMMUNITY
+        private static ArrayList _runningClusters;
+#endif
+#if COMMUNITY
         internal string localIp = "";
+#endif
+
+        private Cache.CacheStoppedEvent _cacheStopped = null;
+        private Cache.CacheStartedEvent _cacheStarted = null;
         private bool _stopServices;
-
-       
-
 
         private ILogger _ncacheLog;
 
@@ -222,8 +240,20 @@ namespace Alachisoft.NCache.Caching.Topologies.Clustered
             get { return _ncacheLog; }
         }
 
-      
-        string _cacheserver="NCache";
+        /// <summary>
+        /// a cluster-wide unique identifier that is used by each of the bridge source cache while 
+        /// connecting to bridge.
+        /// </summary>
+
+#if JAVA
+        string _cacheserver = "TayzGrid";
+#else
+        string _cacheserver = "NCache";
+#endif
+#if DEBUGSTATETRANSFER
+        internal NodeActivities _history;
+        
+#endif
 
         /// <summary>
         /// Overloaded constructor. Takes the listener as parameter.
@@ -233,15 +263,41 @@ namespace Alachisoft.NCache.Caching.Topologies.Clustered
         {
             _context = context;
             _ncacheLog = context.NCacheLog;
-            
+
             _participant = part;
             _distributionPolicyMbr = distributionMbr;
 
-           
-
             _asynHandler = new ClusterOperationSynchronizer(this);
+
+#if COMMUNITY
+
+            if (_runningClusters == null)
+                _runningClusters = new ArrayList();
+
+
+#endif
+
+
+#if DEBUGSTATETRANSFER
+        _history = new NodeActivities();
+#endif
         }
 
+#if COMMUNITY
+        private bool ClusterExist(string CacheName)
+        {
+
+            if (_runningClusters.Contains(CacheName))
+                return true;
+
+            else
+            {
+                _runningClusters.Add(CacheName);
+                return false;
+            }
+
+        }
+#endif
         public void InitializeClusterPerformanceCounters(string instancename)
         {
             if (_channel != null)
@@ -252,16 +308,10 @@ namespace Alachisoft.NCache.Caching.Topologies.Clustered
                 }
                 catch (Exception e)
                 {
-                    NCacheLog.Error("ClusterService.InitializeCLusterCounters",   e.ToString());
+                    NCacheLog.Error("ClusterService.InitializeCLusterCounters", e.ToString());
                 }
             }
         }
-
-        /// <summary>
-        /// a cluster-wide unique identifier that is used by each of the bridge source cache while 
-        /// connecting to bridge.
-        /// </summary>
-        private string _bridgeSourceCacheId;
 
         /// <summary>
         /// Overloaded constructor. Takes the listener as parameter.
@@ -275,6 +325,18 @@ namespace Alachisoft.NCache.Caching.Topologies.Clustered
             _asynHandler = new ClusterOperationSynchronizer(this);
             _listener = listener;
 
+#if COMMUNITY
+
+            if (_runningClusters == null)
+                _runningClusters = new ArrayList();
+
+
+#endif
+
+#if DEBUGSTATETRANSFER
+            _history = new NodeActivities();
+#endif
+
         }
 
         #region	/                 --- IDisposable ---           /
@@ -285,20 +347,24 @@ namespace Alachisoft.NCache.Caching.Topologies.Clustered
         /// </summary>
         public void Dispose()
         {
+            //bool dispatcher = false;
+            //bool channel = false;
             if (_msgDisp != null)
             {
                 _msgDisp.stop();
                 _msgDisp = null;
+                //dispatcher = true;
             }
             if (_channel != null)
             {
                 _channel.close();
                 _channel = null;
+                //channel = true;
             }
             if (_asynHandler != null)
             {
                 _asynHandler.Dispose();
-            }            
+            }
         }
 
         #endregion
@@ -309,13 +375,10 @@ namespace Alachisoft.NCache.Caching.Topologies.Clustered
         public string SubClusterName
         {
             get { return _subgroupid; }
+            //set { _subgroupid = value; }
         }
 
-        public string BridgeSourceCacheId
-        {
-            get { return _bridgeSourceCacheId; }
-        }
-       
+
 
         /// <summary> Get a named subgroup from the list of sub-groups. </summary>
         public SubCluster CurrentSubCluster { get { return GetSubCluster(_subgroupid); } }
@@ -367,7 +430,7 @@ namespace Alachisoft.NCache.Caching.Topologies.Clustered
             if (address == null) return null;
             lock (_subgroups.SyncRoot)
             {
-                for (IEnumerator i = _subgroups.Values.GetEnumerator(); i.MoveNext(); )
+                for (IEnumerator i = _subgroups.Values.GetEnumerator(); i.MoveNext();)
                 {
                     SubCluster group = (SubCluster)i.Current;
                     if (group.IsMember(address)) return group;
@@ -379,7 +442,16 @@ namespace Alachisoft.NCache.Caching.Topologies.Clustered
         /// <summary> The hashtable that contains members and their info.</summary>
         public ArrayList Members { get { return _members; } }
         public ArrayList ValidMembers { get { return _validMembers; } }
-        public ArrayList Servers { get { return _servers; } }
+        public ArrayList Servers
+        {
+            get
+            {
+                lock (_servers.SyncRoot)
+                {
+                    return (ArrayList)_servers.Clone();
+                }
+            }
+        }
         public ArrayList SubCoordinators { get { return _groupCoords; } }
 
         /// <summary>Address of all other servers in cluster.</summary>
@@ -387,6 +459,8 @@ namespace Alachisoft.NCache.Caching.Topologies.Clustered
 
         public Hashtable Renderers { get { return this._membersRenders; } }
 
+
+        public Latch ViewInstallationLatch = new Latch(ViewStatus.NONE);
         /// <summary>
         /// returns true if the node is operating in coordinator mode. 
         /// </summary>
@@ -425,12 +499,21 @@ namespace Alachisoft.NCache.Caching.Topologies.Clustered
             }
         }
 
+
+        public ArrayList ActiveServers
+        {
+            get
+            {
+                return Members;
+            }
+        }
+
         /// <summary>
         /// returns the next coordinator in the cluster. 
         /// </summary>
         public Address NextCoordinator(bool isPOR)
         {
-           
+
             lock (_servers.SyncRoot)
             {
                 if (isPOR)
@@ -445,7 +528,7 @@ namespace Alachisoft.NCache.Caching.Topologies.Clustered
                 }
             }
             return null;
-           
+
         }
 
         /// <summary> The local address of this instance. </summary>
@@ -458,7 +541,7 @@ namespace Alachisoft.NCache.Caching.Topologies.Clustered
         /// <param name="cacheSchemes">collection of cache schemes (config properties).</param>
         /// <param name="properties">properties collection for this cache.</param>
         public void Initialize(IDictionary properties, string channelName,
-            string domain, NodeIdentity identity)
+            string domain, NodeIdentity identity, bool isInproc)
         {
             if (properties == null)
                 throw new ArgumentNullException("properties");
@@ -480,6 +563,8 @@ namespace Alachisoft.NCache.Caching.Topologies.Clustered
                 }
 
                 IDictionary clusterProps = properties["cluster"] as IDictionary;
+
+
                 string channelProps = ConfigHelper.GetClusterPropertyString(clusterProps, Timeout);
 
                 string name = channelName != null ? channelName.ToLower() : null;
@@ -498,7 +583,11 @@ namespace Alachisoft.NCache.Caching.Topologies.Clustered
 
                 if (name != null) name = name.ToLower();
                 if (_subgroupid != null) _subgroupid = _subgroupid.ToLower();
+#if COMMUNITY
 
+                this.PopulateClusterNodes(new Hashtable(clusterProps));
+
+#endif
                 //A property or indexer may not be passed as an out or ref parameter.
                 _channel = new GroupChannel(channelProps, _context.NCacheLog);
 
@@ -507,7 +596,7 @@ namespace Alachisoft.NCache.Caching.Topologies.Clustered
                 _channel.down(new Event(Event.CONFIG, config));
 
                 _msgDisp = new MsgDispatcher(_channel, this, this, this, this, false, true);
-                _channel.connect(name + domain, _subgroupid, identity.IsStartedAsMirror,false);
+                _channel.connect(name + domain, _subgroupid, false);
 
                 localIp = LocalAddress.IpAddress.ToString();
                 _msgDisp.start();
@@ -521,11 +610,11 @@ namespace Alachisoft.NCache.Caching.Topologies.Clustered
 
         public void Initialize(IDictionary properties, string channelName,
             string domain, NodeIdentity identity,
-            bool twoPhaseInitialization,bool isPor)
+             bool twoPhaseInitialization, bool isPor, bool isInProc)
         {
             if (properties == null)
                 throw new ArgumentNullException("properties");
-            
+
             try
             {
                 if (properties.Contains("op-timeout"))
@@ -545,7 +634,7 @@ namespace Alachisoft.NCache.Caching.Topologies.Clustered
                 IDictionary clusterProps = properties["cluster"] as IDictionary;
                 string channelProps = ConfigHelper.GetClusterPropertyString(clusterProps, Timeout, isPor);
 
-                string name = channelName != null? channelName.ToLower(): null ;
+                string name = channelName != null ? channelName.ToLower() : null;
                 if (clusterProps.Contains("group-id"))
                     name = Convert.ToString(clusterProps["group-id"]);
                 if (clusterProps.Contains("sub-group-id"))
@@ -559,10 +648,15 @@ namespace Alachisoft.NCache.Caching.Topologies.Clustered
                     _subgroupid = name;
                 // =======================================
 
-
                 if (name != null) name = name.ToLower();
                 if (_subgroupid != null) _subgroupid = _subgroupid.ToLower();
+#if COMMUNITY
+
+                PopulateClusterNodes(new Hashtable(clusterProps));
+
+#endif
                 //A property or indexer may not be passed as an out or ref parameter.
+                //string loggerName = _context.LoggerName;
                 _channel = new GroupChannel(channelProps, _context.NCacheLog);
 
                 Hashtable config = new Hashtable();
@@ -570,7 +664,7 @@ namespace Alachisoft.NCache.Caching.Topologies.Clustered
                 _channel.down(new Event(Event.CONFIG, config));
 
                 _msgDisp = new MsgDispatcher(_channel, this, this, this, this, false, true);
-                _channel.connect(name + domain, _subgroupid, identity.IsStartedAsMirror,twoPhaseInitialization);
+                _channel.connect(name + domain, _subgroupid, twoPhaseInitialization);
                 localIp = LocalAddress.IpAddress.ToString();
                 _msgDisp.start();
             }
@@ -611,11 +705,11 @@ namespace Alachisoft.NCache.Caching.Topologies.Clustered
         {
             return BroadcastToMultiple((ArrayList)null, msg, mode, _defOpTimeout);
         }
-        public RspList Broadcast(object msg, byte mode, bool isSeqRequired,Priority msgPriority)
+        public RspList Broadcast(object msg, byte mode, bool isSeqRequired, Priority msgPriority)
         {
-            return BroadcastToMultiple((ArrayList)null, msg, mode, _defOpTimeout, isSeqRequired,"",msgPriority);
+            return BroadcastToMultiple((ArrayList)null, msg, mode, _defOpTimeout, isSeqRequired, "", msgPriority);
         }
-       
+
 
         public RspList Multicast(ArrayList dests, object msg, byte mode)
         {
@@ -634,7 +728,7 @@ namespace Alachisoft.NCache.Caching.Topologies.Clustered
         {
             return BroadcastToMultiple(_groupCoords, msg, mode, _defOpTimeout);
         }
-        
+
         /// <summary>
         /// Sends message to every member of the group. Returns its reponse as well.
         /// </summary>
@@ -649,8 +743,8 @@ namespace Alachisoft.NCache.Caching.Topologies.Clustered
         {
             return BroadcastToMultiple(_servers, msg, mode, _defOpTimeout, isSeqRequired);
         }
-       
-     
+
+
         /// <summary>
         /// Sends message to every member of the group. Returns its reponse as well.
         /// </summary>
@@ -663,22 +757,26 @@ namespace Alachisoft.NCache.Caching.Topologies.Clustered
         /// </summary>
         public RspList BroadcastToMultiple(ArrayList dests, object msg, byte mode, bool isSeqRequired)
         {
-            return BroadcastToMultiple(dests, msg, mode, _defOpTimeout, isSeqRequired, "",Priority.Normal);
+            return BroadcastToMultiple(dests, msg, mode, _defOpTimeout, isSeqRequired, "", Priority.Normal);
         }
         public RspList BroadcastToMultiple(ArrayList dests, object msg, byte mode, long timeout, bool isSeqRequired)
         {
             return BroadcastToMultiple(dests, msg, mode, timeout, isSeqRequired, "", Priority.Normal);
         }
-      
+
         public RspList BroadcastToMultiple(ArrayList dests, object msg, byte mode, long timeout)
         {
             return BroadcastToMultiple(dests, msg, mode, timeout, true, "", Priority.Normal);
         }
-        private RspList BroadcastToMultiple(ArrayList dests, object msg, byte mode, long timeout, bool isSeqRequired, string traceMsg,Priority priority)
+        private RspList BroadcastToMultiple(ArrayList dests, object msg, byte mode, long timeout, bool isSeqRequired, string traceMsg, Priority priority)
         {
-            ///TODO: remove this conditional compilation
 
-            byte[] serializedMsg = SerializeMessage(msg);
+#if COMMUNITY
+
+            if (ServerMonitor.MonitorActivity) ServerMonitor.LogClientActivity("ClustService.BcastToMultiple", "");
+
+#endif
+            IList serializedMsg = SerializeMessage(msg);
             Message m = new Message(null, null, serializedMsg);
             if (msg is Function)
             {
@@ -686,7 +784,6 @@ namespace Alachisoft.NCache.Caching.Topologies.Clustered
                 m.responseExpected = ((Function)msg).ResponseExpected;
             }
 
-            m.setBuffer(serializedMsg);
             m.IsSeqRequired = isSeqRequired;
             m.Priority = priority;
             RspList rspList = null;
@@ -698,7 +795,6 @@ namespace Alachisoft.NCache.Caching.Topologies.Clustered
             finally
             {
                 if (ServerMonitor.MonitorActivity) ServerMonitor.LogClientActivity("ClustService.BcastToMultiple", "completed");
-
             }
             if (rspList.size() == 0)
             {
@@ -718,10 +814,9 @@ namespace Alachisoft.NCache.Caching.Topologies.Clustered
 
             if (ServerMonitor.MonitorActivity) ServerMonitor.LogClientActivity("ClustService.BcastToMultiple", "");
 
-            byte[] serializedMsg = SerializeMessage(msg);
+            IList serializedMsg = SerializeMessage(msg);
             Message m = new Message(null, null, serializedMsg);
             m.HandledAysnc = handleAsync;
-            m.setBuffer(serializedMsg);
             m.IsUserMsg = true;
             RspList rspList = null;
 
@@ -732,7 +827,6 @@ namespace Alachisoft.NCache.Caching.Topologies.Clustered
             finally
             {
                 if (ServerMonitor.MonitorActivity) ServerMonitor.LogClientActivity("ClustService.BcastToMultiple", "completed");
-
             }
             if (rspList.size() == 0)
             {
@@ -747,15 +841,43 @@ namespace Alachisoft.NCache.Caching.Topologies.Clustered
             return rspList;
         }
 
+        private Common.Enum.Priority GetOpPriority(OpCodes opCode)
+        {
+            switch (opCode)
+            {
+                case OpCodes.ExecuteReader:
+                case OpCodes.ExecuteReaderCQ:
+                case OpCodes.GetKeys:
+                case OpCodes.GetData:
+                case OpCodes.GetDataGroupInfo:
+                case OpCodes.GetKeysByTag:
+                case OpCodes.GetReaderChunk:
+                case OpCodes.GetTag:
+                case OpCodes.KeyList:
+                case OpCodes.Search:
+                case OpCodes.SearchCQ:
+                case OpCodes.SearchEntries:
+                case OpCodes.SearchEntriesCQ:
+                case OpCodes.Get:
+                    return Common.Enum.Priority.Critical;
+            }
+
+            return Common.Enum.Priority.Normal;
+        }
+
         public RspList Multicast(ArrayList dests, object msg, byte mode, bool isSeqRequired, long timeout)
         {
             if (ServerMonitor.MonitorActivity) ServerMonitor.LogClientActivity("ClustService.Mcast", "");
 
-            byte[] serializedMsg = SerializeMessage(msg);
+            IList serializedMsg = SerializeMessage(msg);
             Message m = new Message(null, null, serializedMsg);
-            if (msg is Function)
-                m.Payload = ((Function)msg).UserPayload;
-            m.setBuffer(serializedMsg);
+            var func = msg as Function;
+            if (func != null)
+            {
+                m.Priority = GetOpPriority((OpCodes)func.Opcode);
+                m.Payload = func.UserPayload;
+            }
+
             m.Dests = dests;
             m.IsSeqRequired = isSeqRequired;
 
@@ -786,7 +908,7 @@ namespace Alachisoft.NCache.Caching.Topologies.Clustered
 
         public void SendResponse(Address dest, object result, long reqId)
         {
-            byte[] serializedMsg = SerializeMessage(result);
+            IList serializedMsg = SerializeMessage(result);
             Message response = new Message(dest, null, serializedMsg);
 
             try
@@ -807,52 +929,59 @@ namespace Alachisoft.NCache.Caching.Topologies.Clustered
         /// Sends a message to a single member (destination = msg.dest) and returns 
         /// the response. The message's destination must be non-zero !
         /// </summary>
-        protected internal object SendMessage(Address dest, object msg, byte mode)
+        protected internal object SendMessage(Address dest, object msg, byte mode, Priority priority = Priority.Normal)
         {
-            return SendMessage(dest, msg, mode, _defOpTimeout);
+            return SendMessage(dest, msg, mode, _defOpTimeout, priority);
         }
 
-        protected internal object SendMessage(Address dest, object msg, byte mode, bool isSeqRequired)
+        protected internal object SendMessage(Address dest, object msg, byte mode, bool isSeqRequired, Priority priority = Priority.Normal)
         {
-            return SendMessage(dest, msg, mode, isSeqRequired, _defOpTimeout);
+            return SendMessage(dest, msg, mode, isSeqRequired, _defOpTimeout, priority);
         }
 
-        private byte[] SerializeMessage(object msg)
+        private ClusteredArrayList SerializeMessage(object msg)
         {
-            byte[] serializedMsg = null;
-            serializedMsg = CompactBinaryFormatter.ToByteBuffer(msg, _context.SerializationContext);
-            return serializedMsg;
+            ClusteredArrayList serializedList;
+            using (ClusteredMemoryStream stream = new ClusteredMemoryStream())
+            {
+                CompactBinaryFormatter.Serialize(stream, msg, _context.SerializationContext, false);
+                serializedList = stream.GetInternalBuffer();
+            }
+
+            return serializedList;
         }
 
-        protected internal object SendMessage(Address dest, object msg, byte mode, long timeout)
+        protected internal object SendMessage(Address dest, object msg, byte mode, long timeout, Priority priority = Priority.Normal)
         {
             try
             {
                 if (ServerMonitor.MonitorActivity) ServerMonitor.LogClientActivity("ClustService.SendMsg", "dest_addr :" + dest);
 
-                object result;
-                byte[] serializedMsg = SerializeMessage(msg);
+                IList serializedMsg = SerializeMessage(msg);
                 Message m = new Message(dest, null, serializedMsg);
                 if (msg is Function)
                 {
+                    m.Priority = GetOpPriority((OpCodes)(((Function)msg).Opcode));
                     m.Payload = ((Function)msg).UserPayload;
                     m.responseExpected = ((Function)msg).ResponseExpected;
                 }
-                result = _msgDisp.sendMessage(m, mode, timeout);
+                object result = _msgDisp.sendMessage(m, mode, timeout);
                 if (result is OperationResponse)
                 {
-                    if (((OperationResponse)result).SerilizationStream != null)
-                    {
-                        CompactBinaryFormatter.Serialize(((OperationResponse)result).SerilizationStream, ((OperationResponse)result).SerializablePayload, _context.SerializationContext, false);
-                    }
-                    else
-                    {
-                        ((OperationResponse)result).SerializablePayload = CompactBinaryFormatter.FromByteBuffer((byte[])((OperationResponse)result).SerializablePayload, _context.SerializationContext);
-                    }
+                    ((OperationResponse)result).SerializablePayload = DeserailizeResponse(((OperationResponse)result).SerializablePayload);
                 }
                 else if (result is byte[])
-                {
                     result = CompactBinaryFormatter.FromByteBuffer((byte[])result, _context.SerializationContext);
+                else if (result is IList)
+                {
+                    IList buffers = result as IList;
+                    ClusteredMemoryStream stream = new ClusteredMemoryStream(0);
+                    foreach (byte[] buffer in buffers)
+                    {
+                        stream.Write(buffer, 0, buffer.Length);
+                    }
+                    stream.Position = 0;
+                    result = CompactBinaryFormatter.Deserialize(stream, _context.SerializationContext);
                 }
 
                 if (result != null && result is Exception) throw (Exception)result;
@@ -861,6 +990,7 @@ namespace Alachisoft.NCache.Caching.Topologies.Clustered
             catch (Alachisoft.NGroups.SuspectedException e)
             {
                 throw new Runtime.Exceptions.SuspectedException("operation failed because the group member was suspected " + e.suspect);
+
             }
             catch (Runtime.Exceptions.TimeoutException e)
             {
@@ -872,35 +1002,68 @@ namespace Alachisoft.NCache.Caching.Topologies.Clustered
             }
         }
 
-        protected internal object SendMessage(Address dest, object msg, byte mode, bool isSeqRequired, long timeout) 
+        public object DeserailizeResponse(object response)
+        {
+            object result = null;
+            if (response is byte[])
+                result = CompactBinaryFormatter.FromByteBuffer((byte[])response, _context.SerializationContext);
+            else if (response is IList)
+            {
+                IList buffers = response as IList;
+                ClusteredMemoryStream stream = new ClusteredMemoryStream(0);
+                foreach (byte[] buffer in buffers)
+                {
+                    stream.Write(buffer, 0, buffer.Length);
+                }
+                stream.Position = 0;
+                result = CompactBinaryFormatter.Deserialize(stream, _context.SerializationContext);
+            }
+
+            return result;
+        }
+
+        protected internal object SendMessage(Address dest, object msg, byte mode, bool isSeqRequired, long timeout, Priority priority = Priority.Normal)
         {
             try
             {
                 if (ServerMonitor.MonitorActivity) ServerMonitor.LogClientActivity("ClustService.SendMsg", "dest_addr :" + dest);
 
-               
-                byte[] serializedMsg = SerializeMessage(msg);
+                object result;
+                IList serializedMsg = SerializeMessage(msg);
                 Message m = new Message(dest, null, serializedMsg);
                 if (msg is Function)
                     m.Payload = ((Function)msg).UserPayload;
                 m.IsSeqRequired = isSeqRequired;
 
-                object result = _msgDisp.sendMessage(m, mode, timeout);
+                result = _msgDisp.sendMessage(m, mode, timeout);
                 if (result is OperationResponse)
                 {
-                    ((OperationResponse)result).SerializablePayload = CompactBinaryFormatter.FromByteBuffer((byte[])((OperationResponse)result).SerializablePayload, _context.SerializationContext);
+                    ((OperationResponse)result).SerializablePayload = DeserailizeResponse(((OperationResponse)result).SerializablePayload);
                 }
                 else if (result is byte[])
                 {
                     result = CompactBinaryFormatter.FromByteBuffer((byte[])result, _context.SerializationContext);
                 }
+                else if (result is IList)
+                {
+                    IList buffers = result as IList;
+                    ClusteredMemoryStream stream = new ClusteredMemoryStream(0);
+                    foreach (byte[] buffer in buffers)
+                    {
+                        stream.Write(buffer, 0, buffer.Length);
+                    }
+                    stream.Position = 0;
+                    result = CompactBinaryFormatter.Deserialize(stream, _context.SerializationContext);
+                }
 
                 if (result != null && result is Exception) throw (Exception)result;
+
                 return result;
             }
             catch (Alachisoft.NGroups.SuspectedException e)
             {
                 throw new Runtime.Exceptions.SuspectedException("operation failed because the group member was suspected " + e.suspect);
+
             }
             catch (Runtime.Exceptions.TimeoutException e)
             {
@@ -918,13 +1081,24 @@ namespace Alachisoft.NCache.Caching.Topologies.Clustered
             {
                 if (ServerMonitor.MonitorActivity) ServerMonitor.LogClientActivity("ClustService.SendMsg", "dest_addr :" + dest);
 
-                byte[] serializedMsg = SerializeMessage(msg);
+                IList serializedMsg = SerializeMessage(msg);
                 Message m = new Message(dest, null, serializedMsg);
                 m.HandledAysnc = handleAsync;
                 m.IsUserMsg = true;
                 object result = _msgDisp.sendMessage(m, mode, timeout);
                 if (result is byte[])
                     result = CompactBinaryFormatter.FromByteBuffer((byte[])result, _context.SerializationContext);
+                else if (result is IList)
+                {
+                    IList buffers = result as IList;
+                    ClusteredMemoryStream stream = new ClusteredMemoryStream(0);
+                    foreach (byte[] buffer in buffers)
+                    {
+                        stream.Write(buffer, 0, buffer.Length);
+                    }
+                    stream.Position = 0;
+                    result = CompactBinaryFormatter.Deserialize(stream, _context.SerializationContext);
+                }
                 return result;
             }
             catch (Alachisoft.NGroups.SuspectedException e)
@@ -991,7 +1165,7 @@ namespace Alachisoft.NCache.Caching.Topologies.Clustered
         {
             if (ServerMonitor.MonitorActivity) ServerMonitor.LogClientActivity("ClustService.SendNoRepMsg", "dest_addr :" + dest);
 
-            byte[] serializedMsg = SerializeMessage(msg);
+            IList serializedMsg = SerializeMessage(msg);
             Message m = new Message(dest, null, serializedMsg);
             m.IsSeqRequired = isSeqRequired;
             m.Priority = priority;
@@ -1038,7 +1212,7 @@ namespace Alachisoft.NCache.Caching.Topologies.Clustered
         /// <param name="part"></param>
         protected internal void SendNoReplyMulticastMessage(ArrayList dest, Object msg, Priority priority, bool isSeqRequired)
         {
-            byte[] serializedMsg = SerializeMessage(msg);
+            IList serializedMsg = SerializeMessage(msg);
             Message m = new Message(null, null, serializedMsg);
             m.IsSeqRequired = isSeqRequired;
             m.Priority = priority;
@@ -1100,7 +1274,7 @@ namespace Alachisoft.NCache.Caching.Topologies.Clustered
             _groupCoords = new ArrayList();
             lock (_subgroups.SyncRoot)
             {
-                for (IEnumerator i = _subgroups.Values.GetEnumerator(); i.MoveNext(); )
+                for (IEnumerator i = _subgroups.Values.GetEnumerator(); i.MoveNext();)
                 {
                     SubCluster group = (SubCluster)i.Current;
                     if (group.Coordinator != null)
@@ -1127,7 +1301,10 @@ namespace Alachisoft.NCache.Caching.Topologies.Clustered
                 {
                     NCacheLog.Warn("ClusterService.OnMemberJoined()", "A non-server attempted to join cluster -> " + address);
                     _validMembers.Remove(address);
-                    _servers.Remove(address);
+                    lock (_servers.SyncRoot)
+                    {
+                        _servers.Remove(address);
+                    }
                     return false;
                 }
 
@@ -1154,14 +1331,15 @@ namespace Alachisoft.NCache.Caching.Topologies.Clustered
 
                 if (joined)
                 {
-                    NCacheLog.CriticalInfo("ClusterService.OnMemberJoined()", "Member joined: " + address);
+                    NCacheLog.CriticalInfo("ClusterService.OnMemberJoined", "Member joined: " + address);
 
                     Address renderer = new Address(identity.RendererAddress, identity.RendererPort);
 
-                    string mirrorExplaination = identity.IsStartedAsMirror ? " (replica)" : "";
+                    string mirrorExplaination = "";
 
-                    if (joiningNowList.Contains(address) && !_context.IsStartedAsMirror && !address.Equals(LocalAddress))
+                    if (joiningNowList.Contains(address) && !address.Equals(LocalAddress))
                     {
+
                         AppUtil.LogEvent(_cacheserver, "Node \"" + address + mirrorExplaination + "\" has joined to \"" + _context.CacheRoot.Name + "\".", System.Diagnostics.EventLogEntryType.Information, EventCategories.Information, EventID.NodeJoined);
                     }
 
@@ -1169,7 +1347,7 @@ namespace Alachisoft.NCache.Caching.Topologies.Clustered
                     {
                         _membersRenders.Add(address, renderer);
 
-                        if (_listener != null && !identity.IsStartedAsMirror)
+                        if (_listener != null)
                         {
                             _listener.OnMemberJoined(address, renderer);
                         }
@@ -1204,27 +1382,24 @@ namespace Alachisoft.NCache.Caching.Topologies.Clustered
                         {
                             if (group.OnMemberLeft(address, _distributionPolicyMbr.BucketsOwnershipMap) < 1)
                             {
-                                if (NCacheLog.IsInfoEnabled) NCacheLog.Info("ClusterService.OnMemberLeft()",   "Destroyed sub-cluster -> " + identity.SubGroupName);
+                                if (NCacheLog.IsInfoEnabled) NCacheLog.Info("ClusterService.OnMemberLeft()", "Destroyed sub-cluster -> " + identity.SubGroupName);
                                 _subgroups.Remove(identity.SubGroupName);
                             }
                         }
                     }
                 }
+
                 if (_membersRenders.Contains(address))
                 {
                     Address renderer = (Address)_membersRenders[address];
                     _membersRenders.Remove(address);
 
-                    if (_listener != null && !identity.IsStartedAsMirror) // invisible replica's don't raise events.
+                    if (_listener != null) // invisible replica's don't raise events.
                         _listener.OnMemberLeft(address, renderer);
                 }
 
-                string mirrorExplaination = identity.IsStartedAsMirror ? " (replica)" : "";
-
-                if (!_context.IsStartedAsMirror)
-                {
-                    AppUtil.LogEvent(_cacheserver, "Node \"" + address + mirrorExplaination + "\" has left \"" + _context.CacheRoot.Name + "\".", System.Diagnostics.EventLogEntryType.Warning, EventCategories.Warning, EventID.NodeLeft);
-                }
+                string mirrorExplaination = "";
+                AppUtil.LogEvent(_cacheserver, "Node \"" + address + mirrorExplaination + "\" has left \"" + _context.CacheRoot.Name + "\".", System.Diagnostics.EventLogEntryType.Warning, EventCategories.Warning, EventID.NodeLeft);
 
                 return _participant.OnMemberLeft(address, identity);
             }
@@ -1243,7 +1418,7 @@ namespace Alachisoft.NCache.Caching.Topologies.Clustered
         {
             System.Collections.ArrayList joined_mbrs, left_mbrs, tmp;
             ArrayList joining_mbrs = new ArrayList();
-
+            ViewInstallationLatch.SetStatusBit(ViewStatus.INPROGRESS, ViewStatus.NONE | ViewStatus.COMPLETE);
             lock (viewMutex)
             {
                 object tmp_mbr;
@@ -1291,12 +1466,17 @@ namespace Alachisoft.NCache.Caching.Topologies.Clustered
                 _members.Clear();
                 _members.AddRange(tmp);
 
+#if DEBUGSTATETRANSFER
+                ViewActivity distActivity = new ViewActivity((View)newView.Clone(), left_mbrs.Clone() as ArrayList, joined_mbrs.Clone() as ArrayList);
+                _history.AddActivity(distActivity);
+#endif
+
                 //pick the map from the view and send it to cache.
                 //if i am the only member, i can build the map locally.
                 if (newView.DistributionMaps == null && newView.Members.Count == 1)
                 {
                     if (NCacheLog.IsInfoEnabled) NCacheLog.Info("ClusterService.viewAccepted()", "I am the only member in the view so, building map myself");
-                    PartNodeInfo affectedNode = new PartNodeInfo(LocalAddress, _subgroupid, true);
+                    PartNodeInfo affectedNode = new PartNodeInfo(LocalAddress, _subgroupid);
                     DistributionInfoData info = new DistributionInfoData(DistributionMode.OptimalWeight, ClusterActivity.NodeJoin, affectedNode);
                     DistributionMaps maps = _distributionPolicyMbr.GetDistributionMaps(info);
                     if (maps != null)
@@ -1307,60 +1487,73 @@ namespace Alachisoft.NCache.Caching.Topologies.Clustered
                 }
                 else
                 {
-
                     if (newView.MirrorMapping != null)
                     {
                         _distributionPolicyMbr.InstallMirrorMap(newView.MirrorMapping);
                         NCacheLog.Info("ClusterService.viewAccepted()", "New MirrorMap installed.");
                     }
+                    else
+                        NCacheLog.CriticalInfo("ClusterService.viewAccepted()", "MirrorMap is NULL.");
 
                     if (newView.DistributionMaps != null)
                     {
                         _distributionPolicyMbr.InstallHashMap(newView.DistributionMaps, left_mbrs);
                         if (NCacheLog.IsInfoEnabled) NCacheLog.Info("ClusterService.viewAccepted()", "New hashmap installed");
                     }
+                    else
+                        NCacheLog.CriticalInfo("ClusterService.viewAccepted()", "distribution maps are NULL.");
+
                 }
 
-                lock (_servers.SyncRoot)
+
+                if (left_mbrs.Count > 0)
                 {
-                    if (left_mbrs.Count > 0)
+                    for (int i = left_mbrs.Count - 1; i >= 0; i--)
                     {
-                        for (int i = left_mbrs.Count - 1; i >= 0; i--)
+                        Address ipAddr = (Address)((Address)left_mbrs[i]);
+                        if (NCacheLog.IsInfoEnabled) NCacheLog.Info("ClusterService.viewAccepted", ipAddr.AdditionalData.Length.ToString());
+                        ipAddr = (Address)ipAddr.Clone();
+                        lock (_servers.SyncRoot)
                         {
-                            Address ipAddr = (Address)((Address)left_mbrs[i]);
-                            if (NCacheLog.IsInfoEnabled) NCacheLog.Info("ClusterService.viewAccepted", ipAddr.AdditionalData.Length.ToString());
-                            ipAddr = (Address)ipAddr.Clone();
                             if (_servers.Contains(ipAddr))
                                 _servers.Remove(ipAddr);
-
-                            OnMemberLeft(ipAddr, CompactBinaryFormatter.FromByteBuffer(ipAddr.AdditionalData, _context.SerializationContext) as NodeIdentity);
-                            ipAddr.AdditionalData = null;
                         }
-                    }
 
-                    _validMembers = (ArrayList)_members.Clone();
-                    if (NCacheLog.IsInfoEnabled) NCacheLog.Info("ClusterService.viewAccepted", joining_mbrs.Count.ToString());
-
-                    if (joined_mbrs.Count > 0)
-                    {
-                        for (int i = 0; i < joined_mbrs.Count; i++)
-                        {
-                            Address ipAddr = (Address)joined_mbrs[i];
-                            if (NCacheLog.IsInfoEnabled) NCacheLog.Info("ClusterService.viewAccepted", ipAddr.AdditionalData.Length.ToString());
-                            ipAddr = (Address)ipAddr.Clone();
-
-                            if (OnMemberJoined(ipAddr, CompactBinaryFormatter.FromByteBuffer(ipAddr.AdditionalData, _context.SerializationContext) as NodeIdentity, joining_mbrs))
-                            {
-                                if (NCacheLog.IsInfoEnabled) NCacheLog.Info("ClusterServices.ViewAccepted", ipAddr.ToString() + " is added to _servers list.");
-                                _servers.Add(ipAddr);
-                            }
-                            ipAddr.AdditionalData = null;
-                        }
+                        OnMemberLeft(ipAddr, CompactBinaryFormatter.FromByteBuffer(ipAddr.AdditionalData, _context.SerializationContext) as NodeIdentity);
+                        ipAddr.AdditionalData = null;
                     }
                 }
 
-                if (String.IsNullOrEmpty(_bridgeSourceCacheId))
-                    _bridgeSourceCacheId = newView.BridgeSourceCacheId;
+                _validMembers = (ArrayList)_members.Clone();
+                if (NCacheLog.IsInfoEnabled) NCacheLog.Info("ClusterService.viewAccepted", joining_mbrs.Count.ToString());
+
+                if (joined_mbrs.Count > 0)
+                {
+                    for (int i = 0; i < joined_mbrs.Count; i++)
+                    {
+                        Address ipAddr = (Address)joined_mbrs[i];
+                        if (NCacheLog.IsInfoEnabled) NCacheLog.Info("ClusterService.viewAccepted", ipAddr.AdditionalData.Length.ToString());
+                        ipAddr = (Address)ipAddr.Clone();
+
+                        if (!OnMemberJoined(ipAddr, CompactBinaryFormatter.FromByteBuffer(ipAddr.AdditionalData, _context.SerializationContext) as NodeIdentity, joining_mbrs))
+
+                        {
+
+                        }
+                        else
+                        {
+                            if (NCacheLog.IsInfoEnabled) NCacheLog.Info("ClusterServices.ViewAccepted", ipAddr.ToString() + " is added to _servers list.");
+                            lock (_servers.SyncRoot)
+                            {
+                                _servers.Add(ipAddr);
+                            }
+                        }
+                        ipAddr.AdditionalData = null;
+                    }
+                }
+
+
+
                 OnAfterMembershipChange();
             }
         }
@@ -1408,12 +1601,26 @@ namespace Alachisoft.NCache.Caching.Topologies.Clustered
         /// <returns></returns>
         public object handleFunction(Address src, Function func)
         {
+            ThrowExceptionIfNonFunctional();
+
             return _participant.HandleClusterMessage(src, func);
         }
 
         public object handleFunction(Address src, Function func, out Address destination, out Message replicationMsg)
         {
+            ThrowExceptionIfNonFunctional();
+
             return _participant.HandleClusterMessage(src, func, out destination, out replicationMsg);
+        }
+
+        public void SetAsNonFunctional(string reason)
+        {
+            lock (_mutex) _reasonOfNonFunctionality = reason;
+        }
+
+        private void ThrowExceptionIfNonFunctional()
+        {
+            
         }
 
         /// <summary>
@@ -1423,7 +1630,7 @@ namespace Alachisoft.NCache.Caching.Topologies.Clustered
         /// <returns>the reply to be sent to the requester.</returns>
         object RequestHandler.handle(Message req)
         {
-            if (req == null || req.Length == 0)
+            if (req == null || (req.Length == 0 && req.BufferLength == 0))
             {
                 return null;
             }
@@ -1431,15 +1638,28 @@ namespace Alachisoft.NCache.Caching.Topologies.Clustered
             {
                 bool isLocalReq = LocalAddress.CompareTo(req.Src) == 0;
                 object body = req.getFlatObject();
+                IList bufferList = req.Buffers;
                 try
                 {
-                    if (body is Byte[])
+                    if (bufferList != null && bufferList.Count > 0)
+                    {
+                        ClusteredMemoryStream stream = new ClusteredMemoryStream(req.BufferLength);
+                        foreach (byte[] buffer in bufferList)
+                        {
+                            stream.Write(buffer, 0, buffer.Length);
+                        }
+                        stream.Position = 0;
+                        body = CompactBinaryFormatter.Deserialize(stream, _context.SerializationContext);
+
+                    }
+                    else if (body is Byte[])
                     {
                         body = CompactBinaryFormatter.FromByteBuffer((byte[])body, _context.SerializationContext);
                     }
                 }
                 catch (Exception e)
-                {                   
+                {
+                    _context.NCacheLog.Error("ClusterServer.handleRequest", e.ToString());
                     return e;
                 }
                 object result = null;
@@ -1506,12 +1726,16 @@ namespace Alachisoft.NCache.Caching.Topologies.Clustered
                     }
                     else
                     {
-                        ((OperationResponse)result).SerializablePayload = CompactBinaryFormatter.ToByteBuffer(((OperationResponse)result).SerializablePayload, _context.SerializationContext);
+                        ClusteredMemoryStream stream = new ClusteredMemoryStream();
+                        CompactBinaryFormatter.Serialize(stream, ((OperationResponse)result).SerializablePayload, _context.SerializationContext, false);
+                        ((OperationResponse)result).SerializablePayload = stream.GetInternalBuffer();
                     }
                 }
                 else
                 {
-                    result = CompactBinaryFormatter.ToByteBuffer(result, _context.SerializationContext);
+                    ClusteredMemoryStream stream = new ClusteredMemoryStream();
+                    CompactBinaryFormatter.Serialize(stream, result, _context.SerializationContext, false);
+                    result = stream.GetInternalBuffer();
                 }
                 return result;
             }
@@ -1519,6 +1743,8 @@ namespace Alachisoft.NCache.Caching.Topologies.Clustered
             {
                 return e;
             }
+
+            return null;
         }
 
         object RequestHandler.handleNHopRequest(Message req, out Address destination, out Message replicationMsg)
@@ -1526,20 +1752,35 @@ namespace Alachisoft.NCache.Caching.Topologies.Clustered
             destination = null;
             replicationMsg = null;
 
-            if (req == null || req.Length == 0)
+            if (req.Length == 0 && req.BufferLength == 0)
                 return null;
 
             try
             {
                 bool isLocalReq = LocalAddress.CompareTo(req.Src) == 0;
                 object body = req.getFlatObject();
+                IList bufferList = req.Buffers;
                 try
                 {
-                    if (body is Byte[])
+                    if (bufferList != null && bufferList.Count > 0)
+                    {
+                        ClusteredMemoryStream stream = new ClusteredMemoryStream(req.BufferLength);
+                        foreach (byte[] buffer in bufferList)
+                        {
+                            stream.Write(buffer, 0, buffer.Length);
+                        }
+                        stream.Position = 0;
+                        body = CompactBinaryFormatter.Deserialize(stream, _context.SerializationContext);
+
+                    }
+                    else if (body is Byte[])
+                    {
                         body = CompactBinaryFormatter.FromByteBuffer((byte[])body, _context.SerializationContext);
+                    }
                 }
                 catch (Exception e)
                 {
+                    _context.NCacheLog.Error("ClusterServer.handleNHopRequest", e.ToString());
                     return e;
                 }
 
@@ -1601,20 +1842,22 @@ namespace Alachisoft.NCache.Caching.Topologies.Clustered
 
                 if (result is OperationResponse)
                 {
-
                     if (((OperationResponse)result).SerilizationStream != null)
                     {
-                       CompactBinaryFormatter.Serialize(((OperationResponse)result).SerilizationStream, ((OperationResponse)result).SerializablePayload, _context.SerializationContext, false);
+                        CompactBinaryFormatter.Serialize(((OperationResponse)result).SerilizationStream, ((OperationResponse)result).SerializablePayload, _context.SerializationContext, false);
                     }
                     else
                     {
-                        ((OperationResponse)result).SerializablePayload = CompactBinaryFormatter.ToByteBuffer(((OperationResponse)result).SerializablePayload, _context.SerializationContext);
+                        ClusteredMemoryStream stream = new ClusteredMemoryStream();
+                        CompactBinaryFormatter.Serialize(stream, ((OperationResponse)result).SerializablePayload, _context.SerializationContext, false);
+                        ((OperationResponse)result).SerializablePayload = stream.GetInternalBuffer();
                     }
-
                 }
                 else
                 {
-                    result = CompactBinaryFormatter.ToByteBuffer(result, _context.SerializationContext);
+                    ClusteredMemoryStream stream = new ClusteredMemoryStream();
+                    CompactBinaryFormatter.Serialize(stream, result, _context.SerializationContext, false);
+                    result = stream.GetInternalBuffer();
                 }
 
                 return result;
@@ -1623,6 +1866,8 @@ namespace Alachisoft.NCache.Caching.Topologies.Clustered
             {
                 return e;
             }
+
+            return null;
         }
 
 
@@ -1647,13 +1892,12 @@ namespace Alachisoft.NCache.Caching.Topologies.Clustered
 
         public object GetDistributionAndMirrorMaps(object data)
         {
-            NCacheLog.Debug("MessageResponder.GetDistributionAndMirrorMaps()",   "here comes the request for hashmap");
+            NCacheLog.Debug("MessageResponder.GetDistributionAndMirrorMaps()", "here comes the request for hashmap");
 
             object[] package = data as object[];
             ArrayList members = package[0] as ArrayList;
             bool isJoining = (bool)package[1];
             string subGroup = (string)package[2];
-            bool isStartedAsMirror = (bool)package[3];
 
             ClusterActivity activity = ClusterActivity.None;
             activity = isJoining ? ClusterActivity.NodeJoin : ClusterActivity.NodeLeave;
@@ -1662,23 +1906,55 @@ namespace Alachisoft.NCache.Caching.Topologies.Clustered
 
             // if the joining node is mirror and its coordinator/active exists
             {
-                PartNodeInfo affectedNode = new PartNodeInfo((Address)members[0], subGroup, !isStartedAsMirror);
+                PartNodeInfo affectedNode = new PartNodeInfo((Address)members[0], subGroup);
                 DistributionInfoData info = new DistributionInfoData(DistributionMode.OptimalWeight, activity, affectedNode);
-                if (NCacheLog.IsInfoEnabled) NCacheLog.Info("ClusterService.GetDistributionMaps",   "NodeAddress: " + info.AffectedNode.NodeAddress.ToString() + " subGroup: " + subGroup + " isMirror: " + isStartedAsMirror.ToString() + " " + (isJoining ? "joining" : "leaving"));
+                if (NCacheLog.IsInfoEnabled) NCacheLog.Info("ClusterService.GetDistributionMaps", "NodeAddress: " + info.AffectedNode.NodeAddress.ToString() + " subGroup: " + subGroup + " " + (isJoining ? "joining" : "leaving"));
                 maps = _distributionPolicyMbr.GetDistributionMaps(info);
             }
 
             CacheNode[] mirrors = _distributionPolicyMbr.GetMirrorMap();
-            NCacheLog.Debug("MessageResponder.GetDistributionAndMirrorMaps()",   "sending hashmap response back...");
+            NCacheLog.Debug("MessageResponder.GetDistributionAndMirrorMaps()", "sending hashmap response back...");
 
-           
             return new object[] { maps, mirrors };
         }
 
         #endregion
 
-      
-        
-      
+#if COMMUNITY
+
+        internal void PopulateClusterNodes(Hashtable clusterProps)
+        {
+            Hashtable nodeList = new Hashtable();
+            try
+            {
+                string x = null;
+
+                nodeList = clusterProps["channel"] as Hashtable;
+                nodeList = nodeList["tcpping"] as Hashtable;
+                if (nodeList.Contains("initial_hosts"))
+                    x = Convert.ToString(nodeList["initial_hosts"]);
+
+                // For Partition Of Replicas
+                nodeList = clusterProps["channel"] as Hashtable;
+                if (nodeList.Contains("partitions"))
+                {
+                    nodeList = nodeList["partitions"] as Hashtable;
+                }
+
+            }
+            catch (Exception) { }
+
+        }
+
+        private string ExtractCacheName(string cacheName)
+        {
+            if (cacheName.ToUpper().IndexOf("_BK_") != -1)
+                return cacheName.Remove(cacheName.ToUpper().IndexOf("_BK"), cacheName.Length - cacheName.ToUpper().IndexOf("_BK"));
+            else
+                return cacheName;
+
+        }
+
+#endif
     }
 }

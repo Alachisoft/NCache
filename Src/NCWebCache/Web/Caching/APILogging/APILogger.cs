@@ -16,7 +16,7 @@ using System;
 using System.Collections;
 using System.IO;
 using Alachisoft.NCache.Common;
-
+using Alachisoft.NCache.Runtime.Caching;
 using System.Threading;
 
 namespace Alachisoft.NCache.Web.Caching.APILogging
@@ -30,18 +30,19 @@ namespace Alachisoft.NCache.Web.Caching.APILogging
         private Queue _logQueue = Queue.Synchronized(new Queue());
         private Thread _thread;
         private int _logToFileInterval;
+
         private DebugAPIConfiguraions _debugAPIConfigurations;
 
         public APILogger(string cacheName, DebugAPIConfiguraions debugAPIConfigurations)
         {
             _debugAPIConfigurations = debugAPIConfigurations;
             _logToFileInterval = 1000 * DebugAPIConfiguraions.LoggerThreadLoggingInterval;
-
             _cacheName = cacheName;
             _thread = new Thread(new ThreadStart(LogInBackground));
             _thread.IsBackground = true;
             _thread.Start();
         }
+
 
         public void Log(APILogItem logItem)
         {
@@ -60,10 +61,17 @@ namespace Alachisoft.NCache.Web.Caching.APILogging
                         APILogItem apiLogItem = _logQueue.Dequeue() as APILogItem;
                         LogInternal(apiLogItem);
                     }
+
                     Thread.Sleep(_logToFileInterval);
                 }
-                catch (ThreadAbortException) { break; }
-                catch (ThreadInterruptedException) { break; }
+                catch (ThreadAbortException)
+                {
+                    break;
+                }
+                catch (ThreadInterruptedException)
+                {
+                    break;
+                }
                 catch (Exception e)
                 {
                     try
@@ -71,7 +79,9 @@ namespace Alachisoft.NCache.Web.Caching.APILogging
                         APILogItem logItem = new APILogItem(null, "An error occurred while logging" + e.ToString());
                         LogInternal(logItem);
                     }
-                    catch (Exception) { }
+                    catch (Exception)
+                    {
+                    }
                 }
             }
         }
@@ -88,49 +98,143 @@ namespace Alachisoft.NCache.Web.Caching.APILogging
 
                 if (!String.IsNullOrEmpty(logItem.Key))
                     w.WriteLine(String.Format("{0,-30}\t Key = {1}", " ", logItem.Key));
+
                 if (logItem.AbsolueExpiration != null)
-                    w.WriteLine(String.Format("{0,-30}\t Absolute Expiration = {1}", " ", logItem.AbsolueExpiration.ToString()));
+                    w.WriteLine(String.Format("{0,-30}\t Absolute Expiration = {1}", " ",
+                        logItem.AbsolueExpiration.ToString()));
                 if (logItem.SlidingExpiration != null)
-                    w.WriteLine(String.Format("{0,-30}\t Sliding Expiration = {1} milliseconds", " ", logItem.SlidingExpiration.Value.TotalMilliseconds));
+                    w.WriteLine(String.Format("{0,-30}\t Sliding Expiration = {1} milliseconds", " ",
+                        logItem.SlidingExpiration.Value.TotalMilliseconds));
+
+                if (!String.IsNullOrEmpty(logItem.Group))
+                    w.WriteLine(String.Format("{0,-30}\t Group = {1}", " ", logItem.Group));
+                if (!String.IsNullOrEmpty(logItem.SubGroup))
+                    w.WriteLine(String.Format("{0,-30}\t SubGroup = {1}", " ", logItem.SubGroup));
+
+                if (logItem.Tags != null && logItem.Tags.Length != 0)
+                {
+                    w.WriteLine(String.Format("{0,-30}\t Tags:", " "));
+                    foreach (Tag t in logItem.Tags)
+                        w.WriteLine(String.Format("{0,-30}\t\tValue = {1}", " ", t != null ? t.TagName : ""));
+                }
+
+                if (logItem.NamedTags != null && logItem.NamedTags.Count != 0)
+                {
+                    w.WriteLine(String.Format("{0,-30}\t NamedTags:", " "));
+                    IEnumerator ie = logItem.NamedTags.GetEnumerator();
+                    while (ie.MoveNext())
+                    {
+                        DictionaryEntry de = (DictionaryEntry) ie.Current;
+                        w.WriteLine(String.Format(
+                            "{0,-30}\t\t Key = " + de.Key.ToString() + "\tValue = " + de.Value.ToString(), " "));
+                    }
+                }
+
                 if (logItem.Priority != null)
                     w.WriteLine(String.Format("{0,-30}\t Priority = {1}", " ", logItem.Priority.ToString()));
 
+                if (logItem.Dependency != null)
+                {
+                    w.WriteLine(String.Format("{0,-30}\t Dependency = {1}", " ", logItem.Dependency.GetType().Name));
+                    if ((logItem.Dependency as Runtime.Dependencies.KeyDependency) != null)
+                    {
+                        w.WriteLine(String.Format("{0,-30}\t\t Keys:", " "));
+                        Runtime.Dependencies.KeyDependency kd = (Runtime.Dependencies.KeyDependency) logItem.Dependency;
+                        foreach (string key in kd.CacheKeys)
+                            w.WriteLine(String.Format("{0,-30}\t\t\tValue = {1}", " ", key));
+                    }
+                    else if ((logItem.Dependency as Runtime.Dependencies.FileDependency) != null)
+                    {
+                        w.WriteLine(String.Format("{0,-30}\t\t Files:", " "));
+                        Runtime.Dependencies.FileDependency fd =
+                            (Runtime.Dependencies.FileDependency) logItem.Dependency;
+                        foreach (string fileName in fd.fileNames)
+                            w.WriteLine(String.Format("{0,-30}\t\t\tValue = {1}", " ", fileName));
+                    }
+                }
+
+                if (logItem.SyncDependency != null)
+                    w.WriteLine(String.Format("{0,-30}\t SyncDependency = {1}", " ",
+                        logItem.SyncDependency.ToString()));
+                if (logItem.IsResyncRequired != null)
+                    w.WriteLine(String.Format("{0,-30}\t IsResyncRequired = {1}", " ",
+                        logItem.IsResyncRequired.ToString()));
+
+
+                if (!String.IsNullOrEmpty(logItem.ProviderName))
+                    w.WriteLine(String.Format("{0,-30}\t ProviderName = {1}", " ", logItem.ProviderName));
+
+                if (!String.IsNullOrEmpty(logItem.ResyncProviderName))
+                    w.WriteLine(String.Format("{0,-30}\t ResyncProviderName = {1}", " ", logItem.ResyncProviderName));
+
+                if (logItem.DSWriteOption != null)
+                    w.WriteLine(String.Format("{0,-30}\t DSWriteOption = {1}", " ", logItem.DSWriteOption.ToString()));
+
+                if (logItem.DSReadOption != null)
+                    w.WriteLine(String.Format("{0,-30}\t DSReadOption = {1}", " ", logItem.DSReadOption.ToString()));
+
+
+                if (logItem.ContinuousQuery != null)
+                {
+                    w.WriteLine(String.Format("{0,-30}\t ContinuousQuery:", " "));
+                    w.WriteLine(String.Format("{0,-30}\t\t Query = {1}", " ", logItem.ContinuousQuery.Query));
+                    w.WriteLine(String.Format("{0,-30}\t\t Values:", " "));
+                    IDictionaryEnumerator ide = logItem.ContinuousQuery.Values.GetEnumerator();
+                    while (ide.MoveNext())
+                    {
+                        w.WriteLine(String.Format(
+                            "{0,-30}\t\t\t Key = " + ide.Key.ToString() + "\tValue = " + ide.Value.ToString(), " "));
+                    }
+                }
+
+
                 if (!string.IsNullOrEmpty(logItem.Query))
                     w.WriteLine(String.Format("{0,-30}\t Query = {1}", " ", logItem.Query.ToString()));
-               
                 if (logItem.QueryValues != null)
                 {
                     w.WriteLine(String.Format("{0,-30}\t Values:", " "));
                     IDictionaryEnumerator ide = logItem.QueryValues.GetEnumerator();
                     while (ide.MoveNext())
                     {
-                        w.WriteLine(String.Format("{0,-30}\t\t Key = " + ide.Key.ToString() + "\tValue = " + ide.Value.ToString(), " "));
+                        w.WriteLine(String.Format(
+                            "{0,-30}\t\t Key = " + ide.Key.ToString() + "\tValue = " + ide.Value.ToString(), " "));
                     }
-
                 }
 
                 if (logItem.LockTimeout != null)
-                    w.WriteLine(String.Format("{0,-30}\t LockTimeout = {1} milliseconds", " ", logItem.LockTimeout.Value.TotalMilliseconds.ToString()));
+                    w.WriteLine(String.Format("{0,-30}\t LockTimeout = {1} milliseconds", " ",
+                        logItem.LockTimeout.Value.TotalMilliseconds.ToString()));
                 if (logItem.AcquireLock != null)
                     w.WriteLine(String.Format("{0,-30}\t AcquireLock = {1}", " ", logItem.AcquireLock.ToString()));
+
+
+                if (logItem.StreamMode != null)
+                    w.WriteLine(String.Format("{0,-30}\t SreamMode = {1}", " ", logItem.StreamMode.ToString()));
+
+                if (logItem.CacheItemVersion != null)
+                    w.WriteLine(String.Format("{0,-30}\t CacheItemVersion = {1}", " ",
+                        logItem.CacheItemVersion.ToString()));
 
                 if (logItem.RuntimeAPILogItem != null)
                 {
                     RuntimeAPILogItem rtLogItem = logItem.RuntimeAPILogItem;
                     string avg = rtLogItem.IsBulk ? "Average " : "";
-                    if(rtLogItem.IsBulk)
-                        w.WriteLine(String.Format("{0,-30}\t Number of Objects = {1}", " ", rtLogItem.NoOfObjects.ToString()));
-                    w.WriteLine(String.Format("{0,-30}\t {1}Object Size (bytes) = {2}", " ", avg, rtLogItem.SizeOfObject));
+                    if (rtLogItem.IsBulk)
+                        w.WriteLine(String.Format("{0,-30}\t Number of Objects = {1}", " ",
+                            rtLogItem.NoOfObjects.ToString()));
+                    w.WriteLine(String.Format("{0,-30}\t {1}Object Size (bytes) = {2}", " ", avg,
+                        rtLogItem.SizeOfObject));
                 }
 
                 if (logItem.NoOfObjectsReturned != null)
-                    w.WriteLine(String.Format("{0,-30}\t Number of Objects Returned = {1}", " ", logItem.NoOfObjectsReturned.ToString()));
+                    w.WriteLine(String.Format("{0,-30}\t Number of Objects Returned = {1}", " ",
+                        logItem.NoOfObjectsReturned.ToString()));
                 if (logItem.ExceptionMessage != null)
                 {
                     w.WriteLine(String.Format("{0,-30}\t Exception = {1}", " ", logItem.ExceptionMessage));
                 }
-                w.WriteLine();
 
+                w.WriteLine();
             }
         }
 
@@ -141,32 +245,42 @@ namespace Alachisoft.NCache.Web.Caching.APILogging
             {
                 return _fileName;
             }
+
             _iterationNumber = iterationNumber;
 
-            _fileName = getPath() + "\\" + "APIUsageLogs." + _cacheName + "_" + loggingTime.Day.ToString() + "-" + loggingTime.Month + "-" + loggingTime.Year + "-" + loggingTime.Hour + "-" + loggingTime.Minute + "-" + loggingTime.Second + ".logs.txt"; ;
+            _fileName = getPath() + Path.DirectorySeparatorChar + "APIUsageLogs." + _cacheName + "_" +
+                        loggingTime.Day.ToString() + "-" + loggingTime.Month + "-" + loggingTime.Year + "-" +
+                        loggingTime.Hour + "-" + loggingTime.Minute + "-" + loggingTime.Second + ".logs.txt";
+            ;
 
             using (StreamWriter w = File.AppendText(_fileName))
             {
                 w.WriteLine("TIMESTAMP                              \t API CALL");
             }
+
             return _fileName;
         }
 
         private string getPath()
         {
             string _path = AppUtil.InstallDir;
+
             string dirName = @"log-files\\APIUsageLogs";
+
             try
             {
                 _path = System.IO.Path.Combine(_path, dirName);
             }
-            catch { }
+            catch
+            {
+            }
 
             if (_path == null && _path.Length > 0)
             {
                 _path = new FileInfo(System.Reflection.Assembly.GetExecutingAssembly().Location).DirectoryName;
                 _path = System.IO.Path.Combine(_path, dirName);
             }
+
             if (!System.IO.Directory.Exists(_path))
                 System.IO.Directory.CreateDirectory(_path);
             return _path;
@@ -174,7 +288,11 @@ namespace Alachisoft.NCache.Web.Caching.APILogging
 
         public void Dispose()
         {
+#if !NETCORE
             _thread.Abort();
+#else
+            _thread.Interrupt();
+#endif
         }
     }
 }

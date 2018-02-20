@@ -14,17 +14,11 @@
 
 using System;
 using System.Collections;
-using System.Threading;
-
-
-using Alachisoft.NCache.Runtime.Serialization.IO;
-
 using Alachisoft.NCache.Runtime.Serialization;
-using Alachisoft.NCache.Common.Net;
+using Alachisoft.NCache.Runtime.Serialization.IO;
 
 namespace Alachisoft.NCache.Caching.DataGrouping
 {
-
     /// <summary>
     /// This class is used to store data groups settings
     /// for a node in the cluster
@@ -37,11 +31,9 @@ namespace Alachisoft.NCache.Caching.DataGrouping
         private ArrayList _unbindedGroups = new ArrayList();
         private bool _strict;
 
-
         public DataAffinity()
         {
         }
-
 
         /// <summary>
         /// Constructor
@@ -52,7 +44,7 @@ namespace Alachisoft.NCache.Caching.DataGrouping
         {
             if (groups != null)
             {
-                _groups = (ArrayList) groups.Clone();
+                _groups = (ArrayList)groups.Clone();
                 _groups.Sort();
             }
             _strict = strict;
@@ -67,23 +59,22 @@ namespace Alachisoft.NCache.Caching.DataGrouping
         {
             if (groups != null)
             {
-                _groups = (ArrayList) groups.Clone();
+                _groups = (ArrayList)groups.Clone();
                 _groups.Sort();
             }
             if (allBindedGroups != null)
             {
-                _allBindedGroups = (ArrayList) allBindedGroups.Clone();
+                _allBindedGroups = (ArrayList)allBindedGroups.Clone();
                 _allBindedGroups.Sort();
             }
             if (unbindGroups != null)
             {
-                _unbindedGroups = (ArrayList) unbindGroups.Clone();
+                _unbindedGroups = (ArrayList)unbindGroups.Clone();
                 _unbindedGroups.Sort();
             }
 
             _strict = strict;
         }
-
         /// <summary>
         /// Overloaded Constructor
         /// </summary>
@@ -97,10 +88,10 @@ namespace Alachisoft.NCache.Caching.DataGrouping
 
             if (props.Contains("data-groups"))
             {
-                string groupsStr = (string) props["data-groups"];
+                string groupsStr = (string)props["data-groups"];
                 if (groupsStr.Trim().Length > 0)
                 {
-                    string[] groups = groupsStr.Split(new char[] {','});
+                    string[] groups = groupsStr.Split(new char[] { ',' });
                     ArrayList list = new ArrayList();
                     for (int i = 0; i < groups.Length; i++)
                     {
@@ -112,10 +103,10 @@ namespace Alachisoft.NCache.Caching.DataGrouping
             }
             if (props.Contains("binded-groups-list"))
             {
-                string groupsStr = (string) props["binded-groups-list"];
+                string groupsStr = (string)props["binded-groups-list"];
                 if (groupsStr.Trim().Length > 0)
                 {
-                    string[] groups = groupsStr.Split(new char[] {','});
+                    string[] groups = groupsStr.Split(new char[] { ',' });
                     ArrayList list = new ArrayList();
                     for (int i = 0; i < groups.Length; i++)
                     {
@@ -132,7 +123,7 @@ namespace Alachisoft.NCache.Caching.DataGrouping
         /// </summary>
         public ArrayList Groups
         {
-            get { return _groups == null ? null : (ArrayList) _groups.Clone(); }
+            get { return _groups == null ? null : (ArrayList)_groups.Clone(); }
             set
             {
                 _groups = value;
@@ -146,7 +137,7 @@ namespace Alachisoft.NCache.Caching.DataGrouping
         /// </summary>
         public ArrayList AllBindedGroups
         {
-            get { return _allBindedGroups == null ? null : (ArrayList) _allBindedGroups.Clone(); }
+            get { return _allBindedGroups == null ? null : (ArrayList)_allBindedGroups.Clone(); }
             set
             {
                 _allBindedGroups = value;
@@ -160,7 +151,7 @@ namespace Alachisoft.NCache.Caching.DataGrouping
         /// </summary>
         public ArrayList AllUndbindedGroups
         {
-            get { return _unbindedGroups == null ? null : (ArrayList) _unbindedGroups.Clone(); }
+            get { return _unbindedGroups == null ? null : (ArrayList)_unbindedGroups.Clone(); }
             set
             {
                 _unbindedGroups = value;
@@ -168,7 +159,6 @@ namespace Alachisoft.NCache.Caching.DataGrouping
                     _unbindedGroups.Sort();
             }
         }
-
         /// <summary>
         /// Allow data without any group or not
         /// </summary>
@@ -227,10 +217,10 @@ namespace Alachisoft.NCache.Caching.DataGrouping
 
         public void Deserialize(CompactReader reader)
         {
-            _strict = (bool) reader.ReadBoolean();
-            _groups = (ArrayList) reader.ReadObject();
-            _allBindedGroups = (ArrayList) reader.ReadObject();
-            _unbindedGroups = (ArrayList) reader.ReadObject();
+            _strict = (bool)reader.ReadBoolean();
+            _groups = (ArrayList)reader.ReadObject();
+            _allBindedGroups = (ArrayList)reader.ReadObject();
+            _unbindedGroups = (ArrayList)reader.ReadObject();
         }
 
         #endregion

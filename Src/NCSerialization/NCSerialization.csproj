@@ -15,8 +15,12 @@
     </SccProvider>
     <Configuration Condition=" '$(Configuration)' == '' ">Debug</Configuration>
     <Platform Condition=" '$(Platform)' == '' ">AnyCPU</Platform>
+    <ApplicationIcon>
+    </ApplicationIcon>
+    <AssemblyKeyContainerName>
+    </AssemblyKeyContainerName>
     <AssemblyName>Alachisoft.NCache.Serialization</AssemblyName>
-    <AssemblyOriginatorKeyFile>..\\..\\Resources\\ncache.snk</AssemblyOriginatorKeyFile>
+    <AssemblyOriginatorKeyFile>..\..\Resources\ncache.snk</AssemblyOriginatorKeyFile>
     <DefaultClientScript>JScript</DefaultClientScript>
     <DefaultHTMLPageLayout>Grid</DefaultHTMLPageLayout>
     <DefaultTargetSchema>IE50</DefaultTargetSchema>
@@ -30,9 +34,9 @@
     </FileUpgradeFlags>
     <UpgradeBackupLocation>
     </UpgradeBackupLocation>
-    <TargetFrameworkVersion>v4.0</TargetFrameworkVersion>
     <OldToolsVersion>2.0</OldToolsVersion>
     <IsWebBootstrapper>false</IsWebBootstrapper>
+    <TargetFrameworkProfile />
     <PublishUrl>publish\</PublishUrl>
     <Install>true</Install>
     <InstallFrom>Disk</InstallFrom>
@@ -49,10 +53,16 @@
     <BootstrapperEnabled>true</BootstrapperEnabled>
   </PropertyGroup>
   <PropertyGroup Condition=" '$(Configuration)|$(Platform)' == 'Debug|AnyCPU' ">
-    <OutputPath>bin\4.0\debug\</OutputPath>
+    <TargetFrameworkVersion>v4.0</TargetFrameworkVersion>
+    <OutputPath>bin\4.0\debug.enterprise\</OutputPath>
     <AllowUnsafeBlocks>false</AllowUnsafeBlocks>
     <BaseAddress>285212672</BaseAddress>
-    <DefineConstants>TRACE;DEBUG;</DefineConstants>
+    <CheckForOverflowUnderflow>false</CheckForOverflowUnderflow>
+    <ConfigurationOverrideFile>
+    </ConfigurationOverrideFile>
+    <DefineConstants>TRACE;DEBUG;COMMUNITY;VS2005</DefineConstants>
+    <DocumentationFile>
+    </DocumentationFile>
     <DebugSymbols>true</DebugSymbols>
     <FileAlignment>4096</FileAlignment>
     <NoStdLib>false</NoStdLib>
@@ -66,18 +76,20 @@
     <DebugType>full</DebugType>
     <ErrorReport>prompt</ErrorReport>
     <PlatformTarget>AnyCPU</PlatformTarget>
+    <CodeAnalysisRuleSet>AllRules.ruleset</CodeAnalysisRuleSet>
   </PropertyGroup>
   <PropertyGroup Condition=" '$(Configuration)|$(Platform)' == 'Release|AnyCPU' ">
-    <OutputPath>bin\4.0\release\</OutputPath>
+    <TargetFrameworkVersion>v4.0</TargetFrameworkVersion>
+    <OutputPath>bin\4.0\release.enterprise\</OutputPath>
     <AllowUnsafeBlocks>false</AllowUnsafeBlocks>
     <BaseAddress>285212672</BaseAddress>
     <CheckForOverflowUnderflow>false</CheckForOverflowUnderflow>
     <ConfigurationOverrideFile>
     </ConfigurationOverrideFile>
-    <DefineConstants>TRACE;</DefineConstants>
+    <DefineConstants>TRACE;COMMUNITY;VS2005</DefineConstants>
     <DocumentationFile>
     </DocumentationFile>
-    <DebugSymbols>false</DebugSymbols>
+    <DebugSymbols>true</DebugSymbols>
     <FileAlignment>4096</FileAlignment>
     <NoStdLib>false</NoStdLib>
     <NoWarn>
@@ -87,33 +99,13 @@
     <RemoveIntegerChecks>false</RemoveIntegerChecks>
     <TreatWarningsAsErrors>false</TreatWarningsAsErrors>
     <WarningLevel>4</WarningLevel>
-    <DebugType>none</DebugType>
+    <DebugType>pdbonly</DebugType>
     <ErrorReport>prompt</ErrorReport>
     <PlatformTarget>AnyCPU</PlatformTarget>
+    <CodeAnalysisRuleSet>AllRules.ruleset</CodeAnalysisRuleSet>
   </PropertyGroup>
   <PropertyGroup>
     <SignAssembly>true</SignAssembly>
-  </PropertyGroup>
-  <PropertyGroup Condition="'$(Configuration)|$(Platform)' == 'Debug.2x|AnyCPU'">
-    <DebugSymbols>true</DebugSymbols>
-    <OutputPath>bin\2.0\debug\</OutputPath>
-    <DefineConstants>TRACE;DEBUG;</DefineConstants>
-    <BaseAddress>285212672</BaseAddress>
-    <FileAlignment>4096</FileAlignment>
-    <DebugType>full</DebugType>
-    <PlatformTarget>AnyCPU</PlatformTarget>
-    <TargetFrameworkVersion>v3.5</TargetFrameworkVersion>
-    <ErrorReport>prompt</ErrorReport>
-  </PropertyGroup>
-  <PropertyGroup Condition="'$(Configuration)|$(Platform)' == 'Release.2x|AnyCPU'">
-    <OutputPath>bin\2.0\release\</OutputPath>
-    <DefineConstants>TRACE;</DefineConstants>
-    <BaseAddress>285212672</BaseAddress>
-    <Optimize>true</Optimize>
-    <FileAlignment>4096</FileAlignment>
-    <PlatformTarget>AnyCPU</PlatformTarget>
-    <TargetFrameworkVersion>v3.5</TargetFrameworkVersion>
-    <ErrorReport>prompt</ErrorReport>
   </PropertyGroup>
   <ItemGroup>
     <Reference Include="System">
@@ -148,6 +140,7 @@
     <Compile Include="Surrogates\AverageResultSerializationSurrogate.cs" />
     <Compile Include="Surrogates\BooleanArraySerializationSurrogate.cs" />
     <Compile Include="Surrogates\BooleanSerializationSurrogate.cs" />
+    <Compile Include="Surrogates\DefaultConstructorDelegate.cs" />
     <Compile Include="Surrogates\NullSerializationSurrogate.cs">
       <SubType>Code</SubType>
     </Compile>
@@ -163,6 +156,9 @@
     <Compile Include="Surrogates\DecimalSerializationSurrogate.cs" />
     <Compile Include="Surrogates\DoubleArraySerializationSurrogate.cs" />
     <Compile Include="Surrogates\DoubleSerializationSurrogate.cs" />
+    <Compile Include="Surrogates\DynamicRefTypeSurrogate.cs" />
+    <Compile Include="Surrogates\DynamicSurrogateBuilder.cs" />
+    <Compile Include="Surrogates\DynamicValueTypeSurrogate.cs" />
     <Compile Include="Surrogates\EnumSerializationSurrogate.cs" />
     <Compile Include="Surrogates\EOFJavaSerializationSurrogate.cs" />
     <Compile Include="Surrogates\EOFNetSerializationSurrogate.cs" />
@@ -184,11 +180,13 @@
     <Compile Include="Surrogates\NullableArraySerializationSurrogate.cs" />
     <Compile Include="Surrogates\ObjectArraySerializationSurrogate.cs" />
     <Compile Include="Surrogates\ObjectSerializationSurrogate.cs" />
+    <Compile Include="Surrogates\ReadObjectDelegate.cs" />
     <Compile Include="Surrogates\SByteArraySerializationSurrogate.cs" />
     <Compile Include="Surrogates\SByteSerializationSurrogate.cs" />
     <Compile Include="Surrogates\SerializationSurrogate.cs">
       <SubType>Code</SubType>
     </Compile>
+    <Compile Include="Surrogates\SerializerConstructorDelegate.cs" />
     <Compile Include="Surrogates\SessionStateCollectionSerializationSurrogate.cs" />
     <Compile Include="Surrogates\SessionStateStaticObjectCollectionSerializationSurrogate.cs" />
     <Compile Include="Surrogates\SingleArraySerializationSurrogate.cs" />
@@ -204,9 +202,20 @@
     <Compile Include="Surrogates\UInt64ArraySerializationSurrogate.cs" />
     <Compile Include="Surrogates\UInt64SerializationSurrogate.cs" />
     <Compile Include="Surrogates\VersionCompatibleCompactSerializationSurrogate.cs" />
+    <Compile Include="Surrogates\WriteObjectDelegate.cs" />
     <Compile Include="TypeSurrogateSelector.cs">
       <SubType>Code</SubType>
     </Compile>
+  </ItemGroup>
+  <ItemGroup>
+    <ProjectReference Include="..\NCCommon\NCCommon.csproj">
+      <Project>{EC5A66B8-2272-4337-A4E2-248BDBD968B3}</Project>
+      <Name>NCCommon</Name>
+    </ProjectReference>
+    <ProjectReference Include="..\NCRuntime\NCRuntime.csproj">
+      <Project>{E60E545B-1A03-45D1-BB06-4FBB4BE71FAD}</Project>
+      <Name>NCRuntime</Name>
+    </ProjectReference>
   </ItemGroup>
   <ItemGroup>
     <BootstrapperPackage Include="Microsoft.Net.Client.3.5">
@@ -225,25 +234,10 @@
       <Install>true</Install>
     </BootstrapperPackage>
   </ItemGroup>
-  <ItemGroup>
-    <ProjectReference Include="..\NCCommon\NCCommon.csproj">
-      <Project>{EC5A66B8-2272-4337-A4E2-248BDBD968B3}</Project>
-      <Name>NCCommon</Name>
-    </ProjectReference>
-    <ProjectReference Include="..\NCRuntime\NCRuntime.csproj">
-      <Project>{E60E545B-1A03-45D1-BB06-4FBB4BE71FAD}</Project>
-      <Name>NCRuntime</Name>
-    </ProjectReference>
-  </ItemGroup>
   <Import Project="$(MSBuildBinPath)\Microsoft.CSharp.targets" />
-  <PropertyGroup Condition="'$(Configuration)|$(Platform)' == 'Release|AnyCPU' OR '$(Configuration)|$(Platform)' == 'Debug|AnyCPU'">
+  <PropertyGroup>
     <PreBuildEvent>
     </PreBuildEvent>
     <PostBuildEvent>xcopy /Y "$(TargetPath)" "$(SolutionDir)build\Server\4x\"</PostBuildEvent>
-  </PropertyGroup>
-  <PropertyGroup Condition="'$(Configuration)|$(Platform)' == 'Release.2x|AnyCPU' OR '$(Configuration)|$(Platform)' == 'Debug.2x|AnyCPU'">
-    <PreBuildEvent>
-    </PreBuildEvent>
-    <PostBuildEvent>xcopy /Y "$(TargetPath)" "$(SolutionDir)build\Server\2x\"</PostBuildEvent>
   </PropertyGroup>
 </Project>

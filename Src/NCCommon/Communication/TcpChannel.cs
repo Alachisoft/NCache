@@ -1,4 +1,4 @@
-// Copyright (c) 2018 Alachisoft
+﻿// Copyright (c) 2018 Alachisoft
 // 
 // Licensed under the Apache License, Version 2.0 (the "License");
 // you may not use this file except in compliance with the License.
@@ -11,7 +11,6 @@
 // WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
 // See the License for the specific language governing permissions and
 // limitations under the License.
-
 using System;
 using System.Collections.Generic;
 using System.Text;
@@ -24,7 +23,7 @@ namespace Alachisoft.NCache.Common.Communication
 {
     public class TcpChannel: IChannel
     {
-        const int DATA_SIZE_BUFFER_LENGTH = 10; //(in bytes)
+        const int DATA_SIZE_BUFFER_LENGTH = 10; 
         
         IConnection _connection;
         string _serverIP;
@@ -53,58 +52,66 @@ namespace Alachisoft.NCache.Common.Communication
             get { return _name; }
             set { _name = value; }
         }
-
-
+       
         public bool Connect()
         {
-            
-            if (_formatter == null)
+            lock (this)
             {
-                throw new Exception("Channel formatter is not specified");
-            }
-
-            if (_eventListener == null)
-            {
-                throw new Exception("There is no channel event listener specified");
-            }
-
-            try
-            {
-                if (_connection == null)
+                if (_formatter == null)
                 {
-                    _connection = new TcpConnection();
+                    throw new Exception("Channel formatter is not specified");
+                }
 
-                    if (!string.IsNullOrEmpty(_bindIP))
-                        _connection.Bind(_bindIP);
+                if (_eventListener == null)
+                {
+                    throw new Exception("There is no channel event listener specified");
+                }
 
-                    _connection.Connect(_serverIP, _port);
+                try
+                {
+                    if (_connection == null)
+                    {
+                        _connection = new TcpConnection();
 
-                    _receiverThread = new Thread(new ThreadStart(Run));
-                    _receiverThread.IsBackground = true;
-                    _receiverThread.Start();
-                    return true;
+                        if (!string.IsNullOrEmpty(_bindIP))
+                            _connection.Bind(_bindIP);
+
+                        _connection.Connect(_serverIP, _port);
+
+                        _receiverThread = new Thread(new ThreadStart(Run));
+                        _receiverThread.IsBackground = true;
+                        _receiverThread.Start();
+                        return true;
+                    }
+                }
+                catch (ConnectionException ce)
+                {
+                    if (_traceProvider != null)
+                    {
+                        _traceProvider.TraceError(Name + ".Connect", ce.ToString());
+                    }
+                    throw new ChannelException(ce.Message, ce);
                 }
             }
-            catch (ConnectionException ce)
-            {
-                if (_traceProvider != null)
-                {
-                    _traceProvider.TraceError(Name + ".Connect", ce.ToString());
-                }
-                throw new ChannelException(ce.Message, ce);
-            }
-
             return false;
         }
 
         public void Disconnect()
         {
-            if (_connection != null)
+            lock (this)
             {
-                _connection.Disconnect();
-                if (_receiverThread != null && _receiverThread.IsAlive)
-                    _receiverThread.Abort();
-                _connection = null;
+                if (_connection != null)
+                {
+                    _connection.Disconnect();
+                    if (_receiverThread != null && _receiverThread.IsAlive)
+                        if (!_receiverThread.Join(500))
+#if !NETCORE
+                            _receiverThread.Abort();
+#else
+                            _receiverThread.Interrupt();
+#endif
+                    _connection = null;
+                }
             }
         }
 
@@ -112,20 +119,25 @@ namespace Alachisoft.NCache.Common.Communication
         {
             if (message == null)
                 throw new ArgumentNullException("message");
-           
+
             //first serialize the message using channel formatter
             byte[] serailizedMessage = _formatter.Serialize(message);
 
+         
             byte[] msgLength = UTF8Encoding.UTF8.GetBytes(serailizedMessage.Length.ToString());
-            
-            //message is written in a specific order as expected by Socket server
-            MemoryStream stream = new MemoryStream();
 
+            //message is written in a specific order as expected by Socket server
+
+            //"MNG" tag for all mangement commands in discarding buffer
+            byte[] mngTag = Encoding.ASCII.GetBytes("MNG");
+
+            MemoryStream stream = new MemoryStream();
+            stream.Position = 0;
+            stream.Write(mngTag, 0, mngTag.Length);
             stream.Position = 20; //skip discarding buffer
             stream.Write(msgLength, 0, msgLength.Length);
             stream.Position = 30;
-
-            stream.Write(serailizedMessage,0,serailizedMessage.Length);
+            stream.Write(serailizedMessage, 0, serailizedMessage.Length);
 
             byte[] finalBuffer = stream.ToArray();
             stream.Close();
@@ -137,7 +149,6 @@ namespace Alachisoft.NCache.Common.Communication
                     try
                     {
                         _connection.Send(finalBuffer, 0, finalBuffer.Length);
-                        
                         return true;
                     }
                     catch (ConnectionException)
@@ -161,10 +172,13 @@ namespace Alachisoft.NCache.Common.Communication
 
         private bool EnsureConnected()
         {
-            if (_connection != null && !_connection.IsConnected)
+            lock (this)
             {
-                Disconnect();
-                Connect();
+                if (_connection != null && !_connection.IsConnected)
+                {
+                    Disconnect();
+                    Connect();
+                }
             }
 
             return _connection.IsConnected;
@@ -202,55 +216,77 @@ namespace Alachisoft.NCache.Common.Communication
         /// </summary>
         private void Run()
         {
-            while (true)
+            try
             {
-                try
+                while (true)
                 {
-
-                    //receive data size for the response
-                    if (_connection != null)
+                    try
                     {
-                        _connection.Receive(_sizeBuffer, DATA_SIZE_BUFFER_LENGTH);
 
-                        int rspLength = Convert.ToInt32(UTF8Encoding.UTF8.GetString(_sizeBuffer, 0, _sizeBuffer.Length));
-
-
-
-                        if (rspLength > 0)
+                        //receive data size for the response
+                        if (_connection != null)
                         {
-                            byte[] dataBuffer = new byte[rspLength];
-                            _connection.Receive(dataBuffer, rspLength);
+                            _connection.Receive(_sizeBuffer, DATA_SIZE_BUFFER_LENGTH);
 
-                            //deserialize the message
-                            IResponse response = null;
-                            if (_formatter != null)
-                                response = _formatter.Deserialize(dataBuffer) as IResponse;
+                            int rspLength = Convert.ToInt32(UTF8Encoding.UTF8.GetString(_sizeBuffer, 0, _sizeBuffer.Length));
 
-                            if (_eventListener != null)
-                                _eventListener.ReceiveResponse(response);
+                            if (rspLength > 0)
+                            {
+                                byte[] dataBuffer = new byte[rspLength];
+                                _connection.Receive(dataBuffer, rspLength);
+
+                                //deserialize the message
+                                IResponse response = null;
+                                if (_formatter != null)
+                                    response = _formatter.Deserialize(dataBuffer) as IResponse;
+
+                                if (_eventListener != null)
+                                    _eventListener.ReceiveResponse(response);
+                            }
+
+                        }
+                        else
+                        {
+                            break;
                         }
 
                     }
+                    catch (ThreadAbortException) { break; }
+                    catch (ThreadInterruptedException) { break; }
+                    catch (ConnectionException ce)
+                    {
+                        if (_traceProvider != null)
+                        {
+                            _traceProvider.TraceError(Name + ".Run", ce.ToString());
+                        }
+                        if (_eventListener != null) _eventListener.ChannelDisconnected(ce.Message);
+                        break;
+                    }
+                    catch (Exception e)
+                    {
+                        if (_traceProvider != null)
+                        {
+                            _traceProvider.TraceError(Name + ".Run", e.ToString());
+                        }
+                        object error = null;
 
-                }
-                catch (ThreadAbortException) { break; }
-                catch (ThreadInterruptedException) { break; }
-                catch (ConnectionException ce)
-                {
-                    if (_traceProvider != null)
-                    {
-                        _traceProvider.TraceError(Name + ".Run", ce.ToString());
-                    }
-                    if (_eventListener != null) _eventListener.ChannelDisconnected(ce.Message);
-                    break;
-                }
-                catch (Exception e)
-                {
-                    if (_traceProvider != null)
-                    {
-                        _traceProvider.TraceError(Name + ".Run", e.ToString());
+                        if (_formatter != null)
+                            error = _formatter.GetErrorResponse(e);
+
+                        if (_eventListener != null)
+                            _eventListener.ChannelError(error);
+
+                        //new ChannelException();
                     }
                 }
+            }
+            catch (ThreadAbortException ex)
+            { 
+                
+            }
+            catch (ThreadInterruptedException e)
+            {
+
             }
         }
 

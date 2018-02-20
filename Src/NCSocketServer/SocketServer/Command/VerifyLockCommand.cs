@@ -13,11 +13,8 @@
 // limitations under the License.
 
 using System;
-
 using Alachisoft.NCache.Caching;
 using Alachisoft.NCache.Common;
-using Alachisoft.NCache.Common.Util;
-using System.Collections.Generic;
 
 namespace Alachisoft.NCache.SocketServer.Command
 {
@@ -57,7 +54,7 @@ namespace Alachisoft.NCache.SocketServer.Command
                 if (!base.immatureId.Equals("-2"))
                 {
                     //PROTOBUF:RESPONSE
-                    _serializedResponsePackets.Add(Alachisoft.NCache.Common.Util.ResponseHelper.SerializeExceptionResponse(arEx, command.requestID));
+                    _serializedResponsePackets.Add(Alachisoft.NCache.Common.Util.ResponseHelper.SerializeExceptionResponse(arEx, command.requestID,command.commandID));
                 }
                 return;
             }
@@ -67,7 +64,7 @@ namespace Alachisoft.NCache.SocketServer.Command
                 if (!base.immatureId.Equals("-2"))
                 {
                     //PROTOBUF:RESPONSE
-                    _serializedResponsePackets.Add(Alachisoft.NCache.Common.Util.ResponseHelper.SerializeExceptionResponse(exc, command.requestID));
+                    _serializedResponsePackets.Add(Alachisoft.NCache.Common.Util.ResponseHelper.SerializeExceptionResponse(exc, command.requestID, command.commandID));
                 }
                 return;
             }
@@ -83,7 +80,8 @@ namespace Alachisoft.NCache.SocketServer.Command
                 //PROTOBUF:RESPONSE
                 Alachisoft.NCache.Common.Protobuf.Response response = new Alachisoft.NCache.Common.Protobuf.Response();
                 Alachisoft.NCache.Common.Protobuf.VerifyLockResponse verifyLockResponse = new Alachisoft.NCache.Common.Protobuf.VerifyLockResponse();
-				response.requestId = Convert.ToInt64(cmdInfo.RequestId);
+                response.requestId = Convert.ToInt64(cmdInfo.RequestId);
+                response.commandID = command.commandID;
                 response.responseType = Alachisoft.NCache.Common.Protobuf.Response.Type.LOCK_VERIFY;
                 response.lockVerify = verifyLockResponse;
 
@@ -91,14 +89,14 @@ namespace Alachisoft.NCache.SocketServer.Command
                 verifyLockResponse.success = res;
                 verifyLockResponse.lockExpiration = lockDate.Ticks;
 
-                _serializedResponsePackets.Add(Alachisoft.NCache.Common.Util.ResponseHelper.SerializeResponse(response));             
+                _serializedResponsePackets.Add(Alachisoft.NCache.Common.Util.ResponseHelper.SerializeResponse(response));
             }
             catch (Exception exc)
             {
                 _lockResult = OperationResult.Failure;
 
                 //PROTOBUF:RESPONSE
-                _serializedResponsePackets.Add(Alachisoft.NCache.Common.Util.ResponseHelper.SerializeExceptionResponse(exc, command.requestID));
+                _serializedResponsePackets.Add(Alachisoft.NCache.Common.Util.ResponseHelper.SerializeExceptionResponse(exc, command.requestID, command.commandID));
             }
         }
 
@@ -111,7 +109,6 @@ namespace Alachisoft.NCache.SocketServer.Command
 
             cmdInfo.Key = lockVerifyCommand.key;
             cmdInfo.RequestId = lockVerifyCommand.requestId.ToString();
-
 
             return cmdInfo;
         }

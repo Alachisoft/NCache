@@ -10,11 +10,14 @@
 // distributed under the License is distributed on an "AS IS" BASIS,
 // WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
 // See the License for the specific language governing permissions and
-// limitations under the License.
+// limitations under the License
 
 using System;
+using System.Collections.Generic;
 using System.Text;
+
 using Alachisoft.NCache.Common.Configuration;
+
 using System.Reflection;
 
 namespace Alachisoft.NCache.Tools.Common
@@ -22,6 +25,11 @@ namespace Alachisoft.NCache.Tools.Common
     public class ConfigurationValidator
     {
         private bool _isLocal = false;
+
+        public ConfigurationValidator()
+        {
+
+        }
 
         public bool ValidateConfiguration(object[] configuration)
         {
@@ -58,6 +66,7 @@ namespace Alachisoft.NCache.Tools.Common
 
         private bool ValidateConfigurationSection(Object configSection, string sectionName, int indent)
         {
+            string endStr = "\r\n";
             string preStr = "".PadRight(indent * 2);
 
             StringBuilder sb = new StringBuilder(preStr + "<" + sectionName);
@@ -81,17 +90,19 @@ namespace Alachisoft.NCache.Tools.Common
                             if (attrib != null)
                             {
                                 Object propertyValue = property.GetValue(configSection, null);
+                             
                                 if (sectionName != null && sectionName == "cache-topology" && propertyValue is string)
                                 {
                                     if (propertyValue is string)
                                         if ((string)propertyValue == "local-cache")
                                             _isLocal = true;
                                 }
+
                                 if (propertyValue == null && attrib.IsRequired)
                                 {
                                     throw new Exception("Error: " + attrib.AttributeName + " attribute is missing in the specified configuration.");
                                 }
-                              }
+                            }
                         }
                     }
                 }
@@ -145,7 +156,6 @@ namespace Alachisoft.NCache.Tools.Common
                     }
                 }
             }
-
             return true;
         }
     }

@@ -1,0 +1,121 @@
+<Project Sdk="Microsoft.NET.Sdk">
+
+  <PropertyGroup>
+    <TargetFramework>netstandard2.0</TargetFramework>
+  </PropertyGroup>
+
+  <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Debug|AnyCPU'">
+    <OutputPath>bin\Debug\netstandard2.0\</OutputPath>
+    <DefineConstants>TRACE;DEBUG;CLIENT;VS2005;NET40;NETCORE</DefineConstants>
+    <AllowUnsafeBlocks>True</AllowUnsafeBlocks>
+  </PropertyGroup>
+  
+    <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Release|AnyCPU'">
+    <OutputPath>bin\Release\netstandard2.0\</OutputPath>
+    <DefineConstants>TRACE;RELEASE;CLIENT;VS2005;NET40;NETCORE</DefineConstants>
+    <AllowUnsafeBlocks>True</AllowUnsafeBlocks>
+  </PropertyGroup>
+  
+    <ItemGroup>
+      <Compile Remove="CacheLoader\**" />
+      <Compile Remove="CloudUsage\**" />
+      <Compile Remove="Registry\NetCore\Crypto\**" />
+      <EmbeddedResource Remove="CacheLoader\**" />
+      <EmbeddedResource Remove="CloudUsage\**" />
+      <EmbeddedResource Remove="Registry\NetCore\Crypto\**" />
+      <None Remove="CacheLoader\**" />
+      <None Remove="CloudUsage\**" />
+      <None Remove="Registry\NetCore\Crypto\**" />
+    </ItemGroup>
+
+  <ItemGroup>
+    <Compile Remove="DataStructures\BigDictionary.cs" />
+    <Compile Remove="DataStructures\BridgeOperation.cs" />
+    <Compile Remove="DataStructures\BridgeOperationData.cs" />
+    <Compile Remove="DataStructures\NCLinkedList.cs" />
+    <Compile Remove="DataStructures\NCLinkedListNode.cs" />
+    <Compile Remove="DataStructures\ReplicatedStateTransferStatus.cs" />
+    <Compile Remove="DataStructures\XrefDictionary.cs" />
+    <Compile Remove="DataStructures\XReference.cs" />
+    <Compile Remove="FlagByte.cs" />
+    <Compile Remove="Interop\NCLicenseDllNetCore.cs" />
+    <Compile Remove="ISizable.cs" />
+    <Compile Remove="JavaClrTypeMapping.cs" />
+    <Compile Remove="Registry\NetCore\DOM\MachineInfo.cs" />
+    <Compile Remove="Log.cs" />
+    <Compile Remove="Logger\BridgeActivityMonitor.cs" />
+    <Compile Remove="Logger\BridgeActivityMonitorHandler.cs" />
+    <Compile Remove="Logger\BridgeOperationMonitor.cs" />
+    <Compile Remove="Logger\InMemoryLogger.cs" />
+    <Compile Remove="Logger\UDummyLogger.cs" />
+    <Compile Remove="Protobuf\Address.cs" />
+    <Compile Remove="Protobuf\CloudUsageResponse.cs" />
+    <Compile Remove="Protobuf\Commands\HeartBeatReceivedCommand.cs" />
+    <Compile Remove="Protobuf\Commands\InitializeCacheResponse.cs" />
+    <Compile Remove="Protobuf\DictionaryEntry.cs" />
+    <Compile Remove="Protobuf\InsertReponse.cs" />
+    <Compile Remove="Protobuf\ManagementCommands\Commands\ManagementResponseExt.cs" />
+    <Compile Remove="Remoting\RemotingChannels.cs" />
+    <Compile Remove="Snmp\CounterBridgeViewModel.cs" />
+    <Compile Remove="Snmp\CountersViewModel.cs" />
+    <Compile Remove="Snmp\SnmpMessenger.cs" />
+    <Compile Remove="Util\BitSetHelper.cs" />
+    <Compile Remove="Util\BufferStatus.cs" />
+    <Compile Remove="Util\CompressionUtil.cs" />
+    <Compile Remove="Util\FlagsByte.cs" />
+    <Compile Remove="Util\Interop.cs" />
+    <Compile Remove="Util\LargBuffer.cs" />
+    <Compile Remove="Util\QueueObject.cs" />
+    <Compile Remove="Util\ReflectionUtil.cs" />
+    <Compile Remove="Util\WebLog.cs" />
+  </ItemGroup>
+
+  <ItemGroup>
+    <None Remove="Protobuf\Address.proto" />
+    <None Remove="Protobuf\CloudUsageResponse.proto" />
+    <None Remove="Protobuf\Commands\InitializeCacheResponse.proto" />
+    <None Remove="Protobuf\DictionaryEntry.proto" />
+  </ItemGroup>
+
+  <ItemGroup>
+    <PackageReference Include="log4net" Version="2.0.8" />
+    <PackageReference Include="Microsoft.Win32.Registry" Version="4.4.0" />
+    <PackageReference Include="Mono.Cecil" Version="0.9.6.4" />
+    <PackageReference Include="protobuf-net" Version="2.2.1" />
+    <PackageReference Include="System.Configuration.ConfigurationManager" Version="4.4.0" />
+    <PackageReference Include="System.Diagnostics.DiagnosticSource" Version="4.4.1" />
+    <PackageReference Include="System.Management.Automation.dll" Version="10.0.10586" />
+    <PackageReference Include="System.ServiceProcess.ServiceController" Version="4.4.0" />
+  </ItemGroup>
+
+  <ItemGroup>
+    <ProjectReference Include="..\NCRuntime\NCRuntime.Client.NetCore.csproj" />
+    <ProjectReference Include="..\NCSystemInternal\NCSystemInternal.csproj" />
+  </ItemGroup>
+
+  <ItemGroup>
+    <Folder Include="Remoting\" />
+  </ItemGroup>
+
+  <ItemGroup>
+    <Reference Include="Mono.Cecil">
+      <HintPath>..\..\Resources\mono.cecil\Mono.Cecil.dll</HintPath>
+    </Reference>
+    <Reference Include="Mono.Cecil.Mdb">
+      <HintPath>..\..\Resources\mono.cecil\Mono.Cecil.Mdb.dll</HintPath>
+    </Reference>
+    <Reference Include="Mono.Cecil.Pdb">
+      <HintPath>..\..\Resources\mono.cecil\Mono.Cecil.Pdb.dll</HintPath>
+    </Reference>
+    <Reference Include="Mono.Cecil.Rocks">
+      <HintPath>..\..\Resources\mono.cecil\Mono.Cecil.Rocks.dll</HintPath>
+    </Reference>
+  </ItemGroup>
+  
+  <PropertyGroup>
+    <GenerateAssemblyInfo>false</GenerateAssemblyInfo>
+    <AssemblyName>Alachisoft.NCache.Common</AssemblyName>
+    <RootNamespace>Alachisoft.NCache.Common</RootNamespace>
+  </PropertyGroup>
+  
+</Project>

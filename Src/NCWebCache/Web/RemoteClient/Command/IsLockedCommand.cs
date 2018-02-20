@@ -17,14 +17,14 @@ namespace Alachisoft.NCache.Web.Command
     internal sealed class IsLockedCommand : CommandBase
     {
         private Alachisoft.NCache.Common.Protobuf.IsLockedCommand _isLockedCommand;
-        
+
         public IsLockedCommand(string key, object lockId)
         {
             base.name = "IsLockedCommand";
 
             _isLockedCommand = new Alachisoft.NCache.Common.Protobuf.IsLockedCommand();
             _isLockedCommand.key = key;
-            if(lockId != null) _isLockedCommand.lockId = lockId.ToString();
+            if (lockId != null) _isLockedCommand.lockId = lockId.ToString();
             _isLockedCommand.requestId = base.RequestId;
         }
 
@@ -44,7 +44,6 @@ namespace Alachisoft.NCache.Web.Command
             base._command.requestID = base.RequestId;
             base._command.isLockedCommand = _isLockedCommand;
             base._command.type = Alachisoft.NCache.Common.Protobuf.Command.Type.ISLOCKED;
-
         }
     }
 }

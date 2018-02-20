@@ -10,26 +10,39 @@
 // distributed under the License is distributed on an "AS IS" BASIS,
 // WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
 // See the License for the specific language governing permissions and
-// limitations under the License.
-
+// limitations under the License
 using System;
 using System.Collections.Generic;
 using System.Text;
 using Alachisoft.NCache.Common.Enum;
-
+#if JAVA
+using Alachisoft.TayzGrid.Runtime.Serialization;
+#else
 using Alachisoft.NCache.Runtime.Serialization;
+#endif
+#if JAVA
+using Runtime = Alachisoft.TayzGrid.Runtime;
+#else
 using Runtime = Alachisoft.NCache.Runtime;
-
+#endif
 namespace Alachisoft.NCache.Common
 {
     [Serializable]
     public class StatusInfo: ICompactSerializable
     {
+#if JAVA
+        private const string NODE_EXPIRED_MESSAGE = "Your license for using TayzGrid has expired on {0}. Please contact sales@alachisoft.com for further terms and conditions.";
+        private const string NODE_EXPIRED_MESSAGE2 = "Your license for using TayzGrid has expired. Please contact sales@alachisoft.com for further terms and conditions.";
+#else
+        private const string NODE_EXPIRED_MESSAGE = "Your license for using NCache has expired on {0}. Please contact sales@alachisoft.com for further terms and conditions.";
+        private const string NODE_EXPIRED_MESSAGE2 = "Your license for using NCache has expired. Please contact sales@alachisoft.com for further terms and conditions.";
+#endif
         private string _info = "";
         /// <summary>Status of the Cache.</summary>
         public CacheStatus Status = CacheStatus.Unavailable;
         internal bool IsCoordinatorInternal = false;
-        double configID;
+        string configID;
+        double configVersion;
 
         /// <summary>
         /// This property tells whether the node is active node in
@@ -42,13 +55,23 @@ namespace Alachisoft.NCache.Common
         }
 
         /// <summary>
-        /// Tells the unique sequence number of the last applied configuration.
+        /// Tells the unique GUID for the configuration.
         /// <para>This helps in identifying the inconsistency b/w project file and config.ncconf</para>
         /// </summary>
-        public double ConfigID
+        public string ConfigID
         {
             get { return configID; }
             set { configID = value; }
+        }
+
+        /// <summary>
+        /// Tells the unique sequence number of the last applied configuration.
+        /// <para>This helps in identifying the inconsistency b/w project file and config.ncconf</para>
+        /// </summary>
+        public double ConfigVersion
+        {
+            get { return configVersion; }
+            set { configVersion = value; }
         }
 
         /// <summary>
@@ -60,6 +83,12 @@ namespace Alachisoft.NCache.Common
         {
             switch (Status)
             {
+                case CacheStatus.Expired:
+                    if (nodeName == null || nodeName == string.Empty)
+                        _info = NODE_EXPIRED_MESSAGE2;
+                    else
+                        _info = string.Format(NODE_EXPIRED_MESSAGE, nodeName);
+                    break;
                 case CacheStatus.Registered:
                     _info = "Stopped";
                     break;
@@ -89,6 +118,7 @@ namespace Alachisoft.NCache.Common
 
         public bool IsRunning { get { return Status == CacheStatus.Running; } }
         public bool IsUnavailable { get { return Status == CacheStatus.Unavailable; } }
+        public bool IsExpired { get { return Status == CacheStatus.Expired; } }
 
         #region ICompactSerializable Members
 
@@ -97,7 +127,8 @@ namespace Alachisoft.NCache.Common
             _info = reader.ReadObject() as string;
             Status = (CacheStatus)reader.ReadInt32();
             IsCoordinatorInternal = reader.ReadBoolean();
-            configID = reader.ReadDouble();
+            configID = reader.ReadString();
+            configVersion = reader.ReadDouble();
         }
 
         public void Serialize(Runtime.Serialization.IO.CompactWriter writer)
@@ -106,8 +137,9 @@ namespace Alachisoft.NCache.Common
             writer.Write((int)Status);
             writer.Write(IsCoordinatorInternal);
             writer.Write(configID);
+            writer.Write(configVersion);
         }
 
         #endregion
-    }
+    };
 }

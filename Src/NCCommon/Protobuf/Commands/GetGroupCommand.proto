@@ -1,0 +1,9 @@
+
+option java_outer_classname="GetGroupCommandProtocol";
+package Alachisoft.NCache.Common.Protobuf;
+message GetGroupCommand {
+	optional int64 requestId = 1;
+	optional string group = 2;
+	optional string subGroup = 3;
+	optional bool getGroupKeys = 4;
+}

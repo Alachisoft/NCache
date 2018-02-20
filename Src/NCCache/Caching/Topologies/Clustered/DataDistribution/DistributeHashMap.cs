@@ -94,6 +94,7 @@ namespace Alachisoft.NCache.Caching.Topologies.Clustered
         {
             int[] _bucketsCount = new int[members.Count];
 
+            //Bad code... need to re-visit later on
             for (int i = 0; i < members.Count; i++)
             {
                 Address addr = (Address)members[i];

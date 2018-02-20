@@ -13,7 +13,6 @@
 // limitations under the License.
 
 using System;
-using Alachisoft.NCache.Util;
 using Alachisoft.NCache.Common;
 using Alachisoft.NCache.Runtime.Serialization.IO;
 using Alachisoft.NCache.Runtime.Serialization;
@@ -28,7 +27,6 @@ namespace Alachisoft.NCache.Caching.AutoExpiration
 	public class IdleExpiration : ExpirationHint, ICompactSerializable
 	{
 
-        /// <summary> FixedExpiration instance Size include _idleTimeToLive plus _lastTimeStamp </summary>
         private const int IdleExpirationSize = 2 * Common.MemoryUtil.NetIntSize;
 
 		/// <summary> the idle time to live value </summary>
@@ -77,6 +75,7 @@ namespace Alachisoft.NCache.Caching.AutoExpiration
 		/// <summary> key to compare expiration hints. </summary>
 		internal override int SortKey { get { return _lastTimeStamp + _idleTimeToLive; } }
 
+
 		/// <summary>
 		/// virtual method that returns true when the expiration has taken place, returns 
 		/// false otherwise.
@@ -96,16 +95,17 @@ namespace Alachisoft.NCache.Caching.AutoExpiration
 		/// </summary>
 		internal override bool Reset(CacheRuntimeContext context)
 		{
-            _lastTimeStamp = AppUtil.DiffSeconds(DateTime.Now);
+			_lastTimeStamp = AppUtil.DiffSeconds(DateTime.Now);
 			return base.Reset(context);
 		}
+
 
 		#region	/                 --- ICompactSerializable ---           /
 
 		public void Deserialize(CompactReader reader)
 		{
             base.Deserialize(reader);
-			_idleTimeToLive = reader.ReadUInt16();
+            _idleTimeToLive = reader.ReadUInt16();
 			_lastTimeStamp = reader.ReadInt32();
 		}
 
@@ -117,6 +117,7 @@ namespace Alachisoft.NCache.Caching.AutoExpiration
 		}
 
 		#endregion
+
 
         #region ISizable Members
 
@@ -138,5 +139,5 @@ namespace Alachisoft.NCache.Caching.AutoExpiration
         }
 
         #endregion
-	}
+    }
 }

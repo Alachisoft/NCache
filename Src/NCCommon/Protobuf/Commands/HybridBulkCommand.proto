@@ -1,0 +1,10 @@
+
+option java_outer_classname="HybridBulkCommandProtocol";
+package Alachisoft.NCache.Common.Protobuf;
+
+message HybridBulkCommand 
+{
+	optional int32 flag = 1;
+	repeated bytes data = 2;
+	optional int64 requestId = 3;
+}

@@ -12,33 +12,18 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-
-
 namespace Alachisoft.NCache.Web.Command
 {
     internal sealed class GetProductVersionCommand : CommandBase
     {
-        private Common.Protobuf.GetProductVersionCommand getProductVersionCommand;
-        
-        private string _userName;
-        private string _password;
-       
+        private Alachisoft.NCache.Common.Protobuf.GetProductVersionCommand getProductVersionCommand;
+
 
         public GetProductVersionCommand(string userName, string password)
         {
-            
             base.name = "GetProductVersionCommand";
-            getProductVersionCommand= new Common.Protobuf.GetProductVersionCommand();
-            getProductVersionCommand.requestId= base.RequestId;
-
-            if(string.IsNullOrEmpty(userName))
-            {
-                getProductVersionCommand.userId= string.Empty;
-            }
-            if(string.IsNullOrEmpty(password))
-            {
-                getProductVersionCommand.pwd= string.Empty;
-            }
+            getProductVersionCommand = new Alachisoft.NCache.Common.Protobuf.GetProductVersionCommand();
+            getProductVersionCommand.requestId = base.RequestId;
         }
 
         internal override RequestType CommandRequestType
@@ -51,6 +36,12 @@ namespace Alachisoft.NCache.Web.Command
             get { return CommandType.GET_PRODUCT_VERSION; }
         }
 
+        internal override bool IsKeyBased
+        {
+            get { return false; }
+        }
+
+
         protected override void CreateCommand()
         {
             base._command = new Alachisoft.NCache.Common.Protobuf.Command();
@@ -58,7 +49,5 @@ namespace Alachisoft.NCache.Web.Command
             base._command.getProductVersionCommand = getProductVersionCommand;
             base._command.type = Alachisoft.NCache.Common.Protobuf.Command.Type.GET_PRODUCT_VERSION;
         }
-
-        
     }
 }

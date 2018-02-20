@@ -11,13 +11,9 @@
 // WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
 // See the License for the specific language governing permissions and
 // limitations under the License.
-
 using System;
-using System.Collections;
-using System.Text;
 using Alachisoft.NCache.Common.Configuration;
 using Alachisoft.NCache.Runtime.Serialization;
-using Runtime = Alachisoft.NCache.Runtime;
 
 namespace Alachisoft.NCache.Config.Dom
 {
@@ -25,13 +21,13 @@ namespace Alachisoft.NCache.Config.Dom
     public class Log: ICloneable,ICompactSerializable
     {
 
-        bool enabled=true;
+        bool enabled = true;
         bool traceErrors = true; 
-        bool traceWarnings, traceNotices, traceDebug;
+        bool traceDebug = true;
         String location = "";
         public Log() { }
 
-        [ConfigurationAttribute("enable-logs")]//Changes for New Dom from enabled
+        [ConfigurationAttribute("enable-logs")]
         public bool Enabled
         {
             get { return enabled; }
@@ -44,21 +40,7 @@ namespace Alachisoft.NCache.Config.Dom
             get { return traceErrors; }
             set { traceErrors = value; }
         }
-
-        [ConfigurationAttribute("trace-notices")]
-        public bool TraceNotices
-        {
-            get { return traceNotices; }
-            set { traceNotices = value; }
-        }
-
-        [ConfigurationAttribute("trace-warnings")]
-        public bool TraceWarnings
-        {
-            get { return traceWarnings; }
-            set { traceWarnings = value; }
-        }
-
+        
         [ConfigurationAttribute("trace-debug")]
         public bool TraceDebug
         {
@@ -87,8 +69,6 @@ namespace Alachisoft.NCache.Config.Dom
             log.Enabled = Enabled;
             log.TraceDebug = TraceDebug;
             log.TraceErrors = TraceErrors;
-            log.TraceNotices = TraceNotices;
-            log.TraceWarnings = TraceWarnings;
             log.LogPath = LogPath;
             return log;
         }
@@ -101,8 +81,6 @@ namespace Alachisoft.NCache.Config.Dom
         {
             enabled = reader.ReadBoolean();
             traceErrors = reader.ReadBoolean();
-            traceWarnings = reader.ReadBoolean();
-            traceNotices = reader.ReadBoolean();
             traceDebug = reader.ReadBoolean();
             location = (string)reader.ReadObject();
         }
@@ -111,8 +89,6 @@ namespace Alachisoft.NCache.Config.Dom
         {
             writer.Write(enabled);
             writer.Write(traceErrors);
-            writer.Write(traceWarnings);
-            writer.Write(traceNotices);
             writer.Write(traceDebug);
             writer.WriteObject(location);
         }

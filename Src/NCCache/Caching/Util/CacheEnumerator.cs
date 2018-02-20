@@ -13,23 +13,7 @@
 // limitations under the License.
 
 using System;
-using System.IO;
-using System.Diagnostics;
-using System.Net;
-using System.Text;
 using System.Collections;
-using System.Runtime.Serialization.Formatters.Binary;
-
-using Alachisoft.NCache.Config;
-using Alachisoft.NCache.Caching;
-using Alachisoft.NCache.Caching.Topologies.Local;
-using Alachisoft.NCache.Caching.Statistics;
-using Alachisoft.NCache.Caching.AutoExpiration;
-using Alachisoft.NCache.Caching.EvictionPolicies;
-using Alachisoft.NCache.Runtime.Exceptions;
-using Alachisoft.NCache.Util;
-using Alachisoft.NCache.Common.Util;
-
 
 namespace Alachisoft.NCache.Caching.Util
 {

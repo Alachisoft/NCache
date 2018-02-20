@@ -12,8 +12,6 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-using System;
-
 using Alachisoft.NCache.Common.Threading;
 
 namespace Alachisoft.NCache.Caching.Topologies.Clustered
@@ -62,7 +60,7 @@ namespace Alachisoft.NCache.Caching.Topologies.Clustered
 		/// The task is cancelled or not. 
 		/// </summary>
 		/// <returns></returns>
-		public override bool IsCancelled()
+		bool TimeScheduler.Task.IsCancelled()
 		{
 			lock (this) { return _parent == null; }
 		}
@@ -71,7 +69,7 @@ namespace Alachisoft.NCache.Caching.Topologies.Clustered
 		/// The interval between replications.
 		/// </summary>
 		/// <returns></returns>
-		public override long GetNextInterval()
+		long TimeScheduler.Task.GetNextInterval()
 		{
 			return _period;
 		}
@@ -79,7 +77,7 @@ namespace Alachisoft.NCache.Caching.Topologies.Clustered
 		/// <summary>
 		/// Do the replication.
 		/// </summary>
-		public override void Run()
+		void TimeScheduler.Task.Run()
 		{
 			if (_parent != null)
 			{

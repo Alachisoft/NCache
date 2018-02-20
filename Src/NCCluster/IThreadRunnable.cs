@@ -9,7 +9,6 @@
 // WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
 // See the License for the specific language governing permissions and
 // limitations under the License.
-
 /// <summary>
 /// This interface should be implemented by any class whose instances are intended 
 /// to be executed by a thread.

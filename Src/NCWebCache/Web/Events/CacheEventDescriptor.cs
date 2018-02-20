@@ -12,34 +12,33 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-using System;
-using System.Collections.Generic;
 using Alachisoft.NCache.Runtime.Events;
-using Alachisoft.NCache.Web.Caching;
 
 namespace Alachisoft.NCache.Web.Caching
 {
     /// <summary>
     /// Instance of this class holds the link to the registered delegate
     /// Keep it safe and use it to unregister the registered delegate when required.
-    /// The bool <see cref=" IsRegistered"/> returns false when the discriptor has been consumed to unregister the delegate.
-    /// Then this instance can then be disposed of. Upon re-registering for the interested event, a new discriptor will be created.
+    /// The bool <see cref=" IsRegistered"/> returns false when the descriptor has been consumed to unregister the delegate.
+    /// Then this instance can then be disposed of. Upon re-registering for the interested event, a new descriptor will be created.
     /// </summary>
-    public sealed class CacheEventDescriptor 
+    public sealed class CacheEventDescriptor
     {
-        private CacheEventDescriptor() { }
+        private CacheEventDescriptor()
+        {
+        }
 
-	    private EventType _eventType;
+        private EventType _eventType;
         private EventHandle _handle = null;
-	    private string _cacheName;
-	    private bool _isRegistered;
+        private string _cacheName;
+        private bool _isRegistered;
         private CacheDataNotificationCallback _cacheDataNotificationCallback;
         private EventDataFilter _datafilter;
 
         private object _syncblk = new object();
 
-        //Creation is CacheDesriptor's responsiblity
-        static internal CacheEventDescriptor CreateCacheDiscriptor(EventType eventType, string cacheName, CacheDataNotificationCallback callback, EventDataFilter datafilter)
+        static internal CacheEventDescriptor CreateCacheDiscriptor(EventType eventType, string cacheName,
+            CacheDataNotificationCallback callback, EventDataFilter datafilter)
         {
             CacheEventDescriptor descriptor = new CacheEventDescriptor();
             descriptor.RegisteredAgainst = eventType;
@@ -48,7 +47,6 @@ namespace Alachisoft.NCache.Web.Caching
             descriptor.IsRegistered = true;
             descriptor.DataFilter = datafilter;
             return descriptor;
-
         }
 
         public EventDataFilter DataFilter
@@ -61,52 +59,58 @@ namespace Alachisoft.NCache.Web.Caching
         /// Returns true if the linked event delegate is registered, returns false when the descriptor has been consumed
         /// This property is ThreadSafe
         /// </summary>
-        public bool IsRegistered 
+        public bool IsRegistered
         {
-            get          { lock (_syncblk ) return _isRegistered; }
-            internal set { lock (_syncblk ) _isRegistered = value; }
+            get
+            {
+                lock (_syncblk) return _isRegistered;
+            }
+            internal set
+            {
+                lock (_syncblk) _isRegistered = value;
+            }
         }
 
         /// <summary>
         /// Name of the cache registered against
         /// </summary>
-	    public string CacheName 
+        public string CacheName
         {
-            get          { return _cacheName; }
+            get { return _cacheName; }
             internal set { _cacheName = value; }
         }
 
         /// <summary>
         /// Event Types registered against. Can be ORed to check registeration types
         /// </summary>
-        public EventType RegisteredAgainst 
-        { 
-            get          { return _eventType; }
+        public EventType RegisteredAgainst
+        {
+            get { return _eventType; }
             internal set { _eventType = value; }
         }
 
-        internal CacheDataNotificationCallback CacheDataNotificationCallback
+
+        public CacheDataNotificationCallback CacheDataNotificationCallback
         {
             get { return _cacheDataNotificationCallback; }
-            set { _cacheDataNotificationCallback = value; }
+            internal set { _cacheDataNotificationCallback = value; }
         }
+
+
         /// <summary>
-	    /// Cannot reset once created
-	    /// </summary>
-        internal EventHandle Handle 
+        /// Cannot reset once created
+        /// </summary>
+        internal EventHandle Handle
         {
             get { return _handle; }
-            set 
+            set
             {
                 if (_handle == null)
                 {
                     IsRegistered = true;
-                    _handle = value; 
+                    _handle = value;
                 }
             }
-        } 
-
-      
-
+        }
     }
 }

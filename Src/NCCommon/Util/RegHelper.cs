@@ -18,6 +18,7 @@ using System.Diagnostics;
 using System.Text;
 using Alachisoft.NCache.Common.Util;
 using Microsoft.Win32;
+using System.IO;
 
 namespace Alachisoft.NCache.Common
 {
@@ -26,18 +27,19 @@ namespace Alachisoft.NCache.Common
     /// </summary>
     public class RegHelper
     {
+
+        public static string ROOT_KEY = @"Software\Alachisoft\NCache";
+        public static string APPBASE_KEY = @"\NCache Manager";
+        public static string MANAGER_OPTIONS = APPBASE_KEY + @"\Options";
+        public static string MONITOR_ROWS_BASE = ROOT_KEY + @"\NCache Manager\Options";
         
-        public static string  ROOT_KEY = @"Software\Alachisoft\NCache";
-
-
-
         static RegHelper()
         {
         }
 
         public static RegistryKey NewKey(string keyPath)
         {
-            return Registry.LocalMachine.CreateSubKey(keyPath);
+            return Microsoft.Win32.Registry.LocalMachine.CreateSubKey(keyPath);
         }
 
         /// <summary>
@@ -46,11 +48,14 @@ namespace Alachisoft.NCache.Common
         /// <param name="section"></param>
         /// <param name="key"></param>
         /// <returns></returns>
+        /// 
+
+
         static public object GetDecryptedRegValue(string keypath, string key, short prodId)
         {
             try
             {
-                object val = GetRegValue(keypath, key,prodId);
+                object val = GetRegValue(keypath, key, prodId);
                 return Protector.DecryptString(Convert.ToString(val));
             }
             catch (Exception)
@@ -61,21 +66,22 @@ namespace Alachisoft.NCache.Common
 
         public static RegistryKey NewUserKey(string keyPath)
         {
-            return Registry.CurrentUser.CreateSubKey(keyPath);
+            return Microsoft.Win32.Registry.CurrentUser.CreateSubKey(keyPath);
         }
 
         static public int GetRegValuesFromCurrentUser(string keypath, Hashtable ht, short prodId)
         {
             RegistryKey root;
+#if !JAVA
             if (AppUtil.IsRunningAsWow64)
             {
                 GetRegValuesInternalWow64(keypath, ht, prodId);
                 return ht.Count;
             }
-
+#endif
             try
             {
-                root = Registry.CurrentUser.OpenSubKey(keypath);
+                root = Microsoft.Win32.Registry.CurrentUser.OpenSubKey(keypath);
                 if (root != null)
                 {
                     string[] keys = root.GetValueNames();
@@ -94,7 +100,7 @@ namespace Alachisoft.NCache.Common
             RegistryKey root;
             try
             {
-                root = Registry.CurrentUser.OpenSubKey(keypath);
+                root = Microsoft.Win32.Registry.CurrentUser.OpenSubKey(keypath);
                 if (root != null)
                 {
                     string[] keys = root.GetValueNames();
@@ -113,7 +119,7 @@ namespace Alachisoft.NCache.Common
         {
             try
             {
-                RegistryKey root = Registry.CurrentUser.OpenSubKey(keypath, true);
+                RegistryKey root = Microsoft.Win32.Registry.CurrentUser.OpenSubKey(keypath, true);
                 if (root != null)
                 {
                     return true;
@@ -155,12 +161,12 @@ namespace Alachisoft.NCache.Common
         {
             try
             {
-                SetRegValue(keypath, key, Protector.EncryptString(Convert.ToString(val)),0);
+                SetRegValue(keypath, key, Protector.EncryptString(Convert.ToString(val)), 0);
             }
             catch (Exception)
             {
             }
-        }        
+        }
 
         /// <summary>
         /// Get a key value from the registry. Automatically caters with wow64 registry read mechanism
@@ -168,14 +174,14 @@ namespace Alachisoft.NCache.Common
         /// <param name="section"></param>
         /// <param name="key"></param>
         /// <returns></returns>
-        static public object GetRegValue(string section, string key,short prodId)
+        static public object GetRegValue(string section, string key, short prodId)
         {
             if (AppUtil.IsRunningAsWow64)
                 return GetRegValueInternal(section, key, prodId);
-        
+
             try
             {
-                RegistryKey root = Registry.LocalMachine.OpenSubKey(section);
+                RegistryKey root = Microsoft.Win32.Registry.LocalMachine.OpenSubKey(section);
                 if (root != null)
                     return root.GetValue(key);
 
@@ -189,7 +195,7 @@ namespace Alachisoft.NCache.Common
 
         static public string GetLicenseKey(short prodId)
         {
-            return (string)RegHelper.GetRegValueInternal("UserInfo", "licensekey",prodId);
+            return (string)RegHelper.GetRegValueInternal("UserInfo", "licensekey", prodId);
         }
 
         /// <summary>
@@ -202,21 +208,21 @@ namespace Alachisoft.NCache.Common
         {
             RegistryKey root;
 
-            if(AppUtil.IsRunningAsWow64)
+            if (AppUtil.IsRunningAsWow64)
             {
-                GetRegValuesInternalWow64(keypath, ht,prodId);
+                GetRegValuesInternalWow64(keypath, ht, prodId);
                 return ht.Count;
             }
 
             try
             {
-                root = Registry.LocalMachine.OpenSubKey(keypath);
+                root = Microsoft.Win32.Registry.LocalMachine.OpenSubKey(keypath);
                 if (root != null)
                 {
                     string[] keys = root.GetValueNames();
                     for (int i = 0; i < keys.Length; i++)
                         ht[keys[i]] = GetRegValue(keypath, keys[i], prodId);
-                }                
+                }
             }
             catch (Exception)
             {
@@ -234,22 +240,22 @@ namespace Alachisoft.NCache.Common
         static public int GetBooleanRegValues(string keypath, Hashtable ht, short prodId)
         {
 
-            if(AppUtil.IsRunningAsWow64)
+            if (AppUtil.IsRunningAsWow64)
             {
-                GetBooleanRegValuesInternalWow64(keypath,ht,prodId);
+                GetBooleanRegValuesInternalWow64(keypath, ht, prodId);
                 return ht.Count;
             }
-            
+
             RegistryKey root;
             try
             {
-                root = Registry.LocalMachine.OpenSubKey(keypath);
+                root = Microsoft.Win32.Registry.LocalMachine.OpenSubKey(keypath);
                 if (root != null)
                 {
                     string[] keys = root.GetValueNames();
                     for (int i = 0; i < keys.Length; i++)
                         ht[keys[i]] = Convert.ToBoolean(GetRegValue(keypath, keys[i], prodId));
-                }                
+                }
             }
             catch (Exception)
             {
@@ -264,17 +270,17 @@ namespace Alachisoft.NCache.Common
         /// <param name="section"></param>
         /// <param name="key"></param>
         /// <param name="val"></param>
-        static public void SetRegValue(string keypath, string key, object val,short prodId)
+        static public void SetRegValue(string keypath, string key, object val, short prodId)
         {
             try
             {
-                RegistryKey root = Registry.LocalMachine.OpenSubKey(keypath, true);
-                if(root != null)
+                RegistryKey root = Microsoft.Win32.Registry.LocalMachine.OpenSubKey(keypath, true);
+                if (root != null)
                     root.SetValue(key, val);
             }
             catch (Exception)
             {
-               
+
             }
         }
 
@@ -282,7 +288,7 @@ namespace Alachisoft.NCache.Common
         {
             try
             {
-                RegistryKey root = Registry.LocalMachine.OpenSubKey(keypath, true);
+                RegistryKey root = Microsoft.Win32.Registry.LocalMachine.OpenSubKey(keypath, true);
                 if (root != null)
                 {
                     return true;
@@ -303,7 +309,7 @@ namespace Alachisoft.NCache.Common
         {
             try
             {
-                RegistryKey root = Registry.LocalMachine.OpenSubKey(keypath, true);
+                RegistryKey root = Microsoft.Win32.Registry.LocalMachine.OpenSubKey(keypath, true);
                 if (root != null)
                     root.DeleteValue(key);
             }
@@ -319,7 +325,7 @@ namespace Alachisoft.NCache.Common
         /// <param name="section"></param>
         /// <param name="key"></param>
         /// <param name="val"></param>
-        static public void SetRegValues(string keypath, Hashtable val,short prodId)
+        static public void SetRegValues(string keypath, Hashtable val, short prodId)
         {
             try
             {
@@ -355,7 +361,7 @@ namespace Alachisoft.NCache.Common
             }
         }
 
-         
+
         static private string GetRegValueInternal(string section, string key, short prodId)
         {
             try
@@ -365,7 +371,7 @@ namespace Alachisoft.NCache.Common
                 StringBuilder sbKey = new StringBuilder(key);
                 StringBuilder sbDefaultVal = new StringBuilder("");
 
-                NCRegistryDLL.GetRegVal(regVal, sbSection, sbKey, sbDefaultVal,prodId);
+                NCRegistryDLL.GetRegVal(regVal, sbSection, sbKey, sbDefaultVal, prodId);
 
                 return regVal.ToString();
             }
@@ -383,7 +389,7 @@ namespace Alachisoft.NCache.Common
             return "";
         }
 
-        static private void GetRegValuesInternalWow64(string keypath, Hashtable ht, short prodId) 
+        static private void GetRegValuesInternalWow64(string keypath, Hashtable ht, short prodId)
         {
             try
             {
@@ -391,7 +397,7 @@ namespace Alachisoft.NCache.Common
                 StringBuilder sbSection = new StringBuilder(keypath);
                 StringBuilder sbKey = new StringBuilder("");
                 StringBuilder sbDefaultVal = new StringBuilder("");
-                NCRegistryDLL.GetRegKeys(regVal, sbSection, sbKey, sbDefaultVal,prodId);
+                NCRegistryDLL.GetRegKeys(regVal, sbSection, sbKey, sbDefaultVal, prodId);
 
                 string keys = regVal.ToString();
                 string[] statKeys = keys.Split(':');
@@ -401,7 +407,7 @@ namespace Alachisoft.NCache.Common
                     string subKey = statKeys[i];
                     if (!String.IsNullOrEmpty(subKey))
                     {
-                        string result = GetRegValueInternal(keypath, subKey,prodId);
+                        string result = GetRegValueInternal(keypath, subKey, prodId);
                         ht[statKeys[i]] = result;
                     }
                 }
@@ -412,7 +418,7 @@ namespace Alachisoft.NCache.Common
             }
         }
 
-        static private void GetBooleanRegValuesInternalWow64(string keypath, Hashtable ht,short prodId) 
+        static private void GetBooleanRegValuesInternalWow64(string keypath, Hashtable ht, short prodId)
         {
             try
             {
@@ -420,7 +426,7 @@ namespace Alachisoft.NCache.Common
                 StringBuilder sbSection = new StringBuilder(keypath);
                 StringBuilder sbKey = new StringBuilder("");
                 StringBuilder sbDefaultVal = new StringBuilder("");
-                NCRegistryDLL.GetRegKeys(regVal, sbSection, sbKey, sbDefaultVal,prodId);
+                NCRegistryDLL.GetRegKeys(regVal, sbSection, sbKey, sbDefaultVal, prodId);
 
                 string keys = regVal.ToString();
                 string[] statKeys = keys.Split(':');
@@ -430,7 +436,7 @@ namespace Alachisoft.NCache.Common
                     string subKey = statKeys[i];
                     if (!String.IsNullOrEmpty(subKey))
                     {
-                        string result = GetRegValueInternal(keypath, subKey,prodId);
+                        string result = GetRegValueInternal(keypath, subKey, prodId);
                         ht[statKeys[i]] = Convert.ToBoolean(result);
                     }
                 }
@@ -445,10 +451,10 @@ namespace Alachisoft.NCache.Common
         {
             if (AppUtil.IsRunningAsWow64)
                 return GetRegValueInternal(section, key, prodId);
-      
+
             try
             {
-                RegistryKey root = Registry.CurrentUser.OpenSubKey(section);
+                RegistryKey root = Microsoft.Win32.Registry.CurrentUser.OpenSubKey(section);
                 if (root != null)
                     return root.GetValue(key);
 
@@ -464,7 +470,7 @@ namespace Alachisoft.NCache.Common
         {
             try
             {
-                object val = GetRegValueFromCurrentUser(keypath, key,prodId);
+                object val = GetRegValueFromCurrentUser(keypath, key, prodId);
                 return Protector.DecryptString(Convert.ToString(val));
             }
             catch (Exception)
@@ -479,14 +485,14 @@ namespace Alachisoft.NCache.Common
             {
                 int retry = 0;
                 retry:
-                RegistryKey root = Registry.CurrentUser.OpenSubKey(keypath, true);
+                RegistryKey root = Microsoft.Win32.Registry.CurrentUser.OpenSubKey(keypath, true);
                 if (root != null)
                     root.SetValue(key, val);
                 else
                 {
-                    Registry.CurrentUser.CreateSubKey(keypath);
+                    Microsoft.Win32.Registry.CurrentUser.CreateSubKey(keypath);
                     retry++;
-                    if(retry == 1)
+                    if (retry == 1)
                         goto retry;
                 }
             }
@@ -509,9 +515,9 @@ namespace Alachisoft.NCache.Common
 
         public static void CreateRegPath(string keypath)
         {
-            RegistryKey root = Registry.LocalMachine.OpenSubKey(keypath, true);
+            RegistryKey root = Microsoft.Win32.Registry.LocalMachine.OpenSubKey(keypath, true);
             if (root == null)
-                Registry.LocalMachine.CreateSubKey(keypath);
+                Microsoft.Win32.Registry.LocalMachine.CreateSubKey(keypath);
         }
     }
 }

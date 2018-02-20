@@ -1,0 +1,9 @@
+import "Dependency.proto";
+option java_outer_classname="DependencyProtocol";
+package Alachisoft.NCache.Common.Protobuf;
+message DependencyItem
+{
+	required string key = 1;
+	required Dependency dependency = 2;
+}
+

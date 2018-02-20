@@ -15,8 +15,8 @@ using System;
 // Based on GOLDParser by Devin Cook <http://www.devincook.com/goldparser>.
 namespace Alachisoft.NCache.Parser
 {
-	/// Each state in the Determinstic Finite Automata contains multiple edges which
-	/// link to other states in the automata. This class is used to represent an edge.
+	/// Each state in the Deterministic Finite Automate contains multiple edges which
+	/// link to other states in the automate. This class is used to represent an edge.
 	internal class FAEdge
 	{
 		private String	m_characters;

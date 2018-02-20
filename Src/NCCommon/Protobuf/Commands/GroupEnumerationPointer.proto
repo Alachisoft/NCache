@@ -1,0 +1,9 @@
+option java_outer_classname="GroupEnumerationPointerProtocol";
+package Alachisoft.NCache.Common.Protobuf;
+
+message GroupEnumerationPointer {
+	optional sint32 chunkId = 1;
+	optional string id = 2;
+	optional string group = 3;
+	optional string subGroup = 4;	 
+}

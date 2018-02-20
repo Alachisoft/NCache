@@ -9,18 +9,11 @@
 // WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
 // See the License for the specific language governing permissions and
 // limitations under the License.
-
 using System;
 using System.Runtime.Serialization;
 
-
-
 using Alachisoft.NCache.Runtime.Serialization.IO;
-
-
 using Alachisoft.NCache.Runtime.Serialization;
-
-
 
 namespace Alachisoft.NGroups.Protocols
 {
@@ -30,9 +23,10 @@ namespace Alachisoft.NGroups.Protocols
 		public const byte GET_MBRS_REQ = 1; // arg = null
         public const byte GET_MBRS_RSP = 2; // arg = PingRsp(local_addr, coord_addr)
 		public string group_addr = null;
+		
 
         public byte type = 0;
-	    public System.Object arg = null;
+		public System.Object arg = null;
 		
 		public PingHeader()
 		{
@@ -50,7 +44,7 @@ namespace Alachisoft.NGroups.Protocols
 			this.group_addr = group_addr;
 		}
 		
-		
+	
 		public override long size()
 		{
 			return 100;
@@ -85,6 +79,7 @@ namespace Alachisoft.NGroups.Protocols
 			type = reader.ReadByte();
 			group_addr = (string)reader.ReadObject();
             arg = reader.ReadObject();
+		
 		}
 
 		public void Serialize(CompactWriter writer)
@@ -92,6 +87,7 @@ namespace Alachisoft.NGroups.Protocols
 			writer.Write(type);
 			writer.WriteObject((object)group_addr);
             writer.WriteObject(arg);
+
 		}
 
 		#endregion

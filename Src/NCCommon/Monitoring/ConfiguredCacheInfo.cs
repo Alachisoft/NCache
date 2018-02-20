@@ -10,16 +10,21 @@
 // distributed under the License is distributed on an "AS IS" BASIS,
 // WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
 // See the License for the specific language governing permissions and
-// limitations under the License.
-
+// limitations under the License
 using System;
 using System.Collections.Generic;
 using System.Text;
 using Alachisoft.NCache.Common.Enum;
-
+#if JAVA
+using Alachisoft.TayzGrid.Runtime.Serialization;
+#else
 using Alachisoft.NCache.Runtime.Serialization;
+#endif
+#if JAVA
+using Runtime = Alachisoft.TayzGrid.Runtime;
+#else
 using Runtime = Alachisoft.NCache.Runtime;
-
+#endif
 namespace Alachisoft.NCache.Common.Monitoring
 {
     [Serializable]
@@ -103,6 +108,8 @@ namespace Alachisoft.NCache.Common.Monitoring
             _dataCapacity = reader.ReadInt64();
             _cachePropString = reader.ReadObject() as string;
             _partId = reader.ReadObject() as string;
+            _managementPort = reader.ReadInt32();
+            _pid = reader.ReadInt32();
         }
 
         public void Serialize(Runtime.Serialization.IO.CompactWriter writer)
@@ -113,6 +120,8 @@ namespace Alachisoft.NCache.Common.Monitoring
             writer.Write(_dataCapacity);
             writer.WriteObject(_cachePropString);
             writer.WriteObject(_partId);
+            writer.Write(_managementPort);
+            writer.Write(_pid);
         }
 
         #endregion

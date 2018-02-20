@@ -17,82 +17,85 @@ using System.Collections;
 using System.Threading;
 using System.Globalization;
 using Alachisoft.NCache.Runtime.Exceptions;
+using Alachisoft.NCache.Common.Logger;
+
 
 namespace Alachisoft.NCache.Caching.EvictionPolicies
 {
-	/// <summary>
-	/// Facotry object resonsible for creating mulitple types of eviction policies. 
-	/// Used by the LocalCache. sample property string for creation is.
-	///  
-	///		scavenging-policy
-	///		(
-	///		    evict-ratio=0.2
-	///			scheme=priority;
-	///			priority
-	///			(
-	///				max-objects=100;
-	///				root-dir=�c:\temp\test�;
-	///			)
-	///		)
-	///			/// </summary>
-	internal class EvictionPolicyFactory
-	{
-		/// <summary>
-		/// Creates and returns a default eviction policy.
-		/// </summary>
-		/// <returns></returns>
-		public static IEvictionPolicy CreateDefaultEvictionPolicy()
-		{
+    /// <summary>
+    /// Factory object responsible for creating multiple types of eviction policies. 
+    /// Used by the LocalCache. sample property string for creation is.
+    ///  
+    ///		scavenging-policy
+    ///		(
+    ///		    evict-ratio=0.2
+    ///			scheme=priority;
+    ///			priority
+    ///			(
+    ///				max-objects=100;
+    ///				root-dir=�c:\temp\test�;
+    ///			)
+    ///		)
+    ///	</summary>
+
+    internal class EvictionPolicyFactory
+    {
+        /// <summary>
+        /// Creates and returns a default eviction policy.
+        /// </summary>
+        /// <returns></returns>
+        public static IEvictionPolicy CreateDefaultEvictionPolicy()
+        {
             return null;
-		}
+        }
 
-		/// <summary>
-		/// Internal method that creates a cache policy. A HashMap containing the config parameters 
-		/// is passed to this method.
-		/// </summary>
-		public static IEvictionPolicy CreateEvictionPolicy(IDictionary properties)
-		{
-			if(properties == null)
-				throw new ArgumentNullException("properties");
+        /// <summary>
+        /// Internal method that creates a cache policy. A HashMap containing the config parameters 
+        /// is passed to this method.
+        /// </summary>
+        public static IEvictionPolicy CreateEvictionPolicy(IDictionary properties, ILogger logger)
+        {
+            if (properties == null)
+                throw new ArgumentNullException("properties");
 
-			try
-			{
-				float evictRatio = 0;
-                if (properties.Contains("evict-ratio")) // for French Parsing error..
+            try
+            {
+                float evictRatio = 0;
+                if (properties.Contains("evict-ratio"))
                 {
                     CultureInfo thisCult = Thread.CurrentThread.CurrentCulture; //get the currently applied culture.
                     Thread.CurrentThread.CurrentCulture = new CultureInfo("en-US");//change it to enUS
                     evictRatio = Convert.ToSingle(properties["evict-ratio"]); //get the value out ...
                     Thread.CurrentThread.CurrentCulture = thisCult; //revert back the original culture.
                 }
-                
+
                 IEvictionPolicy evictionPolicy = null;
 
                 string scheme = "";
-                
-                string tempscheme = Convert.ToString(properties["class"]);
-                if (tempscheme.ToLower().Equals("priority"))
-                {
-                    scheme = tempscheme;
-                }
-                else
-                {
-                    throw new ConfigurationException("Eviction Policy " + tempscheme + " Not Supported in this Edition of NCache.");
-                }
+
+                scheme = Convert.ToString(properties["class"]);
+                scheme = scheme.ToLower();
+
+
                 IDictionary schemeProps = (IDictionary)properties[scheme];
-                evictionPolicy = new PriorityEvictionPolicy(schemeProps, evictRatio);
+                switch (scheme)
+                {
+                    case "priority": evictionPolicy = new PriorityEvictionPolicy(schemeProps, evictRatio); break;
+                }
+                if (evictionPolicy == null)
+                    throw new ConfigurationException("Invalid Eviction Policy: " + scheme);
 
                 //return a thread safe eviction policy.
                 return evictionPolicy;
-			}
-			catch(ConfigurationException e)
-			{
-				throw;
-			}			
-			catch(Exception e)
-			{
+            }
+            catch (ConfigurationException e)
+            {
+                throw;
+            }
+            catch (Exception e)
+            {
                 throw new ConfigurationException("EvictionPolicyFactory.CreateEvictionPolicy(): " + e.ToString());
-			}
-		}
-	}
+            }
+        }
+    }
 }

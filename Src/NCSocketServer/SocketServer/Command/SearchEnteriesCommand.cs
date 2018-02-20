@@ -13,11 +13,16 @@
 // limitations under the License.
 
 using System;
+using System.Text;
 using System.Collections;
+using Alachisoft.NCache.Common.Util;
 using System.Collections.Generic;
 using Alachisoft.NCache.Caching.Queries;
 using Alachisoft.NCache.SocketServer.Command.ResponseBuilders;
 using Alachisoft.NCache.Caching;
+using Alachisoft.NCache.SocketServer.RuntimeLogging;
+using System.Diagnostics;
+using Alachisoft.NCache.Common.Monitoring;
 
 namespace Alachisoft.NCache.SocketServer.Command
 {
@@ -32,54 +37,89 @@ namespace Alachisoft.NCache.SocketServer.Command
             public string ClientLastViewId;
         }
 
-        private static char Delimitor = '|'; 
+        private static char Delimitor = '|';
+
+        CommandInfo cmdInfo;
         //PROTOBUF
+        QueryResultSet _resultSet ;
+        public override string GetCommandParameters(out string commandName)
+        {
+            StringBuilder details = new StringBuilder();
+            commandName = "SearchEntries";
+            details.Append("Command Query: " + cmdInfo.Query);
+            if (_resultSet.SearchEntriesResult != null)
+            {
+                details.Append(" ; ");
+                details.Append("Result Size: " + _resultSet.SearchEntriesResult.Count);
+            }
+            return details.ToString();
+        }
+
+
         public override void ExecuteCommand(ClientManager clientManager, Alachisoft.NCache.Common.Protobuf.Command command)
         {
-            CommandInfo cmdInfo;
+            int overload;
+            string exception = null;
+            Stopwatch stopWatch = new Stopwatch();
+            stopWatch.Start();
 
             try
             {
+                overload = command.MethodOverload;
                 cmdInfo = ParseCommand(command, clientManager);
             }
             catch (Exception exc)
             {
                 if (!base.immatureId.Equals("-2"))
                 {
-                    //PROTOBUF:RESPONSE
-                    _serializedResponsePackets.Add(Alachisoft.NCache.Common.Util.ResponseHelper.SerializeExceptionResponse(exc, command.requestID));
+                    _serializedResponsePackets.Add(Alachisoft.NCache.Common.Util.ResponseHelper.SerializeExceptionResponse(exc, command.requestID, command.commandID));
                 }
                 return;
             }
             
-            //TODO
-
+            byte[] data = null;
+            int resultCount = 0;
             try
             {
                 NCache nCache = clientManager.CmdExecuter as NCache;
-                QueryResultSet resultSet = null;
+
                 Alachisoft.NCache.Caching.OperationContext operationContext = new Alachisoft.NCache.Caching.OperationContext(Alachisoft.NCache.Caching.OperationContextFieldName.OperationType, Alachisoft.NCache.Caching.OperationContextOperationType.CacheOperation);
-                if (cmdInfo.CommandVersion <= 1) //NCache 3.8 SP4 and previous
+                if (cmdInfo.CommandVersion <= 1) // NCache 3.8 SP4 and previous
                 {
                     operationContext.Add(OperationContextFieldName.ClientLastViewId, forcedViewId);
                 }
-                else //NCache 4.1 SP1 or later
+                else // NCache 4.1 SP1 or later
                 {
                     operationContext.Add(OperationContextFieldName.ClientLastViewId, cmdInfo.ClientLastViewId);
                 }
-                resultSet = nCache.Cache.SearchEntries(cmdInfo.Query, cmdInfo.Values, operationContext);
-                
-                SearchEnteriesResponseBuilder.BuildResponse(resultSet, cmdInfo.CommandVersion, cmdInfo.RequestId, _serializedResponsePackets);
-               
+                _resultSet = nCache.Cache.SearchEntries(cmdInfo.Query, cmdInfo.Values, operationContext);
+                stopWatch.Stop();
+                SearchEnteriesResponseBuilder.BuildResponse(_resultSet, cmdInfo.CommandVersion, cmdInfo.RequestId, _serializedResponsePackets,command.commandID, nCache.Cache, out resultCount);
+
             }
             catch (Exception exc)
             {
-                //PROTOBUF:RESPONSE
-                _serializedResponsePackets.Add(Alachisoft.NCache.Common.Util.ResponseHelper.SerializeExceptionResponse(exc, command.requestID));
+                exception = exc.ToString();
+                _serializedResponsePackets.Add(Alachisoft.NCache.Common.Util.ResponseHelper.SerializeExceptionResponse(exc, command.requestID, command.commandID));
+            }
+            finally
+            {
+                TimeSpan executionTime = stopWatch.Elapsed;
+                try
+                {
+                    if (Alachisoft.NCache.Management.APILogging.APILogManager.APILogManger != null && Alachisoft.NCache.Management.APILogging.APILogManager.EnableLogging)
+                    {
+
+                        APILogItemBuilder log = new APILogItemBuilder(MethodsName.SearchEntries.ToLower());
+                        log.GenerateSearchEntriesAPILogItem(cmdInfo.Query, cmdInfo.Values, overload, exception, executionTime, clientManager.ClientID.ToLower(), clientManager.ClientSocketId.ToString(),resultCount);
+                    }
+                }
+                catch
+                {
+                }
             }
         }
 
-        //PROTOBUF : SearchCommand is used for enteries
         private CommandInfo ParseCommand(Alachisoft.NCache.Common.Protobuf.Command command, ClientManager clientManager)
         {
             CommandInfo cmdInfo = new CommandInfo();
@@ -151,7 +191,10 @@ namespace Alachisoft.NCache.SocketServer.Command
                     foreach (Alachisoft.NCache.Common.Protobuf.ValueWithType valueWithType in valueWithTypes)
                     {
                         string typeStr = valueWithType.type;
-                       
+                        if (!clientManager.IsDotNetClient)
+                        {
+                            typeStr = JavaClrTypeMapping.JavaToClr(valueWithType.type);
+                        }
                         type = Type.GetType(typeStr, true, true);
 
                         if (valueWithType.value != null)
@@ -160,8 +203,8 @@ namespace Alachisoft.NCache.SocketServer.Command
                             {
                                 if (type == typeof(System.DateTime))
                                 {
-                                    ///For client we would be sending ticks instead
-                                    ///of string representation of Date.
+                                    // For client we would be sending ticks instead
+                                    // of string representation of Date.
                                     value = new DateTime(Convert.ToInt64(valueWithType.value));
                                 }
                                 else
@@ -187,7 +230,7 @@ namespace Alachisoft.NCache.SocketServer.Command
                                 list = new ArrayList();
                                 list.Add(cmdInfo.Values[key]); // add the already present value in the list
                                 cmdInfo.Values.Remove(key); // remove the key from hashtable to avoid key already exists exception
-                                list.Add(value);// add the new value in the list
+                                list.Add(value); // add the new value in the list
                                 cmdInfo.Values.Add(key, list);
                             }
                             else
@@ -201,7 +244,7 @@ namespace Alachisoft.NCache.SocketServer.Command
 
             return cmdInfo;
         }
-      
+
         private object GetValueObject(string value, bool dotNetClient)
         {
             object retVal = null;
@@ -212,6 +255,17 @@ namespace Alachisoft.NCache.SocketServer.Command
                 string[] vals = value.Split(Delimitor);
                 object valObj = (object)vals[0];
                 string typeStr = vals[1];
+                // Assuming that its otherwise java client only
+
+                if (!dotNetClient)
+                {
+                    string type = JavaClrTypeMapping.JavaToClr(typeStr);
+                    if (type != null) // Only if it is not null, otherwise let it go...
+                    {
+                        typeStr = type;
+                    }
+                }
+
                 Type objType = System.Type.GetType(typeStr);
                 retVal = Convert.ChangeType(valObj, objType);
             }

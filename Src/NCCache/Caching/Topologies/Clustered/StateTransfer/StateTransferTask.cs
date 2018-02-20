@@ -22,11 +22,13 @@ using Alachisoft.NCache.Caching.Statistics;
 using Alachisoft.NCache.Common.DataStructures;
 using Alachisoft.NCache.Common;
 using Alachisoft.NCache.Common.Util;
-using System.Threading;
+using Alachisoft.NCache.Caching.Queries.Continuous.StateTransfer;
 using Alachisoft.NCache.Caching.Exceptions;
-using Runtime = Alachisoft.NCache.Runtime;
+#if DEBUGSTATETRANSFER
+using Alachisoft.NCache.Caching.Topologies.History;
+#endif
 using Alachisoft.NCache.Common.DataStructures.Clustered;
-
+using Alachisoft.NCache.Caching.Messaging;
 namespace Alachisoft.NCache.Caching.Topologies.Clustered
 {
     #region	/                 --- StateTransferTask ---           /
@@ -36,6 +38,22 @@ namespace Alachisoft.NCache.Caching.Topologies.Clustered
     /// </summary>
     internal class StateTransferTask
     {
+        //enum StateTransferTaskType
+        //{
+        //    /// <summary>
+        //    /// This state transfer removes the buckets from source node after it is completly transfered.
+        //    /// This state transfer is done by Group Coordinators to get the redistributed buckets after 
+        //    /// AutoBalance or Manual Load Balance.
+        //    /// </summary>
+        //    Partitioned,
+
+        //    /// <summary>
+        //    /// This state transfer does not remove the buckets from the source after it is completly transfered.
+        //    /// This stateTransfer is used by Replica nodes to replciate the data from the Group Coordinator.
+        //    /// </summary>
+        //    PartitionedReplica
+        //}
+
         /// <summary> The partition base class </summary>
         internal ClusterCacheBase _parent = null;
 
@@ -44,7 +62,7 @@ namespace Alachisoft.NCache.Caching.Topologies.Clustered
 
         /// <summary> 10K is the threshold data size. Above this threshold value, data will be state
         /// transfered in chunks. </summary>
-        //temporarily we are disabling the bulk transfer of sparsed buckets.
+       
         //in future we may need it back.
         protected long _threshold = 0; //10 * 1000; 
 
@@ -66,26 +84,14 @@ namespace Alachisoft.NCache.Caching.Topologies.Clustered
 
         protected bool _isRunning;
         protected object _stateTxfrMutex = new object();
-        protected Address _localAddress;
-        protected int _bktTxfrRetryCount = 3;
-        protected ArrayList _correspondingNodes = new ArrayList();
+		protected Address _localAddress;
+		protected int _bktTxfrRetryCount = 3;
+		protected ArrayList _correspondingNodes = new ArrayList();
         /// <summary>Flag which determines that if sparsed buckets are to be transferred in bulk or not.</summary>
         protected bool _allowBulkInSparsedBuckets = true;
         protected byte _trasferType = StateTransferType.MOVE_DATA;
         protected bool _logStateTransferEvent;
         protected bool _stateTransferEventLogged;
-
-        /// <summary>
-        /// State Transfer Size is used to control the rate of data transfer during State Tranfer i.e per second tranfer rate in MB
-        /// </summary>
-        private static long MB = 1024 * 1024;
-        protected long stateTxfrDataSizePerSecond = 5 * MB;
-        TimeSpan _interval = new TimeSpan(0, 0, 1);
-
-        private ThrottlingManager _throttlingManager;
-        private bool _enableGc;
-        private long _gcThreshhold = 1024 * MB * 2;//default is 2 Gb
-        private long _dataTransferred;
 
         /// <summary>
         /// Gets or sets a value indicating whether this task is for Balancing Data Load or State Transfer.
@@ -97,13 +103,25 @@ namespace Alachisoft.NCache.Caching.Topologies.Clustered
         /// </summary>
         /// 
         ArrayList failedKeysList = null;
+        
+        /// <summary>
+        /// State Transfer Size is used to control the rate of data transfer during State Tranfer i.e per second tranfer rate in MB
+        /// </summary>
+        private static long MB = 1024 * 1024;
+        protected long stateTxfrDataSizePerSecond = 5 * MB;
 
-        private int updateCount;
+        TimeSpan _interval = new TimeSpan(0, 0, 1);
 
-        string _cacheserver = "NCache";
+        string _cacheserver="NCache";
+
         private object _updateIdMutex = new object();
+        private ThrottlingManager _throttlingManager;
+        private bool _enableGc;
+        private long _gcThreshhold = 1024 * MB * 2;//default is 2 Gb
+        private long _dataTransferred;
+        int updateCount;
+      
 
-        protected StringBuilder _sb = new StringBuilder();
         /// <summary>
         /// Constructor
         /// </summary>
@@ -114,7 +132,7 @@ namespace Alachisoft.NCache.Caching.Topologies.Clustered
 
         protected virtual string Name
         {
-            get { return "(" + _localAddress.ToString() + ")StateTransferTask"; }
+            get { return "StateTransferTask"; }
         }
 
         protected virtual bool IsSyncReplica
@@ -126,59 +144,24 @@ namespace Alachisoft.NCache.Caching.Topologies.Clustered
         /// Constructor
         /// </summary>
         /// <param name="parent"></param>
-        public StateTransferTask(ClusterCacheBase parent, Address localAdd)
-        {
-            _parent = parent;
-            _promise = new Promise();
-            _localAddress = localAdd;
+		public StateTransferTask(ClusterCacheBase parent,Address localAdd)
+		{
+			_parent = parent;
+			_promise = new Promise();
+			_localAddress = localAdd;
+                    
+            if (ServiceConfiguration.StateTransferDataSizePerSecond > 0)
+                stateTxfrDataSizePerSecond = (long)(ServiceConfiguration.StateTransferDataSizePerSecond * MB);
 
-            if (!string.IsNullOrEmpty(System.Configuration.ConfigurationSettings.AppSettings["NCacheServer.StateTransferDataSizePerSecond"]))
-            {
-                try
-                {
-                    float result = 0;
-                    float.TryParse(System.Configuration.ConfigurationSettings.AppSettings["NCacheServer.StateTransferDataSizePerSecond"], out result);
-                    if (result > 0)
-                        stateTxfrDataSizePerSecond = (long)(result * MB);
-                }
-                catch (Exception e)
-                {
-                    _parent.NCacheLog.Error(this.Name, "Invalid value specified for NCacheServer.StateTransferDataSizePerSecond." + System.Configuration.ConfigurationSettings.AppSettings["NCacheServer.StateTransferDataSizePerSecond"]);
-                }
-            }
+                    
+            if (ServiceConfiguration.EnableGCDuringStateTransfer)
+                _enableGc = ServiceConfiguration.EnableGCDuringStateTransfer;
+            
+            _gcThreshhold = ServiceConfiguration.GCThreshold * MB;
 
-            if (!string.IsNullOrEmpty(System.Configuration.ConfigurationSettings.AppSettings["NCacheServer.EnableGCDuringStateTransfer"]))
-            {
-                try
-                {
-                    bool enabled = false;
-                    if (bool.TryParse(System.Configuration.ConfigurationSettings.AppSettings["NCacheServer.EnableGCDuringStateTransfer"], out enabled))
-                        _enableGc = enabled;
-
-                }
-                catch (Exception e)
-                {
-                    _parent.NCacheLog.Error(this.Name, "Invalid value specified for NCacheServer.EnableGCDuringStateTransfer." + System.Configuration.ConfigurationSettings.AppSettings["NCacheServer.EnableGCDuringStateTransfer"]);
-                }
-            }
-
-            if (!string.IsNullOrEmpty(System.Configuration.ConfigurationSettings.AppSettings["NCacheServer.GCThreshold"]))
-            {
-                try
-                {
-                    long threshold = _gcThreshhold;
-                    if (long.TryParse(System.Configuration.ConfigurationSettings.AppSettings["NCacheServer.GCThreshold"], out threshold))
-                        _gcThreshhold = threshold * MB;
-
-                }
-                catch (Exception e)
-                {
-                    _parent.NCacheLog.Error(this.Name, "Invalid value specified for NCacheServer.GCThreshold." + System.Configuration.ConfigurationSettings.AppSettings["NCacheServer.GCThreshold"]);
-                }
-            }
-            if (_parent != null && _parent.NCacheLog.IsErrorEnabled)
-                _parent.NCacheLog.CriticalInfo(Name, " explicit-gc-enabled =" + _enableGc + " threshold = " + _gcThreshhold);
-        }
+            if (_parent != null && _parent.NCacheLog.IsDebugEnabled)
+                _parent.NCacheLog.Debug(Name, " explicit-gc-enabled =" + _enableGc + " threshold = " + _gcThreshhold);
+		}
 
         public void Start()
         {
@@ -203,8 +186,8 @@ namespace Alachisoft.NCache.Caching.Topologies.Clustered
             _filledBuckets.Clear();
         }
 
-        public void DoStateTransfer(ArrayList buckets, bool transferQueue)
-        {
+		public void DoStateTransfer(ArrayList buckets,bool transferQueue)
+		{
             int updateId = 0;
 
             lock (_updateIdMutex)
@@ -212,10 +195,9 @@ namespace Alachisoft.NCache.Caching.Topologies.Clustered
                 updateId = ++updateCount;
             }
             System.Threading.ThreadPool.QueueUserWorkItem(new System.Threading.WaitCallback(UpdateAsync), new object[] { buckets, transferQueue, updateId });
-        }
+		}
 
-      
-        public void UpdateAsync(object state)
+		public void UpdateAsync(object state)
         {
             try
             {
@@ -223,9 +205,9 @@ namespace Alachisoft.NCache.Caching.Topologies.Clustered
                 ArrayList buckets = obj[0] as ArrayList;
                 bool transferQueue = (bool)obj[1];
                 int updateId = (int)obj[2];
+               
 
                 _parent.DetermineClusterStatus();
-
                 if (!UpdateStateTransfer(buckets, updateId))
                 {
                     return;
@@ -238,8 +220,15 @@ namespace Alachisoft.NCache.Caching.Topologies.Clustered
                 if (!_isRunning)
                 {
                     _logStateTransferEvent = _stateTransferEventLogged = false;
+
                     Start();
                 }
+                else
+                {
+                    _parent.Cluster.ViewInstallationLatch.SetStatusBit(ViewStatus.COMPLETE, ViewStatus.INPROGRESS | ViewStatus.NONE);
+                }
+                
+               
 
             }
             catch (Exception e)
@@ -247,7 +236,7 @@ namespace Alachisoft.NCache.Caching.Topologies.Clustered
                 _parent.Context.NCacheLog.Error(Name + ".UpdateAsync", e.ToString());
             }
 
-        }
+		}
 
         /// <summary>
         /// Gets or sets a value indicating whether this StateTransfer task is initiated for Data balancing purposes or not.
@@ -260,62 +249,86 @@ namespace Alachisoft.NCache.Caching.Topologies.Clustered
 
         public bool IsRunning
         {
-            get { lock (_stateTxfrMutex) { return _isRunning; } }
+            //get { lock (_stateTxfrMutex) { return _isRunning; } }
+            get {return _isRunning; }
             set { lock (_stateTxfrMutex) { _isRunning = value; } }
         }
-        /// <summary>
-        /// Do the state transfer now.
-        /// </summary>
-        protected virtual void Process()
-        {
-            //fetch the latest stats from every node.
-            _isRunning = true;
+		/// <summary>
+		/// Do the state transfer now.
+		/// </summary>
+		protected virtual void Process()
+		{
+			 
+			//fetch the latest stats from every node.
+			_isRunning = true;
 
+            _parent.Cluster.ViewInstallationLatch.SetStatusBit(ViewStatus.COMPLETE, ViewStatus.INPROGRESS | ViewStatus.NONE);
             object result = null;
 
-            try
-            {
+			try
+			{
                 _parent.Cluster.MarkClusterInStateTransfer();
                 _parent.DetermineClusterStatus();
-                _parent.Context.NCacheLog.CriticalInfo(Name + ".Process", " State transfer has started");
+                _parent.AnnouncePresence(true);
 
-                BucketTxfrInfo info;
-                while (true)
+                try
                 {
-
-                    lock (_stateTxfrMutex)
+                    _parent.TransferTopicState();
+                    if (_parent.IsCQStateTransfer)
                     {
-                        info = GetBucketsForTxfr();
-
-                        //if no more data to transfer then stop.
-                        if (info.end)
-                        {
-                            _isRunning = false;
-                            break;
-                        }
-                    }
-
-                    ArrayList bucketIds = info.bucketIds;
-                    Address owner = info.owner;
-                    bool isSparsed = info.isSparsed;
-
-                    if (bucketIds != null && bucketIds.Count > 0)
-                    {
-                        if (!_correspondingNodes.Contains(owner))
-                            _correspondingNodes.Add(owner);
-
-                        TransferData(bucketIds, owner, isSparsed);
+                        _parent.Context.NCacheLog.CriticalInfo(Name + ".Process", "CQState transfer has started.");
+                        ContinuousQueryStateTransferManager cqStateTxfrMgr = new ContinuousQueryStateTransferManager(_parent, _parent.QueryAnalyzer);
+                        cqStateTxfrMgr.TransferState(_parent.Cluster.Coordinator);
+                        _parent.IsCQStateTransfer = false;
+                        _parent.Context.NCacheLog.CriticalInfo(Name + ".Process", "CQState transfer has ended.");
                     }
                 }
-                result = _parent.Local_Count();
-            }
-            catch (Exception e)
-            {
+                catch (Exception ex)
+                {
+                    _parent.Context.NCacheLog.Error(Name + ".Process", " Transfering Continuous Query State: " + ex.ToString());
+                }
+                _parent.Context.NCacheLog.CriticalInfo(Name + ".Process", "State Transfer has started.");
+                
+				
+                BucketTxfrInfo info ;
+				while (true)
+				{
+
+					lock (_stateTxfrMutex)
+					{
+						info = GetBucketsForTxfr();
+
+						  
+						//if no more data to transfer then stop.
+						if (info.end)
+						{
+							_isRunning = false;
+							break;
+						}
+					}
+
+					ArrayList bucketIds = info.bucketIds;
+					Address owner = info.owner;
+					bool isSparsed = info.isSparsed;
+
+					if (bucketIds != null && bucketIds.Count > 0)
+					{
+						
+                        if (!_correspondingNodes.Contains(owner))
+							_correspondingNodes.Add(owner);
+
+						TransferData(bucketIds, owner, isSparsed);
+					}
+				}
+				result = _parent.Local_Count();
+			}
+			catch (Exception e)
+			{
                 _parent.Context.NCacheLog.Error(Name + ".Process", e.ToString());
-                result = e;
-            }
-            finally
-            {
+				result = e;
+			}
+			finally
+			{
 
                 //Mark state transfer completed.
                 _parent.Cluster.MarkClusterStateTransferCompleted();
@@ -338,73 +351,104 @@ namespace Alachisoft.NCache.Caching.Topologies.Clustered
 
                     FinalizeStateTransfer();
 
-                    _parent.Context.NCacheLog.CriticalInfo(Name + ".Process", " State transfer has ended");
+                    _parent.Context.NCacheLog.CriticalInfo(Name + ".Process", "State transfer has ended");
                     if (_logStateTransferEvent)
                     {
                         AppUtil.LogEvent(_cacheserver, "\"" + _parent.Context.SerializationContext + "(" + _parent.Cluster.LocalAddress.ToString() + ")\"" + " has ended state transfer.", System.Diagnostics.EventLogEntryType.Information, EventCategories.Information, EventID.StateTransferStop);
                     }
 
-                
+                    if (_parent.Context.NCacheLog.IsInfoEnabled)
+                    {
+                        
+                    }
                 }
                 catch (Exception ex)
                 {
                     _parent.Context.NCacheLog.Error(Name + ".Process", ex.ToString());
                 }
-            }
-        }
+			}
+		}
 
         protected virtual void FinalizeStateTransfer() { }
-        private void TransferData(int bucketId, Address owner, bool sparsedBucket)
-        {
-            ArrayList tmp = new ArrayList(1);
-            tmp.Add(bucketId);
-            TransferData(tmp, owner, sparsedBucket);
-        }
+		private void TransferData(int bucketId, Address owner,bool sparsedBucket)
+		{
+			ArrayList tmp = new ArrayList(1);
+			tmp.Add(bucketId);
+			TransferData(tmp, owner,sparsedBucket);
+		}
 
-        protected virtual void TransferData(ArrayList bucketIds, Address owner, bool sparsedBuckets)
-        {
-            ArrayList ownershipChanged = null;
-            ArrayList lockAcquired = null;
+		protected virtual void TransferData(ArrayList bucketIds, Address owner,bool sparsedBuckets)
+		{
+			ArrayList ownershipChanged = null;
+			ArrayList lockAcquired = null;
+			
 
-            //ask coordinator node to lock this/these bucket(s) during the state transfer.
-            Hashtable lockResults = AcquireLockOnBuckets(bucketIds);
+			 
+			//ask coordinator node to lock this/these bucket(s) during the state transfer.
+			Hashtable lockResults = AcquireLockOnBuckets(bucketIds);
 
-            if (lockResults != null)
-            {
-                ownershipChanged = (ArrayList)lockResults[BucketLockResult.OwnerChanged];
-                if (ownershipChanged != null && ownershipChanged.Count > 0)
-                {
-                    //remove from local buckets. remove from sparsedBuckets. remove from filledBuckets.
-                    //these are no more my property.
-                    IEnumerator ie = ownershipChanged.GetEnumerator();
-                    while (ie.MoveNext())
-                    {
+			if (lockResults != null)
+			{
+				ownershipChanged = (ArrayList)lockResults[BucketLockResult.OwnerChanged];
+				if (ownershipChanged != null && ownershipChanged.Count > 0)
+				{
+					 
+					//remove from local buckets. remove from sparsedBuckets. remove from filledBuckets.
+					//these are no more my property.
+					IEnumerator ie = ownershipChanged.GetEnumerator();
+					while (ie.MoveNext())
+					{
                         if (_parent.Context.NCacheLog.IsInfoEnabled) _parent.Context.NCacheLog.Info(Name + ".TransferData", " " + ie.Current.ToString() + " ownership changed");
+#if DEBUGSTATETRANSFER
+                        _parent.Cluster._history.AddActivity(new Activity("StateTransferTask.TransferData Ownership changed of bucket " + ie.Current.ToString() + ". Should be removed from local buckets."));
+#endif
+						if (_parent.InternalCache.Statistics.LocalBuckets.Contains(ie.Current))
+						{
+							lock (_parent.InternalCache.Statistics.LocalBuckets.SyncRoot)
+							{
+								_parent.InternalCache.Statistics.LocalBuckets.Remove(ie.Current);
+							}
+						}
+					}
+				}
 
-                        if (_parent.InternalCache.Statistics.LocalBuckets.Contains(ie.Current))
-                        {
-                            lock (_parent.InternalCache.Statistics.LocalBuckets.SyncRoot)
-                            {
-                                _parent.InternalCache.Statistics.LocalBuckets.Remove(ie.Current);
-                            }
-                        }
-                    }
-                }
-
-                lockAcquired = (ArrayList)lockResults[BucketLockResult.LockAcquired];
-                if (lockAcquired != null && lockAcquired.Count > 0)
-                {
+				lockAcquired = (ArrayList)lockResults[BucketLockResult.LockAcquired];
+				if (lockAcquired != null && lockAcquired.Count > 0)
+				{
+#if DEBUGSTATETRANSFER
+                    _parent.Cluster._history.AddActivity(new Activity("StateTransferTask.TransferData Announcing state transfer for bucket " + lockAcquired[0].ToString() + "."));
+#endif
                     failedKeysList = new ArrayList();
                     AnnounceStateTransfer(lockAcquired);
-                    bool bktsTxfrd = TransferBuckets(lockAcquired, ref owner, sparsedBuckets);
+                   
+                    StartBucketFilteration(lockAcquired);
+
+					bool bktsTxfrd = TransferBuckets(lockAcquired,ref owner,sparsedBuckets);
+
+                    StopBucketFilteration(lockAcquired);
 
                     ReleaseBuckets(lockAcquired);
-                    RemoveFailedKeysOnReplica();
 
-                }
-            }
-            else
+                    RemoveFailedKeysOnReplica();
+				}
+			}
+			else
                 if (_parent.Context.NCacheLog.IsErrorEnabled) _parent.Context.NCacheLog.Error(Name + ".TransferData", " Lock acquisition failure");
+		}
+
+        protected virtual void StopBucketFilteration(ArrayList lockAcquired)
+        {
+            if (this._parent.InternalCache != null)
+            {                
+                var buckets=new System.Collections.Generic.List<int>(new int[]{(int)lockAcquired[0]});
+                _parent.InternalCache.StopBucketFilteration(buckets, Common.Queries.FilterType.BucketFilter);
+            }
+        }
+
+        protected virtual void StartBucketFilteration(ArrayList lockAcquired)
+        {
+            if (this._parent.InternalCache != null)
+                _parent.InternalCache.StartBucketFilteration((int)lockAcquired[0], Common.Queries.FilterType.BucketFilter);
         }
 
         protected virtual void PrepareBucketsForStateTxfr(ArrayList buckets) { }
@@ -419,31 +463,32 @@ namespace Alachisoft.NCache.Caching.Topologies.Clustered
         {
             if (_parent != null) _parent.ReleaseBuckets(lockedBuckets);
         }
-        /// <summary>
-        /// Transfers the buckets from a its owner. We may receive data in chunks.
-        /// It is a pull model, a node wanting state transfer a bucket makes request
-        /// to its owner.
-        /// </summary>
-        /// <param name="buckets"></param>
-        /// <param name="owner"></param>
-        /// <returns></returns>
-        private bool TransferBuckets(ArrayList buckets, ref Address owner, bool sparsedBuckets)
-        {
-            bool transferEnd;
-            bool successfullyTxfrd = false;
-            int expectedTxfrId = 1;
+		/// <summary>
+		/// Transfers the buckets from a its owner. We may receive data in chunks.
+		/// It is a pull model, a node wanting state transfer a bucket makes request
+		/// to its owner.
+		/// </summary>
+		/// <param name="buckets"></param>
+		/// <param name="owner"></param>
+		/// <returns></returns>
+		private bool TransferBuckets(ArrayList buckets,ref Address owner,bool sparsedBuckets)
+		{
+			bool transferEnd;
+			bool successfullyTxfrd = false;
+			int expectedTxfrId = 1;
             bool resync = false;
             try
             {
                 if (_parent.Context.NCacheLog.IsInfoEnabled) _parent.Context.NCacheLog.Info(Name + ".TransferBuckets", " Starting transfer. Owner : " + owner.ToString() + " , Bucket : " + ((int)buckets[0]).ToString());
+                        
 
                 PrepareBucketsForStateTxfr(buckets);
-
                 long dataRecieved = 0;
                 long currentIternationData = 0;
 
                 while (true)
                 {
+
                     if (_enableGc && _dataTransferred >= _gcThreshhold)
                     {
                         _dataTransferred = 0;
@@ -456,11 +501,16 @@ namespace Alachisoft.NCache.Caching.Topologies.Clustered
                     else
                         _dataTransferred += currentIternationData;
 
+                    Boolean sleep = false;
                     resync = false;
                     transferEnd = true;
                     StateTxfrInfo info = null;
                     try
                     {
+#if DEBUGSTATETRANSFER
+                        _parent.Cluster._history.AddActivity(new StateTxferActivity((int)buckets[0], owner, expectedTxfrId));
+#endif
+
                         currentIternationData = 0;
                         info = SafeTransferBucket(buckets, owner, sparsedBuckets, expectedTxfrId);
 
@@ -476,6 +526,11 @@ namespace Alachisoft.NCache.Caching.Topologies.Clustered
                     }
                     catch (Runtime.Exceptions.TimeoutException)
                     {
+                       
+                    }
+                    finally 
+                    {
+                        
                     }
 
                     if (resync)
@@ -487,6 +542,9 @@ namespace Alachisoft.NCache.Caching.Topologies.Clustered
                         {
                             if (_parent.Context.NCacheLog.IsInfoEnabled) _parent.Context.NCacheLog.Info(Name + ".TransferBuckets", changedOwner + " is new owner");
 
+#if DEBUGSTATETRANSFER
+                            _parent.Cluster._history.AddActivity(new Activity("Owner changed. Bucket : " + (int)buckets[0] + ", Owner : " + changedOwner.ToString()));
+#endif
                             if (changedOwner.Equals(owner))
                             {
                                 continue;
@@ -510,59 +568,29 @@ namespace Alachisoft.NCache.Caching.Topologies.Clustered
                     {
                         successfullyTxfrd = true;
                         transferEnd = info.transferCompleted;
-                        HashVector tbl = info.data;
-                        CacheEntry entry = null;
-
+                        //next transfer 
                         expectedTxfrId++;
                         //add data to local cache.
-
-                        if (tbl != null && tbl.Count > 0)
+                        if (!info.HasLoggedOperations)
                         {
-                            IDictionaryEnumerator ide = tbl.GetEnumerator();
-                            while (ide.MoveNext())
-                            {
-                                if (!_stateTransferEventLogged)
-                                {
-                                    AppUtil.LogEvent(_cacheserver, "\"" + _parent.Context.SerializationContext + "(" + _parent.Cluster.LocalAddress.ToString() + ")\"" + " has started state transfer.", System.Diagnostics.EventLogEntryType.Information, EventCategories.Information, EventID.StateTransferStart);
-                                    _stateTransferEventLogged = _logStateTransferEvent = true;
-                                }
-                                try
-                                {
-                                    OperationContext operationContext = new OperationContext(OperationContextFieldName.OperationType, OperationContextOperationType.CacheOperation);
-
-                                    if (ide.Value != null)
-                                    {
-                                        entry = ide.Value as CacheEntry;
-
-                                        CacheInsResultWithEntry result = _parent.InternalCache.Insert(ide.Key, entry, false, false, null, LockAccessType.DEFAULT, operationContext);
-
-                                        if (result != null && result.Result == CacheInsResult.NeedsEviction)
-                                        {
-                                            failedKeysList.Add(ide.Key);
-                                        }
-                                    }
-                                    else
-                                    {
-                                        _parent.InternalCache.Remove(ide.Key, ItemRemoveReason.Removed, false, false, null, LockAccessType.IGNORE_LOCK, operationContext);
-                                    }
-                                }
-                                catch (StateTransferException se)
-                                {
-                                    _parent.Context.NCacheLog.Error(Name + ".TransferBuckets", " Can not add/remove key = " + ide.Key + " : value is " + ((ide.Value == null) ? "null" : " not null") + " : " + se.Message);
-                                }
-                                catch (Exception e)
-                                {
-                                    _parent.Context.NCacheLog.Error(Name + ".TransferBuckets", " Can not add/remove key = " + ide.Key + " : value is " + ((ide.Value == null) ? "null" : " not null") + " : " + e.Message);
-                                }
-                            }
-
-                            if (_parent.Context.NCacheLog.IsInfoEnabled) _parent.Context.NCacheLog.Info(Name + ".TransferBuckets", " BalanceDataLoad = " + _isBalanceDataLoad.ToString());
-
-                            if (_isBalanceDataLoad)
-                                _parent.Context.PerfStatsColl.IncrementDataBalPerSecStatsBy(tbl.Count);
+                            if (!info.IsMessageData)
+                                AddDataToCache(info);
                             else
-                                _parent.Context.PerfStatsColl.IncrementStateTxfrPerSecStatsBy(tbl.Count);
+                                AddMessagesToCache(info);
                         }
+                        else
+                        {
+                            ArrayList loggedOperations = null;
+                            if (info.data != null)
+                            {
+                                loggedOperations = info.data["$__messageLogs__$"] as ArrayList;
+                                info.data.Remove("$__messageLogs__$");
+
+                            }
+                            AddDataToCache(info);
+                            ApplyLoggedMesssageOperations(loggedOperations);
+                        }
+
                     }
                     else
                         successfullyTxfrd = false;
@@ -571,9 +599,15 @@ namespace Alachisoft.NCache.Caching.Topologies.Clustered
                     {
                         BucketsTransfered(owner, buckets);
                         EndBucketsStateTxfr(buckets);
+                         
                         //send ack for the state transfer over.
                         //Ask every node to release lock on this/these bucket(s)
-                        if (_parent.Context.NCacheLog.IsInfoEnabled) _parent.Context.NCacheLog.Info(Name + ".TransferBuckets", "Acknowledging transfer. Owner : " + owner.ToString() + " , Bucket : " + ((int)buckets[0]).ToString());
+
+                        if(_parent.Context.NCacheLog.IsInfoEnabled) _parent.Context.NCacheLog.Info(Name + ".TransferBuckets", "Acknowledging transfer. Owner : " + owner.ToString() + " , Bucket : "+ ((int)buckets[0]).ToString());
+
+#if DEBUGSTATETRANSFER
+                        _parent.Cluster._history.AddActivity(new Activity("Acknowledging transfer. Owner : " + owner.ToString() + " , Bucket : " + ((int)buckets[0]).ToString()));
+#endif
                         AcknowledgeStateTransferCompleted(owner, buckets);
                         break;
                     }
@@ -587,8 +621,141 @@ namespace Alachisoft.NCache.Caching.Topologies.Clustered
                 EndBucketsStateTxfr(buckets);
                 throw;
             }
-            return successfullyTxfrd;
+			return successfullyTxfrd;
 
+		}
+
+        private void AddMessagesToCache(StateTxfrInfo info)
+        {
+            if (info != null)
+            {
+                HashVector tbl = info.data;
+                CacheEntry entry = null;
+
+                //next transfer 
+                 
+                //add data to local cache.
+
+                if (tbl != null && tbl.Count > 0)
+                {
+                    int totalMessages = 0;
+                    IDictionaryEnumerator ide = tbl.GetEnumerator();
+                    while (ide.MoveNext())
+                    {
+                        if (!_stateTransferEventLogged)
+                        {
+                            AppUtil.LogEvent(_cacheserver, "\"" + _parent.Context.SerializationContext + "(" + _parent.Cluster.LocalAddress.ToString() + ")\"" + " has started state transfer.", System.Diagnostics.EventLogEntryType.Information, EventCategories.Information, EventID.StateTransferStart);
+                            _stateTransferEventLogged = _logStateTransferEvent = true;
+                        }
+
+                        OperationContext operationContext = new OperationContext(OperationContextFieldName.OperationType, OperationContextOperationType.CacheOperation);
+
+                        if (ide.Value != null)
+                        {
+                            ClusteredArrayList messages = ide.Value as ClusteredArrayList;
+
+                            foreach (TransferrableMessage message in messages)
+                            {
+                                try
+                                {
+                                    totalMessages++;
+                                    _parent.InternalCache.StoreTransferrableMessage(ide.Key as string, message);
+                                }
+                                catch (Exception e)
+                                {
+                                    _parent.Context.NCacheLog.Error(Name + ".AddMessagesToCache", " Can not store message to topic " + ide.Key + " ; message Id: " + message.Message.MessageId + " error : " + e);
+                                }
+                            }
+
+                        }
+                    }
+
+                    if (_parent.Context.NCacheLog.IsInfoEnabled) _parent.Context.NCacheLog.Info(Name + ".AddMessagesToCache", " BalanceDataLoad = " + _isBalanceDataLoad.ToString());
+                    
+                      _parent.Context.PerfStatsColl.IncrementStateTxfrPerSecStatsBy(totalMessages);
+
+                }
+            }
+        }
+
+        private void ApplyLoggedMesssageOperations(ArrayList loggedOperations)
+        {
+            if (loggedOperations != null)
+            {
+                foreach (object operation in loggedOperations)
+                {
+                    try
+                    {
+                        _parent.ApplyMessageOperation(operation);
+                    }
+                    catch (Exception e)
+                    {
+                        _parent.Context.NCacheLog.Error(Name + ".ApplyLoggedMesssageOperations", " failed to apply logged operation " + operation.GetType().Name + " error : " + e.Message);
+                    }
+                }
+            }
+        }
+        private void AddDataToCache(StateTxfrInfo info)
+        {
+            if (info != null)
+            {
+                HashVector tbl = info.data;
+                CacheEntry entry = null;
+
+                //next transfer 
+                 
+                //add data to local cache.
+
+                if (tbl != null && tbl.Count > 0)
+                {
+                    IDictionaryEnumerator ide = tbl.GetEnumerator();
+                    while (ide.MoveNext())
+                    {
+                        if (info.HasLoggedOperations && ide.Key == "$__messageLogs__$")
+                            continue;
+
+                        if (!_stateTransferEventLogged)
+                        {
+                            AppUtil.LogEvent(_cacheserver, "\"" + _parent.Context.SerializationContext + "(" + _parent.Cluster.LocalAddress.ToString() + ")\"" + " has started state transfer.", System.Diagnostics.EventLogEntryType.Information, EventCategories.Information, EventID.StateTransferStart);
+                           _stateTransferEventLogged = _logStateTransferEvent = true;
+                        }
+                        try
+                        {
+                            OperationContext operationContext = new OperationContext(OperationContextFieldName.OperationType, OperationContextOperationType.CacheOperation);
+
+                            if (ide.Value != null)
+                            {
+                                entry = ide.Value as CacheEntry;
+
+
+                                CacheInsResultWithEntry result = _parent.InternalCache.Insert(ide.Key, entry, false, false, null, entry.Version, LockAccessType.PRESERVE_VERSION, operationContext);
+
+                                if (result != null && result.Result == CacheInsResult.NeedsEviction)
+                                {
+                                    failedKeysList.Add(ide.Key);                                    
+                                }
+
+                            }
+                            else
+                            {
+                                _parent.InternalCache.Remove(ide.Key, ItemRemoveReason.Removed, false, false, null, 0, LockAccessType.IGNORE_LOCK, operationContext);
+                            }
+                        }
+                        catch (StateTransferException se)
+                        {
+                            _parent.Context.NCacheLog.Error(Name + ".AddDataToCache", " Can not add/remove key = " + ide.Key + " : value is " + ((ide.Value == null) ? "null" : " not null") + " : " + se.Message);
+                        }
+                        catch (Exception e)
+                        {
+                            _parent.Context.NCacheLog.Error(Name + ".AddDataToCache", " Can not add/remove key = " + ide.Key + " : value is " + ((ide.Value == null) ? "null" : " not null") + " : " + e.Message);
+                        }
+                    }
+
+                    if (_parent.Context.NCacheLog.IsInfoEnabled) _parent.Context.NCacheLog.Info(Name + ".AddDataToCache", " BalanceDataLoad = " + _isBalanceDataLoad.ToString());
+                    _parent.Context.PerfStatsColl.IncrementStateTxfrPerSecStatsBy(tbl.Count);
+
+                }
+            }
         }
 
         private void RemoveFailedKeysOnReplica()
@@ -596,7 +763,7 @@ namespace Alachisoft.NCache.Caching.Topologies.Clustered
             try
             {
                 if (IsSyncReplica && failedKeysList != null && failedKeysList.Count > 0)
-                {
+                {                  
                     OperationContext operationContext = new OperationContext(OperationContextFieldName.RemoveOnReplica, true);
                     operationContext.Add(OperationContextFieldName.OperationType, OperationContextOperationType.CacheOperation);
 
@@ -604,12 +771,15 @@ namespace Alachisoft.NCache.Caching.Topologies.Clustered
                     while (ieFailedKeys.MoveNext())
                     {
                         string key = (string)ieFailedKeys.Current;
+
                         try
                         {
-                            _parent.Context.CacheImpl.Remove(key, ItemRemoveReason.Removed, false, null, LockAccessType.IGNORE_LOCK, operationContext);
+                            _parent.Context.CacheImpl.Remove(key, null, ItemRemoveReason.Removed, false, null, 0, LockAccessType.IGNORE_LOCK, operationContext);
+
                         }
                         catch (Exception ex)
                         {
+
                         }
                     }
                 }
@@ -620,6 +790,7 @@ namespace Alachisoft.NCache.Caching.Topologies.Clustered
             }
         }
 
+
         public virtual void AcknowledgeStateTransferCompleted(Address owner, ArrayList buckets)
         {
             if (owner != null)
@@ -627,97 +798,97 @@ namespace Alachisoft.NCache.Caching.Topologies.Clustered
                 _parent.AckStateTxfrCompleted(owner, buckets);
             }
         }
-        /// <summary>
-        /// Safely transfer a buckets from its owner. In case timeout occurs we
-        /// retry once again.
-        /// </summary>
-        /// <param name="buckets"></param>
-        /// <param name="owner"></param>
-        /// <returns></returns>
-        private StateTxfrInfo SafeTransferBucket(ArrayList buckets, Address owner, bool sparsedBuckets, int expectedTxfrId)
-        {
-            StateTxfrInfo info = null;
-            int retryCount = _bktTxfrRetryCount;
+		/// <summary>
+		/// Safely transfer a buckets from its owner. In case timeout occurs we
+		/// retry once again.
+		/// </summary>
+		/// <param name="buckets"></param>
+		/// <param name="owner"></param>
+		/// <returns></returns>
+		private StateTxfrInfo SafeTransferBucket(ArrayList buckets, Address owner,bool sparsedBuckets,int expectedTxfrId)
+		{
+			StateTxfrInfo info = null;
+			int retryCount = _bktTxfrRetryCount;
 
-            while (retryCount > 0)
-            {
-                try
-                {
-                    info = _parent.TransferBucket(buckets, owner, _trasferType, sparsedBuckets, expectedTxfrId, _isBalanceDataLoad);
-                    return info;
-                }
-                catch (Runtime.Exceptions.SuspectedException)
-                {
-                    //Member with which we were doing state txfer has left.
-                    _parent.Context.NCacheLog.Error(Name + ".SafeTransterBucket", " " + owner + " is suspected during state txfr");
-                    foreach (int bucket in buckets)
-                    {
-                        try
-                        {
-                            _parent.EmptyBucket(bucket);
-                        }
-                        catch (Exception e)
-                        {
+			while (retryCount > 0)
+			{
+				try
+				{
+					info = _parent.TransferBucket(buckets, owner,_trasferType, sparsedBuckets,expectedTxfrId, _isBalanceDataLoad);
+					return info;
+				}
+				catch (Runtime.Exceptions.SuspectedException)
+				{
+					//Member with which we were doing state txfer has left.
+                    _parent.Context.NCacheLog.Error(Name + ".SafeTransterBucket", " " + owner + " is suspected during state transfer");
+					foreach (int bucket in buckets)
+					{
+						try
+						{
+							_parent.EmptyBucket(bucket);
+						}
+						catch (Exception e)
+						{
                             _parent.Context.NCacheLog.Error(Name + ".SafeTransterBucket", e.ToString());
-                        }
-                    }
-                    throw;
-                }
-                catch (Runtime.Exceptions.TimeoutException tout_e)
-                {
+						}
+					}
+                    throw;	
+				}
+				catch (Runtime.Exceptions.TimeoutException tout_e)
+				{
                     _parent.Context.NCacheLog.Error(Name + ".SafeTransterBucket", " State transfer request timed out from " + owner);
-                    retryCount--;
+					retryCount--;
                     if (retryCount <= 0)
                         throw;
-                }
-                catch (Exception e)
+				}
+				catch (Exception e)
+				{
+                    _parent.Context.NCacheLog.Error(Name + ".SafeTransterBucket", " An error occurred during state transfer " + e.ToString());
+					break;
+				}
+			}
+			return info;
+		}
+		/// <summary>
+		/// Acquire locks on the buckets.
+		/// </summary>
+		/// <param name="buckets"></param>
+		/// <returns></returns>
+		protected virtual Hashtable AcquireLockOnBuckets(ArrayList buckets)
+		{
+                int maxTries = 3;
+                while (maxTries > 0)
                 {
-                    _parent.Context.NCacheLog.Error(Name + ".SafeTransterBucket", " An error occurred during state Txfr " + e.ToString());
-                    break;
+                    try
+                    {
+                        Hashtable lockResults = _parent.LockBuckets(buckets);
+                        return lockResults;
+                    }
+                    catch (Exception e)
+                    {
+                        _parent.Context.NCacheLog.Error(Name + ".AcquireLockOnBuckets", "could not acquire lock on buckets. error: " + e.ToString());
+                        maxTries--;
+                    }
                 }
-            }
-            return info;
-        }
-        /// <summary>
-        /// Acquire locks on the buckets.
-        /// </summary>
-        /// <param name="buckets"></param>
-        /// <returns></returns>
-        protected virtual Hashtable AcquireLockOnBuckets(ArrayList buckets)
-        {
-            int maxTries = 3;
-            while (maxTries > 0)
-            {
-                try
-                {
-                    Hashtable lockResults = _parent.LockBuckets(buckets);
-                    return lockResults;
-                }
-                catch (Exception e)
-                {
-                    _parent.Context.NCacheLog.Error(Name + ".AcquireLockOnBuckets", "could not acquire lock on buckets. error: " + e.ToString());
-                    maxTries--;
-                }
-            }
-            return null;
-        }
+                return null;         
+		}
 
-        public virtual BucketTxfrInfo GetBucketsForTxfr()
-        {
-            ArrayList bucketIds = null;
-            Address owner = null;
-            int bucketId;
+		public virtual BucketTxfrInfo GetBucketsForTxfr()
+		{
+			ArrayList bucketIds = null;
+			Address owner = null;
+			int bucketId;
             ArrayList filledBucketIds = null;
 
-            lock (_stateTxfrMutex)
-            {
-                if (_sparsedBuckets != null && _sparsedBuckets.Count > 0)
-                {
-                    lock (_sparsedBuckets.SyncRoot)
-                    {
-                        BucketsPack bPack = _sparsedBuckets[0] as BucketsPack;
-                        owner = bPack.Owner;
-                        bucketIds = bPack.BucketIds;
+			lock (_stateTxfrMutex)
+			{
+				if (_sparsedBuckets != null && _sparsedBuckets.Count > 0)
+				{
+					lock (_sparsedBuckets.SyncRoot)
+					{
+						BucketsPack bPack = _sparsedBuckets[0] as BucketsPack;
+						owner = bPack.Owner;
+						bucketIds = bPack.BucketIds;
                         if (_allowBulkInSparsedBuckets)
                         {
                             return new BucketTxfrInfo(bucketIds, true, owner);
@@ -729,29 +900,28 @@ namespace Alachisoft.NCache.Caching.Topologies.Clustered
                             //Although it is from the sparsed bucket but we intentionally set flag as non-sparsed.
                             return new BucketTxfrInfo(list, false, owner);
                         }
-                    }
-                }
-                else if (_filledBuckets != null && _filledBuckets.Count > 0)
-                {
-                    lock (_filledBuckets.SyncRoot)
-                    {
-                        BucketsPack bPack = _filledBuckets[0] as BucketsPack;
-                        owner = bPack.Owner;
-                        filledBucketIds = bPack.BucketIds;
-                        if (filledBucketIds != null && filledBucketIds.Count > 0)
-                        {
-                            bucketId = (int)filledBucketIds[0];
-
-                            bucketIds = new ArrayList(1);
-                            bucketIds.Add(bucketId);
-                        }
-                    }
-                    return new BucketTxfrInfo(bucketIds, false, owner);
-                }
-                else
-                    return new BucketTxfrInfo(true);
-            }
-        }
+					}
+				}
+				else if (_filledBuckets != null && _filledBuckets.Count > 0)
+				{
+					lock (_filledBuckets.SyncRoot)
+					{
+						BucketsPack bPack = _filledBuckets[0] as BucketsPack;
+						owner = bPack.Owner;
+						filledBucketIds = bPack.BucketIds;
+						if (filledBucketIds != null && filledBucketIds.Count > 0)
+						{
+							bucketId = (int)filledBucketIds[0];                           
+							bucketIds = new ArrayList(1);
+							bucketIds.Add(bucketId);
+						}
+					}
+					return new BucketTxfrInfo(bucketIds, false, owner);
+				}
+				else
+					return new BucketTxfrInfo(true);
+			}
+		}
 
         /// <summary>
         /// Removes the buckets from the list of transferable buckets after we have
@@ -760,7 +930,7 @@ namespace Alachisoft.NCache.Caching.Topologies.Clustered
         /// <param name="owner"></param>
         /// <param name="buckets"></param>
         /// <param name="sparsed"></param>
-        protected void BucketsTransfered(Address owner, ArrayList buckets)
+        protected void BucketsTransfered(Address owner,ArrayList buckets)
         {
             BucketsPack bPack = null;
             lock (_stateTxfrMutex)
@@ -825,15 +995,26 @@ namespace Alachisoft.NCache.Caching.Topologies.Clustered
             return null;
         }
 
-  
-       
         /// <summary>
-        /// Updates the state transfer task in synchronus way. It adds/remove buckets
-        /// to be transferred by the state transfer task.
+        /// This method removes all the buckets that were being transferred 
+        /// from leaving member and are still incomplete.
+        /// This method is required in POR where we can get these incomplete
+        /// buckets from other members in the group....
+        /// The purpose of removing 
         /// </summary>
-        /// <param name="myBuckets"></param>
-        public bool UpdateStateTransfer(ArrayList myBuckets, int updateId)
+        /// <param name="leavingMbr"></param>
+        public void ResetStateTransfer()
         {
+         
+		}
+
+		/// <summary>
+		/// Updates the state transfer task in synchronus way. It adds/remove buckets
+		/// to be transferred by the state transfer task.
+		/// </summary>
+		/// <param name="myBuckets"></param>
+        public bool UpdateStateTransfer(ArrayList myBuckets, int updateId)
+		{
             if (_parent.HasDisposed)
                 return false;
 
@@ -857,7 +1038,6 @@ namespace Alachisoft.NCache.Caching.Topologies.Clustered
                         //we work on the copy of the map.
                         ArrayList buckets = myBuckets.Clone() as ArrayList;
                         ArrayList leavingNodes = new ArrayList();
-
 
                         if (_sparsedBuckets != null && _sparsedBuckets.Count > 0)
                         {
@@ -984,9 +1164,8 @@ namespace Alachisoft.NCache.Caching.Topologies.Clustered
                                         bPack = _filledBuckets[index] as BucketsPack;
                                     }
                                     else
-                                    {
                                         _filledBuckets.Add(bPack);
-                                    }
+
 
                                     if (!bPack.BucketIds.Contains(bucket.BucketId))
                                     {
@@ -995,6 +1174,20 @@ namespace Alachisoft.NCache.Caching.Topologies.Clustered
                                 }
                             }
                         }
+
+#if DEBUGSTATETRANSFER
+                        ArrayList filledBuckets = new ArrayList();
+                        foreach(BucketsPack pack in _filledBuckets) 
+                        {
+                            filledBuckets.Add(pack.Clone());
+                        }
+                        ArrayList sparsedBuckets = new ArrayList();
+                        foreach(BucketsPack pack in _sparsedBuckets) 
+                        {
+                            sparsedBuckets.Add(pack.Clone());
+                        }
+                        _parent.Cluster._history.AddActivity(new StateTxferUpdateActivity(filledBuckets, sparsedBuckets));
+#endif
                     }
                 }
                 catch (NullReferenceException ex)
@@ -1013,14 +1206,13 @@ namespace Alachisoft.NCache.Caching.Topologies.Clustered
             }
 
             return true;
-
-        }
+		}
         protected Address GetChangedOwner(int bucket, Address currentOwner)
         {
             Address newOwner = null;
             lock (_stateTxfrMutex)
             {
-                while (true)
+                while(true)
                 {
                     newOwner = GetOwnerOfBucket(bucket);
                     if (newOwner == null) return null;
@@ -1031,7 +1223,7 @@ namespace Alachisoft.NCache.Caching.Topologies.Clustered
                     }
                     else
                         return newOwner;
-                }
+                } 
             }
         }
 
@@ -1039,7 +1231,6 @@ namespace Alachisoft.NCache.Caching.Topologies.Clustered
         {
             lock (_stateTxfrMutex)
             {
-
                 if (_sparsedBuckets != null)
                 {
                     foreach (BucketsPack bPack in _sparsedBuckets)
@@ -1056,25 +1247,25 @@ namespace Alachisoft.NCache.Caching.Topologies.Clustered
                             return bPack.Owner;
                     }
                 }
-
+                
             }
             return null;
         }
-        /// <summary>
-        /// Determines whether a given bucket is sparsed one or not. A bucket is
-        /// considered sparsed if its size is less than the threshhold value.
-        /// </summary>
-        /// <param name="bucketId"></param>
-        /// <param name="owner"></param>
-        /// <returns>True, if bucket is sparsed.</returns>
-        public bool IsSparsedBucket(int bucketId, Address owner)
-        {
-            bool isSparsed = false;
-            BucketStatistics stats = GetBucketStats((int)bucketId, owner);
-            isSparsed = stats != null ? stats.DataSize < _threshold : false;
-            return isSparsed;
+		/// <summary>
+		/// Determines whether a given bucket is sparsed one or not. A bucket is
+		/// considered sparsed if its size is less than the threshhold value.
+		/// </summary>
+		/// <param name="bucketId"></param>
+		/// <param name="owner"></param>
+		/// <returns>True, if bucket is sparsed.</returns>
+		public bool IsSparsedBucket(int bucketId, Address owner)
+		{
+			bool isSparsed = false;
+			BucketStatistics stats = GetBucketStats((int)bucketId, owner);
+			isSparsed = stats != null ? stats.DataSize < _threshold : false;
+			return isSparsed;
 
-        }
+		}
 
         public void UpdateBuckets()
         {
@@ -1172,8 +1363,7 @@ namespace Alachisoft.NCache.Caching.Topologies.Clustered
                 }
             }
         }
-
     }
 
-    #endregion
+#endregion
 }

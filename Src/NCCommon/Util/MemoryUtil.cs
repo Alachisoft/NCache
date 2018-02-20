@@ -1,35 +1,35 @@
-﻿// Copyright (c) 2018 Alachisoft
-// 
-// Licensed under the Apache License, Version 2.0 (the "License");
-// you may not use this file except in compliance with the License.
-// You may obtain a copy of the License at
-// 
-//    http://www.apache.org/licenses/LICENSE-2.0
-// 
-// Unless required by applicable law or agreed to in writing, software
-// distributed under the License is distributed on an "AS IS" BASIS,
-// WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
-// See the License for the specific language governing permissions and
-// limitations under the License.
-
 using System;
 using System.Collections;
 
 namespace Alachisoft.NCache.Common
 {
-    public class MemoryUtil
+    public class MemoryUtil 
     {
         public const int KB = 1024;
-        //24 Bytes overhead for every .net class
+        //24 Bytes overhead for every .net class in x64
         public const int NetOverHead = 24;
         public const int NetHashtableOverHead = 45;
         public const int NetListOverHead = 8;
+
         public const int NetClassOverHead = 16;
+
+
+        
         public const int NetIntSize = 4;
+
         public const int NetEnumSize = 4;
+
         public const int NetByteSize = 1;
+
+        public const int NetShortSize = 2;
+
+        public const int NetStringCharSize = 16;
+
+
         public const int NetLongSize = 8;
+
         public const int NetDateTimeSize = 8;
+
         public const int NetReferenceSize = 8;
 
         #region  Dot Net Primitive Tyes String Constants
@@ -61,8 +61,8 @@ namespace Alachisoft.NCache.Common
         public const String Net_System_SByte = "System.SByte";
         public const String Net_System_Object = "System.Object";
         public const String Net_System_DateTime = "System.DateTime";
-
-        public const String Net_decimal = "decimal";
+        
+        public const String Net_decimal = "decimal";        
         public const String Net_System_Decimal = "System.Decimal";
 
         #endregion
@@ -81,7 +81,7 @@ namespace Alachisoft.NCache.Common
         public const String Java_Lang_Object = "java.lang.Object";// Base class for all objects            
         public const String Java_Util_Date = "java.util.Date";// Dates will always be serialized (passed by value); according to .NET Remoting
         public const String Java_Match_BigDecimal = "java.math.BigDecimal";// Will always be serialized (passed by value); according to .NET Remoting           
-
+        
         #endregion
 
         /// <summary>
@@ -126,9 +126,9 @@ namespace Alachisoft.NCache.Common
         /// </summary>
         /// <param name="strArg"></param>
         /// <returns></returns>
-        public static int GetTypeSize(AttributeTypeSize type)
+        public static int GetTypeSize(AttributeTypeSize type) 
         {
-            switch (type)
+            switch(type)
             {
                 case AttributeTypeSize.Byte1:
                     return 1;
@@ -161,7 +161,7 @@ namespace Alachisoft.NCache.Common
 
                 case Java_Lang_Boolean:
                 case Java_Lang_Byte: return AttributeTypeSize.Byte1;
-
+                
                 case Net_char:
                 case Net_short:
                 case Net_ushort:
@@ -172,7 +172,7 @@ namespace Alachisoft.NCache.Common
                 case Java_Lang_Character:
                 case Java_Lang_Float:
                 case Java_Lang_Short: return AttributeTypeSize.Byte2;
-
+                
                 case Net_float:
                 case Net_int:
                 case Net_System_Int32:
@@ -183,7 +183,7 @@ namespace Alachisoft.NCache.Common
                 case Java_Lang_Integer: return AttributeTypeSize.Byte4;
 
                 case Net_double:
-                case Net_System_Double:
+                case Net_System_Double:                             
                 case Net_long:
                 case Net_System_Int64:
                 case Net_ulong:
@@ -199,8 +199,9 @@ namespace Alachisoft.NCache.Common
                 case Java_Match_BigDecimal: return AttributeTypeSize.Byte16;
             }
 
-            return AttributeTypeSize.Variable;
+            return AttributeTypeSize.Variable ;
         }
+
 
         public static Type GetDataType(string typeName)
         {
@@ -259,8 +260,7 @@ namespace Alachisoft.NCache.Common
             }
         }
 
-
-        public static int GetInMemoryInstanceSize(int actualDataBytes)
+        public static int GetInMemoryInstanceSize(int actualDataBytes) 
         {
             int temp = MemoryUtil.NetClassOverHead;
             ushort remainder = (ushort)(actualDataBytes & 7);
@@ -279,7 +279,7 @@ namespace Alachisoft.NCache.Common
                 remainder = (ushort)(8 - remainder);
 
             temp += actualDataBytes + remainder;
-            return temp;
+            return temp;           
         }
 
         public static ArraySegment<TReturn>[] GetArraySegments<TReturn>(IList list)
@@ -300,11 +300,10 @@ namespace Alachisoft.NCache.Common
         /// <returns></returns>
         public static int GetSafeCollectionCount<T>(long length)
         {
-            Type genericType = typeof(T);
+            Type genericType = typeof (T);
             int sizeOfReference;
 
-            if (genericType.IsValueType)
-            {
+            if (genericType.IsValueType){
                 sizeOfReference = System.Runtime.InteropServices.Marshal.SizeOf(genericType);
             }
             else
@@ -316,26 +315,15 @@ namespace Alachisoft.NCache.Common
 
             return ((length > safeLength) ? safeLength : (int)length);
         }
+
+        /// <summary>
+        /// Returns .Net's LOH safe generic collection count...
+        /// </summary>
+        /// <param name="length"></param>
+        /// <returns></returns>
         public static int GetSafeByteCollectionCount(long length)
         {
             return ((length > 81920) ? 81920 : (int)length);
         }
     }
-
-            /// <summary>
-        /// Returns .Net's LOH safe generic collection count...
-        /// </summary>
-        /// <param name="length"></param>
-        /// <returns></returns>
-
-    public enum AttributeTypeSize : byte
-    {
-        Variable,
-        Byte1,
-        Byte2,
-        Byte4,
-        Byte8,
-        Byte16,
-    }
-    
 }

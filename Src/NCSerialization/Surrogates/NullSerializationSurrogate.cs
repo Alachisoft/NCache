@@ -10,13 +10,8 @@
 // distributed under the License is distributed on an "AS IS" BASIS,
 // WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
 // See the License for the specific language governing permissions and
-// limitations under the License.
+// limitations under the License
 
-using System.Net;
-using System.Reflection;
-using System.Runtime.Serialization.Formatters;
-using Alachisoft.NCache.Common;
-using Alachisoft.NCache.Common.Net;
 
 
 namespace Alachisoft.NCache.Serialization.Surrogates
@@ -33,24 +28,5 @@ namespace Alachisoft.NCache.Serialization.Surrogates
 
     #endregion
 
-    #region /       .NET Primitive Types' surrogates       /
-
-    #endregion
-
-    #region /       Generic surrogates for containers      /
-
-    #endregion
-
-
-    #region /       System.Nullable<T> surrogates      /
-
-    #endregion
-
-    #region EOF Surrogates
-
-    #endregion
-
-    #region AverageResult surrogate
-
-    #endregion
+   
 }

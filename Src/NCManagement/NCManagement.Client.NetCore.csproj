@@ -1,0 +1,67 @@
+<Project Sdk="Microsoft.NET.Sdk">
+
+  <PropertyGroup>
+    <TargetFramework>netstandard2.0</TargetFramework>
+  </PropertyGroup>
+
+  <PropertyGroup>
+    <GenerateAssemblyInfo>false</GenerateAssemblyInfo>
+    <AssemblyName>Alachisoft.NCache.Management</AssemblyName>
+    <RootNamespace>Alachisoft.NCache.Management</RootNamespace>
+  </PropertyGroup>
+
+  <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Debug|AnyCPU'">
+    <DefineConstants>TRACE;DEBUG;CLIENT;NETCORE</DefineConstants>
+  </PropertyGroup>
+
+  <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Release|AnyCPU'">
+    <DefineConstants>TRACE;RELEASE;CLIENT;NETCORE</DefineConstants>
+  </PropertyGroup>
+  
+  <ItemGroup>
+    <Compile Remove="Exceptions\**" />
+    <Compile Remove="Management\BridgeManagement\**" />
+    <Compile Remove="SocketServer\**" />
+    <EmbeddedResource Remove="Exceptions\**" />
+    <EmbeddedResource Remove="Management\BridgeManagement\**" />
+    <EmbeddedResource Remove="SocketServer\**" />
+    <None Remove="Exceptions\**" />
+    <None Remove="Management\BridgeManagement\**" />
+    <None Remove="SocketServer\**" />
+  </ItemGroup>
+
+  <ItemGroup>
+    <Compile Remove="Caching\LeasedCacheSponsor.cs" />
+    <Compile Remove="Management\CacheChannels.cs" />
+    <Compile Remove="Management\ClientCacheStatus.cs" />
+    <Compile Remove="Management\ClientConfiguration\Dom\Mapping.cs" />
+    <Compile Remove="Management\ClientConfiguration\Dom\ServerMapping.cs" />
+    <Compile Remove="Management\CloudUsageMonitor.cs" />
+    <Compile Remove="Management\MonitorServer.cs" />
+    <Compile Remove="Management\NCacheServiceRPCBase.cs" />
+    <Compile Remove="Management\RPC\NCacheRPCService.cs" />
+    <Compile Remove="Management\RPC\RemoteBridgeServer.cs" />
+    <Compile Remove="Management\RPC\RemoteMonitorServer.cs" />
+    <Compile Remove="Management\RPC\RemoteServerBase.cs" />
+    <Compile Remove="ServiceControl\NBridgeService.cs" />
+    <Compile Remove="ServiceControl\RemotingBasedCacheService.cs" />
+    <Compile Remove="ServiceControl\ServiceControl.cs" />
+  </ItemGroup>
+
+  <ItemGroup>
+    <PackageReference Include="Neon.SshNet" Version="1.0.0" />
+  </ItemGroup>
+
+  <ItemGroup>
+    <ProjectReference Include="..\NCCache\NCCache.Client.NetCore.csproj" />
+    <ProjectReference Include="..\NCCommon\NCCommon.Client.NetCore.csproj" />
+    <ProjectReference Include="..\NCRuntime\NCRuntime.Client.NetCore.csproj" />
+    <ProjectReference Include="..\NCSerialization\NCSerialization.Client.NetCore.csproj" />
+  </ItemGroup>
+
+  <ItemGroup>
+    <Reference Include="Interop.PlaLibrary">
+      <HintPath>..\..\Resources\interop.plalibrary\Interop.PlaLibrary.dll</HintPath>
+    </Reference>
+  </ItemGroup>
+</Project>

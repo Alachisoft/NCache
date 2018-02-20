@@ -15,7 +15,6 @@
 using System;
 using System.Collections;
 using Alachisoft.NCache.Common.Enum;
-using Alachisoft.NCache.Common.Queries;
 
 namespace Alachisoft.NCache.Caching.Queries.Filters
 {
@@ -30,7 +29,7 @@ namespace Alachisoft.NCache.Caching.Queries.Filters
         {
             if(ChildPredicate!=null)
                 ChildPredicate.Execute(queryContext, nextPredicate);
-
+            
             CacheEntry entry = null;
 
             IComparable max = null;
@@ -70,10 +69,6 @@ namespace Alachisoft.NCache.Caching.Queries.Filters
                 }
             }
             base.SetResult(queryContext, AggregateFunctionType.MAX, max);
-        }
-
-        internal override void ExecuteInternal(QueryContext queryContext, CollectionOperation mergeType)
-        {
         }
 
         internal override AggregateFunctionType GetFunctionType()

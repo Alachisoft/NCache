@@ -10,7 +10,6 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 // $Id: Util.java,v 1.13 2004/07/28 08:14:14 belaban Exp $
-
 using System;
 using System.IO;
 using System.Net;
@@ -19,13 +18,15 @@ using System.Net.Sockets;
 using System.Runtime.Serialization.Formatters.Binary;
 
 using Event = Alachisoft.NGroups.Event;
-
+#if COMMUNITY
 using Alachisoft.NGroups.Blocks;
 using Message = Alachisoft.NGroups.Message;
 using Alachisoft.NCache.Common;
 using System.Text;
 using Alachisoft.NCache.Serialization.Formatters;
-
+using Alachisoft.NCache.Common.DataStructures.Clustered;
+using System.Collections;
+#endif
 
 namespace Alachisoft.NGroups.Util
 {
@@ -51,13 +52,11 @@ namespace Alachisoft.NGroups.Util
 				}
 				catch (System.Net.Sockets.SocketException bind_ex)
 				{
-					//Trace.error("util.createServerSocket()",bind_ex.Message);
 					start_port++;
 					continue;
 				}
 				catch (System.IO.IOException io_ex)
 				{
-					//Trace.error("Util.createServerSocket():2" + io_ex.Message);
 				}
 				break;
 			}
@@ -93,8 +92,9 @@ namespace Alachisoft.NGroups.Util
 			System.Threading.Thread.Sleep(TimeSpan.FromMilliseconds(timeout));
 		}
 
-        internal static byte[] serializeMessage(Message msg)
+        internal static IList serializeMessage(Message msg)
         {
+            
             int len = 0;
             byte[] buffie;
             FlagsByte flags = new FlagsByte();
@@ -102,14 +102,14 @@ namespace Alachisoft.NGroups.Util
             msg.Dest = null;
             msg.Dests = null;
 
-            RequestCorrelator.HDR rqHeader = (RequestCorrelator.HDR)msg.getHeader(HeaderType.REQUEST_COORELATOR);
+            RequestCorrelatorHDR rqHeader = (RequestCorrelatorHDR)msg.getHeader(HeaderType.REQUEST_COORELATOR);
 
             if (rqHeader != null)
             {
                 rqHeader.serializeFlag = false;
             }
 
-            Stream stmOut = new MemoryStream();
+            ClusteredMemoryStream stmOut = new ClusteredMemoryStream();
             stmOut.Write(Util.WriteInt32(len), 0, 4);
             stmOut.Write(Util.WriteInt32(len), 0, 4);
 
@@ -143,12 +143,8 @@ namespace Alachisoft.NGroups.Util
             stmOut.Position = 0;
             stmOut.Write(Util.WriteInt32(len), 0, 4);
             stmOut.Write(Util.WriteInt32(len - 4 - payloadLength), 0, 4);
-            stmOut.Position = 0;
-            buffie = new byte[len + 4 - payloadLength];
-            stmOut.Read(buffie, 0, len + 4 - payloadLength);
-            stmOut.Position = 0;
 
-            return buffie;
+            return stmOut.GetInternalBuffer();
         }
 
 		/// <summary> On most UNIX systems, the minimum sleep time is 10-20ms. Even if we specify sleep(1), the thread will
@@ -217,7 +213,7 @@ namespace Alachisoft.NGroups.Util
 		}
 		
 		
-
+#if COMMUNITY
 		/// <summary>Tries to read an object from the message's buffer and prints it </summary>
 		public static string printMessage(Message msg)
 		{
@@ -232,7 +228,6 @@ namespace Alachisoft.NGroups.Util
 			}
 			catch (System.Exception ex)
 			{
-				
 				return "";
 			}
 		}
@@ -254,9 +249,9 @@ namespace Alachisoft.NGroups.Util
 			}
 			return evt.ToString();
 		}
-
+#endif
 		
-
+#if COMMUNITY
 		/// <summary>Fragments a byte buffer into smaller fragments of (max.) frag_size.
 		/// Example: a byte buffer of 1024 bytes and a frag_size of 248 gives 4 fragments
 		/// of 248 bytes each and 1 fragment of 32 bytes.
@@ -379,7 +374,6 @@ namespace Alachisoft.NGroups.Util
 				sb.Append(hostname);
 			return sb.ToString();
 		}
-		
 		/// <summary>Reads a number of characters from the current source Stream and writes the data to the target array at the specified index.</summary>
 		/// <param name="sourceStream">The source Stream to read from.</param>
 		/// <param name="target">Contains the array of characteres read from the source Stream.</param>
@@ -392,7 +386,6 @@ namespace Alachisoft.NGroups.Util
 			if (target.Length == 0)
 				return 0;
 
-			
 			int bytesRead,totalBytesRead = 0,buffStart = start; 
 			
 			while(true)
@@ -426,8 +419,7 @@ namespace Alachisoft.NGroups.Util
 			// Returns -1 if EOF
 			if (totalBytesRead == 0)	
 				return -1;
-            
-                
+ 
 			return totalBytesRead;
 		}
 
@@ -437,7 +429,6 @@ namespace Alachisoft.NGroups.Util
             if (target.Length == 0)
                 return 0;
 
-           
             int bytesRead, totalBytesRead = 0, buffStart = start;
             
             while (true)
@@ -473,8 +464,6 @@ namespace Alachisoft.NGroups.Util
             if (totalBytesRead == 0)
                 return -1;
 
-           
-
             return totalBytesRead;
         }
        
@@ -505,7 +494,6 @@ namespace Alachisoft.NGroups.Util
 
 			return ip;
 		}
-	
 		/// <summary>Reads a number of characters from the current source TextReader and writes the data to the target array at the specified index.</summary>
 		/// <param name="sourceTextReader">The source TextReader to read from</param>
 		/// <param name="target">Contains the array of characteres read from the source TextReader.</param>
@@ -568,6 +556,6 @@ namespace Alachisoft.NGroups.Util
             System.Buffer.BlockCopy(_byteBuffer, offset, temp, 0, 4);
             return convertToInt32(temp);
         } // ReadInt32
-
+#endif
 	}
 }

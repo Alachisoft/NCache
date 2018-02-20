@@ -12,35 +12,27 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-using System;
-
-using Alachisoft.NCache.Common;
-using System.IO;
-using Alachisoft.NCache.Common.Protobuf.Util;
-using Alachisoft.NCache.Web.Caching.Util;
-
-using Alachisoft.NCache.Web.Communication;
-
 namespace Alachisoft.NCache.Web.Command
 {
     internal sealed class UnlockCommand : CommandBase
     {
         private Alachisoft.NCache.Common.Protobuf.UnlockCommand _unlockCommand;
+        private int _methodOverload;
 
-        public UnlockCommand(string key)
+        public UnlockCommand(string key, int methodOverload)
         {
             base.name = "UnlockCommand";
             base.key = key;
-
+            _methodOverload = methodOverload;
             _unlockCommand = new Alachisoft.NCache.Common.Protobuf.UnlockCommand();
             _unlockCommand.key = key;
             _unlockCommand.preemptive = true;
         }
 
-        public UnlockCommand(string key, object lockId)
+        public UnlockCommand(string key, object lockId, int methodOverload)
         {
             base.name = "UnlockCommand";
-            
+            _methodOverload = methodOverload;
             _unlockCommand = new Alachisoft.NCache.Common.Protobuf.UnlockCommand();
             _unlockCommand.key = key;
             _unlockCommand.preemptive = false;
@@ -63,7 +55,7 @@ namespace Alachisoft.NCache.Web.Command
             base._command.requestID = base.RequestId;
             base._command.unlockCommand = _unlockCommand;
             base._command.type = Alachisoft.NCache.Common.Protobuf.Command.Type.UNLOCK;
-
+            base._command.MethodOverload = _methodOverload;
         }
     }
 }

@@ -1,4 +1,4 @@
-// Copyright (c) 2018 Alachisoft
+﻿// Copyright (c) 2018 Alachisoft
 // 
 // Licensed under the Apache License, Version 2.0 (the "License");
 // you may not use this file except in compliance with the License.
@@ -10,7 +10,7 @@
 // distributed under the License is distributed on an "AS IS" BASIS,
 // WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
 // See the License for the specific language governing permissions and
-// limitations under the License.
+// limitations under the License
 
 using Alachisoft.NCache.Common.Communication;
 using Alachisoft.NCache.Common.Protobuf;
@@ -58,8 +58,8 @@ namespace Alachisoft.NCache.Management.RPC
         public object GetErrorResponse(System.Exception e)
         {
             ManagementResponse response = new ManagementResponse();
-            response.exception = new Exception();
-            response.exception.exception = e.Message;
+            response.exception = new Common.Protobuf.Exception();
+            response.exception.message= e.Message;
             return response;
         }
     }

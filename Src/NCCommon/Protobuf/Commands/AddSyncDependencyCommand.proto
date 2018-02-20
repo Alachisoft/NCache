@@ -1,0 +1,10 @@
+import "SyncDependency.proto";
+
+
+option java_outer_classname="AddSyncDependencyCommandProtocol";
+package Alachisoft.NCache.Common.Protobuf;
+message AddSyncDependencyCommand {
+	optional string key = 1;
+	optional int64 requestId = 2;
+	optional SyncDependency syncDependency = 3;
+}

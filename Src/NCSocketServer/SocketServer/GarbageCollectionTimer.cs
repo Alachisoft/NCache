@@ -13,14 +13,12 @@
 // limitations under the License.
 
 using System;
-using System.Collections;
 using System.Threading;
-using Alachisoft.NCache.Common.Util;
 
 namespace Alachisoft.NCache.SocketServer
 {
     /// <summary>
-    /// Follows Singleton patren. This class is responsible to do preodic collections of GEN#2.
+    /// Follows Singleton pattern. This class is responsible to do periodic collections of GEN#2.
     /// By default the due time and period is set to 5 mins. The minimum interval of 1 mins can be specified.
     /// </summary>
     public sealed class GarbageCollectionTimer : IDisposable
@@ -30,6 +28,7 @@ namespace Alachisoft.NCache.SocketServer
         private static GarbageCollectionTimer _instance = null;
 
         private bool stopped = true;
+
         /// <summary>
         /// To prevent Object creation by user.
         /// </summary>

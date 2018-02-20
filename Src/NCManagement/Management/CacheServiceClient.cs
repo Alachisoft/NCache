@@ -10,12 +10,14 @@
 // distributed under the License is distributed on an "AS IS" BASIS,
 // WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
 // See the License for the specific language governing permissions and
-// limitations under the License.
+// limitations under the License
 
 using System;
 using System.Collections;
 using Alachisoft.NCache.ServiceControl;
+using Alachisoft.NCache.Common;
 using Alachisoft.NCache.Config.Dom;
+
 using Alachisoft.NCache.Management.ServiceControl;
 
 namespace Alachisoft.NCache.Management
@@ -23,9 +25,6 @@ namespace Alachisoft.NCache.Management
     public class CacheServiceClient
     {
         /// <summary> CacheServer object running on other nodes. </summary>
-        /// 
-
-       
         protected ICacheServer _server = null;
 
         /// <summary> Address of the machine. </summary>
@@ -35,17 +34,27 @@ namespace Alachisoft.NCache.Management
         /// <summary> Cluster IP address </summary>
         private string _clusterIpAddress;
         /// <summary> Bind Ip address </summary>
-        private string _bindIpAddress;
-
+        private string _bindIpAddress;       
+     
         private bool _useRemoting = false;
 
+        Action<CredentialsEventArgs> _getCacheCredentials;
 
         /// <summary>
         /// Constructor
         /// </summary>
         /// <param name="address"></param>
         public CacheServiceClient(string address)
-            : this(address,  CacheConfigManager.NCacheTcpPort)
+            : this(address, RuntimeContext.CurrentContext == RtContextValue.JVCACHE ? CacheConfigManager.JvCacheTcpPort : CacheConfigManager.NCacheTcpPort , null)
+        {
+        }
+
+        /// <summary>
+        /// Constructor
+        /// </summary>
+        /// <param name="address"></param>
+        public CacheServiceClient(string address, Action<CredentialsEventArgs> getCredentialsAction)
+            : this(address, RuntimeContext.CurrentContext == RtContextValue.JVCACHE ? CacheConfigManager.JvCacheTcpPort : CacheConfigManager.NCacheTcpPort, getCredentialsAction)
         {
         }
 
@@ -54,11 +63,12 @@ namespace Alachisoft.NCache.Management
         /// </summary>
         /// <param name="address"></param>
         /// <param name="port"></param>
-        public CacheServiceClient(string address, int port)
+        public CacheServiceClient(string address, int port, Action<CredentialsEventArgs> getCredentialsAction)
         {
            
             _address = address;
             _port = port;
+            _getCacheCredentials = getCredentialsAction;
 
             Initialize();
 
@@ -72,16 +82,13 @@ namespace Alachisoft.NCache.Management
         protected virtual void Initialize()
         {
 
-            CacheService cacheService = null;
-            cacheService = new NCacheRPCService(_address, _port);
-            
+            CacheService cacheService = new NCacheRPCService(_address, _port);
 
             try
             {
                 _server = cacheService.GetCacheServer(TimeSpan.FromSeconds(7));
-               
             }
-           
+            
             catch (Exception)
             {
                 throw;
@@ -91,8 +98,6 @@ namespace Alachisoft.NCache.Management
                 cacheService.Dispose();
             }
         }
-
-        
 
         protected ICacheServer CacheServer
         {
@@ -110,6 +115,8 @@ namespace Alachisoft.NCache.Management
             get { return _clusterIpAddress; }
         }
 
+   
+
         /// <summary>
         /// Get the list of running server caches
         /// </summary>
@@ -120,19 +127,21 @@ namespace Alachisoft.NCache.Management
             {
                 Hashtable cacheList = new Hashtable();
 
-               
+            
 
                 IDictionary coll = _server.GetCacheProps();
 
                 IDictionaryEnumerator ie = coll.GetEnumerator();
                 while (ie.MoveNext())
                 {
+                   
                     if (ie.Value is CacheServerConfig)
                     {
                         CacheServerConfig cacheProp = (CacheServerConfig)ie.Value;
                         if (cacheProp.Cluster != null)
                         {
-                            if ((cacheProp.Cluster.Topology == "partitioned-server") || (cacheProp.Cluster.Topology == "replicated-server"))
+                            if ((cacheProp.Cluster.Topology == "partitioned-server")
+                                || (cacheProp.Cluster.Topology == "replicated-server") )
                             {
                                 cacheList.Add(ie.Key, cacheProp);
                             }
@@ -149,9 +158,6 @@ namespace Alachisoft.NCache.Management
             {
                 throw e;
             }
-        }
-
-
-
+        }        
     }
 }

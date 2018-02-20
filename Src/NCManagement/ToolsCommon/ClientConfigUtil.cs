@@ -1,4 +1,4 @@
-// Copyright (c) 2018 Alachisoft
+﻿// Copyright (c) 2018 Alachisoft
 // 
 // Licensed under the Apache License, Version 2.0 (the "License");
 // you may not use this file except in compliance with the License.
@@ -10,18 +10,15 @@
 // distributed under the License is distributed on an "AS IS" BASIS,
 // WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
 // See the License for the specific language governing permissions and
-// limitations under the License.
+// limitations under the License
 
 using System;
 using System.Collections.Generic;
-using System.Text;
 using System.Net;
 using System.Collections;
 using Alachisoft.NCache.Management;
 using Alachisoft.NCache.Management.ServiceControl;
 using Alachisoft.NCache.Config.NewDom;
-
-
 
 namespace Alachisoft.NCache.ToolServerOperations
 {
@@ -44,8 +41,8 @@ namespace Alachisoft.NCache.ToolServerOperations
                     NCache.ServerName = serverNode.IP;
                     ICacheServer _cacheServer = NCache.GetCacheServer(new TimeSpan(0, 0, 0, 30));
                     Hashtable bindedIps = _cacheServer.BindedIp().Map;
-                    if (bindedIps.Contains(CacheServer.Channel.SocketServer))
-                        ClientServerName = bindedIps[CacheServer.Channel.SocketServer].ToString();
+                    if (bindedIps.Contains(Alachisoft.NCache.Management.Channel.SocketServer))
+                        ClientServerName = bindedIps[Alachisoft.NCache.Management.Channel.SocketServer].ToString();
 
                     if (!string.IsNullOrEmpty(ClientServerName))
                         server.ServerName = ClientServerName;
@@ -75,7 +72,7 @@ namespace Alachisoft.NCache.ToolServerOperations
             ICacheServer sw = NCache.GetCacheServer(new TimeSpan(0, 0, 0, 30));
             string nodeName = localNode;
             Hashtable temp = sw.GetNodeInfo().Map;
-            string server = temp[Alachisoft.NCache.Management.CacheServer.Channel.SocketServer] as string;
+            string server = temp[Alachisoft.NCache.Management.Channel.SocketServer] as string;
             IPAddress serverAddress = null;
             if (IPAddress.TryParse(server, out serverAddress))
                 nodeName = server;

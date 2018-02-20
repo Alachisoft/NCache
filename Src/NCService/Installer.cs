@@ -10,7 +10,9 @@
 // distributed under the License is distributed on an "AS IS" BASIS,
 // WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
 // See the License for the specific language governing permissions and
-// limitations under the License.
+// limitations under the License
+
+
 using System;
 using System.Collections;
 using System.ComponentModel;
@@ -42,7 +44,6 @@ namespace Alachisoft.NCache.Service
 			// This call is required by the Designer.
 			InitializeComponent();
 
-			// TODO: Add any initialization after the InitializeComponent call
 		}
 
 		/// <summary> 
@@ -84,26 +85,15 @@ namespace Alachisoft.NCache.Service
 		{
 			this.serviceProcessInstaller = new System.ServiceProcess.ServiceProcessInstaller();
 			this.serviceInstaller = new System.ServiceProcess.ServiceInstaller();
-			// 
-			// serviceProcessInstaller
-			// 
+			
 			this.serviceProcessInstaller.Account = System.ServiceProcess.ServiceAccount.LocalSystem;
 			this.serviceProcessInstaller.Password = null;
 			this.serviceProcessInstaller.Username = null;
-			// 
-			// serviceInstaller
-			// 
-
+			 
             this.serviceInstaller.DisplayName = "NCache";
 
-
-
             this.serviceInstaller.ServiceName = "NCacheSvc";
-
             this.serviceInstaller.StartType = System.ServiceProcess.ServiceStartMode.Automatic;
-			// 
-			// ProjectInstaller
-			// 
 			this.Installers.AddRange(new System.Configuration.Install.Installer[] {
 																					  this.serviceProcessInstaller,
 																					  this.serviceInstaller});
@@ -166,10 +156,14 @@ namespace Alachisoft.NCache.Service
         {
             try
             {
+
                 Process[] nCacheSvcProc = Process.GetProcessesByName("Alachisoft.NCache.Service");
+
                 if (nCacheSvcProc != null && nCacheSvcProc.Length > 0)
                     (nCacheSvcProc[0]).Kill();
                 nCacheSvcProc = Process.GetProcessesByName("Alachisoft.NCache.Service.exe");
+
+
             }
             catch (Exception)
             {

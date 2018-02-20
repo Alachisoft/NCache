@@ -1,0 +1,8 @@
+import "MessageEventResponse.proto";
+option java_outer_classname="MessageEventListResponseProtocol";
+package Alachisoft.NCache.Common.Protobuf;
+message MessageEventListResponse 
+{
+	optional string topicName = 1;
+	repeated MessageEventResponse messageEventList = 2;
+}

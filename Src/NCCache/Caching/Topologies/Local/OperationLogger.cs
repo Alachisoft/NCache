@@ -55,12 +55,14 @@ namespace Alachisoft.NCache.Caching.Topologies.Local
             {
                 Hashtable updatedKeys = null;
                 Hashtable removedKeys = null;
+                ArrayList messageOps = null;
 
                 if (_logTbl == null)
                     _logTbl = new Hashtable();
 
                 _logTbl["updated"] = new Hashtable();
                 _logTbl["removed"] = new Hashtable();
+                _logTbl["messageops"] = messageOps = new ArrayList();
 
                 if (_logTbl.Contains("updated"))
                     updatedKeys = (Hashtable)_logTbl["updated"];
@@ -100,6 +102,10 @@ namespace Alachisoft.NCache.Caching.Topologies.Local
                             updatedKeys.Remove(info.Key);
                             removedKeys[info.Key] = info.Entry;
                             break;
+
+                        case (int)OperationType.MessageOperation:
+                            messageOps.Add(info.Entry);
+                            break;
                     }
                 }
                 return _logTbl;
@@ -112,18 +118,14 @@ namespace Alachisoft.NCache.Caching.Topologies.Local
             {
                 ArrayList updatedKeys = null;
                 ArrayList removedKeys = null;
+                ArrayList messageOps = null;
 
                 if (_logTbl == null)
                     _logTbl = new Hashtable();
 
-                _logTbl["updated"] = new ArrayList();
-                _logTbl["removed"] = new ArrayList();
-
-                if (_logTbl.Contains("updated"))
-                    updatedKeys = (ArrayList)_logTbl["updated"];
-
-                if (_logTbl.Contains("removed"))
-                    removedKeys = (ArrayList)_logTbl["removed"];
+                _logTbl["updated"] = updatedKeys = new ArrayList();
+                _logTbl["removed"] =  removedKeys = new ArrayList();
+                _logTbl["messageops"] = messageOps = new ArrayList();
 
                 IDictionaryEnumerator rbe = _opIndex.GetEnumerator();
                 while (rbe.MoveNext())
@@ -157,6 +159,10 @@ namespace Alachisoft.NCache.Caching.Topologies.Local
                             updatedKeys.Remove(info.Key);
                             removedKeys.Add(info.Key);
                             break;
+
+                        case (int)OperationType.MessageOperation:
+                            messageOps.Add(info.Entry);
+                            break;
                     }
                 }
                 return _logTbl;
@@ -169,7 +175,7 @@ namespace Alachisoft.NCache.Caching.Topologies.Local
                 _opIndex.Clear();
         }
 
-        public void LogOperation(object key, CacheEntry entry, OperationType type)
+        public void LogOperation(object key, object entry, OperationType type)
         {
             if (_opIndex != null)
                 _opIndex.Add(HPTime.Now, new OperationInfo(key, entry, type));

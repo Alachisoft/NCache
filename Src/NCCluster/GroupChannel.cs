@@ -10,10 +10,10 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 // $Id: GroupChannel.java,v 1.25 2004/08/29 19:35:03 belaban Exp $
-
 using System;
 
 using ProtocolStack = Alachisoft.NGroups.Stack.ProtocolStack;
+//using StateTransferInfo = Alachisoft.NGroups.Stack.StateTransferInfo;
 using Queue = Alachisoft.NCache.Common.DataStructures.Queue;
 using QueueClosedException = Alachisoft.NGroups.Util.QueueClosedException;
 using Alachisoft.NGroups.Util;
@@ -91,11 +91,10 @@ namespace Alachisoft.NGroups
 		/*channel closed flag*/
 		private bool closed = false; // close() has been called, channel is unusable
 
-		
+		//private NewTrace _nTrace = null;
+
         private bool _isStartedAsMirror = false;
-        
-
-
+     
         private ILogger _ncacheLog;
 
         public ILogger NCacheLog
@@ -109,6 +108,8 @@ namespace Alachisoft.NGroups
         }
 
 
+//		/// <summary> For traces.</summary>
+//		public NewTrace nTrace = null;
 
 		/// <summary>Used to maintain additional data across channel disconnects/reconnects. This is a kludge and will be remove
 		/// as soon as JGroups supports logical addresses
@@ -119,8 +120,6 @@ namespace Alachisoft.NGroups
 		{
 			Global.RegisterCompactTypes();
 		}
-
-        
 
         internal ProtocolStack Stack
         {
@@ -297,15 +296,12 @@ namespace Alachisoft.NGroups
 		/// <exception cref=""> ChannelClosedException The channel is closed and therefore cannot be used any longer.
 		/// A new channel has to be created first.
 		/// </exception>
-		public override void connect(string channel_name, string subGroup_name, bool isStartedAsMirror,bool twoPhaseInitialization)
+		public override void connect(string channel_name, string subGroup_name, bool twoPhaseInitialization)
 		{
 			lock (this)
 			{
 				/*make sure the channel is not closed*/
 				checkClosed();
-
-                _isStartedAsMirror = isStartedAsMirror;
-				/*if we already are connected, then ignore this*/
 				if (connected)
 				{
 					NCacheLog.Error("GroupChannel",   "already connected to " + channel_name);
@@ -336,7 +332,7 @@ namespace Alachisoft.NGroups
 					throw new ChannelException(e.Message,e);
 				}
 				
-				/* try to get LOCAL_ADDR_TIMEOUT. Catch Exception thrown if called
+				/* try to get LOCAL_ADDR_TIMEOUT. Catch SecurityException thrown if called
 				* in an untrusted environment (e.g. using JNLP) */
 				LOCAL_ADDR_TIMEOUT = 30000;
 				
@@ -357,14 +353,12 @@ namespace Alachisoft.NGroups
 						wait_time -= ((System.DateTime.Now.Ticks - 621355968000000000) / 10000 - start);
 					}
 
-					
 					if (wait_time < 0)
 					{
 						NCacheLog.Fatal( "[Timeout]GroupChannel.connect:" + wait_time);
 					}
 				}
 				
-				// ProtocolStack.start() must have given us a valid local address; if not we won't be able to continue
 				if (local_addr == null)
 				{
 					NCacheLog.Error("GroupChannel",   "local_addr == null; cannot connect");
@@ -386,7 +380,7 @@ namespace Alachisoft.NGroups
 					lock (connect_mutex)
 					{
 						// wait for CONNECT_OK event
-						Event connect_event = new Event(Event.CONNECT, new object[] { channel_name, subGroup_name, isStartedAsMirror,twoPhaseInitialization });
+						Event connect_event = new Event(Event.CONNECT, new object[] { channel_name, subGroup_name, twoPhaseInitialization });
 						connect_ok_event_received = false; // added patch by Roland Kurman (see history.txt)
 						down(connect_event);
 						
@@ -536,8 +530,6 @@ namespace Alachisoft.NGroups
 			checkClosed();
 			checkNotConnected();
 
-           
-           
             Event evt = new Event();
             evt.Type = Event.MSG;
 			msg.IsUserMsg = true;
@@ -607,9 +599,9 @@ namespace Alachisoft.NGroups
 				NCacheLog.Error("GroupChannel.receive()",   e.ToString());
 				throw new ChannelClosedException();
 			}
+
             catch (Runtime.Exceptions.TimeoutException t)
             {
-				// SAL:
 				NCacheLog.Error("GroupChannel.receive()",   t.ToString());
 				
 				throw t;
@@ -774,13 +766,16 @@ namespace Alachisoft.NGroups
 		{
 			switch (option)
 			{
-				case BLOCK:					
+				case BLOCK: 
+					//                return Boolean.valueOf(receive_blocks);
 					return receive_blocks?true:false;
 				
-				case SUSPECT:					
+				case SUSPECT: 
+					//                return Boolean.valueOf(receive_suspects);
 					return receive_suspects?true:false;
 				
-				case LOCAL:					
+				case LOCAL: 
+					//                return Boolean.valueOf(receive_local_msgs);
 					return receive_local_msgs?true:false;
 				
 				default: 
@@ -827,10 +822,13 @@ namespace Alachisoft.NGroups
 				
 				case Event.MSG: 
 					msg = (Message) evt.Arg;
-					
+					/*
+					long timetaken = msg.getTimeTaken();
+					Console.WriteLine("up: " + timetaken);
+					*/
 					if (!receive_local_msgs)
 					{
-						
+						// discard local messages (sent by myself to me)
 						if (local_addr != null && msg.Src != null)
 							if (local_addr.Equals(msg.Src))
 								return ;
@@ -859,7 +857,8 @@ namespace Alachisoft.NGroups
 					if (!receive_views)
 					// discard if client has not set receving views to on
 						return ;
-					
+					//if(connected == false)
+					//  my_view=(View)evt.getArg();
 					break;
 				
 				
@@ -871,7 +870,6 @@ namespace Alachisoft.NGroups
 				
 				case Event.CONFIG: 
 					System.Collections.Hashtable config = (System.Collections.Hashtable) evt.Arg;
-
 					break;
 				
 				
@@ -963,7 +961,7 @@ namespace Alachisoft.NGroups
 				return ;
 			}
 			
-			if (type == Event.MSG || type == Event.VIEW_CHANGE || type == Event.SUSPECT /*|| type == Event.GET_APPLSTATE*/ || type == Event.BLOCK)
+			if (type == Event.MSG || type == Event.VIEW_CHANGE || type == Event.SUSPECT || type == Event.BLOCK)
 			{
 				try
 				{
@@ -1020,8 +1018,6 @@ namespace Alachisoft.NGroups
 				}
 			}
 
-
-
 			if (prot_stack != null)
 				prot_stack.down(evt);
 			else
@@ -1066,11 +1062,14 @@ namespace Alachisoft.NGroups
 			channel_name = null;
 			my_view = null;
 			
+			// changed by Bela Sept 25 2003
+			//if(mq != null && mq.closed())
+			//  mq.reset();
 			
 			connect_ok_event_received = false;
 			disconnect_ok_event_received = false;
 			connected = false;
-			block_sending = false; 
+			block_sending = false; // block send()/down() if true (unlocked by UNBLOCK_SEND event)
 		}
 		
 		
@@ -1299,7 +1298,7 @@ namespace Alachisoft.NGroups
 								m["additional_data"] = Enclosing_Instance.additional_data;
 								Enclosing_Instance.down(new Event(Event.CONFIG, m));
 							}
-							Enclosing_Instance.connect(old_channel_name, old_subGroup_name, Enclosing_Instance._isStartedAsMirror,false);
+							Enclosing_Instance.connect(old_channel_name, old_subGroup_name,false);
 							if (Enclosing_Instance.channel_listener != null)
 								Enclosing_Instance.channel_listener.channelReconnected(Enclosing_Instance.local_addr);
 						}

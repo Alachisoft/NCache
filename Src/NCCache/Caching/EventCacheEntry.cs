@@ -12,29 +12,52 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-using System;
-using System.Collections.Generic;
-using System.Text;
-using Alachisoft.NCache.Caching;
 using Alachisoft.NCache.Common;
 using Alachisoft.NCache.Runtime.Serialization;
-using Runtime = Alachisoft.NCache.Runtime;
 
 namespace Alachisoft.NCache.Caching
 {
     public class EventCacheEntry : ICompactSerializable
     {
+        string _group;
+        string _subGroup;
+        ulong _version;
         int _priority;
+        bool _resyncExpiredItems;
+        string _reSyncProviderCacheItem;
         object _value;
         BitSet _flags;
 
-
+        public string Group 
+        {
+            get { return _group; }
+            set { _group = value; }
+        }
+        public string SubGroup
+        {
+            get { return _subGroup; }
+            set { _subGroup = value; }
+        }
+        public ulong Version
+        {
+            get { return _version; }
+            set { _version = value; }
+        }
         public int Priority
         {
             get { return _priority; }
             set { _priority = value; }
         }
-     
+        public bool ReSyncExpiredItems
+        {
+            get { return _resyncExpiredItems; }
+            set { _resyncExpiredItems = value; }
+        }
+        public string ReSyncProviderCacheItem
+        {
+            get { return _reSyncProviderCacheItem; }
+            set { _reSyncProviderCacheItem = value; }
+        }
         public object Value
         {
             get { return _value; }
@@ -48,20 +71,39 @@ namespace Alachisoft.NCache.Caching
 
         public EventCacheEntry(CacheEntry cacheEntry)
         {
+            if (cacheEntry.GroupInfo != null)
+            {
+                Group = cacheEntry.GroupInfo.Group;
+                SubGroup = cacheEntry.GroupInfo.SubGroup;
+            }
+            Version = cacheEntry.Version;
             Priority = (int)cacheEntry.Priority;
+            if (cacheEntry.ExpirationHint != null)
+                ReSyncExpiredItems = cacheEntry.ExpirationHint.NeedsReSync;
+            ReSyncProviderCacheItem = cacheEntry.ResyncProviderName;
         }
 
         #region ICompactSerializable Members
         public void Deserialize(Runtime.Serialization.IO.CompactReader reader)
         {
+            Group = reader.ReadObject() as string;
+            SubGroup = reader.ReadObject() as string;
+            Version = reader.ReadUInt64();
             Priority = reader.ReadInt32();
+            ReSyncExpiredItems = reader.ReadBoolean();
+            ReSyncProviderCacheItem = reader.ReadObject() as string;
             Flags = new BitSet(reader.ReadByte());
             Value = reader.ReadObject();
         }
 
         public void Serialize(Runtime.Serialization.IO.CompactWriter writer)
         {
+            writer.WriteObject(Group);
+            writer.WriteObject(SubGroup);
+            writer.Write(Version);
             writer.Write(Priority);
+            writer.Write(ReSyncExpiredItems);
+            writer.WriteObject(ReSyncProviderCacheItem);
             writer.Write(Flags.Data);
             writer.WriteObject(Value);
         } 
