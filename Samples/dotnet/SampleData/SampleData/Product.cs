@@ -1,6 +1,8 @@
+﻿using System;
+using System.Text;
+
 // ===============================================================================
 // Alachisoft (R) NCache Sample Code
-// NCache Product Class used by samples
 // ===============================================================================
 // Copyright © Alachisoft.  All rights reserved.
 // THIS CODE AND INFORMATION IS PROVIDED "AS IS" WITHOUT WARRANTY
@@ -9,70 +11,95 @@
 // FITNESS FOR A PARTICULAR PURPOSE.
 // ===============================================================================
 
-using System;
-
 namespace Alachisoft.NCache.Sample.Data
 {
-
+    /// <summary>
+    /// Model class for products
+    /// </summary>
     [Serializable]
     public class Product
     {
-        private int _productId;
-        private string _name;
-        private string _productClass;
-        private int _category;
-        private int _supplier;
-        private int _unitsAvailable;
+        public Product() { }
 
-        public Product()
-        { }
-
-        public Product(int productId, string name, string productClass, int category)
+        /// <summary>
+        /// Unique id assigned to each product
+        /// </summary>
+        public virtual int Id
         {
-            this._productId = productId;
-            this._name = name;
-            this._productClass = productClass;
-            this._category = category;
+            set;
+            get;
         }
 
-        public virtual int ProductID
+        /// <summary>
+        /// Price of one unit of this product
+        /// </summary>
+        public Decimal UnitPrice
         {
-            set { this._productId = value; }
-            get { return this._productId; }
+            get;
+            set;
         }
 
-
+        /// <summary>
+        /// Name of the product
+        /// </summary>
         public virtual string Name
         {
-            set { this._name = value; }
-            get { return this._name; }
+            set;
+            get;
         }
 
 
-        public virtual string ClassName
+        /// <summary>
+        /// Category of the product
+        /// </summary>
+        public virtual string Category
         {
-            set { this._productClass = value; }
-            get { return this._productClass; }
+            set;
+            get;
         }
 
-
-        public virtual int Category
+        /// <summary>
+        /// Quantity per unit of the product
+        /// </summary>
+        public string QuantityPerUnit
         {
-            set { this._category = value; }
-            get { return this._category; }
+            get;
+            set;
         }
 
-        public int Supplier
-        {
-            get { return _supplier; }
-            set { _supplier = value; }
-        }
-
+        /// <summary>
+        /// Unit in stock of the product
+        /// </summary>
         public int UnitsAvailable
         {
-            get { return _unitsAvailable; }
-            set { _unitsAvailable = value; }
+            get;
+            set;
+        }
+
+        /// <summary>
+        /// This method returns the information about this product in string format.
+        /// </summary>
+        /// <returns> Returns the information about this product. </returns>
+        public override string ToString()
+        {
+            StringBuilder builder = new StringBuilder();
+            builder.Append("[");
+
+            builder.Append("Name ");
+            builder.Append(Name);
+
+            builder.Append(", Quantity/Unit ");
+            builder.Append(QuantityPerUnit);
+
+            builder.Append(", UnitPrice ");
+            builder.Append(UnitPrice);
+
+            builder.Append(", UnitsAvailable ");
+            builder.Append(UnitsAvailable);
+
+            builder.Append("]");
+
+            return builder.ToString();
         }
     }
-
 }

@@ -1,4 +1,4 @@
-// Copyright (c) 2017 Alachisoft
+// Copyright (c) 2018 Alachisoft
 // 
 // Licensed under the Apache License, Version 2.0 (the "License");
 // you may not use this file except in compliance with the License.
@@ -19,18 +19,15 @@ using System;
 // General Information about an assembly is controlled through the following 
 // set of attributes. Change these attribute values to modify the information
 // associated with an assembly.
-
 [assembly: CLSCompliantAttribute(true)]
 [assembly: AssemblyTitle("LinqToNCache")]
 [assembly: AssemblyDescription("NCache based provider MS LINQ ")]
-[assembly: AssemblyProduct("Alachisoft® NCache Open Source")]
-[assembly: AssemblyTrademark("NCache ™ is a registered trademark of Alachisoft.")]
 [assembly: AssemblyConfiguration("")]
 [assembly: AssemblyCompany("Alachisoft")]
-
-[assembly: AssemblyCopyright("Copyright © 2005-2017 Alachisoft")]
+[assembly: AssemblyProduct("Alachisoft® NCache")]
+[assembly: AssemblyCopyright("Copyright © 2005-2018 Alachisoft")]
+[assembly: AssemblyTrademark("NCache ™ is a registered trademark of Alachisoft.")]
 [assembly: AssemblyCulture("")]
-
 
 
 // Setting ComVisible to false makes the types in this assembly not visible 
