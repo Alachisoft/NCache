@@ -1,0 +1,276 @@
+﻿<?xml version="1.0" encoding="utf-8"?>
+<Project ToolsVersion="4.0" DefaultTargets="Build" xmlns="http://schemas.microsoft.com/developer/msbuild/2003">
+  <PropertyGroup>
+    <Configuration Condition=" '$(Configuration)' == '' ">Debug</Configuration>
+    <Platform Condition=" '$(Platform)' == '' ">AnyCPU</Platform>
+    <ProductVersion>9.0.21022</ProductVersion>
+    <SchemaVersion>2.0</SchemaVersion>
+    <ProjectGuid>{7B877A50-5008-4295-9A18-FED8B7009E09}</ProjectGuid>
+    <OutputType>Exe</OutputType>
+    <AppDesignerFolder>Properties</AppDesignerFolder>
+    <RootNamespace>Alachisoft.NCache.Samples</RootNamespace>
+    <AssemblyName>EFObjectCaching</AssemblyName>
+    <TargetFrameworkVersion>v4.5</TargetFrameworkVersion>
+    <FileAlignment>512</FileAlignment>
+    <IsWebBootstrapper>true</IsWebBootstrapper>
+    <SccProjectName>
+    </SccProjectName>
+    <SccLocalPath>
+    </SccLocalPath>
+    <SccAuxPath>
+    </SccAuxPath>
+    <SccProvider>
+    </SccProvider>
+    <FileUpgradeFlags>
+    </FileUpgradeFlags>
+    <UpgradeBackupLocation>
+    </UpgradeBackupLocation>
+    <OldToolsVersion>4.0</OldToolsVersion>
+    <TargetFrameworkProfile />
+    <PublishUrl>http://localhost/EntityDataModel/</PublishUrl>
+    <Install>true</Install>
+    <InstallFrom>Web</InstallFrom>
+    <UpdateEnabled>true</UpdateEnabled>
+    <UpdateMode>Foreground</UpdateMode>
+    <UpdateInterval>7</UpdateInterval>
+    <UpdateIntervalUnits>Days</UpdateIntervalUnits>
+    <UpdatePeriodically>false</UpdatePeriodically>
+    <UpdateRequired>false</UpdateRequired>
+    <MapFileExtensions>true</MapFileExtensions>
+    <ApplicationRevision>0</ApplicationRevision>
+    <ApplicationVersion>1.0.0.%2a</ApplicationVersion>
+    <UseApplicationTrust>false</UseApplicationTrust>
+    <BootstrapperEnabled>true</BootstrapperEnabled>
+  </PropertyGroup>
+  <PropertyGroup Condition=" '$(Configuration)|$(Platform)' == 'Debug|AnyCPU' ">
+    <DebugSymbols>true</DebugSymbols>
+    <DebugType>full</DebugType>
+    <Optimize>false</Optimize>
+    <OutputPath>bin\Debug\</OutputPath>
+    <DefineConstants>DEBUG;TRACE</DefineConstants>
+    <ErrorReport>prompt</ErrorReport>
+    <WarningLevel>4</WarningLevel>
+    <CodeAnalysisRuleSet>AllRules.ruleset</CodeAnalysisRuleSet>
+    <Prefer32Bit>false</Prefer32Bit>
+  </PropertyGroup>
+  <PropertyGroup Condition=" '$(Configuration)|$(Platform)' == 'Release|AnyCPU' ">
+    <DebugType>pdbonly</DebugType>
+    <Optimize>true</Optimize>
+    <OutputPath>bin\Release\</OutputPath>
+    <DefineConstants>TRACE</DefineConstants>
+    <ErrorReport>prompt</ErrorReport>
+    <WarningLevel>4</WarningLevel>
+    <CodeAnalysisRuleSet>AllRules.ruleset</CodeAnalysisRuleSet>
+    <Prefer32Bit>false</Prefer32Bit>
+  </PropertyGroup>
+  <ItemGroup>
+    <Reference Include="Alachisoft.Integrations.EntityFramework.CachingProvider">
+      <HintPath>..\packages\Alachisoft.NCache.EF61.4.9.0\lib\net40\Alachisoft.Integrations.EntityFramework.CachingProvider.dll</HintPath>
+    </Reference>
+    <Reference Include="Alachisoft.NCache.Cache, Version=4.9.0.0, Culture=neutral, PublicKeyToken=cff5926ed6a53769, processorArchitecture=MSIL">
+      <Private>True</Private>
+      <HintPath>..\packages\Alachisoft.NCache.SDK.4.9.0\lib\net40\Alachisoft.NCache.Cache.dll</HintPath>
+    </Reference>
+    <Reference Include="Alachisoft.NCache.Common, Version=4.9.0.0, Culture=neutral, PublicKeyToken=cff5926ed6a53769, processorArchitecture=MSIL">
+      <Private>True</Private>
+      <HintPath>..\packages\Alachisoft.NCache.SDK.4.9.0\lib\net40\Alachisoft.NCache.Common.dll</HintPath>
+    </Reference>
+    <Reference Include="Alachisoft.NCache.Management, Version=4.9.0.0, Culture=neutral, PublicKeyToken=cff5926ed6a53769, processorArchitecture=MSIL">
+      <Private>True</Private>
+      <HintPath>..\packages\Alachisoft.NCache.SDK.4.9.0\lib\net40\Alachisoft.NCache.Management.dll</HintPath>
+    </Reference>
+    <Reference Include="Alachisoft.NCache.NetJNIBridge, Version=4.9.0.0, Culture=neutral, PublicKeyToken=cff5926ed6a53769, processorArchitecture=MSIL">
+      <Private>True</Private>
+      <HintPath>..\packages\Alachisoft.NCache.SDK.4.9.0\lib\net40\Alachisoft.NCache.NetJNIBridge.dll</HintPath>
+    </Reference>
+    <Reference Include="Alachisoft.NCache.Parser, Version=4.9.0.0, Culture=neutral, PublicKeyToken=cff5926ed6a53769, processorArchitecture=MSIL">
+      <Private>True</Private>
+      <HintPath>..\packages\Alachisoft.NCache.SDK.4.9.0\lib\net40\Alachisoft.NCache.Parser.dll</HintPath>
+    </Reference>
+    <Reference Include="Alachisoft.NCache.Runtime, Version=4.9.0.0, Culture=neutral, PublicKeyToken=cff5926ed6a53769, processorArchitecture=MSIL">
+      <Private>True</Private>
+      <HintPath>..\packages\Alachisoft.NCache.SDK.4.9.0\lib\net40\Alachisoft.NCache.Runtime.dll</HintPath>
+    </Reference>
+    <Reference Include="Alachisoft.NCache.Security, Version=4.9.0.0, Culture=neutral, PublicKeyToken=cff5926ed6a53769, processorArchitecture=MSIL">
+      <Private>True</Private>
+      <HintPath>..\packages\Alachisoft.NCache.SDK.4.9.0\lib\net40\Alachisoft.NCache.Security.dll</HintPath>
+    </Reference>
+    <Reference Include="Alachisoft.NCache.Serialization, Version=4.9.0.0, Culture=neutral, PublicKeyToken=cff5926ed6a53769, processorArchitecture=MSIL">
+      <Private>True</Private>
+      <HintPath>..\packages\Alachisoft.NCache.SDK.4.9.0\lib\net40\Alachisoft.NCache.Serialization.dll</HintPath>
+    </Reference>
+    <Reference Include="Alachisoft.NCache.SocketServer, Version=4.9.0.0, Culture=neutral, PublicKeyToken=cff5926ed6a53769, processorArchitecture=MSIL">
+      <Private>True</Private>
+      <HintPath>..\packages\Alachisoft.NCache.SDK.4.9.0\lib\net40\Alachisoft.NCache.SocketServer.dll</HintPath>
+    </Reference>
+    <Reference Include="Alachisoft.NCache.Storage, Version=4.9.0.0, Culture=neutral, PublicKeyToken=cff5926ed6a53769, processorArchitecture=MSIL">
+      <Private>True</Private>
+      <HintPath>..\packages\Alachisoft.NCache.SDK.4.9.0\lib\net40\Alachisoft.NCache.Storage.dll</HintPath>
+    </Reference>
+    <Reference Include="Alachisoft.NCache.Web, Version=4.9.0.0, Culture=neutral, PublicKeyToken=cff5926ed6a53769, processorArchitecture=MSIL">
+      <Private>True</Private>
+      <HintPath>..\packages\Alachisoft.NCache.SDK.4.9.0\lib\net40\Alachisoft.NCache.Web.dll</HintPath>
+    </Reference>
+    <Reference Include="EntityFramework, Version=6.0.0.0, Culture=neutral, PublicKeyToken=b77a5c561934e089, processorArchitecture=MSIL">
+      <SpecificVersion>False</SpecificVersion>
+      <HintPath>..\packages\EntityFramework.6.1.3\lib\net45\EntityFramework.dll</HintPath>
+    </Reference>
+    <Reference Include="EntityFramework.SqlServer, Version=6.0.0.0, Culture=neutral, PublicKeyToken=b77a5c561934e089, processorArchitecture=MSIL">
+      <SpecificVersion>False</SpecificVersion>
+      <HintPath>..\packages\EntityFramework.6.1.3\lib\net45\EntityFramework.SqlServer.dll</HintPath>
+    </Reference>
+    <Reference Include="log4net, Version=1.2.10.0, Culture=neutral, PublicKeyToken=1b44e1d426115821, processorArchitecture=MSIL">
+      <Private>True</Private>
+      <HintPath>..\packages\Alachisoft.NCache.SDK.4.9.0\lib\net40\log4net.dll</HintPath>
+    </Reference>
+    <Reference Include="protobuf-net, Version=1.0.0.282, Culture=neutral, PublicKeyToken=257b51d87d2e4d67, processorArchitecture=MSIL">
+      <Private>True</Private>
+      <HintPath>..\packages\Alachisoft.NCache.SDK.4.9.0\lib\net40\protobuf-net.dll</HintPath>
+    </Reference>
+    <Reference Include="System" />
+    <Reference Include="System.ComponentModel.DataAnnotations" />
+    <Reference Include="System.Core">
+      <RequiredTargetFramework>3.5</RequiredTargetFramework>
+    </Reference>
+    <Reference Include="System.Management.Automation, Version=1.0.0.0, Culture=neutral, PublicKeyToken=31bf3856ad364e35, processorArchitecture=MSIL">
+      <Private>True</Private>
+      <HintPath>..\packages\Alachisoft.NCache.SDK.4.9.0\lib\net40\System.Management.Automation.dll</HintPath>
+    </Reference>
+    <Reference Include="System.Runtime.Serialization">
+      <RequiredTargetFramework>3.0</RequiredTargetFramework>
+    </Reference>
+    <Reference Include="System.Security" />
+    <Reference Include="System.Xml.Linq">
+      <RequiredTargetFramework>3.5</RequiredTargetFramework>
+    </Reference>
+    <Reference Include="System.Data.DataSetExtensions">
+      <RequiredTargetFramework>3.5</RequiredTargetFramework>
+    </Reference>
+    <Reference Include="System.Data" />
+    <Reference Include="System.Xml" />
+  </ItemGroup>
+  <ItemGroup>
+    <Compile Include="Category.cs">
+      <DependentUpon>NorthwindCustomerModel.tt</DependentUpon>
+    </Compile>
+    <Compile Include="Customer.cs">
+      <DependentUpon>NorthwindCustomerModel.tt</DependentUpon>
+    </Compile>
+    <Compile Include="CustomerDemographic.cs">
+      <DependentUpon>NorthwindCustomerModel.tt</DependentUpon>
+    </Compile>
+    <Compile Include="Employee.cs">
+      <DependentUpon>NorthwindCustomerModel.tt</DependentUpon>
+    </Compile>
+    <Compile Include="EFCachingProvider.cs" />
+    <Compile Include="NorthwindCustomerModel.Context.cs">
+      <AutoGen>True</AutoGen>
+      <DesignTime>True</DesignTime>
+      <DependentUpon>NorthwindCustomerModel.Context.tt</DependentUpon>
+    </Compile>
+    <Compile Include="NorthwindCustomerModel.cs">
+      <AutoGen>True</AutoGen>
+      <DesignTime>True</DesignTime>
+      <DependentUpon>NorthwindCustomerModel.tt</DependentUpon>
+    </Compile>
+    <Compile Include="NorthwindCustomerModel.Designer.cs">
+      <AutoGen>True</AutoGen>
+      <DesignTime>True</DesignTime>
+      <DependentUpon>NorthwindCustomerModel.edmx</DependentUpon>
+    </Compile>
+    <Compile Include="Order.cs">
+      <DependentUpon>NorthwindCustomerModel.tt</DependentUpon>
+    </Compile>
+    <Compile Include="Order_Detail.cs">
+      <DependentUpon>NorthwindCustomerModel.tt</DependentUpon>
+    </Compile>
+    <Compile Include="Product.cs">
+      <DependentUpon>NorthwindCustomerModel.tt</DependentUpon>
+    </Compile>
+    <Compile Include="Program.cs" />
+    <Compile Include="Properties\AssemblyInfo.cs" />
+    <Compile Include="Region.cs">
+      <DependentUpon>NorthwindCustomerModel.tt</DependentUpon>
+    </Compile>
+    <Compile Include="Shipper.cs">
+      <DependentUpon>NorthwindCustomerModel.tt</DependentUpon>
+    </Compile>
+    <Compile Include="Supplier.cs">
+      <DependentUpon>NorthwindCustomerModel.tt</DependentUpon>
+    </Compile>
+    <Compile Include="Territory.cs">
+      <DependentUpon>NorthwindCustomerModel.tt</DependentUpon>
+    </Compile>
+  </ItemGroup>
+  <ItemGroup>
+    <None Include="App.Config">
+      <SubType>Designer</SubType>
+    </None>
+    <EntityDeploy Include="NorthwindCustomerModel.edmx">
+      <Generator>EntityModelCodeGenerator</Generator>
+      <LastGenOutput>NorthwindCustomerModel.Designer.cs</LastGenOutput>
+    </EntityDeploy>
+    <None Include="client.ncconf" />
+    <None Include="config.ncconf" />
+    <None Include="efcaching.ncconf" />
+    <None Include="NorthwindCustomerModel.Context.tt">
+      <Generator>TextTemplatingFileGenerator</Generator>
+      <DependentUpon>NorthwindCustomerModel.edmx</DependentUpon>
+      <LastGenOutput>NorthwindCustomerModel.Context.cs</LastGenOutput>
+    </None>
+    <None Include="NorthwindCustomerModel.edmx.diagram">
+      <DependentUpon>NorthwindCustomerModel.edmx</DependentUpon>
+    </None>
+    <None Include="NorthwindCustomerModel.tt">
+      <Generator>TextTemplatingFileGenerator</Generator>
+      <DependentUpon>NorthwindCustomerModel.edmx</DependentUpon>
+      <LastGenOutput>NorthwindCustomerModel.cs</LastGenOutput>
+    </None>
+    <None Include="packages.config">
+      <SubType>Designer</SubType>
+    </None>
+  </ItemGroup>
+  <ItemGroup>
+    <BootstrapperPackage Include="Microsoft.Net.Client.3.5">
+      <Visible>False</Visible>
+      <ProductName>.NET Framework 3.5 SP1 Client Profile</ProductName>
+      <Install>false</Install>
+    </BootstrapperPackage>
+    <BootstrapperPackage Include="Microsoft.Net.Framework.2.0">
+      <Visible>False</Visible>
+      <ProductName>.NET Framework 2.0 %28x86%29</ProductName>
+      <Install>false</Install>
+    </BootstrapperPackage>
+    <BootstrapperPackage Include="Microsoft.Net.Framework.3.0">
+      <Visible>False</Visible>
+      <ProductName>.NET Framework 3.0 %28x86%29</ProductName>
+      <Install>false</Install>
+    </BootstrapperPackage>
+    <BootstrapperPackage Include="Microsoft.Net.Framework.3.5">
+      <Visible>False</Visible>
+      <ProductName>.NET Framework 3.5</ProductName>
+      <Install>false</Install>
+    </BootstrapperPackage>
+    <BootstrapperPackage Include="Microsoft.Net.Framework.3.5.SP1">
+      <Visible>False</Visible>
+      <ProductName>.NET Framework 3.5 SP1</ProductName>
+      <Install>true</Install>
+    </BootstrapperPackage>
+    <BootstrapperPackage Include="Microsoft.Windows.Installer.3.1">
+      <Visible>False</Visible>
+      <ProductName>Windows Installer 3.1</ProductName>
+      <Install>true</Install>
+    </BootstrapperPackage>
+  </ItemGroup>
+  <ItemGroup>
+    <Service Include="{508349B6-6B84-4DF5-91F0-309BEEBAD82D}" />
+  </ItemGroup>
+  <Import Project="$(MSBuildToolsPath)\Microsoft.CSharp.targets" />
+  <!-- To modify your build process, add your task inside one of the targets below and uncomment it. 
+       Other similar extension points exist, see Microsoft.Common.targets.
+  <Target Name="BeforeBuild">
+  </Target>
+  <Target Name="AfterBuild">
+  </Target>
+  -->
+</Project>

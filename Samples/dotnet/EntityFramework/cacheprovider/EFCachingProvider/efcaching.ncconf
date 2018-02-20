@@ -1,0 +1,8 @@
+<configuration>
+	<app-config app-id="EFCachingDemo" mode="analysis">
+		<analysis-policy log-path="" analysis-time="1min" cache-enable-threshold="1" default-expiration-type="Sliding" default-expiration-time="180sec" dbsyncdependency="false"/>
+		<cache-policy-configuration database="sqlserver" cache-id="myReplicatedCache">
+			<api-level-caching expiration-type="Sliding" enable="True" expiration-time="120sec" dbsyncdependency="False"/>
+		</cache-policy-configuration>
+	</app-config>
+</configuration>
