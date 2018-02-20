@@ -1,7 +1,7 @@
 ﻿
 Microsoft Visual Studio Solution File, Format Version 12.00
-# Visual Studio 2013
-VisualStudioVersion = 12.0.31101.0
+# Visual Studio 14
+VisualStudioVersion = 14.0.25420.1
 MinimumVisualStudioVersion = 10.0.40219.1
 Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "ItemLocking", "ItemLocking\ItemLocking.csproj", "{AB319316-4D24-4116-8774-F3302B1C8F58}"
 EndProject
@@ -26,9 +26,11 @@ Global
 		{52A6E7BD-C4FF-4609-B472-64A9D3794E08}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
 		{52A6E7BD-C4FF-4609-B472-64A9D3794E08}.Debug|Any CPU.Build.0 = Debug|Any CPU
 		{52A6E7BD-C4FF-4609-B472-64A9D3794E08}.Debug|x86.ActiveCfg = Debug|Any CPU
+		{52A6E7BD-C4FF-4609-B472-64A9D3794E08}.Debug|x86.Build.0 = Debug|Any CPU
 		{52A6E7BD-C4FF-4609-B472-64A9D3794E08}.Release|Any CPU.ActiveCfg = Release|Any CPU
 		{52A6E7BD-C4FF-4609-B472-64A9D3794E08}.Release|Any CPU.Build.0 = Release|Any CPU
 		{52A6E7BD-C4FF-4609-B472-64A9D3794E08}.Release|x86.ActiveCfg = Release|Any CPU
+		{52A6E7BD-C4FF-4609-B472-64A9D3794E08}.Release|x86.Build.0 = Release|Any CPU
 	EndGlobalSection
 	GlobalSection(SolutionProperties) = preSolution
 		HideSolutionNode = FALSE
