@@ -1,6 +1,5 @@
 ﻿// ===============================================================================
 // Alachisoft (R) NCache Sample Code.
-// NCache Bulk Operation sample
 // ===============================================================================
 // Copyright © Alachisoft.  All rights reserved.
 // THIS CODE AND INFORMATION IS PROVIDED "AS IS" WITHOUT WARRANTY
@@ -9,151 +8,246 @@
 // FITNESS FOR A PARTICULAR PURPOSE.
 // ===============================================================================
 
-
 using System;
 using System.Collections;
 using Alachisoft.NCache.Web.Caching;
 using Alachisoft.NCache.Sample.Data;
+using System.Configuration;
 
-
-namespace BulkOperations
+namespace Alachisoft.NCache.Samples
 {
+    /// <summary>
+    /// Class that provides the functionality of the sample
+    /// </summary>
 	public class BulkOperations
-	{
-		public static void Main(string[] args)
-		{
-			try
-			{
-				Cache cache;
-				cache = NCache.InitializeCache("mypartitionedcache");
-				
-                string[] keysToAdd = new string[] { "Product:Cheese", "Product:Butter", "Product:Cream", "Product:Yogurt" };
+    {
+        private static Cache _cache;
 
-				Product[] products = new Product[4];
+        /// <summary>
+        /// Executing this method will perform all the operations of the sample
+        /// </summary>
+        public static void Run()
+        {
+            // Initialize cache 
+            InitializeCache();
 
-				products[0] = new Product(1, "Dairy Milk Cheese", "ClassA", 1);
-				products[1] = new Product(2, "American Butter", "ClassA", 1);
-				products[2] = new Product(3, "Walmart Delicious Cream", "ClassA", 2);
-                products[3] = new Product(4, "Nestle Yogurt", "ClassA", 2);
+            // Generate multiple products that will be used in different operation in this sample
+            Product[] products = CreateNewProducts();
+            string[] keys = GetKeys(products);
 
-				//Adding Bulk Items
-				//Bulk operation returns 
-                IDictionary result = cache.AddBulk(keysToAdd, new CacheItem[] { new CacheItem(products[0]), new CacheItem(products[1]), new CacheItem(products[2]), new CacheItem(products[3]) });
+            // Adding multiple items in cache using bulk api
+            AddMultipleObjectsToCache(keys, products);
 
-				if (result.Count == 0)
-				{
-					Console.WriteLine("All items are successfully added to cache.");
-				}
-				else
-				{
-					Console.WriteLine("One or more items could not be added to the cache. Iterate hashmap for details.");
-					//This is how to iterate the hashmap
-					for (IEnumerator iter = result.Values.GetEnumerator(); iter.MoveNext();)
-					{
-					    Product product = (Product) iter;
-						PrintProductDetails(product);
-					}
-				}
+            // Update multiple items in cache using bulk api
+            UpdateMultipleObjectsInCache(keys, products);
 
-				//Getting bulk items
-				
-                IDictionary items = cache.GetBulk(keysToAdd);
+            // Get multiple items from cache
+            GetMultipleObjectsFromCache(keys);
 
-				if (items.Count > 0)
-				{
-					for (IEnumerator iter = items.Values.GetEnumerator(); iter.MoveNext();)
-					{
-						Product product = (Product) iter.Current;
-						PrintProductDetails(product);
-					}
-				}
+            // Remove the existing objects using bulk api
+            RemoveMultipleObjectsFromCache(keys);
 
-				//Updating Bulk Items
-				//Previous products have their product id, class and category changed.
-				products[0].ClassName = "ClassB";
-				products[1].ClassName = "ClassC";
-				products[2].ClassName = "ClassA";
-				products[3].ClassName = "ClassD";
+            // Delete the existing objects using bulk api
+            DeleteMultipleObjectsFromCache(keys);
 
-                result = cache.InsertBulk(keysToAdd, new CacheItem[] { new CacheItem(products[0]), new CacheItem(products[1]), new CacheItem(products[2]), new CacheItem(products[3]) });
-                
-				if (result.Count == 0)
-				{
-					Console.WriteLine("All items successfully added/updated in cache.");
-				}
-				else
-				{
-					Console.WriteLine("One or more items could not be added to the cache. Iterate hashmap for details.");
-					//This is how to iterate the hashmap
-					for (IEnumerator iter = result.Values.GetEnumerator(); iter.MoveNext();)
-					{
-						Product product = (Product) iter;
-						PrintProductDetails(product);
-					}
-				}
+            // Dispose the cache once done
+            _cache.Dispose();
+        }
 
-                items = cache.GetBulk(keysToAdd);
+        /// <summary>
+        /// This method initializes the cache
+        /// </summary>
+        private static void InitializeCache()
+        {
+            string cache = ConfigurationManager.AppSettings["CacheID"];
 
-                if (items.Count > 0)
-				{
-					for (IEnumerator iter = items.Values.GetEnumerator(); iter.MoveNext();)
-					{
-						Product product = (Product) iter.Current;
-						PrintProductDetails(product);
-					}
-				}
+            if (String.IsNullOrEmpty(cache))
+            {
+                Console.WriteLine("The CacheID cannot be null or empty.");
+                return;
+            }
 
-				//Remove Bulk operation
-				//Remove returns all the items removed from the cache in them form of Hashmap
+            // Initialize an instance of the cache to begin performing operations:
+            _cache = NCache.Web.Caching.NCache.InitializeCache(cache);
 
-                result = cache.RemoveBulk(keysToAdd);
+            // Print output on console
+            Console.WriteLine(string.Format("\nCache '{0}' is initialized.", cache));
+        }
 
-				if (result.Count == 0)
-				{
-					Console.WriteLine("No items removed from the cache against the provided keys.");
-				}
-				else
-				{
-					Console.WriteLine("Following products have been removed from the cache:");
-					//This is how to iterate the hashmap
-					for (IEnumerator iter = result.Values.GetEnumerator(); iter.MoveNext();)
-					{
-						Product product = (Product) iter.Current;
-						PrintProductDetails(product);
-					}
-				}
+        /// <summary>
+        /// This method adds multiple objects in the cache using bulk api
+        /// </summary>
+        /// <param name="keys"> List of string keys that will be inserted in the cache </param>
+        /// <param name="products"> products that will be inserted in the cache </param>
+        private static void AddMultipleObjectsToCache(string[] keys, Product[] products)
+        {
+            // Adding Bulk Items
+            // Bulk operation returns 
+            IDictionary result = _cache.AddBulk(keys, new CacheItem[] { new CacheItem(products[0]), new CacheItem(products[1]), new CacheItem(products[2]), new CacheItem(products[3]) });
 
-				//Delete Bulk from Cache is same as Remove
-				//Delete bulk does not return anything 
-                
-                cache.DeleteBulk(keysToAdd);
+            if (result.Count == 0)
+            {
+                // Print output on console
+                Console.WriteLine("\nAll items are successfully added to cache.");
+            }
+            else
+            {
+                // Print output on console
+                Console.WriteLine("\nOne or more items could not be added to the cache. Iterate hashmap for details.");
+                // Iterate hashmap
+                for (IEnumerator iter = result.Values.GetEnumerator(); iter.MoveNext();)
+                {
+                    Product product = (Product)iter;
+                    PrintProductDetails(product);
+                }
+            }
+        }
 
-                Console.WriteLine("Cache contains " + cache.Count + " items.");
+        /// <summary>
+        /// This method updates multiple objects in the cache using bulk api
+        /// </summary>
+        /// <param name="keys"> List of string keys to update data in cache </param>
+        /// <param name="products"> products that will be inserted in the cache </param>
+        private static void UpdateMultipleObjectsInCache(string[] keys, Product[] products)
+        {
+            // Updating Bulk Items
+            // Previous products have their units available changed.
+            products[0].UnitsAvailable = 150;
+            products[1].UnitsAvailable = 170;
+            products[2].UnitsAvailable = 125;
+            products[3].UnitsAvailable = 130;
 
-				//Must dispose cache 
-				cache.Dispose();
+            IDictionary result = _cache.InsertBulk(keys, new CacheItem[] { new CacheItem(products[0]), new CacheItem(products[1]), new CacheItem(products[2]), new CacheItem(products[3]) });
 
-				Environment.Exit(0);
+            if (result.Count == 0)
+            {
+                // Print output on console
+                Console.WriteLine("\nAll items successfully added/updated in cache.");
+            }
+            else
+            {
+                // Print output on console
+                Console.WriteLine("\nOne or more items could not be added to the cache. Iterate hashmap for details.");
 
-	}
-			catch (Exception e)
-			{
-				Console.WriteLine(e.Message);
-				Environment.Exit(0);
-			}
-}
+                // Iterate hashmap
+                for (IEnumerator iter = result.Values.GetEnumerator(); iter.MoveNext();)
+                {
+                    Product product = (Product)iter;
+                    PrintProductDetails(product);
+                }
+            }
+        }
+
+        /// <summary>
+        /// This method reads multiple objects from the cache using bulk api
+        /// </summary>
+        /// <param name="keys"> List of string keys to fetch data from cache </param>
+        private static void GetMultipleObjectsFromCache(string[] keys)
+        {
+            // Getting bulk items
+            IDictionary items = _cache.GetBulk(keys);
+
+            if (items.Count > 0)
+            {
+                // Print output on console
+                Console.WriteLine("\nFollowing items are fetched from cache.");
+
+                for (IEnumerator iter = items.Values.GetEnumerator(); iter.MoveNext();)
+                {
+                    Product product = (Product)iter.Current;
+                    PrintProductDetails(product);
+                }
+            }
+        }
+
+        /// <summary>
+        /// Remove multiple objects in the cache using bulk api
+        /// </summary>
+        /// <param name="keys"> List of string keys to remove data from cache </param>
+        private static void RemoveMultipleObjectsFromCache(string[] keys)
+        {
+            // Remove Bulk operation
+            // Remove returns all the items removed from the cache in them form of Hashmap
+
+            IDictionary result = _cache.RemoveBulk(keys);
+
+            if (result.Count == 0)
+            {
+                // Print output on console
+                Console.WriteLine("\nNo items removed from the cache against the provided keys.");
+            }
+            else
+            {
+                // Print output on console
+                Console.WriteLine("\nFollowing items have been removed from the cache:");
+                // Iterate hashmap
+                for (IEnumerator iter = result.Values.GetEnumerator(); iter.MoveNext();)
+                {
+                    Product product = (Product)iter.Current;
+                    PrintProductDetails(product);
+                }
+            }
+        }
+
+        /// <summary>
+        /// Delete multiple objects in the cache using bulk api
+        /// </summary>
+        /// <param name="keys"> List of string keys to be removed from cache </param>
+        private static void DeleteMultipleObjectsFromCache(string[] keys)
+        {
+            // Delete Bulk from Cache is same as Remove
+            // Delete bulk does not return anything 
+
+            _cache.DeleteBulk(keys);
+
+            // Print output on console
+            Console.WriteLine("\nItems deleted from cache. ");
+        }
+
+        /// <summary>
+        /// Creates list of products to be used in this sample
+        /// </summary>
+        /// <returns> returns list of Products </returns>
+        private static Product[] CreateNewProducts()
+        {
+            Product[] products = new Product[4];
+
+            products[0] = new Product() { Id = 1, Name = "Dairy Milk Cheese", UnitsAvailable = 200, Category = "Edibles" };
+            products[1] = new Product() { Id = 2, Name = "American Butter", UnitsAvailable = 200, Category = "Edibles" };
+            products[2] = new Product() { Id = 3, Name = "Walmart Delicious Cream", UnitsAvailable = 200, Category = "Edibles" };
+            products[3] = new Product() { Id = 4, Name = "Nestle Yogurt", UnitsAvailable = 200, Category = "Edibles" };
+
+            return products;
+        }
+
+        /// <summary>
+        /// Generates list of string keys 
+        /// </summary>
+        /// <param name="customer"> List of products to generate keys</param>
+        /// <returns> returns list of keys </returns>
+        private static string[] GetKeys(Product[] products)
+        {
+            string[] keys = new string[products.Length];
+            for (int i = 0; i < products.Length; i++)
+            {
+                keys[i] = string.Format("Customer:{0}", products[i].Name);
+            }
+
+            return keys;
+        }
+
         /// <summary>
         /// Method for printing detials of product type.
         /// </summary>
         /// <param name="product"></param>
-		private static void PrintProductDetails(Product product)
-		{
-			Console.WriteLine("Id:       " + product.ProductID);
-			Console.WriteLine("Name:     " + product.Name);
-			Console.WriteLine("Class:    " + product.ClassName);
-			Console.WriteLine("Category: " + product.Category);
-			Console.WriteLine();
-		}
-	}
+        private static void PrintProductDetails(Product product)
+        {
+            Console.WriteLine("Id:       " + product.Id);
+            Console.WriteLine("Name:     " + product.Name);
+            Console.WriteLine("Units Available: "+ product.UnitsAvailable);
+            Console.WriteLine("Category: " + product.Category);
+            Console.WriteLine();
+        }
+    }
 
 }
