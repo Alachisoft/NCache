@@ -1,0 +1,184 @@
+﻿<?xml version="1.0" encoding="utf-8"?>
+<Project ToolsVersion="12.0" DefaultTargets="Build" xmlns="http://schemas.microsoft.com/developer/msbuild/2003">
+  <Import Project="$(MSBuildExtensionsPath)\$(MSBuildToolsVersion)\Microsoft.Common.props" Condition="Exists('$(MSBuildExtensionsPath)\$(MSBuildToolsVersion)\Microsoft.Common.props')" />
+  <PropertyGroup>
+    <Configuration Condition=" '$(Configuration)' == '' ">Debug</Configuration>
+    <Platform Condition=" '$(Platform)' == '' ">AnyCPU</Platform>
+    <ProjectGuid>{10BF7AE7-CA2C-4C60-A335-8041B9E623DB}</ProjectGuid>
+    <OutputType>Library</OutputType>
+    <AppDesignerFolder>Properties</AppDesignerFolder>
+    <RootNamespace>Alachisoft.NCache.Integrations.EntityFramework.Caching</RootNamespace>
+    <AssemblyName>Alachisoft.Integrations.EntityFramework.CachingProvider</AssemblyName>
+    <TargetFrameworkVersion>v4.0</TargetFrameworkVersion>
+    <FileAlignment>512</FileAlignment>
+    <TargetFrameworkProfile />
+  </PropertyGroup>
+  <PropertyGroup Condition=" '$(Configuration)|$(Platform)' == 'Debug|AnyCPU' ">
+    <DebugSymbols>true</DebugSymbols>
+    <DebugType>full</DebugType>
+    <Optimize>false</Optimize>
+    <OutputPath>bin\Debug\</OutputPath>
+    <DefineConstants>DEBUG;TRACE</DefineConstants>
+    <ErrorReport>prompt</ErrorReport>
+    <WarningLevel>4</WarningLevel>
+  </PropertyGroup>
+  <PropertyGroup Condition=" '$(Configuration)|$(Platform)' == 'Release|AnyCPU' ">
+    <DebugType>pdbonly</DebugType>
+    <Optimize>true</Optimize>
+    <OutputPath>bin\Release\</OutputPath>
+    <DefineConstants>TRACE;RELEASE</DefineConstants>
+    <ErrorReport>prompt</ErrorReport>
+    <WarningLevel>4</WarningLevel>
+  </PropertyGroup>
+  <PropertyGroup>
+    <SignAssembly>true</SignAssembly>
+  </PropertyGroup>
+  <PropertyGroup>
+    <AssemblyOriginatorKeyFile>..\..\..\Resources\ncache.snk</AssemblyOriginatorKeyFile>
+  </PropertyGroup>
+  <ItemGroup>
+    <Reference Include="Alachisoft.NCache.Cache">
+      <HintPath>..\..\..\Src\build\Server\4x\Alachisoft.NCache.Cache.dll</HintPath>
+    </Reference>
+    <Reference Include="Alachisoft.NCache.Common">
+      <HintPath>..\..\..\Src\build\Server\4x\Alachisoft.NCache.Common.dll</HintPath>
+    </Reference>
+    <Reference Include="Alachisoft.NCache.Management">
+      <HintPath>..\..\..\Src\build\Server\4x\Alachisoft.NCache.Management.dll</HintPath>
+    </Reference>
+    <Reference Include="Alachisoft.NCache.Runtime, Version=4.4.0.0, Culture=neutral, PublicKeyToken=1448e8d1123e9096, processorArchitecture=MSIL">
+      <SpecificVersion>False</SpecificVersion>
+      <HintPath>..\..\..\Src\build\Server\4x\Alachisoft.NCache.Runtime.dll</HintPath>
+    </Reference>
+    <Reference Include="Alachisoft.NCache.Web">
+      <HintPath>..\..\..\Src\build\Server\4x\Alachisoft.NCache.Web.dll</HintPath>
+    </Reference>
+    <Reference Include="EntityFramework, Version=6.0.0.0, Culture=neutral, PublicKeyToken=b77a5c561934e089, processorArchitecture=MSIL">
+      <HintPath>..\packages\EntityFramework.6.1.0\lib\net40\EntityFramework.dll</HintPath>
+    </Reference>
+    <Reference Include="EntityFramework.SqlServer, Version=6.0.0.0, Culture=neutral, PublicKeyToken=b77a5c561934e089, processorArchitecture=MSIL">
+      <HintPath>..\packages\EntityFramework.6.1.0\lib\net40\EntityFramework.SqlServer.dll</HintPath>
+    </Reference>
+    <Reference Include="System" />
+    <Reference Include="System.ComponentModel.DataAnnotations" />
+    <Reference Include="System.Configuration" />
+    <Reference Include="System.Core" />
+    <Reference Include="System.Data.Linq" />
+    <Reference Include="System.Data.OracleClient" />
+    <Reference Include="System.Transactions" />
+    <Reference Include="System.Web" />
+    <Reference Include="System.Xml.Linq" />
+    <Reference Include="System.Data.DataSetExtensions" />
+    <Reference Include="Microsoft.CSharp" />
+    <Reference Include="System.Data" />
+    <Reference Include="System.Xml" />
+  </ItemGroup>
+  <ItemGroup>
+    <Compile Include="Analysis\AnalysisManager.cs" />
+    <Compile Include="Analysis\Generator\CustomPolicyGenerator.cs" />
+    <Compile Include="Analysis\Generator\IGenerator.cs" />
+    <Compile Include="Analysis\Generator\QueryCachePolicyGenerator.cs" />
+    <Compile Include="Analysis\Generator\QueryPolicyComparer.cs" />
+    <Compile Include="Analysis\Generator\QueryPolicyElementGenerator.cs" />
+    <Compile Include="Analysis\Generator\QueryPolicyGenerator.cs" />
+    <Compile Include="Analysis\Renderer\FileRenderer.cs" />
+    <Compile Include="Analysis\Renderer\IRenderer.cs" />
+    <Compile Include="CachedQueryEnumerator.cs" />
+    <Compile Include="CacheEntry\DbColumnInfo.cs" />
+    <Compile Include="CacheEntry\DbQueryResults.cs" />
+    <Compile Include="CacheEntry\DbResultItem.cs" />
+    <Compile Include="CacheEntry\DbRow.cs" />
+    <Compile Include="Caching\AnalysisPolicy.cs" />
+    <Compile Include="Caching\CachePolicyCollection.cs" />
+    <Compile Include="Caching\ICache.cs" />
+    <Compile Include="Caching\NCache.cs" />
+    <Compile Include="Caching\QueryLevelCachePolicy.cs" />
+    <Compile Include="Config\AnalysisPolicyElement.cs" />
+    <Compile Include="Config\Application.cs" />
+    <Compile Include="Config\ApplicationConfigurationElement.cs" />
+    <Compile Include="Config\CachePolicy.cs" />
+    <Compile Include="Config\CachePolicyElement.cs" />
+    <Compile Include="Config\CustomPolicyElement.cs" />
+    <Compile Include="Config\EFCachingConfiguration.cs" />
+    <Compile Include="Config\EFCachingConfigurationElement.cs" />
+    <Compile Include="Config\QueryCachePolicyElement.cs" />
+    <Compile Include="Config\QueryElement.cs" />
+    <Compile Include="Config\QueryLevelCachePolicyElement.cs" />
+    <Compile Include="Config\QueryPolicyElement.cs" />
+    <Compile Include="DbCommandTreeScanner.cs" />
+    <Compile Include="EFAnalysisCommand.cs">
+      <SubType>Component</SubType>
+    </Compile>
+    <Compile Include="EFCachingCommand.cs">
+      <SubType>Component</SubType>
+    </Compile>
+    <Compile Include="EFCachingCommandDefinition.cs" />
+    <Compile Include="EFCachingConnection.cs">
+      <SubType>Component</SubType>
+    </Compile>
+    <Compile Include="EFCachingDataReaderBase.cs" />
+    <Compile Include="EFCachingDataReaderCacheReader.cs" />
+    <Compile Include="EFCachingDataReaderCacheWriter.cs" />
+    <Compile Include="EFCachingProviderConfiguration.cs" />
+    <Compile Include="EFCachingProviderServices.cs" />
+    <Compile Include="EFCachingTransaction.cs" />
+    <Compile Include="EFCommandInterceptor.cs" />
+    <Compile Include="EFDbCommandFactory.cs" />
+    <Compile Include="EnumerableResult.cs" />
+    <Compile Include="NCacheQueryable.cs">
+      <SubType>Code</SubType>
+    </Compile>
+    <Compile Include="Properties\AssemblyInfo.cs" />
+    <Compile Include="QueryableExtensions.cs">
+      <SubType>Code</SubType>
+    </Compile>
+    <Compile Include="Toolkit\DbCommandDefinitionWrapper.cs" />
+    <Compile Include="Toolkit\DbCommandWrapper.cs">
+      <SubType>Component</SubType>
+    </Compile>
+    <Compile Include="Toolkit\DbCommandWrapperExtended.cs">
+      <SubType>Component</SubType>
+    </Compile>
+    <Compile Include="Toolkit\DbConnectionWrapper.cs">
+      <SubType>Component</SubType>
+    </Compile>
+    <Compile Include="Toolkit\DbProviderFactoryBase.cs" />
+    <Compile Include="Toolkit\DbProviderManifestWrapper.cs" />
+    <Compile Include="Toolkit\DbProviderServicesBase.cs" />
+    <Compile Include="Toolkit\DbTransactionWrapper.cs" />
+    <Compile Include="Toolkit\EFProviderWrapperConnection.cs">
+      <SubType>Component</SubType>
+    </Compile>
+    <Compile Include="Toolkit\EFProviderWrapperFactory.cs" />
+    <Compile Include="Toolkit\EFProviderWrapperServices.cs" />
+    <Compile Include="Toolkit\EFProviderWriterExtensionMethods.cs" />
+    <Compile Include="Toolkit\EntityConnectionWrapperUtils.cs" />
+    <Compile Include="Toolkit\GlobalSuppressions.cs" />
+    <Compile Include="Toolkit\Query.cs" />
+    <Compile Include="Util\ExtensionMethods.cs" />
+    <Compile Include="Util\Logger.cs" />
+  </ItemGroup>
+  <ItemGroup>
+    <Compile Include="EFTransactionHandler.cs" />
+    <Compile Include="EFCachingConfigurationInterceptor.cs" />
+  </ItemGroup>
+  <ItemGroup>
+    <None Include="App.config" />
+    <None Include="..\..\..\Resources\ncache.snk" />
+    <None Include="packages.config" />
+  </ItemGroup>
+  <ItemGroup>
+    <WCFMetadata Include="Service References\" />
+  </ItemGroup>
+  <Import Project="$(MSBuildToolsPath)\Microsoft.CSharp.targets" />
+  <PropertyGroup>
+    <PostBuildEvent>xcopy /Y "$(TargetPath)" "$(SolutionDir)..\build\MSEntityFramework\6.1\"</PostBuildEvent>
+  </PropertyGroup>
+  <!-- To modify your build process, add your task inside one of the targets below and uncomment it. 
+       Other similar extension points exist, see Microsoft.Common.targets.
+  <Target Name="BeforeBuild">
+  </Target>
+  <Target Name="AfterBuild">
+  </Target>
+  -->
+</Project>
