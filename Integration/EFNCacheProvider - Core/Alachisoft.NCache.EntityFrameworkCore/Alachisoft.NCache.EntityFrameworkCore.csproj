@@ -1,0 +1,90 @@
+<Project Sdk="Microsoft.NET.Sdk">
+
+  <PropertyGroup>
+    <TargetFrameworks>netcoreapp2.0;net461</TargetFrameworks>
+    <GeneratePackageOnBuild>true</GeneratePackageOnBuild>
+    <PackageRequireLicenseAcceptance>true</PackageRequireLicenseAcceptance>
+    <Version>4.9.0.0</Version>
+    <Authors>Alachisoft</Authors>
+    <Company>Alachisoft</Company>
+    <Product>NCacheEFCoreCachingPorvider</Product>
+    <PackageId>Alachisoft.NCache.OpenSource.EFCore</PackageId>
+    <AssemblyName>Alachisoft.NCache.EntityFrameworkCore</AssemblyName>
+    <RootNamespace>Alachisoft.NCache.EntityFrameworkCore</RootNamespace>
+    <PackageLicenseUrl>http://www.alachisoft.com/license-agreements.html</PackageLicenseUrl>
+    <PackageIconUrl>http://www.alachisoft.com/images/ext-logos/nuget/ncache-insignia-logo-155X155.png</PackageIconUrl>
+    <Copyright>Copyright 2005-2018 Alachisoft. All rights reserved.</Copyright>
+    <PackageProjectUrl>http://www.alachisoft.com/ncache/</PackageProjectUrl>
+    <PackageTags>Alachisoft NCache EntityFrameworkCore Caching</PackageTags>
+  </PropertyGroup>
+
+  <!--Clearing constants-->
+  <PropertyGroup>
+    <DefineConstants />
+    <Description>NCache is an extremely fast and scalable in-memory distributed cache that removes performance bottlenecks related to data storage and databases. Entity Framework Core Provider for NCache lets you use NCache as a second level cache for entity framework core.</Description>
+  </PropertyGroup>
+  <!--Define Debug and trace-->
+  <PropertyGroup Condition=" '$(Configuration)' == 'Debug' ">
+    <DebugSymbols>true</DebugSymbols>
+    <DebugType>full</DebugType>
+    <Optimize>false</Optimize>
+    <DefineConstants>TRACE;DEBUG;EFCORE;FULL;$(DefineConstants)</DefineConstants>
+  </PropertyGroup>
+  <PropertyGroup Condition=" '$(Configuration)' == 'Release' ">
+    <DebugSymbols>false</DebugSymbols>
+    <Optimize>true</Optimize>
+    <DefineConstants>EFCORE;FULL;$(DefineConstants)</DefineConstants>
+  </PropertyGroup>
+  <!--Build Framework Constants-->
+  <PropertyGroup Condition=" '$(TargetFrameworkVersion)' == 'netcoreapp2.0' ">
+    <DefineConstants>NETSTANDARD2_0;$(DefineConstants)</DefineConstants>
+  </PropertyGroup>
+  <PropertyGroup Condition=" '$(TargetFrameworkVersion)' == 'net461' ">
+    <DefineConstants>NET45;$(DefineConstants)</DefineConstants>
+  </PropertyGroup>
+
+  <ItemGroup>
+    <Compile Remove="System\**" />
+    <EmbeddedResource Remove="System\**" />
+    <None Remove="System\**" />
+  </ItemGroup>
+
+  <ItemGroup>
+    <Compile Remove="Properties\AssemblyInfo.cs" />
+  </ItemGroup>
+
+  <!--NetCoreApp 2.0 Nuget packages-->
+
+  <!--Net Framework 4.7 Nuget packages-->
+
+  <!--UnConditional nuget packages-->
+  <ItemGroup>
+    <PackageReference Include="Alachisoft.NCache.OpenSource.SDK" Version="4.9.0" />
+    <PackageReference Include="protobuf-net" Version="2.2.1" />
+    <PackageReference Include="Microsoft.CSharp" Version="4.4.0" />
+    <PackageReference Include="Microsoft.EntityFrameworkCore.Relational" Version="1.1.0" />
+    <PackageReference Include="Microsoft.Extensions.Caching.Memory" Version="2.0.0" />
+    <PackageReference Include="System.Data.SqlClient" Version="4.4.0" />
+    <PackageReference Include="System.Linq.Expressions" Version="4.3.0" />
+  </ItemGroup>
+
+  <ItemGroup>
+    <Compile Update="EFCore\CreateEntity\CreateEntityCommand.cs">
+      <SubType>Component</SubType>
+    </Compile>
+    <Compile Update="EFCore\CreateEntity\CreateEntityConnection.cs">
+      <SubType>Component</SubType>
+    </Compile>
+  </ItemGroup>
+
+  <ItemGroup>
+    <EmbeddedResource Update="Resources\SR.resx">
+      <Generator></Generator>
+    </EmbeddedResource>
+  </ItemGroup>
+
+  <Target Name="PostBuild" AfterTargets="PostBuildEvent">
+    <Exec Command="xcopy /Y &quot;$(TargetPath)&quot; &quot;$(SolutionDir)..\build\MSEntityFramework\Core\&quot;" />
+  </Target>
+
+</Project>
