@@ -19,22 +19,13 @@ using System.Runtime.InteropServices;
 // General Information about an assembly is controlled through the following 
 // set of attributes. Change these attribute values to modify the information
 // associated with an assembly.
-#if JAVA
-[assembly: AssemblyTitle("Alachisoft.TayzGrid.OutputCache")]
-#else
+
 [assembly: AssemblyTitle("Alachisoft.NCache.OutputCache")]
-#endif
 [assembly: AssemblyConfiguration("")]
 [assembly: AssemblyCompany("Alachisoft")]
-#if JAVA
-[assembly: AssemblyProduct("Alachisoft® TayzGrid")]
-[assembly: AssemblyCopyright("Copyright © 2005-2014 Alachisoft")]
-[assembly: AssemblyTrademark("TayzGrid ™ is a registered trademark of Alachisoft.")]
-#else
 [assembly: AssemblyProduct("Alachisoft® NCache")]
 [assembly: AssemblyCopyright("Copyright © 2005-2018 Alachisoft")]
 [assembly: AssemblyTrademark("NCache ™ is a registered trademark of Alachisoft.")]
-#endif
 [assembly: AssemblyCulture("")]
 
 // Setting ComVisible to false makes the types in this assembly not visible 
