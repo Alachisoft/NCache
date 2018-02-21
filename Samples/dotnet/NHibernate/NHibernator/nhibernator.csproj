@@ -214,7 +214,5 @@
   <PropertyGroup>
     <PreBuildEvent>
     </PreBuildEvent>
-    <PostBuildEvent>
-xcopy "D:\Git\NCache_OpenSource\Samples\dotnet\NHibernate\packages\Alachisoft.NCache.OpenSource.SDK.4.9.0\additionalLib\Oracle.ManagedDataAccess.dll" "$(ProjectDir)\bin\$(ConfigurationName)\" /Y /I</PostBuildEvent>
-  </PropertyGroup>
+
 </Project>
