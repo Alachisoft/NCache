@@ -21,12 +21,11 @@ using System.Runtime.CompilerServices;
 //
 [assembly: AssemblyTitle("NCache's Integration Sample for NHibernate")]
 [assembly: AssemblyDescription("NCache's Integration Sample for NHibernate")]
-[assembly: AssemblyProduct("Alachisoft® NCache Open Source")]
-[assembly: AssemblyTrademark("NCache ™ is a registered trademark of Alachisoft.")]
 [assembly: AssemblyConfiguration("")]
 [assembly: AssemblyCompany("Alachisoft")]
-
-[assembly: AssemblyCopyright("Copyright © 2005-2017 Alachisoft")]
+[assembly: AssemblyProduct("Alachisoft® NCache Open Source")]
+[assembly: AssemblyCopyright("Copyright © 2005-2018 Alachisoft")]
+[assembly: AssemblyTrademark("NCache is a registered trademark of Alachisoft.")]
 [assembly: AssemblyCulture("")]
 //
 // Version information for an assembly consists of the following four values:

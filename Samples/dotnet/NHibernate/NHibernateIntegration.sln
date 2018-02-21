@@ -1,11 +1,9 @@
 Microsoft Visual Studio Solution File, Format Version 11.00
 # Visual Studio 2010
-Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "nhibernator", "NHibernator\nhibernator.csproj", "{A06C21EB-00E4-4319-9FED-CBE4C235D341}"
+
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "NHibernateUsage", "NHibernateTest\NHibernateUsage.csproj", "{276358BC-82F3-45E2-B9BD-BA6C2EBF8DD3}"
 EndProject
-Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "NHibernateTest", "NHibernateTest\NHibernateTest.csproj", "{276358BC-82F3-45E2-B9BD-BA6C2EBF8DD3}"
-	ProjectSection(ProjectDependencies) = postProject
-		{A06C21EB-00E4-4319-9FED-CBE4C235D341} = {A06C21EB-00E4-4319-9FED-CBE4C235D341}
-	EndProjectSection
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "nhibernator", "NHibernator\nhibernator.csproj", "{A06C21EB-00E4-4319-9FED-CBE4C235D341}"
 EndProject
 Global
 	GlobalSection(SolutionConfigurationPlatforms) = preSolution
