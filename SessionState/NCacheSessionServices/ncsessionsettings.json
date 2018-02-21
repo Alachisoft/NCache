@@ -1,0 +1,42 @@
+{
+  "NCacheSessions": {
+    "SessionAppId": null,
+    "SessionOptions": {
+      "CookieName": ".NCache.AspNetCore.Session",
+      "CookieDomain": null,
+      "CookiePath": "/",
+      "CookieHttpOnly": "True",
+      "IdleTimeout": "20",
+      "CookieSecure": "None"
+    },    
+    "CacheName": "MyCache",
+    "EnableSessionLocking": "True",
+    "EmptySessionWhenLocked": "False",
+    "SessionLockingRetry": "-1",
+    "ReadOnlyFlag":".NCache.AspNetCore.IsReadOnly",
+    "WriteExceptionsToEventLog": "True",
+    "EnableLogs": "True",
+    "EnableDetailLogs": "False",
+    "ExceptionsEnabled": "False",
+    "OperationRetry": "0",
+    "OperationRetryInterval": "0",
+    "InprocDelay": "0",
+    "RegenerateExpiredSessionId": "False",
+    "RequestTimeout": "120",
+    "EnableLocationAffinity": "False",
+    "AffinityMapping": [
+      {
+        "CacheName": "cache1",
+        "CachePrefix": "c1"
+      },
+      {
+        "CacheName": "cache2",
+        "CachePrefix": "c2"
+      },
+      {
+        "CacheName": "cache3",
+        "CachePrefix": "c3"
+      }
+    ]
+  }
+}

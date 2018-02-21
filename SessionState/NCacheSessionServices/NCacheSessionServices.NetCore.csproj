@@ -1,0 +1,69 @@
+<Project Sdk="Microsoft.NET.Sdk">
+
+  <PropertyGroup>
+    <TargetFramework>netcoreapp2.0</TargetFramework>
+  </PropertyGroup>
+
+   <PropertyGroup>
+    <GenerateAssemblyInfo>false</GenerateAssemblyInfo>
+    <ApplicationIcon />
+    <OutputType>Library</OutputType>
+    <StartupObject />
+    <GeneratePackageOnBuild>false</GeneratePackageOnBuild>
+    <PackageId>Alachisoft.NCacheSessionServices</PackageId>
+    <PackageVersion>4.9.0</PackageVersion>
+     <Authors>Alachisoft.NCacheSessionServices</Authors>
+    <PackageRequireLicenseAcceptance>true</PackageRequireLicenseAcceptance>
+    <PackageIconUrl>http://www.alachisoft.com/images/ext-logos/nuget/ncache-insignia-logo-155X155.png</PackageIconUrl>
+    <PackageTags />
+    <PackageLicenseUrl>http://www.alachisoft.com/license-agreements.html</PackageLicenseUrl>
+    <PackageProjectUrl>http://www.alachisoft.com/ncache/</PackageProjectUrl>
+    <RootNamespace>Alachisoft.NCache.Web.SessionState</RootNamespace>
+    <AssemblyName>Alachisoft.NCache.CoreSessionStoreProvider</AssemblyName>
+  </PropertyGroup>
+
+   <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Debug|AnyCPU'">
+     <DefineConstants>TRACE;DEBUG;NETCORE;NETCOREAPP2_0</DefineConstants>
+   </PropertyGroup>
+  
+  <ItemGroup>
+    <PackageReference Include="Microsoft.AspNetCore.DataProtection.Abstractions" Version="2.0.0" />
+    <PackageReference Include="Microsoft.AspNetCore.Http.Abstractions" Version="2.0.0" />
+    <PackageReference Include="Microsoft.AspNetCore.Http.Features" Version="2.0.0" />
+    <PackageReference Include="Microsoft.AspNetCore.Session" Version="2.0.0" />
+    <PackageReference Include="Microsoft.Extensions.Caching.Abstractions" Version="2.0.0" />
+    <PackageReference Include="Microsoft.Extensions.Configuration" Version="2.0.0" />
+    <PackageReference Include="Microsoft.Extensions.Configuration.Abstractions" Version="2.0.0" />
+    <PackageReference Include="Microsoft.Extensions.Configuration.Json" Version="2.0.0" />
+    <PackageReference Include="Microsoft.Extensions.DependencyInjection.Abstractions" Version="2.0.0" />
+    <PackageReference Include="Microsoft.Extensions.Options" Version="2.0.0" />
+    <PackageReference Include="Microsoft.Extensions.Options.ConfigurationExtensions" Version="2.0.0" />
+    <PackageReference Include="Microsoft.Extensions.Primitives" Version="2.0.0" />
+    <PackageReference Include="System.Configuration.ConfigurationManager" Version="4.4.0" />
+  </ItemGroup>
+  
+  <ItemGroup>
+    <Reference Include="Alachisoft.NCache.Common">
+      <HintPath>..\..\Src\build\NetCore\Client\Alachisoft.NCache.Common.dll</HintPath>
+    </Reference>
+    <Reference Include="Alachisoft.NCache.Runtime">
+      <HintPath>..\..\Src\build\NetCore\Client\Alachisoft.NCache.Runtime.dll</HintPath>
+    </Reference>
+    <Reference Include="Alachisoft.NCache.Serialization">
+      <HintPath>..\..\Src\build\NetCore\Client\Alachisoft.NCache.Serialization.dll</HintPath>
+    </Reference>
+    <Reference Include="Alachisoft.NCache.SessionStateManagement">
+      <HintPath>..\..\Src\build\NetCore\Client\Alachisoft.NCache.SessionStateManagement.dll</HintPath>
+    </Reference>
+    <Reference Include="Alachisoft.NCache.SessionStoreProvider">
+      <HintPath>..\..\Src\build\NetCore\Client\Alachisoft.NCache.SessionStoreProvider.dll</HintPath>
+    </Reference>
+    <Reference Include="Alachisoft.NCache.Web">
+      <HintPath>..\..\Src\build\NetCore\Client\Alachisoft.NCache.Web.dll</HintPath>
+    </Reference>
+    <Reference Include="Alachisoft.System.Internal">
+      <HintPath>..\..\Src\build\NetCore\Client\Alachisoft.System.Internal.dll</HintPath>
+    </Reference>
+  </ItemGroup>
+
+</Project>
