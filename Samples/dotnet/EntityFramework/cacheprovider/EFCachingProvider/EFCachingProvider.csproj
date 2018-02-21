@@ -210,8 +210,6 @@
       <Generator>EntityModelCodeGenerator</Generator>
       <LastGenOutput>NorthwindCustomerModel.Designer.cs</LastGenOutput>
     </EntityDeploy>
-    <None Include="client.ncconf" />
-    <None Include="config.ncconf" />
     <None Include="efcaching.ncconf" />
     <None Include="NorthwindCustomerModel.Context.tt">
       <Generator>TextTemplatingFileGenerator</Generator>
