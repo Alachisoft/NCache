@@ -78,9 +78,6 @@
       <HintPath>..\packages\Alachisoft.NCache.OpenSource.SDK.4.9.0\lib\net40\Alachisoft.NCache.Serialization.dll</HintPath>
       <Private>True</Private>
     </Reference>
-    <Reference Include="Alachisoft.NCache.SocketServer, Version=4.9.0.0, Culture=neutral, PublicKeyToken=cff5926ed6a53769, processorArchitecture=MSIL">
-      <HintPath>..\packages\Alachisoft.NCache.Community.SDK.4.9.0\lib\net40\Alachisoft.NCache.SocketServer.dll</HintPath>
-    </Reference>
     <Reference Include="Alachisoft.NCache.Storage, Version=4.9.0.0, Culture=neutral, PublicKeyToken=1448e8d1123e9096, processorArchitecture=MSIL">
       <HintPath>..\packages\Alachisoft.NCache.OpenSource.SDK.4.9.0\lib\net40\Alachisoft.NCache.Storage.dll</HintPath>
       <Private>True</Private>
@@ -284,12 +281,6 @@
   </ItemGroup>
   <ItemGroup>
     <None Include="App.config" />
-    <None Include="client.ncconf">
-      <CopyToOutputDirectory>Always</CopyToOutputDirectory>
-    </None>
-    <None Include="config.ncconf">
-      <CopyToOutputDirectory>Always</CopyToOutputDirectory>
-    </None>
     <None Include="packages.config" />
   </ItemGroup>
   <ItemGroup>
