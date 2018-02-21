@@ -1,4 +1,4 @@
-// Copyright (c) 2017 Alachisoft
+// Copyright (c) 2018 Alachisoft
 // 
 // Licensed under the Apache License, Version 2.0 (the "License");
 // you may not use this file except in compliance with the License.
@@ -120,6 +120,14 @@ namespace Alachisoft.NCache.Adapters
                     cache.Dispose();
                 
                 _settings = ConfigurationProvider.Settings;
+
+              //  bool validLicense = Alachisoft.NCache.ContentOptimization.Licensing.LicesnseManager.IsLicenseValid;
+              /*  if (!validLicense)
+                {
+                    FileBasedTraceProvider.Current.WriteTrace(TraceSeverity.CriticalEvent, "License not verified");
+                    _settings.EnableViewstateCaching = false;
+                }
+                */
 
                 if (_settings.Enabled)
                 {

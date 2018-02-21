@@ -13,8 +13,7 @@
     <TargetFrameworkVersion>v4.0</TargetFrameworkVersion>
     <FileAlignment>512</FileAlignment>
     <SignAssembly>true</SignAssembly>
-    <AssemblyOriginatorKeyFile>
-    </AssemblyOriginatorKeyFile>
+    <AssemblyOriginatorKeyFile>..\..\..\Resources\ncache.snk</AssemblyOriginatorKeyFile>
     <SccProjectName>
     </SccProjectName>
     <SccLocalPath>
@@ -45,12 +44,6 @@
     <BootstrapperEnabled>true</BootstrapperEnabled>
     <TargetFrameworkProfile />
   </PropertyGroup>
-  <PropertyGroup>
-    <SignAssembly>true</SignAssembly>
-  </PropertyGroup>
-  <PropertyGroup>
-    <AssemblyOriginatorKeyFile>..\..\..\Resources\ncache.snk</AssemblyOriginatorKeyFile>
-  </PropertyGroup>
   <PropertyGroup Condition=" '$(Configuration)|$(Platform)' == 'Debug|AnyCPU' ">
     <DebugSymbols>true</DebugSymbols>
     <DebugType>full</DebugType>
@@ -71,30 +64,15 @@
     <WarningLevel>4</WarningLevel>
     <CodeAnalysisRuleSet>AllRules.ruleset</CodeAnalysisRuleSet>
   </PropertyGroup>
-  <PropertyGroup Condition="'$(Configuration)|$(Platform)' == 'Release.2x|AnyCPU'">
-    <OutputPath>bin\Release.2x\</OutputPath>
-    <DefineConstants>TRACE</DefineConstants>
-    <Optimize>true</Optimize>
-    <DebugType>pdbonly</DebugType>
-    <PlatformTarget>AnyCPU</PlatformTarget>
-    <TargetFrameworkVersion>v3.5</TargetFrameworkVersion>
-    <CodeAnalysisLogFile>bin\Release\Alachisoft.NCache.Adapters.dll.CodeAnalysisLog.xml</CodeAnalysisLogFile>
-    <CodeAnalysisUseTypeNameInSuppression>true</CodeAnalysisUseTypeNameInSuppression>
-    <CodeAnalysisModuleSuppressionsFile>GlobalSuppressions.cs</CodeAnalysisModuleSuppressionsFile>
-    <ErrorReport>prompt</ErrorReport>
-    <CodeAnalysisRuleSet>AllRules.ruleset</CodeAnalysisRuleSet>
-    <CodeAnalysisRuleSetDirectories>;C:\Program Files (x86)\Microsoft Visual Studio 10.0\Team Tools\Static Analysis Tools\\Rule Sets</CodeAnalysisRuleSetDirectories>
-    <CodeAnalysisIgnoreBuiltInRuleSets>false</CodeAnalysisIgnoreBuiltInRuleSets>
-    <CodeAnalysisRuleDirectories>;C:\Program Files (x86)\Microsoft Visual Studio 10.0\Team Tools\Static Analysis Tools\FxCop\\Rules</CodeAnalysisRuleDirectories>
-    <CodeAnalysisIgnoreBuiltInRules>false</CodeAnalysisIgnoreBuiltInRules>
-    <CodeAnalysisFailOnMissingRules>false</CodeAnalysisFailOnMissingRules>
-  </PropertyGroup>
   <ItemGroup>
     <Reference Include="Alachisoft.NCache.Cache">
       <HintPath>..\..\..\Src\build\Server\4x\Alachisoft.NCache.Cache.dll</HintPath>
     </Reference>
     <Reference Include="Alachisoft.NCache.Common">
       <HintPath>..\..\..\Src\build\Server\4x\Alachisoft.NCache.Common.dll</HintPath>
+    </Reference>
+    <Reference Include="Alachisoft.NCache.Management">
+      <HintPath>..\..\..\Src\build\Server\4x\Alachisoft.NCache.Management.dll</HintPath>
     </Reference>
     <Reference Include="Alachisoft.NCache.Runtime">
       <HintPath>..\..\..\Src\build\Server\4x\Alachisoft.NCache.Runtime.dll</HintPath>
@@ -139,18 +117,16 @@
     </BootstrapperPackage>
   </ItemGroup>
   <ItemGroup>
+    <ProjectReference Include="..\..\Alachisoft.Common\Alachisoft.Common.csproj">
+      <Project>{6a7457c7-13a9-4dbc-9762-dba473dc367f}</Project>
+      <Name>Alachisoft.Common</Name>
+    </ProjectReference>
     <ProjectReference Include="..\Alachisoft.ContentOptimization\Alachisoft.ContentOptimization.csproj">
-      <Project>{CABCE9AA-38DC-4FE7-9E5B-8ECAB9907F3C}</Project>
+      <Project>{cabce9aa-38dc-4fe7-9e5b-8ecab9907f3c}</Project>
       <Name>Alachisoft.ContentOptimization</Name>
     </ProjectReference>
   </ItemGroup>
   <Import Project="$(MSBuildToolsPath)\Microsoft.CSharp.targets" />
-  <PropertyGroup Condition="'$(Configuration)|$(Platform)' == 'Release|AnyCPU' OR '$(Configuration)|$(Platform)' == 'Debug|AnyCPU'">
-    <PreBuildEvent>
-    </PreBuildEvent>
-    <PostBuildEvent>xcopy /Y "$(TargetPath)" "$(SolutionDir)..\build\ContentOptimization\"</PostBuildEvent>
-  </PropertyGroup>
-
   <!-- To modify your build process, add your task inside one of the targets below and uncomment it. 
        Other similar extension points exist, see Microsoft.Common.targets.
   <Target Name="BeforeBuild">
@@ -158,4 +134,17 @@
   <Target Name="AfterBuild">
   </Target>
   -->
+  <!-- <PropertyGroup Condition="'$(Configuration)|$(Platform)' == 'Release|AnyCPU'"> -->
+  <!-- <PreBuildEvent> -->
+  <!-- </PreBuildEvent> -->
+  <!-- <PostBuildEvent>xcopy /Y "$(TargetPath)" "$(SolutionDir)\..\build\ContentOptimization\4x\"</PostBuildEvent> -->
+  <!-- </PropertyGroup> -->
+  <!-- <PropertyGroup Condition="'$(Configuration)|$(Platform)' == 'Release.2x|AnyCPU'"> -->
+  <!-- <PreBuildEvent> -->
+  <!-- </PreBuildEvent> -->
+  <!-- <PostBuildEvent>xcopy /Y "$(TargetPath)" "$(SolutionDir)\..\build\ContentOptimization\2x\"</PostBuildEvent> -->
+  <!-- </PropertyGroup> -->
+  <PropertyGroup>
+    <PostBuildEvent>xcopy /Y "$(TargetPath)" "$(ProjectDir)..\..\build\ContentOptimization\"</PostBuildEvent>
+  </PropertyGroup>
 </Project>
