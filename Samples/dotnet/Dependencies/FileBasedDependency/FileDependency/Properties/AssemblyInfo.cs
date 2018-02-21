@@ -20,7 +20,7 @@ using System.Runtime.InteropServices;
 [assembly: AssemblyConfiguration("")]
 [assembly: AssemblyCompany("Alachisoft")]
 [assembly: AssemblyProduct("Alachisoft ® NCache ")]
-[assembly: AssemblyCopyright("Copyright © 2017 Alachisoft")]
+[assembly: AssemblyCopyright("Copyright © 2018 Alachisoft")]
 [assembly: AssemblyTrademark("")]
 [assembly: AssemblyCulture("")]
 

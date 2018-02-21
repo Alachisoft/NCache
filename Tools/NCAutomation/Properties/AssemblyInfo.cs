@@ -14,14 +14,14 @@ using System.Runtime.InteropServices;
 
 [assembly: AssemblyTitle("Alachisoft.NCache.Automation")]
 
-[assembly: AssemblyProduct("Alachisoft® NCache Community")]
+[assembly: AssemblyProduct("Alachisoft® NCache OpenSource")]
 
 [assembly: AssemblyTrademark("NCache ™ is a registered trademark of Alachisoft.")]
 
 [assembly: AssemblyConfiguration("")]
 [assembly: AssemblyCompany("Alachisoft")]
 
-[assembly: AssemblyCopyright("Copyright © 2005-2018 Alachisoft")]
+[assembly: AssemblyCopyright("Copyright © 2018 Alachisoft")]
 [assembly: AssemblyCulture("")]
 
 //

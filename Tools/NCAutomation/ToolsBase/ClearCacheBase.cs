@@ -18,8 +18,10 @@ using Alachisoft.NCache.Automation.Util;
 using Alachisoft.NCache.Tools.Common;
 using Alachisoft.NCache.Web.Caching;
 using System;
+using System.IO;
 using System.Collections.Generic;
 using System.Management.Automation;
+using System.Reflection;
 
 namespace Alachisoft.NCache.Automation.ToolsBase
 {
