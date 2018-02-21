@@ -24,19 +24,19 @@ ECHO ================================================
 
 ECHO BUILDING INTERGRATION ALACHISOFT.CONTENT OPTIMIZATION FOR
 ECHO ================================================
-	@"%MSBUILDEXE%" "%INTEGRATIONPARENTFOLDER%\Alachisoft.ContentOptimization\Alachisoft.ContentOptimization.sln" %ARGS%
+	@"%MSBUILDEXE%" "%INTEGRATIONPARENTFOLDER%\ViewStateCaching\Alachisoft.ContentOptimization\Alachisoft.ContentOptimization.sln" %ARGS%
 	IF NOT %ERRORLEVEL%==0 GOTO :failAlachisoftDotContentOptimization
 	IF %ERRORLEVEL%==0 ECHO Alachisoft.ContentOptimization build successful
 
 ::_________________________________________::
-::______BUILDING CONTENT OPTIMIZATION______::
+::_______BUILDING VIEW STATE CACHING_______::
 ::_________________________________________::
 
-ECHO BUILDING INTERGRATION CONTENT OPTIMATION FOR
+ECHO BUILDING INTERGRATION VIEW STATE CACHING FOR
 ECHO ================================================
-	@"%MSBUILDEXE%" "%INTEGRATIONPARENTFOLDER%\ContentOptimization\ContentOptimization.sln" %ARGS%
-	IF NOT %ERRORLEVEL%==0 GOTO :failContentOptimization
-	IF %ERRORLEVEL%==0 ECHO ContentOptimization build successful
+	@"%MSBUILDEXE%" "%INTEGRATIONPARENTFOLDER%\ViewStateCaching\ContentOptimization.sln" %ARGS%
+	IF NOT %ERRORLEVEL%==0 GOTO :failViewStateCaching
+	IF %ERRORLEVEL%==0 ECHO ViewStateCaching build successful
 
 ::_________________________________________::
 ::_______BUILDING EF NCACHE PROVIDER_______::
@@ -59,14 +59,14 @@ ECHO ================================================
 	IF %ERRORLEVEL%==0 ECHO LinqToNCache build successful
 
 ::_________________________________________::
-::___________BUILDING NHIBERNATE___________::
+::_____BUILDING NHIBERNATE OPEN SOURCE_____::
 ::_________________________________________::
 
-ECHO BUILDING INTERGRATION NHIBERNATE FOR 
+ECHO BUILDING INTERGRATION NHIBERNATE OPEN SOURCE FOR 
 ECHO ================================================
-	@"%MSBUILDEXE%" "%INTEGRATIONPARENTFOLDER%\NHibernate\src\NHibernateNCache.Professional.sln" %ARGS%
+	@"%MSBUILDEXE%" "%INTEGRATIONPARENTFOLDER%\NHibernate\src\NHibernateNCache.OpenSource.sln" %ARGS%
 	IF NOT %ERRORLEVEL%==0 GOTO :failNHibernate
-	IF %ERRORLEVEL%==0 ECHO NHibernate build successful
+	IF %ERRORLEVEL%==0 ECHO NHibernateNCache.OpenSource build successful
 
 ::_________________________________________::
 ::___________BUILDING OUTPUTCACHE__________::
@@ -110,14 +110,14 @@ EXIT /b 1
 :failAlachisoftDotContentOptimization
 ECHO FAILED TO BUILD ALACHISOFT.CONTENT OPTIMIZATION 
 ECHO =======================================
-"%INTEGRATIONPARENTFOLDER%\Alachisoft.ContentOptimization\Alachisoft.ContentOptimization.sln"
+"%INTEGRATIONPARENTFOLDER%\ViewStateCaching\Alachisoft.ContentOptimization\Alachisoft.ContentOptimization.sln"
 PAUSE
 EXIT /b 1
 
-:failContentOptimization
-ECHO FAILED TO BUILD CONTENT OPTIMIZATION 
+:failViewStateCaching
+ECHO FAILED TO BUILD VIEW STATE CACHING 
 ECHO =======================================
-"%INTEGRATIONPARENTFOLDER%\ContentOptimization\ContentOptimization.sln"
+"%INTEGRATIONPARENTFOLDER%\ViewStateCaching\ContentOptimization.sln"
 PAUSE
 EXIT /b 1
 
@@ -136,9 +136,9 @@ PAUSE
 EXIT /b 1
 
 :failNHibernate
-ECHO FAILED TO BUILD NHIBERNATE 
+ECHO FAILED TO BUILD NHIBERNATE OPEN SOURCE
 ECHO =============================
-"%INTEGRATIONPARENTFOLDER%\NHibernate\src\NHibernateNCache.Professional.sln"
+"%INTEGRATIONPARENTFOLDER%\NHibernate\src\NHibernateNCache.OpenSource.sln"
 PAUSE
 EXIT /b 1
 
