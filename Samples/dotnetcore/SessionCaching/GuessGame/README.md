@@ -1,4 +1,4 @@
-# GUESS GAME CORE
+# GUESS GAME 
 
 ### Table of contents
 

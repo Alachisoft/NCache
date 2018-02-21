@@ -27,7 +27,7 @@ using System.Runtime.CompilerServices;
 [assembly: AssemblyConfiguration("")]
 [assembly: AssemblyCompany("Alachisoft")]
 [assembly: AssemblyProduct("Alachisoft® NCache")]
-[assembly: AssemblyCopyright("Copyright© 2010 Alachisoft")]
+[assembly: AssemblyCopyright("Copyright© 2018 Alachisoft")]
 [assembly: AssemblyTrademark("NCache ™ is a registered trademark of Alachisoft.")]
 [assembly: AssemblyCulture("")]		
 

@@ -21,7 +21,7 @@ namespace Alachisoft.Samples.GuessGameCore
     {
         /// <summary>
         /// A guessing game to demonstrate the usage of NCache Session Services in ASP.NET Core
-        /// Open up the appsettings.json and replace "MyCache" against "CacheName" with your already running cache
+        /// Open up the appsettings.json and replace "myPartitionedCache" against "CacheName" with your already running cache
         /// </summary>
         public static void Main(string[] args)
         {

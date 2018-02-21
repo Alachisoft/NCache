@@ -296,8 +296,4 @@
     </BootstrapperPackage>
   </ItemGroup>
   <Import Project="$(MSBuildToolsPath)\Microsoft.CSharp.targets" />
-  <PropertyGroup>
-    <PostBuildEvent>
-xcopy "E:\Repositories\Git-Hub\NCache\Samples\dotnet\EntityFrameworkCore\packages\Alachisoft.NCache.OpenSource.SDK.4.9.0\additionalLib\Oracle.ManagedDataAccess.dll" "$(ProjectDir)\bin\$(ConfigurationName)\" /Y /I</PostBuildEvent>
-  </PropertyGroup>
-</Project>
+  </Project>
