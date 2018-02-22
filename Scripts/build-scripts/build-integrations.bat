@@ -37,16 +37,6 @@ ECHO ================================================
 	@"%MSBUILDEXE%" "%INTEGRATIONPARENTFOLDER%\ViewStateCaching\ContentOptimization.sln" %ARGS%
 	IF NOT %ERRORLEVEL%==0 GOTO :failViewStateCaching
 	IF %ERRORLEVEL%==0 ECHO ViewStateCaching build successful
-
-::_________________________________________::
-::_______BUILDING EF NCACHE PROVIDER_______::
-::_________________________________________::
-
-ECHO BUILDING INTERGRATION EF NCACHE PROVIDER FOR
-ECHO ================================================
-	@"%MSBUILDEXE%" "%INTEGRATIONPARENTFOLDER%\EFNCacheProvider\EFNCacheProvider\EFNCacheProvider.4x.sln" %ARGS%
-	IF NOT %ERRORLEVEL%==0 GOTO :failEFNCacheProvider
-	IF %ERRORLEVEL%==0 ECHO EFNCacheProvider build successful
 	
 ::___________________________________::
 ::______BUILDING LINQ TO NCACHE______::
@@ -118,13 +108,6 @@ EXIT /b 1
 ECHO FAILED TO BUILD VIEW STATE CACHING 
 ECHO =======================================
 "%INTEGRATIONPARENTFOLDER%\ViewStateCaching\ContentOptimization.sln"
-PAUSE
-EXIT /b 1
-
-:failEFNCacheProvider
-ECHO FAILED TO BUILD EF NCACHE PROVIDER 
-ECHO =======================================
-"%INTEGRATIONPARENTFOLDER%\EFNCacheProvider\EFNCacheProvider\EFNCacheProvider.4x.sln"
 PAUSE
 EXIT /b 1
 
