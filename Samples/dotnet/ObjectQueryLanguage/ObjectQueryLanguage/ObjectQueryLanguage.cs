@@ -1,5 +1,6 @@
 // ===============================================================================
 // Alachisoft (R) NCache Sample Code.
+// NCache Object Query Language sample
 // ===============================================================================
 // Copyright © Alachisoft.  All rights reserved.
 // THIS CODE AND INFORMATION IS PROVIDED "AS IS" WITHOUT WARRANTY
@@ -11,201 +12,122 @@
 using System;
 using System.Collections;
 using System.Configuration;
+using Alachisoft.NCache.Runtime.Caching;
 using Alachisoft.NCache.Web.Caching;
 using Alachisoft.NCache.Sample.Data;
 
-namespace NCacheQuerySample
+namespace Alachisoft.NCache.Samples
 {
-	/// <summary>
-    /// Summary description for ObjectQueryLanguage.
-	/// </summary>
-	class ObjectQueryLanguage
-	{
-		private static ICollection _keys = new ArrayList();
-		private static Datasource _db = new Datasource();
-		private static Cache  _cache;
-        private static string _error = "Some error has occured while executing the query" +
-                                       "\nPossible reason might be that the query indexes are not defined" +
-                                       "\nFor help see readme!.txt given with this sample";
+    /// <summary>
+    /// Class that provides the functionality of the object query language sample.
+    /// </summary>
+    public class ObjectQueryLanguage
+    {
+        private static Cache _cache;
 
-		/// <summary>
-		/// The main entry point for the application.
-		/// </summary>
-		[STAThread]
-		static void Main(string[] args)
-		{
-			string select;
-            Hashtable values = new Hashtable();
-            Console.WindowWidth = 100;
-
-            if (!LoadCache())
-            {
-                Console.ReadLine();
-                return;
-            }
-			
-			Console.WriteLine("Cache loaded !");
-			
-			do
-			{
-				Console.WriteLine("\n\n1> select Alachisoft.NCache.Sample.Data.Product where this.ProductID > 10");
-                Console.WriteLine("2> select Alachisoft.NCache.Sample.Data.Product where this.Category = 4");
-                Console.WriteLine("3> select Alachisoft.NCache.Sample.Data..Product where this.ProductID < 10 and this.Supplier = 1");
-				Console.WriteLine("x> Exit");
-				Console.Write("?> ");
-				select = Console.ReadLine();
-				
-                switch (select)
-				{
-					case "1":
-                        try
-                        {
-                            values.Clear();
-                            values.Add("ProductID", 10);
-                            _keys = _cache.Search("select Alachisoft.NCache.Sample.Data.Product where this.ProductID > ?", values);
-                            if (_keys.Count > 0)
-                            {
-                                PrintHeader();
-
-                                IEnumerator ie = _keys.GetEnumerator();
-                                while (ie.MoveNext())
-                                {
-                                    Console.WriteLine("ProductID : " + ie.Current);
-                                }
-                            }
-                            else
-                                Console.WriteLine("No record found.");
-                        }
-                        catch (Exception)
-                        {
-                            Console.WriteLine(_error);
-                        }
-                        Console.WriteLine("Press Enter to continue..");
-                        Console.ReadLine();
-						break;
-
-					case "2":
-                        try
-                        {
-                            values.Clear();
-                            values.Add("Category", 4);
-                            _keys = _cache.Search("select Alachisoft.NCache.Sample.Data.Product where this.Category = ?", values);
-                            if (_keys.Count > 0)
-                            {
-                                PrintHeader();
-
-                                IEnumerator ie = _keys.GetEnumerator();
-                                while (ie.MoveNext())
-                                {
-                                    Console.WriteLine("ProductID : " + ie.Current);
-                                }
-                            }
-                            else
-                                Console.WriteLine("No record found.");
-                        }
-                        catch (Exception)
-                        {
-                            Console.WriteLine(_error);
-                        }
-
-                        Console.WriteLine("Press Enter to continue..");
-                        Console.ReadLine();
-						break;
-
-					case "3":
-                        try
-                        {
-                            values.Clear();
-                            values.Add("ProductID", 10);
-                            values.Add("Supplier", 1);
-                            _keys = _cache.Search("select Alachisoft.NCache.Sample.Data.Product where this.ProductID < ? and this.Supplier = ?", values);
-                            if (_keys.Count > 0)
-                            {
-                                PrintHeader();
-
-                                IEnumerator ie = _keys.GetEnumerator();
-                                while (ie.MoveNext())
-                                {
-                                    Console.WriteLine("ProductID : " + ie.Current);
-                                }
-                            }
-                            else
-                                Console.WriteLine("No record found.");
-                        }
-                        catch (Exception)
-                        {
-                            Console.WriteLine(_error);
-                        }
-
-                        Console.WriteLine("Press Enter to continue..");
-                        Console.ReadLine();
-						break;
-
-					case "x":
-						break;
-				}
-			} while (select != "x");
-            _cache.Dispose();
-            Environment.Exit(0);
-		}
-
-		private static void PrintHeader()
-		{
-			Console.WriteLine();
-			Console.WriteLine("Cache contains following records.");
-			Console.WriteLine("---------------------------------");
-			Console.WriteLine();
-		}
-
-        private static bool InitializeCache()
+        /// <summary>
+        /// Executing this method will perform the operations fo the sample using object query language.
+        /// </summary>
+        public static void Run()
         {
-            string cacheName = ConfigurationSettings.AppSettings.Get("CacheName").ToString();
+            // Initialize Cache 
+            InitializeCache();
 
-            try
-            {
-                _cache = NCache.InitializeCache(cacheName);
-                return true;
-            }
-            catch (Exception e)
-            {
-                Console.WriteLine("Error occured while trying to initialize Cache named: [" + cacheName + "] \n"
-                                    + "Exception: " + e.Message);
-                return false;
-            }
+            // Querying an item in NCache requires either NamedTags or
+            // Indexes defined for objects or both.
+
+            // Generate a new instance of Product
+            Product product = GenerateProduct(1);
+
+
+            // Insert Item on which Index is defined using NCache Manager
+            InsertItemsWithPreDefinedIndex(product);
+
+            // Query Items with pre-defined index
+            QueryItemsUsingPreDefinedIndex();
+
+
+            // Dispose the cache once done
+            _cache.Dispose();
         }
 
-		private static bool LoadCache()
-		{
-			try
-			{
-                if (InitializeCache())
+        /// <summary>
+        /// This method initializes the cache
+        /// </summary>
+        private static void InitializeCache()
+        {
+            string cache = ConfigurationManager.AppSettings["CacheId"];
+
+            if (String.IsNullOrEmpty(cache))
+            {
+                Console.WriteLine("The Cache Name cannot be null or empty.");
+                return;
+            }
+
+            // Initialize an instance of the cache to begin performing operations:
+            _cache = NCache.Web.Caching.NCache.InitializeCache(cache);
+
+            Console.WriteLine("Cache initialized successfully");
+        }
+
+        /// <summary>
+        /// This method inserts items in the cache on which index was defined using NCache Manager.
+        /// </summary>
+        private static void InsertItemsWithPreDefinedIndex(Product product)
+        {
+            // New product object whose index is defined in NCache Manager
+            _cache.Add("Product:UPS", product);
+
+            Console.WriteLine("Item Inserted in cache.");
+        }
+
+        /// <summary>
+        /// This method queries items in the cache on which index was defined using NCache Manager.
+        /// </summary>
+        private static void QueryItemsUsingPreDefinedIndex()
+        {
+            //  Query can only be applied to C# Primitive data types:	
+            //  and for those non primitive data types whose indexes are defined in NCache manager
+
+            string query = "SELECT Alachisoft.NCache.Sample.Data.Product Where this.Id = ?";
+            var criteria = new Hashtable();
+            criteria["Id"] = 1;
+
+            ICacheReader result = _cache.ExecuteReader(query, criteria);
+
+            if (!result.IsClosed)
+            {
+                while (result.Read())
                 {
-                    Console.WriteLine("Loading products into " + _cache.ToString() + "...");
-
-                    Hashtable keyVals = _db.LoadProducts();
-
-                    String[] keys = new String[keyVals.Keys.Count];
-                    CacheItem[] items = new CacheItem[keyVals.Keys.Count];
-
-                    IDictionaryEnumerator ide = keyVals.GetEnumerator();
-                    int i = 0;
-                    while (ide.MoveNext())
-                    {
-                        keys[i] = ide.Key.ToString();
-                        items[i++] = new CacheItem(ide.Value);
-                    }
-
-                    _cache.AddBulk(keys, items);
+                    Product productFound = (Product)result[1];
+                    PrintProductDetails(productFound);
                 }
-                else
-                    return false;
-			}
-			catch(Exception ex)
-			{
-				Console.WriteLine("Exception : " + ex.Message);
-				return false;
-			}
-			return true;
-		}
-	}
+            }
+
+            Console.WriteLine();
+        }
+
+        /// <summary>
+        /// This method generates a new instance of product with the specified key.
+        /// </summary>
+        /// <param name="key"> Key that will be set as productId. </param>
+        /// <returns> returns a new instance of Product. </returns>
+        private static Product GenerateProduct(int key)
+        {
+            return new Product() { Id = key, Name = "UPS-Unit", Category = "QCPassed" };
+        }
+
+        /// <summary>
+        /// Method for printing details of product type.
+        /// </summary>
+        /// <param name="product"> Product whose details will be printed</param>
+        internal static void PrintProductDetails(Product product)
+        {
+            Console.WriteLine("Id:       " + product.Id);
+            Console.WriteLine("Name:     " + product.Name);
+            Console.WriteLine("Category: " + product.Category);
+            Console.WriteLine();
+        }
+    }
+
 }
