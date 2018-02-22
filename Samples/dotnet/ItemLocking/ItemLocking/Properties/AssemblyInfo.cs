@@ -24,7 +24,7 @@ using System.Runtime.InteropServices;
 [assembly: AssemblyConfiguration("")]
 [assembly: AssemblyCompany("Alachisoft")]
 [assembly: AssemblyProduct("ItemLocking")]
-[assembly: AssemblyCopyright("Copyright © Alachisoft 2017")]
+[assembly: AssemblyCopyright("Copyright © 2018 Alachisoft")]
 [assembly: AssemblyTrademark("")]
 [assembly: AssemblyCulture("")]
 

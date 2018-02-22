@@ -1,4 +1,4 @@
-# NCache SignalR Chat
+# SignalR Chat
 
 ### Table of contents
 
@@ -47,7 +47,3 @@ Alachisoft [C] provides various sources of technical support.
 
 - Please refer to http://www.alachisoft.com/support.html to select a support resource you find suitable for your issue.
 - To request additional features in the future, or if you notice any discrepancy regarding this document, please drop an email to [support@alachisoft.com](mailto:support@alachisoft.com).
-
-### Copyrights
-
-[C] Copyright 2018 Alachisoft 
