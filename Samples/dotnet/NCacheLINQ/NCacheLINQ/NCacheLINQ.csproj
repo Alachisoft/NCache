@@ -61,8 +61,9 @@
       <HintPath>..\packages\Alachisoft.NCache.OpenSource.SDK.4.9.0\lib\net40\Alachisoft.NCache.Common.dll</HintPath>
       <Private>True</Private>
     </Reference>
-    <Reference Include="Alachisoft.NCache.Linq">
-      <HintPath>..\..\..\..\integration\LINQToNCache\LinqToNCache\bin\Release\Alachisoft.NCache.Linq.dll</HintPath>
+    <Reference Include="Alachisoft.NCache.Linq, Version=1.0.0.0, Culture=neutral, processorArchitecture=MSIL">
+      <SpecificVersion>False</SpecificVersion>
+      <HintPath>lib\Alachisoft.NCache.Linq.dll</HintPath>
     </Reference>
     <Reference Include="Alachisoft.NCache.Management, Version=4.9.0.0, Culture=neutral, PublicKeyToken=1448e8d1123e9096, processorArchitecture=MSIL">
       <HintPath>..\packages\Alachisoft.NCache.OpenSource.SDK.4.9.0\lib\net40\Alachisoft.NCache.Management.dll</HintPath>

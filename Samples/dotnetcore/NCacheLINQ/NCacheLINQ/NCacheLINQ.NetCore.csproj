@@ -17,7 +17,7 @@
 
   <ItemGroup>
     <Reference Include="Alachisoft.NCache.Linq">
-      <HintPath>..\..\..\..\Integrations\LINQToNCache\dotnetcore\Alachisoft.NCache.Linq.dll</HintPath>
+      <HintPath>lib\Alachisoft.NCache.Linq.dll</HintPath>
     </Reference>
   </ItemGroup>
 
