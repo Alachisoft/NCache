@@ -30,5 +30,9 @@
      <ProjectReference Include="..\NCRuntime\NCRuntime.Client.NetCore.csproj" />
      <ProjectReference Include="..\NCWebCache\NCWebCache.Client.NetCore.csproj" />
    </ItemGroup>
+  
+   <Target Name="PostBuild" AfterTargets="PostBuildEvent">
+     <Exec Command="xcopy /Y &quot;$(TargetPath)&quot; &quot;$(SolutionDir)build\NetCore\Client\&quot;  2&gt;nul 1&gt;nul&#xD;&#xA;EXIT 0" />
+   </Target>
 
 </Project>

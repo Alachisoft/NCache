@@ -1,7 +1,7 @@
 ﻿
 Microsoft Visual Studio Solution File, Format Version 12.00
 # Visual Studio 15
-VisualStudioVersion = 15.0.26730.16
+VisualStudioVersion = 15.0.26730.3
 MinimumVisualStudioVersion = 10.0.40219.1
 Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "NCSystemInternal", "NCSystemInternal\NCSystemInternal.csproj", "{20812F4E-B03B-4C68-9D92-B706B99EB0DC}"
 EndProject
@@ -26,8 +26,6 @@ EndProject
 Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "NCSessionStoreProvider.Client.NetCore", "NCSessionStoreProvider\NCSessionStoreProvider.Client.NetCore.csproj", "{6288BE4C-DF6A-4747-AA08-5DFA9D46A362}"
 EndProject
 Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "NCSocketServer.Client.NetCore", "NCSocketServer\NCSocketServer.Client.NetCore.csproj", "{A25B1F92-F1FB-4531-8EF5-DAD3575BFA6B}"
-EndProject
-Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "NCacheSessionServices.NetCore", "..\SessionState\ASP.NET Core\NCacheSessionServices\NCacheSessionServices\NCacheSessionServices.NetCore.csproj", "{0424C58D-276E-493A-9FA0-FA0BEFE19A57}"
 EndProject
 Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "NCCache.Client.NetCore", "NCCache\NCCache.Client.NetCore.csproj", "{080EAF61-F9DD-4A93-BBAF-F2777A85F35C}"
 EndProject
@@ -87,10 +85,6 @@ Global
 		{A25B1F92-F1FB-4531-8EF5-DAD3575BFA6B}.Debug|Any CPU.Build.0 = Debug|Any CPU
 		{A25B1F92-F1FB-4531-8EF5-DAD3575BFA6B}.Release|Any CPU.ActiveCfg = Release|Any CPU
 		{A25B1F92-F1FB-4531-8EF5-DAD3575BFA6B}.Release|Any CPU.Build.0 = Release|Any CPU
-		{0424C58D-276E-493A-9FA0-FA0BEFE19A57}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
-		{0424C58D-276E-493A-9FA0-FA0BEFE19A57}.Debug|Any CPU.Build.0 = Debug|Any CPU
-		{0424C58D-276E-493A-9FA0-FA0BEFE19A57}.Release|Any CPU.ActiveCfg = Release|Any CPU
-		{0424C58D-276E-493A-9FA0-FA0BEFE19A57}.Release|Any CPU.Build.0 = Release|Any CPU
 		{080EAF61-F9DD-4A93-BBAF-F2777A85F35C}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
 		{080EAF61-F9DD-4A93-BBAF-F2777A85F35C}.Debug|Any CPU.Build.0 = Debug|Any CPU
 		{080EAF61-F9DD-4A93-BBAF-F2777A85F35C}.Release|Any CPU.ActiveCfg = Release|Any CPU

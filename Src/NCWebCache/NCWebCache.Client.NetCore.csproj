@@ -55,4 +55,8 @@
     <ProjectReference Include="..\NCManagement\NCManagement.Client.NetCore.csproj" />
   </ItemGroup>
   
+  <Target Name="PostBuild" AfterTargets="PostBuildEvent">
+    <Exec Command="xcopy /Y &quot;$(TargetPath)&quot; &quot;$(SolutionDir)build\NetCore\Client\&quot;  2&gt;nul 1&gt;nul&#xD;&#xA;EXIT 0" />
+  </Target>
+  
 </Project>
