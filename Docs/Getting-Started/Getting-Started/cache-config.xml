@@ -1,0 +1,35 @@
+<cache-config cache-name="demoCache">
+    <cache-settings inproc="False">
+
+      <logging enable-logs="True" trace-errors="True"
+        trace-debug="False" log-path=""/>
+
+      <performance-counters enable-counters="True" snmp-port="0"/>
+
+      <cache-notifications item-remove="False" item-add="False"
+              item-update="False"/>
+
+      <storage type="heap" cache-size="1024mb"/>
+      <eviction-policy default-priority="normal" eviction-ratio="5%"/>
+
+      <cache-topology topology="partitioned">
+
+        <cluster-settings operation-timeout="60sec"
+              stats-repl-interval="60sec"
+              use-heart-beat="False">
+
+          <cluster-connection-settings port-range="1" connection-retries="2"
+                    connection-retry-interval="2secs"
+                    cluster-port="7804"/>
+
+        </cluster-settings>
+      </cache-topology>
+    </cache-settings>
+
+    <cache-deployment>
+      <servers>
+        <server-node ip="20.200.20.220"/>
+      </servers>
+    </cache-deployment>
+
+</cache-config>
