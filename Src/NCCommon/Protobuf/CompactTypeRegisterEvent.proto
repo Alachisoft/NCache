@@ -1,8 +1,0 @@
-import "EventId.proto";
-
-option java_outer_classname="CompactTypeRegisterEventProtocol";
-package Alachisoft.NCache.Common.Protobuf;
-message CompactTypeRegisterEvent {
-	optional bytes compactTypes = 1;
-	optional EventId eventId = 2;
-}
