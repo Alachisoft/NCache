@@ -1,0 +1,57 @@
+<?xml version="1.0" encoding="UTF-8" standalone="yes"?>
+<configuration>
+  <cache-config cache-name="myPartitionedCache">
+    <cache-settings inproc="False">
+      <logging enable-logs="True" trace-errors="True" trace-debug="False" log-path=""/>
+      <performance-counters enable-counters="True" snmp-port="0"/>
+      <cache-notifications item-remove="False" item-add="False" item-update="False"/>
+      <cleanup interval="15sec"/>
+      <storage type="heap" cache-size="1024mb"/>
+      <eviction-policy default-priority="normal" eviction-ratio="5%"/>
+      <cache-topology topology="partitioned">
+        <cluster-settings operation-timeout="60sec" stats-repl-interval="60sec" use-heart-beat="False">
+          <cluster-connection-settings port-range="1" connection-retries="2" connection-retry-interval="2secs" cluster-port="7801"/>
+        </cluster-settings>
+      </cache-topology>
+      <client-death-detection enable="False" grace-interval="60sec"/>
+    </cache-settings>
+    <cache-deployment>
+      <servers>
+        <server-node ip="127.0.0.1"/>
+      </servers>
+    </cache-deployment>
+  </cache-config>
+  <cache-config cache-name="myReplicatedCache">
+    <cache-settings inproc="False">
+      <logging enable-logs="True" trace-errors="True" trace-debug="False" log-path=""/>
+      <performance-counters enable-counters="True" snmp-port="0"/>
+      <cache-notifications item-remove="False" item-add="False" item-update="False"/>
+      <cleanup interval="15sec"/>
+      <storage type="heap" cache-size="1024mb"/>
+      <eviction-policy default-priority="normal" eviction-ratio="5%"/>
+      <cache-topology topology="replicated">
+        <cluster-settings operation-timeout="60sec" stats-repl-interval="600sec" use-heart-beat="False">
+          <cluster-connection-settings port-range="1" connection-retries="2" connection-retry-interval="2secs" cluster-port="7800"/>
+        </cluster-settings>
+      </cache-topology>
+      <client-death-detection enable="False" grace-interval="60sec"/>
+    </cache-settings>
+    <cache-deployment>
+      <servers>
+        <server-node ip="127.0.0.1"/>
+      </servers>
+    </cache-deployment>
+  </cache-config>
+  <cache-config cache-name="myCache">
+    <cache-settings inproc="False">
+      <logging enable-logs="True" trace-errors="True" trace-debug="False" log-path=""/>
+      <performance-counters enable-counters="True" snmp-port="0"/>
+      <cache-notifications item-remove="False" item-add="False" item-update="False"/>
+      <cleanup interval="15sec"/>
+      <storage type="heap" cache-size="1024mb"/>
+      <eviction-policy default-priority="normal" eviction-ratio="5%"/>
+      <cache-topology topology="local-cache"/>
+      <client-death-detection enable="False" grace-interval="60sec"/>
+    </cache-settings>
+  </cache-config>
+</configuration>

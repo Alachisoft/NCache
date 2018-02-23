@@ -1,7 +1,0 @@
-<?xml version="1.0" encoding="UTF-8" standalone="yes"?>
-<configuration>
-  <ncache-server connection-retries="5" retry-connection-delay="0" retry-interval="1" client-request-timeout="90" connection-timeout="5" port="9800"/>
-  <cache id="mycache" client-cache-id="" client-cache-syncmode="optimistic" load-balance="false">
-    <server name="127.0.0.1"/>
-  </cache>
-</configuration>

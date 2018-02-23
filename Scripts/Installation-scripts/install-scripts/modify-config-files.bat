@@ -9,7 +9,6 @@ If not exist "%cd%\_.vbs" call :MakeReplace
 CALL :FINDREPLACE "127.0.0.1" %IP% "%~1\bin\service\Alachisoft.NCache.Service.exe.config"
 CALL :FINDREPLACE "127.0.0.1" %IP% "%~1\config\client.ncconf"
 CALL :FINDREPLACE "127.0.0.1" %IP% "%~1\config\config.ncconf"
-CALL :FINDREPLACE "127.0.0.1" %IP% "%~1\integrations\Memcached Wrapper\Gateway\bin\Alachisoft.NCache.Memcached.exe.config"
 
 del "%cd%\_.vbs"
 exit /b

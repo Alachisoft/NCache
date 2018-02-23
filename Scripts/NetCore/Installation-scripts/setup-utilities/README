@@ -1,0 +1,20 @@
+NCache 4.9 - .NET Core Open Source Client
+---------------------------------------
+
+NCache is an extremely fast and scalable distributed cache that caches application data and reduces expensive database trips.
+
+Pre-requisites
+--------------
+Supported .NET version is 2.0.0
+
+How to Install
+--------------
+To install this setup, 
+
+Run the install script with the your first name, last name, email address and .NET home as follows
+
+	./install -f firstname -l lastname -e email@yourcompany.com -d /path/to/dotnet/home
+
+for more detailed installation information, run the installation as follows
+
+	./install --help

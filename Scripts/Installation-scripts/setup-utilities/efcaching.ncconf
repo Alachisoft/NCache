@@ -1,0 +1,38 @@
+<configuration>
+	<app-config app-id="EFCachingDemo" mode="caching">
+		<analysis-policy log-path="" analysis-time="1min" cache-enable-threshold="1" default-expiration-type="Sliding" default-expiration-time="180sec" dbsyncdependency="false"/>
+		<cache-policy-configuration database="sqlserver" cache-id="mycache">
+			<api-level-caching expiration-type="Sliding" enable="True" expiration-time="120sec" dbsyncdependency="False"/>
+			<query>
+			  <!--Call count = 17-->
+			  <!--sql-query = "SELECT     [Extent1].[CustomerID] AS [CustomerID],     [Extent1].[CompanyName] AS [CompanyName],     [Extent1].[ContactName] AS [ContactName],     [Extent1].[ContactTitle] AS [ContactTitle],     [Extent1].[Address] AS [Address],     [Extent1].[City] AS [City],     [Extent1].[Region] AS [Region],     [Extent1].[PostalCode] AS [PostalCode],     [Extent1].[Country] AS [Country],     [Extent1].[Phone] AS [Phone],     [Extent1].[Fax] AS [Fax]    FROM [dbo].[Customers] AS [Extent1]"-->
+			  <cache-query query-text="SELECT     [Extent1].[CustomerID] AS [CustomerID],     [Extent1].[CompanyName] AS [CompanyName],     [Extent1].[ContactName] AS [ContactName],     [Extent1].[ContactTitle] AS [ContactTitle],     [Extent1].[Address] AS [Address],     [Extent1].[City] AS [City],     [Extent1].[Region] AS [Region],     [Extent1].[PostalCode] AS [PostalCode],     [Extent1].[Country] AS [Country],     [Extent1].[Phone] AS [Phone],     [Extent1].[Fax] AS [Fax]    FROM [dbo].[Customers] AS [Extent1]"/>
+			  <cache-policy vary-by-cache-param="" expiration-type="Sliding" enabled="True" expiration-time="180sec" dbsyncdependency="False"/>
+			</query>
+			<query>
+			  <!--Call count = 2-->
+			  <!--sql-query = "SELECT     [Extent1].[OrderID] AS [OrderID],     [Extent1].[CustomerID] AS [CustomerID],     [Extent1].[EmployeeID] AS [EmployeeID],     [Extent1].[OrderDate] AS [OrderDate],     [Extent1].[RequiredDate] AS [RequiredDate],     [Extent1].[ShippedDate] AS [ShippedDate],     [Extent1].[ShipVia] AS [ShipVia],     [Extent1].[Freight] AS [Freight],     [Extent1].[ShipName] AS [ShipName],     [Extent1].[ShipAddress] AS [ShipAddress],     [Extent1].[ShipCity] AS [ShipCity],     [Extent1].[ShipRegion] AS [ShipRegion],     [Extent1].[ShipPostalCode] AS [ShipPostalCode],     [Extent1].[ShipCountry] AS [ShipCountry]    FROM [dbo].[Orders] AS [Extent1]    WHERE ([Extent1].[CustomerID] = @param_0) OR (([Extent1].[CustomerID] IS NULL) AND (@param_0 IS NULL))"-->
+			  <cache-query query-text="SELECT     [Extent1].[OrderID] AS [OrderID],     [Extent1].[CustomerID] AS [CustomerID],     [Extent1].[EmployeeID] AS [EmployeeID],     [Extent1].[OrderDate] AS [OrderDate],     [Extent1].[RequiredDate] AS [RequiredDate],     [Extent1].[ShippedDate] AS [ShippedDate],     [Extent1].[ShipVia] AS [ShipVia],     [Extent1].[Freight] AS [Freight],     [Extent1].[ShipName] AS [ShipName],     [Extent1].[ShipAddress] AS [ShipAddress],     [Extent1].[ShipCity] AS [ShipCity],     [Extent1].[ShipRegion] AS [ShipRegion],     [Extent1].[ShipPostalCode] AS [ShipPostalCode],     [Extent1].[ShipCountry] AS [ShipCountry]    FROM [dbo].[Orders] AS [Extent1]    WHERE ([Extent1].[CustomerID] = @param_0) OR (([Extent1].[CustomerID] IS NULL) AND (@param_0 IS NULL))"/>
+			  <cache-policy vary-by-cache-param="param_0" expiration-type="Sliding" enabled="True" expiration-time="180sec" dbsyncdependency="False"/>
+			</query>
+			<query>
+			  <!--Call count = 1-->
+			  <!--sql-query = "SELECT     [Extent1].[CustomerID] AS [CustomerID],     [Extent1].[CompanyName] AS [CompanyName],     [Extent1].[ContactName] AS [ContactName],     [Extent1].[ContactTitle] AS [ContactTitle],     [Extent1].[Address] AS [Address],     [Extent1].[City] AS [City],     [Extent1].[Region] AS [Region],     [Extent1].[PostalCode] AS [PostalCode],     [Extent1].[Country] AS [Country],     [Extent1].[Phone] AS [Phone],     [Extent1].[Fax] AS [Fax]    FROM [dbo].[Customers] AS [Extent1]    WHERE [Extent1].[CompanyName] = @param_0"-->
+			  <cache-query query-text="SELECT     [Extent1].[CustomerID] AS [CustomerID],     [Extent1].[CompanyName] AS [CompanyName],     [Extent1].[ContactName] AS [ContactName],     [Extent1].[ContactTitle] AS [ContactTitle],     [Extent1].[Address] AS [Address],     [Extent1].[City] AS [City],     [Extent1].[Region] AS [Region],     [Extent1].[PostalCode] AS [PostalCode],     [Extent1].[Country] AS [Country],     [Extent1].[Phone] AS [Phone],     [Extent1].[Fax] AS [Fax]    FROM [dbo].[Customers] AS [Extent1]    WHERE [Extent1].[CompanyName] = @param_0"/>
+			  <cache-policy vary-by-cache-param="param_0" expiration-type="Sliding" enabled="True" expiration-time="180sec" dbsyncdependency="False"/>
+			</query>
+			<query>
+			  <!--Call count = 1-->
+			  <!--sql-query = "SELECT     [Extent1].[OrderID] AS [OrderID],     [Extent1].[CustomerID] AS [CustomerID],     [Extent1].[EmployeeID] AS [EmployeeID],     [Extent1].[OrderDate] AS [OrderDate],     [Extent1].[RequiredDate] AS [RequiredDate],     [Extent1].[ShippedDate] AS [ShippedDate],     [Extent1].[ShipVia] AS [ShipVia],     [Extent1].[Freight] AS [Freight],     [Extent1].[ShipName] AS [ShipName],     [Extent1].[ShipAddress] AS [ShipAddress],     [Extent1].[ShipCity] AS [ShipCity],     [Extent1].[ShipRegion] AS [ShipRegion],     [Extent1].[ShipPostalCode] AS [ShipPostalCode],     [Extent1].[ShipCountry] AS [ShipCountry]    FROM [dbo].[Orders] AS [Extent1]    WHERE [Extent1].[ShippedDate] < @param_0"-->
+			  <cache-query query-text="SELECT     [Extent1].[OrderID] AS [OrderID],     [Extent1].[CustomerID] AS [CustomerID],     [Extent1].[EmployeeID] AS [EmployeeID],     [Extent1].[OrderDate] AS [OrderDate],     [Extent1].[RequiredDate] AS [RequiredDate],     [Extent1].[ShippedDate] AS [ShippedDate],     [Extent1].[ShipVia] AS [ShipVia],     [Extent1].[Freight] AS [Freight],     [Extent1].[ShipName] AS [ShipName],     [Extent1].[ShipAddress] AS [ShipAddress],     [Extent1].[ShipCity] AS [ShipCity],     [Extent1].[ShipRegion] AS [ShipRegion],     [Extent1].[ShipPostalCode] AS [ShipPostalCode],     [Extent1].[ShipCountry] AS [ShipCountry]    FROM [dbo].[Orders] AS [Extent1]    WHERE [Extent1].[ShippedDate] &lt; @param_0"/>
+			  <cache-policy vary-by-cache-param="param_0" expiration-type="Sliding" enabled="True" expiration-time="180sec" dbsyncdependency="False"/>
+			</query>
+			<query>
+			  <!--Call count = 1-->
+			  <!--sql-query = "SELECT     [Extent1].[CustomerID] AS [CustomerID],     [Extent1].[CompanyName] AS [CompanyName],     [Extent1].[ContactName] AS [ContactName],     [Extent1].[ContactTitle] AS [ContactTitle],     [Extent1].[Address] AS [Address],     [Extent1].[City] AS [City],     [Extent1].[Region] AS [Region],     [Extent1].[PostalCode] AS [PostalCode],     [Extent1].[Country] AS [Country],     [Extent1].[Phone] AS [Phone],     [Extent1].[Fax] AS [Fax]    FROM [dbo].[Customers] AS [Extent1]    WHERE [Extent1].[CustomerID] = @param_0"-->
+			  <cache-query query-text="SELECT     [Extent1].[CustomerID] AS [CustomerID],     [Extent1].[CompanyName] AS [CompanyName],     [Extent1].[ContactName] AS [ContactName],     [Extent1].[ContactTitle] AS [ContactTitle],     [Extent1].[Address] AS [Address],     [Extent1].[City] AS [City],     [Extent1].[Region] AS [Region],     [Extent1].[PostalCode] AS [PostalCode],     [Extent1].[Country] AS [Country],     [Extent1].[Phone] AS [Phone],     [Extent1].[Fax] AS [Fax]    FROM [dbo].[Customers] AS [Extent1]    WHERE [Extent1].[CustomerID] = @param_0"/>
+			  <cache-policy vary-by-cache-param="param_0" expiration-type="Sliding" enabled="True" expiration-time="180sec" dbsyncdependency="False"/>
+			</query>
+		</cache-policy-configuration>
+	</app-config>
+</configuration>

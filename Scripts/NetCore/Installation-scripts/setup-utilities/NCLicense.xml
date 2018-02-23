@@ -1,0 +1,22 @@
+<?xml version="1.0" encoding="utf-8"?>
+<license-config xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xmlns:xsd="http://www.w3.org/2001/XMLSchema">
+  <product-info dotnet-install-mode="5" http-port="8251">
+    <install-dir><INSTALLDIR></install-dir>
+    <last-report-time></last-report-time>
+    <platform></platform>
+    <sp-version></sp-version>
+    <tcp-port>8250</tcp-port>
+  </product-info>
+  <user-info>
+    <address></address>
+    <city></city>
+    <company></company>
+    <country></country>
+    <email><EMAIL></email>
+    <first-name><FIRSTNAME></first-name>
+    <last-name><LASTNAME></last-name>
+    <phone></phone>
+    <state></state>
+    <zip></zip >
+  </user-info>
+</license-config>

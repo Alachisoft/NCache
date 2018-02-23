@@ -1,0 +1,148 @@
+#!/bin/sh
+
+#--------------------------------------------------------------------------------------
+printMessage ()
+{
+	message=$1
+	echo "$message"
+}
+#--------------------------------------------------------------------------------------
+printError ()
+{
+	message=$1
+	echo "------"
+	echo "ERROR: $message" 1>&2;
+	echo ""
+}
+#--------------------------------------------------------------------------------------
+printMode ()
+{
+	message=$1
+	if [ ! -z "$VERBOSE" ]
+	then
+		echo "$message"
+	fi
+}
+#--------------------------------------------------------------------------------------
+checkifalreadyrunning()
+{
+	running=$(ps aux | grep [nca]ched.jar)
+	echo $running
+}
+#--------------------------------------------------------------------------------------
+usage()
+{
+	echo "This script uninstalls NCache Open Source Client."
+	echo ""
+	echo "Usage: uninstall [OPTIONS]"
+	echo ""
+	echo "  -p, --path	NCache install directory. If not provided, then it tries to use the default directory instead"
+	echo "  -F, --force	Suppresses all prompts."
+	echo ""
+	exit 1
+}
+#--------------------------------------------------------------------------------------
+uninstall()
+{
+	 rm /etc/systemd/system/ncached.service
+	 rm /usr/lib/NCLicense.xml
+	 rm -r $NCHOME
+	 pwshhome=$(readlink -f `which pwsh` | sed -e "s/pwsh/Modules/g")
+	 pwshhome="${pwshhome}/ncacheps"
+	 rm -r $pwshhome
+}
+#--------------------------------------------------------------------------------------
+reconfirm()
+{
+	read -p "Are you sure you want to uninstall? (y/n)" yn
+	case $yn in
+		y )
+			printMessage "Uninstalling NCache..."
+			;;
+		n )
+			printMessage "Uninstallation cancelled."
+			echo ""
+			exit
+			;;
+		* )
+			printMessage "Invalid argument."
+			echo ""
+			exit
+			;;
+	esac
+}
+#--------------------------------------------------------------------------------------
+stopservice()
+{
+sudo systemctl disable ncached.service
+sudo systemctl stop ncached.service	
+}
+#--------------------------------------------------------------------------------------
+#--- Start of execution
+#--------------------------------------------------------------------------------------
+
+#--------------------------------------------------------------------------------------
+if [ ! -f "/usr/lib/NCLicense.xml" ]; then 
+	echo ""
+	printError "NCache is not installed on your machine or installation is corrupt"
+	exit 1
+fi
+NCHOME=$(awk -F '[<>]' '/install-dir/{print $3}' /usr/lib/NCLicense.xml)
+
+#--------------------------------------------------------------------------------------
+while [ "$1" != "" ]; 
+do
+    case $1 in
+    -p | --path ) shift
+           NCPATH=$1           
+           ;;
+    -F | --force ) shift
+           FORCE="y"
+           ;;
+    * )
+		usage
+        exit 
+        ;;
+    esac
+    shift
+done
+#--------------------------------------------------------------------------------------
+#--- Make sure only root can run our script
+if [ "$(id -u)" != "0" ]; then
+   printError "Installation requires root privileges."
+   exit 1
+fi
+#--------------------------------------------------------------------------------------
+if [ -z "$NCPATH" ]; then
+   if [ -z "$NCHOME" ]; then
+      printError "No install path provided with -p or --path and NCHOME is also not set. Aborting NCache Client for .NET Core uninstallation."
+      exit 1
+   fi
+   NCPATH="$NCHOME";
+   printMessage "NCHOME found, uninstalling NCache Client for .NET Core at location $NCHOME"
+fi
+#--------------------------------------------------------------------------------------
+if [ ! -f "$NCPATH/lib/Alachisoft.NCache.Common.dll" ]; then 
+	echo ""
+	printError "NCache provided installation path is not valid because $NCPATH/lib/Alachisoft.NCache.Common.dll not found."
+	exit 1
+fi
+#--------------------------------------------------------------------------------------
+if [ -z "$FORCE" ]; then
+	reconfirm
+fi
+
+printMessage "Stopping NCache Client Daemon ..."
+stopservice 
+printMessage "Removing NCache Client Daemon ..."
+success=$(uninstall)
+
+#--------------------------------------------------------------------------------------
+printMessage "NCache Client uninstalled."
+
+printMessage ""
+printMessage "User 'ncache' created at install time is not deleted. Please use userdel command to remove the user."
+printMessage "For complete documentation visit the website <http://www.alachisoft.com/resources/docs/index.html>"
+printMessage ""
+exit 1
+#--------------------------------------------------------------------------------------

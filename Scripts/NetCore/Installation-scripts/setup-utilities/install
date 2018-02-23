@@ -1,0 +1,412 @@
+#!/bin/sh
+# takes dotnethome as param       -d
+# takes network ip as param       -i
+# takes installpath  as param     -p
+# takes first name as param       -f
+# takes last name as param        -l
+# takes email address as param    -e
+# takes Verbose as param          -v
+# takes password as param         -P
+# takes force as param            -F
+
+#--------------------------------------------------------------------------------------
+echo ""
+echo "==========================================="
+echo "NCache Open Source Client Installation Script"
+echo "==========================================="
+echo ""
+
+PRODUCT=NCache
+PRODUCT_TAR="ncache-oss-4.9-dotnetclient-setup.tar.gz"
+DOTNETHOME=
+IP=
+NCUSER=ncache
+DESTINATION=/opt
+VERBOSE=
+FORCE=
+MAXMEM="512"
+PASSWORD="ncache"
+FIRST_NAME=
+LAST_NAME=
+EMAIL=
+#--- .NET versions supported for NCache .NET Core Client (Preffered version = 2.0.0)
+DOTNETCOREVER="2.0.0"
+
+#--------------------------------------------------------------------------------------
+# ===================================== FUNCTIONS =====================================
+#--------------------------------------------------------------------------------------
+printMessage ()
+{
+	message=$1
+	echo "$message"
+}
+#--------------------------------------------------------------------------------------
+printError ()
+{
+	message=$1
+	echo "------"
+	echo "ERROR: $message" 1>&2;
+	echo ""
+}
+#--------------------------------------------------------------------------------------
+printMode ()
+{
+	message=$1
+	if [ ! -z "$VERBOSE" ]
+	then
+		echo "$message"
+	fi
+}
+
+#--------------------------------------------------------------------------------------
+usage ()
+{
+	printMessage "This script installs $PRODUCT and then configures it"
+	printMessage "Providing optional arguments will override default implementation"
+	printMessage ""
+	printMessage "Usage: install [OPTION] ARG [OPTION] ARG ..."
+	printMessage ""
+	printMessage "  -f, --firstname   Provide your first name."
+	printMessage "  -l, --lastname    Provide your last name."
+	printMessage "  -e, --email       Provide your email address."
+	printMessage "  -d, --dotnethome  Provide which .NET home directory is to be used."
+	printMessage "  -i, --ipaddress   IP address to be used by $PRODUCT, if not provided then it will use the first IP found."
+	printMessage "  -p, --installpath If not provided then /opt/ncache will be used."
+	printMessage "  -F, --force       Force create destination directory if provided directory does not exist"
+	printMessage "  -P, --password    Provide password for user '$NCUSER', if user already exists then it will override its password"
+	printMessage ""
+	printMessage "By default this script will install $PRODUCT  in the following directory /opt/ncache/, using first found network interface."
+	printMessage ""
+	printMessage "Please contact support@alachisoft.com for any technical help"
+	printMessage "For complete documentation visit the website <http://www.alachisoft.com/resources/docs/index.html>"
+	printMessage ""
+	exit 1
+}
+#---------------------------------------------------------------------------------------------
+#------------------ Verify .NET required version  installed at Specified path ----------------
+verifyDotNetCore()
+{
+	NHOME=$1
+	REQUIRED_VERSION=$2
+	REQUIRED_VERSION=`echo $2 | sed -e 's;\.;0;g'`
+	if [ $1 ]
+	then
+		DOTNET_EXE=$NHOME/dotnet
+		VERSION=`echo $($DOTNET_EXE --version) | sed -e 's;\.;0;g'`
+		if [ $VERSION ]
+		then
+				if [ $VERSION -ge $REQUIRED_VERSION ]
+				then
+					echo $1
+				else
+					return
+				fi
+		else
+			return
+		fi
+	fi
+}
+#--------------------------------------------------------------------------------------
+#--- Start of execution
+#--------------------------------------------------------------------------------------
+
+while [ "$1" != "" ]; do
+    case $1 in
+	-d | --dotnethome )	shift
+			DOTNETHOME=$1
+			;;
+				
+	-i | --ipaddress )	shift
+			IP=$1
+			;;
+
+	-p | --installpath )	shift
+			DESTINATION=$1
+			;;	
+
+	-f | --firstname )	shift
+			FIRST_NAME=$1
+			;;
+
+	-l | --lastname )	shift
+			LAST_NAME=$1
+			;;
+
+	-e | --email )		shift
+			EMAIL=$1
+			;;
+			
+	-P | --password )	shift
+			PASSWORD=$1
+			NEWPASS="true"
+			;;
+
+	-F | --force )
+			FORCE="true"
+			;;
+			
+	-v | --verbose )
+			VERBOSE="true"
+			;;
+
+	-h | --help )
+			usage
+			exit
+			;;
+	* )
+			usage
+			exit 1
+    esac
+    shift
+done
+
+printMessage "Executing script from user : $USER"
+
+#--------------------------------------------------------------------------------------
+# Make sure that NCache is not already installed or was made corrupt by user
+if [  -f "/usr/lib/NCLicense.xml" ]; then 
+	echo ""
+	printError "Either NCache .NET Core Client is already installed or wasn't uninstalled properly."
+	exit 1
+fi
+
+#--------------------------------------------------------------------------------------
+# Make sure only root can run our script
+if [ "$(id -u)" != "0"  ] ; then
+   printError "Installation requires root privileges."
+   exit 1
+fi
+
+if [ ! -d $DESTINATION ] ; then
+	if [ ! -z $FORCE ] ; then
+
+		printMode "Creating $DESTINATION"
+		mkdir -p $DESTINATION
+
+		if [ ! -d $DESTINATION ] ; then
+			printError "Unable to create $DESTINATION."
+			exit 1
+		fi	
+		
+	else
+		printError "$DESTINATION does not exist. (Using setup with --force parameter will create it automatically)"
+		exit 1
+	fi
+fi
+#--------------------------------------------------------------------------------------
+#--- Check all the required parameters
+ERROR_EXISTS=
+
+if [ -z "$DOTNETHOME" ] ; then
+	printError "-d (dotnethome) Please provide .NET home path."
+	ERROR_EXISTS="yes";
+fi
+
+if [ "$ERROR_EXISTS" ] ; then
+	exit 1;
+fi
+
+#--------------------------------------------------------------------------------------
+# Setting IP in used for caches configuration files
+ip=
+if [ "$IP" ]
+then
+	printMessage "Validating ip-address : $IP ..."
+	ipaddress=$(ifconfig | grep -w "$IP" 2>/dev/null)
+	if [ "$ipaddress" ]
+	then
+		printMessage "$IP is a valid ip-address"
+		ip=$IP
+	else
+		printError "$IP is not a valid ip-address, ifconfig does not contain ip-address: $IP"
+		exit 1;
+	fi
+else
+ 	ipaddress=$(hostname -I)
+	set -- $ipaddress
+	one=${1}
+	if [ "$one" ]
+	then		
+		ip=$one
+		printMessage "Selected ip-address: $ip"		
+	else
+		printError "Unable to find a valid ip-address."
+		exit 1;
+	fi
+fi
+#--------------------------------------------------------------------------------------
+#--- Verify required .NET version, if unable to find the required .NET version then exit installation
+correctPath=
+version=
+
+if [ -z "$DOTNETHOME" ] ; then
+	DOTNETHOME=$DOTNET_HOME
+fi
+
+if [ "$DOTNETHOME" ] ; then
+	printMessage "Validating .NET at location : $DOTNETHOME"
+	for ver in $DOTNETCOREVER
+	do
+		correctPath=$(verifyDotNetCore $DOTNETHOME $ver)
+		version=$ver
+		if [ "$correctPath" ] ; then
+			break
+		fi
+	done
+	
+	if [ "$correctPath" ]
+	then
+		printMessage "Correct .NET version $version is verified."
+	else
+		printError "Installation ABORTED! Unable to find required .NET installation at $DOTNETHOME."
+		printError "Please provide .NET 2.0.0 or higher"
+                exit 1
+	fi
+
+else
+	printError "Installation ABORTED! Unable to find required .NET  installation."
+	exit 1
+fi
+
+
+#--------------------------------------------------------------------------------------
+#--- Auto detect available memory, try to allocate 75% of the available memory to ncache
+mem=$(grep MemTotal /proc/meminfo |  tr -dc '[0-9]')
+memMB=$(echo $(($mem/1024)))
+MAXMEM=$(echo $(($memMB/100 *75 )))
+
+#--------------------------------------------------------------------------------------
+# Creating user for NCache 
+printMessage "Checking if user '$NCUSER' already exists ..."
+userExists=
+if [ -z $(id -u $NCUSER 2>/dev/null) ] ; then
+	printMessage "Creating '$NCUSER' user ..."
+	useradd "$NCUSER" -M
+	passwd $NCUSER 2>/dev/null <<EOF
+$PASSWORD
+$PASSWORD
+EOF
+	printMessage "User successfully created."
+	printMessage "Password of '$NCUSER' user is: $PASSWORD"
+else
+	printMessage "User '$NCUSER' already exists."
+	printMessage ""
+	userExists="yes"
+
+	if [ "$NEWPASS" ] ; then
+	passwd $NCUSER 2>/dev/null <<EOF
+$PASSWORD
+$PASSWORD
+EOF
+	fi
+fi
+#--------------------------------------------------------------------------------------
+# All values specified, proceeding with installation
+printMessage ""
+printMessage "--------------------------------------------------"
+printMessage "Proceeding installation with the following values:"
+printMessage "--------------------------------------------------"
+printMessage "First Name            : $FIRST_NAME               "
+printMessage "Last Name             : $LAST_NAME                "
+printMessage "Email Address         : $EMAIL                    "
+printMessage "Destination           : $DESTINATION/ncache       "
+printMessage ".NET Home             : $correctPath              "
+printMessage ".NET Version          : $version                  "
+printMessage "Maximum Memory        : $MAXMEM MB                "
+printMessage "IP Address            : $ip                       "
+printMessage "$PRODUCT user           : $NCUSER                 "
+printMessage "--------------------------------------------------"
+printMessage ""
+
+#--------------------------------------------------------------------------------------
+# Extract installation tar.gz
+printMode "Extracting setup ..."
+tar -zxf "$PRODUCT_TAR" -C $DESTINATION
+
+#--------------------------------------------------------------------------------------
+cd $DESTINATION/ncache/bin/service
+printMode "Setting ip-address in Alachisoft.NCache.Daemon.dll.config ..."
+sed -i "s/<IP>/$ip/g" "Alachisoft.NCache.Daemon.dll.config"
+
+
+cd $DESTINATION/ncache
+cd $DESTINATION/ncache/config
+printMode "Switching to directory $DESTINATION/ncache/config ..."
+printMode "Setting ip-address to $ip ..."
+
+printMode "Setting ip-address in client.ncconf ..." 
+sed -i "s/<IP>/$ip/g" "client.ncconf"
+
+printMode "Setting install-dir in NCLicense.xml ..."
+loc="$DESTINATION/ncache"
+sed -i "s|<INSTALLDIR>|$loc|g" "NCLicense.xml"
+
+printMode "Setting email in NCLicense.xml ..."
+sed -i "s/<EMAIL>/$EMAIL/g" "NCLicense.xml"
+
+printMode "Setting first-name in NCLicense.xml ..."
+sed -i "s/<FIRSTNAME>/$FIRST_NAME/g" "NCLicense.xml"
+
+printMode "Setting last-name in NCLicense.xml ..."
+sed -i "s/<LASTNAME>/$LAST_NAME/g" "NCLicense.xml"
+      
+
+cp $DESTINATION/ncache/config/NCLicense.xml /usr/lib
+rm $DESTINATION/ncache/config/NCLicense.xml
+
+printMode "Changing directory to $DESTINATION ..."
+loc="$DESTINATION/ncache"
+
+printMode "Changing directory to $DESTINATION/ncache"
+cd $DESTINATION/ncache/
+
+
+#--------------------------------------------------------------------------------------
+# Prepare PowerShell Tools 
+cd $DESTINATION/ncache/bin/ncacheps
+sed -i "s|<NCHOME>|$loc|g" ncacheps.psd1
+pwshhome=$(readlink -f `which pwsh` | sed -e "s/pwsh/Modules/g")
+pwshhome="${pwshhome}/"
+cp  -r /$DESTINATION/ncache/bin/ncacheps $pwshhome
+
+
+#--------------------------------------------------------------------------------------
+#--- Change ownership of ncache folder
+printMode "Making $NCUSER the owner of $DESTINATION/ncache ..."
+chown -R $NCUSER:$NCUSER $DESTINATION/ncache
+
+#--------------------------------------------------------------------------------------
+# Installing Service
+printMode "Changing directory to $DESTINATION/ncache/bin/service"
+cd $DESTINATION/ncache/bin/service
+printMode "Installing service"
+
+printMode "Setting DOTNETHOME in ncached.service ..."
+sed -i "s|<DOTNETHOME>|$correctPath|g" "ncached.service"
+
+printMode "Setting INSTALLDIR in ncached.service ..."
+sed -i "s|<INSTALLDIR>|$loc|g" "ncached.service"
+
+cp $DESTINATION/ncache/bin/service/ncached.service /etc/systemd/system
+rm $DESTINATION/ncache/bin/service/ncached.service
+printMode "Daemon Coppied Successfully."
+systemctl daemon-reload
+
+printMessage "Installation completed successfully."
+
+#--------------------------------------------------------------------------------------
+#--- Starting ncache service ...
+printMessage "Starting NCache service ..."
+systemctl enable ncached.service
+systemctl start ncached.service
+
+printMessage "NCacheServer.BindToClientServerIP = $ip  " 
+printMessage "NCacheServer.BindToClusterIP      = $ip  " 
+printMessage "NCacheServer.Port                 = 9800 " 
+printMessage "NCacheServer.ManagementPort       = 8250 " 
+printMessage ""
+printMessage "NCache service started successfully with following process-id (pid): $( pgrep -f  Alachisoft.NCache.Daemon.dll)"
+printMessage ""
+printMessage "Use /etc/systemd/system/ncached to manage ncache service"
+printMessage ""
+printMessage "Find the getting started guide at $loc/docs/ "

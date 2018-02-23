@@ -1,0 +1,14 @@
+[Unit]
+Description=NCache Daemon
+DefaultDependencies=no
+
+[Service]
+User=ncache
+Group=ncache
+Type=forking
+ExecStart=<DOTNETHOME>/dotnet <INSTALLDIR>/bin/service/Alachisoft.NCache.Daemon.dll <DOTNETHOME> <INSTALLDIR>
+ExecStop=<DOTNETHOME>/dotnet <INSTALLDIR>/bin/service/Alachisoft.NCache.Daemon.dll stop
+Restart=always
+
+[Install]
+WantedBy=default.target

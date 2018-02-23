@@ -78,16 +78,6 @@ ECHO ================================================
 	IF NOT %ERRORLEVEL%==0 GOTO :failSignalRNCache
 	IF %ERRORLEVEL%==0 ECHO SignalR.NCache build successful
 
-::_________________________________________::
-::_____BUILDING EF NCACHE PROVIDER 6.1_____::
-::_________________________________________::
-
-ECHO BUILDING INTERGRATION EF NCACHE PROVIDER 6.1 FOR
-ECHO ================================================
-	@"%MSBUILDEXE%" "%INTEGRATIONPARENTFOLDER%\EFNCacheProvider - 6.1\EFCachingProvider.sln" %ARGS%
-	IF NOT %ERRORLEVEL%==0 GOTO :failEFNCacheProviderSixOne
-	IF %ERRORLEVEL%==0 ECHO EFNCacheProvider 6.1 build successful
-
 EXIT /b 0
 
 :failAlachisoftDotCommon
@@ -136,12 +126,5 @@ EXIT /b 1
 ECHO FAILED TO BUILD SIGNALR NCACHE 
 ECHO =============================
 "%INTEGRATIONPARENTFOLDER%\SignalR.NCache\SIgnalR.NCache.sln"
-PAUSE
-EXIT /b 1
-
-:failEFNCacheProviderSixOne
-ECHO FAILED TO BUILD EF NCACHE PROVIDER 6.1
-ECHO =======================================
-"%INTEGRATIONPARENTFOLDER%\EFNCacheProvider - 6.1\EFCachingProvider.sln"
 PAUSE
 EXIT /b 1

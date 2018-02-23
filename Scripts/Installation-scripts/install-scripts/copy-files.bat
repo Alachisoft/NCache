@@ -7,63 +7,70 @@
  
 	ECHO COPYING SERVICE...
 	ECHO ==================
-	XCOPY ..\..\src\build\server\4x\Alachisoft.NCache.Service.exe %1\bin\service\ /Y /Q
-	XCOPY  ..\..\src\build\Server\4x\Alachisoft.NCache.CacheHost.exe %1\bin\service\ /Y /Q
-	XCOPY ..\..\samples\config\Alachisoft.NCache.CacheHost.exe.config %1\bin\service\ /Y /Q
-	XCOPY ..\..\samples\config\Alachisoft.NCache.Service.exe.config %1\bin\service\ /Y /Q
+	XCOPY "..\..\..\Src\build\Server\4x\Alachisoft.NCache.Service.exe" %1\bin\service\ /Y /Q
+	XCOPY "..\..\..\Src\build\Server\4x\Alachisoft.NCache.CacheHost.exe" %1\bin\service\ /Y /Q
+	XCOPY "..\..\..\Samples\config\Alachisoft.NCache.CacheHost.exe.config" %1\bin\service\ /Y /Q
+	XCOPY "..\..\..\Samples\config\Alachisoft.NCache.Service.exe.config" %1\bin\service\ /Y /Q
 	ECHO.
 	
 	
 	ECHO COPYING DLLS...
 	ECHO ===============
-	XCOPY "..\..\resources\NCRegistry.dll" %WINDIR%\System32\ /Y /Q
+	XCOPY "..\..\..\Resources\ncregistry.dll" %WINDIR%\System32\ /Y /Q
 	
-	FOR %%f IN (..\..\src\build\Server\4x\*NCache*.dll) DO (
-			XCOPY "%%f" %1\bin\assemblies\4.0\ /Y /Q /D	
+	FOR %%f IN (..\..\..\Src\build\Server\4x\*NCache*.dll) DO (
+			XCOPY "%%f" %1\bin\assembly\4.0\ /Y /Q /D	
 	) 
-	IF EXIST %1\bin\assemblies\4.0 (
-		XCOPY "..\..\resources\protobufdotnet\x32\protobuf-net.dll" %1\bin\assemblies\4.0\ /Y /Q
-		XCOPY "..\..\resources\log4net\log4net.dll" %1\bin\assemblies\4.0\ /Y /Q
+	FOR %%f IN (..\..\..\Src\build\NetCore\Client\Alachisoft*.dll) DO (
+			XCOPY "%%f" %1\bin\assembly\netcore20\ /Y /Q /D	
+	) 
+	IF EXIST %1\bin\assembly\4.0 (
+		XCOPY "..\..\..\Resources\64bitOracle11g\Oracle.ManagedDataAccess.dll" %1\bin\assembly\4.0\ /Y /Q
+		XCOPY "..\..\..\Resources\protobufdotnet\x32\protobuf-net.dll" %1\bin\assembly\4.0\ /Y /Q
+		XCOPY "..\..\..\Resources\log4net\log4net.dll" %1\bin\assembly\4.0\ /Y /Q
+		XCOPY "..\..\..\Resources\snmp\SharpSnmpLib.dll" %1\bin\assembly\4.0\ /Y /Q
+		XCOPY "..\..\..\Resources\ssh.net\Renci.SshNet.dll" %1\bin\assembly\4.0\ /Y /Q
 	)
 	ECHO.
 
 	ECHO COPYING TOOLS...
 	ECHO ================
-	FOR %%f IN (..\..\tools\build\server\4.0\*.exe) Do (
+	FOR %%f IN (..\..\..\Tools\build\Server\4.0\*.exe) Do (
 		XCOPY "%%f" %1\bin\tools\ /Y /Q
 	)
+	XCOPY "..\..\..\Tools\build\Server\4x\ncacheps.dll" %1\bin\tools\ncacheps\ /Y /Q
 	ECHO.
 	
 	ECHO COPYING INTEGRATIONS ...
 	ECHO ========================
-	XCOPY "..\..\integration\build\ContentOptimization" %1\integrations\ContentOptimization\ /I /Y /Q /S
-	XCOPY "..\..\integration\build\LINQToNCache" %1\integrations\LINQToNCache /I /Y /Q /S
-	XCOPY "..\..\integration\build\NHibernate" %1\integrations\nhibernatencache /I /Y /Q /S
-	XCOPY "..\..\integration\build\Memcached\Gateway\Alachisoft.NCache.Integrations.Memcached.Provider.dll" "%~1\integrations\Memcached Wrapper\Gateway\bin\" /I /Y /Q
-	XCOPY "..\..\integration\build\Memcached\Gateway\Alachisoft.NCache.Integrations.Memcached.ProxyServer.dll" "%~1\integrations\Memcached Wrapper\Gateway\bin\" /I /Y /Q
-	XCOPY "..\..\integration\build\Memcached\Gateway\Alachisoft.NCache.Memcached.exe" "%~1\integrations\Memcached Wrapper\Gateway\bin\" /I /Y /Q
-	XCOPY "..\..\samples\config\Alachisoft.NCache.Memcached.exe.config" "%~1\integrations\Memcached Wrapper\Gateway\bin\" /I /Y /Q
-	XCOPY "..\..\Resources\memcacheclient\Commons.dll" "%~1\integrations\Memcached Wrapper\Plug-Ins\.NET memcached Client Library\bin\" /I /Y /Q
-	XCOPY "..\..\Resources\memcacheclient\ICSharpCode.SharpZipLib.dll" "%~1\integrations\Memcached Wrapper\Plug-Ins\.NET memcached Client Library\bin\" /I /Y /Q
-	XCOPY "..\..\integration\build\Memcached\Plug-Ins\Memcached.ClientLibrary.dll" "%~1\integrations\Memcached Wrapper\Plug-Ins\.NET memcached Client Library\bin\" /I /Y /Q
-	XCOPY "..\..\integration\build\Memcached\Plug-Ins\BeITMemcached.dll" "%~1\integrations\Memcached Wrapper\Plug-Ins\BeITMemcached\bin\" /I /Y /Q
-	XCOPY "..\..\integration\build\Memcached\Plug-Ins\Enyim.Caching.dll" "%~1\integrations\Memcached Wrapper\Plug-Ins\Enyim.Caching\" /I /Y /Q /S
+	XCOPY "..\..\..\Integration\build\ContentOptimization" %1\integrations\ContentOptimization\ /I /Y /Q /S
+	XCOPY "..\..\..\Integration\build\LINQToNCache\4.0" %1\integrations\LINQToNCache\4.0 /I /Y /Q /S
+	XCOPY "..\..\..\Integration\build\LINQToNCache\dotnetcore" %1\integrations\LINQToNCache\dotnetcore\ /I /Y /Q /S
+	XCOPY "..\..\..\Integration\build\NHibernate" %1\integrations\nhibernate\ /I /Y /Q /S
+	XCOPY "..\..\..\Integration\build\NCache.SignalR" %1\integrations\NCache.SignalR\ /I /Y /Q /S
+	XCOPY "..\..\..\Integration\build\PowerShell\Scripts" %1\integrations\PowerShell\ /I /Y /Q /S
+	XCOPY "..\..\..\Integration\build\MSEntityFramework" %1\integrations\MSEntityFramework\ /I /Y /Q /S
+	XCOPY "..\..\..\Integration\build\OutputCache" %1\integrations\OutputCache\ /I /Y /Q /S
+	
 	ECHO.
 	
 	ECHO COPYING CONFIGS...
 	ECHO ==================
-	XCOPY "..\..\samples\config\client.ncconf" %1\config\ /Y /Q
-	XCOPY "..\..\samples\config\config.ncconf" %1\config\ /Y /Q
+	XCOPY "..\setup-utilities\config\client.ncconf" %1\config\ /Y /Q
+	XCOPY "..\setup-utilities\config\config.ncconf" %1\config\ /Y /Q
+	XCOPY "..\setup-utilities\config\efcaching.ncconf" %1\config\ /Y /Q
 	ECHO.
 	
 	ECHO License and README Files...
 	ECHO ==================
-	XCOPY "..\..\LICENSE" %1\ /Y /Q
-	XCOPY "..\..\README.md" %1\ /Y /Q
+	XCOPY "..\..\..\LICENSE" %1\ /Y /Q
+	XCOPY "..\..\..\Scripts\README.md" %1\ /Y /Q
 	ECHO.
 	
 	IF NOT EXIST %1\log-files ( MKDIR %1\log-files )
  )
+
+
 
 	
 	
