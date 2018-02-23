@@ -19,12 +19,12 @@ using System.Runtime.InteropServices;
 // set of attributes. Change these attribute values to modify the information
 // associated with an assembly.
 [assembly: AssemblyTitle("Events")]
-[assembly: AssemblyProduct("Alachisoft® NCache Open Source")]
-[assembly: AssemblyTrademark("NCache ™ is a registered trademark of Alachisoft.")]
+[assembly: AssemblyDescription("")]
 [assembly: AssemblyConfiguration("")]
 [assembly: AssemblyCompany("Alachisoft")]
-
-[assembly: AssemblyCopyright("Copyright © 2005-2017 Alachisoft")]
+[assembly: AssemblyProduct("Events")]
+[assembly: AssemblyCopyright("Copyright © 2018 Alachisoft")]
+[assembly: AssemblyTrademark("")]
 [assembly: AssemblyCulture("")]
 
 // Setting ComVisible to false makes the types in this assembly not visible 

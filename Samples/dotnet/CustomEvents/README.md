@@ -1,4 +1,4 @@
-# EVENTS
+# CUSTOM EVENTS
 
 ### Table of contents
 
@@ -11,24 +11,16 @@
 
 ### Introduction
 
-This sample program demonstrates how to use the NCache Events and Event Notifications. 
-It shows how to initialize the cache instance and Add, Get, Update and Delete object(s) from NCache and receive events.
-These events cover Selective events and General events.
-
-This sample uses SampleData project as a reference for model class "Product".
-
+- This is a sample application based on NCache custom events notification capability.
+- Sample consist of a simple winform application that is just like any other chat application. Once you sign-in, you are using the NCache Custom-Events feature to communicate with other users. When you enter your message, a custom notification about the new message is delivered to all other connected clients of the Cache.
+	
 ### Prerequisites
 
 Before the sample application is executed make sure that:
 
 - app.config have been changed according to the configurations. 
-	- change the cache name
-- Event notifications must be enabled for Cache. Follow these steps to enable notifications
-	- Make sure Cache is stopped before making any configuration changes. Stop the cache using Stop-Cache powershell cmdlet.
-	- Specify cache-level notifications through 'config.ncconf' by specifying the '<cache-notifications>' tag under the '<cache-settings>' tag:
-	- <cache-notifications item-remove="True" item-add="True" item-update="True"/>	
-	- Once changes are made on all server nodes, restart the NCache service and start Cache using Start-Cache powershell cmdlet.
-
+	- Change the cache name 
+	
 - By default this sample uses 'myPartitionedCache', make sure that cache is running. 
 
 ### Build and Run the Sample

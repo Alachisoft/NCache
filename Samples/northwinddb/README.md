@@ -1,21 +1,21 @@
-# NORTHWIND #
+# NORTHWIND
 
-## Table of Contents ##
+### Table of contents
 
 * [Introduction](#introduction)
 * [How to Use](#how-to-use)
 * [Copyrights](#copyrights)
 
-### Introduction ###
+### Introduction
 
-This is the Northwind sample database. Its entities are being used by NCache Samples.
+This is Northwind sample database. Its entities are being used by NCache Samples i.e Backing Source 
 
-### How to Use ###
+### How to Use
 
 1. Attach mdf file.
-2. Remove log file 'Northwind_log.ldf'.
-3. Create Database.
+2. Remove log file 'Northwind_log.ldf' 
+3. Create Database 
 
-### Copyrights ###
+### Copyrights
 
-[C] Copyright 2018 Alachisoft.
+[C] Copyright 2018 Alachisoft 
