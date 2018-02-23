@@ -23,8 +23,6 @@ NCache is used by hundreds of companies all over the world in mission critical a
 -	ASP.NET Session State Provider
 -	ASP.NET View State Cache
 -	Replicated Cache and Partitioned Cache topologies
--	Memcached Protocol Server (plug-in without any code change)
--	Memcached Wrapper for .NET (faster Memcached integration)
 -	NHibernate Second Level Cache provider
 -	NuGet Packages
 -	Runs in Microsoft Azure, Amazon, and any other Cloud platform
