@@ -29,7 +29,7 @@ namespace Alachisoft.NCache.Caching.Topologies.Clustered
         /// <summary> The function code. </summary>
         private byte _opcode;
 
-        /// <summary> The paramter for the function. </summary>
+        /// <summary> The parameter for the function. </summary>
         private object _operand;
 
         /// <summary> Inhibit processing own messages. </summary>

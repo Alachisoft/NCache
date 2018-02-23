@@ -78,10 +78,6 @@ namespace Alachisoft.NCache.Caching.AutoExpiration
             }
         }
 
-
-
-
-
         #region ICompactSerializable Members
 
         public void Deserialize(CompactReader reader)

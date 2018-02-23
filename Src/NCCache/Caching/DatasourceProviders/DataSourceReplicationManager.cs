@@ -70,7 +70,7 @@ namespace Alachisoft.NCache.Caching.DatasourceProviders
                     }
                     catch (SuspectedException se)
                     {
-                        System.Threading.Thread.Sleep(5);//wait untill view is changed properly
+                        System.Threading.Thread.Sleep(5);//wait until view is changed properly
                         continue;
                     }
 

@@ -14,16 +14,13 @@
 
 using System;
 using System.Collections;
-
 using Alachisoft.NCache.Runtime.Exceptions;
-
 using Alachisoft.NCache.Config;
 using Alachisoft.NCache.Common;
 using Alachisoft.NCache.Common.Threading;
 using Alachisoft.NCache.Common.DataStructures;
 using Alachisoft.NCache.Serialization.Formatters;
 using Alachisoft.NCache.Common.Net;
-
 using Alachisoft.NGroups;
 using Alachisoft.NGroups.Blocks;
 using Alachisoft.NGroups.Stack;
@@ -31,16 +28,11 @@ using Alachisoft.NGroups.Util;
 using Alachisoft.NCache.Common.Enum;
 using Alachisoft.NCache.Common.Monitoring;
 using Alachisoft.NCache.Common.Logger;
-
-
 using Alachisoft.NCache.Common.Mirroring;
-
 #if DEBUGSTATETRANSFER
 using Alachisoft.NCache.Caching.Topologies.History;
 #endif
-
 using Alachisoft.NCache.Common.DataStructures.Clustered;
-
 using OpCodes = Alachisoft.NCache.Caching.Topologies.Clustered.ClusterCacheBase.OpCodes;
 
 
@@ -245,11 +237,8 @@ namespace Alachisoft.NCache.Caching.Topologies.Clustered
         /// connecting to bridge.
         /// </summary>
 
-#if JAVA
-        string _cacheserver = "TayzGrid";
-#else
         string _cacheserver = "NCache";
-#endif
+
 #if DEBUGSTATETRANSFER
         internal NodeActivities _history;
         
@@ -273,8 +262,6 @@ namespace Alachisoft.NCache.Caching.Topologies.Clustered
 
             if (_runningClusters == null)
                 _runningClusters = new ArrayList();
-
-
 #endif
 
 
@@ -329,8 +316,6 @@ namespace Alachisoft.NCache.Caching.Topologies.Clustered
 
             if (_runningClusters == null)
                 _runningClusters = new ArrayList();
-
-
 #endif
 
 #if DEBUGSTATETRANSFER

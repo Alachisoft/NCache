@@ -239,12 +239,10 @@ namespace Alachisoft.NCache.Caching.Topologies.Clustered
             }
             catch (CacheException e)
             {
-                //NCacheLog.Error(Context.CacheName, "ReplicatedCacheBase.Clustered_Get()", e.ToString());
                 throw;
             }
             catch (Exception e)
             {
-                //nTrace.error("ReplicatedCacheBase.Clustered_Get()", e.ToString());
                 throw new GeneralFailureException(e.Message, e);
             }
             return retVal;
@@ -272,12 +270,10 @@ namespace Alachisoft.NCache.Caching.Topologies.Clustered
             }
             catch (CacheException e)
             {
-                //NCacheLog.Error(Context.CacheName, "ReplicatedCacheBase.Clustered_Get()", e.ToString());
                 throw;
             }
             catch (Exception e)
             {
-                //nTrace.error("ReplicatedCacheBase.Clustered_Get()", e.ToString());
                 throw new GeneralFailureException(e.Message, e);
             }
             return retVal;
@@ -305,12 +301,10 @@ namespace Alachisoft.NCache.Caching.Topologies.Clustered
             }
             catch (CacheException e)
             {
-                //NCacheLog.Error(Context.CacheName, "ReplicatedCacheBase.Clustered_GetGroup()", e.ToString());
                 throw;
             }
             catch (Exception e)
             {
-                //nTrace.error("ReplicatedCacheBase.Clustered_GetGroup()", e.ToString());
                 throw new GeneralFailureException(e.Message, e);
             }
             return retVal;
@@ -639,12 +633,10 @@ namespace Alachisoft.NCache.Caching.Topologies.Clustered
             }
             catch (CacheException e)
             {
-                //NCacheLog.Error(Context.CacheName, "ReplicatedCacheBase.Clustered_Get()", e.ToString());
                 throw;
             }
             catch (Exception e)
             {
-                //NCacheLog.Error(Context.CacheName, "ReplicatedCacheBase.Clustered_Get()", e.ToString());
                 throw new GeneralFailureException(e.Message, e);
             }
             return retVal;
@@ -665,7 +657,6 @@ namespace Alachisoft.NCache.Caching.Topologies.Clustered
             }
             catch (Exception e)
             {
-                //NCacheLog.Error(Context.CacheName, "ReplicatedServer.Clustered_UnLockKey", e.ToString());
                 throw;
             }
             finally
@@ -700,12 +691,10 @@ namespace Alachisoft.NCache.Caching.Topologies.Clustered
             }
             catch (CacheException e)
             {
-                //NCacheLog.Error(Context.CacheName, "ReplicatedServer.Clustered_LockKey()", e.ToString());
                 throw;
             }
             catch (Exception e)
             {
-                //NCacheLog.Error(Context.CacheName, "ReplicatedServer.Clustered_LockKey", e.ToString());
                 throw new GeneralFailureException(e.Message, e);
             }
             finally
@@ -739,12 +728,10 @@ namespace Alachisoft.NCache.Caching.Topologies.Clustered
             }
             catch (CacheException e)
             {
-                //NCacheLog.Error(Context.CacheName, "ReplicatedServer.Clustered_LockKey()", e.ToString());
                 throw;
             }
             catch (Exception e)
             {
-                //NCacheLog.Error(Context.CacheName, "ReplicatedServer.Clustered_LockKey", e.ToString());
                 throw new GeneralFailureException(e.Message, e);
             }
         }
@@ -773,9 +760,6 @@ namespace Alachisoft.NCache.Caching.Topologies.Clustered
                 {
                     entryToBeSent = cacheEntry.CloneWithoutValue();
                 } 
-
-
-                //NCacheLog.Error(Context.CacheName, "ReplicatedCacheBase.Clustered_add", "Add started :Key ---->" + key.ToString());
                 /// Ask every server to add the object, except myself.
                 Function func = new Function((int)OpCodes.Add, new object[] { key, entryToBeSent, taskId, operationContext }, false, key);
                 Array userPayLoad = null;
@@ -811,16 +795,13 @@ namespace Alachisoft.NCache.Caching.Topologies.Clustered
 
                 /// Check if the operation failed on any node.
                 result = ClusterHelper.FindAtomicAddStatusReplicated(results);
-                //NCacheLog.Error(Context.CacheName, "ReplicatedCacheBase.Clustered_add", "Add complete :Key ---->" + key.ToString());
             }
             catch (CacheException e)
             {
-                //NCacheLog.Error(Context.CacheName, "Replicated.Clustered_Add()", e.ToString());
                 throw;
             }
             catch (Exception e)
             {
-                //NCacheLog.Error(Context.CacheName, "Replicated.Clustered_Add()", e.ToString());
                 throw new GeneralFailureException(e.Message, e);
             }
             finally
@@ -858,12 +839,10 @@ namespace Alachisoft.NCache.Caching.Topologies.Clustered
             }
             catch (CacheException e)
             {
-                //NCacheLog.Error(Context.CacheName, "PoRServer.Clustered_Add()", e.ToString());
                 throw;
             }
             catch (Exception e)
             {
-                //NCacheLog.Error(Context.CacheName, "PoRServer.Clustered_Add()", e.ToString());
                 throw new GeneralFailureException(e.Message, e);
             }
             return result;
@@ -896,12 +875,10 @@ namespace Alachisoft.NCache.Caching.Topologies.Clustered
             }
             catch (CacheException e)
             {
-                //NCacheLog.Error(Context.CacheName, "PoRServer.Clustered_Add()", e.ToString());
                 throw;
             }
             catch (Exception e)
             {
-                //NCacheLog.Error(Context.CacheName, "PoRServer.Clustered_Add()", e.ToString());
                 throw new GeneralFailureException(e.Message, e);
             }
             return result;
@@ -934,12 +911,10 @@ namespace Alachisoft.NCache.Caching.Topologies.Clustered
             }
             catch (CacheException e)
             {
-                //NCacheLog.Error(Context.CacheName, "PoRServer.Clustered_Add()", e.ToString());
                 throw;
             }
             catch (Exception e)
             {
-                //NCacheLog.Error(Context.CacheName, "PoRServer.Clustered_Add()", e.ToString());
                 throw new GeneralFailureException(e.Message, e);
             }
             finally
@@ -1006,12 +981,10 @@ namespace Alachisoft.NCache.Caching.Topologies.Clustered
             }
             catch (CacheException e)
             {
-                //NCacheLog.Error(Context.CacheName, "PoRServer.Clustered_Insert()", e.ToString());
                 throw;
             }
             catch (Exception e)
             {
-                //NCacheLog.Error(Context.CacheName, "PoRServer.Clustered_Insert()", e.ToString());
                 throw new GeneralFailureException(e.Message, e);
             }
             return retVal;
@@ -1041,12 +1014,10 @@ namespace Alachisoft.NCache.Caching.Topologies.Clustered
             }
             catch (CacheException e)
             {
-                //NCacheLog.Error(Context.CacheName, "PartitionedCache.Clustered_Insert()", e.ToString());
                 throw;
             }
             catch (Exception e)
             {
-                //NCacheLog.Error(Context.CacheName, "PartitionedCache.Clustered_Insert()", e.ToString());
                 throw new GeneralFailureException(e.Message, e);
             }
             return inserted;
@@ -1130,11 +1101,10 @@ namespace Alachisoft.NCache.Caching.Topologies.Clustered
                 ClusterHelper.ValidateResponses(results, typeof(OperationResponse), Name);
 
                 // Check if the operation failed on any node.
-                // return ClusterHelper.FindAtomicInsertStatusReplicated(results);
 
-                //Bug Fixed, during state transfer (one node up with the exisiting one) of replicated cache, 
-                //while client doing insert operaion continously, which incrementing the add/sec counter while the client only performing insert
-                //means no need to incrment add/sec counter, need only updat/sec to be incremented
+                //Bug Fixed, during state transfer (one node up with the existing one) of replicated cache, 
+                //while client doing insert operation continuously, which incrementing the add/sec counter while the client only performing insert
+                //means no need to increment add/sec counter, need only update/sec to be incremented
             
                 CacheInsResultWithEntry retVal = ClusterHelper.FindAtomicInsertStatusReplicated(results);
                 if (retVal != null && retVal.Result == CacheInsResult.Success && results != null)
@@ -1153,12 +1123,10 @@ namespace Alachisoft.NCache.Caching.Topologies.Clustered
             }
             catch (CacheException e)
             {
-                //NCacheLog.Error(Context.CacheName, "Replicated.Clustered_Insert()", e.ToString());
                 throw;
             }
             catch (Exception e)
             {
-                //NCacheLog.Error(Context.CacheName, "Replicated.Clustered_Insert()", e.ToString());
                 throw new GeneralFailureException(e.Message, e);
             }
             finally
@@ -1185,12 +1153,10 @@ namespace Alachisoft.NCache.Caching.Topologies.Clustered
             }
             catch (CacheException e)
             {
-                //NCacheLog.Error(Context.CacheName, "PoRServer.Clustered_Insert()", e.ToString());
                 throw;
             }
             catch (Exception e)
             {
-                //NCacheLog.Error(Context.CacheName, "PoRServer.Clustered_Insert()", e.ToString());
                 throw new GeneralFailureException(e.Message, e);
             }
             finally
@@ -1243,12 +1209,10 @@ namespace Alachisoft.NCache.Caching.Topologies.Clustered
             }
             catch (CacheException e)
             {
-                //NCacheLog.Error(Context.CacheName, "ParitionedCache.Clustered_Remove()", e.ToString());
                 throw;
             }
             catch (Exception e)
             {
-                //NCacheLog.Error(Context.CacheName, "ParitionedCache.Clustered_Remove()", e.ToString());
                 throw new GeneralFailureException(e.Message, e);
             }
             finally
@@ -1304,12 +1268,10 @@ namespace Alachisoft.NCache.Caching.Topologies.Clustered
             }
             catch (CacheException e)
             {
-                //NCacheLog.Error(Context.CacheName, "ParitionedCache.Clustered_Remove()", e.ToString());
                 throw;
             }
             catch (Exception e)
             {
-                //NCacheLog.Error(Context.CacheName, "ParitionedCache.Clustered_Remove()", e.ToString());
                 throw new GeneralFailureException(e.Message, e);
             }
             finally
@@ -1360,7 +1322,6 @@ namespace Alachisoft.NCache.Caching.Topologies.Clustered
             }
             catch (Exception e)
             {
-                //NCacheLog.Error(Context.CacheName, "ReplicatedCacheBase.Clustered_Remove([])", e.ToString());
                 throw new GeneralFailureException(e.Message, e);
             }
         }
@@ -1421,8 +1382,6 @@ namespace Alachisoft.NCache.Caching.Topologies.Clustered
                     {
                         operationContext.Add(OperationContextFieldName.GenerateQueryInfo , true);
                         obj = cache.Clustered_Get(targetNode, key, operationContext,_isUserOperation);
-
-                        //obj = cache.Clustered_Get(targetNode, key, operationContext);
                     }
 
                     catch (Runtime.Exceptions.SuspectedException se)
@@ -1464,12 +1423,10 @@ namespace Alachisoft.NCache.Caching.Topologies.Clustered
             }
             catch (CacheException e)
             {
-                //NCacheLog.Error(Context.CacheName, "ReplicatedCacheBase.GetSubClusterEnumerator()", e.ToString());
                 throw;
             }
             catch (Exception e)
             {
-                //NCacheLog.Error(Context.CacheName, "ReplicatedCacheBase.GetSubClusterEnumerator()", e.ToString());
                 throw new GeneralFailureException(e.Message, e);
             }
         }
@@ -1491,12 +1448,10 @@ namespace Alachisoft.NCache.Caching.Topologies.Clustered
             }
             catch (CacheException e)
             {
-                //NCacheLog.Error(Context.CacheName, "ReplicatedCache.Clustered_Search()", e.ToString());
                 throw;
             }
             catch (Exception e)
             {
-                //NCacheLog.Error(Context.CacheName, "ReplicatedCache.Clustered_Search()", e.ToString());
                 throw new OperationFailedException("Clustered_Search failed, Error: " + e.Message, e);
             }
         }
@@ -1515,12 +1470,10 @@ namespace Alachisoft.NCache.Caching.Topologies.Clustered
             }
             catch (CacheException e)
             {
-                //NCacheLog.Error(Context.CacheName, "ReplicatedCache.Clustered_SearchEntries()", e.ToString());
                 throw;
             }
             catch (Exception e)
             {
-                //NCacheLog.Error(Context.CacheName, "ReplicatedCache.Clustered_SearchEntries()", e.ToString());
                 throw new OperationFailedException("Clustered_SearchEntries failed, Error: " + e.Message, e);
             }
         }
@@ -1535,12 +1488,10 @@ namespace Alachisoft.NCache.Caching.Topologies.Clustered
             }
             catch (CacheException e)
             {
-                //Trace.error("PartitionedCache.Clustered_Search()", e.ToString());
                 throw;
             }
             catch (Exception e)
             {
-                //Trace.error("PartitionedCache.Clustered_Search()", e.ToString());
                 throw new GeneralFailureException(e.Message, e);
             }
         }
@@ -1555,18 +1506,13 @@ namespace Alachisoft.NCache.Caching.Topologies.Clustered
             }
             catch (CacheException e)
             {
-                //Trace.error("PartitionedCache.Clustered_Search()", e.ToString());
                 throw;
             }
             catch (Exception e)
             {
-                //Trace.error("PartitionedCache.Clustered_Search()", e.ToString());
                 throw new GeneralFailureException(e.Message, e);
             }
         }
-
-       
-
     }
 }
 

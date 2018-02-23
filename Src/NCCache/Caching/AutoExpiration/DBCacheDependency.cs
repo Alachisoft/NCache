@@ -29,11 +29,8 @@ namespace Alachisoft.NCache.Caching.AutoExpiration
 	/// is incremented. This table is polled to check for any changes.
 	/// </summary>
 	[Serializable]
-//#if !EXPRESS
+
     public class DBCacheDependency : DependencyHint, ICompactSerializable
-//#else
-//    internal class DBCacheDependency : DependencyHint, ICompactSerializable
-//#endif
 	{
 		[CLSCompliant(false)]
 		protected string              _dbCacheKey = "";
@@ -45,7 +42,6 @@ namespace Alachisoft.NCache.Caching.AutoExpiration
 		[NonSerialized] internal CacheDbSyncManager  _cdbSyncManager = null;
 		[NonSerialized] internal IDbConnection       _connection = null;
 
-        //_cdbSyncManager ref + _connection ref
         private const int DBCacheDependencySize = 16;
 
 		/// <summary>
@@ -55,7 +51,6 @@ namespace Alachisoft.NCache.Caching.AutoExpiration
 		internal bool SetSyncData()
 		{
             string modifiedStr = "0";
-			//object[] tableInfo = new object[] {CacheDbSyncManager.SYNC_TABLE, CacheKey, _cacheName, modifiedStr};
             object[] tableInfo = new object[] { CacheDbSyncManager.SYNC_TABLE, _dbCacheKey, _cacheName, modifiedStr };
 			IDataReader reader = null;
 			IDbCommand command = null;

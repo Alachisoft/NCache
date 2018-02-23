@@ -171,7 +171,7 @@ namespace Alachisoft.NCache.Caching.AutoExpiration
         /// <summary>Is this node the coordinator node. useful to synchronize database dependent items. </summary>
         private bool _isCoordinator = true;
 
-        /// <summary>Is this node the sub-coordinator node in partitione-of-replica topology. for all other tolpologies its false. </summary>
+        /// <summary>Is this node the sub-coordinator node in partition-of-replica topology. for all other topologies its false. </summary>
         private bool _isSubCoordinator = false;
 
         private long _expirationManagerSize = 0;
@@ -191,7 +191,7 @@ namespace Alachisoft.NCache.Caching.AutoExpiration
         private NewTrace _cacheLastAccessTimeLogger;
 
         /// <summary>
-        /// True if this node is a "cordinator" or a "subcordinator" in case of partition-of-replica.
+        /// True if this node is a "coordinator" or a "sub coordinator" in case of partition-of-replica.
         /// </summary>
         public bool IsCoordinatorNode
         {
@@ -200,7 +200,7 @@ namespace Alachisoft.NCache.Caching.AutoExpiration
         }
 
         /// <summary>
-        /// True if this node is a "sub-cordinator". This property only applies to partition-of-replica cluster topology.
+        /// True if this node is a "sub-coordinator". This property only applies to partition-of-replica cluster topology.
         /// </summary>
         public bool IsSubCoordinatorNode
         {
@@ -930,7 +930,7 @@ namespace Alachisoft.NCache.Caching.AutoExpiration
         /// <summary>
         /// We log all the operations in a transitory index when we are iterating on
         /// the main index to determine the expired items. StopLogging should be called
-        /// after selection of item is completd. We apply all the logs from transitory
+        /// after selection of item is completed. We apply all the logs from transitory
         /// index to the main index. A null value in transitory index against a key 
         /// indicates that this item is removed during logging, so we should remove
         /// it from the main log as well.

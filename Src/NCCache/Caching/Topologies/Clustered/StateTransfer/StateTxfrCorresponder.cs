@@ -28,14 +28,8 @@ using Alachisoft.NCache.Caching.Messaging;
 namespace Alachisoft.NCache.Caching.Topologies.Clustered
 {
 
-    #region /                 --- BucketLockResult ---           /
-
-    #endregion
-
     #region	/                 --- StateTxfrCorresponder ---           /
-
-
-    class StateTxfrCorresponder : IDisposable
+        class StateTxfrCorresponder : IDisposable
 	{
         /// <summary> 
         /// 200K is the threshold data size. 

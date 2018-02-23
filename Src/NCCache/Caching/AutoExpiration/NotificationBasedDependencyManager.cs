@@ -94,7 +94,7 @@ namespace Alachisoft.NCache.Caching.AutoExpiration
 
             if (hintType == ExpirationHintType.OracleCacheDependency)
             {
-#if !NET20
+#if NET40
                 string fullAssemblyName = "Alachisoft.NCache.RuntimeDependencies, Version=" + Assembly.GetExecutingAssembly().GetName().Version;
                 System.Reflection.Assembly assembly = System.Reflection.Assembly.Load(fullAssemblyName);
                 Type factoryType = assembly.GetType("Alachisoft.NCache.RuntimeDependencies.DependencyListenerFactory");
@@ -166,7 +166,7 @@ namespace Alachisoft.NCache.Caching.AutoExpiration
 
             else if (hintType == ExpirationHintType.OracleCacheDependency)
             {
-#if !NET20
+#if NET40
                 string currentAssemblyFullName = System.Reflection.Assembly.GetExecutingAssembly().FullName;
                 string fullAssemblyName = currentAssemblyFullName.Replace("Alachisoft.NCache.Cache", "Alachisoft.NCache.RuntimeDependencies");
                 System.Reflection.Assembly assembly = System.Reflection.Assembly.Load(fullAssemblyName);
@@ -461,7 +461,8 @@ namespace Alachisoft.NCache.Caching.AutoExpiration
         }
 
 #endregion
-#region Notification Based Dependency Manager: DB Conection pool operations
+        
+        #region Notification Based Dependency Manager: DB Conection pool operations
 
         /// <summary>
         /// Creates a new SqlConnection resource if not already exists. 
@@ -504,7 +505,6 @@ namespace Alachisoft.NCache.Caching.AutoExpiration
 
             internal DependencyListener Listner
             {
-
                 get { return _listner; }
                 set { _listner = value; }
             }
@@ -513,9 +513,6 @@ namespace Alachisoft.NCache.Caching.AutoExpiration
 
             public string CacheKey
             {
-
-
-
                 get { return _cacheKey; }
                 set { _cacheKey = value; }
             }
@@ -524,8 +521,6 @@ namespace Alachisoft.NCache.Caching.AutoExpiration
 
             public bool isChanged
             {
-
-
                 get { return _change; }
                 set { _change = value; }
             }
@@ -566,7 +561,6 @@ namespace Alachisoft.NCache.Caching.AutoExpiration
 
             public DependencyListnerInformation(string cacheKey, bool change, bool restart, bool error, bool invalid, DependencyListener listner)
             {
-
                 _cacheKey = cacheKey;
                 _change = change;
                 _restart = restart;
@@ -574,7 +568,6 @@ namespace Alachisoft.NCache.Caching.AutoExpiration
                 _error = error;
                 _listner = listner;
             }
-
         }
 
         internal class AsyncOnDepenencyChange
@@ -583,26 +576,22 @@ namespace Alachisoft.NCache.Caching.AutoExpiration
             private Thread _dependencyChangeThread;
             private bool _trimToSize = false;
             private NotificationBasedDependencyManager _notificationManager;
+            private Queue _queue;
 
             public AsyncOnDepenencyChange(NotificationBasedDependencyManager notif)
             {
                 _notificationManager = notif;
             }
-
-            private Queue _queue;
+            
             public Queue Queue
             {
                 get { return _queue; }
             }
 
-
             internal void Start()
             {
-
-
                 if (this._isThreadStopped)
                 {
-
                     _queue = new Queue(5, 5);
                     _isThreadStopped = false;
                     _dependencyChangeThread = new Thread(new ThreadStart(this.Run));
@@ -610,15 +599,10 @@ namespace Alachisoft.NCache.Caching.AutoExpiration
                     _dependencyChangeThread.IsBackground = true;
                     _dependencyChangeThread.Start();
                 }
-
-
-
             }
-
 
             internal void Stop(bool graceFullStop)
             {
-
                 _isThreadStopped = true;
                 if (_dependencyChangeThread != null && _dependencyChangeThread.IsAlive)
                 {
@@ -654,7 +638,6 @@ namespace Alachisoft.NCache.Caching.AutoExpiration
 
                 }
             }
-
 
             private void Run()
             {
@@ -766,9 +749,6 @@ namespace Alachisoft.NCache.Caching.AutoExpiration
 
         }
 
-
-
-
         /// <summary>
         /// Class that holds the instances of the YukonDependecy instances in it.
         /// It is also the event handler for the dependency.
@@ -776,17 +756,14 @@ namespace Alachisoft.NCache.Caching.AutoExpiration
         private sealed class YukonDependencyListener : DependencyListener
         {
 #if !NETCORE
-            //TODO: ALACHISOFT
             private SqlDependency _sqlYukonDep = null;
 #endif
             private IDictionary _cmdParams;
             private CommandType _cmdType;
             protected CacheRuntimeContext _context;
-
             protected NotificationBasedDependencyManager _notifBasedDepManager = null;
 
 #if !NETCORE
-            //TODO: ALACHISOFT
             System.Data.SqlClient.OnChangeEventHandler _handler;
 #endif
             /// <summary>
@@ -948,10 +925,8 @@ namespace Alachisoft.NCache.Caching.AutoExpiration
                         sqlparam.SqlValue = param.SqlValue;
                         sqlparam.TypeName = param.TypeName;
 #if !NETCORE
-                        //TODO: ALACHISOFT
                         sqlparam.UdtTypeName = param.UdtName;
 #endif
-
                         sqlparam.Value = param.Value == null ? DBNull.Value : param.Value;
 
                         sqlCmd.Parameters.Add(sqlparam);
@@ -1021,7 +996,7 @@ namespace Alachisoft.NCache.Caching.AutoExpiration
                     eventArgs.Info == SqlNotificationInfo.Restart, //sql server is restarted
                     eventArgs.Info == SqlNotificationInfo.Error,
                     eventArgs.Info == SqlNotificationInfo.Invalid //statement provided that cannot be notified
-                    );//some error occoured on server
+                    );//some error occurred on server
             }
 #endif
 
@@ -1031,12 +1006,9 @@ namespace Alachisoft.NCache.Caching.AutoExpiration
                 {
                     base.Stop();
 #if !NETCORE
-                    //TODO: ALACHISOFT
                     if (_handler != null) this._sqlYukonDep.OnChange -= _handler;
 #endif
-
                     //if QueueName is null default queue will be stopped
-
                     _notifBasedDepManager.StopDependency(base._connString, _context.SQLDepSettings.QueueName);
 
 
@@ -1080,6 +1052,7 @@ namespace Alachisoft.NCache.Caching.AutoExpiration
             }
 
         }
+
         internal void Dispose(bool graceFull)
         {
             Clear();

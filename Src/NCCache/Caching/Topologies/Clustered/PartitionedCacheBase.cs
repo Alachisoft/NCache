@@ -13,16 +13,10 @@
 // limitations under the License.
 
 
-
 using System;
 using System.Collections;
-
-
-
 using Alachisoft.NCache.Runtime.Serialization;
-
 using Alachisoft.NCache.Runtime.Serialization.IO;
-
 using Alachisoft.NCache.Caching.DataGrouping;
 using Alachisoft.NCache.Runtime.Exceptions;
 using Alachisoft.NCache.Caching.Util;
@@ -142,7 +136,6 @@ namespace Alachisoft.NCache.Caching.Topologies.Clustered
             }
             catch (Exception ex)
             {
-                //Trace.error("PartitionedCacheBase.Clustered_LockBuckets", ex.ToString());
                 throw;
             }
         }
@@ -156,7 +149,6 @@ namespace Alachisoft.NCache.Caching.Topologies.Clustered
             }
             catch (CacheException e)
             {
-                //Trace.error("ParitionedCache.Clustered_AckStateTxfrCompleted()", e.ToString());
                 throw;
             }
             catch (Exception e)
@@ -500,7 +492,7 @@ namespace Alachisoft.NCache.Caching.Topologies.Clustered
                     return retVal;
                 }
                 if (result is CacheAddResult)
-                    retVal = (CacheAddResult)result; //retvals[0];
+                    retVal = (CacheAddResult)result; 
                 else if (result is System.Exception)
                     throw (Exception)result;
             }
@@ -543,7 +535,7 @@ namespace Alachisoft.NCache.Caching.Topologies.Clustered
                 {
                     return retVal;
                 }
-                retVal = (bool)result; //retvals[0];
+                retVal = (bool)result; 
             }
             catch (StateTransferException e)
             {
@@ -581,7 +573,7 @@ namespace Alachisoft.NCache.Caching.Topologies.Clustered
                 {
                     return retVal;
                 }
-                retVal = (bool)result; //retvals[0];
+                retVal = (bool)result; 
             }
             catch (StateTransferException e)
             {
@@ -620,7 +612,7 @@ namespace Alachisoft.NCache.Caching.Topologies.Clustered
                 {
                     return retVal;
                 }
-                retVal = (Hashtable)result; //retvals[0];
+                retVal = (Hashtable)result; 
             }
             catch (Runtime.Exceptions.TimeoutException te)
             {
@@ -653,7 +645,7 @@ namespace Alachisoft.NCache.Caching.Topologies.Clustered
         /// <returns>True, if no data integrity conflicts found, other wise false</returns>
         /// <remarks>Each partitioned node can have his data affinity. Data groups other than the
         /// strongly affiliated groups can be loadbalanced to any of the existing node. In such a
-        /// situaltion if a new node joins and it has strong affinity with the groups whose data 
+        /// situation if a new node joins and it has strong affinity with the groups whose data 
         /// was previously distributed evenly, then a data integrity conflict arises. To avoid such
         /// conflicts each joining node first varifes that no other node on the cluster has data
         /// of his groups. If it is so, then he has to leave the cluster.</remarks>
@@ -744,7 +736,6 @@ namespace Alachisoft.NCache.Caching.Topologies.Clustered
                         Rsp rsp = (Rsp)im.Current;
                         QueryResultSet cRestultSet = (QueryResultSet)rsp.Value;
                         resultSet.Compile(cRestultSet);
-                        //if (cList != null) resultSet.AddRange(cList);
                     }
                 }
 
@@ -880,22 +871,18 @@ namespace Alachisoft.NCache.Caching.Topologies.Clustered
             }
             catch (Runtime.Exceptions.TimeoutException te)
             {
-                //nTrace.error("PartitionedCache.Clustered_Insert()", te.ToString());
                 throw;
             }
             catch (Runtime.Exceptions.SuspectedException se)
             {
-                //nTrace.error("PartitionedCache.Clustered_Insert()", se.ToString());
                 throw;
             }
             catch (CacheException e)
             {
-                //nTrace.error("PartitionedCache.Clustered_Insert()", e.ToString());
                 throw;
             }
             catch (Exception e)
             {
-                //nTrace.error("PartitionedCache.Clustered_Insert()", e.ToString());
                 throw new GeneralFailureException(e.Message, e);
             }
             return inserted;
@@ -932,22 +919,18 @@ namespace Alachisoft.NCache.Caching.Topologies.Clustered
             }
             catch (Runtime.Exceptions.SuspectedException se)
             {
-                //nTrace.error("PartitionedCache.Clustered_Insert()", se.ToString());
                 throw;
             }
             catch (Runtime.Exceptions.TimeoutException te)
             {
-                //nTrace.error("PartitionedCache.Clustered_Insert()", te.ToString());
                 throw;
             }
             catch (CacheException e)
             {
-                //nTrace.error("ParitionedCache.Clustered_Remove()", e.ToString());
                 throw;
             }
             catch (Exception e)
             {
-                //nTrace.error("ParitionedCache.Clustered_Remove()", e.ToString());
                 throw new GeneralFailureException(e.Message, e);
             }
             return retVal;
@@ -1010,12 +993,10 @@ namespace Alachisoft.NCache.Caching.Topologies.Clustered
             }
             catch (CacheException e)
             {
-                //Trace.error("PoRServer.Clustered_Remove()", e.ToString());
                 throw;
             }
             catch (Exception e)
             {
-                //Trace.error("PoRServer.Clustered_Remove()", e.ToString());
                 throw new GeneralFailureException(e.Message, e);
             }
             return removedEntries;
@@ -1112,12 +1093,10 @@ namespace Alachisoft.NCache.Caching.Topologies.Clustered
             }
             catch (CacheException e)
             {
-                //nTrace.error("ParitionedCache.Clustered_Remove()", e.ToString());
                 throw;
             }
             catch (Exception e)
             {
-                //nTrace.error("ParitionedCache.Clustered_Remove()", e.ToString());
                 throw new GeneralFailureException(e.Message, e);
             }
             return removedEntries;
@@ -1137,26 +1116,22 @@ namespace Alachisoft.NCache.Caching.Topologies.Clustered
                 {
                     return retVal;
                 }
-                retVal = (Hashtable)result; //retvals[0];
+                retVal = (Hashtable)result; 
             }
             catch (Runtime.Exceptions.SuspectedException se)
             {
-                //nTrace.error("PartitionedCache.Clustered_AddDepKeyList()", se.ToString());
                 throw;
             }
             catch (Runtime.Exceptions.TimeoutException te)
             {
-                //nTrace.error("PartitionedCache.Clustered_AddDepKeyList()", te.ToString());
                 throw;
             }
             catch (CacheException e)
             {
-                //nTrace.error("PartitionedCache.Clustered_AddDepKeyList()", e.ToString());
                 throw;
             }
             catch (Exception e)
             {
-                //nTrace.error("PartitionedCache.Clustered_AddDepKeyList()", e.ToString());
                 throw new GeneralFailureException(e.Message, e);
             }
             return retVal;
@@ -1173,26 +1148,22 @@ namespace Alachisoft.NCache.Caching.Topologies.Clustered
                 {
                     return retVal;
                 }
-                retVal = (Hashtable)result; //retvals[0];
+                retVal = (Hashtable)result;
             }
             catch (Runtime.Exceptions.SuspectedException se)
             {
-                //nTrace.error("PartitionedCache.Clustered_RemoveDepKeyList()", se.ToString());
                 throw;
             }
             catch (Runtime.Exceptions.TimeoutException te)
             {
-                //nTrace.error("PartitionedCache.Clustered_RemoveDepKeyList()", te.ToString());
                 throw;
             }
             catch (CacheException e)
             {
-                //nTrace.error("PartitionedCache.Clustered_RemoveDepKeyList()", e.ToString());
                 throw;
             }
             catch (Exception e)
             {
-                //nTrace.error("PartitionedCache.Clustered_RemoveDepKeyList()", e.ToString());
                 throw new GeneralFailureException(e.Message, e);
             }
             return retVal;
@@ -1302,12 +1273,10 @@ namespace Alachisoft.NCache.Caching.Topologies.Clustered
             }
             catch (CacheException e)
             {
-                //nTrace.error("PoRServer.GetSubClusterEnumerator()", e.ToString());
                 throw;
             }
             catch (Exception e)
             {
-                //nTrace.error("PoRServer.GetSubClusterEnumerator()", e.ToString());
                 throw new GeneralFailureException(e.Message, e);
             }
         }
@@ -1366,12 +1335,10 @@ namespace Alachisoft.NCache.Caching.Topologies.Clustered
             }
             catch (CacheException e)
             {
-                //nTrace.error("PoRServer.GetEnumerator()", e.ToString());
                 throw;
             }
             catch (Exception e)
             {
-                //nTrace.error("PoRServer.GetEnumerator()", e.ToString());
                 throw new GeneralFailureException(e.Message, e);
             }
             return retVal;
@@ -1389,12 +1356,10 @@ namespace Alachisoft.NCache.Caching.Topologies.Clustered
             }
             catch (CacheException e)
             {
-                //Trace.error("PartitionedCache.Clustered_Search()", e.ToString());
                 throw;
             }
             catch (Exception e)
             {
-                //Trace.error("PartitionedCache.Clustered_Search()", e.ToString());
                 throw new GeneralFailureException(e.Message, e);
             }
         }
@@ -1409,12 +1374,10 @@ namespace Alachisoft.NCache.Caching.Topologies.Clustered
             }
             catch (CacheException e)
             {
-                //Trace.error("PartitionedCache.Clustered_Search()", e.ToString());
                 throw;
             }
             catch (Exception e)
             {
-                //Trace.error("PartitionedCache.Clustered_Search()", e.ToString());
                 throw new GeneralFailureException(e.Message, e);
             }
         }
@@ -1444,7 +1407,6 @@ namespace Alachisoft.NCache.Caching.Topologies.Clustered
                         Rsp rsp = (Rsp)im.Current;
                         QueryResultSet cResultSet = (QueryResultSet)rsp.Value;
                         resultSet.Compile(cResultSet);
-                        //if (cList != null) resultSet.AddRange(cList);
                     }
                 }
 
@@ -1452,12 +1414,10 @@ namespace Alachisoft.NCache.Caching.Topologies.Clustered
             }
             catch (CacheException e)
             {
-                //Trace.error("PartitionedCache.Clustered_Search()", e.ToString());
                 throw;
             }
             catch (Exception e)
             {
-                //Trace.error("PartitionedCache.Clustered_Search()", e.ToString());
                 throw new GeneralFailureException(e.Message, e);
             }
         }
@@ -1487,7 +1447,6 @@ namespace Alachisoft.NCache.Caching.Topologies.Clustered
                         Rsp rsp = (Rsp)im.Current;
                         QueryResultSet cResultSet = (QueryResultSet)rsp.Value;
                         resultSet.Compile(cResultSet);
-                        //if (cList != null) resultSet.AddRange(cList);
                     }
                 }
 
@@ -1495,12 +1454,10 @@ namespace Alachisoft.NCache.Caching.Topologies.Clustered
             }
             catch (CacheException e)
             {
-                //Trace.error("PartitionedCache.Clustered_Search()", e.ToString());
                 throw;
             }
             catch (Exception e)
             {
-                //Trace.error("PartitionedCache.Clustered_Search()", e.ToString());
                 throw new GeneralFailureException(e.Message, e);
             }
         }

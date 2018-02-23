@@ -265,13 +265,13 @@ namespace Alachisoft.NCache.Caching.Topologies.Clustered
                     {
                         if (e.Message.IndexOf("operation timeout", StringComparison.OrdinalIgnoreCase) >= 0 && !_shutdownStatusLatch.IsAnyBitsSet(ShutDownStatus.SHUTDOWN_INPROGRESS))
                         {
-                            _context.NCacheLog.CriticalInfo("AsyncReplicator.Run", "Bulk operation timedout. Retrying the operation.");
+                            _context.NCacheLog.CriticalInfo("AsyncReplicator.Run", "Bulk operation timeout. Retrying the operation.");
                             try
                             {
                                 if (!stopped)
                                 {
                                     _context.CacheImpl.ReplicateOperations(opCodesToBeReplicated, infoToBeReplicated, userPayLoad, compilationInfo, 0, 0);
-                                    _context.NCacheLog.CriticalInfo("AsyncReplicator.Run", "RETRY is successfull.");
+                                    _context.NCacheLog.CriticalInfo("AsyncReplicator.Run", "RETRY is successfully.");
                                 }
                             }
                             catch (Exception ex)

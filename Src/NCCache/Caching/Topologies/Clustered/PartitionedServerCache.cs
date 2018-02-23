@@ -109,7 +109,6 @@ namespace Alachisoft.NCache.Caching.Topologies.Clustered
             _stats.ClassName = "partitioned-server";
             IsCQStateTransfer = true;
             RequiresMessageStateTransfer = true;
-            //Initialize(cacheClasses, properties, userId, password);
         }
 
         #region	/                 --- IDisposable ---           /
@@ -268,7 +267,6 @@ namespace Alachisoft.NCache.Caching.Topologies.Clustered
 
         private int GetBucketId(string key)
         {
-            //int hashCode = key.GetHashCode();
             int hashCode = AppUtil.GetHashCode(key);
             int bucketId = hashCode / _distributionMgr.BucketSize;
 
@@ -311,19 +309,13 @@ namespace Alachisoft.NCache.Caching.Topologies.Clustered
             operation.OpCode = MapReduceOpCodes.CancellAllTasks;
             HandleMapReduceOperation(operation);
 
-             
-
 
             if (_context.MessageManager != null) _context.MessageManager.StartMessageProcessing();
             if (_context.DsMgr != null )
                 _context.DsMgr.StartWriteBehindProcessor();
 
             StartStateTransfer(false);
-
-            //DetermineClusterStatus();
             UpdateCacheStatistics();
-            //We announces our status aa uninitalized
-            // AnnouncePresence(false);
         }
 
         /// <summary>
@@ -429,9 +421,6 @@ namespace Alachisoft.NCache.Caching.Topologies.Clustered
 
             _stats.Nodes.Remove(info);
             _distributionMgr.OnMemberLeft(address, identity);
-
-           
-
              
             if (_stats.DatagroupsAtPartition.Contains(address))
             {
@@ -1887,7 +1876,6 @@ namespace Alachisoft.NCache.Caching.Topologies.Clustered
             ContinuousQuery query = CQManager.GetCQ(cmdText, values);
             if (CQManager.Exists(query))
             {
-                //order copied from POR JvCache release 4.1
                 CQManager.Update(query, clientId, clientUniqueId, notifyAdd, notifyUpdate, notifyRemove, datafilters);
                 resultSet = _internalCache.SearchCQ(query.UniqueId, operationContext);
                 resultSet.CQUniqueId = query.UniqueId;
@@ -1903,8 +1891,6 @@ namespace Alachisoft.NCache.Caching.Topologies.Clustered
 
                 if (Cluster.IsCoordinator)
                 {
-                    //If coord - Registration first -> ClusterCall second -> resultSet uniqueID update
-                    //Code base/order copied from JvCache 4.1 release - bug producible in java more easily - Simialr behaviour for POR
                     CQManager.Register(query, clientId, clientUniqueId, notifyAdd, notifyUpdate, notifyRemove, datafilters);
                     Cluster_RegisterSearchCQ(Cluster.Servers, query, clientUniqueId, clientId, notifyAdd, notifyUpdate, notifyRemove, false, operationContext, datafilters);
                     resultSet.CQUniqueId = query.UniqueId;
@@ -1919,7 +1905,6 @@ namespace Alachisoft.NCache.Caching.Topologies.Clustered
             ContinuousQuery query = CQManager.GetCQ(cmdText, values);
             if (CQManager.Exists(query))
             {
-                //order copied from POR JvCache release 4.1
                 CQManager.Update(query, clientId, clientUniqueId, notifyAdd, notifyUpdate, notifyRemove, datafilters);
                 resultSet = _internalCache.SearchEntriesCQ(query.UniqueId, operationContext);
                 resultSet.CQUniqueId = query.UniqueId;
@@ -1933,8 +1918,6 @@ namespace Alachisoft.NCache.Caching.Topologies.Clustered
                 resultSet = _internalCache.SearchEntriesCQ(query, operationContext);
                 if (Cluster.IsCoordinator)
                 {
-                    //If coord - Registration first -> ClusterCall second -> resultSet uniqueID update
-                    //Code base/order copied from JvCache 4.1 release - bug producible in java more easily - Simialr behaviour for POR
                     CQManager.Register(query, clientId, clientUniqueId, notifyAdd, notifyUpdate, notifyRemove, datafilters);
                     Cluster_RegisterSearchEnteriesCQ(Cluster.Servers, query, clientUniqueId, clientId, notifyAdd, notifyUpdate, notifyRemove, false, operationContext, datafilters);
                     resultSet.CQUniqueId = query.UniqueId;
@@ -2205,7 +2188,6 @@ namespace Alachisoft.NCache.Caching.Topologies.Clustered
                     else
                     {
                         e = Clustered_Get(address, key, ref version, ref lockId, ref lockDate, lockExpiration, access, operationContext);
-
                     }
 
                     if (e == null)
@@ -2984,7 +2966,6 @@ namespace Alachisoft.NCache.Caching.Topologies.Clustered
                 }
                 catch (Alachisoft.NCache.Caching.Exceptions.StateTransferException se)
                 {
-                    //nTrace.error("PartitionedServerCache.Add", "bucket transfered. " + se.ToString());
                     _distributionMgr.Wait(key, group);
                 }
 
@@ -3089,7 +3070,6 @@ namespace Alachisoft.NCache.Caching.Topologies.Clustered
                 }
                 catch (Alachisoft.NCache.Caching.Exceptions.StateTransferException se)
                 {
-                    //nTrace.error("PartitionedServerCache.Add", "bucket transfered. " + se.ToString());
                     _distributionMgr.Wait(key, group);
                 }
             }
@@ -3176,7 +3156,6 @@ namespace Alachisoft.NCache.Caching.Topologies.Clustered
                 try
                 {
                     targetNode = GetNextNode(key as string, group);
-
                      
                     //possible in case of strict affinity...
                     if (targetNode == null)
@@ -3196,7 +3175,6 @@ namespace Alachisoft.NCache.Caching.Topologies.Clustered
                 }
                 catch (Alachisoft.NCache.Caching.Exceptions.StateTransferException se)
                 {
-                    //nTrace.error("PartitionedServerCache.Clustered_Add", "bucket under state txfr " + key + " Error: " + se.ToString());
                     _distributionMgr.Wait(key, group);
                 }
                 catch (Runtime.Exceptions.TimeoutException te)
@@ -4696,7 +4674,6 @@ namespace Alachisoft.NCache.Caching.Topologies.Clustered
                         {
                             
                             RaiseCustomUpdateCalbackNotifier(ide.Key, currentEntry, insResult.Entry, operationContext);
-                            //RaiseCustomUpdateCalbackNotifier(ide.Key, (ArrayList)((CallbackEntry)value).ItemUpdateCallbackListener);
                         }
                         EventContext eventContext = CreateEventContextForGeneralDataEvent(Persistence.EventType.ITEM_UPDATED_EVENT, operationContext, currentEntry, insResult.Entry);
                         RaiseItemUpdateNotifier(key, operationContext, eventContext);
@@ -4899,7 +4876,6 @@ namespace Alachisoft.NCache.Caching.Topologies.Clustered
                 }
                 catch (Alachisoft.NCache.Caching.Exceptions.StateTransferException se)
                 {
-                    //nTrace.error("PartitionedCache.Safe_Clustered_Insert()", "Bucket transfered. Error: " + se.ToString());
                     _distributionMgr.Wait(key, group);
                 }
                 catch (Runtime.Exceptions.TimeoutException te)
@@ -4971,11 +4947,11 @@ namespace Alachisoft.NCache.Caching.Topologies.Clustered
                     LockAccessType accessType = (LockAccessType)objs[4];
                     ulong version = (ulong)objs[5];
                     CacheInsResultWithEntry retVal = Local_Insert(key, e, src, taskId, true, lockId, version, accessType, operationContext);
-                    /* send value and entry seperaty*/
+                    /* send value and entry separate*/
                     OperationResponse opRes = new OperationResponse();
                     if (retVal.Entry != null)
                     {
-                        opRes.UserPayload = null;//ubObject.Data;
+                        opRes.UserPayload = null;
 
                         if (retVal.Entry.KeysDependingOnMe == null || retVal.Entry.KeysDependingOnMe.Count == 0)
                             retVal.Entry = null;
@@ -4984,7 +4960,6 @@ namespace Alachisoft.NCache.Caching.Topologies.Clustered
                     }
                     opRes.SerializablePayload = retVal;
                     return opRes;
-                    //return retVal;
                 }
             }
             catch (Exception)
@@ -5029,7 +5004,6 @@ namespace Alachisoft.NCache.Caching.Topologies.Clustered
                     }
                     catch (Exception ex)
                     {
-                        //nTrace.error("PartitionedCache.RemoveSync", ex.ToString());
                         throw;
                     }
                 }
@@ -5073,7 +5047,6 @@ namespace Alachisoft.NCache.Caching.Topologies.Clustered
 
                                 size += entry.Size;
                                 keysOfRemoveNotification.Add(ide.Key);
-                                //entriesOfRemoveNotification.Add(ide.Value);
                                 eventContexts.Add(eventContext);
 
                                 if (size > sizeThreshhold || keysOfRemoveNotification.Count > countThreshhold)
@@ -6079,8 +6052,6 @@ namespace Alachisoft.NCache.Caching.Topologies.Clustered
             // Handle all exceptions, do not let the effect seep thru
             try
             {
-                
-                
                 if (IsItemRemoveNotifier && ValidMembers.Count > 1)
                 {
                     object notification = null;
@@ -6175,7 +6146,6 @@ namespace Alachisoft.NCache.Caching.Topologies.Clustered
         }
 
 
-
         #endregion
 
         #region	/                 --- OnCustomRemoveCallback ---           /
@@ -6186,8 +6156,6 @@ namespace Alachisoft.NCache.Caching.Topologies.Clustered
         void ICacheEventsListener.OnCustomRemoveCallback(object key, object entry, ItemRemoveReason removalReason, OperationContext operationContext, EventContext eventContext)
         {
             bool notifyRemove = false;
-            // (fix for two notification on single key removel)
-            // do not notify if explicitly removed by Remove()
             object notifyRemoval = operationContext.GetValueByField(OperationContextFieldName.NotifyRemove);
 
             if (notifyRemoval != null)
@@ -6605,8 +6573,6 @@ namespace Alachisoft.NCache.Caching.Topologies.Clustered
         public override void EmptyBucket(int bucketId)
         {
             InternalCache.RemoveBucketData(bucketId);
-
-             
             //Announce all the members that i am the new owner of this bucket....
             ArrayList bucketIds = new ArrayList(1);
             bucketIds.Add(bucketId);
@@ -6741,7 +6707,6 @@ namespace Alachisoft.NCache.Caching.Topologies.Clustered
                 }
                 catch (Alachisoft.NCache.Caching.Exceptions.StateTransferException se)
                 {
-                    //nTrace.error("PartitionedServerCache.Get", "bucket transfered. Error: "  + se.ToString());
                     _distributionMgr.Wait(key, null);
                 }
             }
@@ -6804,7 +6769,6 @@ namespace Alachisoft.NCache.Caching.Topologies.Clustered
                 }
                 catch (Alachisoft.NCache.Caching.Exceptions.StateTransferException se)
                 {
-                    //nTrace.error("PartitionedServerCache.Get", "bucket transfered. Error: "  + se.ToString());
                     _distributionMgr.Wait(key, null);
                 }
             }
@@ -6903,7 +6867,6 @@ namespace Alachisoft.NCache.Caching.Topologies.Clustered
                 }
                 catch (Alachisoft.NCache.Caching.Exceptions.StateTransferException se)
                 {
-                    //nTrace.error("PartitionedServerCache.Get", "bucket transfered. Error: "  + se.ToString());
                     _distributionMgr.Wait(key, null);
                 }
             }
@@ -6987,7 +6950,6 @@ namespace Alachisoft.NCache.Caching.Topologies.Clustered
                 }
                 catch (Alachisoft.NCache.Caching.Exceptions.StateTransferException se)
                 {
-                    //nTrace.error("PartitionedServerCache.Clustered_Add", "bucket under state txfr " + key + " Error: " + se.ToString());
                     _distributionMgr.Wait(key, group);
                 }
                 catch (Runtime.Exceptions.TimeoutException te)
@@ -7086,7 +7048,6 @@ namespace Alachisoft.NCache.Caching.Topologies.Clustered
                 }
                 catch (Alachisoft.NCache.Caching.Exceptions.StateTransferException se)
                 {
-                    //nTrace.error("PartitionedServerCache.Clustered_Add", "bucket under state txfr " + key + " Error: " + se.ToString());
                     _distributionMgr.Wait(key, null);
                 }
                 catch (Runtime.Exceptions.TimeoutException te)
@@ -7153,7 +7114,6 @@ namespace Alachisoft.NCache.Caching.Topologies.Clustered
                 }
                 catch (Alachisoft.NCache.Caching.Exceptions.StateTransferException se)
                 {
-                    //nTrace.error("PartitionedServerCache.Clustered_Add", "bucket under state txfr " + key + " Error: " + se.ToString());
                     _distributionMgr.Wait(key, null);
                 }
                 catch (Runtime.Exceptions.TimeoutException te)
@@ -7214,7 +7174,6 @@ namespace Alachisoft.NCache.Caching.Topologies.Clustered
                 }
                 catch (Alachisoft.NCache.Caching.Exceptions.StateTransferException se)
                 {
-                    //nTrace.error("PartitionedServerCache.Clustered_Add", "bucket under state txfr " + key + " Error: " + se.ToString());
                     _distributionMgr.Wait(key, null);
                 }
                 catch (Runtime.Exceptions.TimeoutException te)
@@ -7278,7 +7237,6 @@ namespace Alachisoft.NCache.Caching.Topologies.Clustered
                 }
                 catch (Alachisoft.NCache.Caching.Exceptions.StateTransferException se)
                 {
-                    //nTrace.error("PartitionedServerCache.Clustered_Add", "bucket under state txfr " + key + " Error: " + se.ToString());
                     _distributionMgr.Wait(key, null);
                 }
                 catch (Runtime.Exceptions.TimeoutException te)
@@ -7348,21 +7306,16 @@ namespace Alachisoft.NCache.Caching.Topologies.Clustered
                     GroupRequest.GET_FIRST,
                     Cluster.Timeout);
 
-
-
                 EnumerationDataChunk nextChunk = result as EnumerationDataChunk;
-
 
                 return nextChunk;
             }
             catch (CacheException e)
             {
-                //NCacheLog.Error(Context.CacheName, "ReplicatedCacheBase.GetSubClusterEnumerator()", e.ToString());
                 throw;
             }
             catch (Exception e)
             {
-                //NCacheLog.Error(Context.CacheName, "ReplicatedCacheBase.GetSubClusterEnumerator()", e.ToString());
                 throw new GeneralFailureException(e.Message, e);
             }
         }

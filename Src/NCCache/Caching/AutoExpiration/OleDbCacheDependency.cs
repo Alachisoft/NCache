@@ -21,9 +21,7 @@ namespace Alachisoft.NCache.Caching.AutoExpiration
 
     public class OleDbCacheDependency : DBCacheDependency
     {
-
         public OleDbCacheDependency()
-
         {         
             base._hintType = ExpirationHintType.OleDbCacheDependency;
         }

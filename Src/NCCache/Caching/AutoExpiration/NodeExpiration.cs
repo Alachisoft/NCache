@@ -13,7 +13,7 @@
 // limitations under the License.
 
 using System;
-#if !( DEVELOPMENT || CLIENT)
+#if !CLIENT
 using Alachisoft.NCache.Caching.Topologies.Clustered;
 #endif
 using Alachisoft.NCache.Runtime.Serialization.IO;
@@ -47,7 +47,7 @@ namespace Alachisoft.NCache.Caching.AutoExpiration
             _node = node;
 		}
 
-#if !( DEVELOPMENT || CLIENT)
+#if !CLIENT
 		/// <summary>
 		/// virtual method that returns true when the expiration has taken place, returns 
 		/// false otherwise.

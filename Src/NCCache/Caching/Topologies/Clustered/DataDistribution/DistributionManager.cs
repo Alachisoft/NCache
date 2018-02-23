@@ -257,7 +257,7 @@ namespace Alachisoft.NCache.Caching.Topologies.Clustered
                 ArrayList candidateNodes = new ArrayList();
                 IDictionaryEnumerator ide = DataSizePerNode.GetEnumerator();
                 System.Text.StringBuilder sb = new System.Text.StringBuilder();
-                sb.Append("loadbalancing condition : AvgDataSize (MB): " + MiscUtil.ConvertToMegaBytes(AvgDataSize));
+                sb.Append("load balancing condition : AvgDataSize (MB): " + MiscUtil.ConvertToMegaBytes(AvgDataSize));
                 while (ide.MoveNext())
                 {
                     Address owner = ide.Key as Address;

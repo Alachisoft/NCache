@@ -404,7 +404,6 @@ namespace Alachisoft.NCache.Caching.AutoExpiration
                   }
                   #endregion
 
-
                   #region In case user provides absolute expiration as an enum
 
                   if (slidingExpiration == TimeSpan.Zero)
@@ -417,8 +416,6 @@ namespace Alachisoft.NCache.Caching.AutoExpiration
                   #endregion
 
                   // If no expirations were enabled we have to assign the default expiration
-                  
-
               }
               else
               {
@@ -426,8 +423,6 @@ namespace Alachisoft.NCache.Caching.AutoExpiration
                       hint = new FixedExpiration(DateTime.Now.AddSeconds(policy.AbsoluteExpiration.Default).ToUniversalTime());
               }
           }
-          
-
 
             if (DateTime.MaxValue.ToUniversalTime().Equals(absoluteExpiration) && TimeSpan.Zero.Equals(slidingExpiration))
                 return null;

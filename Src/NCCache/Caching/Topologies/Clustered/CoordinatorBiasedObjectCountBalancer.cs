@@ -23,9 +23,7 @@ namespace Alachisoft.NCache.Caching.Topologies.Clustered
     /// </summary>
     class CoordinatorBiasedObjectCountBalancer : IActivityDistributor
     {
-
         string loggerName;
-        //private NewTrace nTrace;
         ILogger _ncacheLog;
 
         ILogger NCacheLog
@@ -87,7 +85,7 @@ namespace Alachisoft.NCache.Caching.Topologies.Clustered
 
             if (gpAfStrict && gMin == null)
             {
-                if (NCacheLog.IsInfoEnabled) NCacheLog.Info("CoordinatorBiasedObjectCountBalancer.SelectNode", "strict group affinity, no node found to accomodate " + group + " data");
+                if (NCacheLog.IsInfoEnabled) NCacheLog.Info("CoordinatorBiasedObjectCountBalancer.SelectNode", "strict group affinity, no node found to accommodate " + group + " data");
                 return null;
             }
             return (gMin == null) ? sMin : gMin;

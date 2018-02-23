@@ -270,45 +270,24 @@ namespace Alachisoft.NCache.Caching.Topologies.Clustered
             /// Delete Query
             /// </summary>
             DeleteQuery,
-
             InStateTransfer,
-
             GetContinuousQueryStateInfo,
-
-
-
-
-            //#if EXPRESS
-
-            GetSessionCount
-                //#endif
-            ,
+            GetSessionCount,
             GetNextChunk,
-
             RemoveByTag,
-
             GetFilteredPersistentEvents,
-
             BlockActivity,
-
-         
-
             EnqueueWBOp,
-
             Poll,
-
             RegisterPollingNotification,
-
             /// <summary>
             /// OpCode for MapReduce
             /// </summary>
             MapReduceOperation,
-
             /// <summary>
             /// MapReduce Task Call Notification 
             /// </summary>
             NotifyTaskCallback,
-
             /// <summary>
             /// For Dead Clients
             /// </summary>
@@ -450,7 +429,6 @@ namespace Alachisoft.NCache.Caching.Topologies.Clustered
 
         protected int _serverFailureWaitTime = 2000;//time in msec
         
-        //private string _currentSequenceNumber = null;
 
         protected ReplicationOperation GetClearReplicationOperation(int opCode, object info)
         {
@@ -473,7 +451,6 @@ namespace Alachisoft.NCache.Caching.Topologies.Clustered
             if (clientLastViewId != null)
             {
                 ClientLastViewId = Convert.ToInt64(clientLastViewId);
-                //operationContext.RemoveValueByField(OperationContextFieldName.ClientLastViewId);
             }
             return ClientLastViewId;
         }
@@ -4782,39 +4759,27 @@ namespace Alachisoft.NCache.Caching.Topologies.Clustered
 
             try
             {
-                //print hashmap
                 if (newMap != null)
                 {
                     System.Text.StringBuilder sb = new System.Text.StringBuilder();
-                    //NCacheLog.DevTrace(moduleName, " ---------------- HashMap (Begin)---------------------");
                     for (int i = 0; i < newMap.Count; i++)
                     {
                         sb.Append("  " + newMap[i].ToString());
                         if ((i + 1)%10 == 0)
                         {
-                            //NCacheLog.DevTrace(moduleName, sb.ToString());
                             sb.Remove(0, sb.Length);
                         }
                     }
-                    //NCacheLog.DevTrace(moduleName, " ---------------- HashMap (End)---------------------");
                 }
-                else
-                {
-                    //NCacheLog.DevTrace(moduleName, " Hashmap is null");
-                }
-
 
                 HashMapBucket bkt;
                 if (newBucketsOwnershipMap != null)
                 {
-                    //NCacheLog.DevTrace(moduleName, " ---------------- BucketOwnerShipMap (Begin)---------------------");
-
                     IDictionaryEnumerator ide = newBucketsOwnershipMap.GetEnumerator();
                     System.Text.StringBuilder sb = new System.Text.StringBuilder();
                     while (ide.MoveNext())
                     {
                         Address owner = ide.Key as Address;
-                        //NCacheLog.DevTrace(moduleName, " --- Owner : " + owner + " ----");
                         ArrayList myMap = ide.Value as ArrayList;
                         int functionBkts = 0, bktsUnderTxfr = 0, bktsNeedTxfr = 0;
 
@@ -4839,22 +4804,14 @@ namespace Alachisoft.NCache.Caching.Topologies.Clustered
                             sb.Append("  " + bkt.ToString());
                             if ((i + 1)%10 == 0)
                             {
-                                //NCacheLog.DevTrace(moduleName, " " + sb.ToString());
                                 sb.Remove(0, sb.Length);
                             }
                         }
-
-                        //NCacheLog.DevTrace(moduleName, " [" + owner + "] ->" + " Buckets owned :" + myMap.Count + "[ Functional : " + functionBkts + " ; UnderStateTxfr : " + bktsUnderTxfr + " ; NeedTransfer : " + bktsNeedTxfr + " ]");
                     }
-                    //NCacheLog.DevTrace(moduleName, " ---------------- BucketOwnerShipMap (End)---------------------");
-
                 }
-                //else
-                //NCacheLog.DevTrace(moduleName, " Bucket ownership map is null");
             }
             catch (Exception e)
             {
-                //NCacheLog.DevTrace(moduleName, " Exception printing map -> " + e.ToString());
             }
         }
 
@@ -4863,7 +4820,6 @@ namespace Alachisoft.NCache.Caching.Topologies.Clustered
         {
             try
             {
-                //UpdateCacheStatistics();
                 if (Context.NCacheLog.IsInfoEnabled)
                     Context.NCacheLog.Info("ClusteredCacheBase.AnnouncePresence()",
                         " announcing presence ;urget " + urgent);
@@ -5694,7 +5650,6 @@ namespace Alachisoft.NCache.Caching.Topologies.Clustered
                 operation.Source = this.Cluster.LocalAddress;
                 Function func = new Function((int) OpCodes.MapReduceOperation, operation, true);
                 this.Cluster.Multicast(dests, func, GetAllResponses);
-                //handleMapReduceOperation(operation);
             }
             catch (Exception e)
             {

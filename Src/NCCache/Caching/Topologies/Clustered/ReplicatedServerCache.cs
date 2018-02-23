@@ -739,8 +739,6 @@ namespace Alachisoft.NCache.Caching.Topologies.Clustered
                     info.LocalConnectedClientsInfo = other.LocalConnectedClientsInfo;
                     info.ConnectedClients = other.ConnectedClients;
                     info.Status = other.Status;
-                    //if (_context.ConnectedClients != null)
-                    //    _context.ConnectedClients.SynchronizeConnectedClients(info.LocalConnectedClientsInfo, sender);
                 }
             }
             UpdateCacheStatistics();
@@ -978,11 +976,7 @@ namespace Alachisoft.NCache.Caching.Topologies.Clustered
                                     if (!_stopProcessing)
                                     {
                                         OperationContext operationContext = new OperationContext(OperationContextFieldName.OperationType, OperationContextOperationType.CacheOperation);
-
-
                                         _parent.Local_Add(key, val, null, null, false, operationContext);
-
-
                                         _parent.Context.PerfStatsColl.IncrementStateTxfrPerSecStats();
 
                                     }
@@ -1037,11 +1031,8 @@ namespace Alachisoft.NCache.Caching.Topologies.Clustered
                                                 string keyToBeAdded = keysHavingdependency[i].ToString();
                                                 keysHavingdependency.Remove(keyToBeAdded);
 
-
                                                 OperationContext operationContext = new OperationContext(OperationContextFieldName.OperationType, OperationContextOperationType.CacheOperation);
                                                 _parent.Local_Add(keyToBeAdded, valueToAdd, null, null, false, operationContext);
-
-
                                                 _parent.Context.PerfStatsColl.IncrementStateTxfrPerSecStats();
 
                                             }
@@ -1199,8 +1190,6 @@ namespace Alachisoft.NCache.Caching.Topologies.Clustered
 
             /// Set the status to fully-functional (Running) and tell everyone about it.
             _statusLatch.SetStatusBit(NodeStatus.Running, NodeStatus.Initializing);
-
-            // Console.WriteLine("Signalling end of state txfr");
             Function fun = new Function((int)OpCodes.SignalEndOfStateTxfr, new object(), false);
             if (Cluster != null) Cluster.BroadcastToServers(fun, GroupRequest.GET_ALL, true);
 
@@ -1458,13 +1447,11 @@ namespace Alachisoft.NCache.Caching.Topologies.Clustered
             }
             catch (Alachisoft.NGroups.SuspectedException e)
             {
-                //nTrace.error("ReplicatedServer.Clustered_contains()", e.ToString());
                 return Clustered_Contains(key, operationContext);
             }
 
             catch (Runtime.Exceptions.TimeoutException e)
             {
-                //nTrace.error("ReplicatedServer.Clustered_contains()", e.ToString());
                 return Clustered_Contains(key, operationContext);
             }
         }
@@ -1558,7 +1545,6 @@ namespace Alachisoft.NCache.Caching.Topologies.Clustered
             {
                 object[] data = (object[])info;
                 return Local_DeleteQuery(data[0] as string, data[1] as IDictionary, (bool)data[2], (bool)data[3], (ItemRemoveReason)data[4], data[5] as OperationContext);
-                //return _internalCache.DeleteQuery(data[0] as string, data[1] as IDictionary, (bool)data[2], (bool)data[3], (ItemRemoveReason)data[4], data[5] as OperationContext);
             }
             return result;
         }
@@ -2182,12 +2168,10 @@ namespace Alachisoft.NCache.Caching.Topologies.Clustered
             }
             catch (CacheException e)
             {
-                //nTrace.error("PorCache.ReplicateOperations()", e.ToString());
                 throw;
             }
             catch (Exception e)
             {
-                //nTrace.error("PorCache.ReplicateOperations()", e.ToString());
                 throw new GeneralFailureException(e.Message, e);
             }
         }
@@ -2583,7 +2567,6 @@ namespace Alachisoft.NCache.Caching.Topologies.Clustered
                     result = Clustered_Add(key, cacheEntry, taskId, operationContext);
                     if (result == CacheAddResult.KeyExists)
                     {
-                        //nTrace.error("Replicated.Clustered_Add()", "KeyExists = " + key + ", result = " + result);
                         return result;
                     }
                 }
@@ -2592,7 +2575,6 @@ namespace Alachisoft.NCache.Caching.Topologies.Clustered
             }
             catch (Exception e)
             {
-                //nTrace.error("Replicated.Clustered_Add()", e.ToString());
                 thrown = e;
             }
 
@@ -2681,7 +2663,6 @@ namespace Alachisoft.NCache.Caching.Topologies.Clustered
                     result = Clustered_Add(key, eh, operationContext);
                     if (result == false)
                     {
-                        //nTrace.error("Replicated.Clustered_Add()", "Hint not added: Key = " + key);
                         return result;
                     }
                 }
@@ -2690,7 +2671,6 @@ namespace Alachisoft.NCache.Caching.Topologies.Clustered
             }
             catch (Exception e)
             {
-                //nTrace.error("Replicated.Clustered_Add()", e.ToString());
                 thrown = e;
             }
 
@@ -2724,7 +2704,6 @@ namespace Alachisoft.NCache.Caching.Topologies.Clustered
                     result = Clustered_Add(key, syncDependency, operationContext);
                     if (result == false)
                     {
-                        //nTrace.error("Replicated.Clustered_Add()", "Hint not added: Key = " + key);
                         return result;
                     }
                 }
@@ -2733,7 +2712,6 @@ namespace Alachisoft.NCache.Caching.Topologies.Clustered
             }
             catch (Exception e)
             {
-                //nTrace.error("Replicated.Clustered_Add()", e.ToString());
                 thrown = e;
             }
 
@@ -2764,8 +2742,6 @@ namespace Alachisoft.NCache.Caching.Topologies.Clustered
             _statusLatch.WaitForAny(NodeStatus.Initializing | NodeStatus.Running);
 
             if (_internalCache == null) throw new InvalidOperationException();
-
-            //if(nTrace.isInfoEnabled) nTrace.info("Replicated.Add()", "Key = " + key);
 
             object[] failedKeys = null;
             Hashtable addResult = new Hashtable();
@@ -2805,7 +2781,7 @@ namespace Alachisoft.NCache.Caching.Topologies.Clustered
                     if (!list.Contains(key))
                     {
                         newKeys[j] = key;
-                        entries[j] = cacheEntries[i];//((CacheEntry)cacheEntries[i] ).FlattenedClone(_context.SerializationContext);
+                        entries[j] = cacheEntries[i];
                         j++;
                     }
                     i++;
@@ -2845,7 +2821,6 @@ namespace Alachisoft.NCache.Caching.Topologies.Clustered
 
             if (thrown != null)
             {
-                //nTrace.warn("Replicated.Add()", "rolling back, since result was " + result);
                 if (Cluster.Servers.Count > 1)
                 {
                     Clustered_Remove(keys, ItemRemoveReason.Removed, operationContext);
@@ -2854,7 +2829,6 @@ namespace Alachisoft.NCache.Caching.Topologies.Clustered
                 {
                     Local_Remove(keys, ItemRemoveReason.Removed, null, null, null, null, false, operationContext);
                 }
-                //if(thrown != null) throw thrown;
             }
             else
             {
@@ -3170,7 +3144,7 @@ namespace Alachisoft.NCache.Caching.Topologies.Clustered
                         }
                         else
                         {
-                            badKeysList.Add(keys[i]);// throw new OperationFailedException("One of the dependency keys does not exist.");
+                            badKeysList.Add(keys[i]);
                         }
                     }
                     else
@@ -3378,7 +3352,6 @@ namespace Alachisoft.NCache.Caching.Topologies.Clustered
             }
             catch (Exception e)
             {
-                //nTrace.error("ReplicatedCache.handleAdd()", e.ToString());
                 if (_clusteredExceptions) throw;
             }
             return CacheAddResult.Failure;
@@ -3411,7 +3384,6 @@ namespace Alachisoft.NCache.Caching.Topologies.Clustered
             }
             catch (Exception e)
             {
-                //nTrace.error("ReplicatedCache.handleAdd()", e.ToString());
                 if (_clusteredExceptions) throw;
             }
             return false;
@@ -3445,7 +3417,6 @@ namespace Alachisoft.NCache.Caching.Topologies.Clustered
             }
             catch (Exception e)
             {
-                //nTrace.error("ReplicatedCache.handleAdd()", e.ToString());
                 if (_clusteredExceptions) throw;
             }
             return false;
@@ -4031,7 +4002,7 @@ namespace Alachisoft.NCache.Caching.Topologies.Clustered
                             }
                             else
                             {
-                                badKeysList.Add(keys[i]);// throw new OperationFailedException("One of the dependency keys does not exist.");
+                                badKeysList.Add(keys[i]);
                             }
                         }
                         else
@@ -4273,14 +4244,14 @@ namespace Alachisoft.NCache.Caching.Topologies.Clustered
                     {
                         if (resultWithEntry.Entry.Value is CallbackEntry)
                         {
-                            opRes.UserPayload = null;//(byte[])((CallbackEntry)resultWithEntry.Entry.Value).Value;
+                            opRes.UserPayload = null;
                         }
                         else
                         {
                               
                             //we need not to send this entry back... it is needed only for custom notifications and/or key dependencies...
                             if (resultWithEntry.Entry.KeysDependingOnMe == null || resultWithEntry.Entry.KeysDependingOnMe.Count == 0) returnEntry = false;
-                            opRes.UserPayload = null;//(byte[])resultWithEntry.Entry.Value;
+                            opRes.UserPayload = null;
                         }
 
                         if (returnEntry)

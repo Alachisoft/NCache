@@ -187,7 +187,6 @@ namespace Alachisoft.NCache.Caching.CacheSynchronization
                 if (syncCache != null && listener != null)
                 {
                     syncCache.RegisterBulkSyncKeyNotifications(depdencyKeyList.ToArray(), listener, CallbackType.PushBasedNotification);
-                    //syncCache.RegisterBulkSyncKeyNotifications(depdencyKeyList.ToArray(), listener, callbackType);
                 }
             }
         }
@@ -244,7 +243,6 @@ namespace Alachisoft.NCache.Caching.CacheSynchronization
                     ///This registering for every key needs reviewing
                     if (dependentKeys != null && dependentKeys.Count < 2)
                     {
-                        //syncCache.RegisterSyncKeyNotifications((string)syncItem.Key, listener);
                         return true;
                     }
                 }
@@ -406,7 +404,6 @@ namespace Alachisoft.NCache.Caching.CacheSynchronization
                 if (dependency == null)
                     return;
                 try
-
                 {
                     SyncItem item = new SyncItem(key, dependency.Key, dependency.CacheId);
 
@@ -770,7 +767,6 @@ namespace Alachisoft.NCache.Caching.CacheSynchronization
                         }
                         catch (Exception)
                         { }
-                        //RemoveDependentItems(syncCache.CacheId, false, false);
                     }
                 }
                 _synCaches.Clear();

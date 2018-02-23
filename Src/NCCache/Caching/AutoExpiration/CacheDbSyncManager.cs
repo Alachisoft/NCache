@@ -67,25 +67,21 @@ namespace Alachisoft.NCache.Caching.AutoExpiration
 		DbConnectionPool        _sqlConPool;
         Hashtable               _tblDepCount;
 		string                  _cacheID = null;
-        private ILogger _ncacheLog;
+        private ILogger          _ncacheLog;
+        private Hashtable       _dbKeysMappingTbl;
+        public const string SYNC_TABLE = "ncache_db_sync";
+
         ILogger NCacheLog
         {
             get { return _ncacheLog; }
         }
-        private Hashtable       _dbKeysMappingTbl;
-        public const string SYNC_TABLE = "ncache_db_sync";
+
         public Hashtable TblDepCount
         {
             get { return _tblDepCount; }
         }
 
-        public Hashtable ConnectoinStringTable
-        {
-            get
-            {
-                return _connStringTable;
-            }
-        }
+        public Hashtable ConnectoinStringTable { get { return _connStringTable; } }
 
         public void AddDBMapping(string dbKey, string cacheKey, ExpirationHint hint)
         {

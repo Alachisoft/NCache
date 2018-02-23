@@ -36,20 +36,16 @@ namespace Alachisoft.NCache.Caching.AutoExpiration
 		public const int 				IS_VARIANT = 4;
 		public const int 				NON_ROUTABLE = 8;
 		public const int 				DISPOSED = 16;
-       
-        // _cacheKey + _bits + _objNotify + _hintType
         public const int ExpirationHintSize = 24;
-
         private string                  _cacheKey;
 		private int						_bits;
 		private IExpirationEventSink	_objNotify;
-//		private DateTime				_utcLastModified;
 		[CLSCompliant(false)]
         public ExpirationHintType       _hintType;
-		protected ExpirationHint()
+
+        protected ExpirationHint()
 		{            
             _hintType = ExpirationHintType.Parent;
-            //			_utcLastModified = DateTime.UtcNow;
 		}
 
 		#region	/                 --- IDisposable ---           /
@@ -339,7 +335,7 @@ namespace Alachisoft.NCache.Caching.AutoExpiration
         /// new subcoordinator.
         /// </summary>
         /// <param name="context">CacheRuntimeContex for required contextual information.</param>
-        /// <returns>True if reinitialization was successfull.</returns>
+        /// <returns>True if reinitialization was successful.</returns>
         internal virtual bool ReInitializeHint(CacheRuntimeContext context)
         {
             return false;
