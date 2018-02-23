@@ -6,7 +6,11 @@ NCache is used by hundreds of companies all over the world in mission critical a
 
 **Features:**
 
--   Separate process for cache  
+-   Separate process for cache
+-   Publish/Subscribe (Pub/Sub) with Topic 
+-   Map Reduce
+-   Data Source Providers
+-   Cache Dependencies   
 -   Query execution using data reader approach	
 -   Cache CRUD operations
 -	Bulk CRUD operations
