@@ -7,6 +7,12 @@
     <RootNamespace>Alachisoft.NCache.Automation.ProfessionalClient.NetCore</RootNamespace>
   </PropertyGroup>
 
+ <PropertyGroup>
+    <AssemblyOriginatorKeyFile>..\..\Resources\ncache.snk</AssemblyOriginatorKeyFile>
+    <DelaySign>false</DelaySign>
+    <SignAssembly>true</SignAssembly>
+  </PropertyGroup>
+
   <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Debug|AnyCPU'">
     <DefineConstants>TRACE;DEBUG;NETCORE</DefineConstants>
   </PropertyGroup>

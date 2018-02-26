@@ -36,7 +36,6 @@ using System.Runtime.InteropServices;
 [assembly: AssemblyFileVersion("4.9.0.0")]
 //[assembly: AssemblyFileVersionAttribute("4.9.0.0")]
 
-
 namespace Alachisoft.NCache.CacheHost 
 {
     /// <summary>

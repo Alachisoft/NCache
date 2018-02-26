@@ -9,6 +9,12 @@
     <AssemblyName>Alachisoft.NCache.SessionStoreProvider</AssemblyName>
   </PropertyGroup>
 
+  <PropertyGroup>
+    <AssemblyOriginatorKeyFile>..\..\Resources\ncache.snk</AssemblyOriginatorKeyFile>
+    <DelaySign>false</DelaySign>
+    <SignAssembly>true</SignAssembly>
+  </PropertyGroup>
+
   <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Debug|AnyCPU'">
     <DefineConstants>TRACE;DEBUG;CLIENT;NETCORE</DefineConstants>
   </PropertyGroup>

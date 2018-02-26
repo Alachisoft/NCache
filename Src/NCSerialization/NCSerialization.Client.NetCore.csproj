@@ -9,6 +9,12 @@
     <RootNamespace>Alachisoft.NCache.Serialization</RootNamespace>
     <AssemblyName>Alachisoft.NCache.Serialization</AssemblyName>
   </PropertyGroup>
+
+  <PropertyGroup>
+    <AssemblyOriginatorKeyFile>..\..\Resources\ncache.snk</AssemblyOriginatorKeyFile>
+    <DelaySign>false</DelaySign>
+    <SignAssembly>true</SignAssembly>
+  </PropertyGroup>
   
   <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Debug|AnyCPU'">
     <DefineConstants>TRACE;DEBUG;CLIENT;VS2005;NETCORE</DefineConstants>

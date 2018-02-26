@@ -9,6 +9,12 @@
     <RootNamespace>Alachisoft.NCache.CacheHost</RootNamespace>
     <AssemblyName>Alachisoft.NCache.CacheHost</AssemblyName>
   </PropertyGroup>
+  
+  <PropertyGroup>
+    <AssemblyOriginatorKeyFile>..\..\Resources\ncache.snk</AssemblyOriginatorKeyFile>
+    <DelaySign>false</DelaySign>
+    <SignAssembly>true</SignAssembly>
+  </PropertyGroup>
 
   <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Debug|AnyCPU'">
     <DefineConstants>TRACE;DEBUG;NETCORE</DefineConstants>
