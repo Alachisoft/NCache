@@ -15,11 +15,8 @@
 using System;
 using System.Collections.Generic;
 using System.Text;
-#if JAVA
-using Alachisoft.TayzGrid.Runtime.Exceptions;
-#else
 using Alachisoft.NCache.Runtime.Exceptions;
-#endif
+
 
 namespace Alachisoft.NCache.Common.Util
 {
@@ -32,10 +29,8 @@ namespace Alachisoft.NCache.Common.Util
     public sealed class AuthenticateFeature
     {
         private static InstallModes _dotNetInstallMode = InstallModes.Server;
-        private static InstallModes _javaInstallMode = InstallModes.None;
         private const string DOTNET_INSTALL_MODE = "DotNetInstallMode";
-        private const string JAVA_INSTALL_MODE = "JavaInstallMode";
-        
+            
         /// <summary>
         /// Set the java and .net editions are installed mode
         /// </summary>
@@ -44,42 +39,16 @@ namespace Alachisoft.NCache.Common.Util
             try
             {
                 object dotNetInstallMode = RegHelper.GetRegValue(RegHelper.ROOT_KEY, DOTNET_INSTALL_MODE, 0);
-                object javaInstallMode = RegHelper.GetRegValue(RegHelper.ROOT_KEY, JAVA_INSTALL_MODE, 0);
 
                 if (dotNetInstallMode != null)
                 {
                     _dotNetInstallMode = (InstallModes)Convert.ToInt16(dotNetInstallMode);
                 }
 
-                if (javaInstallMode != null)
-                {
-                    _javaInstallMode = (InstallModes)Convert.ToInt16(javaInstallMode);
-                }
+               
             }
             catch (Exception exception){}
 
-        }
-
-        /// <summary>
-        /// Verify whether java edition is installed or not
-        /// </summary>
-        /// <returns>
-        /// true if java edition is installed otherwise; false
-        /// </returns>
-        public static bool IsJavaEnabled
-        {
-            get
-            {
-                if (_javaInstallMode == InstallModes.Client)
-                    return true;
-                if (_javaInstallMode == InstallModes.Developer)
-                    return true;
-                if (_javaInstallMode == InstallModes.Server)
-                    return true;
-
-                return false;
-            }
-            
         }
 
         /// <summary>
@@ -103,16 +72,7 @@ namespace Alachisoft.NCache.Common.Util
             }            
         }
 
-        /// <summary>
-        /// Get Java Install Mode
-        /// </summary>
-        /// <returns>
-        /// java install mode
-        /// </returns>
-        public static InstallModes JavaInstallMode
-        {
-            get { return _javaInstallMode; }
-        }
+       
 
         /// <summary>
         /// Get .net Install Mode
@@ -127,27 +87,10 @@ namespace Alachisoft.NCache.Common.Util
 
         public static void Authenticate(LanguageContext languageContext)
         {
-#if JAVA
             if (languageContext == LanguageContext.DOTNET && !IsDotNetEnabled)
-            {
-                throw new ConfigurationException(".net based readThru provider's are not supported in current installed TayzGrid edition");
-            }
-            else if (languageContext == LanguageContext.JAVA && !IsJavaEnabled)
-            {
-                throw new ConfigurationException("java based readThru provider's are not supported in current installed TayzGrid edition");
-            }
-#else
-                        if (languageContext == LanguageContext.DOTNET && !IsDotNetEnabled)
             {
                 throw new ConfigurationException(".net based readThru provider's are not supported in current installed NCache edition");
             }
-            else if (languageContext == LanguageContext.JAVA && !IsJavaEnabled)
-            {
-                throw new ConfigurationException("java based readThru provider's are not supported in current installed NCache edition");
-            }
-#endif
-
         }
-
     }
 }

@@ -16,11 +16,7 @@ using System;
 using System.Collections.Generic;
 using System.Text;
 
-#if JAVA
-namespace Alachisoft.TayzGrid.Runtime.Caching
-#else
 namespace Alachisoft.NCache.Runtime.Caching
-#endif
 {
   
 

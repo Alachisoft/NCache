@@ -1,3 +1,17 @@
+// Copyright (c) 2018 Alachisoft
+// 
+// Licensed under the Apache License, Version 2.0 (the "License");
+// you may not use this file except in compliance with the License.
+// You may obtain a copy of the License at
+// 
+//    http://www.apache.org/licenses/LICENSE-2.0
+// 
+// Unless required by applicable law or agreed to in writing, software
+// distributed under the License is distributed on an "AS IS" BASIS,
+// WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+// See the License for the specific language governing permissions and
+// limitations under the License
+
 #include "StdAfx.h"
 #include ".\regcommon.h"
 #include <stdlib.h>
@@ -5,175 +19,6 @@
 
 #pragma comment(lib, "Iphlpapi.lib")
 #pragma warning(disable:4309)
-
-
-//unsigned int g_DataOffset = 0x1008;
-
-//
-////////////////////////////////////////////////
-////
-//// Environment specific functions.
-////
-//namespace Environment
-//{
-//	const SYSTEM_INFO& GetSystemInfo()
-//	{
-//		static SYSTEM_INFO sysInfo = {0};
-//		if(sysInfo.dwNumberOfProcessors == 0)
-//		{
-//			::GetSystemInfo(&sysInfo);
-//		}
-//		return sysInfo;
-//	}
-//
-//	//////////////////////////////////////////////////////////////////////
-//	//
-//	// Fetches the MAC address and prints it
-//	//
-//	int GetAdaptersAddressList(string list[], int count)
-//	{
-//		static bool bLoaded = false;
-//		static IP_ADAPTER_INFO adapterInfo[16] = {0};       // Allocate information
-//
-//		if(!bLoaded)
-//		{
-//			DWORD dwBufLen = sizeof(adapterInfo);
-//			DWORD dwStatus = ::GetAdaptersInfo(adapterInfo, &dwBufLen);
-//			if(dwStatus != ERROR_SUCCESS)
-//				return -1;
-//
-//			bLoaded = true;
-//		}
-//
-//		PIP_ADAPTER_INFO pAdapterInfo = adapterInfo;
-//		// Contains pointer to
-//		// current adapter info
-//		int i = 0;
-//		do
-//		{
-//			string address;
-//			for(unsigned int j=0; j<pAdapterInfo->AddressLength; j++)
-//			{
-//				TCHAR v[3] = {0};
-//				_stprintf(v, pAdapterInfo->Address[j] < 10 ? _T("0%x"):_T("%x"), pAdapterInfo->Address[j]);
-//				address += v;
-//			}
-//			list[i++] = address;
-//			pAdapterInfo = pAdapterInfo->Next;    // Progress through
-//			count--;
-//		}
-//		while(count && pAdapterInfo);
-//		return i;
-//	}
-//}
-//
-//
-////////////////////////////////////////////////
-////
-//// Other un-classified functions.
-////
-//namespace Misc
-//{
-//	void GetInstallTime(const BYTE* data, long version, SYSTEMTIME* pSysTime,short prodId)
-//	{
-//		ZeroMemory(pSysTime, sizeof(SYSTEMTIME));
-//		if(data != 0)
-//		{
-//			SYSTEMTIME *temp = ((SYSTEMTIME*)(data + g_DataOffset)) + version;
-//			pSysTime->wYear			= temp->wYear;
-//			pSysTime->wMonth		= temp->wMonth;
-//			pSysTime->wDayOfWeek	= temp->wDayOfWeek; 
-//			pSysTime->wDay			= temp->wDay;   
-//			pSysTime->wMinute		= temp->wMinute;
-//			pSysTime->wSecond		= temp->wSecond; //Read the activation status
-//		}
-//	}
-//
-//	//////////////////////////////////////////////////////////////////////
-//	//
-//	// Returns the number of times the evaluation period has been extended so far.
-//	//
-//	int	GetExtensionsUsed(short prodId)
-//	{
-//		string extCode = RegUtil::GetString(_T("UserInfo"), _T("ExtCode"),_T(""), prodId);
-//		extCode = Crypto::EDecode(extCode.c_str());
-//		int ext = 0;
-//		if(extCode.size() > 3)
-//		{
-//			if(extCode.at(0) >= _T('0') && extCode.at(0) <= _T('9'))
-//				ext = extCode.at(0) - _T('0');
-//		}
-//		return ext;
-//	}
-//
-//	//////////////////////////////////////////////////////////////////////
-//	//
-//	// Returns the number of times the evaluation period has been extended so far.
-//	//
-//	string	GetAuthCode(short prodId)
-//	{
-//		return RegUtil::GetString(_T("UserInfo"), _T("AuthCode"),"",prodId);
-//	}
-//
-//	string GetInstallCode(short prodId)
-//	{
-//		return RegUtil::GetString(NULL, _T("InstallCode"),"",prodId);
-//	}
-//	
-//	// Verifies if the version timestamp is valid, i.e., installed!
-//	bool IsValidVersionMark(const SYSTEMTIME *pSysTime, short prodId)
-//	{
-//		//SYSTEMTIME pSysTime;
-//		//GetInstallTime(version, &pSysTime);
-//		if(pSysTime->wYear < 2005 || pSysTime->wYear > 3500) return false;
-//		if(pSysTime->wMonth > 12 || pSysTime->wDayOfWeek > 31) return false;
-//		return true;
-//	}
-//}
-//
-//
-//namespace FileUtil
-//{
-//	bool FileExists(LPCTSTR pszFilePath)
-//	{
-//		DWORD attribs = GetFileAttributes(pszFilePath);
-//		if(attribs == 0xffffffff || attribs & FILE_ATTRIBUTE_DIRECTORY)
-//			return false;
-//		return true;
-//	}
-//
-//	int ReadFile(LPCTSTR fileName, BYTE** data)
-//	{
-//		*data = 0;
-//		HANDLE hfile = ::CreateFile(fileName, 
-//				GENERIC_READ, FILE_SHARE_READ, 
-//				0, OPEN_EXISTING, 0, NULL);
-//		if(hfile ==INVALID_HANDLE_VALUE)
-//			return -1;
-//
-//		// Try to obtain hFile's size 
-//		DWORD dwSize = GetFileSize (hfile, NULL) ;
-//		BYTE* buffer = new BYTE[dwSize];
-//		DWORD nBytesRead;
-//
-//		BOOL bResult = ::ReadFile(hfile, (LPVOID)buffer, dwSize, &nBytesRead, NULL) ; 
-//		if (!bResult ||  nBytesRead == 0 ) 
-//		{ 
-//			delete [] buffer;
-//			CloseHandle(hfile);
-//			return -1;
-//		} 
-//		CloseHandle(hfile);
-//		
-//		Crypto::EncryptDecryptBytes(buffer + g_DataOffset,dwSize-g_DataOffset);
-//
-//		*data = buffer;
-//		return dwSize;
-//	}
-//
-//}
-//
-//extern HANDLE g_hModule;
 
 //////////////////////////////////////////////
 //
@@ -187,7 +32,7 @@ namespace RegUtil
 	bool KeyExists(HKEY hRootKey, LPCTSTR subKey)
 	{
 		HKEY hKey;
-#if defined(WIN64) //[Asif Imam]
+#if defined(WIN64) 
 		if(ERROR_SUCCESS != RegOpenKeyEx(hRootKey, subKey,0,KEY_READ|KEY_WOW64_64KEY, &hKey) )
 		{
 			return false;
@@ -210,7 +55,7 @@ namespace RegUtil
 	{
 		HKEY hKeyResult;
 		DWORD dwDisposition;
-#if defined(WIN64)||defined(NCWOW64)//[Asif Imam]
+#if defined(WIN64)||defined(NCWOW64)
 		if (RegCreateKeyEx( hRootKey, subKey, 0, NULL, REG_OPTION_NON_VOLATILE,
 							KEY_WRITE|KEY_WOW64_64KEY, NULL, &hKeyResult, &dwDisposition) != ERROR_SUCCESS)
 		{
@@ -242,7 +87,7 @@ namespace RegUtil
 	{
 		HKEY hKeyResult;
 		DWORD dwDisposition;
-#if defined(WIN64)||defined(NCWOW64)//[Asif Imam]
+#if defined(WIN64)||defined(NCWOW64)
 		if (RegCreateKeyEx( hRootKey, subKey, 0, NULL, REG_OPTION_NON_VOLATILE,
 							KEY_WRITE|KEY_WOW64_64KEY, NULL, &hKeyResult, &dwDisposition) != ERROR_SUCCESS)
 		{
@@ -278,7 +123,7 @@ namespace RegUtil
 		DWORD  dwType;
 		DWORD  buffSize=0;
 
-#if defined(WIN64)||defined(NCWOW64)//[Asif Imam]
+#if defined(WIN64)||defined(NCWOW64)
 		
 		retCode = RegOpenKeyEx(root, keyPath, 0, KEY_READ|KEY_WOW64_64KEY, &hKeyResult);
 #else
@@ -330,10 +175,10 @@ namespace RegUtil
 
 	//////////////////////////////////////////////////////////////////////
 	//
-	// Returns a string containing all multiple regesitry enteries under a section
-	// All keys are concatinated and returned back as a single string. [Asif Imam] Aug08'08
+	// Returns a string containing all multiple registry entries under a section
+	// All keys are concatenated and returned back as a single string. 
 	//
-	bool GetRegKeys(HKEY root, LPCTSTR keyPath, LPCTSTR keyName, string& val, short prodId) //Added by [Asif Imam] Aug 08,08
+	bool GetRegKeys(HKEY root, LPCTSTR keyPath, LPCTSTR keyName, string& val, short prodId) 
 	{
 		long retCodeA,retCodeB;
 		HKEY hKeyResult;
@@ -346,7 +191,7 @@ namespace RegUtil
 		string token = ":";
 		string allKeys = "";
 
-#if defined(WIN64)||defined(NCWOW64)//[Asif Imam]
+#if defined(WIN64)||defined(NCWOW64)
 		
 		retCodeA = RegOpenKeyEx(root, keyPath, 0, KEY_READ|KEY_WOW64_64KEY, &hKeyResult);
 #else
@@ -393,20 +238,6 @@ namespace RegUtil
 		{
 			g_AppKeyName = _T("Software\\AlachiSoft\\NCache");
 		}
-		else if (prodId == 1)
-		{
-			g_AppKeyName = _T("Software\\AlachiSoft\\NWebCache");
-		}
-		else if (prodId == 2)
-		{
-			g_AppKeyName = _T("Software\\AlachiSoft\\StorageEdge"); //NCachePoint
-		}
-		else if (prodId == 3)
-		{
-			g_AppKeyName = _T("Software\\AlachiSoft\\TayzGrid"); 
-		}
-
-
 		return g_AppKeyName;
 	}
 
@@ -476,36 +307,5 @@ namespace RegUtil
 	}
 
 	
-	/////////////////////////////
-	////
-
-	//string GetUserString (LPCTSTR szSection, LPCTSTR szKey,LPCTSTR szDefault)
-	//{
-	//	string szKeyName = GetRegBase () + string(_T("\\")) + szSection;
-	//	string  retVal;
-	//	if(!GetRegValue (HKEY_CURRENT_USER, szKeyName.c_str(),szKey, retVal, prodId))
-	//		return szDefault;
-	//	return retVal;
-	//}
-
-	//bool SetUserString (LPCTSTR szSection, LPCTSTR szKey,LPCTSTR szValue)
-	//{
-	//	string szKeyName = GetRegBase () + string(_T("\\")) + szSection;
-	//	return SetRegValue(HKEY_CURRENT_USER, szKeyName.c_str(), szKey, szValue);
-	//}
-
-	//long GetUserInt (LPCTSTR szSection, LPCTSTR szKey,long nDefault)
-	//{
-	//	string szKeyName = GetRegBase () + string(_T("\\")) + szSection;
-	//	string  retVal;
-	//	if(!GetRegValue (HKEY_CURRENT_USER, szKeyName.c_str(),szKey, retVal,prodId))
-	//		return nDefault;
-	//	return _ttol(retVal.c_str());
-	//}
-
-	//bool SetUserInt (LPCTSTR szSection, LPCTSTR szKey,long nValue)
-	//{
-	//	string szKeyName = GetRegBase () + string(_T("\\")) + szSection;
-	//	return SetRegValue(HKEY_CURRENT_USER, szKeyName.c_str(), szKey, nValue);
-	//}
+	
 };

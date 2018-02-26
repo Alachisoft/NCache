@@ -176,33 +176,17 @@ namespace Alachisoft.NCache.Common.Util
 
 #endif
 
-#if JAVA
-                if (config.AppSettings.Settings["CacheServer.ExpirationBulkRemoveSize"] != null)
-                    _expirationBulkRemoveSize = config.AppSettings.Settings["CacheServer.ExpirationBulkRemoveSize"].Value;
 
-                if (config.AppSettings.Settings["CacheServer.ExpirationBulkRemoveDelay"] != null)
-                    _expirationBulkRemoveDelay = config.AppSettings.Settings["CacheServer.ExpirationBulkRemoveDelay"].Value;
-
-                if (config.AppSettings.Settings["CacheServer.EvictionBulkRemoveSize"] != null)
-                    _evictionBulkRemoveSize = config.AppSettings.Settings["CacheServer.EvictionBulkRemoveSize"].Value;
-
-                if (config.AppSettings.Settings["CacheServer.EvictionBulkRemoveDelay"] != null)
-                    _evictionBulkRemoveDelay = config.AppSettings.Settings["CacheServer.EvictionBulkRemoveDelay"].Value;
-#else
             if (!isHotApply)
             {
 
                 try
                 {
-#if JAVA
-                        if (config.AppSettings.Settings["CacheServer.ThreadsPerProcessor"] != null)
-                        {
-                            tempInt = Int32.Parse(config.AppSettings.Settings["CacheServer.ThreadsPerProcessor"].Value);
-#else
+
                     if (config.AppSettings.Settings["NCacheServer.ThreadsPerProcessor"] != null)
                     {
                         tempInt = Int32.Parse(config.AppSettings.Settings["NCacheServer.ThreadsPerProcessor"].Value);
-#endif
+
                         if (tempInt > 0)
                             _threadsPerProcessor = tempInt;
                     }
@@ -211,15 +195,11 @@ namespace Alachisoft.NCache.Common.Util
 
                 try
                 {
-#if JAVA
-                        if (config.AppSettings.Settings["CacheServer.Port"] != null)
-                        {
-                            tempInt = Int32.Parse(config.AppSettings.Settings["CacheServer.Port"].Value);
-#else
+
                     if (config.AppSettings.Settings["NCacheServer.Port"] != null)
                     {
                         tempInt = Int32.Parse(config.AppSettings.Settings["NCacheServer.Port"].Value);
-#endif
+
                         if (tempInt > 0)
                             Port = tempInt;
                     }
@@ -228,15 +208,11 @@ namespace Alachisoft.NCache.Common.Util
 
                 try
                 {
-#if JAVA
-                        if (config.AppSettings.Settings["CacheServer.ManagementPort"] != null)
-                        {
-                            tempInt = Int32.Parse(config.AppSettings.Settings["CacheServer.ManagementPort"].Value);
-#else
+
                     if (config.AppSettings.Settings["NCacheServer.ManagementPort"] != null)
                     {
                         tempInt = Int32.Parse(config.AppSettings.Settings["NCacheServer.ManagementPort"].Value);
-#endif
+
                         if (tempInt > 0)
                             ManagementPort = tempInt;
                     }
@@ -245,15 +221,11 @@ namespace Alachisoft.NCache.Common.Util
 
                 try
                 {
-#if JAVA
-                        if (config.AppSettings.Settings["CacheServer.SendBufferSize"] != null)
-                        {
-                            tempInt = Int32.Parse(config.AppSettings.Settings["CacheServer.SendBufferSize"].Value);
-#else
+
                     if (config.AppSettings.Settings["NCacheServer.SendBufferSize"] != null)
                     {
                         tempInt = Int32.Parse(config.AppSettings.Settings["NCacheServer.SendBufferSize"].Value);
-#endif
+
                         if (tempInt > 0)
                             SendBufferSize = tempInt;
                     }
@@ -274,15 +246,11 @@ namespace Alachisoft.NCache.Common.Util
 
                 try
                 {
-#if JAVA
-                        if (config.AppSettings.Settings["CacheServer.ReceiveBufferSize"] != null)
-                        {
-                            tempInt = Int32.Parse(config.AppSettings.Settings["CacheServer.ReceiveBufferSize"].Value);
-#else
+
                     if (config.AppSettings.Settings["NCacheServer.ReceiveBufferSize"] != null)
                     {
                         tempInt = Int32.Parse(config.AppSettings.Settings["NCacheServer.ReceiveBufferSize"].Value);
-#endif
+
                         if (tempInt > 0)
                             ReceiveBufferSize = tempInt;
                     }
@@ -344,13 +312,10 @@ namespace Alachisoft.NCache.Common.Util
 
             try
             {
-#if JAVA
-                    if (config.AppSettings.Settings["CacheServer.EnableDebuggingCounters"] != null)
-                        EnableDebuggingCounters = bool.Parse(config.AppSettings.Settings["CacheServer.EnableDebuggingCounters"].Value);
-#else
+
                 if (config.AppSettings.Settings["NCacheServer.EnableDebuggingCounters"] != null)
                     EnableDebuggingCounters = bool.Parse(config.AppSettings.Settings["NCacheServer.EnableDebuggingCounters"].Value);
-#endif
+
             }
             catch (Exception ex) { }
 
@@ -656,9 +621,6 @@ namespace Alachisoft.NCache.Common.Util
             }
             catch (Exception ex) { }
 
-        
-
-
             try
             {
                 if (config.AppSettings.Settings["NCacheServer.EventsPersistence"] != null)
@@ -668,15 +630,10 @@ namespace Alachisoft.NCache.Common.Util
 
             try
             {
-#if JAVA
-                    if (config.AppSettings.Settings["Cache.MaxPendingConnections"] != null)
-                    {
-                        tempInt = Int32.Parse(config.AppSettings.Settings["Cache.MaxPendingConnections"].Value);
-#else
                 if (config.AppSettings.Settings["NCache.MaxPendingConnections"] != null)
                 {
                     tempInt = Int32.Parse(config.AppSettings.Settings["NCache.MaxPendingConnections"].Value);
-#endif
+
                     if (tempInt > 10)
                         EventsPersistenceInterval = tempInt;
                 }
@@ -685,13 +642,10 @@ namespace Alachisoft.NCache.Common.Util
 
             try
             {
-#if JAVA
-                    if (config.AppSettings.Settings["Cache.EnableServerCounters"] != null)
-                        EnableServerCounters = bool.Parse(config.AppSettings.Settings["Cache.EnableServerCounters"].Value);
-#else
+
                 if (config.AppSettings.Settings["NCache.EnableServerCounters"] != null)
                     EnableServerCounters = bool.Parse(config.AppSettings.Settings["NCache.EnableServerCounters"].Value);
-#endif
+
             }
             catch (Exception ex) { }
 
@@ -719,15 +673,10 @@ namespace Alachisoft.NCache.Common.Util
 
             try
             {
-#if JAVA
-                    if (config.AppSettings.Settings["CacheServer.BlockingActivityTimeout"] != null)
-                    {
-                        tempInt = Int32.Parse(config.AppSettings.Settings["CacheServer.BlockingActivityTimeout"].Value);
-#else
                 if (config.AppSettings.Settings["NCacheServer.BlockingActivityTimeout"] != null)
                 {
                     tempInt = Int32.Parse(config.AppSettings.Settings["NCacheServer.BlockingActivityTimeout"].Value);
-#endif
+
                     if (tempInt > 1)
                         BlockingActivity = tempInt;
                 }
@@ -736,15 +685,10 @@ namespace Alachisoft.NCache.Common.Util
 
             try
             {
-#if JAVA
-                    if (config.AppSettings.Settings["CacheServer.GracefullShutdownTimeout"] != null)
-                    {
-                        tempInt = Int32.Parse(config.AppSettings.Settings["CacheServer.GracefullShutdownTimeout"].Value);
-#else
                 if (config.AppSettings.Settings["NCacheServer.GracefullShutdownTimeout"] != null)
                 {
                     tempInt = Int32.Parse(config.AppSettings.Settings["NCacheServer.GracefullShutdownTimeout"].Value);
-#endif
+
                     if (tempInt > 1)
                         GracefullTimeout = tempInt;
                 }
@@ -753,25 +697,18 @@ namespace Alachisoft.NCache.Common.Util
 
             try
             {
-#if JAVA
-                    if (config.AppSettings.Settings["CacheServer.DisableIndexNotDefinedException"] != null)
-                        DisableIndexNotDefinedException = bool.Parse(config.AppSettings.Settings["CacheServer.DisableIndexNotDefinedException"].Value);
-#else
+
                 if (config.AppSettings.Settings["NCacheServer.DisableIndexNotDefinedException"] != null)
                     DisableIndexNotDefinedException = bool.Parse(config.AppSettings.Settings["NCacheServer.DisableIndexNotDefinedException"].Value);
-#endif
             }
             catch (Exception ex) { }
 
             try
             {
-#if JAVA
-                    if (config.AppSettings.Settings["CacheServer.EnableDataSourceCounters"] != null)
-                        EnableDataSourceCounters = bool.Parse(config.AppSettings.Settings["CacheServer.EnableDataSourceCounters"].Value);
-#else
+
                 if (config.AppSettings.Settings["NCacheServer.EnableDataSourceCounters"] != null)
                     EnableDataSourceCounters = bool.Parse(config.AppSettings.Settings["NCacheServer.EnableDataSourceCounters"].Value);
-#endif
+
             }
             catch (Exception ex) { }
 
@@ -806,13 +743,10 @@ namespace Alachisoft.NCache.Common.Util
 
             try
             {
-#if JAVA
-                    if (config.AppSettings.Settings["Cache.EnableGCCollection"] != null)
-                        EnableGCCollection = bool.Parse(config.AppSettings.Settings["Cache.EnableGCCollection"].Value);
-#else
+
                 if (config.AppSettings.Settings["NCache.EnableGCCollection"] != null)
                     EnableGCCollection = bool.Parse(config.AppSettings.Settings["NCache.EnableGCCollection"].Value);
-#endif
+
             }
             catch (Exception ex) { }
 
@@ -851,27 +785,20 @@ namespace Alachisoft.NCache.Common.Util
 
             try
             {
-#if JAVA
-                if (config.AppSettings.Settings["Cache.SimulateSocketClose"] != null)
-                    SimulateSocketClose = bool.Parse(config.AppSettings.Settings["Cache.SimulateSocketClose"].Value);
-#else
+
                 if (config.AppSettings.Settings["NCache.SimulateSocketClose"] != null)
                     SimulateSocketClose = bool.Parse(config.AppSettings.Settings["NCache.SimulateSocketClose"].Value);
-#endif
+
             }
             catch (Exception ex) { }
 
             try
             {
-#if JAVA
-                    if (config.AppSettings.Settings["CacheServer.SocketCloseInterval"] != null)
-                    {
-                        tempInt = Int32.Parse(config.AppSettings.Settings["CacheServer.SocketCloseInterval"].Value);
-#else
+
                 if (config.AppSettings.Settings["NCacheServer.SocketCloseInterval"] != null)
                 {
                     tempInt = Int32.Parse(config.AppSettings.Settings["NCacheServer.SocketCloseInterval"].Value);
-#endif
+
                     if (tempInt > 20)
                         SocketCloseInterval = tempInt;
                 }
@@ -894,15 +821,11 @@ namespace Alachisoft.NCache.Common.Util
 
             try
             {
-#if JAVA
-                    if (config.AppSettings.Settings["CacheServer.HeartbeatInterval"] != null)
-                    {
-                        tempInt = Int32.Parse(config.AppSettings.Settings["CacheServer.HeartbeatInterval"].Value);
-#else
+
                 if (config.AppSettings.Settings["NCacheServer.HeartbeatInterval"] != null)
                 {
                     tempInt = Int32.Parse(config.AppSettings.Settings["NCacheServer.HeartbeatInterval"].Value);
-#endif
+
                     if (tempInt > 0)
                         HeartbeatInterval = tempInt * 1000;
                 }
@@ -1083,7 +1006,7 @@ namespace Alachisoft.NCache.Common.Util
             }
             catch (Exception ex) { }
 
-#endif
+
             try
             {
                 if (config.AppSettings.Settings["DataChunkSize"] != null)

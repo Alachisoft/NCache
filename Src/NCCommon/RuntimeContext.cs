@@ -42,11 +42,7 @@ namespace Alachisoft.NCache.Common
         {
             get
             {
-#if JAVA
-                return RtContextValue.JVCACHE;
-#else
                 return RtContextValue.NCACHE;
-#endif
             }
         }
 

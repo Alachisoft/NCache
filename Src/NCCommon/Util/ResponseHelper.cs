@@ -20,18 +20,11 @@ using Alachisoft.NCache.Common.DataStructures.Clustered;
 using Alachisoft.NCache.Common.Protobuf;
 using Alachisoft.NCache.Common.Protobuf.Util;
 using Exception = System.Exception;
-#if JAVA
-using Alachisoft.TayzGrid.Runtime.Exceptions;
-#else
 using Alachisoft.NCache.Runtime.Exceptions;
-#endif 
-#if JAVA
-using Runtime = Alachisoft.TayzGrid.Runtime;
-#else
 using Runtime = Alachisoft.NCache.Runtime;
 using Alachisoft.NCache.Common.DataStructures.Clustered;
 using System.Collections;
-#endif
+
 namespace Alachisoft.NCache.Common.Util
 {
     public class ResponseHelper

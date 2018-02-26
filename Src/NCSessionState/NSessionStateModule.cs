@@ -6,26 +6,15 @@ using System.Configuration;
 using System.Diagnostics;
 using System.IO;
 using Microsoft.Win32;
-
 using Alachisoft.NCache.Management;
 using Alachisoft.NCache.Common;
-
-#if JAVA
-using Alachisoft.TayzGrid.Web.Util;
-using Alachisoft.TayzGrid.Web.Caching;
-using Runtime = Alachisoft.TayzGrid.Runtime;
-using Alachisoft.TayzGrid.Web.SessionStateManagement;
-#else
 using Alachisoft.NCache.Web.Util;
 using Alachisoft.NCache.Web.Caching;
 using Runtime = Alachisoft.NCache.Runtime;
 using Alachisoft.NCache.Web.SessionStateManagement;
-#endif
-
 using Alachisoft.NCache.Web.SessionState.DistributionStrategy;
 using Alachisoft.NCache.Common.Util;
 using Alachisoft.NCache.Common.Logger;
-
 
 namespace Alachisoft.NCache.Web.SessionState
 {

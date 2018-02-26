@@ -15,12 +15,7 @@
 using System;
 using System.Collections;
 
-#if JAVA
-namespace Alachisoft.TayzGrid.Web.Caching
-#else
 namespace Alachisoft.NCache.Runtime.Caching
-#endif
-
 {
 
     /// <summary>
@@ -29,7 +24,6 @@ namespace Alachisoft.NCache.Runtime.Caching
     /// <param name="cacheId">Name of the cache</param>
     /// <param name="client">Client</param>
     /// <param name="status">Client status</param>
-    public delegate void CacheClientConnectivityChangedCallback(
-        string cacheId, ClientInfo client, ConnectivityStatus status);
+    public delegate void CacheClientConnectivityChangedCallback(string cacheId, ClientInfo client, ConnectivityStatus status);
 
 }

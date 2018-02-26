@@ -15,27 +15,12 @@
 using System;
 using System.Collections;
 using System.Collections.Generic;
-#if JAVA
-using Alachisoft.TayzGrid.Runtime.Dependencies;
-#else
 using Alachisoft.NCache.Runtime.Dependencies;
-#endif
-#if JAVA
-using Alachisoft.TayzGrid.Runtime;
-#else
 using Alachisoft.NCache.Runtime;
-#endif
-#if JAVA
-using Alachisoft.TayzGrid.Runtime.Caching;
-#else
 using Alachisoft.NCache.Runtime.Caching;
-#endif
 
-#if JAVA
-namespace Alachisoft.TayzGrid.Runtime.DatasourceProviders
-#else
 namespace Alachisoft.NCache.Runtime.DatasourceProviders
-#endif
+
 {
 	/// <summary>
 	/// Contains methods used to read an object by its key from the master data source. 

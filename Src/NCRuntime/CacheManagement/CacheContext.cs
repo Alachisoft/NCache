@@ -16,11 +16,7 @@ using System;
 using System.Collections.Generic;
 using System.Text;
 
-#if JAVA
-namespace Alachisoft.TayzGrid.Runtime.CacheManagement
-#else
 namespace Alachisoft.NCache.Runtime.CacheManagement
-#endif
 {
     /// <summary>
     /// Context of the cache
@@ -28,6 +24,5 @@ namespace Alachisoft.NCache.Runtime.CacheManagement
     public enum CacheContext
     {
         NCache,
-        TayzGrid,
     }
 }

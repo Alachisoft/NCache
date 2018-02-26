@@ -108,16 +108,9 @@ namespace Alachisoft.NGroups.Stack
         {
             perfStatsColl.InstanceName = instance;
             bool enableDebuggingCounters = false;
-#if JAVA
-            if (System.Configuration.ConfigurationSettings.AppSettings["CacheServer.EnableDebuggingCounters"] != null)
-            {
-                enableDebuggingCounters = Convert.ToBoolean(System.Configuration.ConfigurationSettings.AppSettings["CacheServer.EnableDebuggingCounters"]);
-            }
-#else
 
             enableDebuggingCounters = ServiceConfiguration.EnableDebuggingCounters;
-
-#endif           
+         
             perfStatsColl.NCacheLog = _ncacheLog;
             perfStatsColl.InitializePerfCounters(enableDebuggingCounters);
         }

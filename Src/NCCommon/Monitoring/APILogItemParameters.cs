@@ -14,21 +14,9 @@
 using System;
 using System.Collections.Generic;
 using System.Text;
-#if JAVA
-using Alachisoft.TayzGrid.Runtime.Caching;
-#else
 using Alachisoft.NCache.Runtime.Caching;
-#endif
-#if JAVA
-using Alachisoft.TayzGrid.Runtime;
-#else
 using Alachisoft.NCache.Runtime;
-#endif
-#if JAVA
-using Alachisoft.TayzGrid.Runtime.Dependencies;
-#else
 using Alachisoft.NCache.Runtime.Dependencies;
-#endif
 using System.IO;
 using System.Collections;
 

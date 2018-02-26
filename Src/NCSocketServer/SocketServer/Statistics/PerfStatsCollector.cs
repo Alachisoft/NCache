@@ -76,14 +76,10 @@ namespace Alachisoft.NCache.SocketServer.Statistics
 
 
         /// <summary> Category name of counter performance data.</summary>
-#if JAVA
 
-        private const string			PC_CATEGORY = "TayzGrid";
-        private long _queueSize;
-#else
         private const string PC_CATEGORY = "NCache";
         private long _queueSize;
-#endif
+
 
         /// <summary>
         /// Constructor
@@ -128,11 +124,7 @@ namespace Alachisoft.NCache.SocketServer.Statistics
                 }
                 catch (Exception e)
                 {
-#if JAVA
-                    AppUtil.LogEvent("TayzGrid", "User has no access to TayzGrid Server counters. " + e.ToString(), EventLogEntryType.Error, EventCategories.Error, EventID.GeneralError);
-#else
                     AppUtil.LogEvent("NCache", "User has no access to NCache Server counters. " + e.ToString(), EventLogEntryType.Error, EventCategories.Error, EventID.GeneralError);
-#endif
                     return false;
                 }
                 return true;
@@ -336,11 +328,7 @@ namespace Alachisoft.NCache.SocketServer.Statistics
             }
             catch (Exception e)
             {
-#if JAVA
-                AppUtil.LogEvent("TayzGrid", "An error occurred while initializing counters for TayzGrid Server. " + e.ToString(), EventLogEntryType.Error, EventCategories.Error, EventID.GeneralError);
-#else
-                AppUtil.LogEvent("NCache", "An error occurred while initializing counters for NCache Server. " + e.ToString(), EventLogEntryType.Error, EventCategories.Error, EventID.GeneralError);
-#endif
+               AppUtil.LogEvent("NCache", "An error occurred while initializing counters for NCache Server. " + e.ToString(), EventLogEntryType.Error, EventCategories.Error, EventID.GeneralError);
             }
         }
 

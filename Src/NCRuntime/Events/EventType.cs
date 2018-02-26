@@ -13,12 +13,7 @@
 // limitations under the License
 
 using System;
-
-#if JAVA
-namespace Alachisoft.TayzGrid.Runtime.Events
-#else
 namespace Alachisoft.NCache.Runtime.Events
-#endif
 {
     /// <summary>
     /// Type of event

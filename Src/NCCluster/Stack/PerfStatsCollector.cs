@@ -84,11 +84,8 @@ namespace Alachisoft.NGroups.Stack
         }
 
         /// <summary> Category name of counter performance data.</summary>
-#if JAVA
-        private const string PC_CATEGORY = "TayzGrid";
-#else
         private const string PC_CATEGORY = "NCache";
-#endif
+
         private Thread _printThread;
         private TimeSpan _printInterval = new TimeSpan(10,0,0);
         private string _logFilePath;

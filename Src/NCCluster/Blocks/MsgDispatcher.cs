@@ -22,11 +22,8 @@ using Alachisoft.NCache.Common;
 using Alachisoft.NCache.Common.Stats;
 using Alachisoft.NCache.Common.Util;
 using Alachisoft.NCache.Common.Logger;
-#if JAVA
-using Runtime = Alachisoft.TayzGrid.Runtime;
-#else
 using Runtime = Alachisoft.NCache.Runtime;
-#endif
+
 namespace Alachisoft.NGroups.Blocks
 {
 	public class MsgDispatcher : RequestHandler, UpHandler

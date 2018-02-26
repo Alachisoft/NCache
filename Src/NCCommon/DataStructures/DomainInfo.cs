@@ -16,11 +16,8 @@ using System.Collections.Generic;
 using System.Text;
 using System.Collections;
 
-#if JAVA
-using Runtime = Alachisoft.TayzGrid.Runtime;
-#else
 using Runtime = Alachisoft.NCache.Runtime;
-#endif
+
 
 namespace Alachisoft.NCache.Common.DataStructures
 {

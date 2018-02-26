@@ -14,11 +14,8 @@
 
 using System;
 
-#if JAVA
-namespace Alachisoft.TayzGrid.Runtime
-#else
 namespace Alachisoft.NCache.Runtime
-#endif
+
 {
 	/// <summary>
 	/// Specifies the relative priority of items stored in the <see cref="Cache"/>.

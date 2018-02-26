@@ -17,11 +17,7 @@ using System.Collections;
 using System.IO;
 using System.Collections.Generic;
 
-#if JAVA
-namespace Alachisoft.TayzGrid.Runtime.Dependencies
-#else
 namespace Alachisoft.NCache.Runtime.Dependencies
-#endif
 {
 	/// <summary>
 	/// Combines multiple dependencies between an item stored in an application's Cache object 

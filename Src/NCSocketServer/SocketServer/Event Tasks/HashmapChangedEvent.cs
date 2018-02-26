@@ -15,11 +15,7 @@
 using System;
 using System.Collections;
 using Alachisoft.NCache.SocketServer.Util;
-#if JAVA
-using Alachisoft.TayzGrid.Web.Util;
-#else
 using Alachisoft.NCache.Web.Util;
-#endif
 using Alachisoft.NCache.Common.DataStructures;
 using System.Text;
 

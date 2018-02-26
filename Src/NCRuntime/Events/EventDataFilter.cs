@@ -16,11 +16,8 @@ using System;
 using System.Collections.Generic;
 using System.Text;
 
-#if JAVA
-namespace Alachisoft.TayzGrid.Runtime.Events
-#else
 namespace Alachisoft.NCache.Runtime.Events
-#endif
+
 {
     /// <summary>
     /// This enum is to describe when registering an event, upon raise how much data is 

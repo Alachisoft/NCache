@@ -13,17 +13,9 @@
 // limitations under the License
 
 using System.Collections.Generic;
-#if JAVA
-using Alachisoft.TayzGrid.Runtime.Caching;
-#else
 
-#endif
-
-#if JAVA
-namespace Alachisoft.TayzGrid.Runtime.DatasourceProviders
-#else
 namespace Alachisoft.NCache.Runtime.DatasourceProviders
-#endif
+
 {
     /// <summary>
     /// Used to log the operations type in Write behind

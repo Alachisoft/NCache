@@ -353,11 +353,9 @@ namespace Alachisoft.NCache.Common
         /// <param name="type">One of the <c>EventLogEntryType</c> values.</param>
         public static void LogEvent(string msg, EventLogEntryType type)
         {
-#if JAVA
-            string cacheserver="TayzGrid";
-#else
+
             string cacheserver = "NCache";
-#endif
+
             if (type == EventLogEntryType.Information)
                 LogEvent(cacheserver, msg, type, EventCategories.Information, EventID.GeneralInformation);
             else

@@ -15,17 +15,9 @@
 using System;
 using System.Text;
 using Alachisoft.NCache.Common.Interop;
-#if JAVA
-using Alachisoft.TayzGrid.Runtime.Serialization.IO;
-#else
 using Alachisoft.NCache.Runtime.Serialization.IO;
 using System.Diagnostics;
-#endif
-#if JAVA
-using Alachisoft.TayzGrid.Runtime.Serialization;
-#else
 using Alachisoft.NCache.Runtime.Serialization;
-#endif
 using Alachisoft.NCache.Common.Util;
 
 namespace Alachisoft.NCache.Common.Stats

@@ -15,14 +15,8 @@
 using System;
 using System.Collections;
 using Alachisoft.NCache.Serialization.Surrogates;
-
 using System.Collections.Generic;
-
-#if JAVA
-using Alachisoft.TayzGrid.Runtime.Serialization;
-#else
 using Alachisoft.NCache.Runtime.Serialization;
-#endif
 
 namespace Alachisoft.NCache.Serialization
 {

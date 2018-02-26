@@ -18,11 +18,8 @@ using System.Collections;
 using System.Data;
 using System.Collections.Generic;
 
-#if JAVA
-namespace Alachisoft.TayzGrid.Runtime.Dependencies
-#else
 namespace Alachisoft.NCache.Runtime.Dependencies
-#endif
+
 {
     /// <summary>
     /// Establishes a relationship between an item stored in an application's Cache object 

@@ -15,19 +15,14 @@
 using System;
 using System.Text;
 using System.Collections;
-
 using Alachisoft.NCache.Caching;
 using System.Collections.Generic;
 using Alachisoft.NCache.Common;
 using Alachisoft.NCache.Caching.Messaging;
-
-#if JAVA
-using Alachisoft.TayzGrid.Runtime.DatasourceProviders;
-#else
 using Alachisoft.NCache.Common.Util;
 using Alachisoft.NCache.Runtime.DatasourceProviders;
 using Alachisoft.NCache.Common.DataStructures.Clustered;
-#endif
+
 
 namespace Alachisoft.NCache.SocketServer.Util
 {

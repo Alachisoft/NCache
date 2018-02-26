@@ -17,11 +17,8 @@ using System.Collections.Generic;
 using System.Text;
 using Alachisoft.NCache.Runtime.Exceptions;
 
-#if JAVA
-namespace Alachisoft.TayzGrid.Runtime.Dependencies
-#else
+
 namespace Alachisoft.NCache.Runtime.Dependencies
-#endif
 {
     [Serializable]
     public class FileDependency : CacheDependency

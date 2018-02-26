@@ -22,15 +22,12 @@ using System.IO;
 using Alachisoft.NCache.SocketServer.Statistics;
 using Alachisoft.NCache.SocketServer.RuntimeLogging;
 using Alachisoft.NCache.Common.Threading;
-#if JAVA
-using Web = Alachisoft.TayzGrid.Web;
-#else
 using System.Collections;
 using Alachisoft.NCache.SocketServer.RequestLogging;
 using Alachisoft.NCache.Common.Util;
 using System.Diagnostics;
 using Alachisoft.NCache.SocketServer.CommandLogging;
-#endif
+
 namespace Alachisoft.NCache.SocketServer
 {
     /// <summary>

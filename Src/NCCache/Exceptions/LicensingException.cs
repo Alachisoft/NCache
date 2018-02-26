@@ -16,13 +16,8 @@ using System;
 using System.Collections;
 using System.Security.Permissions;
 using System.Runtime.Serialization;
-
-
-#if JAVA
-using Alachisoft.TayzGrid.Runtime.Exceptions;
-#else
 using Alachisoft.NCache.Runtime.Exceptions;
-#endif 
+
 
 
 namespace Alachisoft.NCache.Caching.Exceptions

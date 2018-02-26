@@ -16,11 +16,8 @@ using System.Text;
 using Alachisoft.NCache.Common.Net;
 using System.Collections;
 using System.Threading;
-#if JAVA
-using Runtime = Alachisoft.TayzGrid.Runtime;
-#else
 using Runtime = Alachisoft.NCache.Runtime;
-#endif
+
 namespace Alachisoft.NCache.Common.Monitoring
 {
     [Serializable]

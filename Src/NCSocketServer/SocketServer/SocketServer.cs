@@ -16,17 +16,7 @@ using System;
 using System.Net;
 using Alachisoft.NCache.Caching;
 using Alachisoft.NCache.Common;
-
-#if JAVA
-using Alachisoft.TayzGrid.Web.Util;
-#else
 using Alachisoft.NCache.Web.Util;
-#endif
-#if JAVA
-using Alachisoft.TayzGrid.Web.Synchronization;
-#else
-#endif
-
 using Alachisoft.NCache.SocketServer.Statistics;
 using System.Collections.Generic;
 using System.Collections;
@@ -34,15 +24,10 @@ using Alachisoft.NCache.Common.Net;
 using Alachisoft.NCache.Common.Monitoring;
 using Alachisoft.NCache.Common.Util;
 using Alachisoft.NCache.Common.Logger;
-#if JAVA
-using Runtime = Alachisoft.TayzGrid.Runtime;
-#else
 using Alachisoft.NCache.Management;
-#endif
+
 namespace Alachisoft.NCache.SocketServer
 {
-#if COMMUNITY
-#endif
     /// <summary>
     /// An object of this class is called when Ncache service starts and stops
     /// as well as when NCache Bridge service starts and stops.
@@ -55,13 +40,10 @@ namespace Alachisoft.NCache.SocketServer
         decimal _clusterHealthDetectionInterval = 3;
         int _managementServerPort;
         string _managementServerIP;
-#if JAVA
-        public const int DEFAULT_SOCK_SERVER_PORT = 9600;
-        public const int DEFAULT_MANAGEMENT_PORT = 8270;  
-#else
+
         public const int DEFAULT_SOCK_SERVER_PORT = 9800;
         public const int DEFAULT_MANAGEMENT_PORT = 8250;
-#endif
+
         public const int DEFAULT_SOCK_BUFFER_SIZE = 32768; 
 
         // Size is specified in bytes (.net stream if grow more then 1.9GB will give memory exception that's why
@@ -74,9 +56,9 @@ namespace Alachisoft.NCache.SocketServer
         static Logs _logger = new Logs();        
 
         static bool _enableCacheServerCounters = true;
-#if !MONO
+
         PerfStatsCollector _perfStatsColl = null;
-#endif
+
         static LoggingInfo _serverLoggingInfo = new LoggingInfo();
 
         /// <summary>
@@ -116,12 +98,7 @@ namespace Alachisoft.NCache.SocketServer
 
 		   if (ServiceConfiguration.ClusterHealthDetectionInterval != 3)
                 _clusterHealthDetectionInterval = ServiceConfiguration.ClusterHealthDetectionInterval;
-#if JAVA
-            if (System.Configuration.ConfigurationSettings.AppSettings.Get("CacheServer.ResponseDataSize") != null)
-            {
-                CHUNK_SIZE_FOR_OBJECT = Convert.ToInt64(System.Configuration.ConfigurationSettings.AppSettings.Get("CacheServer.ResponseDataSize"));
-            }
-#endif
+
             
         }
 
@@ -194,11 +171,9 @@ namespace Alachisoft.NCache.SocketServer
                 _loggerName = loggerName;
             InitializeLogging();
             
-#if JAVA
-            _perfStatsColl = new PerfStatsCollector("TayzGrid Server", _serverPort);
-#else
+
             _perfStatsColl = new PerfStatsCollector(cacheName, _serverPort);
-#endif
+
             _conManager = new ConnectionManager(_perfStatsColl);
             
             _conManager.Start(bindIP, _serverPort, _sendBuffer, _recieveBuffer, _logger, cmdMgrType, conMgrType);

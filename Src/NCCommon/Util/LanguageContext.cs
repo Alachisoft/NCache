@@ -22,6 +22,5 @@ namespace Alachisoft.NCache.Common.Util
     {
         NONE,
         DOTNET,
-        JAVA
     }
 }

@@ -17,11 +17,7 @@ using System.IO;
 using System.Collections;
 using System.Collections.Generic;
 
-#if JAVA
-namespace Alachisoft.TayzGrid.Runtime.Dependencies
-#else
 namespace Alachisoft.NCache.Runtime.Dependencies
-#endif
 {
 	/// <summary>
 	/// Tracks cache dependencies, which can be files, directories, or keys to other objects in 

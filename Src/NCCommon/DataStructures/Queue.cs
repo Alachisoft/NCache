@@ -14,13 +14,9 @@ using System;
 using System.Collections;
 using System.Threading;
 using Alachisoft.NCache.Common.Enum;
-
 using TimeoutException = Alachisoft.NCache.Common.Exceptions.TimeoutException;
-#if JAVA
-using Runtime = Alachisoft.TayzGrid.Runtime;
-#else
 using Runtime = Alachisoft.NCache.Runtime;
-#endif
+
 namespace Alachisoft.NCache.Common.DataStructures
 {
     /// <summary> Elements are added at the tail and removed from the head. Class is thread-safe in that

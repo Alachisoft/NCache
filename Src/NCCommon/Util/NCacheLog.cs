@@ -30,10 +30,6 @@ namespace Alachisoft.NCache.Common.Util
 
         static NCacheLog()
         {
-#if JAVA
-            string serverconfig="Alachisoft.TayzGrid.Service.exe.config";
-#endif
-
 #if !NETCORE && !NETCOREAPP2_0
             string serverconfig ="Alachisoft.NCache.Service.exe.config";
 #else

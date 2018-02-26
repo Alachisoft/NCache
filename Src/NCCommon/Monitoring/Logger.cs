@@ -64,19 +64,13 @@ namespace Alachisoft.NCache.Common.Monitoring
 
                 if (filepath == null || filepath == string.Empty)
                 {
-#if JAVA
-                    if (!DirectoryUtil.SearchGlobalDirectory("log", false, out filepath))
-                    {
-                        try
-                        {
-                            DirectoryUtil.SearchLocalDirectory("log", true, out filepath);
-#else
+
                     if (!DirectoryUtil.SearchGlobalDirectory("log-files", false, out filepath))
                     {
                         try
                         {
                             DirectoryUtil.SearchLocalDirectory("log-files", true, out filepath);
-#endif
+
                         }
                         catch (Exception ex)
                         {

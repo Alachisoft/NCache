@@ -19,12 +19,9 @@ using Alachisoft.NCache.Caching.Queries;
 using System.Collections;
 using Alachisoft.NCache.Common;
 using Alachisoft.NCache.Runtime.Caching;
-#if JAVA
-using Alachisoft.TayzGrid.Runtime.Events;
-#else
 using Alachisoft.NCache.Runtime.Events;
 using Alachisoft.NCache.Common.Util;
-#endif
+
 
 namespace Alachisoft.NCache.SocketServer.Util
 {

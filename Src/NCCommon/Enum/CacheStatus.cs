@@ -22,8 +22,5 @@ namespace Alachisoft.NCache.Common.Enum
         Unavailable,
         Registered,
         Running,
-        InEvaluation,
-        Expired,
-        Activated
     }
 }

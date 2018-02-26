@@ -13,16 +13,8 @@
 // limitations under the License
 using System;
 using System.Text;
-#if JAVA
-using Alachisoft.TayzGrid.Runtime.Serialization;
-#else
 using Alachisoft.NCache.Runtime.Serialization;
-#endif
-#if JAVA
-using Alachisoft.TayzGrid.Runtime.Serialization.IO;
-#else
 using Alachisoft.NCache.Runtime.Serialization.IO;
-#endif
 using System.Collections;
 using Alachisoft.NCache.Common.Net;
 using System.Runtime.Serialization.Formatters.Binary;

@@ -18,11 +18,7 @@ using System.Text;
 using System.Runtime.Serialization;
 using System.Security.Permissions;
 
-#if JAVA
-namespace Alachisoft.TayzGrid.Runtime.Exceptions
-#else
 namespace Alachisoft.NCache.Runtime.Exceptions
-#endif
 {
     /// <summary>
     /// StreamCloseException is thrown if a write operation is performed on closed

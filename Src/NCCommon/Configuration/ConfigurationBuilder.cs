@@ -22,14 +22,11 @@ using System.Web;
 #if !NETCORE
 using System.Runtime.Remoting;
 #endif
-#if JAVA
-using Runtime = Alachisoft.TayzGrid.Runtime;
-#else
 using Runtime = Alachisoft.NCache.Runtime;
 using System.Globalization;
 using System.Threading;
 using System.Web;
-#endif
+
 namespace Alachisoft.NCache.Common.Configuration
 {
     /// <summary>
@@ -49,56 +46,7 @@ namespace Alachisoft.NCache.Common.Configuration
     /// help the framework undersand which .Net object is equivalent to the a specific XML tag. To
     /// see <see cref="Alachisoft.NCache.Common.Configuration.ConfiugrationAttributes."/>. Below is example
     /// .Net class which is populated by the framework from the the above XML.
-    /// <example>
-    ///  [ConfigurationRoot("Cache")]
-    //public class CacheClientConfig
-    //{
-    //    private string _id;
-    //    private int _retryInterval;
-    //    private ServerCofig[] _serverConfig;
 
-    //    [ConfigurationAttribute("id")]
-    //    public string Id
-    //    {
-    //        get { return _id; }
-    //        set { _id = value; }
-    //    }
-    //    [ConfigurationAttribute("retry-interval", "sec")]
-    //    public int RetryInterval
-    //    {
-    //        get { return _retryInterval; }
-    //        set { _retryInterval = value; }
-    //    }
-    
-    //    [ConfigurationSection("server")]
-    //    public ServerCofig[] ServerConifg
-    //    {
-    //        get { return _serverConfig; }
-    //        set { _serverConfig = value; }
-    //    }
-
-    //}
-    //public class ServerCofig
-    //{
-    //    private string _serverName;
-    //    private string _priority;
-
-    //    [ConfigurationAttribute("name")]
-    //    public string ServerName
-    //    {
-    //        get { return _serverName; }
-    //        set { _serverName = value; }
-    //    }
-
-    //    [ConfigurationAttribute("priority")]
-    //    public string Priority
-    //    {
-    //        get { return _priority; }
-    //        set { _priority = value; }
-    //    }
-    //}
-    /// </example>
-    /// </summary>
     public class ConfigurationBuilder
     {
         private Hashtable _baseConfigurationMap = Hashtable.Synchronized(new Hashtable());
@@ -108,11 +56,8 @@ namespace Alachisoft.NCache.Common.Configuration
         string _file;
         string _path;
         const string DYNAMIC_CONFIG_SECTION = "dynamic-config-object";
-#if JAVA
-        string config="client.conf";
-#else
         string config="client.ncconf";
-#endif
+
         public ConfigurationBuilder(object[] configuration)
         {
             Configuration = configuration;

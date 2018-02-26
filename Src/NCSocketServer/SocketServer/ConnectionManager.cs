@@ -18,20 +18,11 @@ using System.Net;
 using System.Net.Sockets;
 using System.Threading;
 using Alachisoft.NCache.Common.Enum;
-
-#if JAVA
-using Alachisoft.TayzGrid.Web.Util;
-#else
 using Alachisoft.NCache.Web.Util;
-#endif
-
 using ProtoCommand = Alachisoft.NCache.Common.Protobuf.Command;
 using ICallbackTask = Alachisoft.NCache.SocketServer.CallbackTasks.ICallbackTask;
 using IEventTask = Alachisoft.NCache.SocketServer.EventTask.IEventTask;
 using HelperFxn = Alachisoft.NCache.SocketServer.Util.HelperFxn;
-
-#if COMMUNITY
-#endif
 using Alachisoft.NCache.Common;
 using Alachisoft.NCache.Common.Monitoring;
 using System.IO;
@@ -42,9 +33,8 @@ using Alachisoft.NCache.Common.DataStructures.Clustered;
 using Alachisoft.NCache.Common.Stats;
 using Alachisoft.NCache.SocketServer.Util;
 using Alachisoft.NCache.SocketServer.RuntimeLogging;
-#if NET40
 using System.Threading.Tasks;
-#endif
+
 
 namespace Alachisoft.NCache.SocketServer
 {
@@ -224,13 +214,10 @@ namespace Alachisoft.NCache.SocketServer
             _clientSendBufferSize = sendBuffer;
             _clientReceiveBufferSize = receiveBuffer;
             _cmdManager = GetCommandManager(cmdMgrType);
-#if JAVA
-            string maxPendingConnections="Cache.MaxPendingConnections";
-            string enableServerCounters = "Cache.EnableServerCounters";
-#else
+
             string maxPendingConnections = "NCache.MaxPendingConnections";
             string enableServerCounters = "NCache.EnableServerCounters";
-#endif
+
             _enableBadClientDetection = ServiceConfiguration.EnableBadClientDetection;
 
             if (_enableBadClientDetection)

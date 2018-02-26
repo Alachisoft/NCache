@@ -23,20 +23,9 @@ using System.Runtime.InteropServices;
 using System.Runtime.Serialization.Formatters.Binary;
 using System.Threading;
 using SysTrace = System.Diagnostics.Trace;
-#if JAVA
-using Alachisoft.TayzGrid.Runtime.Serialization;
-#else
-#endif
-#if JAVA
-using Alachisoft.TayzGrid.Runtime.Serialization.IO;
-#else
 using Alachisoft.NCache.Runtime.Serialization.IO;
-#endif
-#if JAVA
-using Runtime = Alachisoft.TayzGrid.Runtime;
-#else
 using Runtime = Alachisoft.NCache.Runtime;
-#endif
+
 namespace Alachisoft.NCache.Common.Stats
 {
 	/// <summary>

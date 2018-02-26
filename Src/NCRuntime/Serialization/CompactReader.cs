@@ -20,11 +20,9 @@ using System.Reflection;
 /// The namespace provides the CompactReader and CompactWriter that are required 
 /// while implementing the Serialize and Deserialize methods of ICompactSerializable interface.
 /// </summary>
-#if JAVA
-namespace Alachisoft.TayzGrid.Runtime.Serialization.IO
-#else
+
 namespace Alachisoft.NCache.Runtime.Serialization.IO
-#endif
+
 {
     /// <summary>
     /// CompactReader is the  base class for CompactBinaryReader.

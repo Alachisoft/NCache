@@ -72,13 +72,13 @@ namespace Alachisoft.NCache.Common
         static public int GetRegValuesFromCurrentUser(string keypath, Hashtable ht, short prodId)
         {
             RegistryKey root;
-#if !JAVA
+
             if (AppUtil.IsRunningAsWow64)
             {
                 GetRegValuesInternalWow64(keypath, ht, prodId);
                 return ht.Count;
             }
-#endif
+
             try
             {
                 root = Microsoft.Win32.Registry.CurrentUser.OpenSubKey(keypath);

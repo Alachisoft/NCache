@@ -16,16 +16,9 @@ using System;
 using System.Collections.Generic;
 using System.Text;
 using System.Collections;
-#if JAVA
-using Alachisoft.TayzGrid.Runtime.Serialization;
-#else
 using Alachisoft.NCache.Runtime.Serialization;
-#endif
-#if JAVA
-using Runtime = Alachisoft.TayzGrid.Runtime;
-#else
 using Runtime = Alachisoft.NCache.Runtime;
-#endif
+
 namespace Alachisoft.NCache.Common.RPCFramework
 {
     [Serializable]

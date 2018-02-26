@@ -14,11 +14,8 @@
 
 using System.Collections;
 using Alachisoft.NCache.Caching;
-#if JAVA
-using Alachisoft.TayzGrid.Runtime.Events;
-#else
 using Alachisoft.NCache.Runtime.Events;
-#endif
+
 
 namespace Alachisoft.NCache.SocketServer.EventTask
 {

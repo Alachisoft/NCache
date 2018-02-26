@@ -83,11 +83,9 @@ namespace Alachisoft.NGroups.Stack
                 if (filepath == null || filepath == string.Empty)
                 {
 
-#if JAVA
-                        filepath = Path.Combine(filepath, "log");
-#else
+
                     filepath = Path.Combine(filepath, "log-files");
-#endif
+
                     if (!Directory.Exists(filepath)) Directory.CreateDirectory(filepath);
                 }
 

@@ -21,11 +21,8 @@ using System.IO;
 /// not the .NET  and Compact Serialization framework, must implement this interface.
 /// </summary>
 
-#if JAVA
-namespace Alachisoft.TayzGrid.Runtime.Serialization
-#else
 namespace Alachisoft.NCache.Runtime.Serialization
-#endif
+
 {
     /// <summary> 
     /// Implementations of ICompactSerializable can add their state directly to the output stream, 

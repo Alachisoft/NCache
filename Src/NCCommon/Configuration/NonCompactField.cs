@@ -14,11 +14,8 @@
 using System;
 using System.Collections.Generic;
 using System.Text;
-#if JAVA
-using Runtime = Alachisoft.TayzGrid.Runtime;
-#else
 using Runtime = Alachisoft.NCache.Runtime;
-#endif
+
 namespace Alachisoft.NCache.Common.Configuration
 {
     [Serializable]

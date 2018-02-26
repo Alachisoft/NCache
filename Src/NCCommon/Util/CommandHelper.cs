@@ -82,11 +82,8 @@ namespace Alachisoft.NCache.Common.Util
             string valueString = String.Empty;
 
             if (value == null)
-#if JAVA
-                throw new System.Exception("TayzGrid query does not support null values");
-#else
                 throw new System.Exception("NCache query does not support null values");
-#endif
+
             if (value is System.String)
             {
                 valueString = value.ToString().ToLower();

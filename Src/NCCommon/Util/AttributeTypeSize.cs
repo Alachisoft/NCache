@@ -16,11 +16,8 @@ using System.Net;
 using System.Runtime.Serialization.Formatters.Binary;
 using System.Threading;
 using System.Net.Sockets;
-#if JAVA
-using Runtime = Alachisoft.TayzGrid.Runtime;
-#else
 using Runtime = Alachisoft.NCache.Runtime;
-#endif
+
 namespace Alachisoft.NCache.Common
 {
     public enum AttributeTypeSize : byte

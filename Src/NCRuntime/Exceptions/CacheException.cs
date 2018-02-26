@@ -21,11 +21,9 @@ using System.Runtime.Serialization;
 /// are defined in this namespace. These exceptions can be caught in the client applications
 /// and properly dealt with once this namespace is referenced.
 ///</summary>
-#if JAVA
-namespace Alachisoft.TayzGrid.Runtime.Exceptions
-#else
+
 namespace Alachisoft.NCache.Runtime.Exceptions
-#endif
+
 {
 
     /// <summary>

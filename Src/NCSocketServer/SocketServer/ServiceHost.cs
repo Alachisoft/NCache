@@ -34,11 +34,7 @@ namespace Alachisoft.NCache.SocketServer
         private object _stop_mutex = new object();
         private int _autoStartDelay = 0;
         private int _cacheStartDelay = 0;
-#if JAVA
-        static string _cacheserver = "TayzGrid";
-#else
         static string _cacheserver = "NCache";
-#endif
         private ServerHost _nchost = new ServerHost();
         private SocketServer _socketServer;
         private Management.NCacheSniffer _ncacheSniffer;

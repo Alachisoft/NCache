@@ -18,16 +18,8 @@ using System.Collections;
 using System.Security.Permissions;
 using System.Runtime.InteropServices;
 using System.Threading;
-#if JAVA
-using Alachisoft.TayzGrid.Runtime.Serialization;
-#else
 using Alachisoft.NCache.Runtime.Serialization;
-#endif
-#if JAVA
-using Alachisoft.TayzGrid.Runtime.Serialization.IO;
-#else
 using Alachisoft.NCache.Runtime.Serialization.IO;
-#endif
 
 namespace Alachisoft.NCache.Common.DataStructures
 {
@@ -227,11 +219,6 @@ namespace Alachisoft.NCache.Common.DataStructures
         {
             return new Enumerator((NCLinkedList<T>)this);
         }
-
-        //public Enumerator<T> GetEnumerator()
-        //{
-        //    return new Enumerator<T>((LinkedList<T>)this);
-        //}
 
         public void AddRangeInList(System.Collections.ICollection keys)
         {

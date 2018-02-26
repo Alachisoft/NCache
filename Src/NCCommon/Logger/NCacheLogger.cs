@@ -32,22 +32,16 @@ namespace Alachisoft.NCache.Common.Logger
     public class NCacheLogger : ILogger
     {
         private readonly byte[] log4netXML = Encoding.ASCII.GetBytes("<?xml version=\"1.0\"?> <configuration>  <configSections>   <section name=\"log4net\" type=\"log4net.Config.Log4NetConfigurationSectionHandler, log4net, Version=1.2.10.0, Culture = neutral, PublicKeyToken=1b44e1d426115821 \"/> </configSections>   <log4net></log4net> </configuration>");
-#if JAVA
-        string _cacheserver="TayzGrid";
-#else
+
         string _cacheserver="NCache";
-#endif
+
         public log4net.Core.Level criticalInfo = new log4net.Core.Level(5000000, "CRIT", "INFO");
         public log4net.Core.Level devInfo = new log4net.Core.Level(5000001, "DEV", "DEV");
 
         private log4net.ILog log;
-        /// <summary>Configuration file folder name</summary>
-        /// 
-#if JAVA
-        private const string DIRNAME = @"log";
-#else
+
         private const string DIRNAME = @"log-files";
-#endif
+
         /// <summary>Path of the configuration folder.</summary>
         private static string s_configDir = "";
         private string _path = "";
@@ -224,52 +218,46 @@ namespace Alachisoft.NCache.Common.Logger
 
             else if (loggerNameEnum == LoggerNames.CacheHostLogs)
             {
-                    filename = cacheName + "." + loggerNameEnum.ToString();
+                filename = cacheName + "." + loggerNameEnum.ToString();
             }
             else
             {
                 filename = cacheName;
             }
-            filename = string.IsNullOrEmpty(filename) ? string.Empty : filename +  ".";
+            filename = string.IsNullOrEmpty(filename) ? string.Empty : filename + ".";
             filename += DateTime.Now.ToString("dd-MM-yy HH-mm-ss") + "_" + _nodeIP + @".txt";
 
             string filepath = "";
-#if JAVA
-                if (!DirectoryUtil.SearchGlobalDirectory("log", false, out filepath))
-                {
-                    try
-                    {
-                        DirectoryUtil.SearchLocalDirectory("log", true, out filepath);
-#else
-                if (!DirectoryUtil.SearchGlobalDirectory("log-files", false, out filepath))
-                {
-                    try
-                    {
-                        DirectoryUtil.SearchLocalDirectory("log-files", true, out filepath);
-#endif
-                    }
-                    catch (Exception ex)
-                    {
-                        throw new Exception("Unable to initialize the log file", ex);
-                    }
-                }
+
+            if (!DirectoryUtil.SearchGlobalDirectory("log-files", false, out filepath))
+            {
                 try
                 {
-
-
-                    filepath = Path.Combine(filepath, loggerNameEnum.ToString());
-                    if (!Directory.Exists(filepath)) Directory.CreateDirectory(filepath);
-
-
-                    filepath = Path.Combine(filepath, filename);
-                    AddAppender(CreateBufferAppender(filepath, false));
-
+                    DirectoryUtil.SearchLocalDirectory("log-files", true, out filepath);
 
                 }
-                catch (Exception)
+                catch (Exception ex)
                 {
-                    throw;
+                    throw new Exception("Unable to initialize the log file", ex);
                 }
+            }
+            try
+            {
+
+
+                filepath = Path.Combine(filepath, loggerNameEnum.ToString());
+                if (!Directory.Exists(filepath)) Directory.CreateDirectory(filepath);
+
+
+                filepath = Path.Combine(filepath, filename);
+                AddAppender(CreateBufferAppender(filepath, false));
+
+
+            }
+            catch (Exception)
+            {
+                throw;
+            }
 
         }
         public void InitializeAPILogging(LoggerNames loggerNameEnum, string cacheName, string filePath)

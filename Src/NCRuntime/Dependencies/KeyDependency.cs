@@ -18,11 +18,9 @@ using System.Text;
 using System.Collections;
 using Alachisoft.NCache.Runtime.Exceptions;
 
-#if JAVA
-namespace Alachisoft.TayzGrid.Runtime.Dependencies
-#else
+
 namespace Alachisoft.NCache.Runtime.Dependencies
-#endif
+
 {
     [Serializable]
     public class KeyDependency : CacheDependency

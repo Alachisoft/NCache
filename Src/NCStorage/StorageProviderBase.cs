@@ -197,12 +197,9 @@ namespace Alachisoft.NCache.Storage
         {
             try
             {
-#if JAVA
-                string cacheserver = "TayzGrid";
-#else
+
                 string cacheserver = "NCache";
-#endif
-                long currentSizeInPerc = (TotalDataSize / _maxSize) * 100;
+                 long currentSizeInPerc = (TotalDataSize / _maxSize) * 100;
                 if (currentSizeInPerc > 100) currentSizeInPerc = 100;
                 AppUtil.LogEvent(cacheserver,
                     "Cache '" + _cacheContext + "' has exceeded " + _evictionReportSize + "% of allocated cache size",

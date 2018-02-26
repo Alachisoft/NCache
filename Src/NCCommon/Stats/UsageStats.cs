@@ -22,14 +22,10 @@ using System.Reflection;
 using System.Runtime.InteropServices;
 using System.Runtime.Serialization.Formatters.Binary;
 using System.Threading;
-
 using Alachisoft.NCache.Common.Util;
 using Alachisoft.NCache.Common.Interop;
-#if JAVA
-using Runtime = Alachisoft.TayzGrid.Runtime;
-#else
 using Runtime = Alachisoft.NCache.Runtime;
-#endif
+
 namespace Alachisoft.NCache.Common.Stats
 {
 	/// <summary>

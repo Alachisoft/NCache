@@ -15,28 +15,11 @@
 using System;
 using System.Collections.Generic;
 using System.Text;
-
-#if JAVA
-using Alachisoft.TayzGrid.Runtime;
-#else
 using Alachisoft.NCache.Runtime;
-#endif
-#if JAVA
-using Alachisoft.TayzGrid.Runtime.Dependencies;
-#else
 using Alachisoft.NCache.Runtime.Dependencies;
-#endif 
-#if JAVA
-using Alachisoft.TayzGrid.Runtime.Caching;
-#else
 using Alachisoft.NCache.Runtime.Caching;
-#endif
 
-#if JAVA
-namespace Alachisoft.TayzGrid.Runtime.Caching
-#else
 namespace Alachisoft.NCache.Runtime.Caching
-#endif
 {
     /// <remark>
     /// This Feature is Not Available in Express

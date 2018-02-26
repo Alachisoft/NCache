@@ -19,11 +19,7 @@ using System.Runtime.Serialization;
 using System.Runtime.Serialization.Formatters.Binary;
 using System.IO;
 
-#if JAVA
-namespace Alachisoft.TayzGrid.Runtime.Dependencies
-#else
 namespace Alachisoft.NCache.Runtime.Dependencies
-#endif
 {
 
     [Serializable]

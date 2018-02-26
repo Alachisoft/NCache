@@ -900,7 +900,6 @@
     <Compile Include="Monitoring\Logger.cs" />
     <Compile Include="Monitoring\MethodActivity.cs" />
     <Compile Include="Monitoring\Node.cs" />
-    <Compile Include="Monitoring\PerfmonStatistics.cs" />
     <Compile Include="Monitoring\ServerMonitor.cs" />
     <Compile Include="Monitoring\ServerNode.cs" />
     <Compile Include="Net\Address.cs" />
@@ -2131,9 +2130,7 @@
       <SubType>Designer</SubType>
     </EmbeddedResource>
   </ItemGroup>
-  <ItemGroup>
-    <Folder Include="Propagator\" />
-  </ItemGroup>
+  <ItemGroup />
   <Import Project="$(MSBuildBinPath)\Microsoft.CSharp.targets" />
   <PropertyGroup>
     <PreBuildEvent>

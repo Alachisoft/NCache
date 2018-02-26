@@ -16,11 +16,8 @@ using System.Collections;
 using System.Text;
 using Alachisoft.NCache.Common.Communication;
 using Alachisoft.NCache.Common.Communication.Exceptions;
-#if JAVA
-using Runtime = Alachisoft.TayzGrid.Runtime;
-#else
 using Runtime = Alachisoft.NCache.Runtime;
-#endif
+
 namespace Alachisoft.NCache.Common.Communication
 {
     public class RequestManager :IChannelEventListener, IDisposable

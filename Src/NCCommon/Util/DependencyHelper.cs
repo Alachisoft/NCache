@@ -19,24 +19,12 @@ using Alachisoft.NCache.Common.Protobuf;
 using System.Runtime.Serialization;
 using System.IO;
 using System.Runtime.Serialization.Formatters.Binary;
-#if JAVA
-using Alachisoft.TayzGrid.Runtime.Dependencies;
-#else
 using Alachisoft.NCache.Runtime.Dependencies;
-#endif 
-
 using System.Collections;
-#if JAVA
-using Alachisoft.TayzGrid.Runtime.Exceptions;
-#else
 using Alachisoft.NCache.Runtime.Exceptions;
 using Alachisoft.NCache.Runtime.Caching;
-#endif
-#if JAVA
-using Runtime = Alachisoft.TayzGrid.Runtime;
-#else
 using Runtime = Alachisoft.NCache.Runtime;
-#endif
+
 namespace Alachisoft.NCache.Common.Util
 {
     public class DependencyHelper

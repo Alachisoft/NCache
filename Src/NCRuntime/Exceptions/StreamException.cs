@@ -18,11 +18,7 @@ using System.Text;
 using System.Runtime.Serialization;
 using System.Security.Permissions;
 
-#if JAVA
-namespace Alachisoft.TayzGrid.Runtime.Exceptions
-#else
 namespace Alachisoft.NCache.Runtime.Exceptions
-#endif
 {
     /// <summary>
     /// StreamException is thrown if any error occurs during operation on CacheStream.

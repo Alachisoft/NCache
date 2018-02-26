@@ -12,10 +12,7 @@
 // See the License for the specific language governing permissions and
 // limitations under the License
 
-#if JAVA
-using Alachisoft.TayzGrid.Runtime.Exceptions;
-#else
-#endif
+
 using System;
 using System.ServiceProcess;
 

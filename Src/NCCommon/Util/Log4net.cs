@@ -32,15 +32,11 @@ namespace Alachisoft.NCache.Common.Util
     //TODO: ALACHISOFT (For now I have changed code here directly. Do something so that we don't have to)
     public sealed class Log4net
     {
-#if JAVA
-       static string _cacheserver="TayzGrid";
-        /// <summary>Configuration file folder name</summary>
-        private const string DIRNAME = @"log";
-#else
+
         static string _cacheserver="NCache";
         /// <summary>Configuration file folder name</summary>
         private const string DIRNAME = @"log-files";
-#endif
+
         private static byte[] log4netXML = Encoding.ASCII.GetBytes("<?xml version=\"1.0\"?> <configuration>  <configSections>   <section name=\"log4net\" type=\"log4net.Config.Log4NetConfigurationSectionHandler, log4net, Version=1.2.10.0, Culture = neutral, PublicKeyToken=1b44e1d426115821 \"/> </configSections>   <log4net> </log4net> </configuration>");
 
         public static log4net.Core.Level criticalInfo = new log4net.Core.Level(5000000, "CRIT", "INFO");
@@ -293,19 +289,13 @@ namespace Alachisoft.NCache.Common.Util
                             DateTime.Now.ToString("dd-MM-yy HH-mm-ss") + @".logs.txt";
 
                 string filepath = "";
-#if JAVA
-                if (!DirectoryUtil.SearchGlobalDirectory("log", false, out filepath))
-                {
-                    try
-                    {
-                        DirectoryUtil.SearchLocalDirectory("log", true, out filepath);
-#else
+
                         if (!DirectoryUtil.SearchGlobalDirectory("log-files", false, out filepath))
                 {
                     try
                     {
                         DirectoryUtil.SearchLocalDirectory("log-files", true, out filepath);
-#endif
+
                     }
                     catch (Exception ex)
                     {

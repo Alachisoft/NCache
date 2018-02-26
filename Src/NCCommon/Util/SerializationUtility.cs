@@ -18,12 +18,10 @@ using System.Text;
 using System.Collections;
 using System.Collections.Concurrent;
 using Alachisoft.NCache.Runtime.Serialization.IO;
-#if JAVA
-using Runtime = Alachisoft.TayzGrid.Runtime;
-#else
+
 using Runtime = Alachisoft.NCache.Runtime;
 using Alachisoft.NCache.Common.DataStructures.Clustered;
-#endif
+
 namespace Alachisoft.NCache.Common.Util
 {
     /// <summary>

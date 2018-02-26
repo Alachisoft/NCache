@@ -17,11 +17,8 @@ using System.Collections.Generic;
 using System.Text;
 using System.Runtime.Serialization;
 
-#if JAVA
-namespace Alachisoft.TayzGrid.Runtime.Exceptions
-#else
 namespace Alachisoft.NCache.Runtime.Exceptions
-#endif
+
 {
     /// <summary>
     /// StreamInvalidLockException is thrown if the current lock handle becomes invalid.
