@@ -41,13 +41,13 @@ ECHO ================================================
 
 ECHO BUILDING INTERGRATION SESSION SERVICES CORE FOR 
 ECHO ================================================
-	CD "%ROOT%\SessionState\NCacheSessionServices\"
-	@"%DOTNETCORE%" restore
+	CD "%INTEGRATIONPARENTFOLDER%\NCacheSessionServices\"
+	@"%DOTNETCORE%" restore NCacheSessionServices.NetCore.sln
 	@"%DOTNETCORE%" build NCacheSessionServices.NetCore.sln -c Release
 	IF NOT %ERRORLEVEL%==0 GOTO :failSessionServices
 	CD %CURRENTPATH%
-	IF %ERRORLEVEL%==0 ECHO NCacheSessionServices Core build successful
-
+	IF %ERRORLEVEL%==0 ECHO NCacheSessionServices Core build successful		
+	
 EXIT /b 0
 
 :failEFNCacheProviderCore
