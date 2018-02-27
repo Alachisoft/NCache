@@ -14,8 +14,8 @@ ECHO REMOVING PREVIOUS REGISTRY VALUES ...
 ECHO =====================================
 REG QUERY "HKLM\Software\Alachisoft" >nul 2>&1
 IF %ERRORLEVEL%==0 (
-REG DELETE HKLM\Software\Alachisoft /F
-}
+    REG DELETE HKLM\Software\Alachisoft /F
+)
 
 ECHO ADDING NEW REGISTRY VALUES ...
 ECHO ==============================
