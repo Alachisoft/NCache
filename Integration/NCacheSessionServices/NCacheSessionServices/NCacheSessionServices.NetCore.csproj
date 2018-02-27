@@ -44,25 +44,25 @@
   
   <ItemGroup>
     <Reference Include="Alachisoft.NCache.Common">
-      <HintPath>..\..\Src\build\NetCore\Client\Alachisoft.NCache.Common.dll</HintPath>
+      <HintPath>..\..\..\Src\build\NetCore\Client\Alachisoft.NCache.Common.dll</HintPath>
     </Reference>
     <Reference Include="Alachisoft.NCache.Runtime">
-      <HintPath>..\..\Src\build\NetCore\Client\Alachisoft.NCache.Runtime.dll</HintPath>
+      <HintPath>..\..\..\Src\build\NetCore\Client\Alachisoft.NCache.Runtime.dll</HintPath>
     </Reference>
     <Reference Include="Alachisoft.NCache.Serialization">
-      <HintPath>..\..\Src\build\NetCore\Client\Alachisoft.NCache.Serialization.dll</HintPath>
+      <HintPath>..\..\..\Src\build\NetCore\Client\Alachisoft.NCache.Serialization.dll</HintPath>
     </Reference>
     <Reference Include="Alachisoft.NCache.SessionStateManagement">
-      <HintPath>..\..\Src\build\NetCore\Client\Alachisoft.NCache.SessionStateManagement.dll</HintPath>
+      <HintPath>..\..\..\Src\build\NetCore\Client\Alachisoft.NCache.SessionStateManagement.dll</HintPath>
     </Reference>
     <Reference Include="Alachisoft.NCache.SessionStoreProvider">
-      <HintPath>..\..\Src\build\NetCore\Client\Alachisoft.NCache.SessionStoreProvider.dll</HintPath>
+      <HintPath>..\..\..\Src\build\NetCore\Client\Alachisoft.NCache.SessionStoreProvider.dll</HintPath>
     </Reference>
     <Reference Include="Alachisoft.NCache.Web">
-      <HintPath>..\..\Src\build\NetCore\Client\Alachisoft.NCache.Web.dll</HintPath>
+      <HintPath>..\..\..\Src\build\NetCore\Client\Alachisoft.NCache.Web.dll</HintPath>
     </Reference>
     <Reference Include="Alachisoft.System.Internal">
-      <HintPath>..\..\Src\build\NetCore\Client\Alachisoft.System.Internal.dll</HintPath>
+      <HintPath>..\..\..\Src\build\NetCore\Client\Alachisoft.System.Internal.dll</HintPath>
     </Reference>
   </ItemGroup>
   
