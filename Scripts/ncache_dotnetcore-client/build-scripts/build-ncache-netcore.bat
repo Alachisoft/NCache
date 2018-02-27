@@ -10,13 +10,14 @@ SET SRCPATH=..\..\Src
 ::___________BUILDING SOURCE CODE__________::
 ::_________________________________________::
 
+
 ECHO BUILDING NCACHE .NET CORE SOLUTION
 ECHO ==================================
 dotnet	build 	-c Release    %SRCPATH%\NCWebCache\NCWebCache.Client.NetCore.csproj
 dotnet 	build 	-c Release    %SRCPATH%\NCSocketServer\NCSocketServer.Client.NetCore.csproj	
 dotnet 	build 	-c Release    %SRCPATH%\NCSessionStoreProvider\NCSessionStoreProvider.Client.NetCore.csproj	
-dotnet 	publish -c Release    %SRCPATH%\NCDaemon\NCDaemon.NetCore.csproj	
-dotnet 	publish -c Release    %SRCPATH%\NCCacheSeparateHost\NCCacheSeparateHost.Client.NetCore.csproj	
+dotnet 	publish -c Release    %SRCPATH%\NCDaemon\NCDaemon.NetCore.csproj
+dotnet 	publish -c Release    %SRCPATH%\NCCacheSeparateHost\NCCacheSeparateHost.Client.NetCore.csproj
 
 IF NOT %ERRORLEVEL%==0 GOTO failNCache
 
@@ -32,6 +33,8 @@ EXIT /b 0
 ::_________________________________________::
 
 :failNCache
+REM SOME ERROR OCCURRED WHILE COMPILING NCACHE OPENSOURCE SOLUTION FOR .NET CORE , LAUNCH SOLUTION
 ECHO FAILED TO BUILD NCACHE
 ECHO ======================
+%SRCPATH%\NCache.Client.NetCore.sln
 EXIT /b 1

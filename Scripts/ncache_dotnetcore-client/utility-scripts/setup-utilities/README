@@ -12,9 +12,9 @@ How to Install
 To install this setup, 
 
 Run the install script with the your first name, last name, email address and .NET home as follows
-
-	./install -f firstname -l lastname -e email@yourcompany.com -d /path/to/dotnet/home
+	
+	sh install -f firstname -l lastname -e email@yourcompany.com -d /path/to/dotnet/home
 
 for more detailed installation information, run the installation as follows
 
-	./install --help
+	sh install --help

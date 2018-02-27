@@ -7,6 +7,7 @@
 SET ncache=%~1
 SET SRCPATH=..\..\Src
 SET TOOLSPATH=..\..\Tools
+SET INTEGRATIONSPATH=..\..\Integration
 
 ::_________________________________________::
 ::________CARRYING OUT SCRIPT WORK_________::
@@ -47,7 +48,11 @@ XCOPY "%SETUPUTILITIESPATH%\*.psd1"																		"%ncache%\bin\ncacheps" /Y 
 ECHO COPYING CONFIG FILES
 ECHO ====================
 XCOPY "%SETUPUTILITIESPATH%\*.ncconf"																	"%ncache%\config" /Y /Q /S
-XCOPY "%SETUPUTILITIESPATH%\*.xml"																		"%ncache%\config" /Y /Q /S
+XCOPY "%SETUPUTILITIESPATH%\*.xml"                                                                       "%ncache%\config" /Y /Q /S
+
+ECHO COPYING INTEGRATION FILES
+ECHO =========================
+XCOPY "%INTEGRATIONSPATH%\LinqToNCache\LinqToNCache\bin\Release\netcoreapp2.0\Alachisoft.NCache.Linq.dll" "%ncache%\integrations\LINQToNCache" /Y /Q /S
 
 ECHO COPYING GETTING STARED FILES
 ECHO ============================

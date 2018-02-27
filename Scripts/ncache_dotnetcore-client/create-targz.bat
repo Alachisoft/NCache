@@ -17,6 +17,13 @@ SET SETUPUTILITIESPATH=%UTILITYSCRIPTSPATH%\setup-utilities
 ::________CARRYING OUT SCRIPT WORK_________::
 ::_________________________________________::
 
+REG QUERY %KEY_NAME% >NUL
+IF NOT %ERRORLEVEL% EQU 0 (
+  ECHO. Unable to find 7-Zip, Please intall 7-Zip and then try again.
+  GOTO failTar
+)
+
+
 ECHO CONVERTING EOL FROM WINDOWS TO UNIX
 ECHO ===================================
 CALL "%UTILITYSCRIPTSPATH%\dos2unix.bat"
@@ -40,7 +47,13 @@ IF %ERRORLEVEL% EQU 0 (
   ECHO. Unable to find 7-Zip, Please intall 7-Zip and then try again.
 )
 
-ECHO TAR.GZ CREATED SUCCESSFULLY, PLEASE FIND IT AT \SCRIPTS\NETCORE\
-ECHO ================================================================
-
+ECHO TAR.GZ CREATED SUCCESSFULLY, PLEASE FIND IT AT \SCRIPTS\ncache_dotnetcore-client\
+ECHO =================================================================================
 EXIT /b 0
+
+:failTar
+REM SOME ERROR OCCURRED WHILE CREATING TAR.GZ
+ECHO FAILED TO CREATE TAR.GZ
+ECHO =======================
+PAUSE
+EXIT /b 1

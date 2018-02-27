@@ -6,8 +6,9 @@
 
 @SET SRCINTEGRATION="..\..\Integration\build"
 @SET iuPath=%WINDIR%\Microsoft.NET\Framework\v4.0.30319\
-@SET WebPath=%1\bin\assembly\4.0\Alachisoft.NCache.Web.dll
-@SET CachePath=%1\bin\assembly\4.0\Alachisoft.NCache.Cache.dll
+@SET InstallDir=%~1
+@SET WebPath=%InstallDir%\bin\assembly\4.0\Alachisoft.NCache.Web.dll
+@SET CachePath=%InstallDir%\bin\assembly\4.0\Alachisoft.NCache.Cache.dll
 
 ::_________________________________________::
 ::________CARRYING OUT SCRIPT WORK_________::
@@ -56,9 +57,6 @@ IF %ERRORLEVEL%==0 (
 	ECHO REGISTERING PERFMON COUNTERS
 	ECHO ============================
 
-	ECHO CachePath:  %CachePath%
-	ECHO WebPath:  %CachePath%
-	ECHO iuPath: %iuPath%
 	"%iuPath%INSTALLUTIL.EXE" /i "%CachePath%"
 	"%iuPath%INSTALLUTIL.EXE" /i "%WebPath%"
 	ECHO.

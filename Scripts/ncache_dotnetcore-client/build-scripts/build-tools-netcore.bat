@@ -20,5 +20,5 @@ EXIT /b 0
 
 :failTools
 ECHO FAILED TO BUILD TOOLS
-
+%TOOLSSRCPATH%\Tools.Client.NetCore.sln
 EXIT /b 1
