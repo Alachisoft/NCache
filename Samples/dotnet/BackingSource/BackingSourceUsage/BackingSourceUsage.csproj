@@ -205,7 +205,5 @@
   <PropertyGroup>
     <PreBuildEvent>
     </PreBuildEvent>
-    <PostBuildEvent>
-xcopy "E:\GitHub\NCache\Samples\dotnet\BackingSource\packages\Alachisoft.NCache.OpenSource.SDK.4.9.0\additionalLib\Oracle.ManagedDataAccess.dll" "$(ProjectDir)\bin\$(ConfigurationName)\" /Y /I</PostBuildEvent>
   </PropertyGroup>
 </Project>

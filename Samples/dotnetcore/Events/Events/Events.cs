@@ -47,13 +47,10 @@ namespace Alachisoft.NCache.Samples
                 
                 // Dispose cache once done
                 _cache.Dispose();
-
-                Environment.Exit(0);
             }
             catch (Exception ex)
             {
                 Console.WriteLine(ex.Message);
-                Environment.Exit(0);
             }
 
         }

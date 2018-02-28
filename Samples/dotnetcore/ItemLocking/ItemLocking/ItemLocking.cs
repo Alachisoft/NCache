@@ -48,9 +48,6 @@ namespace Alachisoft.NCache.Samples
             // Dispose cache once done
             _cache.Dispose();
 
-            Environment.Exit(0);
-
-
         }
 
 
