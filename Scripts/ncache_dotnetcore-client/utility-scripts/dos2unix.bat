@@ -1,6 +1,6 @@
 @ECHO OFF
 
-Powershell.exe -File "%UTILITYSCRIPTSPATH%\dos2unix.ps1" -Container "%SETUPUTILITIESPATH%"
+Powershell.exe -ExecutionPolicy Bypass -File "%UTILITYSCRIPTSPATH%\dos2unix.ps1" -Container "%SETUPUTILITIESPATH%"
 
 DEL "%SETUPUTILITIESPATH%\install"
 REN "%SETUPUTILITIESPATH%\install1" install
