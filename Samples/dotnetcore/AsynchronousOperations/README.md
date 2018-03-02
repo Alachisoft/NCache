@@ -12,7 +12,7 @@
 ### Introduction
 
 This sample program demonstrates how to use the NCache Asynchronous API to perform CRUD operations. 
-It shows how to initialize the cache instance and Add, Get, Update and Delete object(s) from NCache.
+It shows how to initialize the cache instance and Add, Update and Remove object(s) from NCache.
 
 This sample uses SampleData project as a reference for model class "Customer".
 
