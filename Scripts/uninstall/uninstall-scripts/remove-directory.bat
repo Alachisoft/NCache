@@ -1,6 +1,7 @@
 @ECHO OFF
-
-ECHO DELETING DIRECTORY...
-ECHO =====================
-RD /S /Q "%NCHOME%"
-ECHO.
+IF EXIST %NCHOME% (
+	ECHO DELETING DIRECTORY...
+	ECHO =====================
+	RD /S /Q "%NCHOME%" 
+	ECHO.
+)

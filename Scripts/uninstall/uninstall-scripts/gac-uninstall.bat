@@ -34,8 +34,8 @@ SET WebPath="%NCHOME%bin\assembly\4.0\Alachisoft.NCache.Web.dll"
 
 ECHO UNINSTALLING PERFMON COUNTERS
 ECHO =============================
-"%iuPath%\INSTALLUTIL.EXE" /u "%CachePath%"
-"%iuPath%\INSTALLUTIL.EXE" /u "%WebPath%"
+IF EXIST "%NCHOME%bin\assembly\4.0" ( "%iuPath%\INSTALLUTIL.EXE" /u %CachePath% )
+IF EXIST "%NCHOME%bin\assembly\4.0" ( "%iuPath%\INSTALLUTIL.EXE" /u %WebPath% )
 ECHO.
 
 ECHO REMOVING ASSEMBLIES FROM GAC

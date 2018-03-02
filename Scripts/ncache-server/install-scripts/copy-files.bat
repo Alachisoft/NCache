@@ -45,21 +45,23 @@ IF %ERRORLEVEL%==0 (
 	)
 	ECHO.
 
-	ECHO COPYING TOOLS...
-	ECHO ================
-	XCOPY "%SRCTOOLS4X%\ncacheps.dll" "%DIRECTORY%\bin\tools\ncacheps\" /Y /Q
-	ECHO.
+	IF EXIST %SRCTOOLS4X% (
+		ECHO COPYING TOOLS...
+		ECHO ================
+		XCOPY "%SRCTOOLS4X%\ncacheps.dll" "%DIRECTORY%\bin\tools\ncacheps\" /Y /Q
+		ECHO.
+	)
 
 	ECHO COPYING INTEGRATIONS ...
 	ECHO ========================
-	XCOPY "%SRCINTEGRATION%\ContentOptimization" "%DIRECTORY%\integrations\ContentOptimization\" /I /Y /Q /S
-	XCOPY "%SRCINTEGRATION%\LINQToNCache\4.0" "%DIRECTORY%\integrations\LINQToNCache\4.0" /I /Y /Q /S
-	XCOPY "%SRCINTEGRATION%\LINQToNCache\dotnetcore" "%DIRECTORY%\integrations\LINQToNCache\dotnetcore\" /I /Y /Q /S
-	XCOPY "%SRCINTEGRATION%\NHibernate" "%DIRECTORY%\integrations\nhibernate\" /I /Y /Q /S
-	XCOPY "%SRCINTEGRATION%\NCache.SignalR" "%DIRECTORY%\integrations\NCache.SignalR\" /I /Y /Q /S
-	XCOPY "%SRCINTEGRATION%\PowerShell\Scripts" "%DIRECTORY%\integrations\PowerShell\" /I /Y /Q /S
-	XCOPY "%SRCINTEGRATION%\MSEntityFramework" "%DIRECTORY%\integrations\MSEntityFramework\" /I /Y /Q /S
-	XCOPY "%SRCINTEGRATION%\OutputCache" "%DIRECTORY%\integrations\OutputCache\" /I /Y /Q /S
+	XCOPY "%SRCINTEGRATION%\ContentOptimization" "%DIRECTORY%\integrations\ContentOptimization\" /I /Y /Q /S 
+	XCOPY "%SRCINTEGRATION%\LINQToNCache\4.0" "%DIRECTORY%\integrations\LINQToNCache\4.0" /I /Y /Q /S 
+	IF EXIST %SRCINTEGRATION%\LINQToNCache\dotnetcore ( XCOPY "%SRCINTEGRATION%\LINQToNCache\dotnetcore" "%DIRECTORY%\integrations\LINQToNCache\dotnetcore\" /I /Y /Q /S )
+	XCOPY "%SRCINTEGRATION%\NHibernate" "%DIRECTORY%\integrations\nhibernate\" /I /Y /Q /S 
+	IF EXIST %SRCINTEGRATION%\NCache.SignalR ( XCOPY "%SRCINTEGRATION%\NCache.SignalR" "%DIRECTORY%\integrations\NCache.SignalR\" /I /Y /Q /S )
+	XCOPY "%SRCINTEGRATION%\PowerShell\Scripts" "%DIRECTORY%\integrations\PowerShell\" /I /Y /Q /S 
+	IF EXIST %SRCINTEGRATION%\MSEntityFramework ( XCOPY "%SRCINTEGRATION%\MSEntityFramework" "%DIRECTORY%\integrations\MSEntityFramework\" /I /Y /Q /S )
+	XCOPY "%SRCINTEGRATION%\OutputCache" "%DIRECTORY%\integrations\OutputCache\" /I /Y /Q /S 
 
 	ECHO.
 

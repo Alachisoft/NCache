@@ -14,11 +14,11 @@ DEL "%cd%\_.vbs"
 EXIT /b
 
 :FindReplace <findstr> <replstr> <file>
-SET tmp="%cd%\tmp.txt"
+SET replaceTxt="%cd%\tmp.txt"
 FOR /f "tokens=*" %%a in ('dir /s /b /a-d /on %3') DO (
   FOR /f "usebackq" %%b in (`Findstr /mic:"%~1" "%%a"`) DO (
-    <%%a cscript //nologo "%cd%\_.vbs" "%~1" "%~2">%tmp%
-    IF EXIST %tmp% move /Y %tmp% "%%~dpnxa">nul
+    <%%a cscript //nologo "%cd%\_.vbs" "%~1" "%~2">%replaceTxt%
+    IF EXIST %replaceTxt% move /Y %replaceTxt% "%%~dpnxa">nul
   )
 )
 EXIT /b

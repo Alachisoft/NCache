@@ -5,7 +5,7 @@
 ::_________________________________________::
 
 @SET iuPathIS=%WINDIR%\Microsoft.NET\Framework\v4.0.30319\
-
+@SET InstallDir=%~1
 ::_________________________________________::
 ::________CARRYING OUT SCRIPT WORK_________::
 ::_________________________________________::
@@ -36,7 +36,7 @@ IF %ERRORLEVEL%==0 (
 
 	ECHO INSTALLING SERVICE 4.0
 	ECHO ======================
-	%iuPathIS%INSTALLUTIL.EXE /i %1\bin\service\Alachisoft.NCache.Service.exe
+	if EXIST "%InstallDir%\bin\service"  ( %iuPathIS%INSTALLUTIL.EXE /i "%InstallDir%\bin\service\Alachisoft.NCache.Service.exe" )
 	ECHO.
 )
 
