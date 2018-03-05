@@ -27,6 +27,8 @@ The source code for NCache Open Source 4.9 Cache Server can be divided into the 
 - NCache Server and Tools
 - NCache Integrations
 
+Note: Integrations for SignalR, NCacheSessionServices & EFNcacheProvider will only be built using Visual Studio.
+
 In order to get to using them, these divisions are to be compiled and installed on your machine. For that, follow the following steps:
 
 - To build the source code (source, tools and integrations) you need to run the `build.bat` script present in this directory.
