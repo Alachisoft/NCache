@@ -41,10 +41,10 @@ IF %ERRORLEVEL%==0 (
 
 	ECHO INSTALLING ASSEMBLIES TO GAC 
 	ECHO ============================
-	FOR %%f IN (%InstallDir%\bin\assembly\4.0\*NCache*.dll) DO (
+	FOR /f "delims=" %%f IN ('DIR /B /S "%InstallDir%\bin\assembly\4.0\*NCache*.dll"') DO (
 		"%SETUPUTILITIESPATH%\GacInstall4.0.exe" /i "%%f"
 	)
-	ECHO. 
+	ECHO.
 
 	IF EXIST %SRCINTEGRATION%\ContentOptimization ( "%SETUPUTILITIESPATH%\GacInstall4.0.exe" /i "%%f" %SRCINTEGRATION%\ContentOptimization\Alachisoft.NCache.Adapters.dll)
 	IF EXIST %SRCINTEGRATION%\ContentOptimization ( "%SETUPUTILITIESPATH%\GacInstall4.0.exe" /i "%%f" %SRCINTEGRATION%\ContentOptimization\Alachisoft.Common.dll)
