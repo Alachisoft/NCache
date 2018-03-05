@@ -4,7 +4,7 @@
 ::_____SETTING SOME VARIABLES FOR HELP_____::
 ::_________________________________________::
 
-SET INTEGRATIONPARENTFOLDER=..\..\Integration
+SET INTEGRATIONPARENTFOLDER=..\..\..\Integration
 SET ARGS=/t:Rebuild /p:Configuration=Release /p:Platform="Any CPU"
 SET MSBUILDEXE=%windir%\Microsoft.NET\Framework\v4.0.30319\MSBuild.exe
 
