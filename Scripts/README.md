@@ -26,6 +26,7 @@ In addition to that, NCache Open Source also comes with:
     - [For NCache Open Source Cache Server](#for-ncache-open-source-cache-server)
     - [For NCache Open Source Remote Cache Client](#for-ncache-open-source-remote-cache-client)
   - [If NCache is not Installed](#if-ncache-is-not-installed)
+ - [Handling errors during installation](#handling-errors-during-installation)
 
 ## Setting Up the Environment ##
 
@@ -127,3 +128,7 @@ If NCache is already installed, you will have to replace relevant files in their
 ### If NCache is not Installed ##
 
 If NCache is not installed, that illustrates that the installation package is being updated. For that, when the module is built, a Post-Build script in the module will replace the assembly of the module in the relevant build directory on its own.
+
+### Handling errors during installation ##
+
+If during installation, some error occurs (For e.g GAC clean failed, unable to copy dlls etc) then  run the 'uninstall.bat' script to roll-back the changes that occurred during the installation that failed and then run the 'install.bat' script again to install properly. 
