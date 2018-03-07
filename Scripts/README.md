@@ -26,7 +26,7 @@ In addition to that, NCache Open Source also comes with:
     - [For NCache Open Source Cache Server](#for-ncache-open-source-cache-server)
     - [For NCache Open Source Remote Cache Client](#for-ncache-open-source-remote-cache-client)
   - [If NCache is not Installed](#if-ncache-is-not-installed)
- - [Handling errors during installation](#handling-errors-during-installation)
+- [Handling errors during installation](#handling-errors-during-installation)
 
 ## Setting Up the Environment ##
 
@@ -133,4 +133,6 @@ If NCache is not installed, that illustrates that the installation package is be
 
 ---
 
-If during installation, some error occurs (For e.g GAC clean failed, unable to copy dlls etc) then  run the 'uninstall.bat' script to roll-back the changes that occurred during the installation that failed and then run the 'install.bat' script again to install properly. 
+- If during the installation, an error (e.g., GAC clean failed, unable to copy DLLs etc.) is encountered run the `uninstall.bat` script to rollback the changes that occurred during the installation that failed and then run the `install.bat` script again to install properly.
+
+- Each time the install or uninstall script is run, use a new instance of command prompt in **elevated mode** (right click and choose "Run as administrator") as new environment variables (during the installation e.g. `%NCHOME%`) will not be available for an existing instance and they will only be read if the command prompt is started anew.
