@@ -43,7 +43,6 @@ ECHO ============================
 FOR %%f IN ("%NCHOME%\bin\assembly\4.0\*NCache*.dll") DO (
    "%UNINSTALLUTILITIES%\GacInstall4.0.exe" /uf "%%f"
 )
-echo %gacPath%\GAC_MSIL
 FOR /D %%f IN ("%gacPath%\GAC_MSIL\*NCache*") DO (
 	IF EXIST %%f ( 
 	    RMDIR /s /q "%%f" 
