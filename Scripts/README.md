@@ -125,10 +125,12 @@ If NCache is already installed, you will have to replace relevant files in their
   systemctl restart ncached
   ```
 
-### If NCache is not Installed ##
+### If NCache is not Installed ###
 
 If NCache is not installed, that illustrates that the installation package is being updated. For that, when the module is built, a Post-Build script in the module will replace the assembly of the module in the relevant build directory on its own.
 
-### Handling errors during installation ##
+## Handling errors during installation ##
+
+---
 
 If during installation, some error occurs (For e.g GAC clean failed, unable to copy dlls etc) then  run the 'uninstall.bat' script to roll-back the changes that occurred during the installation that failed and then run the 'install.bat' script again to install properly. 

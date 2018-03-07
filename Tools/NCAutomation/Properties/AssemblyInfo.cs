@@ -14,7 +14,7 @@ using System.Runtime.InteropServices;
 
 [assembly: AssemblyTitle("Alachisoft.NCache.Automation")]
 
-[assembly: AssemblyProduct("Alachisoft® NCache OpenSource")]
+[assembly: AssemblyProduct("Alachisoft® NCache Open Source")]
 
 [assembly: AssemblyTrademark("NCache ™ is a registered trademark of Alachisoft.")]
 
