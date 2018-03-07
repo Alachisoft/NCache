@@ -3,8 +3,9 @@
 ECHO SETTING ENVIRONMENT VARIABLE ...
 ECHO ================================
 SETX /M NCHOME %1\
+@SET SerachPSstring= ~1\bin\tools
 @SET PSMODULE= %PSModulePath%;%~1\bin\tools
-SETX /M PSModulePath "%PSMODULE%"
+echo %PSModulePath%|find /i "%SerachPSstring%">nul  || SETX /M PSModulePath "%PSMODULE%"
 ECHO.
 
 ECHO SETTING REGISTRY VALUES ...
