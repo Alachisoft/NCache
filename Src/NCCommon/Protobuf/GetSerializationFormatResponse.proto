@@ -1,0 +1,8 @@
+
+option java_outer_classname="GetSerializationFormatResponseProtocol";
+package Alachisoft.NCache.Common.Protobuf;
+message GetSerializationFormatResponse {
+	optional int32 serializationFormat = 1;
+	optional int64 requestId = 2;
+	optional int32 commandID = 3;
+}

@@ -1,21 +1,10 @@
-// Licensed under the Apache License, Version 2.0 (the "License");
-// you may not use this file except in compliance with the License.
-// You may obtain a copy of the License at
-// 
-//    http://www.apache.org/licenses/LICENSE-2.0
-// 
-// Unless required by applicable law or agreed to in writing, software
-// distributed under the License is distributed on an "AS IS" BASIS,
-// WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
-// See the License for the specific language governing permissions and
-// limitations under the License.
-
 using System;
 using System.Diagnostics;
 using System.IO;
 using System.Text;
 using System.Threading;
 using Alachisoft.NCache.Common.Logger;
+using Alachisoft.NCache.Common.Util;
 
 namespace Alachisoft.NGroups.Stack
 {
@@ -199,9 +188,13 @@ namespace Alachisoft.NGroups.Stack
         /// <summary> performance counter for Socker recv size(bytes). </summary>
         private PerformanceCounter _pcSocketReceiveSize = null;
 
-        /// <summary> performance counter how many massages were sent togethor in socket.send.
-        private PerformanceCounter _pcNagglingMsgCount = null;
-
+        ///
+        /// <summary> performance counter for Socket recv time (mili seconds). </summary>
+        private PerformanceCounter _pcTcpDownEnter = null;
+        private PerformanceCounter _pcClusterOpsSent= null;
+        private PerformanceCounter _pcClusterOpsReceived = null;
+        private PerformanceCounter _pcResponseSent = null;
+        ////
 
         /// <summary> performance counter for Cache hits per second. </summary>
         //public NewTrace nTrace;
@@ -216,6 +209,7 @@ namespace Alachisoft.NGroups.Stack
         /// <summary> Category name of counter performance data.</summary>
 
         private const string PC_CATEGORY = "NCache";
+
         private Thread _printThread;
         private TimeSpan _printInterval = new TimeSpan(10,0,0);
         private string _logFilePath;
@@ -300,7 +294,11 @@ namespace Alachisoft.NGroups.Stack
             if (_printThread != null)
             {
                 NCacheLog.Flush();
+#if !NETCORE
                 _printThread.Abort();
+#elif NETCORE
+                _printThread.Interrupt();
+#endif
             }
             _printThread = null;
             if (_logger != null) _logger.Close();
@@ -349,12 +347,6 @@ namespace Alachisoft.NGroups.Stack
                     _pcBytesReceivedPerSec.Dispose();
                     _pcBytesReceivedPerSec = null;
                 }
-                if (_pcNagglingMsgCount != null)
-                {
-                    _pcNagglingMsgCount.RemoveInstance();
-                    _pcNagglingMsgCount.Dispose();
-                    _pcNagglingMsgCount = null;
-                }
                 if (_pcSocketSendSize != null)
                 {
                     _pcSocketSendSize.RemoveInstance();
@@ -381,6 +373,37 @@ namespace Alachisoft.NGroups.Stack
                 }
 
 
+                ///
+                if (_pcTcpDownEnter != null)
+                {
+                    _pcTcpDownEnter.RemoveInstance();
+                    _pcTcpDownEnter.Dispose();
+                    _pcTcpDownEnter = null;
+                }
+
+                if (_pcClusterOpsSent != null)
+                {
+                    _pcClusterOpsSent.RemoveInstance();
+                    _pcClusterOpsSent.Dispose();
+                    _pcClusterOpsSent = null;
+                }
+
+                if (_pcClusterOpsReceived != null)
+                {
+                    _pcClusterOpsReceived.RemoveInstance();
+                    _pcClusterOpsReceived.Dispose();
+                    _pcClusterOpsReceived = null;
+                }
+
+                if (_pcResponseSent != null)
+                {
+                    _pcResponseSent.RemoveInstance();
+                    _pcResponseSent.Dispose();
+                    _pcResponseSent = null;
+                }
+
+
+                ////
             }
         }
 
@@ -394,6 +417,10 @@ namespace Alachisoft.NGroups.Stack
         /// </summary>
         public void InitializePerfCounters(bool enableDebuggingCounters)
         {
+#if NETCORE
+            if (System.Runtime.InteropServices.RuntimeInformation.IsOSPlatform(System.Runtime.InteropServices.OSPlatform.Linux))
+                return;
+#endif
             try
             {
                 if (!UserHasAccessRights)
@@ -414,30 +441,19 @@ namespace Alachisoft.NGroups.Stack
                         _pcSocketSendSize = new PerformanceCounter(PC_CATEGORY, "Socket send size (bytes)", _instanceName, false);
                         _pcSocketReceiveTime = new PerformanceCounter(PC_CATEGORY, "Socket recv time (msec)", _instanceName, false);
                         _pcSocketReceiveSize = new PerformanceCounter(PC_CATEGORY, "Socket recv size (bytes)", _instanceName, false);
-                        _pcNagglingMsgCount = new PerformanceCounter(PC_CATEGORY, "NaglingMsgCount", _instanceName, false);
                         _pcBytesSentPerSec = new PerformanceCounter(PC_CATEGORY, "Bytes sent/sec", _instanceName, false);
                         _pcBytesReceivedPerSec = new PerformanceCounter(PC_CATEGORY, "Bytes received/sec", _instanceName, false);
                     }
 
                     _pcClusteredOperationsPerSec = new PerformanceCounter(PC_CATEGORY, "Cluster ops/sec", _instanceName, false);
 
-                    if(System.Configuration.ConfigurationSettings.AppSettings["printClusterStats"] != null)
-                    {
-                        bool printStats = Convert.ToBoolean(System.Configuration.ConfigurationSettings.AppSettings["printClusterStats"]);
-                        if (printStats)
-                        {
-                            if (System.Configuration.ConfigurationSettings.AppSettings["statsPrintInterval"] != null)
-                            {
-                                _printInterval = new TimeSpan(Convert.ToInt32(System.Configuration.ConfigurationSettings.AppSettings["statsPrintInterval"]),0,0);
-                            }
+                    _printInterval = ServiceConfiguration.StatsPrintInterval;
 
-                            _logger = new Logs();
-                            _logger.Initialize(instname + ".clstats", "ClusterPerfMonStats");
+                    _logger = new Logs();
+                    _logger.Initialize(instname + ".clstats", "ClusterPerfMonStats");
 
-                            _printThread = new Thread(new ThreadStart(PrintStats));
-                            _printThread.Start();
-                        }
-                    }
+                    _printThread = new Thread(new ThreadStart(PrintStats));
+                    _printThread.Start();
                 }
             }
             catch (Exception e)
@@ -616,20 +632,48 @@ namespace Alachisoft.NGroups.Stack
             }
         }
 
-        public void IncrementNagglingMessageStats(long nagglingMsgs)
+        ///
+        public void IncrementTcpDownEnter()
         {
-            if (_pcNagglingMsgCount != null)
+            if (_pcTcpDownEnter != null)
             {
-                lock (_pcNagglingMsgCount)
+                lock (_pcTcpDownEnter)
                 {
-                    _pcNagglingMsgCount.RawValue = nagglingMsgs;
+                    _pcTcpDownEnter.Increment();
                 }
             }
         }
-        
-     
 
-        
+        public void IncrementClusterOpsReceived()
+        {
+            if (_pcClusterOpsReceived != null)
+            {
+                lock (_pcClusterOpsReceived)
+                {
+                    _pcClusterOpsReceived.Increment();
+                }
+            }
+        }
+        public void IncrementClusterOpsSent(long sentCount)
+        {
+            if (_pcClusterOpsSent != null)
+            {
+                lock (_pcClusterOpsSent)
+                {
+                    _pcClusterOpsSent.IncrementBy(sentCount);
+                }
+            }
+        }
+        public void IncrementResponseSent()
+        {
+            if (_pcResponseSent != null)
+            {
+                lock (_pcResponseSent)
+                {
+                    _pcResponseSent.Increment();
+                }
+            }
+        }
 
 
         ////

@@ -1,30 +1,8 @@
-// Licensed under the Apache License, Version 2.0 (the "License");
-// you may not use this file except in compliance with the License.
-// You may obtain a copy of the License at
-// 
-//    http://www.apache.org/licenses/LICENSE-2.0
-// 
-// Unless required by applicable law or agreed to in writing, software
-// distributed under the License is distributed on an "AS IS" BASIS,
-// WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
-// See the License for the specific language governing permissions and
-// limitations under the License.
 // $Id: ProtocolStack.java,v 1.12 2004/07/05 14:17:33 belaban Exp $
-
 using System;
-using Microsoft.Win32;
-
-using Alachisoft.NGroups;
-using Alachisoft.NGroups.Protocols;
-using Alachisoft.NGroups.Blocks;
-using Alachisoft.NGroups.Protocols.pbcast;
-using Alachisoft.NGroups.Util;
-
-using Alachisoft.NCache.Common.DataStructures;
 using Alachisoft.NCache.Common.Threading;
 using Alachisoft.NCache.Common.Util;
 using Alachisoft.NCache.Common.Logger;
-using Alachisoft.NCache.Common;
 
 namespace Alachisoft.NGroups.Stack
 {
@@ -83,16 +61,6 @@ namespace Alachisoft.NGroups.Stack
         private ProtocolStackType stackType;
 
         public PerfStatsCollector perfStatsColl = new PerfStatsCollector("EMpty");
-
-		//private NewTrace _nTrace = null;
-        //private string _cacheName = null;
-
-        //public string LoggerName
-        //{
-        //    get { return _cacheName; }
-        //    set { _cacheName = value; }
-        //}
-
         private ILogger _ncacheLog;
         public ILogger NCacheLog
         {
@@ -105,28 +73,10 @@ namespace Alachisoft.NGroups.Stack
                 _ncacheLog = value;
             }
         }
-
-        //public MessageObjectProvider msgProvider = new MessageObjectProvider(6);
-        //public TotalHeaderProvider totalHeaderProvider = new TotalHeaderProvider(5);
-        //public TcpHeaderProvider tcpHeaderProvider = new TcpHeaderProvider(5);
-        //public NackAckHeaderProvider nackHeaderProvider = new NackAckHeaderProvider(5);
-        //public RequestCorrelatorHeaderProvider reqCoHeaderProvider = new RequestCorrelatorHeaderProvider(5);
-       // public EventProvider eventProvider = new EventProvider(5);
-       // public MemoryManager memManager = new MemoryManager();
-		
 		public ProtocolStack(GroupChannel channel, string setup_string)
 		{
 			this.setup_string = setup_string;
 			this.channel = channel;
-
-            //Register the object providers to the memory manager.
-            //memManager.RegisterObjectProvider(msgProvider);
-            //memManager.RegisterObjectProvider(totalHeaderProvider);
-            //memManager.RegisterObjectProvider(tcpHeaderProvider);
-            //memManager.RegisterObjectProvider(nackHeaderProvider);
-           // memManager.RegisterObjectProvider(reqCoHeaderProvider);
-           // memManager.RegisterObjectProvider(eventProvider);
-
 		}
 
         public void InitializePerfCounters(string instance)
@@ -135,8 +85,6 @@ namespace Alachisoft.NGroups.Stack
             bool enableDebuggingCounters = false;
 
             enableDebuggingCounters = ServiceConfiguration.EnableDebuggingCounters;
-
-            //perfStatsColl.nTrace = _nTrace;
             perfStatsColl.NCacheLog = _ncacheLog;
             perfStatsColl.InitializePerfCounters(enableDebuggingCounters);
         }
@@ -153,10 +101,12 @@ namespace Alachisoft.NGroups.Stack
 			set { operational = value; }
 		}
 
-		/// <summary> Prints the names of the protocols, from the bottom to top. If include_properties is true,
-		/// the properties for each protocol will also be printed.
-		/// </summary>
-		public virtual string printProtocolSpec(bool include_properties)
+        public bool DisableOperationOnMerge { get; internal set; }
+
+        /// <summary> Prints the names of the protocols, from the bottom to top. If include_properties is true,
+        /// the properties for each protocol will also be printed.
+        /// </summary>
+        public virtual string printProtocolSpec(bool include_properties)
 		{
 			System.Text.StringBuilder sb = new System.Text.StringBuilder();
 			Protocol prot = top_prot;
@@ -270,7 +220,7 @@ namespace Alachisoft.NGroups.Stack
 					return tmp;
 				tmp = tmp.DownProtocol;
 			}
-			return null; // conf.findProtocol(this, name);
+			return null; 
 		}
 		
 		public override void  destroy()

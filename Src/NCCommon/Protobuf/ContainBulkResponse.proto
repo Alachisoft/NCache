@@ -1,0 +1,7 @@
+package Alachisoft.NCache.Common.Protobuf;
+
+message ContainBulkResponse {
+	optional bytes exists = 1;
+	optional int64 requestId = 2;
+	optional int32 commandID = 3;
+}

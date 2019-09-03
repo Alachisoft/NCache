@@ -7,4 +7,7 @@ message GetReaderNextChunkCommand {
 	optional int32 nextIndex = 2;
 	optional int64 requestId = 3;
 	optional string nodeIP = 4;
+	optional int32 commandVersion = 5 [default=0];
+	optional int32 commandID = 6 [default = -1];
+	optional int64 clientLastViewId = 7 [default=-1];
 }

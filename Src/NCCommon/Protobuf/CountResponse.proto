@@ -3,4 +3,6 @@ option java_outer_classname="CountResponseProtocol";
 package Alachisoft.NCache.Common.Protobuf;
 message CountResponse {
 	optional int64 count = 1;
+	optional int64 requestId = 2;
+	optional int32 commandID = 3;
 }

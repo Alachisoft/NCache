@@ -1,21 +1,21 @@
-// Copyright (c) 2017 Alachisoft
-// 
-// Licensed under the Apache License, Version 2.0 (the "License");
-// you may not use this file except in compliance with the License.
-// You may obtain a copy of the License at
-// 
-//    http://www.apache.org/licenses/LICENSE-2.0
-// 
-// Unless required by applicable law or agreed to in writing, software
-// distributed under the License is distributed on an "AS IS" BASIS,
-// WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
-// See the License for the specific language governing permissions and
-// limitations under the License.
-
+//  Copyright (c) 2019 Alachisoft
+//  
+//  Licensed under the Apache License, Version 2.0 (the "License");
+//  you may not use this file except in compliance with the License.
+//  You may obtain a copy of the License at
+//  
+//     http://www.apache.org/licenses/LICENSE-2.0
+//  
+//  Unless required by applicable law or agreed to in writing, software
+//  distributed under the License is distributed on an "AS IS" BASIS,
+//  WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+//  See the License for the specific language governing permissions and
+//  limitations under the License
 using System;
 using System.Collections;
 using System.Collections.Generic;
 using Alachisoft.NCache.Common.Net;
+using Alachisoft.NCache.Common.DataStructures.Clustered;
 
 namespace Alachisoft.NCache.Caching.Topologies.Clustered
 {
@@ -26,10 +26,10 @@ namespace Alachisoft.NCache.Caching.Topologies.Clustered
         ulong _sequenceId;
         long _viewId;
         List<ReplicationOperation> _operations;
-        Array _opCodes;
-        Array _infos;
+        IList _opCodes;
+        IList _infos;
         Array _userPayloads;
-        ArrayList _compilationInfos;
+        IList _compilationInfos;
         OperationContext _operationContext;
 
         public SequencedReplicationOperation(ulong sequenceId)
@@ -43,13 +43,13 @@ namespace Alachisoft.NCache.Caching.Topologies.Clustered
             get { return _sequenceId; }
         }
 
-        public Array OpCodes
+        public IList OpCodes
         {
             get { return _opCodes; }
             set { _opCodes = value; }
         }
 
-        public Array Infos
+        public IList Infos
         {
             get { return _infos; }
             set { _infos = value; }
@@ -61,7 +61,7 @@ namespace Alachisoft.NCache.Caching.Topologies.Clustered
             set { _userPayloads = value; }
         }
 
-        public ArrayList CompilationInfo
+        public IList CompilationInfo
         {
             get { return _compilationInfos; }
             set { _compilationInfos = value; }
@@ -96,12 +96,13 @@ namespace Alachisoft.NCache.Caching.Topologies.Clustered
             _operations.Add(operation);
         }
 
-        public void Compile(out Array opCodes, out Array info, out Array userPayload, out ArrayList compilationInfo)
+        public void Compile(out IList opCodes, out IList info, out IList userPayload, out IList compilationInfo)
         {
-            ArrayList opCodesToBeReplicated = new ArrayList();
-            ArrayList infoToBeReplicated = new ArrayList();
-            ArrayList payLoad = new ArrayList();
-            compilationInfo = new ArrayList();            
+
+            ClusteredArrayList payLoad = new ClusteredArrayList();
+            IList opCodesToBeReplicated = new ClusteredArrayList();
+            IList infoToBeReplicated = new ClusteredArrayList();
+            compilationInfo = new ClusteredArrayList();            
 
             foreach (ReplicationOperation operation in _operations)
             {
@@ -111,6 +112,7 @@ namespace Alachisoft.NCache.Caching.Topologies.Clustered
 
                 if (operation.UserPayLoad != null)
                 {
+                    if(payLoad==null) payLoad = new ClusteredArrayList();
                     for (int j = 0; j < operation.UserPayLoad.Length; j++)
                     {
                         payLoad.Add(operation.UserPayLoad.GetValue(j));
@@ -119,9 +121,9 @@ namespace Alachisoft.NCache.Caching.Topologies.Clustered
                 compilationInfo.Add(operation.PayLoadSize);                
             }
 
-            opCodes = opCodesToBeReplicated.ToArray();
-            info = infoToBeReplicated.ToArray();
-            userPayload = payLoad.ToArray();
+            userPayload = payLoad;
+            opCodes = opCodesToBeReplicated;
+            info = infoToBeReplicated;
         }
     }
 }

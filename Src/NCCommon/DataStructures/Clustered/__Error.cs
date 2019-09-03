@@ -60,5 +60,15 @@ namespace Alachisoft.NCache.Common.DataStructures.Clustered
         {
             throw new NotSupportedException(ResourceHelper.GetResourceString("NotSupported_UnwritableStream"));
         }
+
+        internal static void SeekNotSupported()
+        {
+            throw new NotSupportedException(ResourceHelper.GetResourceString("NotSupported_UnseekableStream"));
+        }
+
+        internal static void ReadNotSupported()
+        {
+            throw new NotSupportedException(ResourceHelper.GetResourceString("NotSupported_UnreadableStream"));
+        }
     }
 }

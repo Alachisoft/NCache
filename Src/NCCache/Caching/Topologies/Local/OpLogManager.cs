@@ -1,17 +1,16 @@
-// Copyright (c) 2017 Alachisoft
-// 
-// Licensed under the Apache License, Version 2.0 (the "License");
-// you may not use this file except in compliance with the License.
-// You may obtain a copy of the License at
-// 
-//    http://www.apache.org/licenses/LICENSE-2.0
-// 
-// Unless required by applicable law or agreed to in writing, software
-// distributed under the License is distributed on an "AS IS" BASIS,
-// WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
-// See the License for the specific language governing permissions and
-// limitations under the License.
-
+//  Copyright (c) 2019 Alachisoft
+//  
+//  Licensed under the Apache License, Version 2.0 (the "License");
+//  you may not use this file except in compliance with the License.
+//  You may obtain a copy of the License at
+//  
+//     http://www.apache.org/licenses/LICENSE-2.0
+//  
+//  Unless required by applicable law or agreed to in writing, software
+//  distributed under the License is distributed on an "AS IS" BASIS,
+//  WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+//  See the License for the specific language governing permissions and
+//  limitations under the License
 using System;
 using System.Collections;
 using Alachisoft.NCache.Common.Logger;
@@ -21,11 +20,11 @@ namespace Alachisoft.NCache.Caching.Topologies.Local
 {
     internal class OpLogManager : IDisposable
     {
-
-        HashVector _loggers = new HashVector();
+        OperationLogger[] _loggers = new OperationLogger[Common.AppUtil.MAX_BUCKETS];
         bool _logEnteries;
         bool _allowOPAfterBuckeTxfrd = true;
         private ILogger _ncacheLog;
+
         ILogger NCacheLog
         {
             get { return _ncacheLog; }
@@ -35,41 +34,44 @@ namespace Alachisoft.NCache.Caching.Topologies.Local
         {
             _logEnteries = logEnteries;
             _ncacheLog = context.NCacheLog;
-            
         }
 
         public void StartLogging(int bucket, LogMode loggingMode)
         {
-            if (!_loggers.Contains(bucket))
+            OperationLogger logger = _loggers[bucket];
+            if (logger == null)
             {
-                _loggers.Add(bucket, new OperationLogger(bucket, loggingMode));
+                logger = new OperationLogger(bucket, loggingMode);
+                _loggers[bucket] = logger;
             }
-            else
+            lock (logger)
             {
-                OperationLogger logger = _loggers[bucket] as OperationLogger;
                 logger.LoggingMode = loggingMode;
                 logger.BucketTransfered = false;
                 logger.Clear();
             }
+            //}
         }
 
         public bool IsLoggingEnbaled(int bucket, LogMode logMode)
         {
-            if (_loggers.Contains(bucket))
-            {
-                OperationLogger logger = _loggers[bucket] as OperationLogger;
+            OperationLogger logger = _loggers[bucket];
+            if (logger != null)
                 return logger.LoggingMode == logMode;
-            }
             return false;
         }
 
         public void StopLogging(int bucket)
         {
-            if (_loggers.Contains(bucket))
+
+            OperationLogger logger = _loggers[bucket];
+            if (logger!=null)
             {
-                OperationLogger logger = _loggers[bucket] as OperationLogger;
-                logger.BucketTransfered = _allowOPAfterBuckeTxfrd; ;
-                logger.Clear();
+                lock (logger)
+                {
+                    logger.BucketTransfered = _allowOPAfterBuckeTxfrd;
+                    logger.Clear();
+                }
             }
         }
 
@@ -83,7 +85,7 @@ namespace Alachisoft.NCache.Caching.Topologies.Local
 
         public void RemoveLogger(int bucket)
         {
-            _loggers.Remove(bucket);
+            _loggers[bucket]=null;
         }
 
         /// <summary>
@@ -95,11 +97,11 @@ namespace Alachisoft.NCache.Caching.Topologies.Local
         /// <param name="type"></param>
         /// <param name="logMode"></param>
         /// <returns>True, in case operation is logged otherwise false</returns>
-        public bool LogOperation(int bucket, object key, CacheEntry entry, OperationType type)
+        public bool LogOperation(int bucket, object key, Object entry, OperationType type)
         {
-            if (_loggers.Contains(bucket))
+            OperationLogger logger = _loggers[bucket];
+            if (logger != null)
             {
-                OperationLogger logger = _loggers[bucket] as OperationLogger;
                 if (_logEnteries)
                     logger.LogOperation(key, entry, type);
                 else
@@ -116,10 +118,13 @@ namespace Alachisoft.NCache.Caching.Topologies.Local
         /// <returns></returns>
         public bool IsOperationAllowed(int bucket)
         {
-            if (_loggers.Contains(bucket))
+            OperationLogger logger = _loggers[bucket];
+
+            if (logger != null && logger.BucketTransfered)
             {
-                OperationLogger logger = _loggers[bucket] as OperationLogger;
-                return !logger.BucketTransfered;
+                if (OperationContext.IsReplicationOperation) //replication operations are not filtered
+                    return true;
+                return false;
             }
             return true;
         }
@@ -127,12 +132,15 @@ namespace Alachisoft.NCache.Caching.Topologies.Local
         public Hashtable GetLogTable(int bucket)
         {
             Hashtable result = null;
-            if (_loggers.Contains(bucket))
-            {
-                OperationLogger opLogger = (OperationLogger)_loggers[bucket];
+            OperationLogger logger = _loggers[bucket];
 
-                result = opLogger.LoggedKeys.Clone() as Hashtable;
-                opLogger.Clear();
+            if (logger != null)
+            {
+                lock (logger)
+                {
+                    result = logger.LoggedKeys.Clone() as Hashtable;
+                    logger.Clear();
+                }
             }
             return result;
         }
@@ -140,31 +148,29 @@ namespace Alachisoft.NCache.Caching.Topologies.Local
         public Hashtable GetLoggedEnteries(int bucket)
         {
             Hashtable result = null;
-            if (_loggers.Contains(bucket))
-            {
-                OperationLogger opLogger = (OperationLogger)_loggers[bucket];
+            OperationLogger logger = _loggers[bucket];
 
-                result = opLogger.LoggedEnteries.Clone() as Hashtable;
-                opLogger.Clear();
+            if (logger != null)
+            {
+                lock (logger)
+                {
+                    result = logger.LoggedEnteries.Clone() as Hashtable;
+                    logger.Clear();
+                }
             }
             return result;
         }
-
-
+         
         #region IDisposable Members
 
         public void Dispose()
         {
-            if (_loggers != null)
+            foreach (OperationLogger logger in _loggers)
             {
-                foreach (OperationLogger logger in _loggers.Values)
-                {
+                if(logger!=null)
                     logger.Clear();
-                }
-                _loggers.Clear();
             }
         }
-
         #endregion
     }
 }

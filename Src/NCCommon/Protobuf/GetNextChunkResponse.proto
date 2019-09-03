@@ -5,4 +5,7 @@ package Alachisoft.NCache.Common.Protobuf;
 message GetNextChunkResponse {
 	optional EnumerationPointer enumerationPointer = 1;
 	repeated string keys = 2;
+	optional int64 requestId = 3;
+	optional int32 commandID = 4;
+	optional string intendedRecipient = 5;
 }

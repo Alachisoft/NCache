@@ -6,5 +6,7 @@ message DisposeReaderCommand {
     optional string readerId = 1;
 	optional int64 requestId = 2;
 	optional string nodeIP = 3;
+	optional int64 clientLastViewId = 4 [default=-1];
+	optional int32 MethodOverload = 5 [default=0];
 }
 

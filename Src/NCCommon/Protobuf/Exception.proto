@@ -9,16 +9,28 @@ message Exception
         AGGREGATE = 1;
         CONFIGURATION = 2;
         GENERALFAILURE = 3;
+        SECURITY = 4;
         NOTSUPPORTED = 5;
         MAX_CLIENTS_REACHED = 6;
-		TYPE_INDEX_NOT_FOUND = 7;
-		ATTRIBUTE_INDEX_NOT_FOUND = 8;
-		STATE_TRANSFER_EXCEPTION = 9;
-		INVALID_READER_EXCEPTION = 10;
-
+        STREAM_ALREADY_LOCKED = 7;
+        STREAM_CLOSED = 8;
+        STREAM_EXC = 9;
+        STREAM_INVALID_LOCK = 10;
+        STREAM_NOT_FOUND = 11;
+		TYPE_INDEX_NOT_FOUND = 12;
+		ATTRIBUTE_INDEX_NOT_FOUND = 13;
+		STATE_TRANSFER_EXCEPTION = 14;
+		INVALID_READER_EXCEPTION = 15;
+		LICENSING_EXCEPTION = 16;
+		DEPLOYMENT_EXCEPTION = 17;
+		CONFIGURATON_EXCEPTION = 18;
+		MAINTENANCE_EXCEPTION = 19;
 	}
 	
 	optional Type type = 1;
 	optional string message = 2;
 	optional string exception = 3;
+	optional int32 errorCode = 4;
+	optional string stackTrace=5;
+
 }

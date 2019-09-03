@@ -1,0 +1,7 @@
+
+option java_outer_classname="RemoveGroupResponseProtocol";
+package Alachisoft.NCache.Common.Protobuf;
+message RemoveGroupResponse {
+    optional int64 requestId = 1;
+	optional int32 commandID = 2;
+}

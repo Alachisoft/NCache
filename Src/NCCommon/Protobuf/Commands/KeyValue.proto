@@ -1,4 +1,4 @@
-import "ValueWithType.proto";
+import "Commands/ValueWithType.proto";
 
 
 option java_outer_classname="KeyValueProtocol";

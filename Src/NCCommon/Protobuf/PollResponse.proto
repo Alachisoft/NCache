@@ -1,0 +1,11 @@
+import "MessageEventListResponse.proto";
+option java_outer_classname="PollResponseProtocol";
+package Alachisoft.NCache.Common.Protobuf;
+message PollResponse 
+{
+	repeated string removedKeys = 1;
+	repeated string updatedKeys = 2;
+	repeated MessageEventListResponse messageEventListResponse=3;
+	optional int32 commandID = 4;
+	optional int64 requestId = 5;
+}

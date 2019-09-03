@@ -1,8 +1,14 @@
 import "KeyExceptionPackageResponse.proto";
+import "KeyVersionPackageResponse.proto";
 
 
 option java_outer_classname="BulkAddResponseProtocol";
 package Alachisoft.NCache.Common.Protobuf;
 message BulkAddResponse {
 	optional KeyExceptionPackageResponse keyExceptionPackage = 1;
+    optional KeyVersionPackageResponse keyVersionPackage = 2;
+	
+	optional int64 requestId = 3;
+	optional int32 commandID = 4;
+	optional string intendedRecipient = 5;
 }

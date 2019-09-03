@@ -1,0 +1,9 @@
+option java_outer_classname="StartCacheCommandProtocol";
+package Alachisoft.NCache.Common.Protobuf;
+
+message StartCacheCommand {
+
+	optional int64 requestId = 1;
+	optional string cacheId = 2; 
+
+}

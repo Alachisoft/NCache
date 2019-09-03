@@ -1,0 +1,42 @@
+﻿<!--
+    You can find existing browser definitions at
+    <windir>\Microsoft.NET\Framework\<ver>\CONFIG\Browsers
+-->
+<browsers>
+  <!--<browser id="NewBrowser" parentID="Mozilla">
+      <controlAdapters>
+        <adapter controlType="System.Web.UI.Page"
+              adapterType="Alachisoft.NCache.Adapters.PageAdapter" />
+      </controlAdapters>
+
+      <identification>
+            <userAgent match="Unique User Agent Regular Expression" />
+        </identification>
+
+        <capture>
+            <userAgent match="NewBrowser (?'version'\d+\.\d+)" />
+        </capture>
+
+        <capabilities>
+            <capability name="browser" value="My New Browser" />
+            <capability name="version" value="${version}" />
+        </capabilities>
+    </browser>
+
+    <browser refID="Mozilla">
+        <capabilities>
+            <capability name="xml" value="true" />
+        </capabilities>
+    </browser>
+
+  -->
+  <!-- NCache Plug page adapters in the app browser file as following:. -->
+  <!---->
+  <browser refID="Default">
+    <controlAdapters>
+      <adapter controlType="System.Web.UI.Page"
+            adapterType="Alachisoft.NCache.Adapters.PageAdapter" />
+    </controlAdapters>
+  </browser>
+
+</browsers>

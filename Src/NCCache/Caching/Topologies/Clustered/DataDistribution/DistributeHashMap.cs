@@ -1,17 +1,16 @@
-// Copyright (c) 2017 Alachisoft
-// 
-// Licensed under the Apache License, Version 2.0 (the "License");
-// you may not use this file except in compliance with the License.
-// You may obtain a copy of the License at
-// 
-//    http://www.apache.org/licenses/LICENSE-2.0
-// 
-// Unless required by applicable law or agreed to in writing, software
-// distributed under the License is distributed on an "AS IS" BASIS,
-// WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
-// See the License for the specific language governing permissions and
-// limitations under the License.
-
+//  Copyright (c) 2019 Alachisoft
+//  
+//  Licensed under the Apache License, Version 2.0 (the "License");
+//  you may not use this file except in compliance with the License.
+//  You may obtain a copy of the License at
+//  
+//     http://www.apache.org/licenses/LICENSE-2.0
+//  
+//  Unless required by applicable law or agreed to in writing, software
+//  distributed under the License is distributed on an "AS IS" BASIS,
+//  WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+//  See the License for the specific language governing permissions and
+//  limitations under the License
 using System;
 using System.Collections;
 using Alachisoft.NCache.Common.DataStructures;
@@ -22,10 +21,10 @@ namespace Alachisoft.NCache.Caching.Topologies.Clustered
 {
     public class DistributeHashMap
     {
-        public static ArrayList DistributeOrphanBuckets(ArrayList hashMap, Address leavingNode, ArrayList members)
+        public static ArrayList DistributeOrphanBuckets(ArrayList hashMap, Address leavingNode, ArrayList members, out Hashtable orphanedBuckets)
         {
+            orphanedBuckets = new Hashtable();
             HashMapBucket tempBuck;
-            ArrayList orphanBuckets = new ArrayList();
             hashMap = ReAllocBucketsInTransfer(hashMap, leavingNode);
             int[] bucketsInEachNode = NodeBucketsCount(hashMap, members); //node vs bucket count.
             bool bAssigned = false;
@@ -48,8 +47,11 @@ namespace Alachisoft.NCache.Caching.Topologies.Clustered
                     {
                         if (bucketsInEachNode[j] < bucketsPerNode)
                         {
+                            HashMapBucket clonedBucket = tempBuck.Clone() as HashMapBucket;
+                            orphanedBuckets.Add(clonedBucket.BucketId, clonedBucket);
+
                             Address mbr = members[j] as Address;
-                            bucketsInEachNode[j] = (bucketsInEachNode[j])++; //increment bucket count as next j is incremented.
+                            bucketsInEachNode[j] = bucketsInEachNode[j]+ 1; //increment bucket count as next j is incremented.
                             tempBuck.PermanentAddress = mbr;
                             tempBuck.TempAddress = mbr;
                             tempBuck.Status = BucketStatus.Functional;
@@ -67,7 +69,9 @@ namespace Alachisoft.NCache.Caching.Topologies.Clustered
                     //exceptional case when last node gets few more buckets. Assign those leftover buckets to ANY node.
                     if (bAssigned == false)
                     {
-                        tempBuck.PermanentAddress = (Address)members[j++];
+                        Address mbr = (Address)members[j++]; ;
+                        tempBuck.PermanentAddress = tempBuck.TempAddress = mbr;
+                        tempBuck.Status = BucketStatus.Functional;
                     }
 
                 }
@@ -82,8 +86,12 @@ namespace Alachisoft.NCache.Caching.Topologies.Clustered
         {
             for (int i = 0; i < hashMap.Count; i++)
             {
-                if (((HashMapBucket)hashMap[i]).TempAddress.CompareTo(leavingNode) == 0)
-                    ((HashMapBucket)hashMap[i]).TempAddress = ((HashMapBucket)hashMap[i]).PermanentAddress;
+                HashMapBucket bucket = (HashMapBucket)hashMap[i];
+                if (bucket.TempAddress.CompareTo(leavingNode) == 0)
+                {
+                    bucket.TempAddress = ((HashMapBucket)hashMap[i]).PermanentAddress;
+                    bucket.Status = BucketStatus.Functional;
+                }
             }
             return hashMap;
         }
@@ -94,6 +102,7 @@ namespace Alachisoft.NCache.Caching.Topologies.Clustered
         {
             int[] _bucketsCount = new int[members.Count];
 
+            //Bad code... need to re-visit later on
             for (int i = 0; i < members.Count; i++)
             {
                 Address addr = (Address)members[i];

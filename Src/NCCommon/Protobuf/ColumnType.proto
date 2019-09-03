@@ -1,9 +1,11 @@
 package Alachisoft.NCache.Common.Protobuf;
 
-enum ColumnType 
+enum ColumnType
 {
 		ATTRIBUTE_COLUMN = 0;
 		AGGREGATERESULT_COLUMN = 1;
         KEY_COLUMN = 2;
         VALUE_COLUMN = 3;
+		METADATA_COLUMN = 4;
+		DYNAMIC_COLUMN = 5;
 }

@@ -5,4 +5,6 @@ message LockResponse {
 	optional bool locked = 1;
 	optional string lockId = 2;
 	optional int64 lockTime = 3;
+	optional int32 commandID = 4 [default = -1];
+	optional int64 requestId = 5;
 }

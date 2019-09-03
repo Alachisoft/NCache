@@ -1,48 +1,33 @@
-// Licensed under the Apache License, Version 2.0 (the "License");
-// you may not use this file except in compliance with the License.
-// You may obtain a copy of the License at
-// 
-//    http://www.apache.org/licenses/LICENSE-2.0
-// 
-// Unless required by applicable law or agreed to in writing, software
-// distributed under the License is distributed on an "AS IS" BASIS,
-// WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
-// See the License for the specific language governing permissions and
-// limitations under the License.
 // $Id: Protocol.java,v 1.18 2004/07/05 14:17:33 belaban Exp $
-
 using System;
 using System.Threading;
 using System.Collections;
-
-using Alachisoft.NGroups;
-using Alachisoft.NGroups.Util;
 using Alachisoft.NCache.Common.Util;
-using Alachisoft.NCache.Common;
+using Alachisoft.NGroups.Util;
 
 namespace Alachisoft.NGroups.Stack
 {
-	/// <summary> The Protocol class provides a set of common services for protocol layers. Each layer has to
-	/// be a subclass of Protocol and override a number of methods (typically just <code>up()</code>,
-	/// <code>Down</code> and <code>getName</code>. Layers are stacked in a certain order to form
-	/// a protocol stack. <a href=org.jgroups.Event.html>Events</a> are passed from lower
-	/// layers to upper ones and vice versa. E.g. a Message received by the UDP layer at the bottom
-	/// will be passed to its higher layer as an Event. That layer will in turn pass the Event to
-	/// its layer and so on, until a layer handles the Message and sends a response or discards it,
-	/// the former resulting in another Event being passed down the stack.<p>
-	/// Each layer has 2 FIFO queues, one for up Events and one for down Events. When an Event is
-	/// received by a layer (calling the internal upcall <code>ReceiveUpEvent</code>), it is placed
-	/// in the up-queue where it will be retrieved by the up-handler thread which will invoke method
-	/// <code>Up</code> of the layer. The same applies for Events traveling down the stack. Handling
-	/// of the up-handler and down-handler threads and the 2 FIFO queues is donw by the Protocol
-	/// class, subclasses will almost never have to override this behavior.<p>
-	/// The important thing to bear in mind is that Events have to passed on between layers in FIFO
-	/// order which is guaranteed by the Protocol implementation and must be guranteed by subclasses
-	/// implementing their on Event queuing.<p>
-	/// <b>Note that each class implementing interface Protocol MUST provide an empty, public
-	/// constructor !</b>
-	/// </summary>
-	internal abstract class Protocol
+    /// <summary> The Protocol class provides a set of common services for protocol layers. Each layer has to
+    /// be a subclass of Protocol and override a number of methods (typically just <code>up()</code>,
+    /// <code>Down</code> and <code>getName</code>. Layers are stacked in a certain order to form
+    /// a protocol stack. <a href=org.jgroups.Event.html>Events</a> are passed from lower
+    /// layers to upper ones and vice versa. E.g. a Message received by the UDP layer at the bottom
+    /// will be passed to its higher layer as an Event. That layer will in turn pass the Event to
+    /// its layer and so on, until a layer handles the Message and sends a response or discards it,
+    /// the former resulting in another Event being passed down the stack.<p>
+    /// Each layer has 2 FIFO queues, one for up Events and one for down Events. When an Event is
+    /// received by a layer (calling the internal upcall <code>ReceiveUpEvent</code>), it is placed
+    /// in the up-queue where it will be retrieved by the up-handler thread which will invoke method
+    /// <code>Up</code> of the layer. The same applies for Events traveling down the stack. Handling
+    /// of the up-handler and down-handler threads and the 2 FIFO queues is donw by the Protocol
+    /// class, subclasses will almost never have to override this behavior.<p>
+    /// The important thing to bear in mind is that Events have to passed on between layers in FIFO
+    /// order which is guaranteed by the Protocol implementation and must be guranteed by subclasses
+    /// implementing their on Event queuing.<p>
+    /// <b>Note that each class implementing interface Protocol MUST provide an empty, public
+    /// constructor !</b>
+    /// </summary>
+    internal abstract class Protocol
 	{
 		internal class UpHandler:ThreadClass
 		{
@@ -305,10 +290,7 @@ namespace Alachisoft.NGroups.Stack
 
             enableMonitoring = ServiceConfiguration.EnableDebuggingCounters;
 
-            if (System.Configuration.ConfigurationSettings.AppSettings["useAvgStats"] != null)
-            {
-                useAvgStats = Convert.ToBoolean(System.Configuration.ConfigurationSettings.AppSettings["useAvgStats"]);
-            }
+            useAvgStats = ServiceConfiguration.UseAvgStats;
 
 			return setProperties(props);
 		}
@@ -417,17 +399,7 @@ namespace Alachisoft.NGroups.Stack
 				{
                     up_queue = new Alachisoft.NCache.Common.DataStructures.Queue();
 					up_handler = new UpHandler(up_queue, this);
-					if (up_thread_prio >= 0)
-					{
-						try
-						{
-							//up_handler.Priority = System.Threading.ThreadPriority.AboveNormal;
-						}
-						catch (System.Exception t)
-						{
-                            stack.NCacheLog.Error("Protocol",  "priority " + up_thread_prio + " could not be set for thread: " + t.StackTrace);
-						}
-					}
+					
 					up_handler.Start();
 				}
 			}
@@ -445,17 +417,7 @@ namespace Alachisoft.NGroups.Stack
 				{
                     down_queue = new Alachisoft.NCache.Common.DataStructures.Queue();
 					down_handler = new DownHandler(down_queue, this);
-					if (down_thread_prio >= 0)
-					{
-						try
-						{
-							//down_handler.Priority =  System.Threading.ThreadPriority.AboveNormal;
-						}
-						catch (System.Exception t)
-						{
-                            stack.NCacheLog.Error("Protocol.startDownHandler()", "priority " + down_thread_prio + " could not be set for thread: " + t.StackTrace);
-						}
-					}
+					
 					down_handler.Start();
 				}
 			}
@@ -544,7 +506,6 @@ namespace Alachisoft.NGroups.Stack
 			}
 			try
 			{
-
                 if (stack.NCacheLog.IsInfoEnabled) stack.NCacheLog.Info(Name + ".receiveUpEvent()", "RentId :" + evt.RentId + "up queue count : " + up_queue.Count);
 				up_queue.add(evt, evt.Priority);
 			}
@@ -620,7 +581,13 @@ namespace Alachisoft.NGroups.Stack
 		{
 			if (up_prot != null)
 			{
-
+#if DEBUG
+				if(evt.Type == Event.MSG)
+				{
+					Message msg = (Message)evt.Arg;
+                    if (stack.NCacheLog.IsInfoEnabled) stack.NCacheLog.Info(Name + ".passUp()", "hdr: " + Global.CollectionToString(msg.Headers));
+				}
+#endif
 				up_prot.receiveUpEvent(evt);
 			}
 			else
@@ -634,7 +601,13 @@ namespace Alachisoft.NGroups.Stack
 		{
 			if (down_prot != null)
 			{
-
+#if DEBUG
+				if(evt.Type == Event.MSG)
+				{
+					Message msg = (Message)evt.Arg;
+                    if (stack.NCacheLog.IsInfoEnabled) stack.NCacheLog.Info(Name + ".passDown()", "hdr: " + Global.CollectionToString(msg.Headers));
+				}
+#endif
 				down_prot.receiveDownEvent(evt);
 			}
 			else

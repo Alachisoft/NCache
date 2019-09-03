@@ -6,4 +6,7 @@ message LockCommand
 	optional string key = 1;
 	optional int64 lockTimeout = 2;
 	optional int64 requestId = 3;
+	optional int32 threadId = 4 [default = -1];
+	optional int32 MethodOverload = 5 [default=0];
+
 }

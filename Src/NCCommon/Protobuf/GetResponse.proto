@@ -1,9 +1,15 @@
 
 option java_outer_classname="GetResponseProtocol";
+import "CacheItemType.proto";
+
 package Alachisoft.NCache.Common.Protobuf;
 message GetResponse {
 	optional int32 flag = 1;
 	optional string lockId = 2;
 	optional int64 lockTime = 3;
-	repeated bytes data = 4;
+	optional uint64 version = 4;
+	repeated bytes data = 5;
+	optional CacheItemType.ItemType itemType = 6 [ default = CACHEITEM];
+	optional int64 requestId = 7;
+	optional int32 commandID = 8;
 }

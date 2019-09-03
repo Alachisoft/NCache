@@ -1,0 +1,11 @@
+option java_outer_classname="ClientInfoProtocol";
+package Alachisoft.NCache.Common.Protobuf;
+message ClientInfo {
+	optional string appName = 1;
+	optional string clientId = 2;
+	optional string ipAddress = 3;
+	optional int32 processId = 4;
+	optional string machineName = 5;
+	optional string macAddress=6;
+	optional int32 cores=7;
+}

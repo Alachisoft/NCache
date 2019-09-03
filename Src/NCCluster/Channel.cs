@@ -1,21 +1,8 @@
-// Licensed under the Apache License, Version 2.0 (the "License");
-// you may not use this file except in compliance with the License.
-// You may obtain a copy of the License at
-// 
-//    http://www.apache.org/licenses/LICENSE-2.0
-// 
-// Unless required by applicable law or agreed to in writing, software
-// distributed under the License is distributed on an "AS IS" BASIS,
-// WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
-// See the License for the specific language governing permissions and
-// limitations under the License.
-
 using System;
 using System.Collections;
 using Alachisoft.NCache.Common.Net;
-
+using Alachisoft.NCache.Common.Enum;
 using Alachisoft.NGroups.Stack;
-
 namespace Alachisoft.NGroups
 {
 	/// <summary>
@@ -26,6 +13,7 @@ namespace Alachisoft.NGroups
 	public abstract class Channel : Transport 
 	{
 		public const int BLOCK = 0;
+		//public const int VIEW = 1;
 		public const int SUSPECT = 2;
 		public const int LOCAL = 3;
 		public const int GET_STATE_EVENTS = 4;
@@ -52,8 +40,9 @@ namespace Alachisoft.NGroups
 		/// <param name="properties">Properties of Channel stack</param>
 		protected Channel(Object properties) {}
 
-#region "properties"
-		/// <summary>Determines whether the channel is open, ie. the protocol stack has been created (may not be connected though).</summary>
+        #region "properties"
+		
+        /// <summary>Determines whether the channel is open, ie. the protocol stack has been created (may not be connected though).</summary>
 		abstract public bool IsOpen{get;}
 		/// <summary>Determines whether the channel is connected to a group. This implies it is open. If true is returned,
 		/// then the channel can be used to send and receive messages.
@@ -126,7 +115,7 @@ namespace Alachisoft.NGroups
 			}
 			
 		}
-#endregion
+        #endregion
 		
 		
 		/// <summary>
@@ -223,7 +212,6 @@ namespace Alachisoft.NGroups
 			{
 				case BLOCK: 
 					return "BLOCK";
-
 				case SUSPECT: 
 					return "SUSPECT";
 				case LOCAL: 
@@ -238,6 +226,18 @@ namespace Alachisoft.NGroups
 					return "unknown (" + option + ')';
 			}
 		}
-	}
+
+        public abstract void SetOperationModeOnMerge(OperationMode mode);
+        
+        public virtual bool IsClusterInStateTransfer()
+        {
+            return false;
+        }
+
+        public virtual void ExitMaintenance()
+        {
+
+        }
+    }
 
 }

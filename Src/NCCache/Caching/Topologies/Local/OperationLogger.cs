@@ -1,17 +1,16 @@
-// Copyright (c) 2017 Alachisoft
-// 
-// Licensed under the Apache License, Version 2.0 (the "License");
-// you may not use this file except in compliance with the License.
-// You may obtain a copy of the License at
-// 
-//    http://www.apache.org/licenses/LICENSE-2.0
-// 
-// Unless required by applicable law or agreed to in writing, software
-// distributed under the License is distributed on an "AS IS" BASIS,
-// WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
-// See the License for the specific language governing permissions and
-// limitations under the License.
-
+//  Copyright (c) 2019 Alachisoft
+//  
+//  Licensed under the Apache License, Version 2.0 (the "License");
+//  you may not use this file except in compliance with the License.
+//  You may obtain a copy of the License at
+//  
+//     http://www.apache.org/licenses/LICENSE-2.0
+//  
+//  Unless required by applicable law or agreed to in writing, software
+//  distributed under the License is distributed on an "AS IS" BASIS,
+//  WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+//  See the License for the specific language governing permissions and
+//  limitations under the License
 using System.Collections;
 using Alachisoft.NCache.Common.DataStructures;
 using Alachisoft.NCache.Common.Stats;
@@ -55,12 +54,16 @@ namespace Alachisoft.NCache.Caching.Topologies.Local
             {
                 Hashtable updatedKeys = null;
                 Hashtable removedKeys = null;
+                ArrayList messageOps = null;
+                Hashtable collectionOps = null;
 
                 if (_logTbl == null)
                     _logTbl = new Hashtable();
 
                 _logTbl["updated"] = new Hashtable();
                 _logTbl["removed"] = new Hashtable();
+                _logTbl["messageops"] = messageOps = new ArrayList();
+                _logTbl["collectionops"] = collectionOps = new Hashtable();
 
                 if (_logTbl.Contains("updated"))
                     updatedKeys = (Hashtable)_logTbl["updated"];
@@ -98,7 +101,22 @@ namespace Alachisoft.NCache.Caching.Topologies.Local
 
                         case (int)OperationType.Delete:
                             updatedKeys.Remove(info.Key);
+                            collectionOps.Remove(info.Key);
                             removedKeys[info.Key] = info.Entry;
+                            break;
+
+                        case (int)OperationType.MessageOperation:
+                            messageOps.Add(info.Entry);
+                            break;
+
+                        case (int)OperationType.CollectionOperation:
+
+                            if (!collectionOps.ContainsKey(info.Key))
+                                collectionOps[info.Key] = new ArrayList();
+
+                            ArrayList listOps = collectionOps[info.Key] as ArrayList;
+                            if (listOps != null) listOps.Add(info.Entry);
+
                             break;
                     }
                 }
@@ -112,18 +130,16 @@ namespace Alachisoft.NCache.Caching.Topologies.Local
             {
                 ArrayList updatedKeys = null;
                 ArrayList removedKeys = null;
+                ArrayList messageOps = null;
+                Hashtable collectionOps = null;
 
                 if (_logTbl == null)
                     _logTbl = new Hashtable();
 
-                _logTbl["updated"] = new ArrayList();
-                _logTbl["removed"] = new ArrayList();
-
-                if (_logTbl.Contains("updated"))
-                    updatedKeys = (ArrayList)_logTbl["updated"];
-
-                if (_logTbl.Contains("removed"))
-                    removedKeys = (ArrayList)_logTbl["removed"];
+                _logTbl["updated"] = updatedKeys = new ArrayList();
+                _logTbl["removed"] =  removedKeys = new ArrayList();
+                _logTbl["messageops"] = messageOps = new ArrayList();
+                _logTbl["collectionops"] = collectionOps = new Hashtable();
 
                 IDictionaryEnumerator rbe = _opIndex.GetEnumerator();
                 while (rbe.MoveNext())
@@ -155,7 +171,22 @@ namespace Alachisoft.NCache.Caching.Topologies.Local
 
                         case (int)OperationType.Delete:
                             updatedKeys.Remove(info.Key);
+                            collectionOps.Remove(info.Key);
                             removedKeys.Add(info.Key);
+                            break;
+
+                        case (int)OperationType.MessageOperation:
+                            messageOps.Add(info.Entry);
+                            break;
+
+                        case (int)OperationType.CollectionOperation:
+
+                            if (!collectionOps.ContainsKey(info.Key))
+                                collectionOps[info.Key] = new ArrayList();
+
+                            ArrayList listOps = collectionOps[info.Key] as ArrayList;
+                            if (listOps != null) listOps.Add(info.Entry);
+
                             break;
                     }
                 }
@@ -169,7 +200,7 @@ namespace Alachisoft.NCache.Caching.Topologies.Local
                 _opIndex.Clear();
         }
 
-        public void LogOperation(object key, CacheEntry entry, OperationType type)
+        public void LogOperation(object key, object entry, OperationType type)
         {
             if (_opIndex != null)
                 _opIndex.Add(HPTime.Now, new OperationInfo(key, entry, type));

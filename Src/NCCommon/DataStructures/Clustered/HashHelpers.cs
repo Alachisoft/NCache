@@ -23,12 +23,14 @@
 
 using System;
 using System.Collections.Generic;
-using System.Runtime.CompilerServices;
+using System.Linq;
+using System.Text;
 using System.Security.Cryptography;
 using System.Runtime.ConstrainedExecution;
 using System.Runtime.Serialization;
 using System.Collections;
 using System.Threading;
+using System.Runtime.CompilerServices;
 
 namespace Alachisoft.NCache.Common.DataStructures.Clustered
 {
@@ -115,24 +117,34 @@ namespace Alachisoft.NCache.Common.DataStructures.Clustered
 			5999471,
 			7199369
 		};
-        private static ConditionalWeakTable<object, SerializationInfo> s_SerializationInfoTable;
+
+#if !NETCORE
+        private static ConditionalWeakTable<object, SerializationInfo> s_SerializationInfoTable; 
+#endif
         private static RandomNumberGenerator rng;
         private static byte[] data;
         private static int currentIndex = 1024;
         private static readonly object lockObj = new object();
         private const int bufferSize = 1024;
+
+#if !NETCORE
         internal static ConditionalWeakTable<object, SerializationInfo> SerializationInfoTable
+
+        
         {
             get
             {
                 if (HashHelpers.s_SerializationInfoTable == null)
                 {
                     ConditionalWeakTable<object, SerializationInfo> value = new ConditionalWeakTable<object, SerializationInfo>();
-                    Interlocked.CompareExchange<ConditionalWeakTable<object, SerializationInfo>>(ref HashHelpers.s_SerializationInfoTable, value, null);
+                    Interlocked.CompareExchange<ConditionalWeakTable<object, SerializationInfo>>(ref HashHelpers.s_SerializationInfoTable, value, null); 
                 }
                 return HashHelpers.s_SerializationInfoTable;
             }
         }
+
+#endif
+
         [ReliabilityContract(Consistency.WillNotCorruptState, Cer.Success)]
         public static bool IsPrime(int candidate)
         {

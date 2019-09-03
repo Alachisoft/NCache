@@ -1,8 +1,18 @@
-
 option java_outer_classname="EventCacheItemProtocol";
+
+import "CacheItemType.proto";
+
 package Alachisoft.NCache.Common.Protobuf;
+
 message EventCacheItem
 {
 	repeated bytes value = 1;
-	optional int32 priority = 2;
+	optional bool resyncExpiredItems = 2;
+	optional string resyncProviderName = 3;
+	optional string group = 4;
+	optional string subGroup = 5;
+	optional uint64 itemVersion = 6;
+	optional int32 priority = 7;
+	optional CacheItemType.ItemType itemType = 8 [default = CACHEITEM];
+	optional int32 flagMap = 9;
 }

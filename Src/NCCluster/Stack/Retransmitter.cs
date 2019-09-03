@@ -1,44 +1,28 @@
-// Licensed under the Apache License, Version 2.0 (the "License");
-// you may not use this file except in compliance with the License.
-// You may obtain a copy of the License at
-// 
-//    http://www.apache.org/licenses/LICENSE-2.0
-// 
-// Unless required by applicable law or agreed to in writing, software
-// distributed under the License is distributed on an "AS IS" BASIS,
-// WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
-// See the License for the specific language governing permissions and
-// limitations under the License.
-
-using System;
 using System.Collections;
-using System.Threading;
-
-using Alachisoft.NGroups.Util;
 
 using Alachisoft.NCache.Common.Threading;
 using Alachisoft.NCache.Common.Net;
 
 namespace Alachisoft.NGroups.Stack
 {
-	/// <summary> Maintains a pool of sequence numbers of messages that need to be retransmitted. Messages
-	/// are aged and retransmission requests sent according to age (linear backoff used). If a
-	/// TimeScheduler instance is given to the constructor, it will be used, otherwise Reransmitter
-	/// will create its own. The retransmit timeouts have to be set first thing after creating an instance.
-	/// The <code>add()</code> method adds a range of sequence numbers of messages to be retransmitted. The
-	/// <code>remove()</code> method removes a sequence number again, cancelling retransmission requests for it.
-	/// Whenever a message needs to be retransmitted, the <code>RetransmitCommand.retransmit()</code> method is called.
-	/// It can be used e.g. by an ack-based scheme (e.g. AckSenderWindow) to retransmit a message to the receiver, or
-	/// by a nak-based scheme to send a retransmission request to the sender of the missing message.
-	/// 
-	/// </summary>
-	/// <author>  John Giorgiadis
-	/// </author>
-	/// <author>  Bela Ban
-	/// </author>
-	/// <version>  $Revision: 1.4 $
-	/// </version>
-	internal class Retransmitter
+    /// <summary> Maintains a pool of sequence numbers of messages that need to be retransmitted. Messages
+    /// are aged and retransmission requests sent according to age (linear backoff used). If a
+    /// TimeScheduler instance is given to the constructor, it will be used, otherwise Reransmitter
+    /// will create its own. The retransmit timeouts have to be set first thing after creating an instance.
+    /// The <code>add()</code> method adds a range of sequence numbers of messages to be retransmitted. The
+    /// <code>remove()</code> method removes a sequence number again, cancelling retransmission requests for it.
+    /// Whenever a message needs to be retransmitted, the <code>RetransmitCommand.retransmit()</code> method is called.
+    /// It can be used e.g. by an ack-based scheme (e.g. AckSenderWindow) to retransmit a message to the receiver, or
+    /// by a nak-based scheme to send a retransmission request to the sender of the missing message.
+    /// 
+    /// </summary>
+    /// <author>  John Giorgiadis
+    /// </author>
+    /// <author>  Bela Ban
+    /// </author>
+    /// <version>  $Revision: 1.4 $
+    /// </version>
+    internal class Retransmitter
 	{
 		virtual public long[] RetransmitTimeouts
 		{
@@ -198,7 +182,6 @@ namespace Alachisoft.NGroups.Stack
 					}
 					catch (System.Threading.ThreadInterruptedException ex)
 					{
-						//Trace.error("Retransmitter.stop()",ex.ToString());
 					}
 				}
 				else
@@ -261,13 +244,13 @@ namespace Alachisoft.NGroups.Stack
 				this.intervals = new Interval(intervals);
 				this.isCancelled = false;
 			}
-
-			public override long GetNextInterval()
+			
+			public virtual long GetNextInterval()
 			{
 				return (intervals.next());
 			}
-
-            public override bool IsCancelled()
+			
+			public virtual bool IsCancelled()
 			{
 				return (isCancelled);
 			}
@@ -277,7 +260,7 @@ namespace Alachisoft.NGroups.Stack
 				isCancelled = true;
 			}
 
-            public override void Run() { }
+			public virtual void Run() {}
 		}
 		
 		

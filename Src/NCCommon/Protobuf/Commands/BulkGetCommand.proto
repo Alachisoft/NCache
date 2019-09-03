@@ -5,4 +5,11 @@ message BulkGetCommand {
 	repeated string keys = 1;
 	optional int64 requestId = 2;
 	optional int32 flag = 3;
+	optional string providerName = 4;
+	optional int32 readMode = 5 [default = -1];
+	optional int64 clientLastViewId = 6 [default=-1];
+	optional string intendedRecipient = 7 [default = ""];
+	optional int32 commandVersion = 8 [default=0];
+	optional int32 MethodOverload = 9 [default=0];
+	optional int32 commandID = 10 [default = -1];
 }

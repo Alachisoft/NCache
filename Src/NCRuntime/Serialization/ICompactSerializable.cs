@@ -1,19 +1,17 @@
-// Copyright (c) 2017 Alachisoft
-// 
-// Licensed under the Apache License, Version 2.0 (the "License");
-// you may not use this file except in compliance with the License.
-// You may obtain a copy of the License at
-// 
-//    http://www.apache.org/licenses/LICENSE-2.0
-// 
-// Unless required by applicable law or agreed to in writing, software
-// distributed under the License is distributed on an "AS IS" BASIS,
-// WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
-// See the License for the specific language governing permissions and
-// limitations under the License.
-
+//  Copyright (c) 2018 Alachisoft
+//  
+//  Licensed under the Apache License, Version 2.0 (the "License");
+//  you may not use this file except in compliance with the License.
+//  You may obtain a copy of the License at
+//  
+//     http://www.apache.org/licenses/LICENSE-2.0
+//  
+//  Unless required by applicable law or agreed to in writing, software
+//  distributed under the License is distributed on an "AS IS" BASIS,
+//  WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+//  See the License for the specific language governing permissions and
+//  limitations under the License
 using System;
-
 using Alachisoft.NCache.Runtime.Serialization.IO;
 
 
@@ -22,6 +20,7 @@ using Alachisoft.NCache.Runtime.Serialization.IO;
 /// Any type that you want the compact serialization framework to serialize/deserialize and 
 /// not the .NET framework, must implement this interface.
 /// </summary>
+
 namespace Alachisoft.NCache.Runtime.Serialization
 {
 	/// <summary> 
@@ -29,10 +28,7 @@ namespace Alachisoft.NCache.Runtime.Serialization
 	/// enabling them to bypass costly serialization.
 	/// </summary>
 	/// <remarks>
-    ///
-    /// This Feature is Not Available in Express
-    ///
-	/// Objects that implement <see cref="ICompactSerializable"/> must have a default 
+    /// Objects that implement <see cref="ICompactSerializable"/> must have a default 
 	/// constructor (can be private). 
 	/// <para>
 	/// As per current implementation when a <see cref="ICompactSerializable"/> is deserialized 
@@ -56,7 +52,7 @@ namespace Alachisoft.NCache.Runtime.Serialization
 		void Deserialize(CompactReader reader);
 
 		/// <summary>
-		/// Save the the state to the passed stream reader object.
+		/// Save the state to the passed stream reader object.
 		/// </summary>
 		/// <param name="writer">A <see cref="BinaryWriter"/> object</param>
 		[CLSCompliant(false)]

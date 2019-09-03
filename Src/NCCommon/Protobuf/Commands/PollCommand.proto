@@ -1,0 +1,8 @@
+
+option java_outer_classname="PollCommandProtocol";
+package Alachisoft.NCache.Common.Protobuf;
+message PollCommand {
+	optional int64 requestId = 1;
+	optional int64 clientLastViewId = 2 [default=-1];
+	optional int32 commandVersion = 3 [default=0];
+}

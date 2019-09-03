@@ -2,4 +2,6 @@
 option java_outer_classname="ClearResponseProtocol";
 package Alachisoft.NCache.Common.Protobuf;
 message ClearResponse {
+	optional int64 requestId = 1;
+	optional int32 commandID = 2;
 }

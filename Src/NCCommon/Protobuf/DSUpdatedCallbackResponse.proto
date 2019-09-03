@@ -1,0 +1,11 @@
+import "DSUpdatedCallbackResult.proto";
+
+
+option java_outer_classname="DSUpdatedCallbackResponseProtocol";
+package Alachisoft.NCache.Common.Protobuf;
+message DSUpdatedCallbackResponse
+{
+	optional sint32 callbackId = 1;
+	optional int32 opCode = 2;
+	repeated DSUpdatedCallbackResult result = 3;
+}

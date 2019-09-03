@@ -1,36 +1,31 @@
-// Copyright (c) 2017 Alachisoft
-// 
-// Licensed under the Apache License, Version 2.0 (the "License");
-// you may not use this file except in compliance with the License.
-// You may obtain a copy of the License at
-// 
-//    http://www.apache.org/licenses/LICENSE-2.0
-// 
-// Unless required by applicable law or agreed to in writing, software
-// distributed under the License is distributed on an "AS IS" BASIS,
-// WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
-// See the License for the specific language governing permissions and
-// limitations under the License.
-
+﻿//  Copyright (c) 2019 Alachisoft
+//  
+//  Licensed under the Apache License, Version 2.0 (the "License");
+//  you may not use this file except in compliance with the License.
+//  You may obtain a copy of the License at
+//  
+//     http://www.apache.org/licenses/LICENSE-2.0
+//  
+//  Unless required by applicable law or agreed to in writing, software
+//  distributed under the License is distributed on an "AS IS" BASIS,
+//  WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+//  See the License for the specific language governing permissions and
+//  limitations under the License
 using System;
 using System.Collections.Generic;
 using Alachisoft.NCache.Config.Dom;
 using Alachisoft.NCache.Management;
 using Alachisoft.NCache.Common.Net;
+using Alachisoft.NCache.Common;
 using Alachisoft.NCache.Management.ServiceControl;
-
-
 using System.Collections;
 using System.IO;
 
 
-
 namespace Alachisoft.NCache.Tools.Common
 {
-    public delegate void LogErrors(string msg);
     public class ToolOperations
     {
-      
         static private NCacheRPCService NCache = new NCacheRPCService("");
         static ICacheServer cacheServer;
 
@@ -47,7 +42,6 @@ namespace Alachisoft.NCache.Tools.Common
                 NCache.ServerName = server;
             }
             cacheServer = NCache.GetCacheServer(new TimeSpan(0, 0, 0, 30));
-          
             if (cacheServer != null)
             {
                 serverConfig = cacheServer.GetCacheConfiguration(cacheId);
@@ -57,7 +51,7 @@ namespace Alachisoft.NCache.Tools.Common
             return serverConfig;
         }
 
-        public void RegisterCache(Alachisoft.NCache.Config.NewDom.CacheServerConfig serverConfig, int port, string cacheId, bool isHotApply, bool isOverwrite, string server)
+        public void RegisterCache(Alachisoft.NCache.Config.NewDom.CacheServerConfig serverConfig, int port, string cacheId, string userId, string password, bool isHotApply, bool isOverwrite, string server)
         {
             if (port != -1)
             {
@@ -72,8 +66,11 @@ namespace Alachisoft.NCache.Tools.Common
 
             cacheServer = NCache.GetCacheServer(new TimeSpan(0, 0, 0, 30));
 
+            byte[] _userId = null;
+            byte[] _paswd = null;
             if (cacheServer != null)
             {
+               
 
                 if (serverConfig.CacheSettings.CacheType == "clustered-cache")
                 {
@@ -87,9 +84,7 @@ namespace Alachisoft.NCache.Tools.Common
                         }
                         catch (Exception ex)
                         {
-                            Console.Error.WriteLine("Failed to Configure Backing Source on '{0}'. ", NCache.ServerName);
                             Console.Error.WriteLine("Error Detail: '{0}'. ", ex.Message);
-                            
                         }
                         finally
                         {
@@ -105,9 +100,7 @@ namespace Alachisoft.NCache.Tools.Common
                     }
                     catch (Exception ex)
                     {
-                        Console.Error.WriteLine("Failed to Configure Backing Source on '{0}'. ", NCache.ServerName);
                         Console.Error.WriteLine("Error Detail: '{0}'. ", ex.Message);
-                       
                     }
                     finally
                     {
@@ -117,7 +110,7 @@ namespace Alachisoft.NCache.Tools.Common
             }
         }
 
-        public bool IsRunningCaches(string server, int port)
+        public bool IsRunningCaches(string server, int port,string userId, string password)
         {
             ArrayList runningCaches=new ArrayList();
             bool isRunning=false;
@@ -148,7 +141,7 @@ namespace Alachisoft.NCache.Tools.Common
             
         }
 
-        public bool IsRunningCache(string server, int port, string cacheId)
+        public bool IsRunningCache(string server, int port, string cacheId, string userId, string password)
         {
             ArrayList runningCaches = new ArrayList();
             bool isRunning = false;
@@ -172,10 +165,10 @@ namespace Alachisoft.NCache.Tools.Common
             }
 
             return isRunning;
-
         }
 
-        public static bool DeployAssembly(string server, int port, string path, string cacheId, string depAsmPath,LogErrors logError )
+
+        public static bool DeployAssembly(string server, int port, string path, string cacheId, string depAsmPath, string userId,string password,LogErrors logError )
         {
             List<FileInfo> files = new List<FileInfo>();  // List that will hold the files and subfiles in path
             string fileName=null;
@@ -195,7 +188,6 @@ namespace Alachisoft.NCache.Tools.Common
                 {
                     NCache.ServerName = server;
                 }
-           
 
                 cacheServer = NCache.GetCacheServer(new TimeSpan(0, 0, 0, 30));
 
@@ -224,8 +216,7 @@ namespace Alachisoft.NCache.Tools.Common
                             }
                             catch (Exception ex)
                             {
-                                logError("Directory " + di.FullName + "could not be accessed!!!!");
-                                
+                                logError("Directory " + di.FullName + "could not be accessed.");
                                 return false;  // We already got an error trying to access dir so dont try to access it again
                             }
 
@@ -253,8 +244,7 @@ namespace Alachisoft.NCache.Tools.Common
                             }
                             catch (Exception ex)
                             {
-                                logError("Directory " + di.FullName + "could not be accessed!!!!");
-                             
+                                logError("Directory " + di.FullName + "could not be accessed.");
                                 return false;  // We already got an error trying to access dir so dont try to access it again
                             }
 
@@ -272,7 +262,9 @@ namespace Alachisoft.NCache.Tools.Common
                             fs.Flush();
                             fs.Close();
                             fileName = Path.GetFileName(f.FullName);
-                           
+                            byte[] _userId = null;
+                            byte[] _paswd = null;
+                            
                             if (serverConfig.CacheSettings.CacheType == "clustered-cache")
                             {
                                 foreach (Address node in serverConfig.CacheDeployment.Servers.GetAllConfiguredNodes())
@@ -287,7 +279,6 @@ namespace Alachisoft.NCache.Tools.Common
                                     {
                                         logError("Failed to Deploy Assembly on "+NCache.ServerName);
                                         logError("Error Detail: "+ex.Message);
-                                       
                                     }
                                 }
                             }
@@ -298,30 +289,22 @@ namespace Alachisoft.NCache.Tools.Common
                         {
                             string message = string.Format("Could not deploy assembly \"" + fileName + "\". {0}", e.Message);
                             logError("Error : " + message);
-                            
                             return false;
                         }
-                        
-
                     }
-
                 }
-           
             }
             catch (Exception e)
             {
                 logError("Error : {0}" + e.Message);
-              
             }
             finally
             {
-                
                 NCache.Dispose();
             }
 
             return true;
         }
-
     }
 
 }

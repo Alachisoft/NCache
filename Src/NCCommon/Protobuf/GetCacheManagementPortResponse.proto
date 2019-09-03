@@ -1,0 +1,8 @@
+option java_outer_classname="GetCacheManagementPortResponseProtocol";
+package Alachisoft.NCache.Common.Protobuf;
+
+message GetCacheManagementPortResponse {
+	optional string server = 1;
+	optional int32 port = 2;
+	optional bool isRunning = 3; 
+}

@@ -1,0 +1,7 @@
+option java_outer_classname="MessageProtocol";
+package Alachisoft.NCache.Common.Protobuf;
+message SubscriptionIdRecepientList
+{
+	optional string subscriptionName= 1;
+	optional int32 policy = 2;
+}

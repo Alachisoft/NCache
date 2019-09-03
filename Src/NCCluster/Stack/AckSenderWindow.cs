@@ -1,15 +1,3 @@
-// Licensed under the Apache License, Version 2.0 (the "License");
-// you may not use this file except in compliance with the License.
-// You may obtain a copy of the License at
-// 
-//    http://www.apache.org/licenses/LICENSE-2.0
-// 
-// Unless required by applicable law or agreed to in writing, software
-// distributed under the License is distributed on an "AS IS" BASIS,
-// WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
-// See the License for the specific language governing permissions and
-// limitations under the License.
-
 using System;
 using System.Collections;
 
@@ -49,8 +37,6 @@ namespace Alachisoft.NGroups.Stack
 		internal bool use_sliding_window = false, queueing = false;
 		internal Protocol transport = null; // used to send messages
 		
-        //private NewTrace nTrace = null;
-        //string _cacheName;
         private ILogger _ncacheLog;
 
         private ILogger NCacheLog
@@ -63,7 +49,6 @@ namespace Alachisoft.NGroups.Stack
 			void  retransmit(long seqno, Message msg);
 		}
 		
-		
 		/// <summary> Creates a new instance. Thre retransmission thread has to be started separately with
 		/// <code>start()</code>.
 		/// </summary>
@@ -72,7 +57,6 @@ namespace Alachisoft.NGroups.Stack
 		/// </param>
         public AckSenderWindow(AckSenderWindow.RetransmitCommand com, ILogger NCacheLog)
 		{
-            //this.nTrace = nTrace;
             _ncacheLog = NCacheLog;
 
 			InitBlock();
@@ -83,7 +67,6 @@ namespace Alachisoft.NGroups.Stack
 
         public AckSenderWindow(AckSenderWindow.RetransmitCommand com, long[] interval, ILogger NCacheLog)
 		{
-            //this.nTrace = nTrace;
             _ncacheLog = NCacheLog;
             InitBlock();
 			retransmit_command = com;
@@ -96,7 +79,6 @@ namespace Alachisoft.NGroups.Stack
 		/// </summary>
         public AckSenderWindow(AckSenderWindow.RetransmitCommand com, long[] interval, Protocol transport, ILogger NCacheLog)
 		{
-            //this.nTrace = nTrace;
             _ncacheLog = NCacheLog;
             InitBlock();
 			retransmit_command = com;
@@ -160,8 +142,6 @@ namespace Alachisoft.NGroups.Stack
 			{
 				if (msgs.ContainsKey(seqno))
 					return ;
-				
-				
 				
 				if (!use_sliding_window)
 				{
@@ -254,7 +234,7 @@ namespace Alachisoft.NGroups.Stack
 					{
 						// find the message to retransmit
 						retransmit_command.retransmit(i, msg);
-						
+						//System.out.println("### retr(" + first_seqno + "): tstamp=" + System.currentTimeMillis());
 					}
 				}
 			}

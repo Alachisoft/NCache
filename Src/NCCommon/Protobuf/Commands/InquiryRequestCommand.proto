@@ -1,0 +1,10 @@
+
+option java_outer_classname="InquiryRequestCommandProtocol";
+package Alachisoft.NCache.Common.Protobuf;
+message InquiryRequestCommand {
+	
+	optional int64 inquiryRequestId = 1;
+	optional int64 inquiryCommandId = 2;
+	optional string serverIP = 3;
+	optional int64 requestId = 4;
+}

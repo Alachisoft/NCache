@@ -1,0 +1,18 @@
+import "StartCacheResponse.proto";
+import "Exception.proto";
+
+option java_outer_classname="NCManagementResponseProtocol";
+package Alachisoft.NCache.Common.Protobuf;
+message NCManagementResponse 
+{
+	enum Type 
+	{
+		START_CACHE = 1;
+	}
+
+	optional int64 requestId = 1;
+	optional Type responseType = 2;
+	optional Exception exception = 3;
+	optional StartCacheResponse startCache = 4;
+
+}

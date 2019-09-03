@@ -13,4 +13,5 @@ message RecordColumn
 	optional ColumnDataType dataType = 4 [default = OBJECT];
 	optional AggregateFunctionType aggregateFunctionType = 5 [default = NOTAPPLICABLE];
 	optional bool isFilled = 6;
+	optional bool isUserSpecifiedColumn = 7;
 }

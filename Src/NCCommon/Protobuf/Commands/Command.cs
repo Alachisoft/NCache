@@ -9,6 +9,8 @@
 
 // Generated from: Command.proto
 // Note: requires additional types generated from: AddCommand.proto
+// Note: requires additional types generated from: AddDependencyCommand.proto
+// Note: requires additional types generated from: AddSyncDependencyCommand.proto
 // Note: requires additional types generated from: BulkAddCommand.proto
 // Note: requires additional types generated from: BulkGetCommand.proto
 // Note: requires additional types generated from: BulkInsertCommand.proto
@@ -19,36 +21,93 @@
 // Note: requires additional types generated from: DisposeCommand.proto
 // Note: requires additional types generated from: GetCacheItemCommand.proto
 // Note: requires additional types generated from: GetCommand.proto
+// Note: requires additional types generated from: GetCompactTypesCommand.proto
 // Note: requires additional types generated from: GetEnumeratorCommand.proto
+// Note: requires additional types generated from: GetGroupCommand.proto
 // Note: requires additional types generated from: GetHashmapCommand.proto
-// Note: requires additional types generated from: GetThresholdSizeCommand.proto
+// Note: requires additional types generated from: GetOptimalServerCommand.proto
 // Note: requires additional types generated from: GetTypeInfoMapCommand.proto
 // Note: requires additional types generated from: InitCommand.proto
 // Note: requires additional types generated from: InsertCommand.proto
+// Note: requires additional types generated from: RaiseCustomEventCommand.proto
 // Note: requires additional types generated from: RegisterKeyNotifCommand.proto
 // Note: requires additional types generated from: RegisterBulkKeyNotifCommand.proto
 // Note: requires additional types generated from: RegisterNotifCommand.proto
 // Note: requires additional types generated from: RemoveCommand.proto
+// Note: requires additional types generated from: RemoveGroupCommand.proto
 // Note: requires additional types generated from: SearchCommand.proto
+// Note: requires additional types generated from: GetTagCommand.proto
 // Note: requires additional types generated from: LockCommand.proto
 // Note: requires additional types generated from: IsLockedCommand.proto
 // Note: requires additional types generated from: LockVerifyCommand.proto
 // Note: requires additional types generated from: UnlockCommand.proto
 // Note: requires additional types generated from: UnRegisterKeyNotifCommand.proto
 // Note: requires additional types generated from: UnRegisterBulkKeyNotifCommand.proto
+// Note: requires additional types generated from: HybridBulkCommand.proto
 // Note: requires additional types generated from: GetLoggingInfoCommand.proto
+// Note: requires additional types generated from: GetStateTransferInfoCommand.proto
+// Note: requires additional types generated from: GetTransferableKeyListCommand.proto
+// Note: requires additional types generated from: BridgeHybridBulkCommand.proto
+// Note: requires additional types generated from: BridgeInitCommand.proto
+// Note: requires additional types generated from: SetTransferableKeyListCommand.proto
+// Note: requires additional types generated from: SignlEndOfStateTransferCommand.proto
+// Note: requires additional types generated from: BridgeSyncTimeCommand.proto
+// Note: requires additional types generated from: BridgeHeartBeatReceivedCommand.proto
+// Note: requires additional types generated from: RemoveByTagCommand.proto
+// Note: requires additional types generated from: BridgeMakeTargetCacheActivePassiveCommand.proto
+// Note: requires additional types generated from: UnRegisterCQCommand.proto
+// Note: requires additional types generated from: SearchCQCommand.proto
+// Note: requires additional types generated from: RegisterCQCommand.proto
+// Note: requires additional types generated from: GetKeysByTagCommand.proto
 // Note: requires additional types generated from: BulkDeleteCommand.proto
 // Note: requires additional types generated from: DeleteCommand.proto
 // Note: requires additional types generated from: GetNextChunkCommand.proto
+// Note: requires additional types generated from: GetGroupNextChunkCommand.proto
 // Note: requires additional types generated from: AddAttributeCommand.proto
-// Note: requires additional types generated from: GetProductVersionCommand.proto
-// Note: requires additional types generated from: GetServerMappingCommand.proto
-// Note: requires additional types generated from: GetOptimalServerCommand.proto
+// Note: requires additional types generated from: GetEncryptionCommand.proto
 // Note: requires additional types generated from: GetRunningServersCommand.proto
+// Note: requires additional types generated from: SyncEventsCommand.proto
+// Note: requires additional types generated from: DeleteQueryCommand.proto
+// Note: requires additional types generated from: GetProductVersionCommand.proto
+// Note: requires additional types generated from: GetReplicatorStatusInfoCommand.proto
+// Note: requires additional types generated from: GetServerMappingCommand.proto
+// Note: requires additional types generated from: RequestStateTransferCommand.proto
 // Note: requires additional types generated from: GetCacheBindingCommand.proto
+// Note: requires additional types generated from: MapReduceTaskCommand.proto
+// Note: requires additional types generated from: TaskCallbackCommand.proto
+// Note: requires additional types generated from: TaskCancelCommand.proto
+// Note: requires additional types generated from: TaskProgressCommand.proto
+// Note: requires additional types generated from: GetRunningTasksCommand.proto
+// Note: requires additional types generated from: GetNextRecordCommand.proto
+// Note: requires additional types generated from: TaskEnumeratorCommand.proto
+// Note: requires additional types generated from: InvokeEntryProcessorCommand.proto
+// Note: requires additional types generated from: InquiryRequestCommand.proto
 // Note: requires additional types generated from: ExecuteReaderCommand.proto
 // Note: requires additional types generated from: GetReaderNextChunkCommand.proto
 // Note: requires additional types generated from: DisposeReaderCommand.proto
+// Note: requires additional types generated from: ExecuteReaderCQCommand.proto
+// Note: requires additional types generated from: GetExpirationCommand.proto
+// Note: requires additional types generated from: PollCommand.proto
+// Note: requires additional types generated from: RegisterPollingNotificationCommand.proto
+// Note: requires additional types generated from: GetLCCommand.proto
+// Note: requires additional types generated from: GetConnectedClientsCommand.proto
+// Note: requires additional types generated from: TouchCommand.proto
+// Note: requires additional types generated from: GetTopicCommand.proto
+// Note: requires additional types generated from: SubscribeTopicCommand.proto
+// Note: requires additional types generated from: RemoveTopicCommand.proto
+// Note: requires additional types generated from: UnSubscribeTopicCommand.proto
+// Note: requires additional types generated from: MessagePublishCommand.proto
+// Note: requires additional types generated from: GetMessageCommand.proto
+// Note: requires additional types generated from: MesasgeAcknowledgmentCommand.proto
+// Note: requires additional types generated from: GetCacheManagementPortCommand.proto
+// Note: requires additional types generated from: PingCommand.proto
+// Note: requires additional types generated from: MessageCountCommand.proto
+// Note: requires additional types generated from: DataTypes.proto
+// Note: requires additional types generated from: GetSerializationFormatCommand.proto
+// Note: requires additional types generated from: BulkGetCacheItemCommand.proto
+// Note: requires additional types generated from: ContainsBulkCommand.proto
+// Note: requires additional types generated from: SurrogateCommand.proto
+// Note: requires additional types generated from: ModuleCommand.proto
 namespace Alachisoft.NCache.Common.Protobuf
 {
   [global::System.Serializable, global::ProtoBuf.ProtoContract(Name=@"Command")]
@@ -85,7 +144,7 @@ namespace Alachisoft.NCache.Common.Protobuf
     }
 
     private Alachisoft.NCache.Common.Protobuf.BulkAddCommand _bulkAddCommand = null;
-    [global::ProtoBuf.ProtoMember(4, IsRequired = false, Name=@"bulkAddCommand", DataFormat = global::ProtoBuf.DataFormat.Default)]
+    [global::ProtoBuf.ProtoMember(6, IsRequired = false, Name=@"bulkAddCommand", DataFormat = global::ProtoBuf.DataFormat.Default)]
     [global::System.ComponentModel.DefaultValue(null)]
     public Alachisoft.NCache.Common.Protobuf.BulkAddCommand bulkAddCommand
     {
@@ -94,7 +153,7 @@ namespace Alachisoft.NCache.Common.Protobuf
     }
 
     private Alachisoft.NCache.Common.Protobuf.BulkGetCommand _bulkGetCommand = null;
-    [global::ProtoBuf.ProtoMember(5, IsRequired = false, Name=@"bulkGetCommand", DataFormat = global::ProtoBuf.DataFormat.Default)]
+    [global::ProtoBuf.ProtoMember(7, IsRequired = false, Name=@"bulkGetCommand", DataFormat = global::ProtoBuf.DataFormat.Default)]
     [global::System.ComponentModel.DefaultValue(null)]
     public Alachisoft.NCache.Common.Protobuf.BulkGetCommand bulkGetCommand
     {
@@ -103,7 +162,7 @@ namespace Alachisoft.NCache.Common.Protobuf
     }
 
     private Alachisoft.NCache.Common.Protobuf.BulkInsertCommand _bulkInsertCommand = null;
-    [global::ProtoBuf.ProtoMember(6, IsRequired = false, Name=@"bulkInsertCommand", DataFormat = global::ProtoBuf.DataFormat.Default)]
+    [global::ProtoBuf.ProtoMember(8, IsRequired = false, Name=@"bulkInsertCommand", DataFormat = global::ProtoBuf.DataFormat.Default)]
     [global::System.ComponentModel.DefaultValue(null)]
     public Alachisoft.NCache.Common.Protobuf.BulkInsertCommand bulkInsertCommand
     {
@@ -112,7 +171,7 @@ namespace Alachisoft.NCache.Common.Protobuf
     }
 
     private Alachisoft.NCache.Common.Protobuf.BulkRemoveCommand _bulkRemoveCommand = null;
-    [global::ProtoBuf.ProtoMember(7, IsRequired = false, Name=@"bulkRemoveCommand", DataFormat = global::ProtoBuf.DataFormat.Default)]
+    [global::ProtoBuf.ProtoMember(9, IsRequired = false, Name=@"bulkRemoveCommand", DataFormat = global::ProtoBuf.DataFormat.Default)]
     [global::System.ComponentModel.DefaultValue(null)]
     public Alachisoft.NCache.Common.Protobuf.BulkRemoveCommand bulkRemoveCommand
     {
@@ -121,7 +180,7 @@ namespace Alachisoft.NCache.Common.Protobuf
     }
 
     private Alachisoft.NCache.Common.Protobuf.ClearCommand _clearCommand = null;
-    [global::ProtoBuf.ProtoMember(8, IsRequired = false, Name=@"clearCommand", DataFormat = global::ProtoBuf.DataFormat.Default)]
+    [global::ProtoBuf.ProtoMember(10, IsRequired = false, Name=@"clearCommand", DataFormat = global::ProtoBuf.DataFormat.Default)]
     [global::System.ComponentModel.DefaultValue(null)]
     public Alachisoft.NCache.Common.Protobuf.ClearCommand clearCommand
     {
@@ -130,7 +189,7 @@ namespace Alachisoft.NCache.Common.Protobuf
     }
 
     private Alachisoft.NCache.Common.Protobuf.ContainsCommand _containsCommand = null;
-    [global::ProtoBuf.ProtoMember(9, IsRequired = false, Name=@"containsCommand", DataFormat = global::ProtoBuf.DataFormat.Default)]
+    [global::ProtoBuf.ProtoMember(11, IsRequired = false, Name=@"containsCommand", DataFormat = global::ProtoBuf.DataFormat.Default)]
     [global::System.ComponentModel.DefaultValue(null)]
     public Alachisoft.NCache.Common.Protobuf.ContainsCommand containsCommand
     {
@@ -139,7 +198,7 @@ namespace Alachisoft.NCache.Common.Protobuf
     }
 
     private Alachisoft.NCache.Common.Protobuf.CountCommand _countCommand = null;
-    [global::ProtoBuf.ProtoMember(10, IsRequired = false, Name=@"countCommand", DataFormat = global::ProtoBuf.DataFormat.Default)]
+    [global::ProtoBuf.ProtoMember(12, IsRequired = false, Name=@"countCommand", DataFormat = global::ProtoBuf.DataFormat.Default)]
     [global::System.ComponentModel.DefaultValue(null)]
     public Alachisoft.NCache.Common.Protobuf.CountCommand countCommand
     {
@@ -148,7 +207,7 @@ namespace Alachisoft.NCache.Common.Protobuf
     }
 
     private Alachisoft.NCache.Common.Protobuf.DisposeCommand _disposeCommand = null;
-    [global::ProtoBuf.ProtoMember(11, IsRequired = false, Name=@"disposeCommand", DataFormat = global::ProtoBuf.DataFormat.Default)]
+    [global::ProtoBuf.ProtoMember(13, IsRequired = false, Name=@"disposeCommand", DataFormat = global::ProtoBuf.DataFormat.Default)]
     [global::System.ComponentModel.DefaultValue(null)]
     public Alachisoft.NCache.Common.Protobuf.DisposeCommand disposeCommand
     {
@@ -157,7 +216,7 @@ namespace Alachisoft.NCache.Common.Protobuf
     }
 
     private Alachisoft.NCache.Common.Protobuf.GetCacheItemCommand _getCacheItemCommand = null;
-    [global::ProtoBuf.ProtoMember(12, IsRequired = false, Name=@"getCacheItemCommand", DataFormat = global::ProtoBuf.DataFormat.Default)]
+    [global::ProtoBuf.ProtoMember(14, IsRequired = false, Name=@"getCacheItemCommand", DataFormat = global::ProtoBuf.DataFormat.Default)]
     [global::System.ComponentModel.DefaultValue(null)]
     public Alachisoft.NCache.Common.Protobuf.GetCacheItemCommand getCacheItemCommand
     {
@@ -166,7 +225,7 @@ namespace Alachisoft.NCache.Common.Protobuf
     }
 
     private Alachisoft.NCache.Common.Protobuf.GetCommand _getCommand = null;
-    [global::ProtoBuf.ProtoMember(13, IsRequired = false, Name=@"getCommand", DataFormat = global::ProtoBuf.DataFormat.Default)]
+    [global::ProtoBuf.ProtoMember(15, IsRequired = false, Name=@"getCommand", DataFormat = global::ProtoBuf.DataFormat.Default)]
     [global::System.ComponentModel.DefaultValue(null)]
     public Alachisoft.NCache.Common.Protobuf.GetCommand getCommand
     {
@@ -174,8 +233,17 @@ namespace Alachisoft.NCache.Common.Protobuf
       set { _getCommand = value; }
     }
 
+    private Alachisoft.NCache.Common.Protobuf.GetCompactTypesCommand _getCompactTypesCommand = null;
+    [global::ProtoBuf.ProtoMember(16, IsRequired = false, Name=@"getCompactTypesCommand", DataFormat = global::ProtoBuf.DataFormat.Default)]
+    [global::System.ComponentModel.DefaultValue(null)]
+    public Alachisoft.NCache.Common.Protobuf.GetCompactTypesCommand getCompactTypesCommand
+    {
+      get { return _getCompactTypesCommand; }
+      set { _getCompactTypesCommand = value; }
+    }
+
     private Alachisoft.NCache.Common.Protobuf.GetEnumeratorCommand _getEnumeratorCommand = null;
-    [global::ProtoBuf.ProtoMember(14, IsRequired = false, Name=@"getEnumeratorCommand", DataFormat = global::ProtoBuf.DataFormat.Default)]
+    [global::ProtoBuf.ProtoMember(17, IsRequired = false, Name=@"getEnumeratorCommand", DataFormat = global::ProtoBuf.DataFormat.Default)]
     [global::System.ComponentModel.DefaultValue(null)]
     public Alachisoft.NCache.Common.Protobuf.GetEnumeratorCommand getEnumeratorCommand
     {
@@ -184,7 +252,7 @@ namespace Alachisoft.NCache.Common.Protobuf
     }
 
     private Alachisoft.NCache.Common.Protobuf.GetHashmapCommand _getHashmapCommand = null;
-    [global::ProtoBuf.ProtoMember(15, IsRequired = false, Name=@"getHashmapCommand", DataFormat = global::ProtoBuf.DataFormat.Default)]
+    [global::ProtoBuf.ProtoMember(19, IsRequired = false, Name=@"getHashmapCommand", DataFormat = global::ProtoBuf.DataFormat.Default)]
     [global::System.ComponentModel.DefaultValue(null)]
     public Alachisoft.NCache.Common.Protobuf.GetHashmapCommand getHashmapCommand
     {
@@ -192,17 +260,18 @@ namespace Alachisoft.NCache.Common.Protobuf
       set { _getHashmapCommand = value; }
     }
 
-    private Alachisoft.NCache.Common.Protobuf.GetThresholdSizeCommand _getThresholdSizeCommand = null;
-    [global::ProtoBuf.ProtoMember(16, IsRequired = false, Name=@"getThresholdSizeCommand", DataFormat = global::ProtoBuf.DataFormat.Default)]
+    private Alachisoft.NCache.Common.Protobuf.GetOptimalServerCommand _getOptimalServerCommand = null;
+    [global::ProtoBuf.ProtoMember(20, IsRequired = false, Name=@"getOptimalServerCommand", DataFormat = global::ProtoBuf.DataFormat.Default)]
     [global::System.ComponentModel.DefaultValue(null)]
-    public Alachisoft.NCache.Common.Protobuf.GetThresholdSizeCommand getThresholdSizeCommand
+    public Alachisoft.NCache.Common.Protobuf.GetOptimalServerCommand getOptimalServerCommand
     {
-      get { return _getThresholdSizeCommand; }
-      set { _getThresholdSizeCommand = value; }
+      get { return _getOptimalServerCommand; }
+      set { _getOptimalServerCommand = value; }
     }
 
+
     private Alachisoft.NCache.Common.Protobuf.GetTypeInfoMapCommand _getTypeInfoMapCommand = null;
-    [global::ProtoBuf.ProtoMember(17, IsRequired = false, Name=@"getTypeInfoMapCommand", DataFormat = global::ProtoBuf.DataFormat.Default)]
+    [global::ProtoBuf.ProtoMember(22, IsRequired = false, Name=@"getTypeInfoMapCommand", DataFormat = global::ProtoBuf.DataFormat.Default)]
     [global::System.ComponentModel.DefaultValue(null)]
     public Alachisoft.NCache.Common.Protobuf.GetTypeInfoMapCommand getTypeInfoMapCommand
     {
@@ -211,7 +280,7 @@ namespace Alachisoft.NCache.Common.Protobuf
     }
 
     private Alachisoft.NCache.Common.Protobuf.InitCommand _initCommand = null;
-    [global::ProtoBuf.ProtoMember(18, IsRequired = false, Name=@"initCommand", DataFormat = global::ProtoBuf.DataFormat.Default)]
+    [global::ProtoBuf.ProtoMember(23, IsRequired = false, Name=@"initCommand", DataFormat = global::ProtoBuf.DataFormat.Default)]
     [global::System.ComponentModel.DefaultValue(null)]
     public Alachisoft.NCache.Common.Protobuf.InitCommand initCommand
     {
@@ -220,7 +289,7 @@ namespace Alachisoft.NCache.Common.Protobuf
     }
 
     private Alachisoft.NCache.Common.Protobuf.InsertCommand _insertCommand = null;
-    [global::ProtoBuf.ProtoMember(19, IsRequired = false, Name=@"insertCommand", DataFormat = global::ProtoBuf.DataFormat.Default)]
+    [global::ProtoBuf.ProtoMember(24, IsRequired = false, Name=@"insertCommand", DataFormat = global::ProtoBuf.DataFormat.Default)]
     [global::System.ComponentModel.DefaultValue(null)]
     public Alachisoft.NCache.Common.Protobuf.InsertCommand insertCommand
     {
@@ -228,8 +297,17 @@ namespace Alachisoft.NCache.Common.Protobuf
       set { _insertCommand = value; }
     }
 
+    private Alachisoft.NCache.Common.Protobuf.RaiseCustomEventCommand _raiseCustomEventCommand = null;
+    [global::ProtoBuf.ProtoMember(25, IsRequired = false, Name=@"raiseCustomEventCommand", DataFormat = global::ProtoBuf.DataFormat.Default)]
+    [global::System.ComponentModel.DefaultValue(null)]
+    public Alachisoft.NCache.Common.Protobuf.RaiseCustomEventCommand raiseCustomEventCommand
+    {
+      get { return _raiseCustomEventCommand; }
+      set { _raiseCustomEventCommand = value; }
+    }
+
     private Alachisoft.NCache.Common.Protobuf.RegisterKeyNotifCommand _registerKeyNotifCommand = null;
-    [global::ProtoBuf.ProtoMember(20, IsRequired = false, Name=@"registerKeyNotifCommand", DataFormat = global::ProtoBuf.DataFormat.Default)]
+    [global::ProtoBuf.ProtoMember(26, IsRequired = false, Name=@"registerKeyNotifCommand", DataFormat = global::ProtoBuf.DataFormat.Default)]
     [global::System.ComponentModel.DefaultValue(null)]
     public Alachisoft.NCache.Common.Protobuf.RegisterKeyNotifCommand registerKeyNotifCommand
     {
@@ -238,7 +316,7 @@ namespace Alachisoft.NCache.Common.Protobuf
     }
 
     private Alachisoft.NCache.Common.Protobuf.RegisterNotifCommand _registerNotifCommand = null;
-    [global::ProtoBuf.ProtoMember(21, IsRequired = false, Name=@"registerNotifCommand", DataFormat = global::ProtoBuf.DataFormat.Default)]
+    [global::ProtoBuf.ProtoMember(27, IsRequired = false, Name=@"registerNotifCommand", DataFormat = global::ProtoBuf.DataFormat.Default)]
     [global::System.ComponentModel.DefaultValue(null)]
     public Alachisoft.NCache.Common.Protobuf.RegisterNotifCommand registerNotifCommand
     {
@@ -247,7 +325,7 @@ namespace Alachisoft.NCache.Common.Protobuf
     }
 
     private Alachisoft.NCache.Common.Protobuf.RemoveCommand _removeCommand = null;
-    [global::ProtoBuf.ProtoMember(22, IsRequired = false, Name=@"removeCommand", DataFormat = global::ProtoBuf.DataFormat.Default)]
+    [global::ProtoBuf.ProtoMember(28, IsRequired = false, Name=@"removeCommand", DataFormat = global::ProtoBuf.DataFormat.Default)]
     [global::System.ComponentModel.DefaultValue(null)]
     public Alachisoft.NCache.Common.Protobuf.RemoveCommand removeCommand
     {
@@ -255,17 +333,8 @@ namespace Alachisoft.NCache.Common.Protobuf
       set { _removeCommand = value; }
     }
 
-    private Alachisoft.NCache.Common.Protobuf.SearchCommand _searchCommand = null;
-    [global::ProtoBuf.ProtoMember(23, IsRequired = false, Name=@"searchCommand", DataFormat = global::ProtoBuf.DataFormat.Default)]
-    [global::System.ComponentModel.DefaultValue(null)]
-    public Alachisoft.NCache.Common.Protobuf.SearchCommand searchCommand
-    {
-      get { return _searchCommand; }
-      set { _searchCommand = value; }
-    }
-
     private Alachisoft.NCache.Common.Protobuf.LockCommand _lockCommand = null;
-    [global::ProtoBuf.ProtoMember(24, IsRequired = false, Name=@"lockCommand", DataFormat = global::ProtoBuf.DataFormat.Default)]
+    [global::ProtoBuf.ProtoMember(32, IsRequired = false, Name=@"lockCommand", DataFormat = global::ProtoBuf.DataFormat.Default)]
     [global::System.ComponentModel.DefaultValue(null)]
     public Alachisoft.NCache.Common.Protobuf.LockCommand lockCommand
     {
@@ -274,7 +343,7 @@ namespace Alachisoft.NCache.Common.Protobuf
     }
 
     private Alachisoft.NCache.Common.Protobuf.UnlockCommand _unlockCommand = null;
-    [global::ProtoBuf.ProtoMember(25, IsRequired = false, Name=@"unlockCommand", DataFormat = global::ProtoBuf.DataFormat.Default)]
+    [global::ProtoBuf.ProtoMember(33, IsRequired = false, Name=@"unlockCommand", DataFormat = global::ProtoBuf.DataFormat.Default)]
     [global::System.ComponentModel.DefaultValue(null)]
     public Alachisoft.NCache.Common.Protobuf.UnlockCommand unlockCommand
     {
@@ -283,7 +352,7 @@ namespace Alachisoft.NCache.Common.Protobuf
     }
 
     private Alachisoft.NCache.Common.Protobuf.IsLockedCommand _isLockedCommand = null;
-    [global::ProtoBuf.ProtoMember(26, IsRequired = false, Name=@"isLockedCommand", DataFormat = global::ProtoBuf.DataFormat.Default)]
+    [global::ProtoBuf.ProtoMember(34, IsRequired = false, Name=@"isLockedCommand", DataFormat = global::ProtoBuf.DataFormat.Default)]
     [global::System.ComponentModel.DefaultValue(null)]
     public Alachisoft.NCache.Common.Protobuf.IsLockedCommand isLockedCommand
     {
@@ -292,7 +361,7 @@ namespace Alachisoft.NCache.Common.Protobuf
     }
 
     private Alachisoft.NCache.Common.Protobuf.LockVerifyCommand _lockVerifyCommand = null;
-    [global::ProtoBuf.ProtoMember(27, IsRequired = false, Name=@"lockVerifyCommand", DataFormat = global::ProtoBuf.DataFormat.Default)]
+    [global::ProtoBuf.ProtoMember(35, IsRequired = false, Name=@"lockVerifyCommand", DataFormat = global::ProtoBuf.DataFormat.Default)]
     [global::System.ComponentModel.DefaultValue(null)]
     public Alachisoft.NCache.Common.Protobuf.LockVerifyCommand lockVerifyCommand
     {
@@ -301,7 +370,7 @@ namespace Alachisoft.NCache.Common.Protobuf
     }
 
     private Alachisoft.NCache.Common.Protobuf.UnRegisterKeyNotifCommand _unRegisterKeyNotifCommand = null;
-    [global::ProtoBuf.ProtoMember(28, IsRequired = false, Name=@"unRegisterKeyNotifCommand", DataFormat = global::ProtoBuf.DataFormat.Default)]
+    [global::ProtoBuf.ProtoMember(36, IsRequired = false, Name=@"unRegisterKeyNotifCommand", DataFormat = global::ProtoBuf.DataFormat.Default)]
     [global::System.ComponentModel.DefaultValue(null)]
     public Alachisoft.NCache.Common.Protobuf.UnRegisterKeyNotifCommand unRegisterKeyNotifCommand
     {
@@ -310,7 +379,7 @@ namespace Alachisoft.NCache.Common.Protobuf
     }
 
     private Alachisoft.NCache.Common.Protobuf.UnRegisterBulkKeyNotifCommand _unRegisterBulkKeyNotifCommand = null;
-    [global::ProtoBuf.ProtoMember(29, IsRequired = false, Name=@"unRegisterBulkKeyNotifCommand", DataFormat = global::ProtoBuf.DataFormat.Default)]
+    [global::ProtoBuf.ProtoMember(37, IsRequired = false, Name=@"unRegisterBulkKeyNotifCommand", DataFormat = global::ProtoBuf.DataFormat.Default)]
     [global::System.ComponentModel.DefaultValue(null)]
     public Alachisoft.NCache.Common.Protobuf.UnRegisterBulkKeyNotifCommand unRegisterBulkKeyNotifCommand
     {
@@ -319,7 +388,7 @@ namespace Alachisoft.NCache.Common.Protobuf
     }
 
     private Alachisoft.NCache.Common.Protobuf.RegisterBulkKeyNotifCommand _registerBulkKeyNotifCommand = null;
-    [global::ProtoBuf.ProtoMember(30, IsRequired = false, Name=@"registerBulkKeyNotifCommand", DataFormat = global::ProtoBuf.DataFormat.Default)]
+    [global::ProtoBuf.ProtoMember(38, IsRequired = false, Name=@"registerBulkKeyNotifCommand", DataFormat = global::ProtoBuf.DataFormat.Default)]
     [global::System.ComponentModel.DefaultValue(null)]
     public Alachisoft.NCache.Common.Protobuf.RegisterBulkKeyNotifCommand registerBulkKeyNotifCommand
     {
@@ -328,7 +397,7 @@ namespace Alachisoft.NCache.Common.Protobuf
     }
 
     private Alachisoft.NCache.Common.Protobuf.GetLoggingInfoCommand _getLoggingInfoCommand = null;
-    [global::ProtoBuf.ProtoMember(31, IsRequired = false, Name=@"getLoggingInfoCommand", DataFormat = global::ProtoBuf.DataFormat.Default)]
+    [global::ProtoBuf.ProtoMember(40, IsRequired = false, Name=@"getLoggingInfoCommand", DataFormat = global::ProtoBuf.DataFormat.Default)]
     [global::System.ComponentModel.DefaultValue(null)]
     public Alachisoft.NCache.Common.Protobuf.GetLoggingInfoCommand getLoggingInfoCommand
     {
@@ -336,8 +405,17 @@ namespace Alachisoft.NCache.Common.Protobuf
       set { _getLoggingInfoCommand = value; }
     }
 
+    private Alachisoft.NCache.Common.Protobuf.WriteToStreamCommand _writeToStreamCommand = null;
+    [global::ProtoBuf.ProtoMember(44, IsRequired = false, Name=@"writeToStreamCommand", DataFormat = global::ProtoBuf.DataFormat.Default)]
+    [global::System.ComponentModel.DefaultValue(null)]
+    public Alachisoft.NCache.Common.Protobuf.WriteToStreamCommand writeToStreamCommand
+    {
+      get { return _writeToStreamCommand; }
+      set { _writeToStreamCommand = value; }
+    }
+        
     private long _requestID = default(long);
-    [global::ProtoBuf.ProtoMember(32, IsRequired = false, Name=@"requestID", DataFormat = global::ProtoBuf.DataFormat.TwosComplement)]
+    [global::ProtoBuf.ProtoMember(52, IsRequired = false, Name=@"requestID", DataFormat = global::ProtoBuf.DataFormat.TwosComplement)]
     [global::System.ComponentModel.DefaultValue(default(long))]
     public long requestID
     {
@@ -346,7 +424,7 @@ namespace Alachisoft.NCache.Common.Protobuf
     }
 
     private int _commandVersion = (int)0;
-    [global::ProtoBuf.ProtoMember(33, IsRequired = false, Name=@"commandVersion", DataFormat = global::ProtoBuf.DataFormat.TwosComplement)]
+    [global::ProtoBuf.ProtoMember(53, IsRequired = false, Name=@"commandVersion", DataFormat = global::ProtoBuf.DataFormat.TwosComplement)]
     [global::System.ComponentModel.DefaultValue((int)0)]
     public int commandVersion
     {
@@ -355,7 +433,7 @@ namespace Alachisoft.NCache.Common.Protobuf
     }
 
     private long _clientLastViewId = (long)-1;
-    [global::ProtoBuf.ProtoMember(34, IsRequired = false, Name=@"clientLastViewId", DataFormat = global::ProtoBuf.DataFormat.TwosComplement)]
+    [global::ProtoBuf.ProtoMember(62, IsRequired = false, Name=@"clientLastViewId", DataFormat = global::ProtoBuf.DataFormat.TwosComplement)]
     [global::System.ComponentModel.DefaultValue((long)-1)]
     public long clientLastViewId
     {
@@ -364,7 +442,7 @@ namespace Alachisoft.NCache.Common.Protobuf
     }
 
     private Alachisoft.NCache.Common.Protobuf.BulkDeleteCommand _bulkDeleteCommand = null;
-    [global::ProtoBuf.ProtoMember(35, IsRequired = false, Name=@"bulkDeleteCommand", DataFormat = global::ProtoBuf.DataFormat.Default)]
+    [global::ProtoBuf.ProtoMember(63, IsRequired = false, Name=@"bulkDeleteCommand", DataFormat = global::ProtoBuf.DataFormat.Default)]
     [global::System.ComponentModel.DefaultValue(null)]
     public Alachisoft.NCache.Common.Protobuf.BulkDeleteCommand bulkDeleteCommand
     {
@@ -373,7 +451,7 @@ namespace Alachisoft.NCache.Common.Protobuf
     }
 
     private Alachisoft.NCache.Common.Protobuf.DeleteCommand _deleteCommand = null;
-    [global::ProtoBuf.ProtoMember(36, IsRequired = false, Name=@"deleteCommand", DataFormat = global::ProtoBuf.DataFormat.Default)]
+    [global::ProtoBuf.ProtoMember(64, IsRequired = false, Name=@"deleteCommand", DataFormat = global::ProtoBuf.DataFormat.Default)]
     [global::System.ComponentModel.DefaultValue(null)]
     public Alachisoft.NCache.Common.Protobuf.DeleteCommand deleteCommand
     {
@@ -382,7 +460,7 @@ namespace Alachisoft.NCache.Common.Protobuf
     }
 
     private string _intendedRecipient = "";
-    [global::ProtoBuf.ProtoMember(37, IsRequired = false, Name=@"intendedRecipient", DataFormat = global::ProtoBuf.DataFormat.Default)]
+    [global::ProtoBuf.ProtoMember(65, IsRequired = false, Name=@"intendedRecipient", DataFormat = global::ProtoBuf.DataFormat.Default)]
     [global::System.ComponentModel.DefaultValue("")]
     public string intendedRecipient
     {
@@ -391,7 +469,7 @@ namespace Alachisoft.NCache.Common.Protobuf
     }
 
     private Alachisoft.NCache.Common.Protobuf.GetNextChunkCommand _getNextChunkCommand = null;
-    [global::ProtoBuf.ProtoMember(38, IsRequired = false, Name=@"getNextChunkCommand", DataFormat = global::ProtoBuf.DataFormat.Default)]
+    [global::ProtoBuf.ProtoMember(66, IsRequired = false, Name=@"getNextChunkCommand", DataFormat = global::ProtoBuf.DataFormat.Default)]
     [global::System.ComponentModel.DefaultValue(null)]
     public Alachisoft.NCache.Common.Protobuf.GetNextChunkCommand getNextChunkCommand
     {
@@ -399,8 +477,17 @@ namespace Alachisoft.NCache.Common.Protobuf
       set { _getNextChunkCommand = value; }
     }
 
+    private Alachisoft.NCache.Common.Protobuf.GetGroupNextChunkCommand _getGroupNextChunkCommand = null;
+    [global::ProtoBuf.ProtoMember(67, IsRequired = false, Name=@"getGroupNextChunkCommand", DataFormat = global::ProtoBuf.DataFormat.Default)]
+    [global::System.ComponentModel.DefaultValue(null)]
+    public Alachisoft.NCache.Common.Protobuf.GetGroupNextChunkCommand getGroupNextChunkCommand
+    {
+      get { return _getGroupNextChunkCommand; }
+      set { _getGroupNextChunkCommand = value; }
+    }
+
     private Alachisoft.NCache.Common.Protobuf.AddAttributeCommand _addAttributeCommand = null;
-    [global::ProtoBuf.ProtoMember(39, IsRequired = false, Name=@"addAttributeCommand", DataFormat = global::ProtoBuf.DataFormat.Default)]
+    [global::ProtoBuf.ProtoMember(68, IsRequired = false, Name=@"addAttributeCommand", DataFormat = global::ProtoBuf.DataFormat.Default)]
     [global::System.ComponentModel.DefaultValue(null)]
     public Alachisoft.NCache.Common.Protobuf.AddAttributeCommand addAttributeCommand
     {
@@ -408,35 +495,8 @@ namespace Alachisoft.NCache.Common.Protobuf
       set { _addAttributeCommand = value; }
     }
 
-    private Alachisoft.NCache.Common.Protobuf.GetProductVersionCommand _getProductVersionCommand = null;
-    [global::ProtoBuf.ProtoMember(40, IsRequired = false, Name=@"getProductVersionCommand", DataFormat = global::ProtoBuf.DataFormat.Default)]
-    [global::System.ComponentModel.DefaultValue(null)]
-    public Alachisoft.NCache.Common.Protobuf.GetProductVersionCommand getProductVersionCommand
-    {
-      get { return _getProductVersionCommand; }
-      set { _getProductVersionCommand = value; }
-    }
-
-    private Alachisoft.NCache.Common.Protobuf.GetServerMappingCommand _getServerMappingCommand = null;
-    [global::ProtoBuf.ProtoMember(41, IsRequired = false, Name=@"getServerMappingCommand", DataFormat = global::ProtoBuf.DataFormat.Default)]
-    [global::System.ComponentModel.DefaultValue(null)]
-    public Alachisoft.NCache.Common.Protobuf.GetServerMappingCommand getServerMappingCommand
-    {
-      get { return _getServerMappingCommand; }
-      set { _getServerMappingCommand = value; }
-    }
-
-    private Alachisoft.NCache.Common.Protobuf.GetOptimalServerCommand _getOptimalServerCommand = null;
-    [global::ProtoBuf.ProtoMember(42, IsRequired = false, Name=@"getOptimalServerCommand", DataFormat = global::ProtoBuf.DataFormat.Default)]
-    [global::System.ComponentModel.DefaultValue(null)]
-    public Alachisoft.NCache.Common.Protobuf.GetOptimalServerCommand getOptimalServerCommand
-    {
-      get { return _getOptimalServerCommand; }
-      set { _getOptimalServerCommand = value; }
-    }
-
     private Alachisoft.NCache.Common.Protobuf.GetRunningServersCommand _getRunningServersCommand = null;
-    [global::ProtoBuf.ProtoMember(43, IsRequired = false, Name=@"getRunningServersCommand", DataFormat = global::ProtoBuf.DataFormat.Default)]
+    [global::ProtoBuf.ProtoMember(70, IsRequired = false, Name=@"getRunningServersCommand", DataFormat = global::ProtoBuf.DataFormat.Default)]
     [global::System.ComponentModel.DefaultValue(null)]
     public Alachisoft.NCache.Common.Protobuf.GetRunningServersCommand getRunningServersCommand
     {
@@ -444,8 +504,72 @@ namespace Alachisoft.NCache.Common.Protobuf
       set { _getRunningServersCommand = value; }
     }
 
+    private Alachisoft.NCache.Common.Protobuf.SyncEventsCommand _syncEventsCommand = null;
+    [global::ProtoBuf.ProtoMember(71, IsRequired = false, Name=@"syncEventsCommand", DataFormat = global::ProtoBuf.DataFormat.Default)]
+    [global::System.ComponentModel.DefaultValue(null)]
+    public Alachisoft.NCache.Common.Protobuf.SyncEventsCommand syncEventsCommand
+    {
+      get { return _syncEventsCommand; }
+      set { _syncEventsCommand = value; }
+    }
+
+    private Alachisoft.NCache.Common.Protobuf.DeleteQueryCommand _deleteQueryCommand = null;
+    [global::ProtoBuf.ProtoMember(72, IsRequired = false, Name=@"deleteQueryCommand", DataFormat = global::ProtoBuf.DataFormat.Default)]
+    [global::System.ComponentModel.DefaultValue(null)]
+    public Alachisoft.NCache.Common.Protobuf.DeleteQueryCommand deleteQueryCommand
+    {
+      get { return _deleteQueryCommand; }
+      set { _deleteQueryCommand = value; }
+    }
+
+    private Alachisoft.NCache.Common.Protobuf.GetProductVersionCommand _getProductVersionCommand = null;
+    [global::ProtoBuf.ProtoMember(73, IsRequired = false, Name=@"getProductVersionCommand", DataFormat = global::ProtoBuf.DataFormat.Default)]
+    [global::System.ComponentModel.DefaultValue(null)]
+    public Alachisoft.NCache.Common.Protobuf.GetProductVersionCommand getProductVersionCommand
+    {
+      get { return _getProductVersionCommand; }
+      set { _getProductVersionCommand = value; }
+    }
+        
+
+    private Alachisoft.NCache.Common.Protobuf.GetServerMappingCommand _getServerMappingCommand = null;
+    [global::ProtoBuf.ProtoMember(76, IsRequired = false, Name=@"getServerMappingCommand", DataFormat = global::ProtoBuf.DataFormat.Default)]
+    [global::System.ComponentModel.DefaultValue(null)]
+    public Alachisoft.NCache.Common.Protobuf.GetServerMappingCommand getServerMappingCommand
+    {
+      get { return _getServerMappingCommand; }
+      set { _getServerMappingCommand = value; }
+    }
+
+    private Alachisoft.NCache.Common.Protobuf.InquiryRequestCommand _inquiryRequestCommand = null;
+    [global::ProtoBuf.ProtoMember(77, IsRequired = false, Name=@"inquiryRequestCommand", DataFormat = global::ProtoBuf.DataFormat.Default)]
+    [global::System.ComponentModel.DefaultValue(null)]
+    public Alachisoft.NCache.Common.Protobuf.InquiryRequestCommand inquiryRequestCommand
+    {
+      get { return _inquiryRequestCommand; }
+      set { _inquiryRequestCommand = value; }
+    }
+
+    private bool _isRetryCommand = (bool)false;
+    [global::ProtoBuf.ProtoMember(78, IsRequired = false, Name=@"isRetryCommand", DataFormat = global::ProtoBuf.DataFormat.Default)]
+    [global::System.ComponentModel.DefaultValue((bool)false)]
+    public bool isRetryCommand
+    {
+      get { return _isRetryCommand; }
+      set { _isRetryCommand = value; }
+    }
+
+    private int _commandID = (int)-1;
+    [global::ProtoBuf.ProtoMember(85, IsRequired = false, Name=@"commandID", DataFormat = global::ProtoBuf.DataFormat.TwosComplement)]
+    [global::System.ComponentModel.DefaultValue((int)-1)]
+    public int commandID
+    {
+      get { return _commandID; }
+      set { _commandID = value; }
+    }
+
     private Alachisoft.NCache.Common.Protobuf.GetCacheBindingCommand _getCacheBindingCommand = null;
-    [global::ProtoBuf.ProtoMember(44, IsRequired = false, Name=@"getCacheBindingCommand", DataFormat = global::ProtoBuf.DataFormat.Default)]
+    [global::ProtoBuf.ProtoMember(86, IsRequired = false, Name=@"getCacheBindingCommand", DataFormat = global::ProtoBuf.DataFormat.Default)]
     [global::System.ComponentModel.DefaultValue(null)]
     public Alachisoft.NCache.Common.Protobuf.GetCacheBindingCommand getCacheBindingCommand
     {
@@ -453,17 +577,8 @@ namespace Alachisoft.NCache.Common.Protobuf
       set { _getCacheBindingCommand = value; }
     }
 
-    private Alachisoft.NCache.Common.Protobuf.ExecuteReaderCommand _executeReaderCommand = null;
-    [global::ProtoBuf.ProtoMember(45, IsRequired = false, Name=@"executeReaderCommand", DataFormat = global::ProtoBuf.DataFormat.Default)]
-    [global::System.ComponentModel.DefaultValue(null)]
-    public Alachisoft.NCache.Common.Protobuf.ExecuteReaderCommand executeReaderCommand
-    {
-      get { return _executeReaderCommand; }
-      set { _executeReaderCommand = value; }
-    }
-
     private Alachisoft.NCache.Common.Protobuf.GetReaderNextChunkCommand _getReaderNextChunkCommand = null;
-    [global::ProtoBuf.ProtoMember(46, IsRequired = false, Name=@"getReaderNextChunkCommand", DataFormat = global::ProtoBuf.DataFormat.Default)]
+    [global::ProtoBuf.ProtoMember(90, IsRequired = false, Name=@"getReaderNextChunkCommand", DataFormat = global::ProtoBuf.DataFormat.Default)]
     [global::System.ComponentModel.DefaultValue(null)]
     public Alachisoft.NCache.Common.Protobuf.GetReaderNextChunkCommand getReaderNextChunkCommand
     {
@@ -472,12 +587,211 @@ namespace Alachisoft.NCache.Common.Protobuf
     }
 
     private Alachisoft.NCache.Common.Protobuf.DisposeReaderCommand _disposeReaderCommand = null;
-    [global::ProtoBuf.ProtoMember(47, IsRequired = false, Name=@"disposeReaderCommand", DataFormat = global::ProtoBuf.DataFormat.Default)]
+    [global::ProtoBuf.ProtoMember(91, IsRequired = false, Name=@"disposeReaderCommand", DataFormat = global::ProtoBuf.DataFormat.Default)]
     [global::System.ComponentModel.DefaultValue(null)]
     public Alachisoft.NCache.Common.Protobuf.DisposeReaderCommand disposeReaderCommand
     {
       get { return _disposeReaderCommand; }
       set { _disposeReaderCommand = value; }
+    }
+
+  
+    private Alachisoft.NCache.Common.Protobuf.GetExpirationCommand _getExpirationCommand = null;
+    [global::ProtoBuf.ProtoMember(93, IsRequired = false, Name=@"getExpirationCommand", DataFormat = global::ProtoBuf.DataFormat.Default)]
+    [global::System.ComponentModel.DefaultValue(null)]
+    public Alachisoft.NCache.Common.Protobuf.GetExpirationCommand getExpirationCommand
+    {
+      get { return _getExpirationCommand; }
+      set { _getExpirationCommand = value; }
+    }
+
+    private Alachisoft.NCache.Common.Protobuf.GetLCCommand _getLCCommand = null;
+    [global::ProtoBuf.ProtoMember(94, IsRequired = false, Name=@"getLCCommand", DataFormat = global::ProtoBuf.DataFormat.Default)]
+    [global::System.ComponentModel.DefaultValue(null)]
+    public Alachisoft.NCache.Common.Protobuf.GetLCCommand getLCCommand
+    {
+      get { return _getLCCommand; }
+      set { _getLCCommand = value; }
+    }
+
+    private Alachisoft.NCache.Common.Protobuf.PollCommand _pollCommand = null;
+    [global::ProtoBuf.ProtoMember(96, IsRequired = false, Name=@"pollCommand", DataFormat = global::ProtoBuf.DataFormat.Default)]
+    [global::System.ComponentModel.DefaultValue(null)]
+    public Alachisoft.NCache.Common.Protobuf.PollCommand pollCommand
+    {
+      get { return _pollCommand; }
+      set { _pollCommand = value; }
+    }
+
+    private Alachisoft.NCache.Common.Protobuf.RegisterPollingNotificationCommand _registerPollNotifCommand = null;
+    [global::ProtoBuf.ProtoMember(97, IsRequired = false, Name=@"registerPollNotifCommand", DataFormat = global::ProtoBuf.DataFormat.Default)]
+    [global::System.ComponentModel.DefaultValue(null)]
+    public Alachisoft.NCache.Common.Protobuf.RegisterPollingNotificationCommand registerPollNotifCommand
+    {
+      get { return _registerPollNotifCommand; }
+      set { _registerPollNotifCommand = value; }
+    }
+
+    private Alachisoft.NCache.Common.Protobuf.GetConnectedClientsCommand _getConnectedClientsCommand = null;
+    [global::ProtoBuf.ProtoMember(98, IsRequired = false, Name=@"getConnectedClientsCommand", DataFormat = global::ProtoBuf.DataFormat.Default)]
+    [global::System.ComponentModel.DefaultValue(null)]
+    public Alachisoft.NCache.Common.Protobuf.GetConnectedClientsCommand getConnectedClientsCommand
+    {
+      get { return _getConnectedClientsCommand; }
+      set { _getConnectedClientsCommand = value; }
+    }
+
+    private int _MethodOverload = (int)0;
+    [global::ProtoBuf.ProtoMember(99, IsRequired = false, Name=@"MethodOverload", DataFormat = global::ProtoBuf.DataFormat.TwosComplement)]
+    [global::System.ComponentModel.DefaultValue((int)0)]
+    public int MethodOverload
+    {
+      get { return _MethodOverload; }
+      set { _MethodOverload = value; }
+    }
+
+    private Alachisoft.NCache.Common.Protobuf.TouchCommand _touchCommand = null;
+    [global::ProtoBuf.ProtoMember(100, IsRequired = false, Name=@"touchCommand", DataFormat = global::ProtoBuf.DataFormat.Default)]
+    [global::System.ComponentModel.DefaultValue(null)]
+    public Alachisoft.NCache.Common.Protobuf.TouchCommand touchCommand
+    {
+      get { return _touchCommand; }
+      set { _touchCommand = value; }
+    }
+
+    private Alachisoft.NCache.Common.Protobuf.GetCacheManagementPortCommand _getCacheManagementPortCommand = null;
+    [global::ProtoBuf.ProtoMember(101, IsRequired = false, Name=@"getCacheManagementPortCommand", DataFormat = global::ProtoBuf.DataFormat.Default)]
+    [global::System.ComponentModel.DefaultValue(null)]
+    public Alachisoft.NCache.Common.Protobuf.GetCacheManagementPortCommand getCacheManagementPortCommand
+    {
+      get { return _getCacheManagementPortCommand; }
+      set { _getCacheManagementPortCommand = value; }
+    }
+
+    private Alachisoft.NCache.Common.Protobuf.GetTopicCommand _getTopicCommand = null;
+    [global::ProtoBuf.ProtoMember(102, IsRequired = false, Name=@"getTopicCommand", DataFormat = global::ProtoBuf.DataFormat.Default)]
+    [global::System.ComponentModel.DefaultValue(null)]
+    public Alachisoft.NCache.Common.Protobuf.GetTopicCommand getTopicCommand
+    {
+      get { return _getTopicCommand; }
+      set { _getTopicCommand = value; }
+    }
+
+    private Alachisoft.NCache.Common.Protobuf.SubscribeTopicCommand _subscribeTopicCommand = null;
+    [global::ProtoBuf.ProtoMember(103, IsRequired = false, Name=@"subscribeTopicCommand", DataFormat = global::ProtoBuf.DataFormat.Default)]
+    [global::System.ComponentModel.DefaultValue(null)]
+    public Alachisoft.NCache.Common.Protobuf.SubscribeTopicCommand subscribeTopicCommand
+    {
+      get { return _subscribeTopicCommand; }
+      set { _subscribeTopicCommand = value; }
+    }
+
+    private Alachisoft.NCache.Common.Protobuf.RemoveTopicCommand _removeTopicCommand = null;
+    [global::ProtoBuf.ProtoMember(104, IsRequired = false, Name=@"removeTopicCommand", DataFormat = global::ProtoBuf.DataFormat.Default)]
+    [global::System.ComponentModel.DefaultValue(null)]
+    public Alachisoft.NCache.Common.Protobuf.RemoveTopicCommand removeTopicCommand
+    {
+      get { return _removeTopicCommand; }
+      set { _removeTopicCommand = value; }
+    }
+
+    private Alachisoft.NCache.Common.Protobuf.UnSubscribeTopicCommand _unSubscribeTopicCommand = null;
+    [global::ProtoBuf.ProtoMember(105, IsRequired = false, Name=@"unSubscribeTopicCommand", DataFormat = global::ProtoBuf.DataFormat.Default)]
+    [global::System.ComponentModel.DefaultValue(null)]
+    public Alachisoft.NCache.Common.Protobuf.UnSubscribeTopicCommand unSubscribeTopicCommand
+    {
+      get { return _unSubscribeTopicCommand; }
+      set { _unSubscribeTopicCommand = value; }
+    }
+
+    private Alachisoft.NCache.Common.Protobuf.MessagePublishCommand _messagePublishCommand = null;
+    [global::ProtoBuf.ProtoMember(106, IsRequired = false, Name=@"messagePublishCommand", DataFormat = global::ProtoBuf.DataFormat.Default)]
+    [global::System.ComponentModel.DefaultValue(null)]
+    public Alachisoft.NCache.Common.Protobuf.MessagePublishCommand messagePublishCommand
+    {
+      get { return _messagePublishCommand; }
+      set { _messagePublishCommand = value; }
+    }
+
+    private Alachisoft.NCache.Common.Protobuf.GetMessageCommand _getMessageCommand = null;
+    [global::ProtoBuf.ProtoMember(107, IsRequired = false, Name=@"getMessageCommand", DataFormat = global::ProtoBuf.DataFormat.Default)]
+    [global::System.ComponentModel.DefaultValue(null)]
+    public Alachisoft.NCache.Common.Protobuf.GetMessageCommand getMessageCommand
+    {
+      get { return _getMessageCommand; }
+      set { _getMessageCommand = value; }
+    }
+
+    private Alachisoft.NCache.Common.Protobuf.MesasgeAcknowledgmentCommand _mesasgeAcknowledgmentCommand = null;
+    [global::ProtoBuf.ProtoMember(108, IsRequired = false, Name=@"mesasgeAcknowledgmentCommand", DataFormat = global::ProtoBuf.DataFormat.Default)]
+    [global::System.ComponentModel.DefaultValue(null)]
+    public Alachisoft.NCache.Common.Protobuf.MesasgeAcknowledgmentCommand mesasgeAcknowledgmentCommand
+    {
+      get { return _mesasgeAcknowledgmentCommand; }
+      set { _mesasgeAcknowledgmentCommand = value; }
+    }
+
+    private Alachisoft.NCache.Common.Protobuf.PingCommand _pingCommand = null;
+    [global::ProtoBuf.ProtoMember(109, IsRequired = false, Name=@"pingCommand", DataFormat = global::ProtoBuf.DataFormat.Default)]
+    [global::System.ComponentModel.DefaultValue(null)]
+    public Alachisoft.NCache.Common.Protobuf.PingCommand pingCommand
+    {
+      get { return _pingCommand; }
+      set { _pingCommand = value; }
+    }
+
+    private Alachisoft.NCache.Common.Protobuf.MessageCountCommand _messageCountCommand = null;
+    [global::ProtoBuf.ProtoMember(110, IsRequired = false, Name=@"messageCountCommand", DataFormat = global::ProtoBuf.DataFormat.Default)]
+    [global::System.ComponentModel.DefaultValue(null)]
+    public Alachisoft.NCache.Common.Protobuf.MessageCountCommand messageCountCommand
+    {
+      get { return _messageCountCommand; }
+      set { _messageCountCommand = value; }
+    }
+
+    private Alachisoft.NCache.Common.Protobuf.GetSerializationFormatCommand _getSerializationFormatCommand = null;
+    [global::ProtoBuf.ProtoMember(112, IsRequired = false, Name=@"getSerializationFormatCommand", DataFormat = global::ProtoBuf.DataFormat.Default)]
+    [global::System.ComponentModel.DefaultValue(null)]
+    public Alachisoft.NCache.Common.Protobuf.GetSerializationFormatCommand getSerializationFormatCommand
+    {
+      get { return _getSerializationFormatCommand; }
+      set { _getSerializationFormatCommand = value; }
+    }
+
+    private Alachisoft.NCache.Common.Protobuf.BulkGetCacheItemCommand _bulkGetCacheItemCommand = null;
+    [global::ProtoBuf.ProtoMember(113, IsRequired = false, Name=@"bulkGetCacheItemCommand", DataFormat = global::ProtoBuf.DataFormat.Default)]
+    [global::System.ComponentModel.DefaultValue(null)]
+    public Alachisoft.NCache.Common.Protobuf.BulkGetCacheItemCommand bulkGetCacheItemCommand
+    {
+      get { return _bulkGetCacheItemCommand; }
+      set { _bulkGetCacheItemCommand = value; }
+    }
+
+    private Alachisoft.NCache.Common.Protobuf.ContainsBulkCommand _containsBulkCommand = null;
+    [global::ProtoBuf.ProtoMember(114, IsRequired = false, Name=@"containsBulkCommand", DataFormat = global::ProtoBuf.DataFormat.Default)]
+    [global::System.ComponentModel.DefaultValue(null)]
+    public Alachisoft.NCache.Common.Protobuf.ContainsBulkCommand containsBulkCommand
+    {
+      get { return _containsBulkCommand; }
+      set { _containsBulkCommand = value; }
+    }
+
+    private Alachisoft.NCache.Common.Protobuf.ModuleCommand _moduleCommand = null;
+    [global::ProtoBuf.ProtoMember(115, IsRequired = false, Name=@"moduleCommand", DataFormat = global::ProtoBuf.DataFormat.Default)]
+    [global::System.ComponentModel.DefaultValue(null)]
+    public Alachisoft.NCache.Common.Protobuf.ModuleCommand moduleCommand
+    {
+      get { return _moduleCommand; }
+      set { _moduleCommand = value; }
+    }
+
+    private Alachisoft.NCache.Common.Protobuf.SurrogateCommand _surrogateCommand = null;
+    [global::ProtoBuf.ProtoMember(116, IsRequired = false, Name=@"surrogateCommand", DataFormat = global::ProtoBuf.DataFormat.Default)]
+    [global::System.ComponentModel.DefaultValue(null)]
+    public Alachisoft.NCache.Common.Protobuf.SurrogateCommand surrogateCommand
+    {
+      get { return _surrogateCommand; }
+      set { _surrogateCommand = value; }
     }
     [global::ProtoBuf.ProtoContract(Name=@"Type")]
     public enum Type
@@ -486,125 +800,243 @@ namespace Alachisoft.NCache.Common.Protobuf
       [global::ProtoBuf.ProtoEnum(Name=@"ADD", Value=1)]
       ADD = 1,
             
-      [global::ProtoBuf.ProtoEnum(Name=@"ADD_BULK", Value=2)]
-      ADD_BULK = 2,
+      [global::ProtoBuf.ProtoEnum(Name=@"ADD_DEPENDENCY", Value=2)]
+      ADD_DEPENDENCY = 2,
             
-      [global::ProtoBuf.ProtoEnum(Name=@"GET_BULK", Value=3)]
-      GET_BULK = 3,
+      [global::ProtoBuf.ProtoEnum(Name=@"ADD_SYNC_DEPENDENCY", Value=3)]
+      ADD_SYNC_DEPENDENCY = 3,
             
-      [global::ProtoBuf.ProtoEnum(Name=@"INSERT_BULK", Value=4)]
-      INSERT_BULK = 4,
+      [global::ProtoBuf.ProtoEnum(Name=@"ADD_BULK", Value=4)]
+      ADD_BULK = 4,
             
-      [global::ProtoBuf.ProtoEnum(Name=@"REMOVE_BULK", Value=5)]
-      REMOVE_BULK = 5,
+      [global::ProtoBuf.ProtoEnum(Name=@"GET_BULK", Value=5)]
+      GET_BULK = 5,
             
-      [global::ProtoBuf.ProtoEnum(Name=@"CLEAR", Value=6)]
-      CLEAR = 6,
+      [global::ProtoBuf.ProtoEnum(Name=@"INSERT_BULK", Value=6)]
+      INSERT_BULK = 6,
             
-      [global::ProtoBuf.ProtoEnum(Name=@"CONTAINS", Value=7)]
-      CONTAINS = 7,
+      [global::ProtoBuf.ProtoEnum(Name=@"REMOVE_BULK", Value=7)]
+      REMOVE_BULK = 7,
             
-      [global::ProtoBuf.ProtoEnum(Name=@"COUNT", Value=8)]
-      COUNT = 8,
+      [global::ProtoBuf.ProtoEnum(Name=@"CLEAR", Value=8)]
+      CLEAR = 8,
             
-      [global::ProtoBuf.ProtoEnum(Name=@"DISPOSE", Value=9)]
-      DISPOSE = 9,
+      [global::ProtoBuf.ProtoEnum(Name=@"CONTAINS", Value=9)]
+      CONTAINS = 9,
             
-      [global::ProtoBuf.ProtoEnum(Name=@"GET_CACHE_ITEM", Value=10)]
-      GET_CACHE_ITEM = 10,
+      [global::ProtoBuf.ProtoEnum(Name=@"COUNT", Value=10)]
+      COUNT = 10,
             
-      [global::ProtoBuf.ProtoEnum(Name=@"GET", Value=11)]
-      GET = 11,
+      [global::ProtoBuf.ProtoEnum(Name=@"DISPOSE", Value=11)]
+      DISPOSE = 11,
             
-      [global::ProtoBuf.ProtoEnum(Name=@"GET_ENUMERATOR", Value=12)]
-      GET_ENUMERATOR = 12,
+      [global::ProtoBuf.ProtoEnum(Name=@"GET_CACHE_ITEM", Value=12)]
+      GET_CACHE_ITEM = 12,
             
-      [global::ProtoBuf.ProtoEnum(Name=@"GET_HASHMAP", Value=13)]
-      GET_HASHMAP = 13,
+      [global::ProtoBuf.ProtoEnum(Name=@"GET", Value=13)]
+      GET = 13,
             
-      [global::ProtoBuf.ProtoEnum(Name=@"GET_THRESHOLD_SIZE", Value=14)]
-      GET_THRESHOLD_SIZE = 14,
+      [global::ProtoBuf.ProtoEnum(Name=@"GET_COMPACT_TYPES", Value=14)]
+      GET_COMPACT_TYPES = 14,
             
-      [global::ProtoBuf.ProtoEnum(Name=@"GET_TYPEINFO_MAP", Value=15)]
-      GET_TYPEINFO_MAP = 15,
+      [global::ProtoBuf.ProtoEnum(Name=@"GET_ENUMERATOR", Value=15)]
+      GET_ENUMERATOR = 15,
             
-      [global::ProtoBuf.ProtoEnum(Name=@"INIT", Value=16)]
-      INIT = 16,
             
-      [global::ProtoBuf.ProtoEnum(Name=@"INSERT", Value=17)]
-      INSERT = 17,
+      [global::ProtoBuf.ProtoEnum(Name=@"GET_HASHMAP", Value=17)]
+      GET_HASHMAP = 17,
             
-      [global::ProtoBuf.ProtoEnum(Name=@"REGISTER_KEY_NOTIF", Value=18)]
-      REGISTER_KEY_NOTIF = 18,
+      [global::ProtoBuf.ProtoEnum(Name=@"GET_OPTIMAL_SERVER", Value=18)]
+      GET_OPTIMAL_SERVER = 18,
             
-      [global::ProtoBuf.ProtoEnum(Name=@"REGISTER_NOTIF", Value=19)]
-      REGISTER_NOTIF = 19,
+      [global::ProtoBuf.ProtoEnum(Name=@"GET_TYPEINFO_MAP", Value=20)]
+      GET_TYPEINFO_MAP = 20,
             
-      [global::ProtoBuf.ProtoEnum(Name=@"REMOVE", Value=20)]
-      REMOVE = 20,
+      [global::ProtoBuf.ProtoEnum(Name=@"INIT", Value=21)]
+      INIT = 21,
             
-      [global::ProtoBuf.ProtoEnum(Name=@"SEARCH", Value=21)]
-      SEARCH = 21,
+      [global::ProtoBuf.ProtoEnum(Name=@"INSERT", Value=22)]
+      INSERT = 22,
             
-      [global::ProtoBuf.ProtoEnum(Name=@"LOCK", Value=22)]
-      LOCK = 22,
+      [global::ProtoBuf.ProtoEnum(Name=@"RAISE_CUSTOM_EVENT", Value=23)]
+      RAISE_CUSTOM_EVENT = 23,
             
-      [global::ProtoBuf.ProtoEnum(Name=@"UNLOCK", Value=23)]
-      UNLOCK = 23,
+      [global::ProtoBuf.ProtoEnum(Name=@"REGISTER_KEY_NOTIF", Value=24)]
+      REGISTER_KEY_NOTIF = 24,
             
-      [global::ProtoBuf.ProtoEnum(Name=@"ISLOCKED", Value=24)]
-      ISLOCKED = 24,
+      [global::ProtoBuf.ProtoEnum(Name=@"REGISTER_NOTIF", Value=25)]
+      REGISTER_NOTIF = 25,
             
-      [global::ProtoBuf.ProtoEnum(Name=@"LOCK_VERIFY", Value=25)]
-      LOCK_VERIFY = 25,
+      [global::ProtoBuf.ProtoEnum(Name=@"REMOVE", Value=26)]
+      REMOVE = 26,
             
-      [global::ProtoBuf.ProtoEnum(Name=@"UNREGISTER_KEY_NOTIF", Value=26)]
-      UNREGISTER_KEY_NOTIF = 26,
+      [global::ProtoBuf.ProtoEnum(Name=@"SEARCH", Value=28)]
+      SEARCH = 28,
             
-      [global::ProtoBuf.ProtoEnum(Name=@"UNREGISTER_BULK_KEY_NOTIF", Value=27)]
-      UNREGISTER_BULK_KEY_NOTIF = 27,
             
-      [global::ProtoBuf.ProtoEnum(Name=@"REGISTER_BULK_KEY_NOTIF", Value=28)]
-      REGISTER_BULK_KEY_NOTIF = 28,
+      [global::ProtoBuf.ProtoEnum(Name=@"LOCK", Value=30)]
+      LOCK = 30,
             
-      [global::ProtoBuf.ProtoEnum(Name=@"GET_LOGGING_INFO", Value=29)]
-      GET_LOGGING_INFO = 29,
+      [global::ProtoBuf.ProtoEnum(Name=@"UNLOCK", Value=31)]
+      UNLOCK = 31,
             
-      [global::ProtoBuf.ProtoEnum(Name=@"DELETE_BULK", Value=30)]
-      DELETE_BULK = 30,
+      [global::ProtoBuf.ProtoEnum(Name=@"ISLOCKED", Value=32)]
+      ISLOCKED = 32,
             
-      [global::ProtoBuf.ProtoEnum(Name=@"DELETE", Value=31)]
-      DELETE = 31,
+      [global::ProtoBuf.ProtoEnum(Name=@"LOCK_VERIFY", Value=33)]
+      LOCK_VERIFY = 33,
             
-      [global::ProtoBuf.ProtoEnum(Name=@"GET_NEXT_CHUNK", Value=32)]
-      GET_NEXT_CHUNK = 32,
+      [global::ProtoBuf.ProtoEnum(Name=@"UNREGISTER_KEY_NOTIF", Value=34)]
+      UNREGISTER_KEY_NOTIF = 34,
             
-      [global::ProtoBuf.ProtoEnum(Name=@"ADD_ATTRIBUTE", Value=33)]
-      ADD_ATTRIBUTE = 33,
+      [global::ProtoBuf.ProtoEnum(Name=@"UNREGISTER_BULK_KEY_NOTIF", Value=35)]
+      UNREGISTER_BULK_KEY_NOTIF = 35,
             
-      [global::ProtoBuf.ProtoEnum(Name=@"GET_PRODUCT_VERSION", Value=34)]
-      GET_PRODUCT_VERSION = 34,
+      [global::ProtoBuf.ProtoEnum(Name=@"REGISTER_BULK_KEY_NOTIF", Value=36)]
+      REGISTER_BULK_KEY_NOTIF = 36,
             
-      [global::ProtoBuf.ProtoEnum(Name=@"GET_SERVER_MAPPING", Value=35)]
-      GET_SERVER_MAPPING = 35,
+      [global::ProtoBuf.ProtoEnum(Name=@"GET_LOGGING_INFO", Value=38)]
+      GET_LOGGING_INFO = 38,
             
-      [global::ProtoBuf.ProtoEnum(Name=@"GET_OPTIMAL_SERVER", Value=36)]
-      GET_OPTIMAL_SERVER = 36,
+      [global::ProtoBuf.ProtoEnum(Name=@"CLOSE_STREAM", Value=39)]
+      CLOSE_STREAM = 39,
             
-      [global::ProtoBuf.ProtoEnum(Name=@"GET_RUNNING_SERVERS", Value=37)]
-      GET_RUNNING_SERVERS = 37,
+      [global::ProtoBuf.ProtoEnum(Name=@"GET_STREAM_LENGTH", Value=40)]
+      GET_STREAM_LENGTH = 40,
             
-      [global::ProtoBuf.ProtoEnum(Name=@"GET_CACHE_BINDING", Value=38)]
-      GET_CACHE_BINDING = 38,
+      [global::ProtoBuf.ProtoEnum(Name=@"OPEN_STREAM", Value=41)]
+      OPEN_STREAM = 41,
             
-      [global::ProtoBuf.ProtoEnum(Name=@"EXECUTE_READER", Value=39)]
-      EXECUTE_READER = 39,
+      [global::ProtoBuf.ProtoEnum(Name=@"WRITE_TO_STREAM", Value=42)]
+      WRITE_TO_STREAM = 42,
             
-      [global::ProtoBuf.ProtoEnum(Name=@"GET_READER_CHUNK", Value=40)]
-      GET_READER_CHUNK = 40,
+      [global::ProtoBuf.ProtoEnum(Name=@"READ_FROM_STREAM", Value=43)]
+      READ_FROM_STREAM = 43,
             
-      [global::ProtoBuf.ProtoEnum(Name=@"DISPOSE_READER", Value=41)]
-      DISPOSE_READER = 41
+      [global::ProtoBuf.ProtoEnum(Name=@"UNREGISTER_CQ", Value=54)]
+      UNREGISTER_CQ = 54,
+            
+      [global::ProtoBuf.ProtoEnum(Name=@"SEARCH_CQ", Value=55)]
+      SEARCH_CQ = 55,
+            
+      [global::ProtoBuf.ProtoEnum(Name=@"REGISTER_CQ", Value=56)]
+      REGISTER_CQ = 56,
+            
+            
+      [global::ProtoBuf.ProtoEnum(Name=@"DELETE_BULK", Value=58)]
+      DELETE_BULK = 58,
+            
+      [global::ProtoBuf.ProtoEnum(Name=@"DELETE", Value=59)]
+      DELETE = 59,
+            
+      [global::ProtoBuf.ProtoEnum(Name=@"GET_NEXT_CHUNK", Value=60)]
+      GET_NEXT_CHUNK = 60,
+            
+      [global::ProtoBuf.ProtoEnum(Name=@"GET_GROUP_NEXT_CHUNK", Value=61)]
+      GET_GROUP_NEXT_CHUNK = 61,
+            
+      [global::ProtoBuf.ProtoEnum(Name=@"ADD_ATTRIBUTE", Value=62)]
+      ADD_ATTRIBUTE = 62,
+            
+      [global::ProtoBuf.ProtoEnum(Name=@"GET_RUNNING_SERVERS", Value=64)]
+      GET_RUNNING_SERVERS = 64,
+            
+      [global::ProtoBuf.ProtoEnum(Name=@"SYNC_EVENTS", Value=65)]
+      SYNC_EVENTS = 65,
+            
+      [global::ProtoBuf.ProtoEnum(Name=@"DELETEQUERY", Value=66)]
+      DELETEQUERY = 66,
+            
+      [global::ProtoBuf.ProtoEnum(Name=@"GET_PRODUCT_VERSION", Value=67)]
+      GET_PRODUCT_VERSION = 67,
+            
+      [global::ProtoBuf.ProtoEnum(Name=@"GET_SERVER_MAPPING", Value=70)]
+      GET_SERVER_MAPPING = 70,
+            
+      [global::ProtoBuf.ProtoEnum(Name=@"INQUIRY_REQUEST", Value=71)]
+      INQUIRY_REQUEST = 71,
+            
+      [global::ProtoBuf.ProtoEnum(Name=@"GET_CACHE_BINDING", Value=72)]
+      GET_CACHE_BINDING = 72,
+            
+      [global::ProtoBuf.ProtoEnum(Name=@"EXECUTE_READER", Value=82)]
+      EXECUTE_READER = 82,
+            
+      [global::ProtoBuf.ProtoEnum(Name=@"GET_READER_CHUNK", Value=83)]
+      GET_READER_CHUNK = 83,
+            
+      [global::ProtoBuf.ProtoEnum(Name=@"DISPOSE_READER", Value=84)]
+      DISPOSE_READER = 84,
+            
+      [global::ProtoBuf.ProtoEnum(Name=@"EXECUTE_READER_CQ", Value=85)]
+      EXECUTE_READER_CQ = 85,
+            
+      [global::ProtoBuf.ProtoEnum(Name=@"GET_EXPIRATION", Value=86)]
+      GET_EXPIRATION = 86,
+            
+      [global::ProtoBuf.ProtoEnum(Name=@"GET_LC_DATA", Value=87)]
+      GET_LC_DATA = 87,
+            
+      [global::ProtoBuf.ProtoEnum(Name=@"POLL", Value=88)]
+      POLL = 88,
+            
+      [global::ProtoBuf.ProtoEnum(Name=@"REGISTER_POLLING_NOTIFICATION", Value=89)]
+      REGISTER_POLLING_NOTIFICATION = 89,
+            
+      [global::ProtoBuf.ProtoEnum(Name=@"SECURITY_AUTHORIZATION", Value=90)]
+      SECURITY_AUTHORIZATION = 90,
+            
+      [global::ProtoBuf.ProtoEnum(Name=@"GET_CONNECTED_CLIENTS", Value=91)]
+      GET_CONNECTED_CLIENTS = 91,
+            
+      [global::ProtoBuf.ProtoEnum(Name=@"TOUCH", Value=92)]
+      TOUCH = 92,
+            
+      [global::ProtoBuf.ProtoEnum(Name=@"GET_CACHE_MANAGEMENT_PORT", Value=94)]
+      GET_CACHE_MANAGEMENT_PORT = 94,
+            
+      [global::ProtoBuf.ProtoEnum(Name=@"GET_TOPIC", Value=95)]
+      GET_TOPIC = 95,
+            
+      [global::ProtoBuf.ProtoEnum(Name=@"SUBSCRIBE_TOPIC", Value=97)]
+      SUBSCRIBE_TOPIC = 97,
+            
+      [global::ProtoBuf.ProtoEnum(Name=@"REMOVE_TOPIC", Value=98)]
+      REMOVE_TOPIC = 98,
+            
+      [global::ProtoBuf.ProtoEnum(Name=@"UNSUBSCRIBE_TOPIC", Value=99)]
+      UNSUBSCRIBE_TOPIC = 99,
+            
+      [global::ProtoBuf.ProtoEnum(Name=@"MESSAGE_PUBLISH", Value=100)]
+      MESSAGE_PUBLISH = 100,
+            
+      [global::ProtoBuf.ProtoEnum(Name=@"GET_MESSAGE", Value=101)]
+      GET_MESSAGE = 101,
+            
+      [global::ProtoBuf.ProtoEnum(Name=@"MESSAGE_ACKNOWLEDGMENT", Value=102)]
+      MESSAGE_ACKNOWLEDGMENT = 102,
+            
+      [global::ProtoBuf.ProtoEnum(Name=@"PING", Value=103)]
+      PING = 103,
+            
+      [global::ProtoBuf.ProtoEnum(Name=@"MESSAGE_COUNT", Value=104)]
+      MESSAGE_COUNT = 104,
+            
+      [global::ProtoBuf.ProtoEnum(Name=@"GET_SERIALIZATION_FORMAT", Value=106)]
+      GET_SERIALIZATION_FORMAT = 106,
+            
+      [global::ProtoBuf.ProtoEnum(Name=@"GET_BULK_CACHEITEM", Value=107)]
+      GET_BULK_CACHEITEM = 107,
+            
+      [global::ProtoBuf.ProtoEnum(Name=@"CONTAINS_BULK", Value=108)]
+      CONTAINS_BULK = 108,
+
+      [global::ProtoBuf.ProtoEnum(Name=@"MODULE", Value=117)]
+      MODULE = 117,
+            
+      [global::ProtoBuf.ProtoEnum(Name=@"SURROGATE", Value=118)]
+      SURROGATE = 118
+
     }
   
     private global::ProtoBuf.IExtension extensionObject;

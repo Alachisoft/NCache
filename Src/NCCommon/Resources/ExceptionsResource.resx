@@ -1,0 +1,736 @@
+﻿<?xml version="1.0" encoding="utf-8"?>
+<root>
+  <!-- 
+    Microsoft ResX Schema 
+    
+    Version 2.0
+    
+    The primary goals of this format is to allow a simple XML format 
+    that is mostly human readable. The generation and parsing of the 
+    various data types are done through the TypeConverter classes 
+    associated with the data types.
+    
+    Example:
+    
+    ... ado.net/XML headers & schema ...
+    <resheader name="resmimetype">text/microsoft-resx</resheader>
+    <resheader name="version">2.0</resheader>
+    <resheader name="reader">System.Resources.ResXResourceReader, System.Windows.Forms, ...</resheader>
+    <resheader name="writer">System.Resources.ResXResourceWriter, System.Windows.Forms, ...</resheader>
+    <data name="Name1"><value>this is my long string</value><comment>this is a comment</comment></data>
+    <data name="Color1" type="System.Drawing.Color, System.Drawing">Blue</data>
+    <data name="Bitmap1" mimetype="application/x-microsoft.net.object.binary.base64">
+        <value>[base64 mime encoded serialized .NET Framework object]</value>
+    </data>
+    <data name="Icon1" type="System.Drawing.Icon, System.Drawing" mimetype="application/x-microsoft.net.object.bytearray.base64">
+        <value>[base64 mime encoded string representing a byte array form of the .NET Framework object]</value>
+        <comment>This is a comment</comment>
+    </data>
+                
+    There are any number of "resheader" rows that contain simple 
+    name/value pairs.
+    
+    Each data row contains a name, and value. The row also contains a 
+    type or mimetype. Type corresponds to a .NET class that support 
+    text/value conversion through the TypeConverter architecture. 
+    Classes that don't support this are serialized and stored with the 
+    mimetype set.
+    
+    The mimetype is used for serialized objects, and tells the 
+    ResXResourceReader how to depersist the object. This is currently not 
+    extensible. For a given mimetype the value must be set accordingly:
+    
+    Note - application/x-microsoft.net.object.binary.base64 is the format 
+    that the ResXResourceWriter will generate, however the reader can 
+    read any of the formats listed below.
+    
+    mimetype: application/x-microsoft.net.object.binary.base64
+    value   : The object must be serialized with 
+            : System.Runtime.Serialization.Formatters.Binary.BinaryFormatter
+            : and then encoded with base64 encoding.
+    
+    mimetype: application/x-microsoft.net.object.soap.base64
+    value   : The object must be serialized with 
+            : System.Runtime.Serialization.Formatters.Soap.SoapFormatter
+            : and then encoded with base64 encoding.
+
+    mimetype: application/x-microsoft.net.object.bytearray.base64
+    value   : The object must be serialized into a byte array 
+            : using a System.ComponentModel.TypeConverter
+            : and then encoded with base64 encoding.
+    -->
+  <xsd:schema id="root" xmlns="" xmlns:xsd="http://www.w3.org/2001/XMLSchema" xmlns:msdata="urn:schemas-microsoft-com:xml-msdata">
+    <xsd:import namespace="http://www.w3.org/XML/1998/namespace" />
+    <xsd:element name="root" msdata:IsDataSet="true">
+      <xsd:complexType>
+        <xsd:choice maxOccurs="unbounded">
+          <xsd:element name="metadata">
+            <xsd:complexType>
+              <xsd:sequence>
+                <xsd:element name="value" type="xsd:string" minOccurs="0" />
+              </xsd:sequence>
+              <xsd:attribute name="name" use="required" type="xsd:string" />
+              <xsd:attribute name="type" type="xsd:string" />
+              <xsd:attribute name="mimetype" type="xsd:string" />
+              <xsd:attribute ref="xml:space" />
+            </xsd:complexType>
+          </xsd:element>
+          <xsd:element name="assembly">
+            <xsd:complexType>
+              <xsd:attribute name="alias" type="xsd:string" />
+              <xsd:attribute name="name" type="xsd:string" />
+            </xsd:complexType>
+          </xsd:element>
+          <xsd:element name="data">
+            <xsd:complexType>
+              <xsd:sequence>
+                <xsd:element name="value" type="xsd:string" minOccurs="0" msdata:Ordinal="1" />
+                <xsd:element name="comment" type="xsd:string" minOccurs="0" msdata:Ordinal="2" />
+              </xsd:sequence>
+              <xsd:attribute name="name" type="xsd:string" use="required" msdata:Ordinal="1" />
+              <xsd:attribute name="type" type="xsd:string" msdata:Ordinal="3" />
+              <xsd:attribute name="mimetype" type="xsd:string" msdata:Ordinal="4" />
+              <xsd:attribute ref="xml:space" />
+            </xsd:complexType>
+          </xsd:element>
+          <xsd:element name="resheader">
+            <xsd:complexType>
+              <xsd:sequence>
+                <xsd:element name="value" type="xsd:string" minOccurs="0" msdata:Ordinal="1" />
+              </xsd:sequence>
+              <xsd:attribute name="name" type="xsd:string" use="required" />
+            </xsd:complexType>
+          </xsd:element>
+        </xsd:choice>
+      </xsd:complexType>
+    </xsd:element>
+  </xsd:schema>
+  <resheader name="resmimetype">
+    <value>text/microsoft-resx</value>
+  </resheader>
+  <resheader name="version">
+    <value>2.0</value>
+  </resheader>
+  <resheader name="reader">
+    <value>System.Resources.ResXResourceReader, System.Windows.Forms, Version=2.0.0.0, Culture=neutral, PublicKeyToken=b77a5c561934e089</value>
+  </resheader>
+  <resheader name="writer">
+    <value>System.Resources.ResXResourceWriter, System.Windows.Forms, Version=2.0.0.0, Culture=neutral, PublicKeyToken=b77a5c561934e089</value>
+  </resheader>
+  <data name="EM001" xml:space="preserve">
+    <value>Cluster can not be started on the given server port. The port might be already in use.</value>
+  </data>
+  <data name="EM002" xml:space="preserve">
+    <value>local address is null</value>
+  </data>
+  <data name="EM004" xml:space="preserve">
+    <value>Message can only contain an Array of messages or a ISerializable object</value>
+  </data>
+  <data name="EM005" xml:space="preserve">
+    <value>Index out of bounds</value>
+  </data>
+  <data name="EM006" xml:space="preserve">
+    <value>Specified object for message is not serializable</value>
+  </data>
+  <data name="EM007" xml:space="preserve">
+    <value>Invalid BindToIP address specified</value>
+  </data>
+  <data name="EM008" xml:space="preserve">
+    <value>Invalid initial memebers list</value>
+  </data>
+  <data name="EM009" xml:space="preserve">
+    <value>type</value>
+  </data>
+  <data name="EM010" xml:space="preserve">
+    <value>cmd</value>
+  </data>
+  <data name="EM011" xml:space="preserve">
+    <value>Interval()</value>
+  </data>
+  <data name="EM012" xml:space="preserve">
+    <value>socket closed</value>
+  </data>
+  <data name="EM013" xml:space="preserve">
+    <value>hints</value>
+  </data>
+  <data name="EM014" xml:space="preserve">
+    <value>properties</value>
+  </data>
+  <data name="EM015" xml:space="preserve">
+    <value>No cache instance defined</value>
+  </data>
+  <data name="EM016" xml:space="preserve">
+    <value>connection or query string is null</value>
+  </data>
+  <data name="EM017" xml:space="preserve">
+    <value>Missing configuration attribute 'cache'</value>
+  </data>
+  <data name="EM018" xml:space="preserve">
+    <value>Missing configuration attribute 'class'</value>
+  </data>
+  <data name="EM019" xml:space="preserve">
+    <value>Missing configuration section 'cache-classes'</value>
+  </data>
+  <data name="EM020" xml:space="preserve">
+    <value>Can not find cache class '</value>
+  </data>
+  <data name="EM021" xml:space="preserve">
+    <value>Can not find the type of cache, invalid configuration for cache class '</value>
+  </data>
+  <data name="EM022" xml:space="preserve">
+    <value>Your license for using NCache has expired. Please contact sales@alachisoft.com for further terms and conditions.</value>
+  </data>
+  <data name="EM023" xml:space="preserve">
+    <value>Specified cache class '</value>
+  </data>
+  <data name="EM024" xml:space="preserve">
+    <value>Backing source not available. Verify backing source settings</value>
+  </data>
+  <data name="EM025" xml:space="preserve">
+    <value>key</value>
+  </data>
+  <data name="EM026" xml:space="preserve">
+    <value>key is not serializable</value>
+  </data>
+  <data name="EM027" xml:space="preserve">
+    <value>group</value>
+  </data>
+  <data name="EM028" xml:space="preserve">
+    <value>keys</value>
+  </data>
+  <data name="EM029" xml:space="preserve">
+    <value>value</value>
+  </data>
+  <data name="EM030" xml:space="preserve">
+    <value>value is not serializable</value>
+  </data>
+  <data name="EM031" xml:space="preserve">
+    <value>expiryHint is not serializable</value>
+  </data>
+  <data name="EM032" xml:space="preserve">
+    <value>evictionHint is not serializable</value>
+  </data>
+  <data name="EM033" xml:space="preserve">
+    <value>notifId is not serializable</value>
+  </data>
+  <data name="EM034" xml:space="preserve">
+    <value>data is not serializable</value>
+  </data>
+  <data name="EM035" xml:space="preserve">
+    <value>expiryHint is not not serializable</value>
+  </data>
+  <data name="EM036" xml:space="preserve">
+    <value>Generic operation failure; not enough information is available.</value>
+  </data>
+  <data name="EM037" xml:space="preserve">
+    <value>The cache is full and not enough items could be evicted.</value>
+  </data>
+  <data name="EM038" xml:space="preserve">
+    <value>The specified key already exists.</value>
+  </data>
+  <data name="EM039" xml:space="preserve">
+    <value>items</value>
+  </data>
+  <data name="EM040" xml:space="preserve">
+    <value>keys count is not equals to values count</value>
+  </data>
+  <data name="EM041" xml:space="preserve">
+    <value>Group must be specified for Sub Group</value>
+  </data>
+  <data name="EM042" xml:space="preserve">
+    <value>query</value>
+  </data>
+  <data name="EM043" xml:space="preserve">
+    <value>Incorrect query format</value>
+  </data>
+  <data name="EM044" xml:space="preserve">
+    <value>Keys count can not be zero</value>
+  </data>
+  <data name="EM045" xml:space="preserve">
+    <value>The method or operation is not implemented.</value>
+  </data>
+  <data name="EM046" xml:space="preserve">
+    <value>Read through provider returned an object that is not serializable.</value>
+  </data>
+  <data name="EM047" xml:space="preserve">
+    <value>Operation failed to synchronize with data source</value>
+  </data>
+  <data name="EM048" xml:space="preserve">
+    <value>Missing assembly name for write-thru option</value>
+  </data>
+  <data name="EM049" xml:space="preserve">
+    <value>Missing class name for write-thru option</value>
+  </data>
+  <data name="EM050" xml:space="preserve">
+    <value>The class specified in write-thru does not implement IDatasourceWriter</value>
+  </data>
+  <data name="EM051" xml:space="preserve">
+    <value>Missing assembly name for read-thru option</value>
+  </data>
+  <data name="EM052" xml:space="preserve">
+    <value>Missing class name for read-thru option</value>
+  </data>
+  <data name="EM053" xml:space="preserve">
+    <value>The class specified in read-thru does not implement IDatasourceReader</value>
+  </data>
+  <data name="EM054" xml:space="preserve">
+    <value>Incorrect query format \'*\'</value>
+  </data>
+  <data name="EM055" xml:space="preserve">
+    <value>Syntax Error !</value>
+  </data>
+  <data name="EM056" xml:space="preserve">
+    <value>No attribute-index are defined</value>
+  </data>
+  <data name="EM057" xml:space="preserve">
+    <value>Incorrect query format \'</value>
+  </data>
+  <data name="EM058" xml:space="preserve">
+    <value>Index is not defined on attribute '</value>
+  </data>
+  <data name="EM059" xml:space="preserve">
+    <value>cache</value>
+  </data>
+  <data name="EM060" xml:space="preserve">
+    <value>operation failed because the group member was suspected</value>
+  </data>
+  <data name="EM061" xml:space="preserve">
+    <value>operation timed out</value>
+  </data>
+  <data name="EM062" xml:space="preserve">
+    <value>invalid or non-local class specified in partitioned cache</value>
+  </data>
+  <data name="EM063" xml:space="preserve">
+    <value>Data affinity conflict</value>
+  </data>
+  <data name="EM064" xml:space="preserve">
+    <value>One of the dependency keys does not exist.</value>
+  </data>
+  <data name="EM065" xml:space="preserve">
+    <value>No target node available to accommodate the data.</value>
+  </data>
+  <data name="EM066" xml:space="preserve">
+    <value>No servers available to process request</value>
+  </data>
+  <data name="EM067" xml:space="preserve">
+    <value>Specified dependency is non routable</value>
+  </data>
+  <data name="EM068" xml:space="preserve">
+    <value>Data group of the inserted item does not match the existing item's data group</value>
+  </data>
+  <data name="EM069" xml:space="preserve">
+    <value>Error setting up key depenedncy.</value>
+  </data>
+  <data name="EM070" xml:space="preserve">
+    <value>I am no more the owner of this bucket</value>
+  </data>
+  <data name="EM071" xml:space="preserve">
+    <value>Missing configuration option 'storage'</value>
+  </data>
+  <data name="EM072" xml:space="preserve">
+    <value>invalid or non-local cache class specified in composite cache</value>
+  </data>
+  <data name="EM073" xml:space="preserve">
+    <value>slidingExpiration</value>
+  </data>
+  <data name="EM074" xml:space="preserve">
+    <value>Can not find the type of cache, invalid configuration for cache class</value>
+  </data>
+  <data name="EM075" xml:space="preserve">
+    <value>Can not find channel properties</value>
+  </data>
+  <data name="EM076" xml:space="preserve">
+    <value>Invalid EOF</value>
+  </data>
+  <data name="EM077" xml:space="preserve">
+    <value>Invalid property string, un-matched paranthesis</value>
+  </data>
+  <data name="EM078" xml:space="preserve">
+    <value>Invalid property string, ) misplaced</value>
+  </data>
+  <data name="EM079" xml:space="preserve">
+    <value>Invalid property string, ) unexpected</value>
+  </data>
+  <data name="EM080" xml:space="preserve">
+    <value>Invalid property string, key following a bad token</value>
+  </data>
+  <data name="EM081" xml:space="preserve">
+    <value>Invalid property string, value following a bad token</value>
+  </data>
+  <data name="EM082" xml:space="preserve">
+    <value>Invalid property string</value>
+  </data>
+  <data name="EM083" xml:space="preserve">
+    <value>Error occured while reading configuration</value>
+  </data>
+  <data name="EM084" xml:space="preserve">
+    <value>Specified cache config. section '</value>
+  </data>
+  <data name="EM085" xml:space="preserve">
+    <value>Invalid Authentication Code</value>
+  </data>
+  <data name="EM086" xml:space="preserve">
+    <value>License not verified.</value>
+  </data>
+  <data name="EM087" xml:space="preserve">
+    <value>EvaluationLicense information is either missing or corrupted.</value>
+  </data>
+  <data name="EM088" xml:space="preserve">
+    <value>Your library has expired the evaluation period of</value>
+  </data>
+  <data name="EM089" xml:space="preserve">
+    <value>can not be registered with compact framework</value>
+  </data>
+  <data name="EM090" xml:space="preserve">
+    <value>Unable to initialize</value>
+  </data>
+  <data name="EM091" xml:space="preserve">
+    <value>You cannot set both sliding and absolute expirations on the same cached item.</value>
+  </data>
+  <data name="EM092" xml:space="preserve">
+    <value>dependencies</value>
+  </data>
+  <data name="EM093" xml:space="preserve">
+    <value>key cannot be empty string</value>
+  </data>
+  <data name="EM094" xml:space="preserve">
+    <value>Unable extracting query information from user object.</value>
+  </data>
+  <data name="EM095" xml:space="preserve">
+    <value>dependency is not serializable</value>
+  </data>
+  <data name="EM096" xml:space="preserve">
+    <value>syncDependency</value>
+  </data>
+  <data name="EM097" xml:space="preserve">
+    <value>Cache is not initialized</value>
+  </data>
+  <data name="EM098" xml:space="preserve">
+    <value>group must be specified for sub group</value>
+  </data>
+  <data name="EM099" xml:space="preserve">
+    <value>keys count is not equals to items count</value>
+  </data>
+  <data name="EM100" xml:space="preserve">
+    <value>There is no key present in keys array</value>
+  </data>
+  <data name="EM101" xml:space="preserve">
+    <value>items[</value>
+  </data>
+  <data name="EM102" xml:space="preserve">
+    <value>fileName</value>
+  </data>
+  <data name="EM103" xml:space="preserve">
+    <value>fileName cannot be an empty string</value>
+  </data>
+  <data name="EM104" xml:space="preserve">
+    <value>fileNames array must have atleast one file name</value>
+  </data>
+  <data name="EM105" xml:space="preserve">
+    <value>fileName cannot be empty string</value>
+  </data>
+  <data name="EM106" xml:space="preserve">
+    <value>cacheKey</value>
+  </data>
+  <data name="EM107" xml:space="preserve">
+    <value>cacheKey cannot be empty string</value>
+  </data>
+  <data name="EM108" xml:space="preserve">
+    <value>cacheId</value>
+  </data>
+  <data name="EM109" xml:space="preserve">
+    <value>cacheId cannot be an empty string</value>
+  </data>
+  <data name="EM110" xml:space="preserve">
+    <value>No server is available to process the request</value>
+  </data>
+  <data name="EM111" xml:space="preserve">
+    <value>Session state is not available in this context.</value>
+  </data>
+  <data name="EM112" xml:space="preserve">
+    <value>Missing installation folder information</value>
+  </data>
+  <data name="EM113" xml:space="preserve">
+    <value>An error occured while reading client.ncconf.</value>
+  </data>
+  <data name="EM114" xml:space="preserve">
+    <value>Invalid XmlNode \'</value>
+  </data>
+  <data name="EM115" xml:space="preserve">
+    <value>Input endIndex is not in correct format.</value>
+  </data>
+  <data name="EM116" xml:space="preserve">
+    <value>You cannot set both sliding and absolute expirations on the same cached item</value>
+  </data>
+  <data name="EM117" xml:space="preserve">
+    <value>Connection with server lost</value>
+  </data>
+  <data name="EM118" xml:space="preserve">
+    <value>Key</value>
+  </data>
+  <data name="EM119" xml:space="preserve">
+    <value>'Client.ncconf' not found or does not contain server information</value>
+  </data>
+  <data name="EM120" xml:space="preserve">
+    <value>Connection to a remote server is not allowed in this edition of NCache</value>
+  </data>
+  <data name="EM121" xml:space="preserve">
+    <value>ncache-server-port missing in client confiugration</value>
+  </data>
+  <data name="EM122" xml:space="preserve">
+    <value>application</value>
+  </data>
+  <data name="EM123" xml:space="preserve">
+    <value>data</value>
+  </data>
+  <data name="EM124" xml:space="preserve">
+    <value>Cache is not running. For more information see Application Log.</value>
+  </data>
+  <data name="EM125" xml:space="preserve">
+    <value>Invalid configuration; missing 'web-cache' element.</value>
+  </data>
+  <data name="EM126" xml:space="preserve">
+    <value>'cache-id' not specified in configuration.</value>
+  </data>
+  <data name="EM127" xml:space="preserve">
+    <value>Can not locate cache configuration file. Installation might be corrupt</value>
+  </data>
+  <data name="EM128" xml:space="preserve">
+    <value>You do not have permissions to perform this operation</value>
+  </data>
+  <data name="EM129" xml:space="preserve">
+    <value>Can not locate cache configuration file. Installation might be corrupt.</value>
+  </data>
+  <data name="EM130" xml:space="preserve">
+    <value>Cache ID can not be null</value>
+  </data>
+  <data name="EM131" xml:space="preserve">
+    <value>Specified cacheId is not registered</value>
+  </data>
+  <data name="EM132" xml:space="preserve">
+    <value>Null value for settings.</value>
+  </data>
+  <data name="EM133" xml:space="preserve">
+    <value>Already registered.</value>
+  </data>
+  <data name="EM134" xml:space="preserve">
+    <value>Failed to stop the cache</value>
+  </data>
+  <data name="EM135" xml:space="preserve">
+    <value>Failed to apply configuration</value>
+  </data>
+  <data name="EM136" xml:space="preserve">
+    <value>Assembly name can not be null</value>
+  </data>
+  <data name="EM137" xml:space="preserve">
+    <value>Type can not be null</value>
+  </data>
+  <data name="EM138" xml:space="preserve">
+    <value>settings not found in cluster map</value>
+  </data>
+  <data name="EM139" xml:space="preserve">
+    <value>settings not found in local cache map</value>
+  </data>
+  <data name="EM140" xml:space="preserve">
+    <value>Cache '</value>
+  </data>
+  <data name="EM141" xml:space="preserve">
+    <value>This project file seems to be of an older version. Please create a new project.</value>
+  </data>
+  <data name="EM142" xml:space="preserve">
+    <value>Invalid project file</value>
+  </data>
+  <data name="EM143" xml:space="preserve">
+    <value>Failed to update configuration.</value>
+  </data>
+  <data name="EM144" xml:space="preserve">
+    <value>Not running.</value>
+  </data>
+  <data name="EM145" xml:space="preserve">
+    <value>is not available</value>
+  </data>
+  <data name="EM146" xml:space="preserve">
+    <value>A cache exists with the same name</value>
+  </data>
+  <data name="EM147" xml:space="preserve">
+    <value>Some error occured on the remote server</value>
+  </data>
+  <data name="EM148" xml:space="preserve">
+    <value>already exists in</value>
+  </data>
+  <data name="EM149" xml:space="preserve">
+    <value>Please specify a valid multicast address</value>
+  </data>
+  <data name="EM150" xml:space="preserve">
+    <value>Please specify a valid server port</value>
+  </data>
+  <data name="EM151" xml:space="preserve">
+    <value>NCache Queries only support premitive types. \</value>
+  </data>
+  <data name="EM152" xml:space="preserve">
+    <value>Node already have cluster '</value>
+  </data>
+  <data name="EM153" xml:space="preserve">
+    <value>context cannot be null.</value>
+  </data>
+  <data name="EM154" xml:space="preserve">
+    <value>session state is not available in this context.</value>
+  </data>
+  <data name="EM155" xml:space="preserve">
+    <value>Object is not HPTime</value>
+  </data>
+  <data name="EM156" xml:space="preserve">
+    <value>Unable to allocate plaintext buffer.</value>
+  </data>
+  <data name="EM157" xml:space="preserve">
+    <value>Exception marshalling data.</value>
+  </data>
+  <data name="EM158" xml:space="preserve">
+    <value>Unable to allocate entropy data buffer.</value>
+  </data>
+  <data name="EM159" xml:space="preserve">
+    <value>Exception entropy marshalling data.</value>
+  </data>
+  <data name="EM160" xml:space="preserve">
+    <value>Encryption failed.</value>
+  </data>
+  <data name="EM161" xml:space="preserve">
+    <value>Exception encrypting.</value>
+  </data>
+  <data name="EM162" xml:space="preserve">
+    <value>Unable to allocate cipherText buffer.</value>
+  </data>
+  <data name="EM163" xml:space="preserve">
+    <value>Unable to allocate entropy buffer.</value>
+  </data>
+  <data name="EM164" xml:space="preserve">
+    <value>Decryption failed.</value>
+  </data>
+  <data name="EM165" xml:space="preserve">
+    <value>Exception decrypting.</value>
+  </data>
+  <data name="EM166" xml:space="preserve">
+    <value>Failed to format message for error code</value>
+  </data>
+  <data name="EM167" xml:space="preserve">
+    <value>Missing log path</value>
+  </data>
+  <data name="EM168" xml:space="preserve">
+    <value>storageProvider</value>
+  </data>
+  <data name="EM169" xml:space="preserve">
+    <value>Missing cache store class.</value>
+  </data>
+  <data name="EM170" xml:space="preserve">
+    <value>_mvPtr</value>
+  </data>
+  <data name="EM171" xml:space="preserve">
+    <value>hFile</value>
+  </data>
+  <data name="EM172" xml:space="preserve">
+    <value>protection</value>
+  </data>
+  <data name="EM173" xml:space="preserve">
+    <value>offSet</value>
+  </data>
+  <data name="EM174" xml:space="preserve">
+    <value>count</value>
+  </data>
+  <data name="EM175" xml:space="preserve">
+    <value>Limited Virtual Memory. Your system has no paging file, or the paging file is too small.</value>
+  </data>
+  <data name="EM176" xml:space="preserve">
+    <value>maxLength</value>
+  </data>
+  <data name="EM177" xml:space="preserve">
+    <value>info</value>
+  </data>
+  <data name="EM178" xml:space="preserve">
+    <value>item</value>
+  </data>
+  <data name="EM179" xml:space="preserve">
+    <value>item size is larger than view size</value>
+  </data>
+  <data name="EM180" xml:space="preserve">
+    <value>Type</value>
+  </data>
+  <data name="EM181" xml:space="preserve">
+    <value>No appropriate surrogate found for type</value>
+  </data>
+  <data name="EM182" xml:space="preserve">
+    <value>cacheContext can not be null</value>
+  </data>
+  <data name="EM183" xml:space="preserve">
+    <value>Type '</value>
+  </data>
+  <data name="EM184" xml:space="preserve">
+    <value>Type handle</value>
+  </data>
+  <data name="EM185" xml:space="preserve">
+    <value>surrogate</value>
+  </data>
+  <data name="EM186" xml:space="preserve">
+    <value>Specified type handle is already registered.</value>
+  </data>
+  <data name="EM187" xml:space="preserve">
+    <value>config</value>
+  </data>
+  <data name="EM188" xml:space="preserve">
+    <value>cacheName</value>
+  </data>
+  <data name="EM189" xml:space="preserve">
+    <value>RetrieveToken returned null</value>
+  </data>
+  <data name="EM190" xml:space="preserve">
+    <value>Table sizes not initialized</value>
+  </data>
+  <data name="EM191" xml:space="preserve">
+    <value>Table counts not initialized</value>
+  </data>
+  <data name="EM192" xml:space="preserve">
+    <value>Wrong id for record</value>
+  </data>
+  <data name="EM193" xml:space="preserve">
+    <value>Action for LALR state is null</value>
+  </data>
+  <data name="EM194" xml:space="preserve">
+    <value>Error constructing GrammarReader</value>
+  </data>
+  <data name="EM195" xml:space="preserve">
+    <value>Incorrect file header</value>
+  </data>
+  <data name="EM196" xml:space="preserve">
+    <value>User not found</value>
+  </data>
+  <data name="EM197" xml:space="preserve">
+    <value>The provided IIdentity object is null.</value>
+  </data>
+  <data name="EM198" xml:space="preserve">
+    <value>The provided IIdentity object is incomplete or invalid.</value>
+  </data>
+  <data name="EM199" xml:space="preserve">
+    <value>principal</value>
+  </data>
+  <data name="EM200" xml:space="preserve">
+    <value>ruleName</value>
+  </data>
+  <data name="EM201" xml:space="preserve">
+    <value>name</value>
+  </data>
+  <data name="EM202" xml:space="preserve">
+    <value>Missing security config file</value>
+  </data>
+  <data name="EM203" xml:space="preserve">
+    <value>Cache is not registered</value>
+  </data>
+  <data name="EM204" xml:space="preserve">
+    <value>Cache is not running</value>
+  </data>
+  <data name="EM205" xml:space="preserve">
+    <value>Server can not accept remote clients in this edition of NCache</value>
+  </data>
+   <data name="EM206" xml:space="preserve">
+    <value>Operation could not be completed due to a timeout.</value>
+  </data>
+
+</root>

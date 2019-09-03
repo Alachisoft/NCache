@@ -1,71 +1,152 @@
-// Copyright (c) 2017 Alachisoft
-// 
-// Licensed under the Apache License, Version 2.0 (the "License");
-// you may not use this file except in compliance with the License.
-// You may obtain a copy of the License at
-// 
-//    http://www.apache.org/licenses/LICENSE-2.0
-// 
-// Unless required by applicable law or agreed to in writing, software
-// distributed under the License is distributed on an "AS IS" BASIS,
-// WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
-// See the License for the specific language governing permissions and
-// limitations under the License.
-
+//  Copyright (c) 2019 Alachisoft
+//  
+//  Licensed under the Apache License, Version 2.0 (the "License");
+//  you may not use this file except in compliance with the License.
+//  You may obtain a copy of the License at
+//  
+//     http://www.apache.org/licenses/LICENSE-2.0
+//  
+//  Unless required by applicable law or agreed to in writing, software
+//  distributed under the License is distributed on an "AS IS" BASIS,
+//  WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+//  See the License for the specific language governing permissions and
+//  limitations under the License
 using System.Collections;
+using System.Threading;
 using Alachisoft.NCache.Caching.Exceptions;
 using Alachisoft.NCache.Caching.Statistics;
 using Alachisoft.NCache.Common;
 using Alachisoft.NCache.Common.DataStructures.Clustered;
+using System;
 using Alachisoft.NCache.Common.Locking;
+using System.Collections.Generic;
+
+using Alachisoft.NCache.Caching.Messaging;
+using Alachisoft.NCache.Common.Enum;
+using Alachisoft.NCache.Caching.Topologies.Clustered.Operations;
+using Alachisoft.NCache.Caching.Pooling;
+using Alachisoft.NCache.Common.Pooling;
+using Alachisoft.NCache.Util;
+
 
 namespace Alachisoft.NCache.Caching.Topologies.Local
 {
-    class HashedLocalCache : IndexedLocalCache
+    class HashedLocalCache : LocalCache,ISizableIndex
     {
         private int _bucketSize;
 
         /// <summary>
         /// A map that contains key lists against each bucket id.
         /// </summary>
-        private HashVector _keyList;
+        /// 
+        private BucketStatistcs[] _keyList= new BucketStatistcs[AppUtil.MAX_BUCKETS];
         private int _stopLoggingThreshhold = 50;
-        private long _keyListSize = 0;
-
+        private long _inMemorySize = 0;
         private OpLogManager _logMgr;
-
+      
+        private object _filterMutex = new object();
+        
         private readonly SemaphoreLock _keyListLock = new SemaphoreLock();
+        private Thread _thread;
+        private object _bucketStatsMutex = new object();
+        //This lock is intended to synchronize user operations and state transfer. State transfer operations can only take WRITER lock.
+        private ReaderWriterLockSlim _rwBucketsLock = new ReaderWriterLockSlim(LockRecursionPolicy.SupportsRecursion);
 
         public HashedLocalCache(IDictionary cacheClasses, CacheBase parentCache, IDictionary properties, ICacheEventsListener listener, CacheRuntimeContext context, bool logEntries)
             : base(cacheClasses, parentCache, properties, listener, context)
         {
             _logMgr = new OpLogManager(logEntries, context);
-            _stats.LocalBuckets = new HashVector();
+            _stats.LocalBuckets = new BucketStatistics[AppUtil.MAX_BUCKETS];
+            _cacheStore.ISizableBucketIndexManager = this;
+
+            _thread = new Thread(UpdateStats)
+            {
+                Name = "UpdateStats",
+                IsBackground = true
+            };
+
+            _thread.Start();
         }
 
         public override int BucketSize
         {
-            set { _bucketSize = value; }
+            set 
+            {
+                _bucketSize = value;
+            }
         }
 
-        public override HashVector LocalBuckets
+        public override BucketStatistics[] LocalBuckets
         {
             get { return _stats.LocalBuckets; }
-            set { _stats.LocalBuckets = value; }
+        }
+
+        private void UpdatePendingBucketStats()
+        {
+            lock (_bucketStatsOperations)
+            {
+                int count = _bucketStatsOperations.Count;
+
+                while (count > 0)
+                {
+                    BucketStatsOperation statsOperation = _bucketStatsOperations.Dequeue();
+
+                    try
+                    {
+                        switch (statsOperation.Type)
+                        {
+                            case OperationType.Add:
+                                IncrementBucketStats(statsOperation.Key as string, statsOperation.BucketId, statsOperation.Size, statsOperation.IsMessage, statsOperation.Topic);
+                                break;
+                            case OperationType.Insert:
+                                switch (statsOperation.InsResult)
+                                {
+                                    case CacheInsResult.SuccessNearEvicition:
+                                    case CacheInsResult.Success:
+                                        IncrementBucketStats(statsOperation.Key as string, statsOperation.BucketId, statsOperation.Size, statsOperation.IsMessage, statsOperation.Topic);
+                                        break;
+
+                                    case CacheInsResult.SuccessOverwriteNearEviction:
+                                    case CacheInsResult.SuccessOverwrite:
+                                        DecrementBucketStats(statsOperation.Key as string, statsOperation.BucketId, statsOperation.OldSize, statsOperation.IsMessage, statsOperation.Topic);
+                                        IncrementBucketStats(statsOperation.Key as string, statsOperation.BucketId, statsOperation.Size, statsOperation.IsMessage, statsOperation.Topic);
+                                        break;
+                                }
+                                break;
+                            case OperationType.Delete:
+                                DecrementBucketStats(statsOperation.Key as string, statsOperation.BucketId, statsOperation.Size, statsOperation.IsMessage, statsOperation.Topic);
+                                break;
+                        }
+                    }
+                    catch (Exception e)
+                    {
+                        _context.NCacheLog.Error("HashedLocalCache.UpdatePendingBucketStats", e.ToString());
+                    }
+
+                    count--;
+                }
+            }
         }
 
         public override void GetKeyList(int bucketId, bool startLogging, out ClusteredArrayList keyList)
         {
-            if (startLogging)
-                _logMgr.StartLogging(bucketId, LogMode.LogBeforeAfterActualOperation);
-            keyList = new ClusteredArrayList();
-            if (_keyList != null)
+            try
             {
-                if (_keyList.Contains(bucketId))
+                UpdatePendingBucketStats();
+               // _rwBucketsLock.EnterWriteLock();
+                if (startLogging)
+                    _logMgr.StartLogging(bucketId, LogMode.LogBeforeAfterActualOperation);
+
+                keyList = new ClusteredArrayList();
+                BucketStatistcs stats = _keyList[bucketId];
+                if (stats!=null)
                 {
-                    HashVector keyTbl = _keyList[bucketId] as HashVector;
-                    keyList.AddRange(keyTbl.Keys);
+                   keyList = stats.GetCacheKeys();  
                 }
+            }
+            finally
+            {
+              //  _rwBucketsLock.ExitWriteLock();
             }
         }
 
@@ -77,11 +158,42 @@ namespace Alachisoft.NCache.Caching.Topologies.Local
         /// <param name="bucketId"></param>
         public override void StartLogging(int bucketId)
         {
-            if (_logMgr != null) _logMgr.StartLogging(bucketId, LogMode.LogBeforeActualOperation);
+            try
+            {
+                _rwBucketsLock.EnterWriteLock();
+                if (_logMgr != null)
+                {
+                    _logMgr.StartLogging(bucketId, LogMode.LogBeforeActualOperation);
+                }
+            }
+            finally
+            {
+                _rwBucketsLock.ExitWriteLock();
+            }
         }
 
+        public override void PrepareBucketForStateTrxfer(int bucketId)
+        {
+            try
+            {
+                _rwBucketsLock.EnterWriteLock();
 
-        public override Hashtable GetLogTable(ArrayList bucketIds, ref bool isLoggingStopped)
+                if (LocalBuckets != null && LocalBuckets[bucketId] != null)
+                {
+                    BucketStatistics statistics = LocalBuckets[bucketId] as BucketStatistics;
+                    statistics.IsStateTransferStarted = true;
+                }
+
+            }
+            finally
+            {
+                _rwBucketsLock.ExitWriteLock();
+            }
+        }
+
+       
+
+        public override Hashtable GetLogTable(ArrayList bucketIds, ref bool isLoggingStopped, OPLogType type = OPLogType.Cache)
         {
             Hashtable result = null;
             int logCount = 0;
@@ -123,98 +235,122 @@ namespace Alachisoft.NCache.Caching.Topologies.Local
             return result;
         }
 
-        private void IncrementBucketStats(string key, int bucketId, long dataSize)
+        private void IncrementBucketStats(string cacheKeyOrMessageId, int bucketId, long dataSize, bool isMessage, string topic)
         {
-            if (_stats.LocalBuckets != null && _stats.LocalBuckets.Contains(bucketId))
+            if (_stats.LocalBuckets != null)
             {
-                ((BucketStatistics)_stats.LocalBuckets[bucketId]).Increment(dataSize);
+                BucketStatistics bStats = _stats.LocalBuckets[bucketId];
+                if (bStats != null)
+                {
+                    if (isMessage)
+                        bStats.IncrementTopicStats(topic, dataSize);
+                    else
+                        bStats.Increment(dataSize);
+                }
+            }
+            
+            _stats.IncrementUpdateCount();
+
+                HashVector keys;
+                BucketStatistcs bucketStats = _keyList[bucketId];
+                bool isKeyExist = false;
+
+                if (bucketStats == null)
+                {
+                    bucketStats = new BucketStatistcs(bucketId);
+                    _keyList[bucketId] = bucketStats;
+                }
+
+                long oldSize = bucketStats.InMemorySize;
+                lock (bucketStats)
+                {
+                    if (isMessage)
+                        bucketStats.AddMessage(topic, cacheKeyOrMessageId);
+                    else
+                        bucketStats.AddCacheKey(cacheKeyOrMessageId);
+                }
+                long newSize = bucketStats.InMemorySize;
+                _inMemorySize += (newSize - oldSize);
+
+                // TODO: [Umer] need to know what is this ? Found during Merge
+                //isKeyExist = true;
+                //if (isKeyExist) return;
+        }
+
+        private void DecrementBucketStats(string cacheKeyOrMessageId, int bucketId, long dataSize, bool isMessage, string topic)
+        {
+            if (_stats.LocalBuckets != null)
+            {
+                BucketStatistics bStats = _stats.LocalBuckets[bucketId];
+                if (bStats != null)
+                {
+                    if (isMessage)
+                        bStats.DecrementTopicStats(topic, dataSize);
+                    else
+                        bStats.Decrement(dataSize);
+                }
             }
 
-            if (_keyList == null)
-                _keyList = new HashVector();
+            _stats.IncrementUpdateCount();
 
-            if (_keyList != null)
+            bool isKeysEmpty = false;
+            HashVector keys = null;
+            BucketStatistcs bucketStats = _keyList[bucketId];
+            if (bucketStats != null)
             {
-                HashVector keys;
-                bool isKeyExist = false;
-        
-                _keyListLock.Enter();
+                long oldSize = bucketStats.InMemorySize;
+                long newSize = 0;
 
-                if (!_keyList.Contains(bucketId))
+                lock (bucketStats)
                 {
-                    keys = new HashVector();
-                    keys[key] = null;
-                    long keySize = keys.BucketCount * MemoryUtil.NetHashtableOverHead;
-                    long currentsize = _keyListSize;
-                    _keyListSize = currentsize + keySize;
-                    _keyList[bucketId] = keys;
-                    isKeyExist = true;
-                }
+                    if (isMessage)
+                        bucketStats.RemoveMessage(topic, cacheKeyOrMessageId);
+                    else
+                        bucketStats.RemoveCacheKey(cacheKeyOrMessageId);
 
-                _keyListLock.Exit();
-         
-                if (isKeyExist) return;
-                keys = (HashVector)_keyList[bucketId];
-                long oldSize = keys.BucketCount * MemoryUtil.NetHashtableOverHead;
-                lock (keys)
-                {
-                    keys[key] = null;
+                    newSize = bucketStats.InMemorySize;
                 }
-                long newSize = keys.BucketCount * MemoryUtil.NetHashtableOverHead;
-                long tmpsize = _keyListSize;
-                _keyListSize = tmpsize + (newSize - oldSize);
+                long currentsize = _inMemorySize;
+
+                _inMemorySize = currentsize + (newSize - oldSize);
+
+                if (_inMemorySize < 0) _inMemorySize = 0;
             }
         }
 
-        private void DecrementBucketStats(string key, int bucketId, long dataSize)
+        private void RemoveTopicStats(string topic)
         {
-            if (_stats.LocalBuckets != null && _stats.LocalBuckets.Contains(bucketId))
+            lock (_bucketStatsMutex)
             {
-                ((BucketStatistics)_stats.LocalBuckets[bucketId]).Decrement(dataSize);
-            }
-            bool isKeysEmpty = false;
-            HashVector keys = null;
-            if (_keyList != null)
-            {
-
-                _keyListLock.Enter();
-
-                    if (_keyList.Contains(bucketId))
-                    {
-                        keys = (HashVector)_keyList[bucketId];
-                    }
-
-                _keyListLock.Exit();
-
-                if (keys != null)
+                if (_stats.LocalBuckets != null)
                 {
-                    long oldSize = keys.BucketCount * MemoryUtil.NetHashtableOverHead;
-                    long newSize = 0;
-                    lock (keys)
+                    foreach (var stats in _stats.LocalBuckets)
                     {
-                        keys.Remove(key);
-                        if (keys.Count != 0)
-                            newSize = keys.BucketCount * MemoryUtil.NetHashtableOverHead;
-                        else
-                            isKeysEmpty = true;
+                        if(stats!=null)
+                            stats.RemoveTopic(topic);
                     }
-                    long currentsize = _keyListSize;
-                    _keyListSize = currentsize + (newSize - oldSize);
-                    if (isKeysEmpty)
-                    {
-                        _keyListLock.Enter();
-
-                            _keyList.Remove(bucketId);
-
-                             _keyListLock.Exit();
-                    }
-                    if (_keyListSize < 0) _keyListSize = 0;
                 }
             }
+            foreach (BucketStatistcs bucketStats in _keyList)
+            {
+                if (bucketStats != null)
+                {
+                    long oldSize = bucketStats.InMemorySize;
+                    long newSize;
+                    lock (bucketStats)
+                    {
+                        bucketStats.RemoveTopic(topic);
+                        newSize = bucketStats.InMemorySize;
+                    }
+                    _inMemorySize = _inMemorySize + (newSize - oldSize);
+                }
+            }
+
+            if (_inMemorySize < 0) _inMemorySize = 0;
         }
 
         private int GetBucketId(string key)
-        {
+        {            
             int hashCode = AppUtil.GetHashCode(key);
             int bucketId = hashCode / _bucketSize;
 
@@ -222,13 +358,20 @@ namespace Alachisoft.NCache.Caching.Topologies.Local
                 bucketId *= -1;
             return bucketId;
         }
+
         public override void RemoveFromLogTbl(int bucketId)
         {
             if (_logMgr != null)
                 _logMgr.RemoveLogger(bucketId);
         }
-        public override void AddLoggedData(ArrayList bucketIds)
+
+        public override void AddLoggedData(ArrayList bucketIds, OPLogType type= OPLogType.Cache)
         {
+             AddLoggedEntriesInternal(bucketIds);
+        }
+
+        private void AddLoggedEntriesInternal(ArrayList bucketIds)
+            {
             if (bucketIds != null)
             {
                 IEnumerator ie = bucketIds.GetEnumerator();
@@ -241,28 +384,81 @@ namespace Alachisoft.NCache.Caching.Topologies.Local
                         {
                             Hashtable removed = loggedEnteries["removed"] as Hashtable;
                             Hashtable updated = loggedEnteries["updated"] as Hashtable;
+                            ArrayList messageOperatons = loggedEnteries["messageops"] as ArrayList;
+                            Hashtable collectionOperations = loggedEnteries["collectionops"] as Hashtable;
 
                             if (removed != null && removed.Count > 0)
                             {
                                 IDictionaryEnumerator ide = removed.GetEnumerator();
                                 while (ide.MoveNext())
                                 {
-                                    Remove(ide.Key, ItemRemoveReason.Removed, false, null, LockAccessType.IGNORE_LOCK, new OperationContext(OperationContextFieldName.OperationType, OperationContextOperationType.CacheOperation));
+                                    OperationContext operationContext = null;
+
+                                    try
+                                    {
+                                        operationContext = OperationContext.CreateAndMarkInUse(
+                                            Context.TransactionalPoolManager, NCModulesConstants.CacheInternal, OperationContextFieldName.OperationType, OperationContextOperationType.CacheOperation
+                                        );
+                                        operationContext.CloneCacheEntry = false;
+                                        operationContext.NeedUserPayload = false;
+                                        Remove(ide.Key, ItemRemoveReason.Removed, false, null, 0, LockAccessType.IGNORE_LOCK, operationContext);
+                                    }
+                                    finally
+                                    {
+                                        MiscUtil.ReturnOperationContextToPool(operationContext, _context.TransactionalPoolManager);
+                                        operationContext?.MarkFree(NCModulesConstants.CacheInternal);
+                                    }
                                 }
                             }
 
                             if (updated != null && updated.Count > 0)
                             {
                                 IDictionaryEnumerator ide = updated.GetEnumerator();
+                                CacheEntry entry = null;
                                 while (ide.MoveNext())
                                 {
-                                    CacheEntry entry = ide.Value as CacheEntry;
-                                    if (entry != null)
+                                    OperationContext operationContext = null;
+                                    try
                                     {
-                                        Add(ide.Key, entry, false, false, new OperationContext(OperationContextFieldName.OperationType, OperationContextOperationType.CacheOperation));
+                                        entry = ide.Value as CacheEntry;
+                                        if (entry != null) 
+                                        {
+                                            operationContext = OperationContext.CreateAndMarkInUse(
+                                             Context.TransactionalPoolManager, NCModulesConstants.CacheInternal, OperationContextFieldName.OperationType, OperationContextOperationType.CacheOperation
+                                         );
+                                            entry.MarkInUse(NCModulesConstants.CacheInternal);
+                                                Add(ide.Key, entry, false, false, new OperationContext(OperationContextFieldName.OperationType, OperationContextOperationType.CacheOperation));
+                                        }
+                                    }
+                                    finally
+                                    {
+                                        MiscUtil.ReturnOperationContextToPool(operationContext, _context.TransactionalPoolManager);
+                                        operationContext?.MarkFree(NCModulesConstants.CacheInternal);
+                                        if (entry != null)
+                                            entry.MarkFree(NCModulesConstants.CacheInternal);
+
+                                        //This entry was initially allocted on transactional pool, then logged but not added to store
+                                        //Above Add call will automatically allocate another entry from store pool
+                                        MiscUtil.ReturnEntryToPool(entry, _context.TransactionalPoolManager);
                                     }
                                 }
                             }
+
+                            if (messageOperatons != null)
+                            {
+                                foreach (object operation in messageOperatons)
+                                {
+                                    try
+                                    {
+                                        ((Clustered.ClusterCacheBase)_context.CacheImpl).ApplyMessageOperation(operation);
+                                    }
+                                    catch (Exception)
+                                    {
+                                    }
+                                }
+                            }
+
+                           
                         }
                         //disable logging for this bucket...
                         _logMgr.RemoveLogger((int)ie.Current);
@@ -270,34 +466,96 @@ namespace Alachisoft.NCache.Caching.Topologies.Local
                 }
             }
         }
+
         public override void RemoveBucketData(int bucketId)
         {
-            ClusteredArrayList keys;
-            GetKeyList(bucketId, false, out keys);
-            if (keys != null)
+            OperationContext operationContext = null;
+
+            try
             {
-                keys = keys.Clone() as ClusteredArrayList;
-                IEnumerator ie = keys.GetEnumerator();
-                while (ie.MoveNext())
+                _rwBucketsLock.EnterWriteLock();
+
+                ClusteredArrayList keys;
+                GetKeyList(bucketId, false, out keys);
+                if (keys != null)
                 {
-                    if (ie.Current != null)
+                    keys = keys.Clone() as ClusteredArrayList;
+                    IEnumerator ie = keys.GetEnumerator();
+                    while (ie.MoveNext())
                     {
-                        Remove(ie.Current, ItemRemoveReason.Removed, false, false, null, LockAccessType.IGNORE_LOCK, new OperationContext(OperationContextFieldName.OperationType, OperationContextOperationType.CacheOperation));
+                        if (ie.Current != null)
+                        {
+                            OperationContext removeCallOperationContext = null;
+
+                            try
+                            {
+                                removeCallOperationContext = OperationContext.CreateAndMarkInUse(
+                                    Context.TransactionalPoolManager, NCModulesConstants.CacheInternal, OperationContextFieldName.OperationType, OperationContextOperationType.CacheOperation
+                                );
+                                removeCallOperationContext.CloneCacheEntry = false;
+                                removeCallOperationContext.NeedUserPayload = false;
+                                Remove(ie.Current, ItemRemoveReason.Removed, false, false, null, 0, LockAccessType.IGNORE_LOCK, removeCallOperationContext);
+                            }
+                            finally
+                            {
+                                MiscUtil.ReturnOperationContextToPool(removeCallOperationContext, _context.TransactionalPoolManager);
+                                removeCallOperationContext?.MarkFree(NCModulesConstants.CacheInternal);
+                            }
+                        }
                     }
+
                 }
 
+                //remove messages
+                OrderedDictionary topicWiseMessages = GetMessageList(bucketId,true);
+                MessageInfo message = new MessageInfo();
+                operationContext = OperationContext.CreateAndMarkInUse(
+                    Context.TransactionalPoolManager, NCModulesConstants.CacheInternal, OperationContextFieldName.InternalOperation, true
+                );
+
+                foreach (DictionaryEntry entry in topicWiseMessages)
+                {
+                    message.Topic = entry.Key as string;
+
+                    foreach (string messageId in entry.Value as ClusteredArrayList)
+                    {
+                        message.MessageId = messageId;
+                        RemoveMessagesInternal(message, MessageRemovedReason.Delivered, operationContext);
+                    }
+                }
+            }
+            finally
+            {
+                MiscUtil.ReturnOperationContextToPool(operationContext, _context.TransactionalPoolManager);
+                operationContext?.MarkFree(NCModulesConstants.CacheInternal);
+                _rwBucketsLock.ExitWriteLock();
             }
         }
 
         public override void RemoveBucket(int bucket)
         {
-            if (Context.NCacheLog.IsInfoEnabled) Context.NCacheLog.Info("HashedCache.RemoveBucket", "removing bucket :" + bucket);
-            //Remove from stats
-            if (LocalBuckets != null) LocalBuckets.Remove(bucket);
-            //Remove actual data of the bucket
-            RemoveBucketData(bucket);
-            //remove operation logger for the bucket from log table if any exists.
-            RemoveFromLogTbl(bucket);
+            try
+            {
+                _rwBucketsLock.EnterWriteLock();
+                if (Context.NCacheLog.IsInfoEnabled) Context.NCacheLog.Info("HashedCache.RemoveBucket", "removing bucket :" + bucket);
+                //Remove from stats
+                if (LocalBuckets != null)
+                {
+                    lock (_bucketStatsMutex)
+                    {
+                        LocalBuckets[bucket]=null;
+                    }
+                }
+
+                //Remove actual data of the bucket
+                RemoveBucketData(bucket);
+                //remove operation logger for the bucket from log table if any exists.
+                RemoveFromLogTbl(bucket);
+            }
+            finally
+            {
+                _rwBucketsLock.ExitWriteLock();
+            }
         }
 
         /// <summary>
@@ -321,11 +579,14 @@ namespace Alachisoft.NCache.Caching.Topologies.Local
             while (ie.MoveNext())
             {
                 if (LocalBuckets == null)
-                    LocalBuckets = new HashVector();
+                    LocalBuckets = new BucketStatistics[AppUtil.MAX_BUCKETS];
 
-                if (!LocalBuckets.Contains(ie.Current))
+                lock (_bucketStatsMutex)
                 {
-                    LocalBuckets[ie.Current] = new BucketStatistics();
+                    if (LocalBuckets[(int)ie.Current]==null)
+                    {
+                        LocalBuckets[(int)ie.Current] = new BucketStatistics();
+                    } 
                 }
             }
         }
@@ -335,25 +596,54 @@ namespace Alachisoft.NCache.Caching.Topologies.Local
         internal override CacheAddResult AddInternal(object key, CacheEntry cacheEntry, bool isUserOperation, OperationContext operationContext)
         {
             int bucketId = GetBucketId(key as string);
-
-            if (_logMgr.IsOperationAllowed(bucketId) && LocalBuckets.Contains(bucketId))
+            CacheEntry clone = null;
+            try
             {
-                if (_logMgr.IsLoggingEnbaled(bucketId, LogMode.LogBeforeActualOperation) && isUserOperation)
+                operationContext?.MarkInUse(NCModulesConstants.LocalBase);
+                cacheEntry?.MarkInUse(NCModulesConstants.LocalCache);
+
+                if (_logMgr.IsOperationAllowed(bucketId) && LocalBuckets[bucketId]!=null)
                 {
-                    _logMgr.LogOperation(bucketId, key, cacheEntry, OperationType.Add);
-                    return CacheAddResult.Success;
+                    if (_logMgr.IsLoggingEnbaled(bucketId, LogMode.LogBeforeActualOperation) && isUserOperation)
+                    {
+                        clone = cacheEntry.DeepClone(_context.TransactionalPoolManager);
+                        cacheEntry?.MarkInUse(NCModulesConstants.Replication);
+                        _logMgr.LogOperation(bucketId, key, clone, OperationType.Add);
+                        return CacheAddResult.Success;
+                    }
+
+                    Hashtable queryInfo = cacheEntry.QueryInfo;
+                    CacheAddResult result = base.AddInternal(key, cacheEntry, isUserOperation, operationContext);
+
+                    if (result == CacheAddResult.Success || result == CacheAddResult.SuccessNearEviction)
+                    {                        
+                        BucketStatsOperation statsOperation =
+                       new BucketStatsOperation(bucketId, key, OperationType.Add, CacheInsResult.Success, 0, cacheEntry.InMemorySize, false, null);
+
+                        lock (_bucketStatsOperations)
+                        {
+                            _bucketStatsOperations.Enqueue(statsOperation);
+                        }
+                        if (isUserOperation && _logMgr.IsLoggingEnbaled(bucketId,LogMode.LogBeforeAfterActualOperation))
+                        {
+                            clone = cacheEntry.DeepClone(_context.TransactionalPoolManager);
+                            clone.QueryInfo = queryInfo;
+                            _logMgr.LogOperation(bucketId, key, clone, OperationType.Add);
+                        }
+                    }
+
+                    return result;
                 }
+            }
+            finally
+            {
 
-                CacheEntry clone = (CacheEntry)cacheEntry.Clone();
-                CacheAddResult result = base.AddInternal(key, cacheEntry, isUserOperation, operationContext);
+                cacheEntry?.MarkFree(NCModulesConstants.LocalCache);
 
-                if (result == CacheAddResult.Success || result == CacheAddResult.SuccessNearEviction)
-                {
-                    IncrementBucketStats(key as string, bucketId, clone.DataSize);
-                    if (isUserOperation) _logMgr.LogOperation(bucketId, key, clone, OperationType.Add);
-                }
+                operationContext?.MarkFree(NCModulesConstants.LocalBase);
 
-                return result;
+                if (clone != null) clone.MarkFree(NCModulesConstants.LocalBase);
+
             }
 
             throw new StateTransferException("I am no more the owner of this bucket");
@@ -363,111 +653,300 @@ namespace Alachisoft.NCache.Caching.Topologies.Local
         {
             int bucketId = GetBucketId(key as string);
 
-            if (_logMgr.IsOperationAllowed(bucketId) && LocalBuckets.Contains(bucketId))
-                return base.AddInternal(key, eh, operationContext);
-
-            throw new StateTransferException("I am no more the owner of this bucket");
-        }
-
-        internal override CacheInsResult InsertInternal(object key, CacheEntry cacheEntry, bool isUserOperation, CacheEntry oldEntry, OperationContext operationContext, bool updateIndex)
-        {
-            int bucketId = GetBucketId(key as string);
-
-            //fetch the operation logger...
-            if (_logMgr.IsOperationAllowed(bucketId) && LocalBuckets.Contains(bucketId))
-            {
-                long oldEntrysize = oldEntry == null ? 0 : oldEntry.DataSize;
-
-                if (_logMgr.IsLoggingEnbaled(bucketId, LogMode.LogBeforeActualOperation) && isUserOperation)
-                {
-                    _logMgr.LogOperation(bucketId, key, cacheEntry, OperationType.Insert);
-                    return oldEntry != null ? CacheInsResult.SuccessOverwrite : CacheInsResult.Success;
-                }
-
-                CacheEntry clone = (CacheEntry)cacheEntry.Clone();
-
-                CacheInsResult result = base.InsertInternal(key, cacheEntry, isUserOperation, oldEntry, operationContext, updateIndex);
-
-                switch (result)
-                {
-                    case CacheInsResult.SuccessNearEvicition:
-                    case CacheInsResult.Success:
-                        if (isUserOperation) _logMgr.LogOperation(bucketId, key, clone, OperationType.Insert);
-                        IncrementBucketStats(key as string, bucketId, cacheEntry.DataSize);
-                        break;
-
-                    case CacheInsResult.SuccessOverwriteNearEviction:
-                    case CacheInsResult.SuccessOverwrite:
-                        if (isUserOperation) _logMgr.LogOperation(bucketId, key, clone, OperationType.Insert);
-                        DecrementBucketStats(key as string, bucketId, oldEntrysize);
-                        IncrementBucketStats(key as string, bucketId, cacheEntry.DataSize);
-                        break;
-                }
-
-                return result;
-            }
-
+            if (_logMgr.IsOperationAllowed(bucketId) && LocalBuckets[bucketId]!=null)
+                return base.AddInternal(key, eh,operationContext);
+            
             throw new StateTransferException("I am no more the owner of this bucket");
         }
 
         internal override bool RemoveInternal(object key, Alachisoft.NCache.Caching.AutoExpiration.ExpirationHint eh)
         {
             int bucketId = GetBucketId(key as string);
-
-            if (_logMgr.IsOperationAllowed(bucketId) && LocalBuckets.Contains(bucketId))
-
+            
+            if (_logMgr.IsOperationAllowed(bucketId) && LocalBuckets[bucketId] != null)
                 return base.RemoveInternal(key, eh);
 
             throw new StateTransferException("I am no more the owner of this bucket");
         }
 
-        internal override CacheEntry RemoveInternal(object key, ItemRemoveReason removalReason, bool isUserOperation, OperationContext operationContext)
+        internal override bool AddInternal(object key)
         {
             int bucketId = GetBucketId(key as string);
+            
+            if (_logMgr.IsOperationAllowed(bucketId) && LocalBuckets[bucketId] != null)
+                return base.AddInternal(key);
+            
+            throw new StateTransferException("I am no more the owner of this bucket");
+        }
+        private long GetEntrySize(CacheEntry entry)
+        {
+            return entry.Type == Common.Caching.EntryType.CacheItem ? entry.InMemorySize : entry.OldInMemorySize;
+        }
 
-            if (isUserOperation)
+        private Queue<BucketStatsOperation> _bucketStatsOperations = new Queue<BucketStatsOperation>(50000);
+
+        internal struct BucketStatsOperation
+        {
+            internal int BucketId { get; }
+            internal object Key { get; }
+            internal OperationType Type { get; }
+            internal CacheInsResult InsResult { get; }
+            public long Size { get; }
+            public long OldSize { get; }
+            public bool IsMessage { get; }
+            public string Topic { get; }
+
+            internal BucketStatsOperation(int bucketId, object key, OperationType type, CacheInsResult insResult, long oldSize, long size, bool isMessage, string topic)
             {
-                if (!(_logMgr.IsOperationAllowed(bucketId) && LocalBuckets.Contains(bucketId)))
-                    throw new StateTransferException("I am no more the owner of this bucket");
+                BucketId = bucketId;
+                Key = key;
+                Type = type;
+                InsResult = insResult;
+                OldSize = oldSize;
+                Size = size;
+                IsMessage = isMessage;
+                Topic = topic;
             }
-            if (_logMgr.IsLoggingEnbaled(bucketId, LogMode.LogBeforeActualOperation) && isUserOperation)
+        }
+
+        private void UpdateStats()
+        {
+            try
             {
-                CacheEntry e = GetInternal(key, isUserOperation, operationContext);
-                _logMgr.LogOperation(bucketId, key, null, OperationType.Delete);
-                return e;
+                while(true)
+                {
+                    try
+                    {
+                        int count = 0;
+
+                        lock (_bucketStatsOperations)
+                        {
+                            count = _bucketStatsOperations.Count;
+                        }
+
+                        while (count > 0)
+                        {
+                            BucketStatsOperation? operation = null;
+                            lock (_bucketStatsOperations)
+                            {
+                                if (_bucketStatsOperations.Count == 0) break;
+                                operation = _bucketStatsOperations.Dequeue();
+                            }
+
+                            BucketStatsOperation statsOperation = operation.Value;
+
+                            try
+                            {
+                                switch (statsOperation.Type)
+                                {
+                                    case OperationType.Add:
+                                        IncrementBucketStats(statsOperation.Key as string, statsOperation.BucketId, statsOperation.Size, statsOperation.IsMessage, statsOperation.Topic);
+                                      
+                                        break;
+                                    case OperationType.Insert:
+                                        switch (statsOperation.InsResult)
+                                        {
+                                            case CacheInsResult.SuccessNearEvicition:
+                                            case CacheInsResult.Success:
+                                                IncrementBucketStats(statsOperation.Key as string, statsOperation.BucketId, statsOperation.Size, statsOperation.IsMessage, statsOperation.Topic);
+                                                break;
+
+                                            case CacheInsResult.SuccessOverwriteNearEviction:
+                                            case CacheInsResult.SuccessOverwrite:
+                                                DecrementBucketStats(statsOperation.Key as string, statsOperation.BucketId, statsOperation.OldSize, statsOperation.IsMessage, statsOperation.Topic);
+                                                IncrementBucketStats(statsOperation.Key as string, statsOperation.BucketId, statsOperation.Size, statsOperation.IsMessage, statsOperation.Topic);
+                                                break;
+                                        }
+                                        break;
+                                    case OperationType.Delete:
+                                        DecrementBucketStats(statsOperation.Key as string, statsOperation.BucketId, statsOperation.Size, statsOperation.IsMessage, statsOperation.Topic);
+                                        break;
+                                }
+                            }
+                            catch (Exception e)
+                            {
+                                _context.NCacheLog.Error("HashedLocalCache.UpdateStats", e.ToString());
+                            }
+
+                            count--;
+                        }
+
+                        Thread.Sleep(1000);
+                    }
+                    catch (ThreadAbortException)
+                    {
+                        break;
+                    }
+                    catch (Exception e)
+                    {
+                        _context.NCacheLog.Error("HashedLocalCache.UpdateStats", e.ToString());
+                    }
+                }
+            }
+            catch(Exception e)
+            {
+                _context.NCacheLog.Error("HashedLocalCache.UpdateStats", e.ToString());
+            }
+        }
+
+        internal override CacheInsResult InsertInternal(object key, CacheEntry cacheEntry, bool isUserOperation, CacheEntry oldEntry, OperationContext operationContext, bool updateIndex)
+        {
+            CacheEntry clone = null;
+            int bucketId = GetBucketId(key as string);
+
+            try
+            {
+                operationContext?.MarkInUse(NCModulesConstants.LocalBase);
+                if (cacheEntry != null)
+                    cacheEntry.MarkInUse(NCModulesConstants.CacheInternal);
+
+                //fetch the operation logger...
+                if (_logMgr.IsOperationAllowed(bucketId) && LocalBuckets[bucketId] != null)
+                {
+                    long oldEntrysize = oldEntry == null ? 0 : GetEntrySize(oldEntry);
+
+                    if (_logMgr.IsLoggingEnbaled(bucketId, LogMode.LogBeforeActualOperation) && isUserOperation)
+                    {
+                        clone = cacheEntry.DeepClone(_context.TransactionalPoolManager);
+                        _logMgr.LogOperation(bucketId, key, clone, OperationType.Insert);
+                        return oldEntry != null ? CacheInsResult.SuccessOverwrite : CacheInsResult.Success;
+                    }
+
+                    // POTeam only clone when it is not user operation i.e. for state txfr
+                    Hashtable queryInfo = cacheEntry.QueryInfo;
+                    CacheInsResult result = base.InsertInternal(key, cacheEntry, isUserOperation, oldEntry, operationContext, updateIndex);
+
+                    bool logOperation = !operationContext.Contains(OperationContextFieldName.DoNotLog);
+
+                    if (result != CacheInsResult.Failure && result != CacheInsResult.NeedsEviction)
+                    {
+                        BucketStatsOperation statsOperation = new BucketStatsOperation(bucketId, key, OperationType.Insert, result, oldEntrysize, cacheEntry.InMemorySize, false, null);
+
+                        lock (_bucketStatsOperations)
+                        {
+                            _bucketStatsOperations.Enqueue(statsOperation);
+                        }
+
+                        if (isUserOperation && logOperation && _logMgr.IsLoggingEnbaled(bucketId, LogMode.LogBeforeAfterActualOperation))
+                        {
+                            clone = cacheEntry.DeepClone(_context.TransactionalPoolManager);
+                            clone.QueryInfo = queryInfo;
+                            _logMgr.LogOperation(bucketId, key, clone, OperationType.Insert);
+                        }
+                    }
+                   
+                    return result;
+                }
+            }
+            finally
+            {
+                if (clone != null)
+                    clone.MarkFree(NCModulesConstants.CacheInternal);
+                operationContext?.MarkFree(NCModulesConstants.LocalBase);
+                if (cacheEntry != null)
+                    cacheEntry.MarkFree(NCModulesConstants.CacheInternal);
             }
 
-            CacheEntry entry = base.RemoveInternal(key, removalReason, isUserOperation, operationContext);
-            if (entry != null)
-            {
-                DecrementBucketStats(key as string, bucketId, entry.DataSize);
-                if (isUserOperation) _logMgr.LogOperation(bucketId, key, null, OperationType.Delete);
-            }
+            throw new StateTransferException("I am no more the owner of this bucket");
+        }
 
+
+        internal override CacheEntry RemoveInternal(object key, ItemRemoveReason removalReason, bool isUserOperation, OperationContext operationContext, bool cloneEntry, bool needUserPayload)
+        {
+            int bucketId = GetBucketId(key as string);
+            CacheEntry entry = null;
+            try
+            {
+                operationContext?.MarkInUse(NCModulesConstants.LocalBase);
+
+                if (isUserOperation)
+                {
+                    if (!(_logMgr.IsOperationAllowed(bucketId) && LocalBuckets[bucketId] != null))
+                        throw new StateTransferException("I am no more the owner of this bucket");
+                }
+                if (_logMgr.IsLoggingEnbaled(bucketId, LogMode.LogBeforeActualOperation) && isUserOperation)
+                {
+                    CacheEntry e = GetInternal(key, isUserOperation, operationContext,cloneEntry,needUserPayload);
+                    _logMgr.LogOperation(bucketId, key, null, OperationType.Delete);
+                    
+                    return e;
+                }
+
+                entry = base.RemoveInternal(key, removalReason, isUserOperation, operationContext,cloneEntry,needUserPayload);
+                if (entry != null)
+                {
+                    BucketStatsOperation statsOperation =
+                        new BucketStatsOperation(bucketId, key, OperationType.Delete, CacheInsResult.Success, 0, entry.InMemorySize, false, null);
+
+                    lock (_bucketStatsOperations)
+                    {
+                        _bucketStatsOperations.Enqueue(statsOperation);
+                    }
+
+                    if (isUserOperation) _logMgr.LogOperation(bucketId, key, null, OperationType.Delete);
+                    
+                }
+            }
+            finally
+            {
+                operationContext?.MarkFree(NCModulesConstants.LocalBase);
+            }
             return entry;
         }
 
-        internal override CacheEntry GetInternal(object key, bool isUserOperation, OperationContext operationContext)
+        internal override CacheEntry GetInternal(object key, bool isUserOperation, OperationContext operationContext, bool cloneEntry, bool needUserPayload)
         {
-            int bucketId = GetBucketId(key as string);
-            if (isUserOperation)
+            try
             {
-                if (!_logMgr.IsOperationAllowed(bucketId))
-                    throw new StateTransferException("I am no more the owner of this bucket");
+                operationContext?.MarkInUse(NCModulesConstants.LocalBase);
+
+                int bucketId = GetBucketId(key as string);
+                if (isUserOperation)
+                {
+                    try
+                    {
+
+                        if (!_logMgr.IsOperationAllowed(bucketId))
+                            throw new StateTransferException("I am no more the owner of this bucket");
+                    }
+                    catch (Exception e)
+                    {
+                        if (e is NullReferenceException)
+                        {
+                            string loggingModule = _logMgr == null ? "_logMgr is null" : "_logMgr is not null";
+                            _context.NCacheLog.Error("GetInternal()", "Null Module: " + loggingModule + "[] Exception is " + e);
+                        }
+                        throw e;
+                    }
+                }
+                CacheEntry entry = base.GetInternal(key, isUserOperation, operationContext,cloneEntry,needUserPayload);
+                try
+                {
+                    if (entry == null && (isUserOperation && LocalBuckets[bucketId] == null))
+                        throw new StateTransferException("I am no more the owner of this bucket");
+                }
+                catch (Exception e)
+                {
+                    if (e is NullReferenceException)
+                    {
+                        string loggingModule = LocalBuckets == null ? "LocalBuckets is null" : "LocalBuckets is not null";
+                        _context.NCacheLog.Error("GetInternal()", "Null Module: " + loggingModule + "[] Exception is " + e);
+                    }
+                    throw e;
+                }
+                return entry;
             }
-            CacheEntry entry = base.GetInternal(key, isUserOperation, operationContext);
-
-            if (entry == null && (isUserOperation && !LocalBuckets.Contains(bucketId)))
-                throw new StateTransferException("I am no more the owner of this bucket");
-
-            return entry;
+            finally
+            {
+                operationContext?.MarkFree(NCModulesConstants.LocalBase);
+            }
         }
 
         internal override bool ContainsInternal(object key)
         {
             int bucketId = GetBucketId(key as string);
 
-            if (_logMgr.IsOperationAllowed(bucketId) && LocalBuckets.Contains(bucketId))
+            if (_logMgr.IsOperationAllowed(bucketId) && LocalBuckets[bucketId] != null)
                 return base.ContainsInternal(key);
 
             throw new StateTransferException("I am no more the owner of this bucket");
@@ -479,50 +958,523 @@ namespace Alachisoft.NCache.Caching.Topologies.Local
         internal override void ClearInternal()
         {
             base.ClearInternal();
-            if (_keyList != null) _keyList.Clear();
+            ClearKeyList();
+            _inMemorySize = 0;
             if (_logMgr != null) _logMgr.Dispose(); //it clears the operation loggers for each bucket   
-            _keyListSize = 0;
+
 
             if (LocalBuckets == null)
                 return;
-            //clear the bucket stats
-            IDictionaryEnumerator ide = LocalBuckets.GetEnumerator();
-            while (ide.MoveNext())
+            lock (_bucketStatsMutex)
             {
-                BucketStatistics stats = ide.Value as BucketStatistics;
-                if (stats != null)
+                //clear the bucket stats
+                for (int i = 0; i < LocalBuckets.Length; i++)
                 {
-                    stats.Clear();
+                    if(LocalBuckets[i]!=null)
+                        LocalBuckets[i].Clear();
                 }
             }
         }
 
         public override void Dispose()
         {
+            if (_thread != null)
+#if !NETCORE
+                _thread.Abort();
+#else
+                _thread.Interrupt();
+#endif
             if (_logMgr != null) _logMgr.Dispose();
-            if (_keyList != null) _keyList.Clear();
-            _keyListSize = 0;
+            ClearKeyList();
+            _inMemorySize = 0;
             base.Dispose();
         }
 
-        #endregion
-
+#endregion
 
         public long InMemorySize
         {
             get
             {
-                if (_keyList != null)
-                    return _keyListSize + (_keyList.BucketCount * MemoryUtil.NetHashtableOverHead);
-                else return 0;
+                return _inMemorySize + _keyList.Length * MemoryUtil.NetClassOverHead;
             }
         }
         internal override long Size
         {
             get
-            {
+            {                
                 return base.Size + InMemorySize;
             }
         }
+
+        public long IndexInMemorySize
+        {
+            get { return InMemorySize; }
+        }
+
+        internal override void TouchInternal(string key, OperationContext operationContext)
+        {
+            int bucketId = GetBucketId(key as string);
+
+            if (_logMgr.IsOperationAllowed(bucketId) && LocalBuckets[bucketId] != null)
+                base.TouchInternal(key, operationContext);
+
+            throw new StateTransferException("I am no more the owner of this bucket");
+        }
+
+        public override bool StoreMessage(string topic, Message message, OperationContext context)
+        {
+            bool stored = false;
+            bool lockHeld = false;
+            try
+            {
+                int bucketId = GetBucketId(message.MessageId as string);
+                Message clone = null;
+                if (message is EventMessage)
+                {
+                    EventMessage eventMessage = (EventMessage)message;
+                    clone = new EventMessage(message.MessageId);
+                    clone = eventMessage.Clone();
+                    clone.MessageMetaData =new MessageMetaData(eventMessage.MessageId);
+                    clone.MessageMetaData.TopicName = topic;
+                    clone.MessageMetaData.IsNotify = false;
+                    clone.MessageMetaData.DeliveryOption = Alachisoft.NCache.Runtime.Caching.DeliveryOption.All;
+                    clone.MessageMetaData.ExpirationTime = message.MessageMetaData.ExpirationTime;
+                    clone.MessageMetaData.TimeToLive = message.MessageMetaData.TimeToLive;
+                }
+                else
+                {
+                    clone = new Message(message.MessageId);
+                    clone = message.Clone() as Message;
+                }
+               
+                if (!_rwBucketsLock.IsWriteLockHeld)
+                {
+                    lockHeld = true;
+                   _rwBucketsLock.EnterReadLock();
+                }
+
+                if (_logMgr.IsOperationAllowed(bucketId) && LocalBuckets[bucketId] != null)
+                {
+                    if (_logMgr.IsLoggingEnbaled(bucketId, LogMode.LogBeforeActualOperation) && !context.Contains(OperationContextFieldName.InternalOperation))
+                    {
+                        OperationContext operationContext = null;
+
+                        try
+                        {
+                            operationContext = OperationContext.CreateAndMarkInUse(
+                                Context.TransactionalPoolManager, NCModulesConstants.CacheInternal, OperationContextFieldName.InternalOperation, true
+                            );
+                            _logMgr.LogOperation(bucketId, message.MessageId, new StoreMessageOperation(topic, clone, operationContext), OperationType.MessageOperation);
+                            return true;
+                        }
+                        finally
+                        {
+                            MiscUtil.ReturnOperationContextToPool(operationContext, _context.TransactionalPoolManager);
+                            operationContext?.MarkFree(NCModulesConstants.CacheInternal);
+                        }
+                    }
+
+                    if (base.StoreMessage(topic, message, context))
+                    {
+                        stored = true;
+
+                        BucketStatsOperation statsOperation =
+                       new BucketStatsOperation(bucketId, message.MessageId, OperationType.Add, CacheInsResult.Success, 0, message.Size, true, topic);
+
+                        lock (_bucketStatsOperations)
+                        {
+                            _bucketStatsOperations.Enqueue(statsOperation);
+                        }
+
+                        if (_logMgr.IsLoggingEnbaled(bucketId, LogMode.LogBeforeAfterActualOperation) && !context.Contains(OperationContextFieldName.InternalOperation))
+                        {
+                            OperationContext operationContext = null;
+
+                            try
+                            {
+                                operationContext = OperationContext.CreateAndMarkInUse(
+                                    Context.TransactionalPoolManager, NCModulesConstants.CacheInternal, OperationContextFieldName.InternalOperation, true
+                                );
+                                _logMgr.LogOperation(bucketId, message.MessageId, new StoreMessageOperation(topic, clone, operationContext), OperationType.MessageOperation);
+                            }
+                            finally
+                            {
+                                MiscUtil.ReturnOperationContextToPool(operationContext, _context.TransactionalPoolManager);
+                                operationContext?.MarkFree(NCModulesConstants.CacheInternal);
+                            }
+                        }
+                        return true;
+                    }
+                }
+                else
+                    throw new StateTransferException("I am no more the owner of this bucket");
+            }
+            finally
+            {
+                if(lockHeld)
+                    _rwBucketsLock.ExitReadLock();
+            }
+            return stored;
+        }
+
+        protected override Message RemoveMessagesInternal(MessageInfo messageInfo, MessageRemovedReason reason,OperationContext context)
+        {
+            Message message = null;
+            bool lockHeld = false;
+            try
+            {
+                int bucketId = GetBucketId(messageInfo.MessageId as string);
+                if (!_rwBucketsLock.IsWriteLockHeld)
+                {
+                    lockHeld = true;
+                    _rwBucketsLock.EnterReadLock();
+                }
+
+                if (_logMgr.IsOperationAllowed(bucketId) && LocalBuckets[bucketId] != null || context.Contains(OperationContextFieldName.InternalOperation))
+                {
+                    if (_logMgr.IsLoggingEnbaled(bucketId, LogMode.LogBeforeActualOperation) && !context.Contains(OperationContextFieldName.InternalOperation))
+                    {
+                        OperationContext operationContext = null;
+
+                        try
+                        {
+                            operationContext = OperationContext.CreateAndMarkInUse(
+                                Context.TransactionalPoolManager, NCModulesConstants.CacheInternal, OperationContextFieldName.InternalOperation, true
+                            );
+
+                            _logMgr.LogOperation(bucketId, messageInfo.MessageId, new AtomicRemoveMessageOperation(messageInfo, reason, operationContext), OperationType.MessageOperation);
+                            return null;
+                        }
+                        finally
+                        {
+                            MiscUtil.ReturnOperationContextToPool(operationContext, _context.TransactionalPoolManager);
+                            operationContext?.MarkFree(NCModulesConstants.CacheInternal);
+                        }
+                    }
+
+                    message = base.RemoveMessagesInternal(messageInfo, reason,context);
+
+                    if (message != null)
+                    {
+                        BucketStatsOperation statsOperation =
+                      new BucketStatsOperation(bucketId, message.MessageId, OperationType.Delete, CacheInsResult.Success, 0, message.Size, true, message.MessageMetaData.TopicName);
+
+                        lock (_bucketStatsOperations)
+                        {
+                            _bucketStatsOperations.Enqueue(statsOperation);
+                        }
+                    }
+                    
+                    if (_logMgr.IsLoggingEnbaled(bucketId, LogMode.LogBeforeAfterActualOperation) && !context.Contains(OperationContextFieldName.InternalOperation))
+                    {
+                        OperationContext operationContext = null;
+
+                        try
+                        {
+                            operationContext = OperationContext.CreateAndMarkInUse(
+                                Context.TransactionalPoolManager, NCModulesConstants.CacheInternal, OperationContextFieldName.InternalOperation, true
+                            );
+                            _logMgr.LogOperation(bucketId, message.MessageId, new AtomicRemoveMessageOperation(messageInfo, reason, operationContext), OperationType.MessageOperation);
+                        }
+                        finally
+                        {
+                            MiscUtil.ReturnOperationContextToPool(operationContext, _context.TransactionalPoolManager);
+                            operationContext?.MarkFree(NCModulesConstants.CacheInternal);
+                        }
+                    }
+                }
+            }
+            finally
+            {
+                if(lockHeld)
+                    _rwBucketsLock.ExitReadLock();
+            }
+
+            return message;
+        }
+
+        public override bool AssignmentOperation(MessageInfo messageInfo, SubscriptionInfo subscriptionInfo,TopicOperationType type, OperationContext context)
+        {
+            bool result = false;
+            bool lockHeld = false;
+            try
+            {
+                int bucketId = GetBucketId(messageInfo.MessageId as string);
+                if (!_rwBucketsLock.IsWriteLockHeld)
+                {
+                    lockHeld = true;
+                    _rwBucketsLock.EnterReadLock();
+                }
+
+                if (_logMgr.IsOperationAllowed(bucketId) && LocalBuckets[bucketId] != null)
+                {
+                    if (_logMgr.IsLoggingEnbaled(bucketId, LogMode.LogBeforeActualOperation) && !context.Contains(OperationContextFieldName.InternalOperation))
+                    {
+                        OperationContext operationContext = null;
+
+                        try
+                        {
+                            operationContext = OperationContext.CreateAndMarkInUse(
+                                Context.TransactionalPoolManager, NCModulesConstants.CacheInternal, OperationContextFieldName.InternalOperation, true
+                            );
+                            _logMgr.LogOperation(bucketId, messageInfo.MessageId, new AssignmentOperation(messageInfo, subscriptionInfo, type, operationContext), OperationType.MessageOperation);
+                            return true;
+                        }
+                        finally
+                        {
+                            MiscUtil.ReturnOperationContextToPool(operationContext, _context.TransactionalPoolManager);
+                            operationContext?.MarkFree(NCModulesConstants.CacheInternal);
+                        }
+                    }
+
+                     result = base.AssignmentOperation(messageInfo, subscriptionInfo,type,context);
+
+                    if (_logMgr.IsLoggingEnbaled(bucketId, LogMode.LogBeforeAfterActualOperation) && !context.Contains(OperationContextFieldName.InternalOperation))
+                    {
+                        OperationContext operationContext = null;
+
+                        try
+                        {
+                            operationContext = OperationContext.CreateAndMarkInUse(
+                                Context.TransactionalPoolManager, NCModulesConstants.CacheInternal, OperationContextFieldName.InternalOperation, true
+                            );
+                            _logMgr.LogOperation(bucketId, messageInfo.MessageId, new AssignmentOperation(messageInfo, subscriptionInfo, type, operationContext), OperationType.MessageOperation);
+                        }
+                        finally
+                        {
+                            MiscUtil.ReturnOperationContextToPool(operationContext, _context.TransactionalPoolManager);
+                            operationContext?.MarkFree(NCModulesConstants.CacheInternal);
+                        }
+                    }
+                }
+            }
+            finally
+            {
+                if(lockHeld)
+                    _rwBucketsLock.ExitReadLock();
+            }
+            return result;
+        }
+
+        protected override void AcknowledgeMessageReceiptInternal(string clientId, string topic, string messageId, OperationContext context)
+        {
+            bool lockHeld = false;
+            try
+            {
+                int bucketId = GetBucketId(messageId);
+                if (!_rwBucketsLock.IsWriteLockHeld)
+                {
+                    lockHeld = true;
+                    _rwBucketsLock.EnterReadLock();
+                }
+
+                if (_logMgr.IsOperationAllowed(bucketId) && LocalBuckets[bucketId] != null && !context.Contains(OperationContextFieldName.InternalOperation))
+                {
+                    if (_logMgr.IsLoggingEnbaled(bucketId, LogMode.LogBeforeActualOperation))
+                    {
+                        OperationContext operationContext = null;
+
+                        try
+                        {
+                            operationContext = OperationContext.CreateAndMarkInUse(
+                                Context.TransactionalPoolManager, NCModulesConstants.CacheInternal, OperationContextFieldName.InternalOperation, true
+                            );
+                            _logMgr.LogOperation(bucketId, messageId, new AtomicAcknowledgeMessageOperation(clientId, messageId, messageId, operationContext), OperationType.MessageOperation);
+                            return;
+                        }
+                        finally
+                        {
+                            MiscUtil.ReturnOperationContextToPool(operationContext, _context.TransactionalPoolManager);
+                            operationContext?.MarkFree(NCModulesConstants.CacheInternal);
+                        }
+                    }
+
+                    base.AcknowledgeMessageReceiptInternal(clientId, topic, messageId, context);
+
+                    if (_logMgr.IsLoggingEnbaled(bucketId, LogMode.LogBeforeAfterActualOperation) && !context.Contains(OperationContextFieldName.InternalOperation))
+                    {
+                        OperationContext operationContext = null;
+
+                        try
+                        {
+                            operationContext = OperationContext.CreateAndMarkInUse(
+                                Context.TransactionalPoolManager, NCModulesConstants.CacheInternal, OperationContextFieldName.InternalOperation, true
+                            );
+                            _logMgr.LogOperation(bucketId, messageId, new AtomicAcknowledgeMessageOperation(clientId, messageId, messageId, operationContext), OperationType.MessageOperation);
+                        }
+                        finally
+                        {
+                            MiscUtil.ReturnOperationContextToPool(operationContext, _context.TransactionalPoolManager);
+                            operationContext?.MarkFree(NCModulesConstants.CacheInternal);
+                        }
+                    }
+                }
+                else
+                    throw new StateTransferException("I am no more the owner of this bucket");
+            }
+            finally
+            {
+                if(lockHeld)
+                    _rwBucketsLock.ExitReadLock();
+            }
+        }
+
+        public override void RevokeAssignment(MessageInfo messageInfo, SubscriptionInfo subscriptionInfo,OperationContext context)
+        {
+            bool lockHeld = false;
+            try
+            {
+                int bucketId = GetBucketId(messageInfo.MessageId as string);
+                if (!_rwBucketsLock.IsWriteLockHeld)
+                {
+                    lockHeld = true;
+                    _rwBucketsLock.EnterReadLock();
+                }
+
+                if (_logMgr.IsOperationAllowed(bucketId) && LocalBuckets[bucketId] != null && !context.Contains(OperationContextFieldName.InternalOperation))
+                {
+                    if (_logMgr.IsLoggingEnbaled(bucketId, LogMode.LogBeforeActualOperation))
+                    {
+                        OperationContext operationContext = null;
+
+                        try
+                        {
+                            operationContext = OperationContext.CreateAndMarkInUse(
+                                Context.TransactionalPoolManager, NCModulesConstants.CacheInternal, OperationContextFieldName.InternalOperation, true
+                            );
+                            _logMgr.LogOperation(bucketId, messageInfo.MessageId, new AssignmentOperation(messageInfo, subscriptionInfo, TopicOperationType.RevokeAssignment, operationContext), OperationType.MessageOperation);
+                            return;
+                        }
+                        finally
+                        {
+                            MiscUtil.ReturnOperationContextToPool(operationContext, _context.TransactionalPoolManager);
+                            operationContext?.MarkFree(NCModulesConstants.CacheInternal);
+                        }
+                    }
+
+                    base.RevokeAssignment(messageInfo, subscriptionInfo,context);
+
+                    if (_logMgr.IsLoggingEnbaled(bucketId, LogMode.LogBeforeAfterActualOperation) && !context.Contains(OperationContextFieldName.InternalOperation))
+                    {
+                        OperationContext operationContext = null;
+
+                        try
+                        {
+                            operationContext = OperationContext.CreateAndMarkInUse(
+                                Context.TransactionalPoolManager, NCModulesConstants.CacheInternal, OperationContextFieldName.InternalOperation, true
+                            );
+                            _logMgr.LogOperation(bucketId, messageInfo.MessageId, new AssignmentOperation(messageInfo, subscriptionInfo, TopicOperationType.RevokeAssignment, operationContext), OperationType.MessageOperation);
+                        }
+                        finally
+                        {
+                            MiscUtil.ReturnOperationContextToPool(operationContext, _context.TransactionalPoolManager);
+                            operationContext?.MarkFree(NCModulesConstants.CacheInternal);
+                        }
+                    }
+                }
+            }
+            finally
+            {
+                if(lockHeld)
+                    _rwBucketsLock.ExitReadLock();
+            }
+        }
+        
+        public override bool StoreTransferrableMessage(string topic, TransferrableMessage transferrableMessage)
+        {
+            bool stored = false;
+            try
+            {
+                Message message = transferrableMessage.Message;
+
+                int bucketId = GetBucketId(message.MessageId as string);
+
+                if (_logMgr.IsOperationAllowed(bucketId) && LocalBuckets[bucketId] != null)
+                {
+                    if (base.StoreTransferrableMessage(topic, transferrableMessage))
+                    {
+                        stored = true;
+
+                        BucketStatsOperation statsOperation =
+                      new BucketStatsOperation(bucketId, message.MessageId, OperationType.Add, CacheInsResult.Success, 0, message.Size, true, topic);
+
+                        lock (_bucketStatsOperations)
+                        {
+                            _bucketStatsOperations.Enqueue(statsOperation);
+                        }
+                    }
+                }
+            }
+            finally
+            {
+            }
+            return stored;
+        }
+
+        public override bool TopicOperation(TopicOperation operation, OperationContext operationContext)
+        {
+            bool result = base.TopicOperation(operation, operationContext);
+
+            if(operation.TopicOperationType == TopicOperationType.Remove)
+            {
+                RemoveTopicStats(operation.Topic);
+            }
+
+            return result;
+        }
+
+        public override OrderedDictionary GetMessageList(int bucketId, bool includeEventMessages)
+        {
+            OrderedDictionary messageList = new OrderedDictionary();
+            try
+            {
+                _rwBucketsLock.EnterWriteLock();
+                BucketStatistcs bucketStats = _keyList[bucketId];
+                if (bucketStats != null)
+                {
+                    lock (bucketStats)
+                    {
+                        messageList = bucketStats.GetTopicWiseMessagIds(includeEventMessages);
+                    }
+                }
+            }
+            finally
+            {
+                _rwBucketsLock.ExitWriteLock();
+            }
+            return messageList;
+        }
+
+        private void ClearKeyList()
+        {
+            lock (_keyList.SyncRoot)
+            {
+                for (int i = 0; i < _keyList.Length; i++)
+                {
+                    _keyList[i] = null;
+                }
+            }
+        }
+
+        
+
+#region Private Methods
+
+        private bool IsCollectionReplicationOperationAllowed(int bucketId)
+        {
+            bool allowed = false;
+            if (_logMgr.IsOperationAllowed(bucketId) && LocalBuckets[bucketId] != null)
+            {
+                BucketStatistics statistics = LocalBuckets[bucketId] as BucketStatistics;
+                allowed = statistics.IsStateTransferStarted; 
+            }
+
+            return allowed;
+        }
+
+       
+
+#endregion
     }
 }

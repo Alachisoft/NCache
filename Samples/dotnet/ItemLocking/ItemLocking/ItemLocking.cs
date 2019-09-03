@@ -1,6 +1,5 @@
 ﻿// ===============================================================================
 // Alachisoft (R) NCache Sample Code.
-// NCache Basic Operations sample
 // ===============================================================================
 // Copyright © Alachisoft.  All rights reserved.
 // THIS CODE AND INFORMATION IS PROVIDED "AS IS" WITHOUT WARRANTY
@@ -10,85 +9,136 @@
 // ===============================================================================
 
 using System;
-using Alachisoft.NCache.Web.Caching;
+using System.Configuration;
+using Alachisoft.NCache.Client;
 using Alachisoft.NCache.Sample.Data;
 
-namespace ItemLocking
+namespace Alachisoft.NCache.Samples
 {
-	public class ItemLocking
-	{
-		public static void Main(string[] args)
-		{
+    public class ItemLocking
+    {
+        private static ICache _cache;
+        private static string key="Customer:KirstenGoli";
+        public static void Run()
+        {
+            // Initialize cache            
+            InitializeCache();
 
-			try
-			{
-				//Initialize cache            
+            // Add item in cache
+            AddItemInCache(key);
 
-				Cache cache = NCache.InitializeCache("mypartitionedcache");
-				
-				//Locking prevents multiple clients from updating the same data simultaneously
-				//and also provides the data consistency.
+            // Create new lock handle to fetch Item usin locking
+            LockHandle lockHandle = new LockHandle();
 
-				//Adding an item the cache
-				Customer customer = new Customer();
-				customer.Name = "Kirsten Goli";
-				customer.Age = 40;
-				customer.Address = "45-A West Boulevard, Cartago, Costa Rica";
-				customer.Gender = "Female";
-				customer.ContactNo = "52566-1779";
+            // Timespan for which lock will be taken
+            TimeSpan timeSpan = new TimeSpan(0, 0, 0, 20);
 
-				cache.Add("Customer:KirstenGoli", customer);
+            // Get item from cache
+            GetItemFromCache(key, lockHandle, timeSpan);
 
-				//Get     
-				TimeSpan timeSpan = new TimeSpan(0,0,0,20);
-				LockHandle lockHandle = new LockHandle();
-                Customer getCustomer = (Customer) cache.Get("Customer:KirstenGoli", timeSpan, ref lockHandle, true);
+            // Lock Item in cache 
+            LockItemInCache(key,lockHandle, timeSpan);
 
-				PrintCustomerDetails(getCustomer);
+            // Unlock item in cache using multiple ways
+            UnLockItemInCache(key,lockHandle);
 
-				Console.WriteLine("Lock acquired on " + lockHandle.LockId);
+            RemoveItemFromCache(key);
 
-				//Lock item in cache
-				bool isLocked = cache.Lock("Customer:KirstenGoli", timeSpan, out lockHandle);
+            // Dispose cache once done
+            _cache.Dispose();
+        }
 
-				if (!isLocked)
-				{
-					Console.WriteLine("Lock acquired on " + lockHandle.LockId);
-				}
+        /// <summary>
+        /// This method initializes the cache.
+        /// </summary>
+        private static void InitializeCache ()
+        {
+            string cache = ConfigurationManager.AppSettings["CacheId"];
 
-				//Unlock item in cache
-				cache.Unlock("Customer:KirstenGoli");
+            if (String.IsNullOrEmpty(cache))
+            {
+                Console.WriteLine("The Cache Name cannot be null or empty.");
+                return;
+            }
 
-				//Unlock via lockhandle
-				cache.Unlock("Customer:KirstenGoli", lockHandle);
+            // Initialize an instance of the cache to begin performing operations:
+            _cache = CacheManager.GetCache(cache);
+            Console.WriteLine("Cache initialized successfully");
+        }
+        /// <summary>
+        /// This method add items in the cache.
+        /// </summary>
+        private static void AddItemInCache(string customerId)
+        {
+            //Adding an item the cache
+            Customer customer = new Customer();
+            customer.CustomerID = customerId;
+            customer.ContactName = "Kirsten Goli";
+            customer.Address = "45-A West Boulevard, Cartago, Costa Rica";
+            customer.ContactNo = "52566-1779";
 
-				//Must dispose cache
-				cache.Dispose();
+            _cache.Add(customer.CustomerID, customer);
+        }
 
-				Environment.Exit(0);
+        private static void RemoveItemFromCache(string key)
+        {
+            _cache.Remove(key);
+        }
 
-			}
-			catch (Exception ex)
-			{
-				Console.WriteLine(ex.Message);
-				Environment.Exit(0);
-			}
-		}
+        /// <summary>
+        /// This method fetches item from the cache.
+        /// </summary>
+        /// <param name="lockHandle"> An instance of lock handle that will be used for locking the fetched item. </param>
+        /// <param name="timeSpan"> Time for which the lock will be held. </param>
+        private static void GetItemFromCache(string key,LockHandle lockHandle, TimeSpan timeSpan)
+        {            
+            // GetT Get<T> (string key, bool acquireLock, TimeSpan lockTimeout, ref LockHandle lockHandle);
+            Customer getCustomer = _cache.Get<Customer>(key, true,timeSpan, ref lockHandle);
+
+            PrintCustomerDetails(getCustomer);
+            Console.WriteLine("Lock acquired on " + lockHandle.LockId);
+        }
+
+        /// <summary>
+        /// This method locks specified item in the cache
+        /// </summary>
+        /// <param name="lockHandle"> Handle of the lock. </param>
+        /// <param name="timeSpan"> Time for which lock will be held. </param>
+        private static void LockItemInCache(string key,LockHandle lockHandle, TimeSpan timeSpan)
+        {
+            // Lock item in cache
+            bool isLocked = _cache.Lock(key, timeSpan, out lockHandle);
+
+            if (!isLocked)
+            {
+                Console.WriteLine("Lock acquired on " + lockHandle.LockId);
+            }
+        }
+
+        /// <summary>
+        /// This method unlocks the item in the cache using 2 different ways.
+        /// </summary>
+        /// <param name="lockHandle"> The lock handle that was used to lock the item. </param>
+        private static void UnLockItemInCache(string key,LockHandle lockHandle)
+        {
+            _cache.Unlock(key, lockHandle);
+
+            //Forcefully unlock item in cache 
+            //_cache.Unlock("Customer:KirstenGoli");
+        }
 
         /// <summary>
         /// Method for printing customer type details.
         /// </summary>
         /// <param name="customer"></param>
-		public static void PrintCustomerDetails(Customer customer)
-		{
-			Console.WriteLine();
-			Console.WriteLine("Customer Details are as follows: ");
-			Console.WriteLine("Name: " + customer.Name);
-			Console.WriteLine("Age: " + customer.Age);
-			Console.WriteLine("Gender: " + customer.Gender);
-			Console.WriteLine("Contact No: " + customer.ContactNo);
-			Console.WriteLine("Address: " + customer.Address);
-		}
-	}
+        public static void PrintCustomerDetails(Customer customer)
+        {
+            Console.WriteLine();
+            Console.WriteLine("Customer Details are as follows: ");
+            Console.WriteLine("Name: " + customer.ContactName);
+            Console.WriteLine("Contact No: " + customer.ContactNo);
+            Console.WriteLine("Address: " + customer.Address);
+        }
+    }
 
 }

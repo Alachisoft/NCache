@@ -1,0 +1,7 @@
+
+option java_outer_classname="GetStateTransferInfoCommandProtocol";
+package Alachisoft.NCache.Common.Protobuf;
+message GetStateTransferInfoCommand 
+{
+	optional int64 requestId = 1;
+}

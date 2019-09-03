@@ -1,0 +1,12 @@
+import "KeyValue.proto";
+option java_outer_classname="MesasgeAcknowledgmentCommand";
+package Alachisoft.NCache.Common.Protobuf;
+message MesasgeAcknowledgmentCommand {
+    repeated KeyValue values = 1;
+	optional int64 requestId = 2;
+	optional string topicName = 3;
+		optional int64 clientLastViewId = 4 [default=-1];
+	optional string version = 5;
+	optional int32 commandVersion = 6 [default=0];
+	optional string intendedRecipient = 7 [default = ""];
+}

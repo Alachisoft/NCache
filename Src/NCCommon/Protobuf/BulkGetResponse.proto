@@ -5,4 +5,9 @@ option java_outer_classname="BulkGetResponseProtocol";
 package Alachisoft.NCache.Common.Protobuf;
 message BulkGetResponse {
 	optional KeyValuePackageResponse keyValuePackage = 1;
+	optional int64 requestId = 2;
+	optional int32 commandID = 3;
+	optional string intendedRecipient = 4;
+	optional int32 numberOfChuncks = 5 [default=1];
+	optional int32 sequenceId = 6 [default=1];
 }

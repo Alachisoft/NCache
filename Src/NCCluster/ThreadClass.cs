@@ -1,14 +1,3 @@
-// Licensed under the Apache License, Version 2.0 (the "License");
-// you may not use this file except in compliance with the License.
-// You may obtain a copy of the License at
-// 
-//    http://www.apache.org/licenses/LICENSE-2.0
-// 
-// Unless required by applicable law or agreed to in writing, software
-// distributed under the License is distributed on an "AS IS" BASIS,
-// WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
-// See the License for the specific language governing permissions and
-// limitations under the License.
 //
 // In order to convert some functionality to Visual C#, the Java Language Conversion Assistant
 // creates "support classes" that duplicate the original functionality.  
@@ -210,22 +199,31 @@ using System.Threading;
 		/// </summary>
 		public void Abort()
 		{
-			threadField.Abort();
-		}
-	      
-		/// <summary>
-		/// Raises a ThreadAbortException in the thread on which it is invoked, 
-		/// to begin the process of terminating the thread while also providing
-		/// exception information about the thread termination. 
-		/// Calling this method usually terminates the thread.
-		/// </summary>
-		/// <param name="stateInfo">An object that contains application-specific information, such as state, which can be used by the thread being aborted</param>
-		public void Abort(object stateInfo)
+#if !NETCORE
+            threadField.Abort();
+#elif NETCORE
+        threadField.Interrupt();
+#endif
+        }
+    
+
+        /// <summary>
+        /// Raises a ThreadAbortException in the thread on which it is invoked, 
+        /// to begin the process of terminating the thread while also providing
+        /// exception information about the thread termination. 
+        /// Calling this method usually terminates the thread.
+        /// </summary>
+        /// <param name="stateInfo">An object that contains application-specific information, such as state, which can be used by the thread being aborted</param>
+        public void Abort(object stateInfo)
 		{
 			lock(this)
 			{
-				threadField.Abort(stateInfo);
-			}
+#if !NETCORE
+            threadField.Abort(stateInfo);
+#elif NETCORE
+            threadField.Interrupt();
+#endif
+        }
 		}
 	      
 		/// <summary>

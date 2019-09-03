@@ -7,4 +7,5 @@ message UnlockCommand
 	optional string lockId = 2;
 	optional bool preemptive = 3;
 	optional int64 requestId = 4;
+	optional int32 MethodOverload = 5 [default=0];
 }

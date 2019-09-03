@@ -1,0 +1,6 @@
+option java_outer_classname="GetConnectedClientsCommandProtocol";
+package Alachisoft.NCache.Common.Protobuf;
+
+message GetConnectedClientsCommand {
+	optional int64 requestId = 1;	
+}

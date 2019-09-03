@@ -1,41 +1,30 @@
-// Licensed under the Apache License, Version 2.0 (the "License");
-// you may not use this file except in compliance with the License.
-// You may obtain a copy of the License at
-// 
-//    http://www.apache.org/licenses/LICENSE-2.0
-// 
-// Unless required by applicable law or agreed to in writing, software
-// distributed under the License is distributed on an "AS IS" BASIS,
-// WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
-// See the License for the specific language governing permissions and
-// limitations under the License.
-// $Id: GroupRequest.java,v 1.8 2004/09/05 04:54:22 ovidiuf Exp $
 
+// $Id: GroupRequest.java,v 1.8 2004/09/05 04:54:22 ovidiuf Exp $
 using System;
 using System.Collections;
+
 using System.IO;
 using System.Text;
 using System.Net;
 using System.Net.Sockets;
-using System.IO;
 using System.Threading;
-using Alachisoft.NCache.Common.DataStructures.Clustered;
 using Alachisoft.NCache.Common.Sockets;
-using Alachisoft.NGroups;
 using Alachisoft.NCache.Serialization.Formatters;
-
 using Alachisoft.NCache.Runtime.Serialization;
-
-
 using Alachisoft.NCache.Runtime.Serialization.IO;
-
 using Alachisoft.NCache.Common.Net;
 using Alachisoft.NCache.Common;
 using Alachisoft.NCache.Common.Stats;
-using Alachisoft.NGroups.Protocols;
 using Alachisoft.NCache.Common.Enum;
 using Alachisoft.NCache.Common.Util;
 using Alachisoft.NCache.Common.Logger;
+using Alachisoft.NCache.Common.DataStructures.Clustered;
+using Alachisoft.NGroups.Protocols;
+using System.Diagnostics;
+
+#if NETCORE
+using System.Runtime.InteropServices;
+#endif
 
 namespace Alachisoft.NGroups.Blocks
 {
@@ -49,7 +38,7 @@ namespace Alachisoft.NGroups.Blocks
     /// </summary>
     /// <author>  Bela Ban
     /// </author>
-    class ConnectionTable 
+    class ConnectionTable
     {
         virtual public Address LocalAddress
         {
@@ -61,6 +50,7 @@ namespace Alachisoft.NGroups.Blocks
             }
 
         }
+
         virtual public int SendBufferSize
         {
             get
@@ -87,7 +77,6 @@ namespace Alachisoft.NGroups.Blocks
             }
 
         }
-
         private System.Collections.Hashtable conns_NIC_1 = System.Collections.Hashtable.Synchronized(new System.Collections.Hashtable()); // keys: Addresses (peer address), values: Connection
 
         private System.Collections.Hashtable secondayrConns_NIC_1 = System.Collections.Hashtable.Synchronized(new System.Collections.Hashtable()); // keys: Addresses (peer address), values: Connection
@@ -96,9 +85,10 @@ namespace Alachisoft.NGroups.Blocks
 
         private System.Collections.Hashtable dedicatedSenders = System.Collections.Hashtable.Synchronized(new System.Collections.Hashtable()); // keys: Addresses (peer address), values: Connection
         private ConnectionTable.Receiver receiver = null;
-        private System.Net.Sockets.TcpListener srv_sock1 = null;
+        // srv_sock1 & srv_sock2 was initially tcplistener
+        private System.Net.Sockets.Socket srv_sock1 = null;
 
-        private System.Net.Sockets.TcpListener srv_sock2 = null;
+        private System.Net.Sockets.Socket srv_sock2 = null;
 
 
         private System.Net.IPAddress bind_addr1 = null;
@@ -110,6 +100,8 @@ namespace Alachisoft.NGroups.Blocks
         private Address local_addr_s = null; // bind_addr + port of Secondary srv_sock.
 
         internal int srv_port = 7800;
+        public string env_name = "";
+
         private bool stopped;
         private object newcon_sync_lock = new object();
 
@@ -117,7 +109,6 @@ namespace Alachisoft.NGroups.Blocks
 
         private Thread acceptor1 = null; // continuously calls srv_sock.accept()
         private Thread acceptor2 = null; // continuously calls srv_sock.accept()
-       
         private int recv_buf_size = 20000000;
         private int send_buf_size = 640000;
         private System.Collections.ArrayList conn_listeners = System.Collections.ArrayList.Synchronized(new System.Collections.ArrayList(10)); // listeners to be notified when a conn is established/torn down
@@ -129,7 +120,6 @@ namespace Alachisoft.NGroups.Blocks
         private MemoryManager memManager;
         private ReaderWriterLock conn_syn_lock = new ReaderWriterLock();
 
-       
 
         private ILogger _ncacheLog;
 
@@ -142,6 +132,8 @@ namespace Alachisoft.NGroups.Blocks
         object con_selection_mutex = new object();
         bool _usePrimary = true;
         bool enableMonitoring;
+        bool enableNaggling;
+        int nagglingSize;
         bool useDedicatedSender = true;
         object con_reestablish_sync = new object();
         ArrayList _nodeRejoiningList;
@@ -164,7 +156,7 @@ namespace Alachisoft.NGroups.Blocks
             void connectionOpened(Address peer_addr);
             void connectionClosed(Address peer_addr);
             void couldnotConnectTo(Address peer_addr);
-
+            void HandleFailedNodes(object failedNodes);
         }
 
 
@@ -197,7 +189,6 @@ namespace Alachisoft.NGroups.Blocks
             this.srv_port = srv_port;
             this.reaper_interval = reaper_interval;
             this.conn_expire_time = conn_expire_time;
-          
             this._ncacheLog = NCacheLog;
             start();
         }
@@ -218,7 +209,7 @@ namespace Alachisoft.NGroups.Blocks
         /// </param>
         /// 
 
-        public ConnectionTable(ConnectionTable.Receiver r, System.Net.IPAddress bind_addr1, System.Net.IPAddress bind_addr2, int srv_port, int port_range, ILogger NCacheLog, int retries, int retryInterval)
+        public ConnectionTable(ConnectionTable.Receiver r, System.Net.IPAddress bind_addr1, System.Net.IPAddress bind_addr2, int srv_port, int port_range, ILogger NCacheLog, int retries, int retryInterval, bool isInproc,string environmentName)
         {
             setReceiver(r);
             enclosingInstance = (TCP)r;
@@ -235,6 +226,8 @@ namespace Alachisoft.NGroups.Blocks
             this._retries = retries;
             this._retryInterval = retryInterval;
 
+            this._isInproc = isInproc;
+            this.env_name = environmentName;
             start();
         }
 
@@ -283,6 +276,7 @@ namespace Alachisoft.NGroups.Blocks
         {
             if (l != null && !conn_listeners.Contains(l))
                 conn_listeners.Add(l);
+
         }
 
 
@@ -295,7 +289,7 @@ namespace Alachisoft.NGroups.Blocks
         public void publishBytesReceivedStats(long byteReceived)
         {
 
-                enclosingInstance.Stack.perfStatsColl.IncrementBytesReceivedPerSecStats(byteReceived);            
+            enclosingInstance.Stack.perfStatsColl.IncrementBytesReceivedPerSecStats(byteReceived);
 
         }
 
@@ -311,6 +305,7 @@ namespace Alachisoft.NGroups.Blocks
         /// </summary>
         /// <param name="members"></param>
         /// 
+
         public ArrayList synchronzeMembership(ArrayList members, bool establishConnectionWithSecondaryNIC)
         {
             ArrayList failedNodes = new ArrayList();
@@ -330,6 +325,8 @@ namespace Alachisoft.NGroups.Blocks
 
                         if (!conns_NIC_1.Contains(memeber))
                         {
+                            NCacheLog.CriticalInfo("ConnectionTable.synchronzeMembership", "member :" + memeber + " is not part of the custer");
+
                             if (indexOfLocal > indexOfmember)
                             {
                                 newConList.Add(memeber);
@@ -343,7 +340,7 @@ namespace Alachisoft.NGroups.Blocks
                     }
                     catch (Exception e)
                     {
-                        NCacheLog.Error("ConnectionTable.makeConnection",   "member :" + memeber + " Exception:" + e.ToString());
+                        NCacheLog.Error("ConnectionTable.makeConnection", "member :" + memeber + " Exception:" + e.ToString());
                     }
                 }
                 if (newConList.Count > 0)
@@ -373,6 +370,7 @@ namespace Alachisoft.NGroups.Blocks
                     foreach (Address leavingNode in leavingMembers)
                     {
                         con = conns_NIC_1[leavingNode] as Connection;
+
                         if (con != null && con.IsPartOfCluster && !leavingNode.IpAddress.Equals(local_addr.IpAddress))
                         {
                             NCacheLog.Error("ConnectionTable.synchronizeMembership", leavingNode.ToString() + " is no more part of the membership");
@@ -384,13 +382,14 @@ namespace Alachisoft.NGroups.Blocks
                 }
                 catch (Exception e)
                 {
-                    NCacheLog.Error("ConnectionTable.makeConnection",   "destroying connection with member : Exception:" + e.ToString());
+                    NCacheLog.Error("ConnectionTable.makeConnection", "destroying connection with member : Exception:" + e.ToString());
                 }
                 finally
                 {
                     conn_syn_lock.ReleaseWriterLock();
-                    
+
                 }
+
                 if (establishConnectionWithSecondaryNIC)
                 {
                     try
@@ -421,10 +420,12 @@ namespace Alachisoft.NGroups.Blocks
                     }
                     catch (Exception e)
                     {
-                        NCacheLog.Error("ConnectionTable.makeConnection",   "an error occurred while establishing secondary connection. Exception:" + e.ToString());
+                        NCacheLog.Error("ConnectionTable.makeConnection", "an error occurred while establishing secondary connection. Exception:" + e.ToString());
                     }
 
                 }
+
+
 
             }
             return failedNodes;
@@ -442,23 +443,36 @@ namespace Alachisoft.NGroups.Blocks
             {
                 foreach (Address member in nodeList)
                 {
+                    Connection con = null;
                     if (stopped) return;
-                    Connection con = GetConnection(member, null, true, useDualConnection, true);
+                    try
+                    {
+                        con = GetConnection(member, null, true, useDualConnection, true);
+                    }
+                    catch (Exception e)
+                    {
+                        NCacheLog.Error("ConnectionTable.MakeConnectionAsync", " Exception:" + e.ToString());
+                    }
                     if (con == null)
                     {
-                        NCacheLog.Error("ConnectionTable.MakeConnectionAsync",   "could not establish connection with " + member);
+                        NCacheLog.Error("ConnectionTable.MakeConnectionAsync", "could not establish connection with " + member);
                         failedNodes.Add(member);
+
                     }
                     else
                     {
                         con.IsPartOfCluster = true;
-                        if (NCacheLog.IsInfoEnabled) NCacheLog.Info("ConnectionTable.MakeConnectionAsync",   "established connection with " + member);
+                        if (NCacheLog.IsInfoEnabled) NCacheLog.Info("ConnectionTable.MakeConnectionAsync", "established connection with " + member);
                     }
                 }
+
+                for (int i = 0; i < conn_listeners.Count; i++)
+                    ((ConnectionTable.ConnectionListener)conn_listeners[i]).HandleFailedNodes(failedNodes);
+
             }
             catch (Exception e)
             {
-                NCacheLog.Error("ConnectionTable.MakeConnectionAsync",   " Exception:" + e.ToString());
+                NCacheLog.Error("ConnectionTable.MakeConnectionAsync", " Exception:" + e.ToString());
             }
             finally
             {
@@ -475,7 +489,7 @@ namespace Alachisoft.NGroups.Blocks
         /// <param name="reEstablishCon">indicate that if connection is not found in
         /// connectin table then re-establish the connection or not.
         /// </param>
-        public virtual long send(Address dest, byte[] msg, bool reEstablishCon, Array userPayload,Priority priority)
+        public virtual long send(Address dest, IList msg, bool reEstablishCon, Array userPayload, Priority priority)
         {
             Connection conn = null;
             long bytesSent = 0;
@@ -496,7 +510,7 @@ namespace Alachisoft.NGroups.Blocks
                         DedicatedMessageSendManager dmSenderMgr = dedicatedSenders[dest] as DedicatedMessageSendManager;
                         if (dmSenderMgr != null)
                         {
-                            int queueCount = dmSenderMgr.QueueMessage(msg, userPayload,priority);
+                            int queueCount = dmSenderMgr.QueueMessage(msg, userPayload, priority);
 
                             enclosingInstance.Stack.perfStatsColl.IncrementTcpDownQueueCountStats(queueCount);
 
@@ -508,7 +522,7 @@ namespace Alachisoft.NGroups.Blocks
             }
             catch (System.Net.Sockets.SocketException sock_ex)
             {
-                if (NCacheLog.IsErrorEnabled) NCacheLog.Error("ConnectionTable.GetConnection",   sock_ex.Message);
+                if (NCacheLog.IsErrorEnabled) NCacheLog.Error("ConnectionTable.GetConnection", sock_ex.Message);
                 for (int i = 0; i < conn_listeners.Count; i++)
                     ((ConnectionTable.ConnectionListener)conn_listeners[i]).couldnotConnectTo(dest);
 
@@ -518,7 +532,7 @@ namespace Alachisoft.NGroups.Blocks
             catch (ThreadInterruptedException) { return bytesSent; }
             catch (System.Exception ex)
             {
-                if (NCacheLog.IsErrorEnabled) NCacheLog.Error("ConnectionTable.GetConnection",   "connection to " + dest + " could not be established: " + ex);
+                if (NCacheLog.IsErrorEnabled) NCacheLog.Error("ConnectionTable.GetConnection", "connection to " + dest + " could not be established: " + ex);
                 throw new ExtSocketException(ex.ToString());
             }
 
@@ -530,7 +544,7 @@ namespace Alachisoft.NGroups.Blocks
                     DedicatedMessageSendManager dmSenderMgr = dedicatedSenders[dest] as DedicatedMessageSendManager;
                     if (dmSenderMgr != null)
                     {
-                        int queueCount = dmSenderMgr.QueueMessage(msg, userPayload,priority);
+                        int queueCount = dmSenderMgr.QueueMessage(msg, userPayload, priority);
 
                         enclosingInstance.Stack.perfStatsColl.IncrementTcpDownQueueCountStats(queueCount);
 
@@ -549,19 +563,18 @@ namespace Alachisoft.NGroups.Blocks
                 {
                     socketSendTimeStats.EndSample();
                     long operationsperSec = (long)(1000 / socketSendTimeStats.Avg);
-                    
                 }
             }
             catch (System.Exception ex)
             {
                 if (conn.NeedReconnect)
                 {
-                    if (NCacheLog.IsInfoEnabled) NCacheLog.Info("ConnectionTable.send",   local_addr + " re-establishing connection with " + dest);
+                    if (NCacheLog.IsInfoEnabled) NCacheLog.Info("ConnectionTable.send", local_addr + " re-establishing connection with " + dest);
 
                     conn = ReEstablishConnection(dest);
                     if (conn != null)
                     {
-                        if (NCacheLog.IsInfoEnabled) NCacheLog.Info("ConnectionTable.send",   local_addr + " re-established connection successfully with " + dest);
+                        if (NCacheLog.IsInfoEnabled) NCacheLog.Info("ConnectionTable.send", local_addr + " re-established connection successfully with " + dest);
 
                         try
                         {
@@ -570,16 +583,16 @@ namespace Alachisoft.NGroups.Blocks
                         }
                         catch (Exception e)
                         {
-                            NCacheLog.Error("ConnectionTable.send",   "send failed after reconnect " + e.ToString());
+                            NCacheLog.Error("ConnectionTable.send", "send failed after reconnect " + e.ToString());
                         }
                     }
                     else
-                        NCacheLog.Error("ConnectionTable.send",   local_addr + " failed to re-establish connection  with " + dest);
+                        NCacheLog.Error("ConnectionTable.send", local_addr + " failed to re-establish connection  with " + dest);
                 }
                 else
-                    if (NCacheLog.IsInfoEnabled) NCacheLog.Info("ConnectionTable.send",   local_addr + " need not to re-establish connection with " + dest);
+                    if (NCacheLog.IsInfoEnabled) NCacheLog.Info("ConnectionTable.send", local_addr + " need not to re-establish connection with " + dest);
 
-                if (NCacheLog.IsInfoEnabled) NCacheLog.Info("Ct.send",   "sending message to " + dest + " failed (ex=" + ex.GetType().FullName + "); removing from connection table");
+                if (NCacheLog.IsInfoEnabled) NCacheLog.Info("Ct.send", "sending message to " + dest + " failed (ex=" + ex.GetType().FullName + "); removing from connection table");
                 throw new ExtSocketException(ex.ToString());
             }
             return bytesSent;
@@ -596,20 +609,27 @@ namespace Alachisoft.NGroups.Blocks
                 Connection secondary = null;
                 while (ide.MoveNext())
                 {
+
                     secondary = secondayrConns_NIC_1[ide.Key] as Connection;
+
                     if (((Connection)ide.Value).IsIdle)
                     {
+
                         if (secondary != null)
                         {
                             if (secondary.IsIdle)
+
                                 idleMembers.Add(ide.Key);
+
                         }
                         else
                         {
                             idleMembers.Add(ide.Key);
                         }
+
                     }
                 }
+
             }
             finally
             {
@@ -635,6 +655,7 @@ namespace Alachisoft.NGroups.Blocks
                 {
                     ((Connection)ide.Value).IsIdle = idle;
                 }
+
             }
             finally
             {
@@ -655,7 +676,7 @@ namespace Alachisoft.NGroups.Blocks
             System.Net.Sockets.Socket sock;
             IPEndPoint ipRemoteEndPoint = new IPEndPoint(((Address)node).IpAddress, ((Address)node).Port);
             sock = new Socket(AddressFamily.InterNetwork, SocketType.Stream, ProtocolType.Tcp);
-            
+
             sock.SetSocketOption(SocketOptionLevel.Tcp, SocketOptionName.NoDelay, 1);
             sock.SetSocketOption(SocketOptionLevel.Socket, SocketOptionName.SendBuffer, send_buf_size);
             sock.SetSocketOption(SocketOptionLevel.Socket, SocketOptionName.ReceiveBuffer, recv_buf_size);
@@ -672,7 +693,7 @@ namespace Alachisoft.NGroups.Blocks
             {
                 sock.Bind(new IPEndPoint(bindAddr, 0));
 
-                if (NCacheLog.IsInfoEnabled) NCacheLog.Info("ConnectionTable.Connect",   "Opening socket connection with " + ipRemoteEndPoint.ToString());
+                if (NCacheLog.IsInfoEnabled) NCacheLog.Info("ConnectionTable.Connect", "Opening socket connection with " + ipRemoteEndPoint.ToString());
                 sock.Connect(ipRemoteEndPoint);
 
             }
@@ -680,7 +701,6 @@ namespace Alachisoft.NGroups.Blocks
             {
                 if (se.ErrorCode == 10049) //"Requested address is not valid in its context
                 {
-                    // A call to bind to a local ip is failed, therefore we dont bind.
                     sock = new Socket(AddressFamily.InterNetwork, SocketType.Stream, ProtocolType.Tcp);
 
                     sock.SetSocketOption(SocketOptionLevel.Tcp, SocketOptionName.NoDelay, 1);
@@ -688,7 +708,7 @@ namespace Alachisoft.NGroups.Blocks
                     sock.SetSocketOption(SocketOptionLevel.Socket, SocketOptionName.ReceiveBuffer, recv_buf_size);
 
                     //we do not bind an IP address.
-                    if (NCacheLog.IsInfoEnabled) NCacheLog.Info("ConnectionTable.Connect",   "Opening socket connection with " + ipRemoteEndPoint.ToString());
+                    if (NCacheLog.IsInfoEnabled) NCacheLog.Info("ConnectionTable.Connect", "Opening socket connection with " + ipRemoteEndPoint.ToString());
                     sock.Connect(ipRemoteEndPoint);
                 }
                 else
@@ -699,12 +719,12 @@ namespace Alachisoft.NGroups.Blocks
             size = sock.GetSocketOption(SocketOptionLevel.Socket, SocketOptionName.SendBuffer);
             int lport = 0;
             if (!sock.Connected)
-                NCacheLog.Error("Connection.getConnection()",   "can not be connected");
+                NCacheLog.Error("Connection.getConnection()", "can not be connected");
             else
             {
                 lport = ((IPEndPoint)sock.LocalEndPoint).Port;
                 if (NCacheLog.IsInfoEnabled) NCacheLog.Info("CONNECTED at local port = " + lport);
-                if (NCacheLog.IsInfoEnabled) NCacheLog.Info("ConnectionTable.getConnection()",   "client port local_port= " + ((IPEndPoint)sock.LocalEndPoint).Port + "client port remote_port= " + ((IPEndPoint)sock.RemoteEndPoint).Port);
+                if (NCacheLog.IsInfoEnabled) NCacheLog.Info("ConnectionTable.getConnection()", "client port local_port= " + ((IPEndPoint)sock.LocalEndPoint).Port + "client port remote_port= " + ((IPEndPoint)sock.RemoteEndPoint).Port);
             }
             return sock;
         }
@@ -726,7 +746,7 @@ namespace Alachisoft.NGroups.Blocks
                     {
                         Connection con = GetConnection(secondaryAddres, con_with_NIC_1.peer_addr, true, useDualConnection, false);
                         if (con == null)
-                            NCacheLog.Error("ConnectionTable.ConnectToPeerOnSeconary",   "failed to connect with " + con_with_NIC_1.peer_addr + " on second IP " + secondaryAddres);
+                            NCacheLog.Error("ConnectionTable.ConnectToPeerOnSeconary", "failed to connect with " + con_with_NIC_1.peer_addr + " on second IP " + secondaryAddres);
                     }
                 }
 
@@ -740,7 +760,6 @@ namespace Alachisoft.NGroups.Blocks
             {
 
                 if (_usePrimary || !useDualConnection)
-
                     con = conns_NIC_1[dest] as Connection;
 
                 else
@@ -756,7 +775,9 @@ namespace Alachisoft.NGroups.Blocks
             }
             if (con == null && reEstablish)
             {
+
                 con = GetConnection(dest, null, reEstablish, useDualConnection, true);
+
             }
             return con;
         }
@@ -770,24 +791,29 @@ namespace Alachisoft.NGroups.Blocks
         public Connection GetPrimaryConnection(Address dest, bool reEstablish)
         {
             Connection con;
-            con = getConnection(dest, null, reEstablish, true, true,true);
+
+            con = getConnection(dest, null, reEstablish, true, true, true,env_name);
+
             return con;
         }
 
         protected virtual Connection GetConnection(Address dest, Address primaryAddress, bool reEstablish, bool getDualConnection, bool withFirstNIC)
         {
             Connection con;
-            con = getConnection(dest, primaryAddress, reEstablish, true, withFirstNIC,true);
+            con = getConnection(dest, primaryAddress, reEstablish, true, withFirstNIC, true,env_name);
             if (con != null && getDualConnection && reEstablish)
             {
-                getConnection(dest, primaryAddress, reEstablish, false, withFirstNIC,true);
+                getConnection(dest, primaryAddress, reEstablish, false, withFirstNIC, true,env_name);
             }
             return con;
         }
 
+
         /// <summary>Try to obtain correct Connection (or create one if not yet existent) </summary>
-        protected virtual Connection getConnection(Address dest, Address primaryAddress, bool reEstablishCon, bool isPrimary, bool withFirstNIC,bool connectingFirstTime)
+        protected virtual Connection getConnection(Address dest, Address primaryAddress, bool reEstablishCon, bool isPrimary, bool withFirstNIC, bool connectingFirstTime,string environmentName)
         {
+            //env_name
+
             Connection conn = null;
             System.Net.Sockets.Socket sock;
             Address peer_addr = null;
@@ -809,46 +835,45 @@ namespace Alachisoft.NGroups.Blocks
                         conn = (Connection)secondayrConns_NIC_2[primaryAddress];
                 }
 
-                if ((conn == null ||!connectingFirstTime) && reEstablishCon)
+                if ((conn == null || !connectingFirstTime) && reEstablishCon)
                 {
 
                     try
                     {
-                        if (NCacheLog.IsInfoEnabled) NCacheLog.Info("ConnectionTable.getConnection()",   "No Connetion was found found with " + dest.ToString());
+                        if (NCacheLog.IsInfoEnabled) NCacheLog.Info("ConnectionTable.getConnection()", "No Connetion was found found with " + dest.ToString());
                         if (local_addr == null) return null; //cluster being stopped.
 
                         sock = Connect(dest, withFirstNIC);
-
-
-                        conn = new Connection(this, sock, primaryAddress, this.NCacheLog, isPrimary, ServiceConfiguration.NaglingSize, _retries, _retryInterval);
+                        conn = new Connection(this, sock, primaryAddress, this.NCacheLog, isPrimary, ServiceConfiguration.NaglingSize, _retries, _retryInterval,env_name);
                         conn.MemManager = MemManager;
                         conn.IamInitiater = true;
                         ConnectInfo conInfo = null;
                         try
                         {
                             byte connectStatus = connectingFirstTime ? ConnectInfo.CONNECT_FIRST_TIME : ConnectInfo.RECONNECTING;
-                            
-                            conn.sendLocalAddress(local_addr,connectingFirstTime);
-                            conn.readPeerAddress(sock,ref peer_addr);
+
+                            conn.sendLocalAddress(local_addr, connectingFirstTime);
+                            conn.readPeerAddress(sock, ref peer_addr);
                             if (((Address)local_addr).CompareTo((Address)dest) > 0)
                             {
                                 conInfo = new ConnectInfo(connectStatus, GetConnectionId());
-                                if (NCacheLog.IsInfoEnabled) NCacheLog.Info("ConnectionTable.getConnection",   dest + " I should send connect_info");
+                                if (NCacheLog.IsInfoEnabled) NCacheLog.Info("ConnectionTable.getConnection", dest + " I should send connect_info");
                                 conn.SendConnectInfo(conInfo);
                             }
                             else
                             {
                                 conInfo = conn.ReadConnectInfo(sock);
                             }
+                            //log.Error("ConnectionTable.getConnection",   " conn_info :" + conInfo);
                             conn.ConInfo = conInfo;
                         }
                         catch (System.Exception e)
                         {
-                            NCacheLog.Error("ConnectionTable.getConnection()",   e.Message);
+                            NCacheLog.Error("ConnectionTable.getConnection()", e.Message);
                             conn.DestroySilent();
                             return null;
                         }
-                        if (NCacheLog.IsInfoEnabled) NCacheLog.Info("ConnectionTable.getConnection",   "b4 lock conns.SyncRoot");
+                        if (NCacheLog.IsInfoEnabled) NCacheLog.Info("ConnectionTable.getConnection", "b4 lock conns.SyncRoot");
                         try
                         {
                             conn_syn_lock.AcquireWriterLock(Timeout.Infinite);
@@ -858,10 +883,10 @@ namespace Alachisoft.NGroups.Blocks
                                 {
                                     if (conns_NIC_1.ContainsKey(dest))
                                     {
-                                        if (NCacheLog.IsInfoEnabled) NCacheLog.Info("ConnectionTable.getConnection()",   "connection is already in the table");
+                                        if (NCacheLog.IsInfoEnabled) NCacheLog.Info("ConnectionTable.getConnection()", "connection is already in the table");
                                         Connection tmpConn = (Connection)conns_NIC_1[dest];
-                                        
-                                        if (NCacheLog.IsInfoEnabled) NCacheLog.Info("ConnectionTable.getConnection",   "table_con id :" + tmpConn.ConInfo.Id + " new_con id :" + conn.ConInfo.Id);
+
+                                        if (NCacheLog.IsInfoEnabled) NCacheLog.Info("ConnectionTable.getConnection", "table_con id :" + tmpConn.ConInfo.Id + " new_con id :" + conn.ConInfo.Id);
                                         if (conn.ConInfo.Id < tmpConn.ConInfo.Id)
                                         {
                                             conn.Destroy();
@@ -869,11 +894,10 @@ namespace Alachisoft.NGroups.Blocks
                                         }
                                         else
                                         {
-                                            if (NCacheLog.IsInfoEnabled) NCacheLog.Info("ConnectionTable.getConnection()",   dest + "--->connection present in the table is terminated");
-                                            
+                                            if (NCacheLog.IsInfoEnabled) NCacheLog.Info("ConnectionTable.getConnection()", dest + "--->connection present in the table is terminated");
                                             tmpConn.Destroy();
-                                             conns_NIC_1.Remove(dest);
-                                         }
+                                            conns_NIC_1.Remove(dest);
+                                        }
                                     }
 
                                     notifyConnectionOpened(dest);
@@ -882,9 +906,8 @@ namespace Alachisoft.NGroups.Blocks
                                 {
                                     if (conns_NIC_2.ContainsKey(primaryAddress))
                                     {
-                                        if (NCacheLog.IsInfoEnabled) NCacheLog.Info("ConnectionTable.getConnection()",   "connection is already in the table");
+                                        if (NCacheLog.IsInfoEnabled) NCacheLog.Info("ConnectionTable.getConnection()", "connection is already in the table");
                                         Connection tmpConn = (Connection)conns_NIC_1[dest];
-                                        
                                         if (conn.ConInfo.Id < tmpConn.ConInfo.Id)
                                         {
                                             conn.Destroy();
@@ -892,8 +915,7 @@ namespace Alachisoft.NGroups.Blocks
                                         }
                                         else
                                         {
-                                            NCacheLog.Warn("ConnectionTable.getConnection()",   dest + "connection present in the table is terminated");
-                                            
+                                            NCacheLog.Warn("ConnectionTable.getConnection()", dest + "connection present in the table is terminated");
                                             tmpConn.Destroy();
                                             conns_NIC_2.Remove(primaryAddress);
                                         }
@@ -906,11 +928,12 @@ namespace Alachisoft.NGroups.Blocks
                         }
                         finally
                         {
-                            conn_syn_lock.ReleaseWriterLock();
+                            if (conn_syn_lock.IsWriterLockHeld)
+                                conn_syn_lock.ReleaseWriterLock();
                         }
-                        if (NCacheLog.IsInfoEnabled) NCacheLog.Info("ConnectionTable.getConnection",   "after lock conns.SyncRoot");
-                        
-                        if (NCacheLog.IsInfoEnabled) NCacheLog.Info("ConnectionTable.getConnection()",   "connection is now working");
+                        if (NCacheLog.IsInfoEnabled) NCacheLog.Info("ConnectionTable.getConnection", "after lock conns.SyncRoot");
+
+                        if (NCacheLog.IsInfoEnabled) NCacheLog.Info("ConnectionTable.getConnection()", "connection is now working");
                     }
                     finally
                     {
@@ -921,13 +944,11 @@ namespace Alachisoft.NGroups.Blocks
             }
             catch (System.Threading.ThreadAbortException e)
             {
-                
                 if (conn != null) conn.Destroy();
                 conn = null;
             }
             catch (System.Threading.ThreadInterruptedException ex)
             {
-                
                 if (conn != null) conn.Destroy();
                 conn = null;
             }
@@ -955,23 +976,22 @@ namespace Alachisoft.NGroups.Blocks
                 //Another thread might have been able to re-establish the connnection.
                 if (con != null && con.IsConnected)
                 {
-                    if(NCacheLog.IsInfoEnabled) NCacheLog.Info("ConnectionTable.ReEstablishConnection",   "already re-established connection with " + addr);
+                    if (NCacheLog.IsInfoEnabled) NCacheLog.Info("ConnectionTable.ReEstablishConnection", "already re-established connection with " + addr);
                     return con;
                 }
-                
-                con = getConnection(addr, null, true, true, true, false); 
+                con = getConnection(addr, null, true, true, true, false,env_name);
+
 
             }
             catch (Exception ex)
             {
                 con = null;
-                NCacheLog.Error("ConnectionTable.ReEstablishConnection",   "failed to re-establish connection with " + addr + " " + ex.ToString());
+                NCacheLog.Error("ConnectionTable.ReEstablishConnection", "failed to re-establish connection with " + addr + " " + ex.ToString());
             }
             finally
             {
                 conn_syn_lock.ReleaseWriterLock();
             }
-           
             return con;
         }
 
@@ -1040,6 +1060,7 @@ namespace Alachisoft.NGroups.Blocks
         {
             srv_sock1 = createServerSocket(bind_addr1, srv_port);
 
+
             if (bind_addr2 != null)
                 srv_sock2 = createServerSocket(bind_addr2, 0);
 
@@ -1049,25 +1070,24 @@ namespace Alachisoft.NGroups.Blocks
                 throw new ExtSocketException("Cluster can not be started on the given server port. The port might be already in use.");
             }
             if (bind_addr1 != null)
-                local_addr = new Address(bind_addr1, ((System.Net.IPEndPoint)srv_sock1.LocalEndpoint).Port);
+                local_addr = new Address(bind_addr1, ((System.Net.IPEndPoint)srv_sock1.LocalEndPoint).Port);
             else
-                local_addr = new Address(((IPEndPoint)srv_sock1.LocalEndpoint).Address, ((System.Net.IPEndPoint)srv_sock1.LocalEndpoint).Port);
+                local_addr = new Address(((IPEndPoint)srv_sock1.LocalEndPoint).Address, ((System.Net.IPEndPoint)srv_sock1.LocalEndPoint).Port);
 
             if (srv_sock2 != null)
             {
-                local_addr_s = new Address(bind_addr2, ((System.Net.IPEndPoint)srv_sock2.LocalEndpoint).Port);
+                local_addr_s = new Address(bind_addr2, ((System.Net.IPEndPoint)srv_sock2.LocalEndPoint).Port);
             }
 
 
             if (NCacheLog.IsInfoEnabled) NCacheLog.Info("server socket created on " + local_addr);
 
-            
+            enableNaggling = ServiceConfiguration.EnableNagling;
+            nagglingSize = ServiceConfiguration.NaglingSize * 1024;
             enableMonitoring = ServiceConfiguration.EnableDebuggingCounters;
             useDualConnection = ServiceConfiguration.EnableDualSocket;
-            
 
-            //Roland Kurmann 4/7/2003, build new thread group
-            //Roland Kurmann 4/7/2003, put in thread_group
+
             acceptor1 = new Thread(new ThreadStart(this.RunPrimary));
             acceptor1.Name = "ConnectionTable.AcceptorThread_p";
             acceptor1.IsBackground = true;
@@ -1075,7 +1095,6 @@ namespace Alachisoft.NGroups.Blocks
 
             NCacheLog.CriticalInfo("ConnectionTable.Start", "operating parameters -> [bind_addr :" + local_addr + " ; dual_socket: " + useDualConnection + " ; nagling: " + ServiceConfiguration.EnableNagling + " ; nagling_size : " + ServiceConfiguration.NaglingSize + " ]");
 
-            
             // start the connection reaper - will periodically remove unused connections
             if (use_reaper && reaper == null)
             {
@@ -1092,12 +1111,16 @@ namespace Alachisoft.NGroups.Blocks
             stopped = true;
             System.Collections.IEnumerator it = null;
             Connection conn;
-            System.Net.Sockets.TcpListener tmp;
+            System.Net.Sockets.Socket tmp;
             if (disconThread != null)
             {
                 //Flush: Buffer Appender can clear all Logs as reported by this thread
                 NCacheLog.Flush();
+#if !NETCORE
                 disconThread.Abort();
+#elif NETCORE
+                disconThread.Interrupt();
+#endif
                 disconThread = null;
             }
             // 1. close the server socket (this also stops the acceptor thread)
@@ -1107,7 +1130,13 @@ namespace Alachisoft.NGroups.Blocks
                 {
                     tmp = srv_sock1;
                     srv_sock1 = null;
-                    tmp.Stop();
+#if NETCORE
+                    if (RuntimeInformation.IsOSPlatform(OSPlatform.Linux))
+                    {
+                        tmp.Shutdown(SocketShutdown.Both);
+                    }    
+#endif
+                    tmp.Close();
                 }
                 catch (System.Exception)
                 {
@@ -1120,7 +1149,13 @@ namespace Alachisoft.NGroups.Blocks
                 {
                     tmp = srv_sock2;
                     srv_sock2 = null;
-                    tmp.Stop();
+#if NETCORE
+                    if (RuntimeInformation.IsOSPlatform(OSPlatform.Linux))
+                    {
+                        tmp.Shutdown(SocketShutdown.Both);
+                    }
+#endif
+                    tmp.Close();
                 }
                 catch (System.Exception)
                 {
@@ -1134,7 +1169,7 @@ namespace Alachisoft.NGroups.Blocks
 
             // 3. then close the connections
 
-            if (NCacheLog.IsInfoEnabled) NCacheLog.Info("ConnectionTable.stop",   "b4 lock conns.SyncRoot");
+            if (NCacheLog.IsInfoEnabled) NCacheLog.Info("ConnectionTable.stop", "b4 lock conns.SyncRoot");
             try
             {
                 conn_syn_lock.AcquireWriterLock(Timeout.Infinite);
@@ -1145,7 +1180,7 @@ namespace Alachisoft.NGroups.Blocks
                 while (it.MoveNext())
                 {
                     conn = (Connection)it.Current;
-                    conn.SendLeaveNotification();                    
+                    conn.SendLeaveNotification();
                     conn.Destroy();
                 }
                 conns_NIC_1.Clear();
@@ -1184,9 +1219,10 @@ namespace Alachisoft.NGroups.Blocks
             }
             finally
             {
-                conn_syn_lock.ReleaseWriterLock();
+                if (conn_syn_lock.IsWriterLockHeld)
+                    conn_syn_lock.ReleaseWriterLock();
             }
-            if (NCacheLog.IsInfoEnabled) NCacheLog.Info("ConnectionTable.stop",   "after lock conns.SyncRoot");
+            if (NCacheLog.IsInfoEnabled) NCacheLog.Info("ConnectionTable.stop", "after lock conns.SyncRoot");
         }
 
 
@@ -1195,15 +1231,15 @@ namespace Alachisoft.NGroups.Blocks
 
         public virtual void remove(Address addr, bool isPrimary)
         {
-            
             Connection conn;
-            if (NCacheLog.IsInfoEnabled) NCacheLog.Info("ConnectionTable.remove",   "b4 lock conns.SyncRoot");
+            if (NCacheLog.IsInfoEnabled) NCacheLog.Info("ConnectionTable.remove", "b4 lock conns.SyncRoot");
             try
             {
                 conn_syn_lock.AcquireWriterLock(Timeout.Infinite);
 
                 if (isPrimary)
                 {
+
                     conn = (Connection)conns_NIC_1[addr];
 
                     if (conn != null)
@@ -1225,7 +1261,7 @@ namespace Alachisoft.NGroups.Blocks
                 if (conn != null)
                 {
                     try
-                    {                        
+                    {
                         conn.Destroy(); // won't do anything if already destroyed
                     }
                     catch (System.Exception)
@@ -1234,37 +1270,29 @@ namespace Alachisoft.NGroups.Blocks
                     secondayrConns_NIC_1.Remove(addr);
                 }
 
-                
 
                 if (NCacheLog.IsInfoEnabled) NCacheLog.Info("addr=" + addr + ",   connections are " + ToString());
             }
             finally
             {
-                conn_syn_lock.ReleaseWriterLock();
+                if (conn_syn_lock.IsWriterLockHeld)
+                    conn_syn_lock.ReleaseWriterLock();
             }
             RemoveDedicatedMessageSender(addr);
-            if (NCacheLog.IsInfoEnabled) NCacheLog.Info("ConnectionTable.remove",   "after lock conns.SyncRoot");
+            if (NCacheLog.IsInfoEnabled) NCacheLog.Info("ConnectionTable.remove", "after lock conns.SyncRoot");
         }
 
         Thread disconThread;
+        private bool _isInproc;
+
         public void ConfigureNodeRejoining(ArrayList list)
         {
-           
             {
                 _nodeRejoiningList = list;
             }
             bool simulate = false;
 
-            string str = System.Configuration.ConfigurationSettings.AppSettings["NCacheServer.SimulateSocketClose"];
-
-            if (!string.IsNullOrEmpty(str))
-            {
-                try
-                {
-                    simulate = Convert.ToBoolean(str);
-                }
-                catch (Exception) { }
-            }
+            simulate = ServiceConfiguration.SimulateSocketClose;
 
             if (simulate && disconThread == null)
             {
@@ -1276,21 +1304,11 @@ namespace Alachisoft.NGroups.Blocks
         }
         private void Disconnect()
         {
-			int interval = 60;
+            int interval = 60;
+
             NCacheLog.CriticalInfo("ConnectionTable.Disconnect", "simulating sudden disconnect " + Thread.CurrentThread.ManagedThreadId);
 
-            string str = System.Configuration.ConfigurationSettings.AppSettings["NCacheServer.SocketCloseInterval"];
-
-            if (!string.IsNullOrEmpty(str))
-            {
-                try
-                {
-                    interval = Convert.ToInt32(str);
-                    if (interval < 20)
-                        interval = 20;
-                }
-                catch (Exception) { }
-            }
+            interval = ServiceConfiguration.SocketCloseInterval;
 
             NCacheLog.CriticalInfo("ConnectionTable.Disconnect", "socket close interval :" + interval + " seconds");
             while (true)
@@ -1331,6 +1349,12 @@ namespace Alachisoft.NGroups.Blocks
                             {
                                 NCacheLog.CriticalInfo("ConnectionTable.Disconnect", "going to disconnect with " + con.peer_addr);
                                 con.markedClose = true;
+#if NETCORE
+                                if (RuntimeInformation.IsOSPlatform(OSPlatform.Linux))
+                                {
+                                    con.sock.Shutdown(SocketShutdown.Both);
+                                }
+#endif
                                 con.sock.Close();
                             }
                         }
@@ -1354,7 +1378,7 @@ namespace Alachisoft.NGroups.Blocks
         {
             if (!stopped)
             {
-                Event evt = new Event(Event.CONNECTION_BREAKAGE, node, Priority.Critical);
+                Event evt = new Event(Event.CONNECTION_BREAKAGE, node, Priority.High);
                 enclosingInstance.passUp(evt);
             }
         }
@@ -1362,21 +1386,24 @@ namespace Alachisoft.NGroups.Blocks
         {
             if (!stopped)
             {
-                Event evt = new Event(Event.CONNECTION_RE_ESTABLISHED, node, Priority.Critical);
+                Event evt = new Event(Event.CONNECTION_RE_ESTABLISHED, node, Priority.High);
                 enclosingInstance.passUp(evt);
             }
         }
-        public Connection Reconnect(Address node)
+        public Connection Reconnect(Address node, out bool connectionCloseNotified)
         {
             Connection peerConnection = null;
             bool shouldConnect = false;
             bool initiateReconnection = false;
+            connectionCloseNotified = false;
 
             if (node == null)
             {
-                NCacheLog.Error("ConnectionTable.Reconnect",   "node name is NULL");
+                NCacheLog.Error("ConnectionTable.Reconnect", "node name is NULL");
                 return null;
             }
+
+
 
             lock (con_reestablish_sync)
             {
@@ -1412,7 +1439,7 @@ namespace Alachisoft.NGroups.Blocks
                     }
                     if (shouldConnect)
                     {
-                        if (NCacheLog.IsInfoEnabled) NCacheLog.Info("ConnectionTable.Reconnect",   node.ToString() + " is part of node rejoining list");
+                        if (NCacheLog.IsInfoEnabled) NCacheLog.Info("ConnectionTable.Reconnect", node.ToString() + " is part of node rejoining list");
 
                         int connectionRetries = _retries;
 
@@ -1435,14 +1462,15 @@ namespace Alachisoft.NGroups.Blocks
                         if (peerConnection == null)
                         {
 
-                            if (NCacheLog.IsErrorEnabled) NCacheLog.Error("ConnectionTable.Reconnect",   "Can not establish connection with " + node + " after " + _retries + " retries");
+                            if (NCacheLog.IsErrorEnabled) NCacheLog.Error("ConnectionTable.Reconnect", "Can not establish connection with " + node + " after " + _retries + " retries");
 
                             notifyConnectionClosed(node);
+                            connectionCloseNotified = false;
+
                         }
                         else
                         {
                             NCacheLog.CriticalInfo("ConnectionTable.Reconnect", "Connection re-establised with " + node);
-                            
                             if (peerConnection.IamInitiater)
                             {
                                 //inform above layers about re-connection.
@@ -1452,14 +1480,18 @@ namespace Alachisoft.NGroups.Blocks
                     }
                     else
                     {
-                        if (NCacheLog.IsInfoEnabled) NCacheLog.Info("ConnectionTable.Reconnect",   node.ToString() + " is not part of the node rejoining list");
+                        if (NCacheLog.IsInfoEnabled) NCacheLog.Info("ConnectionTable.Reconnect", node.ToString() + " is not part of the node rejoining list");
                         notifyConnectionClosed(node);
+                        connectionCloseNotified = true;
+
                     }
                 }
                 catch (Exception e)
                 {
-                    NCacheLog.Error("ConnectionTable.Reconnect",   "An error occurred while reconnecting with " + node + " Error :" + e.ToString());
+                    NCacheLog.Error("ConnectionTable.Reconnect", "An error occurred while reconnecting with " + node + " Error :" + e.ToString());
                     notifyConnectionClosed(node);
+                    connectionCloseNotified = true;
+
                 }
             }
 
@@ -1471,11 +1503,11 @@ namespace Alachisoft.NGroups.Blocks
 
             try
             {
-                enclosingInstance.passUp(new Event(Event.NODE_REJOINING, node, Alachisoft.NCache.Common.Enum.Priority.Critical));
+                enclosingInstance.passUp(new Event(Event.NODE_REJOINING, node, Alachisoft.NCache.Common.Enum.Priority.High));
             }
             catch (Exception e)
             {
-                NCacheLog.Error("ConnectionTable.InformAboutReconnection",   e.ToString());
+                NCacheLog.Error("ConnectionTable.InformAboutReconnection", e.ToString());
             }
         }
         public void RunPrimary()
@@ -1495,50 +1527,45 @@ namespace Alachisoft.NGroups.Blocks
         public virtual void Run(Object arg)
         {
             Object[] objArr = arg as object[];
-            TcpListener listener = objArr[0] as TcpListener;
+            Socket socketListener = objArr[0] as Socket;
             bool isPrimaryListener = (bool)objArr[1];
 
             System.Net.Sockets.Socket client_sock;
             Connection conn = null;
             Address peer_addr = null;
 
-            while (listener != null)
+            while (socketListener != null)
             {
                 try
                 {
-                    client_sock = listener.AcceptSocket();
+                    client_sock = socketListener.Accept();
                     int cport = ((IPEndPoint)client_sock.RemoteEndPoint).Port;
 
-                     if (NCacheLog.IsInfoEnabled) NCacheLog.Info("ConnectionTable.Run()", "CONNECTION ACCPETED Remote port = " + cport);
+                    if (NCacheLog.IsInfoEnabled) NCacheLog.Info("ConnectionTable.Run()", "CONNECTION ACCPETED Remote port = " + cport);
                     client_sock.SetSocketOption(SocketOptionLevel.Tcp, SocketOptionName.NoDelay, 1);
-                    
+
                     client_sock.SetSocketOption(SocketOptionLevel.Socket, SocketOptionName.SendBuffer, send_buf_size);
                     client_sock.SetSocketOption(SocketOptionLevel.Socket, SocketOptionName.ReceiveBuffer, recv_buf_size);
 
                     object size = client_sock.GetSocketOption(SocketOptionLevel.Socket, SocketOptionName.ReceiveBuffer);
                     size = client_sock.GetSocketOption(SocketOptionLevel.Socket, SocketOptionName.SendBuffer);
                     // create new thread and add to conn table
-
-                    conn = new Connection(this, client_sock, null, _ncacheLog, true, ServiceConfiguration.NaglingSize, _retries, _retryInterval); // will call receive(msg)
+                    conn = new Connection(this, client_sock, null, _ncacheLog, true, ServiceConfiguration.NaglingSize, _retries, _retryInterval,env_name); // will call receive(msg)
 
                     // get peer's address
                     bool connectingFirstTime = conn.readPeerAddress(client_sock, ref peer_addr);
-                    conn.sendLocalAddress(local_addr,connectingFirstTime);
+                    conn.sendLocalAddress(local_addr, connectingFirstTime);
                     ConnectInfo conInfo = null;
                     if (((Address)local_addr).CompareTo((Address)peer_addr) > 0)
                     {
                         conInfo = new ConnectInfo(ConnectInfo.CONNECT_FIRST_TIME, GetConnectionId());
                         if (NCacheLog.IsInfoEnabled) NCacheLog.Info("ConnectionTable.Run", peer_addr + " I should send connect_info");
-
-                       
                         conn.SendConnectInfo(conInfo);
                     }
                     else
                     {
                         conInfo = conn.ReadConnectInfo(client_sock);
-                        
                     }
-
                     conn.ConInfo = conInfo;
                     conn.ConInfo.ConnectStatus = connectingFirstTime ? ConnectInfo.CONNECT_FIRST_TIME : ConnectInfo.RECONNECTING;
 
@@ -1546,15 +1573,15 @@ namespace Alachisoft.NGroups.Blocks
 
                     conn.PeerAddress = peer_addr;
 
+                    NCacheLog.CriticalInfo("ConnectionTable.Run", peer_addr + " established connection");
+
                     if (conInfo.ConnectStatus == ConnectInfo.RECONNECTING)
                     {
                         //if other node is reconnecting then we should check for its member ship first.
                         bool ismember = enclosingInstance.IsMember(peer_addr);
                         if (!ismember)
                         {
-
-                            NCacheLog.CriticalInfo("ConnectionTa ble.Run", "ConnectionTable.Run" + peer_addr + " has connected. but it is no more part of the membership");
-
+                            NCacheLog.CriticalInfo("ConnectionTable.Run", "ConnectionTable.Run" + peer_addr + " has connected. but it is no more part of the membership");
                             conn.SendLeaveNotification();
                             Thread.Sleep(1000); //just to make sure that peer node receives the leave notification.
                             conn.Destroy();
@@ -1563,7 +1590,7 @@ namespace Alachisoft.NGroups.Blocks
                     }
 
                     bool isPrimary = true;
-
+                    
                     if (NCacheLog.IsInfoEnabled) NCacheLog.Info("ConnectionTable.run", "b4 lock conns.SyncRoot");
                     try
                     {
@@ -1571,10 +1598,8 @@ namespace Alachisoft.NGroups.Blocks
 
                         if (isPrimaryListener)
                         {
-
-                           if (conns_NIC_1.ContainsKey(peer_addr))
+                            if (conns_NIC_1.ContainsKey(peer_addr))
                             {
-
                                 if (!secondayrConns_NIC_1.Contains(peer_addr) && useDualConnection)
                                 {
                                     secondayrConns_NIC_1[peer_addr] = conn;
@@ -1583,7 +1608,6 @@ namespace Alachisoft.NGroups.Blocks
                                 else
                                 {
                                     Connection tmpConn = (Connection)conns_NIC_1[peer_addr];
-
                                     if (conn.ConInfo.Id < tmpConn.ConInfo.Id && conn.ConInfo.ConnectStatus != ConnectInfo.CONNECT_FIRST_TIME)
                                     {
                                         NCacheLog.CriticalInfo("ConnectionTable.Run", "1. Destroying Connection (conn.ConInfo.Id < tmpConn.ConInfo.Id)" + conn.ConInfo.Id.ToString() + ":" + tmpConn.ConInfo.Id.ToString() + conn.ToString());
@@ -1600,7 +1624,6 @@ namespace Alachisoft.NGroups.Blocks
                                 }
 
                             }
-                            
                         }
 
                         else
@@ -1616,8 +1639,6 @@ namespace Alachisoft.NGroups.Blocks
                                 {
                                     if (NCacheLog.IsInfoEnabled) NCacheLog.Info("ConnectionTable.Run()", "connection alrady exists in the table");
                                     Connection tmpConn = (Connection)conns_NIC_2[peer_addr];
-
-                                  
                                     if (conn.ConInfo.Id < tmpConn.ConInfo.Id)
                                     {
                                         conn.Destroy();
@@ -1639,11 +1660,12 @@ namespace Alachisoft.NGroups.Blocks
 
                         if (useDedicatedSender) AddDedicatedMessageSender(conn.peer_addr, conn, isPrimaryListener);
 
-                        conn.init(); 
+                        conn.init(); // starts handler thread on this socket
                     }
                     finally
                     {
-                        conn_syn_lock.ReleaseWriterLock();
+                        if (conn_syn_lock.IsWriterLockHeld)
+                            conn_syn_lock.ReleaseWriterLock();
                     }
                     if (NCacheLog.IsInfoEnabled) NCacheLog.Info("ConnectionTable.run", "after lock conns.SyncRoot");
 
@@ -1655,10 +1677,15 @@ namespace Alachisoft.NGroups.Blocks
 
                     if (NCacheLog.IsInfoEnabled) NCacheLog.Info("ConnectionTable.Run()", "connection working now");
                 }
+                catch (VersionMismatchException ex)
+                {
+                    NCacheLog.Error("ConnectionTable.Run", "exception is " + ex);
+                    if (conn != null)
+                        conn.DestroySilent();
+                }
                 catch (ExtSocketException sock_ex)
                 {
                     NCacheLog.Error("ConnectionTable.Run", "exception is " + sock_ex);
-
                     if (conn != null)
                         conn.DestroySilent();
                     if (srv_sock1 == null)
@@ -1667,13 +1694,8 @@ namespace Alachisoft.NGroups.Blocks
                 catch (System.Exception ex)
                 {
                     NCacheLog.Error("ConnectionTable.Run", "exception is " + ex);
-
                     if (srv_sock1 == null)
                         break; // socket was closed, therefore stop
-
-                }
-                finally
-                {
 
                 }
             }
@@ -1701,13 +1723,13 @@ namespace Alachisoft.NGroups.Blocks
             Address key;
             Connection val;
 
-            if (NCacheLog.IsInfoEnabled) NCacheLog.Info("ConnectionTable.ToString",   "b4 lock conns.SyncRoot");
+            if (NCacheLog.IsInfoEnabled) NCacheLog.Info("ConnectionTable.ToString", "b4 lock conns.SyncRoot");
             try
             {
                 conn_syn_lock.AcquireReaderLock(Timeout.Infinite);
 
                 ret.Append("connections (" + conns_NIC_1.Count + "):\n");
-                for (System.Collections.IEnumerator e = conns_NIC_1.Keys.GetEnumerator(); e.MoveNext(); )
+                for (System.Collections.IEnumerator e = conns_NIC_1.Keys.GetEnumerator(); e.MoveNext();)
                 {
                     key = (Address)e.Current;
                     val = (Connection)conns_NIC_1[key];
@@ -1718,7 +1740,7 @@ namespace Alachisoft.NGroups.Blocks
             {
                 conn_syn_lock.ReleaseReaderLock();
             }
-            if (NCacheLog.IsInfoEnabled) NCacheLog.Info("ConnectionTable.ToString",   "b4 lock conns.SyncRoot");
+            if (NCacheLog.IsInfoEnabled) NCacheLog.Info("ConnectionTable.ToString", "b4 lock conns.SyncRoot");
             ret.Append('\n');
             return ret.ToString();
         }
@@ -1728,51 +1750,51 @@ namespace Alachisoft.NGroups.Blocks
             return conns_NIC_1 != null ? conns_NIC_1.Contains(member) : false;
         }
         /// <summary>Finds first available port starting at start_port and returns server socket. Sets srv_port </summary>
-        protected internal virtual System.Net.Sockets.TcpListener createServerSocket(IPAddress bind_addr, int start_port)
+        protected internal virtual System.Net.Sockets.Socket createServerSocket(IPAddress bind_addr, int start_port)
         {
-            System.Net.Sockets.TcpListener ret = null;
-            
-
-            for (int i = 1; i <= port_range; i++) // W 
+            System.Net.Sockets.Socket ret = null;
+            //We will try to start on a two  ports
+            for (int i = 1; i <= port_range; i++)
             {
 
                 try
                 {
                     if (bind_addr == null)
                     {
-                        System.Net.Sockets.TcpListener temp_tcpListener;
-                        temp_tcpListener = new System.Net.Sockets.TcpListener(start_port);
-                        temp_tcpListener.Start();
+                        System.Net.Sockets.Socket temp_tcpListener;
+                        IPEndPoint temp_endpoint = new IPEndPoint(IPAddress.Any, start_port);
+                        temp_tcpListener = new System.Net.Sockets.Socket(temp_endpoint.AddressFamily, SocketType.Stream, ProtocolType.Tcp);
+                        temp_tcpListener.Bind(temp_endpoint);
+                        temp_tcpListener.Listen(start_port);
                         ret = temp_tcpListener;
                     }
                     else
                     {
-                        System.Net.Sockets.TcpListener temp_tcpListener2;
-                        temp_tcpListener2 = new System.Net.Sockets.TcpListener(new System.Net.IPEndPoint(bind_addr, start_port));
-                        temp_tcpListener2.Start();
+                        System.Net.Sockets.Socket temp_tcpListener2;
+                        IPEndPoint temp_endpoint = new System.Net.IPEndPoint(bind_addr, start_port);
+                        temp_tcpListener2 = new System.Net.Sockets.Socket(temp_endpoint.AddressFamily, SocketType.Stream, ProtocolType.Tcp);
+                        temp_tcpListener2.Bind(temp_endpoint);
+                        temp_tcpListener2.Listen(start_port);
                         ret = temp_tcpListener2;
                     }
                 }
                 catch (System.Net.Sockets.SocketException bind_ex)
                 {
-
                     start_port++;
-
                     ret = null;
-
                     continue;
 
                 }
                 catch (System.IO.IOException io_ex)
                 {
-                    NCacheLog.Error("exception is " + io_ex);
                     ret = null;
                 }
                 srv_port = start_port;
+
                 break;
             }
 
-            if (ret == null) NCacheLog.Error("ConnectionTable.createServerSocket",   "binding failed " + bind_addr == null ? "null" : bind_addr.ToString() + " is not valid");
+            if (ret == null) NCacheLog.Error("ConnectionTable.createServerSocket", "binding failed " + bind_addr == null ? "null" : bind_addr.ToString() + " is not valid");
             return ret;
         }
 
@@ -1814,7 +1836,7 @@ namespace Alachisoft.NGroups.Blocks
 
             if (reaper != null && !reaper.Running)
                 reaper.start();
-            if (NCacheLog.IsInfoEnabled) NCacheLog.Info("ConnectionTable.addConnection",   "Connection added to the table");
+            if (NCacheLog.IsInfoEnabled) NCacheLog.Info("ConnectionTable.addConnection", "Connection added to the table");
         }
 
 
@@ -1846,13 +1868,11 @@ namespace Alachisoft.NGroups.Blocks
 
             }
             internal System.Net.Sockets.Socket sock = null; // socket to/from peer (result of srv_sock.accept() or new Socket())
-
             internal ThreadClass handler = null; // thread for receiving messages
             internal Address peer_addr = null; // address of the 'other end' of the connection
             internal System.Object send_mutex = new System.Object(); // serialize sends
             internal long last_access = (System.DateTime.Now.Ticks - 621355968000000000) / 10000; // last time a message was sent or received
             internal bool self_close = false;
-
             internal Stream inStream = new MemoryStream(8000);
             private MemoryManager memManager;
             private bool _isIdle = false;
@@ -1865,13 +1885,11 @@ namespace Alachisoft.NGroups.Blocks
             private byte[] sendBuffer = new byte[sendBufferSize];
             private byte[] receiveBuffer = null;
 
-
             private ILogger _ncacheLog;
             public ILogger NCacheLog
             {
                 get { return _ncacheLog; }
             }
-
             const int LARGE_OBJECT_SIZE = 79 * 1024;
             internal Socket _secondarySock;
 
@@ -1881,7 +1899,7 @@ namespace Alachisoft.NGroups.Blocks
             Address secondaryAddress;
             object initializationPhase_mutex = new object();
             bool inInitializationPhase = false;
-
+            //muds:
 
             private int _retries;
             private int _retryInterval;
@@ -1892,9 +1910,10 @@ namespace Alachisoft.NGroups.Blocks
             private bool iaminitiater;
             private TimeSpan _worsRecvTime = new TimeSpan(0, 0, 0);
             private TimeSpan _worsSendTime = new TimeSpan(0, 0, 0);
+            private string env_name = "";
 
+            internal Connection(ConnectionTable enclosingInstance, System.Net.Sockets.Socket s, Address peer_addr, ILogger NCacheLog, bool isPrimary, int naglingSize, int retries, int retryInterval,string environmentName)
 
-            internal Connection(ConnectionTable enclosingInstance, System.Net.Sockets.Socket s, Address peer_addr, ILogger NCacheLog, bool isPrimary, int naglingSize, int retries, int retryInterval)
             {
                 InitBlock(enclosingInstance);
                 sock = s;
@@ -1911,6 +1930,11 @@ namespace Alachisoft.NGroups.Blocks
                     receiveBuffer = new byte[naglingSize + 8];
                 else
                     receiveBuffer = new byte[receiveBufferSize];
+
+                _socSendArgs = new SocketAsyncEventArgs();
+                _socSendArgs.UserToken = new SendContext();
+                _socSendArgs.Completed += OnCompleteAsyncSend;
+                env_name = environmentName;
             }
 
             public ConnectInfo ConInfo
@@ -1975,17 +1999,392 @@ namespace Alachisoft.NGroups.Blocks
 
             internal virtual void init()
             {
+
                 if (NCacheLog.IsInfoEnabled) NCacheLog.Info("connection was created to " + peer_addr);
                 if (handler == null)
                 {
-
-                    // Roland Kurmann 4/7/2003, put in thread_group
                     handler = new ThreadClass(new System.Threading.ThreadStart(this.Run), "ConnectionTable.Connection.HandlerThread");
                     handler.IsBackground = true;
                     handler.Start();
                 }
             }
 
+            #region Async mechanism
+
+            private const int BufferHeader = sizeof(int);
+
+            private readonly object _sendWaitObject = new object();
+
+            private SocketAsyncEventArgs _socSendArgs;
+            private SocketAsyncEventArgs _socRecArgs;
+
+            private bool _isSending = false;
+
+            private bool BeginAsyncSend(SocketAsyncEventArgs args, byte[] buffer, int offset, int count)
+            {
+                SendContext sendingStruct = (SendContext)args.UserToken;
+                sendingStruct.DataToSend = count;
+                sendingStruct.Buffer = new ArraySegment<byte>(buffer, offset, count);
+
+                _socSendArgs.SetBuffer(buffer, offset, count);
+
+                if (!sock.SendAsync(_socSendArgs))
+                {
+                    SendDataAsync(_socSendArgs);
+                    return false;
+                }
+                return true;
+            }
+
+            private void BeginAsyncReceive(long requestSize, byte[] buffer, int offset, int count)
+            {
+                ReceiveContext receiveStruct = (ReceiveContext)_socRecArgs.UserToken;
+                receiveStruct.RequestSize = requestSize;
+                receiveStruct.ChunkToReceive = count;
+                receiveStruct.Buffer = new ArraySegment<byte>(buffer, offset, count);
+
+                _socRecArgs.SetBuffer(buffer, offset, count);
+                if (!sock.Connected)
+                    throw new ExtSocketException("socket closed");
+                if (!sock.ReceiveAsync(_socRecArgs))
+                {
+                    ReceiveDataAsync(_socRecArgs);
+                }
+            }
+
+            private void OnCompleteAsyncSend(object obj, SocketAsyncEventArgs args)
+            {
+                SendDataAsync(args);
+            }
+
+            private void OnCompleteAsyncReceive(object sender, SocketAsyncEventArgs e)
+            {
+                ReceiveDataAsync(e);
+            }
+
+            private void SendDataAsync(SocketAsyncEventArgs sockAsynArgs)
+            {
+                try
+                {
+                    SendContext sendStruct = (SendContext)sockAsynArgs.UserToken;
+                    int bytesSent = sockAsynArgs.BytesTransferred;
+
+                    if (bytesSent == 0)
+                    {
+                        PulseSend();
+                        return;
+                    }
+
+                    if (sockAsynArgs.SocketError != SocketError.Success)
+                    {
+                        PulseSend();
+                        return;
+                    }
+
+                    if (bytesSent < sendStruct.DataToSend)
+                    {
+                        int newDataToSend = sendStruct.DataToSend - bytesSent;
+                        int newOffset = sendStruct.Buffer.Array.Length - newDataToSend;
+                        BeginAsyncSend(sockAsynArgs, sendStruct.Buffer.Array, newOffset, newDataToSend);
+                        return;
+                    }
+
+                    PulseSend();
+                }
+                catch (ThreadAbortException) { }
+                catch (ThreadInterruptedException) { }
+                catch (Exception e)
+                {
+                    lock (send_mutex) { isConnected = false; }
+                    NCacheLog.Error("Connection.SendDataAsync()", Enclosing_Instance.local_addr + "-->" + peer_addr.ToString() + " exception is " + e);
+                }
+            }
+
+            private void ReceiveDataAsync(SocketAsyncEventArgs sockAsynArgs)
+            {
+                try
+                {
+                    ReceiveContext receiveStruct = (ReceiveContext)sockAsynArgs.UserToken;
+                    int bytesReceived = sockAsynArgs.BytesTransferred;
+
+                    if (bytesReceived == 0 || sockAsynArgs.SocketError != SocketError.Success)
+                    {
+                        NCacheLog.Error("Connection.ReceiveDataAsnc()", "connection closed with " + peer_addr.ToString() + "");
+
+                        lock (send_mutex) { isConnected = false; }
+                        try { }
+                        finally
+                        {
+                            receiveStruct.StreamBuffer.Dispose();
+                        }
+
+                        return;
+                    }
+
+                    receiveStruct.RequestSize -= bytesReceived;
+                    receiveStruct.StreamBuffer.Write(receiveStruct.Buffer.Array, receiveStruct.Buffer.Offset, bytesReceived);
+
+                    //For checking of the receival of current chunk...
+                    if (bytesReceived < receiveStruct.ChunkToReceive)
+                    {
+                        int newDataToReceive = receiveStruct.ChunkToReceive - bytesReceived;
+                        int newOffset = receiveStruct.Buffer.Array.Length - newDataToReceive;
+                        BeginAsyncReceive(receiveStruct.RequestSize, receiveStruct.Buffer.Array, newOffset,
+                            newDataToReceive);
+                        return;
+                    }
+
+                    //Check if there is any more command/request left to receive...
+                    if (receiveStruct.RequestSize > 0)
+                    {
+                        int dataToRecieve = GetSafeCollectionCount(receiveStruct.RequestSize);
+                        BeginAsyncReceive(receiveStruct.RequestSize, new byte[dataToRecieve], 0, dataToRecieve);
+                        return;
+                    }
+
+                    switch (receiveStruct.State)
+                    {
+                        case ReceivingState.ReceivingDataLength:
+
+                            //Reading message's header...
+                            byte[] reqSizeBytes = new byte[BufferHeader];
+                            Array.Copy(sockAsynArgs.Buffer, reqSizeBytes, BufferHeader);
+
+                            //Reading message's header...
+                            int dataSize = BitConverter.ToInt32(reqSizeBytes, 0);
+                            int dataToRecieve = GetSafeCollectionCount(dataSize);
+                            receiveStruct.State = ReceivingState.ReceivingData;
+                            receiveStruct.StreamBuffer = new ClusteredMemoryStream(dataSize);
+                            receiveStruct.ReceiveTimeStats = null;
+
+                            if (enclosingInstance.enableMonitoring)
+                            {
+                                receiveStruct.ReceiveTimeStats = new HPTimeStats();
+                                receiveStruct.ReceiveTimeStats.BeginSample();
+                            }
+
+                            receiveStruct.ReceiveStartTime = DateTime.Now;
+                            BeginAsyncReceive(dataSize, new byte[dataToRecieve], 0, dataToRecieve);
+                            break;
+
+                        case ReceivingState.ReceivingData:
+
+                            using (Stream dataStream = receiveStruct.StreamBuffer)
+                            {
+
+                                HPTimeStats socketReceiveTimeStats = receiveStruct.ReceiveTimeStats;
+                                DateTime startTime = receiveStruct.ReceiveStartTime;
+
+                                if (sock == null)
+                                {
+                                    NCacheLog.Error("input stream is null !");
+                                    return;
+                                }
+
+                                //Start receiving before processing the current data...
+                                receiveStruct.State = ReceivingState.ReceivingDataLength;
+                                receiveStruct.StreamBuffer = new ClusteredMemoryStream(BufferHeader);
+                                BeginAsyncReceive(BufferHeader, new byte[BufferHeader], 0, BufferHeader);
+
+                                DateTime now = DateTime.Now;
+                                TimeSpan receiveTime = now - startTime;
+
+                                if (receiveTime.TotalMilliseconds > _worsRecvTime.TotalMilliseconds)
+                                {
+                                    _worsRecvTime = receiveTime;
+                                }
+
+                                if (socketReceiveTimeStats != null)
+                                {
+                                    socketReceiveTimeStats.EndSample();
+                                    enclosingInstance.enclosingInstance.Stack.perfStatsColl
+                                        .IncrementSocketReceiveTimeStats((long)socketReceiveTimeStats.Current);
+                                    enclosingInstance.enclosingInstance.Stack.perfStatsColl
+                                        .IncrementSocketReceiveSizeStats(dataStream.Length);
+                                }
+
+                                enclosingInstance.publishBytesReceivedStats(dataStream.Length + BufferHeader);
+
+                                dataStream.Position = 0;
+                                int streamOffset;
+
+                                byte[] lengthBytes = new byte[sizeof(int)];
+                                dataStream.Read(lengthBytes, 0, sizeof(int));
+                                int noOfMessages = BitConverter.ToInt32(lengthBytes, 0);
+                                streamOffset = +sizeof(int);
+
+                                for (int msgCount = 0; msgCount < noOfMessages; msgCount++)
+                                {
+
+                                    int totalMessagelength, messageLength;
+                                    Message msg = ReadMessage(dataStream, out messageLength, out totalMessagelength);
+
+                                    if (msg != null)
+                                    {
+
+                                        int payLoadLength = totalMessagelength - messageLength - sizeof(int);
+                                        if (payLoadLength > 0)
+                                        {
+                                            msg.Payload = ReadPayload(dataStream, payLoadLength, messageLength, streamOffset);
+                                        }
+
+                                        streamOffset += (totalMessagelength + sizeof(int));
+
+                                        ConnectionHeader hdr = msg.getHeader("ConnectionHeader") as ConnectionHeader;
+                                        if (hdr != null)
+                                        {
+                                            switch (hdr.Type)
+                                            {
+                                                case ConnectionHeader.CLOSE_SILENT:
+                                                    if (NCacheLog.IsInfoEnabled) NCacheLog.Info("Connection.Run", "connection being closed silently");
+                                                    self_close = true;
+                                                    handler = null;
+                                                    continue;
+
+                                                case ConnectionHeader.LEAVE:
+                                                    //The node is leaving the cluster gracefully.
+                                                    leavingGracefully = true;
+                                                    if (NCacheLog.IsInfoEnabled) NCacheLog.Info("Connection.Run", peer_addr + " is leaving gracefully");
+                                                    if (LeavingGracefully)
+                                                    {
+                                                        enclosingInstance.notifyConnectionClosed(peer_addr);
+                                                        enclosingInstance.remove(peer_addr, IsPrimary);
+                                                    }
+                                                    return;
+
+                                                case ConnectionHeader.GET_SECOND_ADDRESS_REQ:
+                                                    SendSecondaryAddressofPeer();
+                                                    continue;
+
+                                                case ConnectionHeader.GET_SECOND_ADDRESS_RSP:
+                                                    lock (get_addr_sync)
+                                                    {
+                                                        secondaryAddress = hdr.MySecondaryAddress;
+                                                        Monitor.PulseAll(get_addr_sync);
+                                                    }
+                                                    continue;
+
+                                                case ConnectionHeader.ARE_U_IN_INITIALIZATION_PHASE:
+                                                    try
+                                                    {
+                                                        bool iMinInitializationPhase = !enclosingInstance.enclosingInstance.Stack.IsOperational;
+                                                        SendInitializationPhaseRsp(iMinInitializationPhase);
+                                                    }
+                                                    catch
+                                                    {
+                                                    }
+                                                    break;
+
+                                                case ConnectionHeader.INITIALIZATION_PHASE_RSP:
+                                                    lock (initializationPhase_mutex)
+                                                    {
+                                                        inInitializationPhase = hdr.InitializationPhase;
+                                                        Monitor.PulseAll(inInitializationPhase);
+                                                    }
+                                                    break;
+                                            }
+                                        }
+                                    }
+                                    msg.Src = peer_addr;
+                                    msg.MarkArrived();
+                                    Enclosing_Instance.receive(msg); // calls receiver.receiver(msg)
+                                }
+                            }
+                            break;
+                    }
+                }
+                catch (Exception e)
+                {
+                    lock (send_mutex) { isConnected = false; }
+                    NCacheLog.Error("Connection.RecaiveDataAsync()", Enclosing_Instance.local_addr + "-->" + peer_addr.ToString() + " exception is " + e);
+                }
+            }
+
+            #region helpers
+
+            //Pulse the waiting sync call...
+            private void PulseSend()
+            {
+                lock (_sendWaitObject)
+                {
+                    _isSending = false;
+                    Monitor.Pulse(_sendWaitObject);
+                }
+            }
+
+            private void CompleteSend()
+            {
+                lock (_sendWaitObject)
+                {
+                    if (_isSending)
+                    {
+                        Monitor.Wait(_sendWaitObject);
+                    }
+
+                    if (_socSendArgs != null && (_socSendArgs.BytesTransferred == 0 || _socSendArgs.SocketError != SocketError.Success))
+                        throw new SocketException((int)SocketError.ConnectionReset);
+
+                }
+            }
+
+            private Message ReadMessage(Stream stream, out int msgLen, out int tMsgLen)
+            {
+                byte[] lengthBytes = new byte[sizeof(int)];
+
+                stream.Read(lengthBytes, 0, lengthBytes.Length);
+                tMsgLen = BitConverter.ToInt32(lengthBytes, 0);
+
+                stream.Read(lengthBytes, 0, lengthBytes.Length);
+                msgLen = BitConverter.ToInt32(lengthBytes, 0);
+
+                BinaryReader msgReader = new BinaryReader(stream, new UTF8Encoding(true));
+                FlagsByte flags = new FlagsByte();
+                flags.DataByte = msgReader.ReadByte();
+
+                if (flags.AnyOn(FlagsByte.Flag.TRANS))
+                {
+                    Message tmpMsg = new Message();
+                    tmpMsg.DeserializeLocal(msgReader);
+                    return tmpMsg;
+                }
+                return (Message)CompactBinaryFormatter.Deserialize(stream, null, false, null);
+            }
+
+            private Array ReadPayload(Stream stream, int payLoadLength, int messageLength, int streamOffset)
+            {
+                int noOfChunks = payLoadLength / LARGE_OBJECT_SIZE;
+                noOfChunks += (payLoadLength - (noOfChunks * LARGE_OBJECT_SIZE)) != 0 ? 1 : 0;
+                Array payload = new Array[noOfChunks];
+                int nextChunk = 0;
+                int startIndex = streamOffset + sizeof(int) * +messageLength;
+
+                for (int i = 0; i < noOfChunks; i++)
+                {
+
+                    int nextChunkSize = payLoadLength - nextChunk;
+
+                    if (nextChunkSize > LARGE_OBJECT_SIZE)
+                    {
+                        nextChunkSize = LARGE_OBJECT_SIZE;
+                    }
+
+                    byte[] binaryChunk = new byte[nextChunkSize];
+                    stream.Read(binaryChunk, 0, nextChunkSize);
+                    nextChunk += nextChunkSize;
+                    startIndex += nextChunkSize;
+                    payload.SetValue(binaryChunk, i);
+                }
+                return payload;
+            }
+
+            private int GetSafeCollectionCount(long length)
+            {
+                return ((length > 20000) ? 20000 : (int)length);
+            }
+
+            #endregion
+
+            #endregion
 
             public void ConnectionDestructionSimulator()
             {
@@ -2002,15 +2401,21 @@ namespace Alachisoft.NGroups.Blocks
                 {
                     try
                     {
-
                         NCacheLog.Flush();
+#if !NETCORE
                         handler.Abort();
+#elif NETCORE
+                        handler.Interrupt();
+#endif
                     }
                     catch (Exception) { }
                 }
                 handler = null;
-                if (inStream != null) inStream.Close();
-
+                try
+                {
+                    if (inStream != null) inStream.Close();
+                }
+                catch (Exception) { }
             }
             internal virtual void DestroySilent()
             {
@@ -2020,7 +2425,6 @@ namespace Alachisoft.NGroups.Blocks
             {
                 lock (send_mutex) { this.self_close = true; }// we intentionally close the connection. no need to suspect for such close
                 if (IsConnected) SendSilentCloseNotification();//Inform the peer about closing the socket.
-
                 Destroy();
             }
 
@@ -2037,7 +2441,7 @@ namespace Alachisoft.NGroups.Blocks
                 if (NCacheLog.IsInfoEnabled) NCacheLog.Info("Connection.SendSilentCloseNotification", "sending silent close request");
                 try
                 {
-                    byte[] binaryMsg = Util.Util.serializeMessage(closeMsg);
+                    IList binaryMsg = Util.Util.serializeMessage(closeMsg);
 
                     SendInternal(binaryMsg);
                 }
@@ -2045,8 +2449,6 @@ namespace Alachisoft.NGroups.Blocks
                 {
                     NCacheLog.Error("Connection.SendSilentCloseNotification", e.ToString());
                 }
-
-
             }
 
             public bool AreUinInitializationPhase()
@@ -2060,7 +2462,7 @@ namespace Alachisoft.NGroups.Blocks
                 {
                     lock (initializationPhase_mutex)
                     {
-                        byte[] binaryMsg = Util.Util.serializeMessage(closeMsg);
+                        IList binaryMsg = Util.Util.serializeMessage(closeMsg);
                         SendInternal(binaryMsg);
                         Monitor.Wait(initializationPhase_mutex, 1000);
                         return inInitializationPhase;
@@ -2085,7 +2487,7 @@ namespace Alachisoft.NGroups.Blocks
                 {
                     lock (initializationPhase_mutex)
                     {
-                        byte[] binaryMsg = Util.Util.serializeMessage(closeMsg);
+                        IList binaryMsg = Util.Util.serializeMessage(closeMsg);
                         SendInternal(binaryMsg);
                         Monitor.Wait(initializationPhase_mutex);
                         return inInitializationPhase;
@@ -2102,17 +2504,25 @@ namespace Alachisoft.NGroups.Blocks
             /// Used to send the internal messages of the connection.
             /// </summary>
             /// <param name="binaryMsg"></param>
-            private void SendInternal(byte[] binaryMsg)
+            private void SendInternal(IList binaryMsg)
             {
                 if (binaryMsg != null)
                 {
-                    byte[] buf = new byte[binaryMsg.Length + 8];
-                    byte[] lenBuf = Util.Util.WriteInt32(binaryMsg.Length + 4);
-                    Buffer.BlockCopy(lenBuf, 0, buf, 0, 4);
+                    ClusteredMemoryStream stream = new ClusteredMemoryStream();
+
+                    stream.Seek(4, System.IO.SeekOrigin.Begin);
                     byte[] msgCount = Util.Util.WriteInt32(1);
-                    Buffer.BlockCopy(msgCount, 0, buf, 4, msgCount.Length);
-                    Buffer.BlockCopy(binaryMsg, 0, buf, 8, binaryMsg.Length);
-                    send(buf, null);
+                    stream.Write(msgCount, 0, msgCount.Length);
+                    int length = 0;
+                    foreach (byte[] buffer in binaryMsg)
+                    {
+                        length += buffer.Length;
+                        stream.Write(buffer, 0, buffer.Length);
+                    }
+                    stream.Seek(0, System.IO.SeekOrigin.Begin);
+                    byte[] lenBuf = Util.Util.WriteInt32(length + 4);
+                    stream.Write(lenBuf, 0, lenBuf.Length);
+                    send(stream.GetInternalBuffer(), null);
                 }
             }
             /// <summary>
@@ -2127,7 +2537,7 @@ namespace Alachisoft.NGroups.Blocks
                 if (NCacheLog.IsInfoEnabled) NCacheLog.Info("Connection.SendSilentCloseNotification", "sending leave request");
                 try
                 {
-                    byte[] binaryMsg = Util.Util.serializeMessage(leaveMsg);
+                    IList binaryMsg = Util.Util.serializeMessage(leaveMsg);
                     SendInternal(binaryMsg);
                 }
                 catch (Exception e)
@@ -2136,44 +2546,42 @@ namespace Alachisoft.NGroups.Blocks
                 }
             }
 
-            internal virtual long send(byte[] msg, Array userPayload)
+            internal virtual long send(IList msg, Array userPayload)
             {
-                return send(msg, userPayload, msg.Length);
+                return send(msg, userPayload, 0);
             }
-            internal virtual long send(byte[] msg, Array userPayload, int bytesToSent)
+
+            internal virtual long send(IList msg, Array userPayload, int bytesToSent)
             {
                 long bytesSent = 0;
                 try
                 {
                     HPTimeStats socketSendTimeStats = null;
+
                     if (enclosingInstance.enableMonitoring)
                     {
                         socketSendTimeStats = new HPTimeStats();
                         socketSendTimeStats.BeginSample();
                     }
+
                     bytesSent = doSend(msg, userPayload, bytesToSent);
+
                     if (socketSendTimeStats != null)
                     {
                         socketSendTimeStats.EndSample();
-
                         enclosingInstance.enclosingInstance.Stack.perfStatsColl.IncrementSocketSendTimeStats((long)socketSendTimeStats.Current);
                         enclosingInstance.enclosingInstance.Stack.perfStatsColl.IncrementSocketSendSizeStats((long)bytesSent);
 
                     }
-
                 }
-
                 catch (ObjectDisposedException)
                 {
-
-
                     lock (send_mutex)
                     {
                         socket_error = true;
                         isConnected = false;
                     }
                     throw new ExtSocketException("Connection is closed");
-
                 }
                 catch (SocketException sock_exc)
                 {
@@ -2193,9 +2601,10 @@ namespace Alachisoft.NGroups.Blocks
             }
 
 
-            internal virtual long doSend(byte[] msg, Array userPayload, int bytesToSent)
+            internal virtual long doSend(IList msg, Array userPayload, int bytesToSent)
             {
                 long bytesSent = 0;
+
                 Address dst_addr = (Address)peer_addr;
                 byte[] buffie = null;
 
@@ -2211,11 +2620,12 @@ namespace Alachisoft.NGroups.Blocks
                     // we're using 'double-writes', sending the buffer to the destination in 2 pieces. this would
                     // ensure that, if the peer closed the connection while we were idle, we would get an exception.
                     // this won't happen if we use a single write (see Stevens, ch. 5.13).
-
+                    //if(nTrace.isInfoEnabled) NCacheLog.Info("ConnectionTable.Connection.doSend()"," before writing to out put stream");
                     if (sock != null)
                     {
 
 
+                        //sock.Send(Util.Util.WriteInt32(buffie.Length)); // write the length of the data buffer first
                         DateTime dt = DateTime.Now;
                         bytesSent = AssureSend(msg, userPayload, bytesToSent);
                         DateTime now = DateTime.Now;
@@ -2224,6 +2634,7 @@ namespace Alachisoft.NGroups.Blocks
                             _worsSendTime = ts;
 
                         enclosingInstance.enclosingInstance.Stack.perfStatsColl.IncrementBytesSentPerSecStats(bytesSent);
+
 
                     }
                 }
@@ -2235,7 +2646,7 @@ namespace Alachisoft.NGroups.Blocks
                         isConnected = false;
                     }
                     NCacheLog.Error(Enclosing_Instance.local_addr + " to " + dst_addr + ",   exception is " + ex);
-
+                    //if(!markedClose) Enclosing_Instance.remove(dst_addr, IsPrimary);
                     throw ex;
                 }
                 catch (System.Exception ex)
@@ -2246,54 +2657,61 @@ namespace Alachisoft.NGroups.Blocks
                         isConnected = false;
                     }
                     NCacheLog.Error(Enclosing_Instance.local_addr + "to " + dst_addr + ",   exception is " + ex);
-
+                    //if (!markedClose) Enclosing_Instance.remove(dst_addr, IsPrimary);
                     throw ex;
                 }
                 return bytesSent;
             }
 
-            private long AssureSend(byte[] buffer, Array userPayLoad, int bytesToSent)
+            private long AssureSend(IList buffers, Array userPayLoad, int bytesToSent)
             {
                 int totalDataLength = 0;
 
                 lock (send_mutex)
                 {
-                    int count = buffer.Length;
+                    int count = 0;
                     int bytesCopied = 0;
                     int mainIndex = 0;
 
-                    totalDataLength += bytesToSent;
+                    totalDataLength = 0;
 
                     if (userPayLoad == null)
                     {
-                        AssureSend(buffer, bytesToSent);
+                        foreach (byte[] buffer in buffers)
+                        {
+                            totalDataLength += buffer.Length;
+                            AssureSend(buffer, buffer.Length);
+                        }
                     }
                     else
                     {
-                        while (bytesCopied < buffer.Length)
+                        foreach (byte[] buffer in buffers)
                         {
-                            count = buffer.Length - bytesCopied;
-                            if (count > sendBuffer.Length - mainIndex)
-                                count = sendBuffer.Length - mainIndex;
-
-                            Buffer.BlockCopy(buffer, bytesCopied, sendBuffer, mainIndex, count);
-                            bytesCopied += count;
-                            mainIndex += count;
-
-                            if (mainIndex >= sendBuffer.Length)
+                            while (bytesCopied < buffer.Length)
                             {
-                                AssureSend(sendBuffer, sendBuffer.Length);
-                                mainIndex = 0;
-                            }
+                                count = buffer.Length - bytesCopied;
+                                if (count > sendBuffer.Length - mainIndex)
+                                    count = sendBuffer.Length - mainIndex;
 
+                                Buffer.BlockCopy(buffer, bytesCopied, sendBuffer, mainIndex, count);
+                                bytesCopied += count;
+                                mainIndex += count;
+
+                                if (mainIndex >= sendBuffer.Length)
+                                {
+                                    AssureSend(sendBuffer, sendBuffer.Length);
+                                    mainIndex = 0;
+                                }
+
+                            }
                         }
 
-
+                        //AssureSend(buffer);
                         if (userPayLoad != null && userPayLoad.Length > 0)
                         {
                             for (int i = 0; i < userPayLoad.Length; i++)
                             {
-                                buffer = userPayLoad.GetValue(i) as byte[];
+                                byte[] buffer = userPayLoad.GetValue(i) as byte[];
                                 bytesCopied = 0;
                                 totalDataLength += buffer.Length;
 
@@ -2327,7 +2745,9 @@ namespace Alachisoft.NGroups.Blocks
                             }
                         }
                         else
+                        {
                             AssureSend(sendBuffer, mainIndex);
+                        }
                     }
                 }
 
@@ -2341,8 +2761,6 @@ namespace Alachisoft.NGroups.Blocks
                 DateTime startTime;
                 lock (send_mutex)
                 {
-
-                    startTime = DateTime.Now;
                     while (bytesSent < count)
                     {
                         try
@@ -2353,17 +2771,16 @@ namespace Alachisoft.NGroups.Blocks
                         }
                         catch (SocketException e)
                         {
-
                             if (e.SocketErrorCode == SocketError.NoBufferSpaceAvailable)
                             {
                                 continue;
                             }
-                            else throw;
+                            throw;
                         }
                     }
-
                 }
             }
+
             /// <summary> Reads the peer's address. First a cookie has to be sent which has to match my own cookie, otherwise
             /// the connection will be refused
             /// </summary>
@@ -2371,7 +2788,7 @@ namespace Alachisoft.NGroups.Blocks
             {
 
                 ConnectInfo info = null;
-                byte[] buf;
+                byte[] buf;//, input_cookie = new byte[Enclosing_Instance.cookie.Length];
                 int len = 0;
                 bool connectingFirstTime = false;
                 ProductVersion receivedVersion;
@@ -2393,11 +2810,15 @@ namespace Alachisoft.NGroups.Blocks
                     peer_addr = args[0] as Address;
                     connectingFirstTime = (bool)args[1];
                     receivedVersion = (ProductVersion)args[2];//reading the productVersion
+                    if((args[3]!=null)&&(!(((string)args[3]).Equals("Eval") )) && !env_name.Equals("Eval") && !((string)args[3]).Equals(env_name))
+                    {
+                        throw new VersionMismatchException("Environment does not match");
+                    }
+
                     if (receivedVersion.IsValidVersion(receivedVersion.EditionID) == false)
                     {
 
-                        NCacheLog.Error("Cookie version is different");
-                        throw new ExtSocketException("ConnectionTable.Connection.readPeerAddress(): cookie sent by " + peer_addr + " does not match own cookie; terminating connection");
+                        NCacheLog.Warn("Cookie version is different");
 
                     }
                     if (NCacheLog.IsInfoEnabled) NCacheLog.Info("ConnectionTable.connection.readpeerAdress", "after deserialization of adress");
@@ -2412,10 +2833,9 @@ namespace Alachisoft.NGroups.Blocks
             internal virtual void sendLocalAddress(Address local_addr, bool connectingFirstTime)
             {
                 byte[] buf;
-                //Live upgrade task 5-12-13
                 //Product Version is sent as a part of the object array; no version is to be sent explicitly
                 ProductVersion currentVersion = ProductVersion.ProductInfo;
-
+                
                 if (local_addr == null)
                 {
                     NCacheLog.Warn("local_addr is null");
@@ -2426,10 +2846,10 @@ namespace Alachisoft.NGroups.Blocks
                     try
                     {
                         if (NCacheLog.IsInfoEnabled) NCacheLog.Info("Connection.sendLocaladress", "b4 serializing...");
-                        object[] objArray = new object[] { local_addr, connectingFirstTime, currentVersion };
+                        //Debugger.Launch();
+                        object[] objArray = new object[] { local_addr, connectingFirstTime, currentVersion,env_name};
                         buf = CompactBinaryFormatter.ToByteBuffer(objArray, null);
                         if (NCacheLog.IsInfoEnabled) NCacheLog.Info("Connection.sendLocaladress", "after serializing...");
-
                         byte[] lenBuff;// write the length of the buffer
                         lenBuff = Util.Util.WriteInt32(buf.Length);
                         sock.Send(lenBuff);
@@ -2437,7 +2857,6 @@ namespace Alachisoft.NGroups.Blocks
                         // and finally write the buffer itself
                         sock.Send(buf);
                         if (NCacheLog.IsInfoEnabled) NCacheLog.Info("Connection.sendLocaladress", "after sending...");
-
                         updateLastAccessed();
                     }
                     catch (System.Exception t)
@@ -2454,18 +2873,23 @@ namespace Alachisoft.NGroups.Blocks
             internal virtual ConnectInfo ReadConnectInfo(System.Net.Sockets.Socket client_sock)
             {
                 ConnectInfo info = null;
-                byte[] buf;
+                byte[] version, buf;//, input_cookie = new byte[Enclosing_Instance.cookie.Length];
                 int len = 0;
 
                 if (sock != null)
                 {
-
-                    //version = new byte[Version.VersionLength];
+                    version = new byte[Version.version_id.Length];
                     if (NCacheLog.IsInfoEnabled) NCacheLog.Info("ConnectionTable.connection.readpeerAdress", "before reading from socket");
-                    //Util.Util.ReadInput(sock, version, 0, version.Length);
+                    Util.Util.ReadInput(sock, version, 0, version.Length);
                     if (NCacheLog.IsInfoEnabled) NCacheLog.Info("ConnectionTable.connection.readpeerAdress", "after reading from socket");
+                    if (Version.CompareTo(version) == false)
+                    {
 
-                   
+                        NCacheLog.Error("ConnectionTable.ReadConnectInfo()", "WARRING: Cookie version is different");
+                        NCacheLog.Error("ConnectionTable.ReadConnectInfo()", "WARRING: Cookie sent by machine having Address [ " + peer_addr + " ] does not match own cookie.");
+                        NCacheLog.Error("ConnectionTable.ReadConnectInfo()", "WARRING: Cluster formation is not allowed between different editions of NCache. Terminating connection!");
+                        throw new VersionMismatchException("NCache version of machine " + peer_addr + " does not match with local installation. Cluster formation is not allowed between different editions of NCache.");
+                    }
 
                     // read the length of the address
                     byte[] lenBuff = new byte[4];
@@ -2498,7 +2922,8 @@ namespace Alachisoft.NGroups.Blocks
                         if (NCacheLog.IsInfoEnabled) NCacheLog.Info("Connection.sendLocaladress", "b4 serializing...");
                         buf = CompactBinaryFormatter.ToByteBuffer(info, null);
                         if (NCacheLog.IsInfoEnabled) NCacheLog.Info("Connection.sendLocaladress", "after serializing...");
-                                              
+                        sock.Send(Version.version_id);
+
                         // write the length of the buffer
                         byte[] lenBuff;
                         lenBuff = Util.Util.WriteInt32(buf.Length);
@@ -2524,7 +2949,8 @@ namespace Alachisoft.NGroups.Blocks
                 return new System.String(Global.ToCharArray(c));
             }
 
-
+            //The receiver thread...
+            //* Will be replaced by async method... as done in the client and server side of the communication.
             public virtual void Run()
             {
                 Message msg = null;
@@ -2539,6 +2965,7 @@ namespace Alachisoft.NGroups.Blocks
                         if (sock == null)
                         {
                             NCacheLog.Error("input stream is null !");
+                            //Console.WriteLine("Socket is Null");
                             break;
                         }
                         byte[] lenBuff = new byte[4];
@@ -2548,12 +2975,10 @@ namespace Alachisoft.NGroups.Blocks
 
                         len = Util.Util.convertToInt32(lenBuff);
 
-
+                        stmIn = new ClusteredMemoryStream(len);
                         buf = receiveBuffer;
-                        if (len > receiveBuffer.Length)
-                            buf = new byte[len];
-
-
+                        int totalRecevied = 0;
+                        int totaldataToReceive = len;
                         HPTimeStats socketReceiveTimeStats = null;
                         if (enclosingInstance.enableMonitoring)
                         {
@@ -2561,7 +2986,16 @@ namespace Alachisoft.NGroups.Blocks
                             socketReceiveTimeStats.BeginSample();
                         }
                         DateTime dt = DateTime.Now;
-                        int recLength = Util.Util.ReadInput(sock, buf, 0, len);
+
+                        while (totalRecevied < len)
+                        {
+                            int dataToReceive = buf.Length < totaldataToReceive ? buf.Length : totaldataToReceive;
+                            int recLength = Util.Util.ReadInput(sock, buf, 0, dataToReceive);
+                            stmIn.Write(buf, 0, recLength);
+                            totaldataToReceive -= recLength;
+                            totalRecevied += recLength;
+                        }
+
                         DateTime now = DateTime.Now;
 
                         TimeSpan ts = now - dt;
@@ -2581,20 +3015,20 @@ namespace Alachisoft.NGroups.Blocks
 
                         enclosingInstance.publishBytesReceivedStats(len + 4);
 
-
-                        if (recLength == len)
+                        if (totalRecevied == len)
                         {
-                            int noOfMessages = Util.Util.convertToInt32(buf, 0);
+                            stmIn.Position = 0;
+                            byte[] quadBuffer = new byte[4];
+                            stmIn.Read(quadBuffer, 0, quadBuffer.Length);
+                            int noOfMessages = Util.Util.convertToInt32(quadBuffer, 0);
                             int messageBaseIndex = 4;
                             for (int msgCount = 0; msgCount < noOfMessages; msgCount++)
                             {
-                                int totalMessagelength = Util.Util.convertToInt32(buf, messageBaseIndex);
-                                int messageLength = Util.Util.convertToInt32(buf, messageBaseIndex + 4);
+                                stmIn.Read(quadBuffer, 0, quadBuffer.Length);
+                                int totalMessagelength = Util.Util.convertToInt32(quadBuffer, 0);
+                                stmIn.Read(quadBuffer, 0, quadBuffer.Length);
+                                int messageLength = Util.Util.convertToInt32(quadBuffer, 0);
 
-                                stmIn = new MemoryStream();
-                                stmIn.Position = 0;
-                                stmIn.Write(buf, messageBaseIndex + 8, messageLength);
-                                stmIn.Position = 0;
                                 msgReader = new BinaryReader(stmIn, new UTF8Encoding(true));
                                 FlagsByte flags = new FlagsByte();
                                 flags.DataByte = msgReader.ReadByte();
@@ -2631,7 +3065,8 @@ namespace Alachisoft.NGroups.Blocks
                                                 nextChunkSize = LARGE_OBJECT_SIZE;
 
                                             byte[] binaryChunk = new byte[nextChunkSize];
-                                            Buffer.BlockCopy(buf, startIndex, binaryChunk, 0, nextChunkSize);
+                                            //Buffer.BlockCopy(buf, startIndex, binaryChunk, 0, nextChunkSize);
+                                            stmIn.Read(binaryChunk, 0, nextChunkSize);
                                             nextChunk += nextChunkSize;
                                             startIndex += nextChunkSize;
 
@@ -2648,7 +3083,7 @@ namespace Alachisoft.NGroups.Blocks
                                         {
                                             case ConnectionHeader.CLOSE_SILENT:
 
-                                                if (NCacheLog.IsInfoEnabled) NCacheLog.Info("Connection.Run", "connection being closed silently");
+                                                if (NCacheLog.IsErrorEnabled) NCacheLog.CriticalInfo("Connection.Run", peer_addr + " connection being closed silently");
                                                 this.self_close = true;
                                                 handler = null;
                                                 continue;
@@ -2656,7 +3091,7 @@ namespace Alachisoft.NGroups.Blocks
                                             case ConnectionHeader.LEAVE:
                                                 //The node is leaving the cluster gracefully.
                                                 leavingGracefully = true;
-                                                if (NCacheLog.IsInfoEnabled) NCacheLog.Info("Connection.Run", peer_addr.ToString() + " is leaving gracefully");
+                                                if (NCacheLog.IsErrorEnabled) NCacheLog.CriticalInfo("Connection.Run", peer_addr.ToString() + " is leaving gracefully");
                                                 handler = null;
                                                 continue;
 
@@ -2695,7 +3130,6 @@ namespace Alachisoft.NGroups.Blocks
                                     }
                                 }
                                 msg.Src = peer_addr;
-
 
                                 msg.MarkArrived();
                                 Enclosing_Instance.receive(msg); // calls receiver.receiver(msg)
@@ -2752,7 +3186,6 @@ namespace Alachisoft.NGroups.Blocks
                         lock (send_mutex) { isConnected = false; }
                         // peer closed connection
                         NCacheLog.Error("Connection.Run()", "data :" + len + Enclosing_Instance.local_addr + "-->" + peer_addr.ToString() + " exception is " + eof_ex);
-
                         break;
                     }
                     catch (System.Net.Sockets.SocketException io_ex)
@@ -2763,7 +3196,6 @@ namespace Alachisoft.NGroups.Blocks
                             isConnected = false;
                         }
                         NCacheLog.Error("Connection.Run()", Enclosing_Instance.local_addr + "-->" + peer_addr.ToString() + " exception is " + io_ex.Message);
-
                         break;
                     }
                     catch (System.ArgumentException ex)
@@ -2788,10 +3220,14 @@ namespace Alachisoft.NGroups.Blocks
 
                 if (LeavingGracefully)
                 {
+                    try
+                    {
+                        enclosingInstance.notifyConnectionClosed(peer_addr);
 
-                    enclosingInstance.notifyConnectionClosed(peer_addr);
-                    enclosingInstance.remove(peer_addr, IsPrimary);
-
+                        enclosingInstance.remove(peer_addr, IsPrimary);
+                    }
+                    catch (ThreadAbortException) { }
+                    catch (ThreadInterruptedException) { }
                 }
             }
 
@@ -2829,6 +3265,7 @@ namespace Alachisoft.NGroups.Blocks
             }
             public void SendSecondaryAddressofPeer()
             {
+                Address secondaryAddress = null;
                 Connection.ConnectionHeader header = new ConnectionHeader(ConnectionHeader.GET_SECOND_ADDRESS_RSP);
                 header.MySecondaryAddress = enclosingInstance.local_addr_s;
 
@@ -2846,7 +3283,6 @@ namespace Alachisoft.NGroups.Blocks
                     ret.Append("<null socket>");
                 else
                 {
-
                     ret.Append("<" + this.peer_addr.ToString() + ">");
                 }
 
@@ -2861,16 +3297,20 @@ namespace Alachisoft.NGroups.Blocks
                     try
                     {
                         if (NCacheLog.IsInfoEnabled) NCacheLog.Info("Connection.closeSocket()", "client port local_port= " + ((IPEndPoint)sock.LocalEndPoint).Port + "client port remote_port= " + ((IPEndPoint)sock.RemoteEndPoint).Port);
+#if NETCORE
+                        if (RuntimeInformation.IsOSPlatform(OSPlatform.Linux))
+                        {
+                            sock.Shutdown(SocketShutdown.Both);
+                        }
+#endif
                         sock.Close(); // should actually close in/out (so we don't need to close them explicitly)
                         if (NCacheLog.IsInfoEnabled) NCacheLog.Info("Connection.closeSocket()", "connection destroyed");
                     }
                     catch (System.Exception e)
                     {
-
                     }
                     sock = null;
                 }
-
             }
             internal class ConnectionHeader : Header, ICompactSerializable
             {
@@ -2930,6 +3370,7 @@ namespace Alachisoft.NGroups.Blocks
             }
         }
 
+
         internal class Reaper : IThreadRunnable
         {
             private void InitBlock(ConnectionTable enclosingInstance)
@@ -2954,7 +3395,6 @@ namespace Alachisoft.NGroups.Blocks
 
             }
             internal ThreadClass t = null;
-            
             private string _cacheName;
 
             internal Reaper(ConnectionTable enclosingInstance)
@@ -2970,7 +3410,6 @@ namespace Alachisoft.NGroups.Blocks
                     t = null;
                 if (t == null)
                 {
-                    //RKU 7.4.2003, put in threadgroup
                     t = new ThreadClass(new System.Threading.ThreadStart(this.Run), "ConnectionTable.ReaperThread");
                     t.IsBackground = true; // will allow us to terminate if all remaining threads are daemons
                     t.Start();
@@ -2983,7 +3422,8 @@ namespace Alachisoft.NGroups.Blocks
                     t = null;
             }
 
-            
+
+            // Aobvoe functin re-writtnen
             public virtual void Run()
             {
                 Connection value_Renamed;
@@ -2998,11 +3438,11 @@ namespace Alachisoft.NGroups.Blocks
                     // first sleep
                     Util.Util.sleep(Enclosing_Instance.reaper_interval);
 
-                    if (enclosingInstance.NCacheLog.IsInfoEnabled) enclosingInstance.NCacheLog.Info("ConnectionTable.Reaper",  "b4 lock conns.SyncRoot");
+                    if (enclosingInstance.NCacheLog.IsInfoEnabled) enclosingInstance.NCacheLog.Info("ConnectionTable.Reaper", "b4 lock conns.SyncRoot");
                     lock (Enclosing_Instance.conns_NIC_1.SyncRoot)
                     {
                         curr_time = (System.DateTime.Now.Ticks - 621355968000000000) / 10000;
-                        for (System.Collections.IEnumerator it = Enclosing_Instance.conns_NIC_1.GetEnumerator(); it.MoveNext(); )
+                        for (System.Collections.IEnumerator it = Enclosing_Instance.conns_NIC_1.GetEnumerator(); it.MoveNext();)
                         {
                             entry = (System.Collections.DictionaryEntry)it.Current;
                             value_Renamed = (Connection)entry.Value;
@@ -3011,13 +3451,11 @@ namespace Alachisoft.NGroups.Blocks
                             if (value_Renamed.last_access + Enclosing_Instance.conn_expire_time < curr_time)
                             {
                                 if (enclosingInstance.NCacheLog.IsInfoEnabled) enclosingInstance.NCacheLog.Info("connection " + value_Renamed + " has been idle for too long (conn_expire_time=" + Enclosing_Instance.conn_expire_time + "), will be removed");
-                                
                                 value_Renamed.Destroy();
                                 temp.Add(it.Current);
                             }
                         }
 
-                        // Now  remove closed connection from the connection hashtable
 
                         for (int i = 0; i < temp.Count; i++)
                         {

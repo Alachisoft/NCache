@@ -1,5 +1,5 @@
-
 option java_outer_classname="ContainsCommandProtocol";
+
 package Alachisoft.NCache.Common.Protobuf;
 message ContainsCommand {
 	optional string key = 1;

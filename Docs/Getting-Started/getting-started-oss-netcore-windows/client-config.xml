@@ -1,0 +1,6 @@
+<cache id="demoClusteredCache" load-balance="True" 
+           enable-client-logs="False" log-level="error">
+      
+     <server name="20.200.20.220"/>
+      
+</cache>

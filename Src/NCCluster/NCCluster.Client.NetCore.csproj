@@ -1,0 +1,125 @@
+<Project Sdk="Microsoft.NET.Sdk">
+
+  <PropertyGroup>
+    <TargetFramework>netstandard2.0</TargetFramework>
+  </PropertyGroup>
+  
+  <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Debug|AnyCPU'">
+    <OutputPath>bin\Debug\netstandard2.0\</OutputPath>
+    <DefineConstants>TRACE;DEBUG;ENTERPRISE;VS2005;NET40;NETCORE</DefineConstants>
+  </PropertyGroup>
+  
+  <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Release|AnyCPU'">
+    <OutputPath>bin\Release\netstandard2.0\</OutputPath>
+    <DefineConstants>TRACE;ENTERPRISE;VS2005;NET40;NETCORE</DefineConstants>
+  </PropertyGroup>
+  
+  <PropertyGroup>
+    <GenerateAssemblyInfo>false</GenerateAssemblyInfo>
+    <AssemblyName>Alachisoft.NCache.Cluster</AssemblyName>
+    <RootNamespace>Alachisoft.NCache.Cluster</RootNamespace>
+  </PropertyGroup>
+  
+  <ItemGroup>
+    <Compile Remove="Protocols\Ring\**" />
+    <EmbeddedResource Remove="Protocols\Ring\**" />
+    <None Remove="Protocols\Ring\**" />
+  </ItemGroup>
+  
+  <ItemGroup>
+    <Compile Remove="Blocks\MembershipListenerAdapter.cs" />
+    <Compile Remove="Blocks\MethodCall.cs" />
+    <Compile Remove="Blocks\NotificationBus.cs" />
+    <Compile Remove="Blocks\RpcDispatcher.cs" />
+    <Compile Remove="Blocks\UpdateException.cs" />
+    <Compile Remove="Digest.cs" />
+    <Compile Remove="GetStateEvent.cs" />
+    <Compile Remove="GroupChannelHelper.cs" />
+    <Compile Remove="PINGHeader.cs" />
+    <Compile Remove="Protocols\CAUSAL.cs" />
+    <Compile Remove="Protocols\ClientGmsImpl.cs" />
+    <Compile Remove="Protocols\CoordGmsImpl.cs" />
+    <Compile Remove="Protocols\Digest.cs" />
+    <Compile Remove="Protocols\DISCARD.cs" />
+    <Compile Remove="Protocols\FC.cs" />
+    <Compile Remove="Protocols\FD.cs" />
+    <Compile Remove="Protocols\FDHeader.cs" />
+    <Compile Remove="Protocols\FD_PID.cs" />
+    <Compile Remove="Protocols\FD_PROB.cs" />
+    <Compile Remove="Protocols\FD_SIMPLE.cs" />
+    <Compile Remove="Protocols\FD_SOCK.cs" />
+    <Compile Remove="Protocols\FLOWCONTROL.cs" />
+    <Compile Remove="Protocols\FLOW_CONTROL.cs" />
+    <Compile Remove="Protocols\FLUSH.cs" />
+    <Compile Remove="Protocols\FlushRsp.cs" />
+    <Compile Remove="Protocols\FRAG.cs" />
+    <Compile Remove="Protocols\FRAG2.cs" />
+    <Compile Remove="Protocols\GMS.cs" />
+    <Compile Remove="Protocols\GmsHeader.cs" />
+    <Compile Remove="Protocols\GmsImpl.cs" />
+    <Compile Remove="Protocols\JoinRsp.cs" />
+    <Compile Remove="Protocols\MERGE.cs" />
+    <Compile Remove="Protocols\MERGE2.cs" />
+    <Compile Remove="Protocols\MERGEFAST.cs" />
+    <Compile Remove="Protocols\NAKACK.cs" />
+    <Compile Remove="Protocols\NakackHeader.cs" />
+    <Compile Remove="Protocols\ParticipantGmsImpl.cs" />
+    <Compile Remove="Protocols\pbcast\FD.cs" />
+    <Compile Remove="Protocols\pbcast\NAKACK.cs" />
+    <Compile Remove="Protocols\pbcast\PBCAST.cs" />
+    <Compile Remove="Protocols\pbcast\STABLE.cs" />
+    <Compile Remove="Protocols\pbcast\STATE_TRANSFER.cs" />
+    <Compile Remove="Protocols\PIGGYBACK.cs" />
+    <Compile Remove="Protocols\PING.cs" />
+    <Compile Remove="Protocols\SMACK.cs" />
+    <Compile Remove="Protocols\STABLE.cs" />
+    <Compile Remove="Protocols\STATE_TRANSFER.cs" />
+    <Compile Remove="Protocols\TCPGOSSIP.cs" />
+    <Compile Remove="Protocols\TOTAL_OLD.cs" />
+    <Compile Remove="Protocols\TOTAL_TOKEN.cs" />
+    <Compile Remove="Protocols\TransportableVectorTimeStamp.cs" />
+    <Compile Remove="Protocols\TransportedVectorTime.cs" />
+    <Compile Remove="Protocols\UDP.cs" />
+    <Compile Remove="Protocols\UDPHeader.cs" />
+    <Compile Remove="Protocols\UNICAST.cs" />
+    <Compile Remove="Protocols\VectorTime.cs" />
+    <Compile Remove="Protocols\VectorTimeStamp.cs" />
+    <Compile Remove="Protocols\VERIFY_SUSPECT.cs" />
+    <Compile Remove="SetStateEvent.cs" />
+    <Compile Remove="Stack\AckMcastReceiverWindow.cs" />
+    <Compile Remove="Stack\AckReceiverWindow.cs" />
+    <Compile Remove="Stack\GossipClient.cs" />
+    <Compile Remove="Stack\GossipData.cs" />
+    <Compile Remove="Stack\GossipRouter.cs" />
+    <Compile Remove="Stack\GossipServer.cs" />
+    <Compile Remove="Stack\MessageProtocol.cs" />
+    <Compile Remove="Stack\NakReceiverWindow.cs" />
+    <Compile Remove="Stack\ProtocolObserver.cs" />
+    <Compile Remove="Stack\RingNode.cs" />
+    <Compile Remove="Stack\RingNodeFlowControl.cs" />
+    <Compile Remove="Stack\RingToken.cs" />
+    <Compile Remove="Stack\RpcProtocol.cs" />
+    <Compile Remove="Stack\StackHeader.cs" />
+    <Compile Remove="Stack\StateTransferInfo.cs" />
+    <Compile Remove="Stack\TcpRingNode.cs" />
+    <Compile Remove="Stack\TokenLostException.cs" />
+    <Compile Remove="Stack\UdpRingNode.cs" />
+    <Compile Remove="Util\Marshaller.cs" />
+    <Compile Remove="Util\MQueue.cs" />
+    <Compile Remove="Util\Queue.cs" />
+    <Compile Remove="Util\ReusableThread.cs" />
+    <Compile Remove="Util\RWlock.cs" />
+    <Compile Remove="Util\Scheduler.cs" />
+    <Compile Remove="Util\SchedulerListener.cs" />
+    <Compile Remove="Util\ThreadPool.cs" />
+  </ItemGroup>
+  
+  <ItemGroup>
+    <ProjectReference Include="..\NCSerialization\NCSerialization.Client.NetCore.csproj" />
+  </ItemGroup>
+  
+  <Target Name="PostBuild" AfterTargets="PostBuildEvent">
+    <Exec Command="xcopy /Y &quot;$(TargetPath)&quot; &quot;$(SolutionDir)build\NetCore\Client\&quot;" />
+  </Target>
+  
+</Project>

@@ -1,0 +1,102 @@
+﻿@*
+    For more information on enabling MVC for empty projects, visit http://go.microsoft.com/fwlink/?Linkid=397860
+*@
+@{
+    ViewData["Title"] = "Guess Game";
+}
+
+<Label id="Label1" class="label1">The computer has selected a random number between 1 and 100 (inclusive). In this game you have to try to guess the number.</Label>
+<Label id="Label6" class="label6">Last Guess:</Label>
+@{
+    string system = "Page generated at: " + Environment.MachineName;
+}
+<Label id="lblSystemName" class="lblSystemName">@system</Label>
+
+@{
+    bool gameOver = ViewData.ContainsKey("YouWin") ? (bool)ViewData["YouWin"] : false;
+
+    if (gameOver)
+    {
+        using (Html.BeginForm("NewGame", "GuessGame", FormMethod.Post))
+        {
+            @Html.Label("Enter a number:", "Enter a number:", new { @class = "Label2" })
+            @Html.TextBox("id", "", new { @maxlength = "3", @class = "txtGuess", @disabled = "disabled" })
+            <input type="submit" id="btnGuess" name="New Game" class="cmdGuess" value="New Game" />
+        }
+    }
+    else
+    {
+        using (Html.BeginForm("Guess", "GuessGame", FormMethod.Post))
+        {
+            @Html.Label("Enter a number:", "Enter a number:", new {@class = "Label2"})
+            @Html.TextBox("id", "", new {@maxlength = "3", @class = "txtGuess"})
+            <input type="submit" id="btnGuess" name="Guess!" class="cmdGuess" value="Guess!"/>
+        }
+    }
+}
+@{
+    string oldValue = ViewData.ContainsKey("LastValue") ? ViewData["LastValue"].ToString() : "None";
+}
+
+<Label id="Label5" class="Label5">Previous attempts:</Label>
+<Label id="lblLastGuess" class="lblLastGuess">@oldValue</Label>
+
+@{
+    string hasWon = null;
+    if (ViewData.ContainsKey("YouWin"))
+    {
+        bool guessedRight = (bool) ViewData["YouWin"];
+        if (guessedRight)
+        {
+            hasWon = "Congratulations, you guessed the right number. " + @oldValue + " was the selected number. ";
+        }
+        else if(ViewData.ContainsKey("IsGreater"))
+        {
+            bool guessedGreater = (bool)ViewData["IsGreater"];
+            hasWon = guessedGreater ? "The number that you have tried is greater than the guess." : "The number that you have tried is lesser than the guess.";
+        }
+        else
+        {
+            hasWon = "Pick a number and guess";
+        }
+    }
+    else
+    {
+        hasWon = "Pick a number and guess";
+    }
+}
+
+<Label id="lblMessage" class="lblMessage">@hasWon</Label>
+@{
+    string history = string.Empty;
+    int min = 0;
+    int max = 101;
+    if (ViewData.ContainsKey("History") && ViewData.ContainsKey("GuessedNumber"))
+    {
+        int secret = (int) ViewData["GuessedNumber"];
+        List<int> historyList = (List<int>) ViewData["History"];
+        for (int i = historyList.Count - 1; i >= 0; i--)
+        {
+            if (historyList[i] < secret && historyList[i] > min)
+            {
+                min = historyList[i];
+            }
+            if (historyList[i] > secret && historyList[i] < max)
+            {
+                max = historyList[i];
+            }
+            history += historyList[i] + (i == 0 ? "" : ", ");
+        }
+    }
+    else
+    {
+        history = "None";
+    }
+
+    string hint = "Hint: The number is between " + min + " and " + max + ".";
+}
+
+<Label id="lblHint" class="lblHint">@hint</Label>
+<Label id="Label4" class="Label4"> Attempts History ---</Label>
+<Label id="lblHistory" class="lblHistory">@history</Label>
+<Label ID="Label3" class="Label3">Using NCache's Session Store Provider Implementation</Label>

@@ -8,6 +8,7 @@
 //------------------------------------------------------------------------------
 
 // Generated from: InitializeCacheResponse.proto
+// Note: requires additional types generated from: ShutDownServerInfo.proto
 namespace Alachisoft.NCache.Common.Protobuf
 {
   [global::System.Serializable, global::ProtoBuf.ProtoContract(Name=@"InitializeCacheResponse")]
@@ -25,13 +26,65 @@ namespace Alachisoft.NCache.Common.Protobuf
       set { _cacheType = value; }
     }
 
-    private byte[] _token = null;
-    [global::ProtoBuf.ProtoMember(2, IsRequired = false, Name=@"token", DataFormat = global::ProtoBuf.DataFormat.Default)]
-    [global::System.ComponentModel.DefaultValue(null)]
-    public byte[] token
+    private string _targetCacheUniqueID = "";
+    [global::ProtoBuf.ProtoMember(2, IsRequired = false, Name=@"targetCacheUniqueID", DataFormat = global::ProtoBuf.DataFormat.Default)]
+    [global::System.ComponentModel.DefaultValue("")]
+    public string targetCacheUniqueID
     {
-      get { return _token; }
-      set { _token = value; }
+      get { return _targetCacheUniqueID; }
+      set { _targetCacheUniqueID = value; }
+    }
+
+    private bool _isPersistenceEnabled = default(bool);
+    [global::ProtoBuf.ProtoMember(3, IsRequired = false, Name=@"isPersistenceEnabled", DataFormat = global::ProtoBuf.DataFormat.Default)]
+    [global::System.ComponentModel.DefaultValue(default(bool))]
+    public bool isPersistenceEnabled
+    {
+      get { return _isPersistenceEnabled; }
+      set { _isPersistenceEnabled = value; }
+    }
+
+    private int _persistenceInterval = default(int);
+    [global::ProtoBuf.ProtoMember(4, IsRequired = false, Name=@"persistenceInterval", DataFormat = global::ProtoBuf.DataFormat.TwosComplement)]
+    [global::System.ComponentModel.DefaultValue(default(int))]
+    public int persistenceInterval
+    {
+      get { return _persistenceInterval; }
+      set { _persistenceInterval = value; }
+    }
+
+    private bool _isShutDownProcessEnabled = default(bool);
+    [global::ProtoBuf.ProtoMember(5, IsRequired = false, Name=@"isShutDownProcessEnabled", DataFormat = global::ProtoBuf.DataFormat.Default)]
+    [global::System.ComponentModel.DefaultValue(default(bool))]
+    public bool isShutDownProcessEnabled
+    {
+      get { return _isShutDownProcessEnabled; }
+      set { _isShutDownProcessEnabled = value; }
+    }
+    private readonly global::System.Collections.Generic.List<Alachisoft.NCache.Common.Protobuf.ShutDownServerInfo> _shutDownServerInfo = new global::System.Collections.Generic.List<Alachisoft.NCache.Common.Protobuf.ShutDownServerInfo>();
+    [global::ProtoBuf.ProtoMember(6, Name=@"shutDownServerInfo", DataFormat = global::ProtoBuf.DataFormat.Default)]
+    public global::System.Collections.Generic.List<Alachisoft.NCache.Common.Protobuf.ShutDownServerInfo> shutDownServerInfo
+    {
+      get { return _shutDownServerInfo; }
+    }
+  
+
+    private bool _requestLoggingEnabled = default(bool);
+    [global::ProtoBuf.ProtoMember(7, IsRequired = false, Name=@"requestLoggingEnabled", DataFormat = global::ProtoBuf.DataFormat.Default)]
+    [global::System.ComponentModel.DefaultValue(default(bool))]
+    public bool requestLoggingEnabled
+    {
+      get { return _requestLoggingEnabled; }
+      set { _requestLoggingEnabled = value; }
+    }
+
+    private bool _secureConnectionEnabled = (bool)false;
+    [global::ProtoBuf.ProtoMember(8, IsRequired = false, Name=@"secureConnectionEnabled", DataFormat = global::ProtoBuf.DataFormat.Default)]
+    [global::System.ComponentModel.DefaultValue((bool)false)]
+    public bool secureConnectionEnabled
+    {
+      get { return _secureConnectionEnabled; }
+      set { _secureConnectionEnabled = value; }
     }
     private global::ProtoBuf.IExtension extensionObject;
     global::ProtoBuf.IExtension global::ProtoBuf.IExtensible.GetExtensionObject(bool createIfMissing)

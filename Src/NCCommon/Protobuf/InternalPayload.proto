@@ -1,0 +1,17 @@
+import "EventMessage.proto";
+import "CollectionEventMessage.proto";
+
+option java_outer_classname="InternalPayloadProtocol";
+package Alachisoft.NCache.Common.Protobuf;
+
+message InternalPayload {
+
+	enum PayloadType {
+		CACHE_ITEM_EVENTS = 1;
+		COLLECTION_EVENTS = 2;
+	}
+
+	optional EventMessage eventMessage = 1;
+	optional CollectionEventMessage collectionEventMessage = 2;
+	optional PayloadType payloadType = 3 [default = CACHE_ITEM_EVENTS];
+}

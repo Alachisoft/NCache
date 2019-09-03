@@ -1,0 +1,15 @@
+import "KeyValue.proto";
+
+
+option java_outer_classname="DeleteQueryCommandProtocol";
+package Alachisoft.NCache.Common.Protobuf;
+
+message DeleteQueryCommand {
+    optional string query = 1;
+    repeated KeyValue values = 2;
+    optional bool isRemove = 3;
+	optional int64 clientLastViewId = 4 [default=-1];
+	optional int32 MethodOverload = 5 [default=0];
+	optional int64 requestId = 6;
+	optional int32 commandVersion = 7[default=0];
+}

@@ -1,4 +1,4 @@
-﻿﻿/*
+﻿/*
 * Copyright (c) 2015, Alachisoft. All Rights Reserved.
 *
 * Licensed under the Apache License, Version 2.0 (the "License");
@@ -14,7 +14,10 @@
 * limitations under the License.
 */
 
-
+using System;
+using System.Collections.Generic;
+using System.Linq;
+using System.Text;
 using System.Globalization;
 using System.Resources;
 using System.Reflection;
@@ -28,7 +31,11 @@ namespace Alachisoft.NCache.Common.DataStructures.Clustered
         static ResourceHelper()
         {
             Assembly assembly = typeof(string).Assembly;
+#if NETCORE
+            s_resourceManager = new ResourceManager("FxResources.System.Private.CoreLib.SR", assembly);
+#else
             s_resourceManager = new ResourceManager("mscorlib", assembly);
+#endif
         }
 
         public static string GetResourceString(string name)

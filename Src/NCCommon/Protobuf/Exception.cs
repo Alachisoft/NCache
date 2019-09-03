@@ -42,6 +42,24 @@ namespace Alachisoft.NCache.Common.Protobuf
       get { return _exception; }
       set { _exception = value; }
     }
+
+    private int _errorCode = default(int);
+    [global::ProtoBuf.ProtoMember(4, IsRequired = false, Name=@"errorCode", DataFormat = global::ProtoBuf.DataFormat.TwosComplement)]
+    [global::System.ComponentModel.DefaultValue(default(int))]
+    public int errorCode
+    {
+      get { return _errorCode; }
+      set { _errorCode = value; }
+    }
+
+    private string _stackTrace = "";
+    [global::ProtoBuf.ProtoMember(5, IsRequired = false, Name=@"stackTrace", DataFormat = global::ProtoBuf.DataFormat.Default)]
+    [global::System.ComponentModel.DefaultValue("")]
+    public string stackTrace
+    {
+      get { return _stackTrace; }
+      set { _stackTrace = value; }
+    }
     [global::ProtoBuf.ProtoContract(Name=@"Type")]
     public enum Type
     {
@@ -58,23 +76,53 @@ namespace Alachisoft.NCache.Common.Protobuf
       [global::ProtoBuf.ProtoEnum(Name=@"GENERALFAILURE", Value=3)]
       GENERALFAILURE = 3,
             
+      [global::ProtoBuf.ProtoEnum(Name=@"SECURITY", Value=4)]
+      SECURITY = 4,
+            
       [global::ProtoBuf.ProtoEnum(Name=@"NOTSUPPORTED", Value=5)]
       NOTSUPPORTED = 5,
             
       [global::ProtoBuf.ProtoEnum(Name=@"MAX_CLIENTS_REACHED", Value=6)]
       MAX_CLIENTS_REACHED = 6,
             
-      [global::ProtoBuf.ProtoEnum(Name=@"TYPE_INDEX_NOT_FOUND", Value=7)]
-      TYPE_INDEX_NOT_FOUND = 7,
+      [global::ProtoBuf.ProtoEnum(Name=@"STREAM_ALREADY_LOCKED", Value=7)]
+      STREAM_ALREADY_LOCKED = 7,
             
-      [global::ProtoBuf.ProtoEnum(Name=@"ATTRIBUTE_INDEX_NOT_FOUND", Value=8)]
-      ATTRIBUTE_INDEX_NOT_FOUND = 8,
+      [global::ProtoBuf.ProtoEnum(Name=@"STREAM_CLOSED", Value=8)]
+      STREAM_CLOSED = 8,
             
-      [global::ProtoBuf.ProtoEnum(Name=@"STATE_TRANSFER_EXCEPTION", Value=9)]
-      STATE_TRANSFER_EXCEPTION = 9,
+      [global::ProtoBuf.ProtoEnum(Name=@"STREAM_EXC", Value=9)]
+      STREAM_EXC = 9,
             
-      [global::ProtoBuf.ProtoEnum(Name=@"INVALID_READER_EXCEPTION", Value=10)]
-      INVALID_READER_EXCEPTION = 10
+      [global::ProtoBuf.ProtoEnum(Name=@"STREAM_INVALID_LOCK", Value=10)]
+      STREAM_INVALID_LOCK = 10,
+            
+      [global::ProtoBuf.ProtoEnum(Name=@"STREAM_NOT_FOUND", Value=11)]
+      STREAM_NOT_FOUND = 11,
+            
+      [global::ProtoBuf.ProtoEnum(Name=@"TYPE_INDEX_NOT_FOUND", Value=12)]
+      TYPE_INDEX_NOT_FOUND = 12,
+            
+      [global::ProtoBuf.ProtoEnum(Name=@"ATTRIBUTE_INDEX_NOT_FOUND", Value=13)]
+      ATTRIBUTE_INDEX_NOT_FOUND = 13,
+            
+      [global::ProtoBuf.ProtoEnum(Name=@"STATE_TRANSFER_EXCEPTION", Value=14)]
+      STATE_TRANSFER_EXCEPTION = 14,
+            
+      [global::ProtoBuf.ProtoEnum(Name=@"INVALID_READER_EXCEPTION", Value=15)]
+      INVALID_READER_EXCEPTION = 15,
+            
+      [global::ProtoBuf.ProtoEnum(Name=@"LICENSING_EXCEPTION", Value=16)]
+      LICENSING_EXCEPTION = 16,
+            
+      [global::ProtoBuf.ProtoEnum(Name=@"DEPLOYMENT_EXCEPTION", Value=17)]
+      DEPLOYMENT_EXCEPTION = 17,
+            
+      [global::ProtoBuf.ProtoEnum(Name=@"CONFIGURATON_EXCEPTION", Value=18)]
+      CONFIGURATON_EXCEPTION = 18,
+            
+      [global::ProtoBuf.ProtoEnum(Name=@"MAINTENANCE_EXCEPTION", Value=19)]
+      MAINTENANCE_EXCEPTION = 19
     }
   
     private global::ProtoBuf.IExtension extensionObject;

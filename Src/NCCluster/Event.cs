@@ -1,15 +1,3 @@
-// Licensed under the Apache License, Version 2.0 (the "License");
-// you may not use this file except in compliance with the License.
-// You may obtain a copy of the License at
-// 
-//    http://www.apache.org/licenses/LICENSE-2.0
-// 
-// Unless required by applicable law or agreed to in writing, software
-// distributed under the License is distributed on an "AS IS" BASIS,
-// WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
-// See the License for the specific language governing permissions and
-// limitations under the License.
-
 using System;
 using Alachisoft.NCache.Common;
 using Alachisoft.NCache.Common.Enum;
@@ -73,6 +61,7 @@ namespace Alachisoft.NGroups
 		public const int SUBVIEWSET_MERGE = 49; // arg = vector of addresses; see JGroups/EVS/Readme.txt
 		public const int HEARD_FROM = 50; // arg = Vector (list of Addresses)
 		public const int UNSUSPECT = 51; // arg = Address (of unsuspected member)
+//		public const int SET_PID = 52; // arg = Integer (process id)
 		public const int MERGE_DIGEST = 53; // arg = Digest
 		public const int BLOCK_SEND = 54; // arg = null
 		public const int UNBLOCK_SEND = 55; // arg = null
@@ -117,10 +106,15 @@ namespace Alachisoft.NGroups
         public const int I_AM_LEAVING = 94;
         public const int CONNECTION_NOT_OPENED = 95;
         public const int NOTIFY_LEAVING = 96;
+        public const int MARK_FOR_MAINTENANCE = 97;
+        public const int MARKED_FOR_MAINTENANCE = 98;
+        public const int UNMARK_FOR_MAINTENANCE = 99;
+        public const int IS_CLUSTER_IN_STATE_TRANSFER = 100;
+        public const int IS_CLUSTER_IN_STATE_TRANSFER_RSP = 101;
 
 
-		/// <summary> Current type of event </summary>
-		private int     type=0;  
+        /// <summary> Current type of event </summary>
+        private int     type=0;  
 
 		/// <summary> Object associated with the type </summary>
 		private Object  arg=null;     // must be serializable if used for inter-stack communication
@@ -220,10 +214,8 @@ namespace Alachisoft.NGroups
 				case FIND_INITIAL_MBRS_OK:  return "FIND_INITIAL_MBRS_OK";
 				case TMP_VIEW:  return "TMP_VIEW";
 				case BECOME_SERVER:  return "BECOME_SERVER";
-
                 case GET_STATE: return "GET_STATE";
                 case GET_STATE_OK: return "GET_STATE_OK";
-
 				case START_QUEUEING:  return "START_QUEUEING";
 				case STOP_QUEUEING:  return "STOP_QUEUEING";
 				case SWITCH_NAK:  return "SWITCH_NAK";
@@ -256,7 +248,7 @@ namespace Alachisoft.NGroups
 				case SUBVIEWSET_MERGE:  return "SUBVIEWSET_MERGE";
 				case HEARD_FROM:  return "HEARD_FROM";
 				case UNSUSPECT:  return "UNSUSPECT";
-
+//				case SET_PID:  return "SET_PID";
 				case MERGE_DIGEST:  return "MERGE_DIGEST";
 				case BLOCK_SEND:  return "BLOCK_SEND";
 				case UNBLOCK_SEND:  return "UNBLOCK_SEND";
@@ -301,7 +293,6 @@ namespace Alachisoft.NGroups
             arg = null;
             priority = Priority.Normal;
         }
-        
 
 		/// <summary>
 		/// Returns a string representation of the Event 

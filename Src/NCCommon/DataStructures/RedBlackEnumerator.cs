@@ -1,17 +1,3 @@
-// Copyright (c) 2017 Alachisoft
-// 
-// Licensed under the Apache License, Version 2.0 (the "License");
-// you may not use this file except in compliance with the License.
-// You may obtain a copy of the License at
-// 
-//    http://www.apache.org/licenses/LICENSE-2.0
-// 
-// Unless required by applicable law or agreed to in writing, software
-// distributed under the License is distributed on an "AS IS" BASIS,
-// WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
-// See the License for the specific language governing permissions and
-// limitations under the License.
-
 using System;
 using System.Collections;
 	
@@ -26,7 +12,6 @@ namespace Alachisoft.NCache.Common.DataStructures
 		// the treap uses the stack to order the nodes
 		private Stack stack;
 		// return the keys
-		//private bool keys;
 		// return in ascending order (true) or descending (false)
 		private bool ascending;
 		
@@ -44,23 +29,27 @@ namespace Alachisoft.NCache.Common.DataStructures
         ///<summary>
 		///Key
 		///</summary>
-		object IDictionaryEnumerator.Key
+		/*public IComparable*/ object IDictionaryEnumerator.Key
 		{
 			get
             {
 				return ordKey;
 			}
+			
 		}
+
 		///<summary>
 		///Data
 		///</summary>
-		object IDictionaryEnumerator.Value
+		/*public*/ object IDictionaryEnumerator.Value
 		{
 			get
             {
 				return objValue;
 			}
+			
 		}
+
 
         DictionaryEntry IDictionaryEnumerator.Entry
         {
@@ -186,10 +175,9 @@ namespace Alachisoft.NCache.Common.DataStructures
                 }
             }
 			
-			// the following is for .NET compatibility (see MoveNext())
             ordKey = node.Key;
             objValue = node.Value;
-			
+          	
 			return node.Key;
 		}
 		///<summary>

@@ -1,20 +1,7 @@
-// Copyright (c) 2017 Alachisoft
-// 
-// Licensed under the Apache License, Version 2.0 (the "License");
-// you may not use this file except in compliance with the License.
-// You may obtain a copy of the License at
-// 
-//    http://www.apache.org/licenses/LICENSE-2.0
-// 
-// Unless required by applicable law or agreed to in writing, software
-// distributed under the License is distributed on an "AS IS" BASIS,
-// WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
-// See the License for the specific language governing permissions and
-// limitations under the License.
-
 using System;
 using System.Collections;
 using System.Collections.Generic;
+using Alachisoft.NCache.Common.DataStructures;
 using Alachisoft.NCache.Runtime.Serialization.IO;
 
 namespace Alachisoft.NCache.Caching
@@ -25,7 +12,7 @@ namespace Alachisoft.NCache.Caching
     /// It is designed to handle the large objects.
     /// </summary>
     [Serializable]
-    public class SmallUserBinaryObject : UserBinaryObject
+    public class SmallUserBinaryObject :UserBinaryObject
     {
         byte[] _data;
         public SmallUserBinaryObject(int noOfChunks)
@@ -37,6 +24,7 @@ namespace Alachisoft.NCache.Caching
             _data = data;
         }
 
+        public byte[] Bytes { get { return _data; } }
 
         /// <summary>
         /// Creates a UserBinaryObject from a byte array
@@ -53,7 +41,24 @@ namespace Alachisoft.NCache.Caching
             return binaryObject;
         }
 
-        public static SmallUserBinaryObject CreateUserBinaryObject(Array data)
+        public static SmallUserBinaryObject CreatePooledUserBinaryObject(ICollection data)
+        {
+            SmallUserBinaryObject binaryObject = null;
+            foreach (byte[] buffer in data)
+            {
+                binaryObject = ObjectPooling.ObjectPoolManager.PayloadObjectPool.GetObject();
+
+                byte[] pooledBuffer = binaryObject.Bytes;
+
+                Buffer.BlockCopy(buffer, 0, pooledBuffer, 0, pooledBuffer.Length);
+
+                break;
+            }
+
+            return binaryObject;
+        }
+
+        public static SmallUserBinaryObject CreateUserBinaryObject(ICollection data)
         {
             SmallUserBinaryObject binaryObject = null;
             foreach (byte[] buffer in data)
@@ -135,13 +140,31 @@ namespace Alachisoft.NCache.Caching
 
         #endregion
 
+        #region IStreamItem Members
+
+        public override VirtualArray Read(int offset, int length)
+        {
+            throw new Exception("The method or operation is not implemented.");         
+        }
+
+        public override void Write(VirtualArray vBuffer, int srcOffset, int dstOffset, int length)
+        {
+            throw new Exception("The method or operation is not implemented.");
+        }
+
         public override int Length
         {
             get
             {
                 return _data.Length;
             }
+            set
+            {
+                //throw new Exception("The method or operation is not implemented.");
+            }
         }
+
+        #endregion
 
     }
 }

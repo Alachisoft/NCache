@@ -1,0 +1,14 @@
+option java_outer_classname="GetCacheManagementPortCommandProtocol";
+
+package Alachisoft.NCache.Common.Protobuf;
+
+message GetCacheManagementPortCommand {
+	optional int64 requestId = 1;
+	optional string cacheId = 2;
+	optional bool isRunning = 3; 
+	optional string userId = 4 [default="dummyUID"];
+	optional string pwd = 5 [default="dummyPwd"];
+	optional bool isJavaClient = 6 [default=true];
+	optional bytes binaryUserId = 7;
+	optional bytes binaryPassword = 8;
+}

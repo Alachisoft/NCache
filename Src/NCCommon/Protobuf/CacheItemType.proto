@@ -1,0 +1,15 @@
+ package Alachisoft.NCache.Common.Protobuf;
+
+message CacheItemType{
+
+	enum ItemType {
+		CACHEITEM=1;
+        LIST = 2;
+        QUEUE = 3;
+        SET = 4;
+        DICTIONARY = 5;
+        COUNTER = 6;
+    }
+
+}
+

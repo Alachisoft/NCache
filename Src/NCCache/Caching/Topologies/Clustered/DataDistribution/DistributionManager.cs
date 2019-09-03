@@ -1,17 +1,16 @@
-// Copyright (c) 2017 Alachisoft
-// 
-// Licensed under the Apache License, Version 2.0 (the "License");
-// you may not use this file except in compliance with the License.
-// You may obtain a copy of the License at
-// 
-//    http://www.apache.org/licenses/LICENSE-2.0
-// 
-// Unless required by applicable law or agreed to in writing, software
-// distributed under the License is distributed on an "AS IS" BASIS,
-// WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
-// See the License for the specific language governing permissions and
-// limitations under the License.
-
+//  Copyright (c) 2019 Alachisoft
+//  
+//  Licensed under the Apache License, Version 2.0 (the "License");
+//  you may not use this file except in compliance with the License.
+//  You may obtain a copy of the License at
+//  
+//     http://www.apache.org/licenses/LICENSE-2.0
+//  
+//  Unless required by applicable law or agreed to in writing, software
+//  distributed under the License is distributed on an "AS IS" BASIS,
+//  WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+//  See the License for the specific language governing permissions and
+//  limitations under the License
 using System;
 using System.Collections;
 using System.Collections.Generic;
@@ -26,13 +25,14 @@ using System.Net;
 using Alachisoft.NCache.Common;
 using Alachisoft.NCache.Common.Util;
 using Alachisoft.NCache.Common.Logger;
-using Alachisoft.NCache.Common.DataStructures.Clustered;
+#if DEBUGSTATETRANSFER
+using Alachisoft.NCache.Caching.Topologies.History;
+#endif
 
 namespace Alachisoft.NCache.Caching.Topologies.Clustered
 {
     class DistributionManager
     {
-
         #region/                        --- inner classes ---           /
 
         internal class CandidateNodeForLoadBalance : IComparable
@@ -82,6 +82,7 @@ namespace Alachisoft.NCache.Caching.Topologies.Clustered
         protected ArrayList _installedHashMap;
         protected ArrayList _lastCreatedHashMap;
         protected Hashtable _bucketsOwnershipMap;
+        protected Dictionary<Address, Dictionary<int, HashMapBucket>> _POTeamBucketsOwnershipMap;
         protected Hashtable _bucketsStats;
         protected ArrayList _existingMembers;
         protected Address _newMember;
@@ -90,10 +91,10 @@ namespace Alachisoft.NCache.Caching.Topologies.Clustered
         protected ReaderWriterLock _sync = new ReaderWriterLock();
         protected Address _localAddrss;
         protected int _autoBalancingThreshold;
-
-        protected IDictionary<Address, IDictionary<HashMapBucket, int>> _BucketOwnershipMapDictionary; 
         public static int TotalBuckets = 1000;
 
+        protected Hashtable _orphanedBuckets;
+        protected Address _leavingNode =null;
         private ILogger _ncacheLog;
         public ILogger NCacheLog
         {
@@ -292,11 +293,7 @@ namespace Alachisoft.NCache.Caching.Topologies.Clustered
         public Hashtable BucketsOwnershipMap
         {
             get { return _bucketsOwnershipMap; }
-            set
-            {
-                _bucketsOwnershipMap = value;
-                _BucketOwnershipMapDictionary = GetHashMapBucketIndex(_bucketsOwnershipMap);
-            }
+            set { _bucketsOwnershipMap = value; _POTeamBucketsOwnershipMap = POTeamConvertOwnershitMap(_bucketsOwnershipMap); }
         }
 
         /// <summary>
@@ -318,17 +315,16 @@ namespace Alachisoft.NCache.Caching.Topologies.Clustered
             Sync.AcquireReaderLock(Timeout.Infinite);
             try
             {
-                if (BucketsOwnershipMap != null && BucketsOwnershipMap.Contains(owner))
+                if (_POTeamBucketsOwnershipMap != null && _POTeamBucketsOwnershipMap.ContainsKey(owner))
                 {
-                    ArrayList buckets = BucketsOwnershipMap[owner] as ArrayList;
+                    var buckets = _POTeamBucketsOwnershipMap[owner];
                     if (buckets != null)
                     {
-                        int index = buckets.IndexOf(new HashMapBucket(null, bucketId));
-                        if (index != -1)
+                        HashMapBucket bucket;
+                        buckets.TryGetValue(bucketId, out bucket);
+                        if (bucket != null && bucket.Status == BucketStatus.Functional)
                         {
-                            HashMapBucket bucket = buckets[index] as HashMapBucket;
-                            if (bucket.Status == BucketStatus.Functional)
-                                return true;
+                            return true;
                         }
                     }
                 }
@@ -340,14 +336,14 @@ namespace Alachisoft.NCache.Caching.Topologies.Clustered
             return false;
         }
 
-        public Address SelectNode(string key)
+        public Address SelectNode(string key, string group)
         {
             //Three retries
             for (int retries = 0; retries < 3; retries++)
             {
                 try
                 {
-                    return SelectNodeInternal(key);
+                    return SelectNodeInternal(key, group);
                 }
                 catch (ArgumentException e)
                 {
@@ -359,7 +355,7 @@ namespace Alachisoft.NCache.Caching.Topologies.Clustered
             return null;
         }
 
-        private Address SelectNodeInternal(string key)
+        private Address SelectNodeInternal(string key, string group)
         {
             int hashCode = AppUtil.GetHashCode(key);
             int index = hashCode / this.BucketSize;
@@ -376,22 +372,24 @@ namespace Alachisoft.NCache.Caching.Topologies.Clustered
                     HashMapBucket bucket = _installedHashMap[index] as HashMapBucket;
                     if (bucket != null)
                     {
+
                         /// This is special case that handles operations during stateTransfer.
                         /// If a bucket is not yet transfered to the new coordinator from the replica. then
                         /// the replica's address is returned.
-                        Address coordinatorNodeAddress = bucket.TempAddress; // this should be the sub-coordinator addres
-                        ArrayList ownershipMap = _bucketsOwnershipMap[coordinatorNodeAddress] as ArrayList;
+                        Address coordinatorNodeAddress = bucket.TempAddress; // this should be the sub-coordinator address.
+                        Dictionary<int, HashMapBucket> ownershipMap;
+                        _POTeamBucketsOwnershipMap.TryGetValue(coordinatorNodeAddress, out ownershipMap);
+
                         if (ownershipMap == null)
                         {
                             NCacheLog.Warn("DistributionManager.SelectNodeInternal()", "ownershipMap is null. Returning permanent address of bucket.");
                             return bucket.PermanentAddress;
                         }
-                        int indexOfOwnedBucket = -1;
-                        _BucketOwnershipMapDictionary[coordinatorNodeAddress].TryGetValue(bucket, out indexOfOwnedBucket);
 
-                        if (indexOfOwnedBucket != -1)
+                        HashMapBucket ownedBucket;
+                        ownershipMap.TryGetValue(bucket.BucketId, out ownedBucket);
+                        if (ownedBucket != null)
                         {
-                            HashMapBucket ownedBucket = ownershipMap[indexOfOwnedBucket] as HashMapBucket;
                             return ownedBucket.PermanentAddress;
                         }
                         return bucket.PermanentAddress;
@@ -417,6 +415,10 @@ namespace Alachisoft.NCache.Caching.Topologies.Clustered
             return bucket.BucketId;
         }
 
+        public virtual bool IsMyBackUpNodeUunderMaintaince(Address server)
+        {
+            return false;
+        }
         /// <summary>
         /// A new map is required when a member leaves or joins the cluster.
         /// This method returns a new map based on the input paramameters.
@@ -502,6 +504,21 @@ namespace Alachisoft.NCache.Caching.Topologies.Clustered
             return null;
         }
 
+        public virtual bool IsPreviousNode()
+        {
+            return false;
+        }
+
+        public virtual bool HasUndermaintenceReplica()
+        {
+            return false;
+        }
+
+        public virtual Address GetUndermaintenceReplica(Address server)
+        {
+            return null;
+        }
+
         protected DistributionMaps GetMapsOnNodeJoining(DistributionInfoData distInfoData)
         {
             if (NCacheLog.IsInfoEnabled) NCacheLog.Info("DistributionMgr.GetMapsOnNodeJoining()", "Total Data Size : " + TotalDataSize.ToString());
@@ -521,19 +538,65 @@ namespace Alachisoft.NCache.Caching.Topologies.Clustered
             return new DistributionMaps(_lastCreatedHashMap, bucketsOwnershipMap);
         }
 
+        protected DistributionMaps GetMapsOnNodeReJoining(DistributionInfoData distInfoData)
+        {
+            if (NCacheLog.IsInfoEnabled) NCacheLog.Info("DistributionMgr.GetMapsOnNodeJoining()", "Total Data Size : " + TotalDataSize.ToString());
+            ArrayList tmpMap = new ArrayList();
+            Hashtable bucketsOwnershipMap = null;
+
+            _existingMembers.Add(distInfoData.AffectedNode.NodeAddress);
+            Address replicaAddress = GetReplica(distInfoData.AffectedNode);
+
+            ArrayList newHashMap = new ArrayList();
+
+            foreach (HashMapBucket bucket in _lastCreatedHashMap)
+            {
+                foreach (HashMapBucket orphanBucket in _orphanedBuckets.Values)
+                {
+                    if (bucket.BucketId.Equals(orphanBucket.BucketId))
+                    {
+                        bucket.TempAddress = orphanBucket.PermanentAddress;
+                        bucket.Status = BucketStatus.NeedTransfer;
+                    }
+                }
+                tmpMap.Add(bucket);
+            }
+
+            _lastCreatedHashMap = tmpMap.Clone() as ArrayList;
+
+            bucketsOwnershipMap = GetBucketsOwnershipMap(_lastCreatedHashMap);
+            if (NCacheLog.IsInfoEnabled) NCacheLog.Info("DistributionMgr.GetMaps()", "Sending new map as a new node joined the cluster");
+            return new DistributionMaps(_lastCreatedHashMap, bucketsOwnershipMap);
+        }
+
+        protected virtual Address GetReplica(PartNodeInfo node)
+        {
+            return null;
+        }
+
         protected DistributionMaps GetMapsOnNodeLeaving(DistributionInfoData distInfoData)
         {
             ArrayList tmpMap = null;
             Hashtable bucketsOwnershipMap = null;
             _existingMembers.Remove(distInfoData.AffectedNode.NodeAddress);
             if (NCacheLog.IsInfoEnabled) NCacheLog.Info("DistributionMgr.GetMapsOnNodeLeaving()", "Before Calling DistributeOrphanBuckets() ---- Leaving Node:" + distInfoData.AffectedNode.NodeAddress.ToString() + " Existing Members Count:0" + _existingMembers.Count);
-            tmpMap = DistributeHashMap.DistributeOrphanBuckets(_lastCreatedHashMap, distInfoData.AffectedNode.NodeAddress, _existingMembers);
+            Hashtable orphanedBuckets = null;
+            tmpMap = DistributeHashMap.DistributeOrphanBuckets(_lastCreatedHashMap, distInfoData.AffectedNode.NodeAddress, _existingMembers, out orphanedBuckets);
 
             if (tmpMap == null) return null;
             _lastCreatedHashMap = tmpMap.Clone() as ArrayList;
 
             bucketsOwnershipMap = GetBucketsOwnershipMap(_lastCreatedHashMap);
-            return new DistributionMaps(_lastCreatedHashMap, bucketsOwnershipMap);
+
+            DistributionMaps distributionMaps = new DistributionMaps(_lastCreatedHashMap, bucketsOwnershipMap);
+            if (distInfoData.IsUnderMaintenance)
+            {
+                _orphanedBuckets = orphanedBuckets;
+
+                distributionMaps.OrphanedBuckets = _orphanedBuckets;
+            }
+
+            return distributionMaps;
         }
 
         protected ArrayList ChangeOwnerShip(ArrayList affectedBuckets, Address newMember)
@@ -616,7 +679,7 @@ namespace Alachisoft.NCache.Caching.Topologies.Clustered
         /// Returns a table that has buckets owners and there respective hashcode ranges
         /// </summary>
         /// <returns>a hashtable, with bucket id's as keys and owners address as value</returns>
-        internal Hashtable GetOwnerHashMapTable(Hashtable renderers)
+        internal Hashtable GetOwnerHashMapTable(Hashtable renderers, bool clusterUnderMaitenance)
         {
             Hashtable ownerHashCodeTable = new Hashtable(TotalBuckets);
             try
@@ -638,6 +701,20 @@ namespace Alachisoft.NCache.Caching.Topologies.Clustered
                                 case BucketStatus.UnderStateTxfr:
                                     ownerHashCodeTable.Add(i, GetServerAddress(renderers, bucket.TempAddress));
                                     break;
+                            }
+                        }
+                    }
+
+                    if (clusterUnderMaitenance && _orphanedBuckets != null && _orphanedBuckets.Count > 0)
+                    {
+                        foreach (ArrayList bucketList in _bucketsOwnershipMap.Values)
+                        {
+                            foreach (HashMapBucket bucket in bucketList)
+                            {
+                                if (_orphanedBuckets.ContainsKey(bucket.BucketId))
+                                {
+                                    ownerHashCodeTable[bucket.BucketId] = GetServerAddress(renderers, bucket.PermanentAddress);
+                                }
                             }
                         }
                     }
@@ -671,10 +748,10 @@ namespace Alachisoft.NCache.Caching.Topologies.Clustered
         /// </summary>
         /// <param name="bucketSize">out parameter, holds the individual bucket size</param>
         /// <returns>a hashtable, with bucket id's as keys and owners address as value</returns>        
-        internal Hashtable GetOwnerHashMapTable(Hashtable renderers, out int bucketSize)
+        internal Hashtable GetOwnerHashMapTable(Hashtable renderers, bool clusterUnderMaintenance, out int bucketSize)
         {
             bucketSize = this.BucketSize;
-            return GetOwnerHashMapTable(renderers);
+            return GetOwnerHashMapTable(renderers, clusterUnderMaintenance);
         }
 
         public void UpdateBucketStats(NodeInfo localNode)
@@ -690,20 +767,21 @@ namespace Alachisoft.NCache.Caching.Topologies.Clustered
 
                 if (localNode.Statistics != null && localNode.Statistics.LocalBuckets != null)
                 {
-                    IDictionary bucketStats = localNode.Statistics.LocalBuckets.Clone() as IDictionary;
+                    BucketStatistics[] bucketStats = localNode.Statistics.LocalBuckets.Clone() as BucketStatistics[];
                     if (bucketStats != null)
                     {
-                        IDictionaryEnumerator ide = bucketStats.GetEnumerator();
-                        while (ide.MoveNext())
+
+                        for (int i = 0; i < bucketStats.Length; i++)
                         {
+                            //muds:
                             //see if this node is the permanent owner of the bucket
                             //otherwise its quite possible that we override the 
                             //stats of the bucket from the temporary owner.
-                            HashMapBucket bucket = (HashMapBucket)_installedHashMap[(int)ide.Key];
+                            HashMapBucket bucket = (HashMapBucket)_installedHashMap[i];
                             if (bucket.PermanentAddress.Equals(localNode.Address))
                             {
-                                BucketStatistics stats = ide.Value as BucketStatistics;
-                                _bucketsStats[ide.Key] = ide.Value;
+                                if(bucketStats[i] != null)
+                                    _bucketsStats[i] = bucketStats[i];
                             }
                             else
                             {
@@ -750,7 +828,8 @@ namespace Alachisoft.NCache.Caching.Topologies.Clustered
                     if (hashBucket.StateTxfrLatch.IsAnyBitsSet(status) || !owner.Equals(hashBucket.TempAddress)) return;
                     lock (_status_wait_mutex)
                     {
-                        if (!owner.Equals(hashBucket.TempAddress) || hashBucket.StateTxfrLatch.IsAnyBitsSet(status))
+                        if (!owner.Equals(hashBucket.TempAddress) || hashBucket.StateTxfrLatch.IsAnyBitsSet(status)
+                            || (owner.Equals(hashBucket.TempAddress) && hashBucket.TempAddress.Equals(hashBucket.PermanentAddress)))//this condition handles anamoly if bucket status is mistakenly set to needtransfer
                             return;
                         Monitor.Wait(_status_wait_mutex);
                     }
@@ -848,7 +927,9 @@ namespace Alachisoft.NCache.Caching.Topologies.Clustered
                             if (node.Equals(bucket.TempAddress))
                             {
                                 bucket.Status = BucketStatus.UnderStateTxfr;
-                         
+                                //#if DEBUGSTATETRANSFER
+                                //                                _parent.Cluster._history.AddActivity(new Activity("DistributionMgr.ChangeBucketStatusToStateTransfer Bucket " + bucket.BucketId + " status changed to UnderStateTxfr in InstalledHashMap requested by " + node));
+                                //#endif
                                 if (NCacheLog.IsInfoEnabled) NCacheLog.Info("DistributionMgr.ChangeBucketStatus", bucket.ToString());
                             }
                         }
@@ -856,19 +937,20 @@ namespace Alachisoft.NCache.Caching.Topologies.Clustered
 
                     if (_bucketsOwnershipMap != null)
                     {
-                        ArrayList nodeBuckets = _bucketsOwnershipMap[node] as ArrayList;
+                        Dictionary<int, HashMapBucket> nodeBuckets;
+                        _POTeamBucketsOwnershipMap.TryGetValue(node, out nodeBuckets);
                         if (nodeBuckets != null)
                         {
                             foreach (int bucketId in buckets)
                             {
-                                int indexOfBucket = nodeBuckets.IndexOf(new HashMapBucket(null, bucketId));
-                                if (indexOfBucket != -1)
+                                HashMapBucket bucket;
+                                nodeBuckets.TryGetValue(bucketId, out bucket);
+                                if (bucket != null && node.Equals(bucket.TempAddress))
                                 {
-                                    HashMapBucket bucket = nodeBuckets[indexOfBucket] as HashMapBucket;
-                                    if (node.Equals(bucket.TempAddress))
-                                    {
-                                        bucket.Status = BucketStatus.UnderStateTxfr;
-                                    }
+                                    bucket.Status = BucketStatus.UnderStateTxfr;
+                                    //#if DEBUGSTATETRANSFER
+                                    //                                        _parent.Cluster._history.AddActivity(new Activity("DistributionMgr.ChangeBucketStatusToStateTransfer Bucket " + bucket.BucketId + " status changed to UnderStateTxfr in _bucketsOwnershipMap requested by " + node));
+                                    //#endif
                                 }
                             }
                         }
@@ -938,6 +1020,7 @@ namespace Alachisoft.NCache.Caching.Topologies.Clustered
 
             return result;
         }
+
         /// <summary>
         /// Releases a bucket by setting its status again to functional. Only 
         /// node who has set its status to state trxfr can change its status.
@@ -966,38 +1049,27 @@ namespace Alachisoft.NCache.Caching.Topologies.Clustered
                                     //has sent request to release after he has transfered the bucket completely.
                                     bucket.PermanentAddress = bucket.TempAddress;
                                 }
+                                //NCacheLog.Error("DistributionMgr.ReleaseBuckets", " Released bucket from InstalledHashMap " + bucket.ToString() + ". Requested by " + requestingNode);
                             }
                         }
                     }
 
                     if (_bucketsOwnershipMap != null)
                     {
-                        ArrayList nodeBuckets = _bucketsOwnershipMap[requestingNode] as ArrayList;
+                        Dictionary<int, HashMapBucket> nodeBuckets;
+                        _POTeamBucketsOwnershipMap.TryGetValue(requestingNode, out nodeBuckets);
+                        //ArrayList nodeBuckets = _bucketsOwnershipMap[requestingNode] as ArrayList;
                         if (nodeBuckets != null)
                         {
                             foreach (int bucketId in buckets)
                             {
-                                int indexOfBucket = -1;
-                                int startIndex = 0;
-                                do
+                                HashMapBucket bucket;
+                                nodeBuckets.TryGetValue(bucketId, out bucket);
+                                if (bucket != null && requestingNode.Equals(bucket.TempAddress))
                                 {
-                                    //TempFix: Updates status for multipile occurances of the same bucket in ownership map for replica.
-                                    indexOfBucket = nodeBuckets.IndexOf(new HashMapBucket(null, bucketId), startIndex);
-                                    if (indexOfBucket != -1)
-                                    {
-                                        HashMapBucket bucket = nodeBuckets[indexOfBucket] as HashMapBucket;
-                                        if (requestingNode.Equals(bucket.TempAddress))
-                                        {
-                                            bucket.Status = BucketStatus.Functional;
-                                            //Change permnant address only when node who locked the bucket 
-                                            //has sent request to release after he has transfered the bucket completely.
-
-                                            bucket.PermanentAddress = requestingNode;
-                                        }
-                                        startIndex = indexOfBucket + 1;
-                                    }
-                                } while (indexOfBucket >= 0);
-                               
+                                    bucket.Status = BucketStatus.Functional;
+                                    bucket.PermanentAddress = requestingNode;
+                                }
                             }
                         }
                     }
@@ -1010,12 +1082,14 @@ namespace Alachisoft.NCache.Caching.Topologies.Clustered
             }
             catch (NullReferenceException e)
             {
+                //Null is expected at start of cache
             }
             catch (Exception e)
             {
                 NCacheLog.Error("DistributionMgr.ReleaseBuckets", e.ToString());
             }
         }
+
         /// <summary>
         /// Verifies whether the given node is temorary owner of the bucket or not.
         /// </summary>
@@ -1108,6 +1182,11 @@ namespace Alachisoft.NCache.Caching.Topologies.Clustered
 
                 newMap = distributionMaps.Hashmap;
                 newBucketsOwnershipMap = distributionMaps.BucketsOwnershipMap;
+                _leavingNode = distributionMaps.LeavingNode;
+                _orphanedBuckets = distributionMaps.OrphanedBuckets;
+                if (_orphanedBuckets == null) ExitMaintenceMode();
+                
+                _POTeamBucketsOwnershipMap = POTeamConvertOwnershitMap(newBucketsOwnershipMap);
 
                 if (newMap == null || newBucketsOwnershipMap == null)
                     return;
@@ -1139,7 +1218,7 @@ namespace Alachisoft.NCache.Caching.Topologies.Clustered
                     _installedHashMap = newMap;
                 }
                 _bucketsOwnershipMap = newBucketsOwnershipMap;
-                _BucketOwnershipMapDictionary = GetHashMapBucketIndex(newBucketsOwnershipMap);
+                _POTeamBucketsOwnershipMap = POTeamConvertOwnershitMap(newBucketsOwnershipMap);
 
                 NotifyBucketUpdate();
             }
@@ -1147,9 +1226,85 @@ namespace Alachisoft.NCache.Caching.Topologies.Clustered
             {
                 _sync.ReleaseWriterLock();
             }
+            LogMybuckets(newBucketsOwnershipMap);
         }
 
-        public virtual void Wait(object key)
+        protected Dictionary<Address, Dictionary<int, HashMapBucket>> POTeamConvertOwnershitMap(Hashtable ownershipMap)
+        {
+            try
+            {
+                Dictionary<Address, Dictionary<int, HashMapBucket>> newMap =
+                    new Dictionary<Address, Dictionary<int, HashMapBucket>>();
+                foreach (DictionaryEntry entry in ownershipMap)
+                {
+                    ArrayList buckets = entry.Value as ArrayList;
+                    Dictionary<int, HashMapBucket> newBuckets = new Dictionary<int, HashMapBucket>();
+                    foreach (HashMapBucket bucket in buckets)
+                    {
+                        newBuckets.Add(bucket.BucketId, bucket);
+                    }
+                    newMap.Add(entry.Key as Address, newBuckets);
+                }
+                return newMap;
+            }
+            catch (Exception e)
+            { this._ncacheLog.CriticalInfo("POTEAM", e.ToString()); }
+            return null;
+        }
+
+        private void LogMybuckets(Hashtable newBucketsOwnershipMap) 
+        {
+            if (_localAddrss == null) return;
+
+            if (newBucketsOwnershipMap != null)
+            {
+                System.Text.StringBuilder sb = new System.Text.StringBuilder();
+
+                ArrayList myMap = newBucketsOwnershipMap[_localAddrss] as ArrayList;
+
+                if (myMap != null)
+                {
+                    sb.Append("[").Append(_localAddrss).Append("]->[");
+                    int functionBkts = 0, bktsUnderTxfr = 0, bktsNeedTxfr = 0;
+
+                    for (int i = 0; i < myMap.Count; i++)
+                    {
+                        HashMapBucket bkt = myMap[i] as HashMapBucket;
+                        sb.Append(" " + bkt.BucketId);
+
+                        switch (bkt.Status)
+                        {
+                            case BucketStatus.Functional:
+                                functionBkts++;
+                                break;
+
+                            case BucketStatus.UnderStateTxfr:
+                                bktsUnderTxfr++;
+                                sb.Append(" :UnderStateTransfer(" + bkt.PermanentAddress).Append(")");
+                                break;
+
+                            case BucketStatus.NeedTransfer:
+                                bktsNeedTxfr++;
+                                sb.Append(" :NeedStateTransfer(" + bkt.PermanentAddress).Append(")");
+                                break;
+                        }
+
+                        sb.Append(" , ");
+                    }
+                    sb.Append("]").Append(" (Stats Functional: ").Append(functionBkts)
+                        .Append(" UnderStateTransfer: ").Append(bktsUnderTxfr)
+                        .Append(" NeedStateTansfer :").Append(bktsNeedTxfr).Append(")");
+
+                }
+
+                this._ncacheLog.CriticalInfo("OwnershipMap", sb.ToString());
+            }
+            else
+                this._ncacheLog.CriticalInfo("DistMgr.Install", "bucket ownership map is null");
+        }
+
+
+        public virtual void Wait(object key, string group)
         {
             if (key != null)
             {
@@ -1201,12 +1356,17 @@ namespace Alachisoft.NCache.Caching.Topologies.Clustered
                 {
                     if (_bucketsOwnershipMap.ContainsKey(server))
                     {
-                        foreach (HashMapBucket bucket in _bucketsOwnershipMap[server] as ArrayList)
+                        Dictionary<int, HashMapBucket> buckets;
+                        _POTeamBucketsOwnershipMap.TryGetValue(server, out buckets);
+                        if (buckets != null)
                         {
-                            Address address = bucket.PermanentAddress;
-                            if (!list.Contains(address))
+                            foreach (HashMapBucket bucket in buckets.Values)
                             {
-                                list.Add(address.Clone());
+                                Address address = bucket.PermanentAddress;
+                                if (!list.Contains(address))
+                                {
+                                    list.Add(address.Clone());
+                                }
                             }
                         }
                         if (!list.Contains(server))
@@ -1232,7 +1392,8 @@ namespace Alachisoft.NCache.Caching.Topologies.Clustered
                 {
                     if (bucket.Status == BucketStatus.UnderStateTxfr || bucket.Status == BucketStatus.NeedTransfer)
                     {
-                        return true;
+                        if(!bucket.PermanentAddress.Equals(bucket.TempAddress)) //Due to a hashmap anomoly, bucket status is mistakenly set to state transfer
+                            return true;
                     }
                 }
             }
@@ -1243,43 +1404,10 @@ namespace Alachisoft.NCache.Caching.Topologies.Clustered
             return false;
         }
 
-        internal IDictionary<Address, IDictionary<HashMapBucket, int>> GetHashMapBucketIndex(Hashtable bucketOwnerMap)
+        internal virtual void ExitMaintenceMode()
         {
-            IDictionary<Address, IDictionary<HashMapBucket, int>> dictionary =
-                new Dictionary<Address, IDictionary<HashMapBucket, int>>();
-            foreach (DictionaryEntry entry in bucketOwnerMap)
-            {
-                Address address = entry.Key as Address;
-                ArrayList arrayList = entry.Value as ArrayList;
-                if (dictionary.ContainsKey(address))
-                {
-                    IDictionary<HashMapBucket, int> hashDictionary = dictionary[address];
-                    if (arrayList != null)
-                    {
-                        int lenght = hashDictionary.Count;
-                        for (int i = 0; i < arrayList.Count; i++)
-                        {
-                            if (!hashDictionary.ContainsKey((HashMapBucket)arrayList[i]))
-                                hashDictionary.Add((HashMapBucket)arrayList[i], lenght + i);
-                        }
-                    }
-                }
-                else
-                {
-                    IDictionary<HashMapBucket, int> hashDictionary = new Dictionary<HashMapBucket, int>();
-                    if (arrayList != null)
-                    {
-                        for (int i = 0; i < arrayList.Count; i++)
-                        {
-                            if (!hashDictionary.ContainsKey((HashMapBucket)arrayList[i]))
-                                hashDictionary.Add((HashMapBucket)arrayList[i], i);
-                        }
-                    }
-                    dictionary.Add(address, hashDictionary);
-                }
-            }
-
-            return dictionary;
+            
         }
     }
 }
+

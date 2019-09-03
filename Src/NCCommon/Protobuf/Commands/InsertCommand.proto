@@ -1,4 +1,6 @@
 import "QueryInfo.proto";
+import "TagInfo.proto";
+import "NamedTagInfo.proto";
 import "ObjectQueryInfo.proto";
 
 option java_outer_classname="InsertCommandProtocol";
@@ -8,16 +10,32 @@ message InsertCommand {
 	optional int64 requestId = 2;
 	optional sint32 updateCallbackId = 3;
 	optional sint32 removeCallbackId = 4;
-	optional int32 priority = 5;
-	optional int64 absExpiration = 6;
-	optional int64 sldExpiration = 7;
-	optional int32 flag = 8;
-	optional string lockId = 9;
-	optional int32 lockAccessType = 10; 
-	optional QueryInfo queryInfo = 11;
-	repeated bytes data = 12;
-	optional ObjectQueryInfo objectQueryInfo = 13;		
-	repeated bytes objectQueryInfoEncrypted = 14; 
-	optional sint32 updateDataFilter = 15 [default = -1];
-	optional sint32 removeDataFilter = 16 [default = -1];
+	optional sint32 datasourceUpdatedCallbackId = 5;
+	optional bool isAsync = 6;
+	optional int32 priority = 7;
+	optional int64 absExpiration = 8;
+	optional int64 sldExpiration = 9;
+	optional bool isResync = 10;
+	optional string group = 11;
+	optional string subGroup = 12;
+	optional int32 flag = 13;
+	optional string providerName = 14;
+	optional string resyncProviderName = 15;
+	optional string lockId = 17;
+	optional int32 lockAccessType = 18; 
+	optional uint64 itemVersion = 19;
+
+	optional TagInfo tagInfo = 21;	
+	repeated bytes data = 23;
+	optional NamedTagInfo namedTagInfo = 24;
+			
+	repeated bytes objectQueryInfoEncrypted = 26; 
+	optional sint32 updateDataFilter = 27 [default = -1];
+	optional sint32 removeDataFilter = 28 [default = -1];
+	optional string clientID = 29;
+    optional sint32 CallbackType = 30;
+	optional string groupType = 31;
+	optional string version = 32;
+	optional int32 MethodOverload = 33 [default=0];
+	optional int32 commandID = 34 [default = -1];
 }

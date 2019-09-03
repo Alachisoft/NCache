@@ -1,0 +1,13 @@
+import "Commands/Value.proto";
+import "KeyValuePackageResponse.proto";
+
+
+option java_outer_classname="GetTagResponseProtocol";
+package Alachisoft.NCache.Common.Protobuf;
+message GetTagResponse {
+	optional KeyValuePackageResponse keyValuePackage = 1;
+	optional int32 commandID = 2 [default = -1];
+	optional int64 requestId = 3;
+	optional int32 numberOfChuncks = 4 [default=1];
+	optional int32 sequenceId = 5 [default=1];
+}

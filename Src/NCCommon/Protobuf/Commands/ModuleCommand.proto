@@ -1,0 +1,10 @@
+package Alachisoft.NCache.Common.Protobuf;
+
+message ModuleCommand {
+	 
+	optional string module = 1;
+	repeated bytes payload = 2;
+	optional int64 requestId = 3;
+	optional int64 commandId = 4;
+	optional string version = 5;
+}

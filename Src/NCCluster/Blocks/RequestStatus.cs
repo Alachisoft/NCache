@@ -1,23 +1,12 @@
-// Licensed under the Apache License, Version 2.0 (the "License");
-// you may not use this file except in compliance with the License.
-// You may obtain a copy of the License at
-// 
-//    http://www.apache.org/licenses/LICENSE-2.0
-// 
-// Unless required by applicable law or agreed to in writing, software
-// distributed under the License is distributed on an "AS IS" BASIS,
-// WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
-// See the License for the specific language governing permissions and
-// limitations under the License.
-
 using System;
 using System.Text;
+using Alachisoft.NCache.Runtime.Serialization;
 using Alachisoft.NCache.Runtime.Serialization.IO;
 
 namespace Alachisoft.NGroups.Blocks
 {
     [Serializable]
-    public class RequestStatus : Alachisoft.NCache.Runtime.Serialization.ICompactSerializable
+    public class RequestStatus : ICompactSerializable
     {
         public const byte REQ_NOT_RECEIVED = 1;
         public const byte REQ_RECEIVED_NOT_PROCESSED = 2;
@@ -115,7 +104,6 @@ namespace Alachisoft.NGroups.Blocks
         {
             _reqId = reader.ReadInt32();
             _status = reader.ReadByte();
-            
             _creationTime = (DateTime?)reader.ReadObject();
 
         }
@@ -124,9 +112,8 @@ namespace Alachisoft.NGroups.Blocks
         {
             writer.Write(_reqId); 
             writer.Write(_status);
-
-            writer.WriteObject(_creationTime); //you cannot write nullable datetime with write so using writeObject
-     
+            writer.WriteObject(_creationTime); // you cannot write nullable datetime with simple write so using writeObject
+      
         } 
         #endregion
     }

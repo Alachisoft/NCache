@@ -1,41 +1,23 @@
-// Licensed under the Apache License, Version 2.0 (the "License");
-// you may not use this file except in compliance with the License.
-// You may obtain a copy of the License at
-// 
-//    http://www.apache.org/licenses/LICENSE-2.0
-// 
-// Unless required by applicable law or agreed to in writing, software
-// distributed under the License is distributed on an "AS IS" BASIS,
-// WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
-// See the License for the specific language governing permissions and
-// limitations under the License.
 // $Id: QUEUE.java,v 1.6 2004/07/23 02:28:01 belaban Exp $
 
-using System;
 using System.Threading;
-using Alachisoft.NGroups;
 using Alachisoft.NGroups.Protocols.pbcast;
 using Alachisoft.NGroups.Stack;
-using Alachisoft.NGroups.Util;
-
 using Gms = Alachisoft.NGroups.Protocols.pbcast.GMS;
-using Alachisoft.NCache.Common.Util;
 
 namespace Alachisoft.NGroups.Protocols
 {
-	
-	
-	/// <summary> Queuing layer. Upon reception of event START_QUEUEING, all events traveling through
-	/// this layer upwards/downwards (depending on direction of event) will be queued. Upon
-	/// reception of a STOP_QUEUEING event, all events will be released. Finally, the
-	/// queueing flag is reset.
-	/// When queueing, only event STOP_QUEUEING (received up or downwards) will be allowed
-	/// to release queueing.
-	/// </summary>
-	/// <author>  Bela Ban
-	/// </author>
-	
-	internal class QUEUE:Protocol
+    /// <summary> Queuing layer. Upon reception of event START_QUEUEING, all events traveling through
+    /// this layer upwards/downwards (depending on direction of event) will be queued. Upon
+    /// reception of a STOP_QUEUEING event, all events will be released. Finally, the
+    /// queueing flag is reset.
+    /// When queueing, only event STOP_QUEUEING (received up or downwards) will be allowed
+    /// to release queueing.
+    /// </summary>
+    /// <author>  Bela Ban
+    /// </author>
+
+    internal class QUEUE:Protocol
 	{
         public QUEUE()
         {
@@ -125,10 +107,10 @@ namespace Alachisoft.NGroups.Protocols
 				case Event.MSG:
 					Message msg = (Message) evt.Arg;
                     object obj = msg.getHeader(HeaderType.GMS);
-					if (obj != null && obj is Gms.HDR)
+					if (obj != null && obj is GMS.HDR)
 					{
-						Gms.HDR hdr = (Gms.HDR)obj;
-						if (hdr.type == Gms.HDR.VIEW || hdr.type == Gms.HDR.JOIN_RSP)
+						GMS.HDR hdr = (GMS.HDR)obj;
+						if (hdr.type == GMS.HDR.VIEW || hdr.type == GMS.HDR.JOIN_RSP)
 						{
                             queingLock.AcquireWriterLock(Timeout.Infinite);
                             try
@@ -156,8 +138,6 @@ namespace Alachisoft.NGroups.Protocols
                     finally { queingLock.ReleaseReaderLock(); }
                        
 					break;
-
-
 				}
 		
 			passUp(evt); // Pass up to the layer above us
@@ -165,8 +145,7 @@ namespace Alachisoft.NGroups.Protocols
 		
 		private void deliverUpQueuedEvts(Event evt)
 		{
-
-			Event e;					
+			Event e;
 			if(Stack.NCacheLog.IsInfoEnabled) Stack.NCacheLog.Info("replaying up events");
 
             queingLock.AcquireWriterLock(Timeout.Infinite);
@@ -194,7 +173,6 @@ namespace Alachisoft.NGroups.Protocols
 					if(Stack.NCacheLog.IsInfoEnabled) Stack.NCacheLog.Info("Queue.down()",  "VIEW_CHANGE : lets stop queuing");
 					deliverUpQueuedEvts(evt);
 					break;
-
 				}
 			
 			if (queueing_dn)

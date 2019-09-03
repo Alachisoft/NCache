@@ -1,11 +1,13 @@
+<!--Sample Configuration file-->
+
 <configuration>
 <application-config application-id="myapp" enable-cache-exception="true" default-region-name="default" key-case-sensitivity="false">
 	<cache-regions>
-		<region name="AbsoluteExpirationRegion" cache-name="myPartitionedCache" priority="Default" expiration-type="absolute" expiration-period="10"/>
-		<region name="default" cache-name="myPartitionedCache" priority="default" expiration-type="none" expiration-period="0"/>
+		<region name="AbsoluteExpirationRegion" cache-name="myPartitionedcache" priority="Default" expiration-type="sliding" expiration-period="180" />
+		<region name="default" cache-name="myPartitionedcache" priority="default" expiration-type="none" expiration-period="0" use-async="false"  />
 	</cache-regions>
 	<database-dependencies>
-		<dependency entity-name="nhibernator.BLL.Customer" type="sql" sql-statement="select ContactName from dbo.Customers where CustomerID =?" cache-key-format="depdency.customer:[pk]"/>
+		<dependency entity-name="nhibernator.BLL.Customer" type="sql" sql-statement="select ContactName from dbo.Customers where CustomerID ='?'" cache-key-format="depdency.customer:[pk]"/>
 	</database-dependencies>
 </application-config>
 </configuration>

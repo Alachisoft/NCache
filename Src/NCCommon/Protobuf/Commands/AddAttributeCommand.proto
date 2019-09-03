@@ -1,3 +1,4 @@
+
 option java_outer_classname="AddAttributeCommandProtocol";
 package Alachisoft.NCache.Common.Protobuf;
 
@@ -5,4 +6,6 @@ message AddAttributeCommand {
 	optional string key = 1;
 	optional int64 requestId = 2;
 	optional int64 absExpiration = 3;
+	optional int32 MethodOverload = 7 [default=0];
+
 }

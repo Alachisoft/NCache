@@ -1,26 +1,14 @@
-// Licensed under the Apache License, Version 2.0 (the "License");
-// you may not use this file except in compliance with the License.
-// You may obtain a copy of the License at
-// 
-//    http://www.apache.org/licenses/LICENSE-2.0
-// 
-// Unless required by applicable law or agreed to in writing, software
-// distributed under the License is distributed on an "AS IS" BASIS,
-// WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
-// See the License for the specific language governing permissions and
-// limitations under the License.
 // $Id: Configurator.java,v 1.6 2004/08/12 15:43:11 belaban Exp $
-
 using System;
-using System.Runtime.Remoting;
+//using System.Runtime.Remoting;
 
 using Alachisoft.NGroups;
 using Alachisoft.NCache.Common.Util;
+using Alachisoft.NGroups.Protocols;
+using Alachisoft.NGroups.Protocols.pbcast;
 
 namespace Alachisoft.NGroups.Stack
 {
-	
-	
 	/// <summary> The task if this class is to setup and configure the protocol stack. A string describing
 	/// the desired setup, which is both the layering and the configuration of each layer, is
 	/// given to the configurator which creates and configures the protocol stack and returns
@@ -243,10 +231,10 @@ namespace Alachisoft.NGroups.Stack
 		public virtual System.Collections.ArrayList parseComponentStrings(string config_str, string delimiter)
 		{
 			System.Collections.ArrayList retval = System.Collections.ArrayList.Synchronized(new System.Collections.ArrayList(10));
-			Global.Tokenizer tok;
+			Tokenizer tok;
 			string token;
 			
-			tok = new Global.Tokenizer(config_str, delimiter);
+			tok = new Tokenizer(config_str, delimiter);
 			while (tok.HasMoreTokens())
 			{
 				token = tok.NextToken();
@@ -664,30 +652,27 @@ namespace Alachisoft.NGroups.Stack
 			{
 				if (protocol_name == null)
 					return null;
-			
-              
-
                 Protocol protocol = null;
 
                 switch (protocol_name)
                 {
                     case "TCP":
-                        protocol = new Alachisoft.NGroups.Protocols.TCP();
+                        protocol = new TCP();
                         break;
                     case "TCPPING":
-                        protocol = new Alachisoft.NGroups.Protocols.TCPPING();
+                        protocol = new TCPPING();
                         break;
                     case "QUEUE":
-                        protocol = new Alachisoft.NGroups.Protocols.QUEUE();
+                        protocol = new QUEUE();
                         break;
                     case "TOTAL":
-                        protocol = new Alachisoft.NGroups.Protocols.TOTAL();
+                        protocol = new TOTAL();
                         break;
                     case "VIEW_ENFORCER":
-                        protocol = new Alachisoft.NGroups.Protocols.VIEW_ENFORCER();
+                        protocol = new VIEW_ENFORCER();
                         break;
                     case "pbcast.GMS":
-                        protocol = new Alachisoft.NGroups.Protocols.pbcast.GMS();
+                        protocol = new GMS();
                         break;                    
                 }
 

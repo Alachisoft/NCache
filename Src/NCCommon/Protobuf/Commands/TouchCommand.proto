@@ -1,0 +1,7 @@
+option java_outer_classname="TouchCommandProtocol";
+package Alachisoft.NCache.Common.Protobuf;
+message TouchCommand {
+	repeated string keys = 1;
+	optional int64 requestId = 2;
+	optional int32 MethodOverload = 3 [default=0];
+}

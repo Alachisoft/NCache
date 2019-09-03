@@ -1,0 +1,10 @@
+import "EventId.proto";
+
+option java_outer_classname="ItemUpdatedEventResponseProtocol";
+package Alachisoft.NCache.Common.Protobuf;
+message ItemUpdatedEventResponse 
+{
+	optional string key = 1;
+	optional EventId eventId = 2;
+	optional int32 flag = 3;
+}

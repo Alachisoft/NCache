@@ -1,25 +1,22 @@
-// Copyright (c) 2017 Alachisoft
-// 
-// Licensed under the Apache License, Version 2.0 (the "License");
-// you may not use this file except in compliance with the License.
-// You may obtain a copy of the License at
-// 
-//    http://www.apache.org/licenses/LICENSE-2.0
-// 
-// Unless required by applicable law or agreed to in writing, software
-// distributed under the License is distributed on an "AS IS" BASIS,
-// WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
-// See the License for the specific language governing permissions and
-// limitations under the License.
-
+//  Copyright (c) 2019 Alachisoft
+//  
+//  Licensed under the Apache License, Version 2.0 (the "License");
+//  you may not use this file except in compliance with the License.
+//  You may obtain a copy of the License at
+//  
+//     http://www.apache.org/licenses/LICENSE-2.0
+//  
+//  Unless required by applicable law or agreed to in writing, software
+//  distributed under the License is distributed on an "AS IS" BASIS,
+//  WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+//  See the License for the specific language governing permissions and
+//  limitations under the License
 using System;
-using System.Collections.Generic;
 
-using Runtime = Alachisoft.NCache.Runtime;
 
 namespace Alachisoft.NCache.Common
 {
-       //This class is to serve as the basis for live upgrades and cross version communication in future
+    //This class is to serve as the basis for live upgrades and cross version communication in future
 
     /// <summary>
     /// Returns the version of the NCache running on a particular Node. 
@@ -34,7 +31,7 @@ namespace Alachisoft.NCache.Common
         private byte _majorVersion2=0;
         private byte _minorVersion1=0;
         private byte _minorVersion2=0;
-        private string _productName= string.Empty;//JvCache,NCache
+        private string _productName= string.Empty;
         private int _editionID=-1;
         private static volatile ProductVersion _productInfo;
         private static object _syncRoot = new object(); // this object is to serve as locking instance to avoid deadlocks
@@ -59,8 +56,8 @@ namespace Alachisoft.NCache.Common
                         if (_productInfo == null)
                         {
                             _productInfo = new ProductVersion();
-
-                            _productInfo._editionID = 34;
+#if SERVER
+                            _productInfo._editionID = 32;
                             _productInfo._majorVersion1 = 4;
                             _productInfo._majorVersion2 = 3;
                             _productInfo._minorVersion1 = 0;
@@ -68,6 +65,16 @@ namespace Alachisoft.NCache.Common
                             _productInfo._productName = "NCACHE";
                             _productInfo._additionalData = new byte[0];
 
+#elif CLIENT
+                            _productInfo._editionID = 33;
+                            _productInfo._majorVersion1 = 4;
+                            _productInfo._majorVersion2 = 3;
+                            _productInfo._minorVersion1 = 0;
+                            _productInfo._minorVersion2 = 0;
+                            _productInfo._productName = "NCACHE";
+                            _productInfo._additionalData = new byte[0];
+
+#endif
                         }
                     }
                     
@@ -247,7 +254,6 @@ namespace Alachisoft.NCache.Common
                 }
                 else
                     result = -1;
-                // Suggestion- Incase of invalid type an exception should be thrown!!
 
             }
             return result;
@@ -255,5 +261,4 @@ namespace Alachisoft.NCache.Common
         #endregion
         
     }
-   
 }

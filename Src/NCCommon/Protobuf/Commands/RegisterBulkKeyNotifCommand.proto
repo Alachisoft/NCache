@@ -9,4 +9,6 @@ message RegisterBulkKeyNotifCommand
 	optional int64 requestId = 4;
 	optional bool notifyOnExpiration = 5 [default=true];
 	optional int32 datafilter = 6 [default = -1];
+	optional int32 callbackType = 7 [default = 2];
+	optional string surrogateClientID = 8;
 }

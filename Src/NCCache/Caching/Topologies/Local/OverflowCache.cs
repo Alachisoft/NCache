@@ -1,30 +1,36 @@
-// Copyright (c) 2017 Alachisoft
-// 
-// Licensed under the Apache License, Version 2.0 (the "License");
-// you may not use this file except in compliance with the License.
-// You may obtain a copy of the License at
-// 
-//    http://www.apache.org/licenses/LICENSE-2.0
-// 
-// Unless required by applicable law or agreed to in writing, software
-// distributed under the License is distributed on an "AS IS" BASIS,
-// WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
-// See the License for the specific language governing permissions and
-// limitations under the License.
-
+//  Copyright (c) 2018 Alachisoft
+//  
+//  Licensed under the Apache License, Version 2.0 (the "License");
+//  you may not use this file except in compliance with the License.
+//  You may obtain a copy of the License at
+//  
+//     http://www.apache.org/licenses/LICENSE-2.0
+//  
+//  Unless required by applicable law or agreed to in writing, software
+//  distributed under the License is distributed on an "AS IS" BASIS,
+//  WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+//  See the License for the specific language governing permissions and
+//  limitations under the License
 using System;
 using System.Collections;
 using System.Data;
-using Alachisoft.NCache.Caching.AutoExpiration;
-using Alachisoft.NCache.Runtime.Exceptions;
 
+#if JAVA
+using Alachisoft.TayzGrid.Runtime.Exceptions;
+#else
+using Alachisoft.NCache.Runtime.Exceptions;
+#endif
 using Alachisoft.NCache.Caching.Statistics;
+using Alachisoft.NCache.Caching.AutoExpiration;
 using Alachisoft.NCache.Caching.Util;
 using Alachisoft.NCache.Config;
 using Alachisoft.NCache.Util;
 using Alachisoft.NCache.Common.DataStructures;
 using Alachisoft.NCache.Common.Util;
 using Alachisoft.NCache.Caching.Queries;
+using Alachisoft.NCache.Runtime.Events;
+using Alachisoft.NCache.Common.Enum;
+using Alachisoft.NCache.Common.Locking;
 
 namespace Alachisoft.NCache.Caching.Topologies.Local
 {
@@ -32,6 +38,7 @@ namespace Alachisoft.NCache.Caching.Topologies.Local
 	/// Combines two cache stores together and provides abstraction of a single store. Also 
 	/// implements ICacheStore. 
 	/// </summary>
+
 	internal class OverflowCache : LocalCacheBase
 	{
 		#region	/                 --- Cache Listeners ---           /
@@ -55,6 +62,36 @@ namespace Alachisoft.NCache.Caching.Topologies.Local
 			#region	/                 --- ICacheEventsListener ---           /
 
 			/// <summary> 
+			/// Fired when an item is added to the cache. 
+			/// </summary>
+            void ICacheEventsListener.OnItemAdded(object key, OperationContext operationContext, EventContext eventContext) { }
+
+			/// <summary> 
+			/// handler for item updated event.
+			/// </summary>
+            void ICacheEventsListener.OnItemUpdated(object key, OperationContext operationContext, EventContext eventContext) { }
+
+			/// <summary> 
+			/// Fire when the cache is cleared. 
+			/// </summary>
+            void ICacheEventsListener.OnCacheCleared(OperationContext operationContext, EventContext eventContext) { }
+
+			/// <summary> 
+			/// Fired when an item is removed from the cache.
+			/// </summary>
+            void ICacheEventsListener.OnItemRemoved(object key, object val, ItemRemoveReason reason, OperationContext operationContext, EventContext eventContext)
+			{
+                if (reason == ItemRemoveReason.Underused)
+                {
+                    //if(nnTrace.isInfoEnabled) nTrace.info("PrimaryCacheListener.OnItemRemoved()", "trying to add to secondary cache : " + key);
+                    _parent.Secondary.Add(key, (CacheEntry)val, false, new OperationContext(OperationContextFieldName.OperationType, OperationContextOperationType.CacheOperation));
+                }
+                else
+                {
+                    ((IDisposable)val).Dispose();
+                }
+			}
+			/// <summary> 
 			/// Fired when multiple items are removed from the cache. 
 			/// </summary>
             public void OnItemsRemoved(object[] key, object[] val, ItemRemoveReason reason, OperationContext operationContext, EventContext[] eventContext)
@@ -75,7 +112,16 @@ namespace Alachisoft.NCache.Caching.Topologies.Local
                 }
 			}
 
+            /// <summary>
+            /// 
+            /// </summary>
+            /// <param name="notifId"></param>
+            /// <param name="data"></param>
+            void ICacheEventsListener.OnCustomEvent(object notifId, object data, OperationContext operationContext, EventContext eventContext)
+            {
+            }
 
+#if !CLIENT && !DEVELOPMENT
             /// <summary>
             /// Fire when hasmap changes when 
             /// - new node joins
@@ -86,15 +132,41 @@ namespace Alachisoft.NCache.Caching.Topologies.Local
             void ICacheEventsListener.OnHashmapChanged(NewHashmap newHashmap, bool updateClientMap)
             {
             }
+#endif
+            /// <summary>
+            /// 
+            /// </summary>
+            /// <param name="operationCode"></param>
+            /// <param name="result"></param>
+            /// <param name="notification"></param>
+            void ICacheEventsListener.OnWriteBehindOperationCompletedCallback(OpCode operationCode, object result, Caching.Notifications notification)
+            {
+            }
 
-		    public void OnCustomUpdateCallback(object key, object value, OperationContext operationContext, EventContext eventContext) { }
+            public void OnCustomUpdateCallback(object key, object value, OperationContext operationContext, EventContext eventContext) { }
 
             public void OnCustomRemoveCallback(object key, object value, ItemRemoveReason reason, OperationContext operationContext, EventContext eventContext) { }
 
-            
+            public void OnActiveQueryChanged(object key, QueryChangeType changeType, System.Collections.Generic.List<CQCallbackInfo> activeQueries, OperationContext operationContext, EventContext eventContext)
+            {
+            }
+
+            public void OnPollNotify(string client, short callbackId, Runtime.Events.EventType eventType)
+            {
+                throw new NotImplementedException();
+            }
+
+            public void OnTaskCallback(string taskId, object value, OperationContext operationContext, EventContext eventContext)
+            {
+            }
+
+            public void OnOperationModeChanged(OperationMode mode)
+            {
+                
+            }
+
             #endregion
 
-            
         }
 
 		
@@ -117,7 +189,55 @@ namespace Alachisoft.NCache.Caching.Topologies.Local
 
 			#region	/                 --- ICacheEventsListener ---           /
 
+			/// <summary> 
+			/// Fired when an item is added to the cache. 
+			/// </summary>
+            void ICacheEventsListener.OnItemAdded(object key, OperationContext operationContext, EventContext eventContext) { }
+			/// <summary> 
+			/// handler for item updated event.
+			/// </summary>
+            void ICacheEventsListener.OnItemUpdated(object key, OperationContext operationContext, EventContext eventContext) { }
+			/// <summary> 
+			/// Fire when the cache is cleared. 
+			/// </summary>
+            void ICacheEventsListener.OnCacheCleared(OperationContext operationContext, EventContext eventContext) { }
 
+			/// <summary>
+			/// Fired when an item is removed from the cache.
+			/// </summary>
+            void ICacheEventsListener.OnItemRemoved(object key, object val, ItemRemoveReason reason, OperationContext operationContext, EventContext eventContext)
+			{
+				if((reason == ItemRemoveReason.Underused) && (_parent.Listener != null))
+				{
+					_parent.Listener.OnItemRemoved(key, val, reason,operationContext,eventContext);
+				}
+                ((IDisposable)val).Dispose();
+			}
+			/// <summary>
+			/// Fired when multiple items are removed from the cache.
+			/// </summary>
+            public void OnItemsRemoved(object[] key, object[] val, ItemRemoveReason reason, OperationContext operationContext, EventContext[] eventContext)
+			{
+				if(reason != ItemRemoveReason.Underused || (_parent.Listener == null))
+					return;
+
+				for(int i=0; i<key.Length; i++)
+				{
+					_parent.Listener.OnItemRemoved(key[i], val[i], reason,operationContext,eventContext[i]);
+                    ((IDisposable)val[i]).Dispose();
+				}
+			}
+
+            /// <summary>
+            /// 
+            /// </summary>
+            /// <param name="notifId"></param>
+            /// <param name="data"></param>
+            void ICacheEventsListener.OnCustomEvent(object notifId, object data, OperationContext operationContext, EventContext eventContext)
+            {
+            }
+
+#if !CLIENT && !DEVELOPMENT
             /// <summary>
             /// Fire when hasmap changes when 
             /// - new node joins
@@ -128,8 +248,18 @@ namespace Alachisoft.NCache.Caching.Topologies.Local
             void ICacheEventsListener.OnHashmapChanged(NewHashmap newHashmap, bool updateClientMap)
             {
             }
+#endif
+            /// <summary>
+            /// 
+            /// </summary>
+            /// <param name="operationCode"></param>
+            /// <param name="result"></param>
+            /// <param name="notification"></param>
+            void ICacheEventsListener.OnWriteBehindOperationCompletedCallback(OpCode operationCode, object result, Caching.Notifications notification)
+            {
+            }
 
-		    /// <summary>
+            /// <summary>
             /// Fired when an item which has CacheItemUpdateCallback is updated.
             /// </summary>
             /// <param name="key"></param>
@@ -144,8 +274,26 @@ namespace Alachisoft.NCache.Caching.Topologies.Local
             /// <param name="reason"></param>
             public void OnCustomRemoveCallback(object key, object value, ItemRemoveReason reason, OperationContext operationContext, EventContext eventContext) { }
 
-          
+            public void OnActiveQueryChanged(object key, QueryChangeType changeType, System.Collections.Generic.List<CQCallbackInfo> activeQueries, OperationContext operationContext, EventContext eventContext)
+            {
+            }
+
+            public void OnPollNotify(string client, short callbackId, Runtime.Events.EventType eventType)
+            {
+                throw new NotImplementedException();
+            }
+
+            public void OnTaskCallback(string taskId, object value, OperationContext operationContext, EventContext eventContext)
+            {
+            }
+
+            public void OnOperationModeChanged(OperationMode mode)
+            {
+                
+            }
+
             #endregion
+
         }
 		#endregion
 
@@ -164,8 +312,8 @@ namespace Alachisoft.NCache.Caching.Topologies.Local
 		/// <param name="properties">properties collection for this cache.</param>
 		/// <param name="listener">listener for the cache</param>
 		/// <param name="timeSched">scheduler to use for periodic tasks</param>
-        public OverflowCache(IDictionary cacheClasses, CacheBase parentCache, IDictionary properties, ICacheEventsListener listener, CacheRuntimeContext context)
-            : base(properties, parentCache, listener, context)
+        public OverflowCache(IDictionary cacheClasses, CacheBase parentCache, IDictionary properties, ICacheEventsListener listener, CacheRuntimeContext context, ActiveQueryAnalyzer activeQueryAnalyzer)
+            : base(properties, parentCache, listener, context, activeQueryAnalyzer)
 		{
 			_stats.ClassName = "overflow-cache";
 			Initialize(cacheClasses, properties);
@@ -324,13 +472,13 @@ namespace Alachisoft.NCache.Caching.Topologies.Local
 
 		protected virtual LocalCacheBase CreateLocalCache(CacheBase parentCache,IDictionary cacheClasses, IDictionary schemeProps)
 		{
-			return new LocalCache( cacheClasses,parentCache, schemeProps, null, _context);
+			return new LocalCache( cacheClasses,parentCache, schemeProps, null, _context, _activeQueryAnalyzer);
 		}
 
 
 		protected virtual LocalCacheBase CreateOverflowCache(IDictionary cacheClasses, IDictionary schemeProps)
 		{
-            return new OverflowCache(cacheClasses, this, schemeProps, null, _context);
+            return new OverflowCache(cacheClasses, this, schemeProps, null, _context, _activeQueryAnalyzer);
 		}
 
 		#endregion
@@ -383,11 +531,6 @@ namespace Alachisoft.NCache.Caching.Topologies.Local
 				{
 					// bring to the front.
                     
-                    // AddInternal doesn't handle eviction properly.
-                    // therefore, we need to use _primary.Add.
-					
-                    //AddInternal(key, e);
-
                     _primary.Add(key, e, false,new OperationContext(OperationContextFieldName.OperationType,OperationContextOperationType.CacheOperation));
 				}
 			}
@@ -413,8 +556,9 @@ namespace Alachisoft.NCache.Caching.Topologies.Local
 			// If the call succeeds there might be some eviction, which is handled by
 			// the primary listener. Otherwise there is some error so we may try the second
 			// instance.
-			return _primary.AddInternal(key, cacheEntry, false, operationContext);
+			return _primary.AddInternal(key, cacheEntry, false,operationContext);
 		}
+
 
         internal override bool AddInternal(object key, ExpirationHint eh, OperationContext operationContext)
         {
@@ -424,19 +568,19 @@ namespace Alachisoft.NCache.Caching.Topologies.Local
             // If the primary has it then we are bound to update that item
             if (_primary.ContainsInternal(key))
             {
-                return _primary.AddInternal(key, eh, operationContext);
+                return _primary.AddInternal(key, eh,operationContext);
             }
 
             // If the secondary has it then we are bound to update that item
-            if (_secondary.Contains(key, operationContext))
+            if (_secondary.Contains(key,operationContext))
             {
-                return _secondary.AddInternal(key, eh, operationContext);
+                return _secondary.AddInternal(key, eh,operationContext);
             }
 
             return false;
         }
 
-	    /// <summary>
+		/// <summary>
 		/// Adds a pair of key and value to the cache. If the specified key already exists 
 		/// in the cache; it is updated, otherwise a new item is added to the cache.
 		/// </summary>
@@ -460,7 +604,7 @@ namespace Alachisoft.NCache.Caching.Topologies.Local
 				return _secondary.InsertInternal(key, cacheEntry, false,oldEntry,operationContext, updateIndex);
 			}
 
-            CacheAddResult result = AddInternal(key, cacheEntry, false, operationContext);
+			CacheAddResult result = AddInternal(key, cacheEntry, false,operationContext);
 			switch(result)
 			{
 				case CacheAddResult.Success: return CacheInsResult.Success;
@@ -487,7 +631,7 @@ namespace Alachisoft.NCache.Caching.Topologies.Local
             {
                 for (int i = 0; i < keys.Length; i++)
                 {
-                    CacheEntry entry = _primary.Remove(keys[i], reason, false, null, LockAccessType.IGNORE_LOCK,operationContext);
+                    CacheEntry entry = _primary.Remove(keys[i], reason, false, null, 0, LockAccessType.IGNORE_LOCK,operationContext);
                     if (entry == null) continue;
                     if (reason == ItemRemoveReason.Underused && entry != null)
                     {

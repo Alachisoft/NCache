@@ -1,36 +1,19 @@
-// Licensed under the Apache License, Version 2.0 (the "License");
-// you may not use this file except in compliance with the License.
-// You may obtain a copy of the License at
-// 
-//    http://www.apache.org/licenses/LICENSE-2.0
-// 
-// Unless required by applicable law or agreed to in writing, software
-// distributed under the License is distributed on an "AS IS" BASIS,
-// WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
-// See the License for the specific language governing permissions and
-// limitations under the License.
 // $Id: Util.java,v 1.13 2004/07/28 08:14:14 belaban Exp $
-
 using System;
 using System.IO;
 using System.Net;
 using System.Net.Sockets;
-
-using System.Runtime.Serialization.Formatters.Binary;
-
-using Event = Alachisoft.NGroups.Event;
-
-using Alachisoft.NGroups.Blocks;
-using Message = Alachisoft.NGroups.Message;
 using Alachisoft.NCache.Common;
 using System.Text;
 using Alachisoft.NCache.Serialization.Formatters;
-
+using Alachisoft.NCache.Common.DataStructures.Clustered;
+using System.Collections;
+using Alachisoft.NGroups.Blocks;
 
 namespace Alachisoft.NGroups.Util
 {
-	/// <summary> Collection of various utility routines that can not be assigned to other classes.</summary>
-	internal class Util
+    /// <summary> Collection of various utility routines that can not be assigned to other classes.</summary>
+    internal class Util
 	{
 		// constants
 		public const int MAX_PORT = 65535; // highest port allocatable
@@ -51,13 +34,11 @@ namespace Alachisoft.NGroups.Util
 				}
 				catch (System.Net.Sockets.SocketException bind_ex)
 				{
-					//Trace.error("util.createServerSocket()",bind_ex.Message);
 					start_port++;
 					continue;
 				}
 				catch (System.IO.IOException io_ex)
 				{
-					//Trace.error("Util.createServerSocket():2" + io_ex.Message);
 				}
 				break;
 			}
@@ -93,8 +74,9 @@ namespace Alachisoft.NGroups.Util
 			System.Threading.Thread.Sleep(TimeSpan.FromMilliseconds(timeout));
 		}
 
-        internal static byte[] serializeMessage(Message msg)
+        internal static IList serializeMessage(Message msg)
         {
+            
             int len = 0;
             byte[] buffie;
             FlagsByte flags = new FlagsByte();
@@ -109,7 +91,7 @@ namespace Alachisoft.NGroups.Util
                 rqHeader.serializeFlag = false;
             }
 
-            Stream stmOut = new MemoryStream();
+            ClusteredMemoryStream stmOut = new ClusteredMemoryStream();
             stmOut.Write(Util.WriteInt32(len), 0, 4);
             stmOut.Write(Util.WriteInt32(len), 0, 4);
 
@@ -143,12 +125,7 @@ namespace Alachisoft.NGroups.Util
             stmOut.Position = 0;
             stmOut.Write(Util.WriteInt32(len), 0, 4);
             stmOut.Write(Util.WriteInt32(len - 4 - payloadLength), 0, 4);
-            stmOut.Position = 0;
-            buffie = new byte[len + 4 - payloadLength];
-            stmOut.Read(buffie, 0, len + 4 - payloadLength);
-            stmOut.Position = 0;
-
-            return buffie;
+            return stmOut.GetInternalBuffer();
         }
 
 		/// <summary> On most UNIX systems, the minimum sleep time is 10-20ms. Even if we specify sleep(1), the thread will
@@ -216,8 +193,6 @@ namespace Alachisoft.NGroups.Util
 			return ret;
 		}
 		
-		
-
 		/// <summary>Tries to read an object from the message's buffer and prints it </summary>
 		public static string printMessage(Message msg)
 		{
@@ -232,7 +207,8 @@ namespace Alachisoft.NGroups.Util
 			}
 			catch (System.Exception ex)
 			{
-				
+				//Trace.error("util.printMessage()",ex.Message);
+				// it is not an object
 				return "";
 			}
 		}
@@ -254,8 +230,6 @@ namespace Alachisoft.NGroups.Util
 			}
 			return evt.ToString();
 		}
-
-		
 
 		/// <summary>Fragments a byte buffer into smaller fragments of (max.) frag_size.
 		/// Example: a byte buffer of 1024 bytes and a frag_size of 248 gives 4 fragments
@@ -392,7 +366,6 @@ namespace Alachisoft.NGroups.Util
 			if (target.Length == 0)
 				return 0;
 
-			
 			int bytesRead,totalBytesRead = 0,buffStart = start; 
 			
 			while(true)
@@ -423,10 +396,9 @@ namespace Alachisoft.NGroups.Util
 				
 			}
 	
-			// Returns -1 if EOF
 			if (totalBytesRead == 0)	
 				return -1;
-            
+                
                 
 			return totalBytesRead;
 		}
@@ -437,7 +409,6 @@ namespace Alachisoft.NGroups.Util
             if (target.Length == 0)
                 return 0;
 
-           
             int bytesRead, totalBytesRead = 0, buffStart = start;
             
             while (true)
@@ -473,7 +444,6 @@ namespace Alachisoft.NGroups.Util
             if (totalBytesRead == 0)
                 return -1;
 
-           
 
             return totalBytesRead;
         }
@@ -505,7 +475,7 @@ namespace Alachisoft.NGroups.Util
 
 			return ip;
 		}
-	
+		//:
 		/// <summary>Reads a number of characters from the current source TextReader and writes the data to the target array at the specified index.</summary>
 		/// <param name="sourceTextReader">The source TextReader to read from</param>
 		/// <param name="target">Contains the array of characteres read from the source TextReader.</param>
@@ -542,7 +512,7 @@ namespace Alachisoft.NGroups.Util
 			_byteBuffer[3] = (byte)(value >> 24);
 			
 			return _byteBuffer;
-		} // WriteInt32
+		} 
 
         /// <summary>
         /// Creates a <c>Int32</c> from a byte buffer representation
@@ -555,7 +525,7 @@ namespace Alachisoft.NGroups.Util
                 _byteBuffer[1] << 8 |
                 _byteBuffer[2] << 16 |
                 _byteBuffer[3] << 24);
-        } // ReadInt32
+        } 
 
         /// <summary>
         /// Creates a <c>Int32</c> from a byte buffer representation
@@ -567,7 +537,7 @@ namespace Alachisoft.NGroups.Util
             byte[] temp = new byte[4];
             System.Buffer.BlockCopy(_byteBuffer, offset, temp, 0, 4);
             return convertToInt32(temp);
-        } // ReadInt32
+        } 
 
 	}
 }

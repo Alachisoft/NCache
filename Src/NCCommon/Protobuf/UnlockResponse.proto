@@ -2,4 +2,6 @@
 option java_outer_classname="UnlockResponseProtocol";
 package Alachisoft.NCache.Common.Protobuf;
 message UnlockResponse {
+	optional int32 commandID = 1 [default = -1];
+	optional int64 requestId = 2;
 }

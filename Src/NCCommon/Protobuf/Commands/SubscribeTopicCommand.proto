@@ -1,0 +1,15 @@
+option java_outer_classname="SubscribeTopicCommandProtocol";
+package Alachisoft.NCache.Common.Protobuf;
+message SubscribeTopicCommand {
+    optional string topicName = 1;
+	optional string subscriptionName = 2;
+	optional int64 requestId = 3;
+	optional int32 pubSubType = 4;
+	optional int32 subscriptionPolicy=5;
+	optional int64 expirationTime=6;
+	optional int64 creationTime=7;
+	optional int64 clientLastViewId = 8 [default=-1];
+	optional string version = 9;
+	optional string intendedRecipient = 10 [default = ""];
+	optional int32 commandVersion = 11 [default=0];
+}
