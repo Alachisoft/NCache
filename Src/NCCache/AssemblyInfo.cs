@@ -99,5 +99,5 @@ using System.Runtime.InteropServices;
 [assembly: AssemblyKeyFile("..\\..\\Resources\\ncache.snk")]
 #endif
 [assembly: AssemblyDescriptionAttribute("Cache Core")]
-[assembly: AssemblyFileVersionAttribute("5.0.1.0")]
+[assembly: AssemblyFileVersionAttribute("5.0.2.0")]
 [assembly: AssemblyInformationalVersion("5.0.0")]
