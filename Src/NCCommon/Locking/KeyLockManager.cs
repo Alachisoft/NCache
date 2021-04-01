@@ -1,17 +1,16 @@
-﻿// Copyright (c) 2017 Alachisoft
-// 
-// Licensed under the Apache License, Version 2.0 (the "License");
-// you may not use this file except in compliance with the License.
-// You may obtain a copy of the License at
-// 
-//    http://www.apache.org/licenses/LICENSE-2.0
-// 
-// Unless required by applicable law or agreed to in writing, software
-// distributed under the License is distributed on an "AS IS" BASIS,
-// WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
-// See the License for the specific language governing permissions and
-// limitations under the License.
-
+﻿//  Copyright (c) 2021 Alachisoft
+//  
+//  Licensed under the Apache License, Version 2.0 (the "License");
+//  you may not use this file except in compliance with the License.
+//  You may obtain a copy of the License at
+//  
+//     http://www.apache.org/licenses/LICENSE-2.0
+//  
+//  Unless required by applicable law or agreed to in writing, software
+//  distributed under the License is distributed on an "AS IS" BASIS,
+//  WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+//  See the License for the specific language governing permissions and
+//  limitations under the License
 using System.Collections.Generic;
 using System.Threading;
 
@@ -23,68 +22,57 @@ namespace Alachisoft.NCache.Common.Locking
     /// <typeparam name="TKey"></typeparam>
     public class KeyLockManager<TKey>
     {
-        private readonly LockRecursionPolicy _policy;
+        //private readonly LockRecursionPolicy _policy;
         private readonly IDictionary<TKey, SlimLockWrapper> _keyLockTable;
+        
+        private readonly object _mutex= new object();
 
-        private readonly object _mutex = new object();
 
-        public KeyLockManager(LockRecursionPolicy policy)
+        public KeyLockManager()//LockRecursionPolicy policy)
         {
-            _policy = policy;
             _keyLockTable = new Dictionary<TKey, SlimLockWrapper>();
         }
 
         public void GetReaderLock(TKey key)
         {
-            GetLock(key, LockMode.Reader);
+            Monitor.Enter(key);
         }
 
         public void ReleaseReaderLock(TKey key)
         {
-            ReleaseLock(key, LockMode.Reader);
+            Monitor.Exit(key);
         }
 
         public void GetWriterLock(TKey key)
         {
-            GetLock(key, LockMode.Write);
+            Monitor.Enter(key);
         }
 
+
+  
         public void ReleaseWriterLock(TKey key)
         {
-            ReleaseLock(key, LockMode.Write);
+            Monitor.Exit(key);
         }
 
-        private void GetLock(TKey key, LockMode lockMode)
+        private void GetLock(TKey key) //, LockMode lockMode)
         {
             SlimLockWrapper slimlock = BorrowLockObject(key, true);
 
-            switch (lockMode)
-            {
-                case LockMode.Reader:
-                    slimlock.GetReaderLock();
-                    return;
-                case LockMode.Write:
-                    slimlock.GetWriterLock();
-                    return;
-            }
+            slimlock.GetLock();
+
         }
 
-        private void ReleaseLock(TKey key, LockMode lockMode)
+        private void ReleaseLock(TKey key)//, LockMode lockMode)
         {
             SlimLockWrapper lockObject = GetLockObject(key);
 
-            if (lockObject == null)
+            if(lockObject == null)
                 return;
 
-            switch (lockMode)
-            {
-                case LockMode.Reader:
-                    lockObject.ReleaseReaderLock();
-                    break;
-                case LockMode.Write:
-                    lockObject.ReleaseWriterLock();
-                    break;
-            }
+            lockObject.ReleaseLock();
+
+          
 
             ReturnLockObject(key, lockObject);
         }
@@ -96,24 +84,21 @@ namespace Alachisoft.NCache.Common.Locking
         /// <returns></returns>
         private SlimLockWrapper BorrowLockObject(TKey key, bool createNew)
         {
-            SlimLockWrapper retInstance = null;
+            SlimLockWrapper retInstance;
             lock (_keyLockTable)
             {
-                if (_keyLockTable.ContainsKey(key))
-                {
-                    retInstance = _keyLockTable[key];
-                }
+                _keyLockTable.TryGetValue(key, out retInstance);
+
                 if (retInstance == null && !createNew)
                 {
                     return null;
                 }
                 if (retInstance == null)
                 {
-                    retInstance = _keyLockTable[key] = new SlimLockWrapper(_policy);
+                    retInstance = _keyLockTable[key] = new SlimLockWrapper();//_policy);
                 }
-                else if (retInstance.MarkedDeleted)
-                {
-                    retInstance = _keyLockTable[key] = new SlimLockWrapper(_policy);
+                else if (retInstance.MarkedDeleted){
+                    retInstance = _keyLockTable[key] = new SlimLockWrapper();// _policy);
                 }
                 retInstance.IncrementRef();
                 return retInstance;
@@ -122,13 +107,10 @@ namespace Alachisoft.NCache.Common.Locking
 
         private SlimLockWrapper GetLockObject(TKey key)
         {
-            SlimLockWrapper retInstance = null;
+            SlimLockWrapper retInstance;
             lock (_keyLockTable)
             {
-                if (_keyLockTable.ContainsKey(key))
-                {
-                    retInstance = _keyLockTable[key];
-                }
+                _keyLockTable.TryGetValue(key, out retInstance);
                 return retInstance;
             }
         }
@@ -146,8 +128,7 @@ namespace Alachisoft.NCache.Common.Locking
                 if (lockObject.MarkedDeleted)
                 {
                     SlimLockWrapper outValue;
-                    if (_keyLockTable.TryGetValue(key, out outValue)
-                        && lockObject == outValue)
+                    if (_keyLockTable.TryGetValue(key, out outValue) && lockObject == outValue)
                     {
                         _keyLockTable.Remove(key);
                     }
@@ -155,4 +136,5 @@ namespace Alachisoft.NCache.Common.Locking
             }
         }
     }
+
 }

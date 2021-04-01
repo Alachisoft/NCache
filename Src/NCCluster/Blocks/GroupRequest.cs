@@ -1,21 +1,8 @@
-// Licensed under the Apache License, Version 2.0 (the "License");
-// you may not use this file except in compliance with the License.
-// You may obtain a copy of the License at
-// 
-//    http://www.apache.org/licenses/LICENSE-2.0
-// 
-// Unless required by applicable law or agreed to in writing, software
-// distributed under the License is distributed on an "AS IS" BASIS,
-// WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
-// See the License for the specific language governing permissions and
-// limitations under the License.
 // $Id: GroupRequest.java,v 1.8 2004/09/05 04:54:22 ovidiuf Exp $
-
 using System;
 using System.Collections;
 using Alachisoft.NGroups;
 using Alachisoft.NGroups.Stack;
-using Alachisoft.NGroups.Util;
 using Alachisoft.NCache.Common.Net;
 using Alachisoft.NCache.Common.Monitoring;
 using System.Text;
@@ -24,6 +11,7 @@ using System.Configuration;
 using System.Collections.Generic;
 using Alachisoft.NCache.Common.Util;
 using Alachisoft.NCache.Common.Logger;
+using Alachisoft.NGroups.Util;
 
 
 namespace Alachisoft.NGroups.Blocks
@@ -111,7 +99,7 @@ namespace Alachisoft.NGroups.Blocks
             {
                 lock (req_mutex)
                 {
-                    //TAIM: Request id ranges from 0 to long.Max. If it reaches the max we
+                    //Request id ranges from 0 to long.Max. If it reaches the max we
                     //re-initialize it to -1;
                     if (last_req_id == long.MaxValue) last_req_id = -1;
                     long result = ++last_req_id;
@@ -160,7 +148,7 @@ namespace Alachisoft.NGroups.Blocks
                         if (num_received > 0)
                             return true;
                         if (num_suspected >= num_total)
-                            
+                            // e.g. 2 members, and both suspected
                             return true;
                         break;
 
@@ -256,14 +244,14 @@ namespace Alachisoft.NGroups.Blocks
         /// 2. this dictionary is filled with the replica addresses (next hop addresses) received as part of the response 
         ///    from main node along with the status (RECEIVED/NOT_RECEIVED...). 
         /// </summary>
-
+        
 		private Dictionary<Address, byte> receivedFromNHops = new Dictionary<Address, byte>();
 
         /// <summary>
         /// list of next hop members. 
         /// </summary>
         private List<Address> nHops = new List<Address>();
-
+		
         /// <summary>
         /// number of responses expected from next hops. When one node send requests to other node (NHop Request),
         /// the node may or may not send the same request to next hop depending on the success/failure of the request
@@ -309,7 +297,6 @@ namespace Alachisoft.NGroups.Blocks
         protected internal long req_id = -1; // request ID for this request
         private static object req_mutex = new object();
 
-        //private string cacheName;
         private ILogger _ncacheLog;
 
         private ILogger NCacheLog
@@ -322,6 +309,7 @@ namespace Alachisoft.NGroups.Blocks
 
         static GroupRequest()
         {
+
         }
 
         /// <param name="m">The message to be sent
@@ -363,7 +351,6 @@ namespace Alachisoft.NGroups.Blocks
             this._ncacheLog = NCacheLog;
             this.clusterMembership = clusterCompleteMembership;
             reset(members);
-           
         }
 
         /// <param name="timeout">Time to wait for responses (ms). A value of <= 0 means wait indefinitely
@@ -387,7 +374,6 @@ namespace Alachisoft.NGroups.Blocks
 
             this.clusterMembership = clusterCompleteMembership;
             reset(members);
-            
         }
 
         /// <param name="timeout">Time to wait for responses (ms). A value of <= 0 means wait indefinitely
@@ -522,20 +508,27 @@ namespace Alachisoft.NGroups.Blocks
                 NCacheLog.Warn("GroupRequest.receiveResponse()", "received response from suspected member " + sender + "; discarding");
                 return;
             }
-            if (m.Length > 0)
+            if (m.Length > 0 || m.BufferLength >0)
             {
                 try
                 {
                     if (m.responseExpected)
                     {
                         OperationResponse opRes = new OperationResponse();
-                        opRes.SerializablePayload = m.getFlatObject();
+                        
+                        if (m.Buffers != null)
+                            opRes.SerializablePayload = m.Buffers;
+                        else
+                            opRes.SerializablePayload = m.getFlatObject();
                         opRes.UserPayload = m.Payload;
                         val = opRes;
                     }
                     else
                     {
-                        val = m.getFlatObject();
+                        if (m.Buffers != null)
+                            val = m.Buffers;
+                        else
+                            val = m.getFlatObject();
                     }
                 }
                 catch (System.Exception e)
@@ -569,6 +562,7 @@ namespace Alachisoft.NGroups.Blocks
                 {
 
                     receivedFromNHops[sender] = RECEIVED;
+                    //nTrace.criticalInfo("GroupRequest.receiveResponse", sender.ToString() + " has sent nhop response");
                     System.Threading.Monitor.PulseAll(rsp_mutex);
 
                 }
@@ -611,7 +605,6 @@ namespace Alachisoft.NGroups.Blocks
 
                 }
             }
-            
         }
 
         /// <summary> Any member of 'membership' that is not in the new view is flagged as
@@ -809,12 +802,11 @@ namespace Alachisoft.NGroups.Blocks
                         catch (System.Exception e)
                         {
                             NCacheLog.Error("GroupRequest.doExecute():3", "exception=" + e);
-                            
+                            //e.printStacknTrace();
                         }
                     }
                 }
 
-                
                 if (timeout <= 0)
                 {
                     RspList rspList = Results;
@@ -967,7 +959,8 @@ namespace Alachisoft.NGroups.Blocks
 
                            if ((!reacquired || _seqReset) && ServiceConfiguration.AllowRequestEnquiry)
                            {
-                               
+                               //_seqReset = false;
+                              
                                if (Responses)
                                {
                                    if (ServerMonitor.MonitorActivity) ServerMonitor.LogClientActivity("GrpReq.doExec", "req_id :" + req_id + " completed");
@@ -995,8 +988,6 @@ namespace Alachisoft.NGroups.Blocks
                                        if (!enquireAgain) 
                                            enquiryFailure++;
 
-                                       //for debugging and tesing purpose only. will be removed after testing.
-                                       NCacheLog.CriticalInfo("GetRequestStatus, retries : " + retries + ", enquire again : " + enquireAgain.ToString() + ", enquiry failure : " + enquiryFailure);
 
                                        if (enquiryFailure >=3 || _retriesAfteSeqReset > 3)
                                        {
@@ -1011,12 +1002,10 @@ namespace Alachisoft.NGroups.Blocks
                         catch (System.Exception e)
                         {
                             NCacheLog.Error("GroupRequest.doExecute():3", "exception=" + e);
-                            
                         }
                     }
                 }
 
-                
                 if (timeout <= 0)
                 {
                     RspList rspList = Results;
@@ -1207,7 +1196,6 @@ namespace Alachisoft.NGroups.Blocks
             Address mbr;
             if (membership == null || membership.Length == 0)
             {
-               
                 return;
             }
             for (int i = 0; i < membership.Length; i++)

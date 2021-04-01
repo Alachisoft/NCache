@@ -4,6 +4,7 @@
 
 using System;
 using System.Collections;
+using System.Collections.Generic;
 
 namespace nhibernator.BLL
 {
@@ -19,7 +20,7 @@ namespace nhibernator.BLL
 		private DateTime m_OrderDate;
 		private DateTime m_ShippedDate;
 		private string m_ShipName,m_ShipAddress,m_ShipCity,m_ShipRegion,m_ShipPostalCode;
-		private ICollection m_Products;
+		private IEnumerable<Product> m_Products;
 		private Customer m_OCustomer;
 
 		#endregion
@@ -155,7 +156,7 @@ namespace nhibernator.BLL
 		}
 
 
-        public virtual ICollection Products
+        public virtual IEnumerable<Product> Products
 		{
 			get
 			{

@@ -1,25 +1,22 @@
-// Copyright (c) 2017 Alachisoft
-// 
-// Licensed under the Apache License, Version 2.0 (the "License");
-// you may not use this file except in compliance with the License.
-// You may obtain a copy of the License at
-// 
-//    http://www.apache.org/licenses/LICENSE-2.0
-// 
-// Unless required by applicable law or agreed to in writing, software
-// distributed under the License is distributed on an "AS IS" BASIS,
-// WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
-// See the License for the specific language governing permissions and
-// limitations under the License.
-
+//  Copyright (c) 2021 Alachisoft
+//  
+//  Licensed under the Apache License, Version 2.0 (the "License");
+//  you may not use this file except in compliance with the License.
+//  You may obtain a copy of the License at
+//  
+//     http://www.apache.org/licenses/LICENSE-2.0
+//  
+//  Unless required by applicable law or agreed to in writing, software
+//  distributed under the License is distributed on an "AS IS" BASIS,
+//  WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+//  See the License for the specific language governing permissions and
+//  limitations under the License
 using System;
-using System.Threading;
-
 using Alachisoft.NCache.Runtime.Serialization.IO;
 using Alachisoft.NCache.Runtime.Serialization;
 using System.Collections;
-using System.Globalization;
 using Alachisoft.NCache.Common.DataStructures.Clustered;
+using System.Threading;
 
 namespace Alachisoft.NCache.Caching.Statistics
 {
@@ -60,17 +57,20 @@ namespace Alachisoft.NCache.Caching.Statistics
         /// <summary> The number of objects fetch failures. </summary>
         private long            _dataSize;
 
-		/// <summary> The name of the cache scheme. </summary>
-		private string			_perfInst = String.Empty;
+        /// <summary> The number of updates/writes performed successfuly. </summary>
+        private long            _updatesCount;
 
+        /// <summary> The name of the cache scheme. </summary>
+        private string			_perfInst = String.Empty;
+              
         /// <summary> A map of local buckets maintained at each node. </summary>
-        private HashVector _localBuckets;
-
+        private BucketStatistics[] _localBuckets;
 
         /// <summary> Connected Clients for local Cache. </summary>
         private ArrayList _connectedClients = new ArrayList();
 
         //maximum of 4 unique clients can connect to the cache in Express Edition.        
+
         private Hashtable _clientsList = Hashtable.Synchronized(new Hashtable(4));
         //In express only client within the cluster can connect with the cache.
         //Currently we have limitation of 2 nodes cluster, therefore there can
@@ -110,13 +110,41 @@ namespace Alachisoft.NCache.Caching.Statistics
                 this._maxSize = stat._maxSize;
 				this._hitCount = stat._hitCount;
 				this._missCount = stat._missCount;
-                this._sessionCount = stat._sessionCount;
-                this._clientsList = stat._clientsList != null ? stat._clientsList.Clone() as Hashtable : null;
-                this._localBuckets = stat._localBuckets != null ? stat._localBuckets.Clone() as HashVector : null;
+                this._localBuckets = stat._localBuckets != null ? stat._localBuckets.Clone() as BucketStatistics[] : null;
 			}
 		}
 
-        
+        internal bool AcceptClient(System.Net.IPAddress clientAddress)
+        {
+            lock (_clientsList.SyncRoot)
+            {
+                if (_clientsList.Contains(clientAddress))
+                {
+                    int refCount = (int)_clientsList[clientAddress];
+                    refCount++;
+                    _clientsList[clientAddress] = refCount;
+                    return true;
+                }
+                
+                return false;
+            }
+        }
+
+        internal void DisconnectClient(System.Net.IPAddress clientAddress)
+        {
+            lock (_clientsList.SyncRoot)
+            {
+                if (_clientsList.Contains(clientAddress))
+                {
+                    int refCount = (int)_clientsList[clientAddress];
+                    refCount--;
+                    if (refCount == 0) 
+                        _clientsList.Remove(clientAddress);
+                    else
+                        _clientsList[clientAddress] = refCount;
+                }
+            }
+        }
 
 		/// <summary>
 		/// The type of caching scheme.
@@ -217,7 +245,15 @@ namespace Alachisoft.NCache.Caching.Statistics
 			set { _missCount = value; }
 		}
 
-        public HashVector LocalBuckets
+        /// <summary>
+		/// The number of successful updates/writes.
+		/// </summary>
+		public long UpdatesCount
+        {
+            get { return Interlocked.Read(ref _updatesCount); }
+        }
+
+        public BucketStatistics[] LocalBuckets
         {
             get { return _localBuckets; }
             set { _localBuckets = value; }
@@ -311,9 +347,14 @@ namespace Alachisoft.NCache.Caching.Statistics
 		/// </summary>
 		protected internal void BumpHitCount() { lock(this) { ++ _hitCount; } }
 
-		#endregion
+        /// <summary>
+		/// Increases the updates/writes count by one.
+		/// </summary>
+		protected internal void IncrementUpdateCount() { Interlocked.Increment(ref _updatesCount); }
+        
+        #endregion
 
-     #region	/                 --- ICompactSerializable ---           /
+        #region	/                 --- ICompactSerializable ---           /
 
         public virtual void Deserialize(CompactReader reader)
         {
@@ -326,17 +367,9 @@ namespace Alachisoft.NCache.Caching.Statistics
             _maxCount = reader.ReadInt64();
             _hitCount = reader.ReadInt64();
             _missCount = reader.ReadInt64();
-            _clientsList = reader.ReadObject() as Hashtable;
-
-            _localBuckets = new HashVector();
-            int count = reader.ReadInt32();
-            for (int i = 0; i < count; i++)
-            {
-                BucketStatistics tmp = new BucketStatistics();
-                int bucketId = reader.ReadInt32();
-                tmp.DeserializeLocal(reader);
-                _localBuckets[bucketId] = tmp;
-            }
+            Interlocked.Exchange(ref _updatesCount, reader.ReadInt64());
+            
+            _localBuckets = (BucketStatistics[])reader.ReadObject();
         }
 
         public virtual void Serialize(CompactWriter writer)
@@ -350,18 +383,8 @@ namespace Alachisoft.NCache.Caching.Statistics
             writer.Write(_maxCount);
             writer.Write(_hitCount);
             writer.Write(_missCount);
-            writer.WriteObject(_clientsList);
-            int count = _localBuckets != null ? _localBuckets.Count : 0;
-            writer.Write(count);
-            if (_localBuckets != null)
-            {
-                IDictionaryEnumerator ide = _localBuckets.GetEnumerator();
-                while (ide.MoveNext())
-                {
-                    writer.Write((int)ide.Key);
-                    ((BucketStatistics)ide.Value).SerializeLocal(writer);
-                }
-            }
+            writer.Write(Interlocked.Read(ref _updatesCount));
+            writer.WriteObject(_localBuckets);
         }
 
         #endregion

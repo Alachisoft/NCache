@@ -3,5 +3,9 @@ option java_outer_classname="ClearCommandProtocol";
 package Alachisoft.NCache.Common.Protobuf;
 message ClearCommand {
 	optional int64 requestId = 1;
-	optional int32 flag = 2;
+	optional bool isAsync = 2;
+	optional int32 flag = 3;
+	optional sint32 datasourceClearedCallbackId = 4;
+	optional string providerName = 5;
+	optional int32 MethodOverload = 6 [default=0];
 }

@@ -1,0 +1,8 @@
+import "Commands/ClientInfo.proto";
+option java_outer_classname="GetConnectedClientsResponseProtocol";
+package Alachisoft.NCache.Common.Protobuf;
+message GetConnectedClientsResponse {
+	repeated ClientInfo connectedClients = 1;
+	optional int64 requestId = 2;
+	optional int32 commandID = 3;
+}

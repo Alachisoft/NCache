@@ -1,0 +1,24 @@
+﻿@{
+    ViewData["Title"] = "Index";
+}
+<h2>@ViewData["Title"]</h2>
+<h3>@ViewData["Message"]</h3>
+
+<p> The value for this item will change everytime the application is refreshed.</p>
+<div>@DateTime.Now.ToString()</div><br />
+
+<p>The value for this item will be static and remain in the cache forever, unless cache is cleared.</p>
+<distributed-cache name="Key:1">
+    <div>@DateTime.Now.ToString()</div><br />
+</distributed-cache>
+
+<p>The value for this item will be static upon refreshing the application, but it will expire after 10 seconds.</p>
+<distributed-cache name="Key:2" expires-after="TimeSpan.FromSeconds(10)">
+    <div>@DateTime.Now.ToString()</div><br />
+</distributed-cache>
+
+<p>The value for this item will be static and will only be removed from cache if the "vary-by" value is changed.</p>
+<distributed-cache name="Key:3" vary-by="test">
+    <div>@DateTime.Now.ToString()</div><br />
+</distributed-cache>
+

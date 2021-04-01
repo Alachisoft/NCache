@@ -1,40 +1,26 @@
-// Copyright (c) 2017 Alachisoft
-// 
-// Licensed under the Apache License, Version 2.0 (the "License");
-// you may not use this file except in compliance with the License.
-// You may obtain a copy of the License at
-// 
-//    http://www.apache.org/licenses/LICENSE-2.0
-// 
-// Unless required by applicable law or agreed to in writing, software
-// distributed under the License is distributed on an "AS IS" BASIS,
-// WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
-// See the License for the specific language governing permissions and
-// limitations under the License.
-
+//  Copyright (c) 2021 Alachisoft
+//  
+//  Licensed under the Apache License, Version 2.0 (the "License");
+//  you may not use this file except in compliance with the License.
+//  You may obtain a copy of the License at
+//  
+//     http://www.apache.org/licenses/LICENSE-2.0
+//  
+//  Unless required by applicable law or agreed to in writing, software
+//  distributed under the License is distributed on an "AS IS" BASIS,
+//  WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+//  See the License for the specific language governing permissions and
+//  limitations under the License
 using System;
 using System.Collections;
 using System.Threading;
 using System.Globalization;
 using Alachisoft.NCache.Runtime.Exceptions;
+using Alachisoft.NCache.Common.Logger;
+using Alachisoft.NCache.Common.FeatureUsageData;
 
 namespace Alachisoft.NCache.Caching.EvictionPolicies
 {
-	/// <summary>
-	/// Facotry object resonsible for creating mulitple types of eviction policies. 
-	/// Used by the LocalCache. sample property string for creation is.
-	///  
-	///		scavenging-policy
-	///		(
-	///		    evict-ratio=0.2
-	///			scheme=priority;
-	///			priority
-	///			(
-	///				max-objects=100;
-	///				root-dir=�c:\temp\test�;
-	///			)
-	///		)
-	///			/// </summary>
 	internal class EvictionPolicyFactory
 	{
 		/// <summary>
@@ -43,22 +29,23 @@ namespace Alachisoft.NCache.Caching.EvictionPolicies
 		/// <returns></returns>
 		public static IEvictionPolicy CreateDefaultEvictionPolicy()
 		{
+			//return new LFUEvictionPolicy();
             return null;
 		}
 
-		/// <summary>
-		/// Internal method that creates a cache policy. A HashMap containing the config parameters 
-		/// is passed to this method.
-		/// </summary>
-		public static IEvictionPolicy CreateEvictionPolicy(IDictionary properties)
-		{
-			if(properties == null)
+        /// <summary>
+        /// Internal method that creates a cache policy. A HashMap containing the config parameters 
+        /// is passed to this method.
+        /// </summary>
+        public static IEvictionPolicy CreateEvictionPolicy(IDictionary properties, ILogger logger)
+        {
+            if (properties == null)
 				throw new ArgumentNullException("properties");
 
 			try
 			{
 				float evictRatio = 0;
-                if (properties.Contains("evict-ratio")) // for French Parsing error..
+                if (properties.Contains("evict-ratio")) 
                 {
                     CultureInfo thisCult = Thread.CurrentThread.CurrentCulture; //get the currently applied culture.
                     Thread.CurrentThread.CurrentCulture = new CultureInfo("en-US");//change it to enUS
@@ -68,21 +55,15 @@ namespace Alachisoft.NCache.Caching.EvictionPolicies
                 
                 IEvictionPolicy evictionPolicy = null;
 
-                string scheme = "";
-                
-                string tempscheme = Convert.ToString(properties["class"]);
-                if (tempscheme.ToLower().Equals("priority"))
-                {
-                    scheme = tempscheme;
-                }
-                else
-                {
-                    throw new ConfigurationException("Eviction Policy " + tempscheme + " Not Supported in this Edition of NCache.");
-                }
+                string scheme = Convert.ToString(properties["class"]).ToLower();
                 IDictionary schemeProps = (IDictionary)properties[scheme];
+
                 evictionPolicy = new PriorityEvictionPolicy(schemeProps, evictRatio);
 
-                //return a thread safe eviction policy.
+                if (evictionPolicy == null)
+                    throw new ConfigurationException("Invalid Eviction Policy: " + scheme);
+
+                FeatureUsageCollector.Instance.GetFeature(FeatureEnum.priority_eviction, FeatureEnum.eviction).UpdateUsageTime();
                 return evictionPolicy;
 			}
 			catch(ConfigurationException e)

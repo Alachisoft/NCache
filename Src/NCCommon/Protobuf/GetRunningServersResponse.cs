@@ -23,13 +23,6 @@ namespace Alachisoft.NCache.Common.Protobuf
       get { return _keyValuePair; }
     }
   
-    private readonly global::System.Collections.Generic.List<Alachisoft.NCache.Common.Protobuf.KeyValuePair> _connectedClients = new global::System.Collections.Generic.List<Alachisoft.NCache.Common.Protobuf.KeyValuePair>();
-    [global::ProtoBuf.ProtoMember(2, Name=@"connectedClients", DataFormat = global::ProtoBuf.DataFormat.Default)]
-    public global::System.Collections.Generic.List<Alachisoft.NCache.Common.Protobuf.KeyValuePair> connectedClients
-    {
-      get { return _connectedClients; }
-    }
-  
     private global::ProtoBuf.IExtension extensionObject;
     global::ProtoBuf.IExtension global::ProtoBuf.IExtensible.GetExtensionObject(bool createIfMissing)
       { return global::ProtoBuf.Extensible.GetExtensionObject(ref extensionObject, createIfMissing); }

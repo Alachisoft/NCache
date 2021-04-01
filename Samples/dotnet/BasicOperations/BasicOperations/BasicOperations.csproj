@@ -1,19 +1,18 @@
 ﻿<?xml version="1.0" encoding="utf-8"?>
-<Project ToolsVersion="4.0" DefaultTargets="Build" xmlns="http://schemas.microsoft.com/developer/msbuild/2003">
+<Project ToolsVersion="15.0" xmlns="http://schemas.microsoft.com/developer/msbuild/2003">
+  <Import Project="$(MSBuildExtensionsPath)\$(MSBuildToolsVersion)\Microsoft.Common.props" Condition="Exists('$(MSBuildExtensionsPath)\$(MSBuildToolsVersion)\Microsoft.Common.props')" />
   <PropertyGroup>
     <Configuration Condition=" '$(Configuration)' == '' ">Debug</Configuration>
     <Platform Condition=" '$(Platform)' == '' ">AnyCPU</Platform>
-    <ProductVersion>8.0.30703</ProductVersion>
-    <SchemaVersion>2.0</SchemaVersion>
-    <ProjectGuid>{8568B151-9748-4B26-9210-F669B879DEDA}</ProjectGuid>
+    <ProjectGuid>{E7F1E246-B0CE-4F3F-B8FB-B1BA539410D1}</ProjectGuid>
     <OutputType>Exe</OutputType>
-    <AppDesignerFolder>Properties</AppDesignerFolder>
     <RootNamespace>BasicOperations</RootNamespace>
     <AssemblyName>BasicOperations</AssemblyName>
     <TargetFrameworkVersion>v4.0</TargetFrameworkVersion>
     <FileAlignment>512</FileAlignment>
   </PropertyGroup>
   <PropertyGroup Condition=" '$(Configuration)|$(Platform)' == 'Debug|AnyCPU' ">
+    <PlatformTarget>AnyCPU</PlatformTarget>
     <DebugSymbols>true</DebugSymbols>
     <DebugType>full</DebugType>
     <Optimize>false</Optimize>
@@ -23,6 +22,7 @@
     <WarningLevel>4</WarningLevel>
   </PropertyGroup>
   <PropertyGroup Condition=" '$(Configuration)|$(Platform)' == 'Release|AnyCPU' ">
+    <PlatformTarget>AnyCPU</PlatformTarget>
     <DebugType>pdbonly</DebugType>
     <Optimize>true</Optimize>
     <OutputPath>bin\Release\</OutputPath>
@@ -30,18 +30,49 @@
     <ErrorReport>prompt</ErrorReport>
     <WarningLevel>4</WarningLevel>
   </PropertyGroup>
-  <PropertyGroup>
-    <StartupObject />
-  </PropertyGroup>
   <ItemGroup>
-    <Reference Include="Alachisoft.NCache.Runtime">
-      <HintPath>..\..\..\..\bin\assembly\4.0\Alachisoft.NCache.Runtime.dll</HintPath>
+    <Reference Include="Alachisoft.NCache.Cache, Version=5.0.0.0, Culture=neutral, PublicKeyToken=1448e8d1123e9096, processorArchitecture=MSIL">
+      <HintPath>..\packages\Alachisoft.NCache.OpenSource.SDK.5.0.1.1\lib\net40\Alachisoft.NCache.Cache.dll</HintPath>
     </Reference>
-    <Reference Include="Alachisoft.NCache.Web">
-      <HintPath>..\..\..\..\bin\assembly\4.0\Alachisoft.NCache.Web.dll</HintPath>
+    <Reference Include="Alachisoft.NCache.Client, Version=5.0.0.0, Culture=neutral, PublicKeyToken=1448e8d1123e9096, processorArchitecture=MSIL">
+      <HintPath>..\packages\Alachisoft.NCache.OpenSource.SDK.5.0.1.1\lib\net40\Alachisoft.NCache.Client.dll</HintPath>
+    </Reference>
+    <Reference Include="Alachisoft.NCache.Common, Version=5.0.0.0, Culture=neutral, PublicKeyToken=1448e8d1123e9096, processorArchitecture=MSIL">
+      <HintPath>..\packages\Alachisoft.NCache.OpenSource.SDK.5.0.1.1\lib\net40\Alachisoft.NCache.Common.dll</HintPath>
+    </Reference>
+    <Reference Include="Alachisoft.NCache.Management, Version=5.0.0.0, Culture=neutral, PublicKeyToken=1448e8d1123e9096, processorArchitecture=MSIL">
+      <HintPath>..\packages\Alachisoft.NCache.OpenSource.SDK.5.0.1.1\lib\net40\Alachisoft.NCache.Management.dll</HintPath>
+    </Reference>
+    <Reference Include="Alachisoft.NCache.Parser, Version=5.0.0.0, Culture=neutral, PublicKeyToken=cff5926ed6a53769, processorArchitecture=MSIL">
+      <HintPath>..\packages\Alachisoft.NCache.OpenSource.SDK.5.0.1.1\lib\net40\Alachisoft.NCache.Parser.dll</HintPath>
+    </Reference>
+    <Reference Include="Alachisoft.NCache.Runtime, Version=5.0.0.0, Culture=neutral, PublicKeyToken=1448e8d1123e9096, processorArchitecture=MSIL">
+      <HintPath>..\packages\Alachisoft.NCache.OpenSource.SDK.5.0.1.1\lib\net40\Alachisoft.NCache.Runtime.dll</HintPath>
+    </Reference>
+    <Reference Include="Alachisoft.NCache.Serialization, Version=5.0.0.0, Culture=neutral, PublicKeyToken=1448e8d1123e9096, processorArchitecture=MSIL">
+      <HintPath>..\packages\Alachisoft.NCache.OpenSource.SDK.5.0.1.1\lib\net40\Alachisoft.NCache.Serialization.dll</HintPath>
+    </Reference>
+    <Reference Include="Alachisoft.NCache.SocketServer, Version=5.0.0.0, Culture=neutral, PublicKeyToken=1448e8d1123e9096, processorArchitecture=MSIL">
+      <HintPath>..\packages\Alachisoft.NCache.OpenSource.SDK.5.0.1.1\lib\net40\Alachisoft.NCache.SocketServer.dll</HintPath>
+    </Reference>
+    <Reference Include="Alachisoft.NCache.Storage, Version=5.0.0.0, Culture=neutral, PublicKeyToken=1448e8d1123e9096, processorArchitecture=MSIL">
+      <HintPath>..\packages\Alachisoft.NCache.OpenSource.SDK.5.0.1.1\lib\net40\Alachisoft.NCache.Storage.dll</HintPath>
+    </Reference>
+    <Reference Include="log4net, Version=1.2.10.0, Culture=neutral, PublicKeyToken=1b44e1d426115821, processorArchitecture=MSIL">
+      <HintPath>..\packages\Alachisoft.NCache.OpenSource.SDK.5.0.1.1\lib\net40\log4net.dll</HintPath>
+    </Reference>
+    <Reference Include="protobuf-net, Version=2.3.5.0, Culture=neutral, PublicKeyToken=257b51d87d2e4d67, processorArchitecture=MSIL">
+      <HintPath>..\packages\Alachisoft.NCache.OpenSource.SDK.5.0.1.1\lib\net40\protobuf-net.dll</HintPath>
+    </Reference>
+    <Reference Include="SampleData">
+      <HintPath>..\..\SampleData\SampleData\bin\Debug\SampleData.dll</HintPath>
     </Reference>
     <Reference Include="System" />
+    <Reference Include="System.configuration" />
     <Reference Include="System.Core" />
+    <Reference Include="System.Management.Automation, Version=1.0.0.0, Culture=neutral, PublicKeyToken=31bf3856ad364e35, processorArchitecture=MSIL">
+      <HintPath>..\packages\Alachisoft.NCache.OpenSource.SDK.5.0.1.1\lib\net40\System.Management.Automation.dll</HintPath>
+    </Reference>
     <Reference Include="System.Xml.Linq" />
     <Reference Include="System.Data.DataSetExtensions" />
     <Reference Include="Microsoft.CSharp" />
@@ -50,20 +81,14 @@
   </ItemGroup>
   <ItemGroup>
     <Compile Include="BasicOperations.cs" />
+    <Compile Include="Program.cs" />
     <Compile Include="Properties\AssemblyInfo.cs" />
   </ItemGroup>
   <ItemGroup>
-    <ProjectReference Include="..\..\SampleData\SampleData\SampleData.csproj">
-      <Project>{52a6e7bd-c4ff-4609-b472-64a9d3794e08}</Project>
-      <Name>SampleData</Name>
-    </ProjectReference>
+    <None Include="App.config">
+      <SubType>Designer</SubType>
+    </None>
+    <None Include="packages.config" />
   </ItemGroup>
   <Import Project="$(MSBuildToolsPath)\Microsoft.CSharp.targets" />
-  <!-- To modify your build process, add your task inside one of the targets below and uncomment it. 
-       Other similar extension points exist, see Microsoft.Common.targets.
-  <Target Name="BeforeBuild">
-  </Target>
-  <Target Name="AfterBuild">
-  </Target>
-  -->
 </Project>

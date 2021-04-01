@@ -1,0 +1,10 @@
+import "Commands/GroupEnumerationPointer.proto";
+
+option java_outer_classname="GetGroupNextChunkResponseProtocol";
+package Alachisoft.NCache.Common.Protobuf;
+message GetGroupNextChunkResponse {
+	optional GroupEnumerationPointer groupEnumerationPointer = 1;
+	repeated string keys = 2;
+	optional int32 commandID = 3 [default = -1];
+	optional int64 requestId = 4;
+}

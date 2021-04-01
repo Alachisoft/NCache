@@ -15,5 +15,6 @@ message ManagementCommand
 	{
 		TOOL = 1;
 		MANAGER = 2;
+		MONITOR = 3;
 	}	
 }

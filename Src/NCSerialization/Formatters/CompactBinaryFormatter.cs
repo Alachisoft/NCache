@@ -1,17 +1,16 @@
-// Copyright (c) 2017 Alachisoft
-// 
-// Licensed under the Apache License, Version 2.0 (the "License");
-// you may not use this file except in compliance with the License.
-// You may obtain a copy of the License at
-// 
-//    http://www.apache.org/licenses/LICENSE-2.0
-// 
-// Unless required by applicable law or agreed to in writing, software
-// distributed under the License is distributed on an "AS IS" BASIS,
-// WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
-// See the License for the specific language governing permissions and
-// limitations under the License.
-
+//  Copyright (c) 2021 Alachisoft
+//  
+//  Licensed under the Apache License, Version 2.0 (the "License");
+//  you may not use this file except in compliance with the License.
+//  You may obtain a copy of the License at
+//  
+//     http://www.apache.org/licenses/LICENSE-2.0
+//  
+//  Unless required by applicable law or agreed to in writing, software
+//  distributed under the License is distributed on an "AS IS" BASIS,
+//  WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+//  See the License for the specific language governing permissions and
+//  limitations under the License
 using System;
 using System.Collections;
 using System.IO;
@@ -53,7 +52,7 @@ namespace Alachisoft.NCache.Serialization.Formatters
 		/// <param name="graph">object to serialize</param>
 		/// <returns>binary form of object</returns>
 		static public byte[] ToByteBuffer(object graph,string cacheContext)
-		{
+{
 			using(MemoryStream stream = new MemoryStream())
 			{
 				Serialize(stream, graph,cacheContext);
@@ -66,11 +65,11 @@ namespace Alachisoft.NCache.Serialization.Formatters
 		/// </summary>
 		/// <param name="buffer">binary representation of the object</param>
 		/// <returns>deserialized object</returns>
-		static public object FromByteBuffer(byte[] buffer,string cacheContext)
-		{
+		static public object FromByteBuffer(byte[] buffer,string cacheContext, System.Runtime.Serialization.SerializationBinder binder = null)
+        {
 			using(MemoryStream stream = new MemoryStream(buffer))
 			{
-				return Deserialize(stream,cacheContext);
+				return Deserialize(stream,cacheContext,binder);
 			}
 		}
 
@@ -98,7 +97,6 @@ namespace Alachisoft.NCache.Serialization.Formatters
             Serialize(writer, graph, cacheContext);
             writer.Dispose(closeStream);
         }
-
         /// <summary>
         /// Serializes an object into the specified stream.
         /// </summary>
@@ -111,20 +109,19 @@ namespace Alachisoft.NCache.Serialization.Formatters
             Serialize(writer, graph, cacheContext);
             writer.Dispose(closeStream);
         }
-
 		/// <summary>
 		/// Deserializes an object from the specified stream.
 		/// </summary>
 		/// <param name="stream">specified stream</param>
 		/// <returns>deserialized object</returns>
-		static public object Deserialize(Stream stream,string cacheContext)
+		static public object Deserialize(Stream stream,string cacheContext, System.Runtime.Serialization.SerializationBinder binder = null)
 		{
 			using(CompactBinaryReader reader = new CompactBinaryReader(stream))
 			{
+                reader.Context.Binder = binder;
 				return Deserialize(reader,cacheContext, false);
 			}
 		}
-
         /// <summary>
         /// Deserializes an object from the specified stream.
         /// </summary>
@@ -138,7 +135,6 @@ namespace Alachisoft.NCache.Serialization.Formatters
             reader.Dispose(closeStream);
             return obj;
         }
-
         /// <summary>
         /// Deserializes an object from the specified stream.
         /// </summary>
@@ -153,7 +149,6 @@ namespace Alachisoft.NCache.Serialization.Formatters
             reader.Dispose(closeStream);
             return obj;
         }
-
 		/// <summary>
 		/// Serializes an object into the specified compact binary writer.
 		/// </summary>
@@ -184,6 +179,11 @@ namespace Alachisoft.NCache.Serialization.Formatters
 			// Find an appropriate surrogate by handle
 			ISerializationSurrogate surrogate =
                 TypeSurrogateSelector.GetSurrogateForTypeHandle(handle,cacheContext);
+            
+            if (surrogate == null)
+            {
+                surrogate = TypeSurrogateSelector.GetSurrogateForSubTypeHandle(handle, reader.ReadInt16(), cacheContext);
+            }
 
 			if(surrogate == null)
 			{

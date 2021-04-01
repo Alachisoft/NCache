@@ -1,18 +1,18 @@
-// Copyright (c) 2017 Alachisoft
-// 
-// Licensed under the Apache License, Version 2.0 (the "License");
-// you may not use this file except in compliance with the License.
-// You may obtain a copy of the License at
-// 
-//    http://www.apache.org/licenses/LICENSE-2.0
-// 
-// Unless required by applicable law or agreed to in writing, software
-// distributed under the License is distributed on an "AS IS" BASIS,
-// WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
-// See the License for the specific language governing permissions and
-// limitations under the License.
-
+//  Copyright (c) 2021 Alachisoft
+//  
+//  Licensed under the Apache License, Version 2.0 (the "License");
+//  you may not use this file except in compliance with the License.
+//  You may obtain a copy of the License at
+//  
+//     http://www.apache.org/licenses/LICENSE-2.0
+//  
+//  Unless required by applicable law or agreed to in writing, software
+//  distributed under the License is distributed on an "AS IS" BASIS,
+//  WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+//  See the License for the specific language governing permissions and
+//  limitations under the License
 using System;
+using Alachisoft.NCache.Common.Pooling;
 using Alachisoft.NCache.IO;
 
 namespace Alachisoft.NCache.Serialization.Surrogates
@@ -22,7 +22,7 @@ namespace Alachisoft.NCache.Serialization.Surrogates
     /// </summary>
     public abstract class ContextSensitiveSerializationSurrogate : SerializationSurrogate
     {
-        public ContextSensitiveSerializationSurrogate(Type t) : base(t) { }
+        public ContextSensitiveSerializationSurrogate(Type t, IObjectPool pool) : base(t, pool) { }
 
         abstract public object ReadDirect(CompactBinaryReader reader, object graph);
         abstract public void WriteDirect(CompactBinaryWriter writer, object graph);
@@ -44,7 +44,7 @@ namespace Alachisoft.NCache.Serialization.Surrogates
                 graph = Instantiate(reader);
                 if (graph != null)
                 {
-                    reader.Context.RememberObject(graph,false);
+                    reader.Context.RememberObject(graph, false);
                     bKnown = true;
                 }
 
@@ -56,8 +56,11 @@ namespace Alachisoft.NCache.Serialization.Surrogates
                     startPosition = reader.BaseReader.BaseStream.Position;
                     
                     dataLength = reader.ReadInt32();
+                    reader.BeginCurrentObjectDeserialization(startPosition + dataLength);
+
                     graph = ReadDirect(reader, graph);
 
+                    reader.EndCurrentObjectDeserialization();
                     if (dataLength != -1 && (endPosition - startPosition) < dataLength)
                     {
                         endPosition = reader.BaseReader.BaseStream.Position;
@@ -66,12 +69,14 @@ namespace Alachisoft.NCache.Serialization.Surrogates
                 }
                 else
                 {
+                    reader.BeginCurrentObjectDeserialization(reader.BaseReader.BaseStream.Length);
                     graph = ReadDirect(reader, graph);
+                    reader.EndCurrentObjectDeserialization();
                 }
 
                 if (!bKnown)
                 {
-                    reader.Context.RememberObject(graph,false);
+                    reader.Context.RememberObject(graph, false);
                 }
             }
             return graph;
@@ -86,7 +91,7 @@ namespace Alachisoft.NCache.Serialization.Surrogates
                 return;
             }
 
-            cookie = writer.Context.RememberObject(graph,true);
+            cookie = writer.Context.RememberObject(graph, true);
             writer.Write(cookie);
 
             if (VersionCompatible)

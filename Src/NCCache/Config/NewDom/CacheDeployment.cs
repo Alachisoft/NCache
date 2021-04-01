@@ -1,17 +1,16 @@
-// Copyright (c) 2017 Alachisoft
-// 
-// Licensed under the Apache License, Version 2.0 (the "License");
-// you may not use this file except in compliance with the License.
-// You may obtain a copy of the License at
-// 
-//    http://www.apache.org/licenses/LICENSE-2.0
-// 
-// Unless required by applicable law or agreed to in writing, software
-// distributed under the License is distributed on an "AS IS" BASIS,
-// WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
-// See the License for the specific language governing permissions and
-// limitations under the License.
-
+//  Copyright (c) 2021 Alachisoft
+//  
+//  Licensed under the Apache License, Version 2.0 (the "License");
+//  you may not use this file except in compliance with the License.
+//  You may obtain a copy of the License at
+//  
+//     http://www.apache.org/licenses/LICENSE-2.0
+//  
+//  Unless required by applicable law or agreed to in writing, software
+//  distributed under the License is distributed on an "AS IS" BASIS,
+//  WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+//  See the License for the specific language governing permissions and
+//  limitations under the License
 using System;
 using System.Collections.Generic;
 using System.Text;
@@ -28,11 +27,20 @@ namespace Alachisoft.NCache.Config.NewDom
     {
         Alachisoft.NCache.Config.Dom.ClientNodes clientNodes;
         ServersNodes serverNodes;
+        double depVersion = 0;
 
         public CacheDeployment()
         {
             serverNodes = new ServersNodes();
         }
+
+        [ConfigurationAttribute("deployment-version")]
+        public double DeploymentVersion
+        {
+            get { return depVersion; }
+            set { depVersion = value; }
+        }
+
 
         [ConfigurationSection("client-nodes")]
         public Alachisoft.NCache.Config.Dom.ClientNodes ClientNodes
@@ -48,6 +56,7 @@ namespace Alachisoft.NCache.Config.NewDom
             set { serverNodes = value; }
         }
 
+
         #region ICloneable Members
 
         public object Clone()
@@ -55,6 +64,7 @@ namespace Alachisoft.NCache.Config.NewDom
             CacheDeployment config = new CacheDeployment();
             config.clientNodes = clientNodes != null ? clientNodes.Clone() as Alachisoft.NCache.Config.Dom.ClientNodes : null;
             config.serverNodes = serverNodes != null ? serverNodes.Clone() as ServersNodes : null;
+            config.DeploymentVersion = depVersion;
             return config;
         }
 
@@ -65,12 +75,14 @@ namespace Alachisoft.NCache.Config.NewDom
         {
             clientNodes = (Alachisoft.NCache.Config.Dom.ClientNodes)reader.ReadObject();
             serverNodes = (ServersNodes)reader.ReadObject();
+            depVersion = (double)reader.ReadObject();
         }
 
         public void Serialize(Runtime.Serialization.IO.CompactWriter writer)
         {
             writer.WriteObject(clientNodes);
             writer.WriteObject(serverNodes);
+            writer.WriteObject(depVersion);
         }
         #endregion
     }

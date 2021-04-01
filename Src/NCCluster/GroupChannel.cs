@@ -1,43 +1,27 @@
-// Licensed under the Apache License, Version 2.0 (the "License");
-// you may not use this file except in compliance with the License.
-// You may obtain a copy of the License at
-// 
-//    http://www.apache.org/licenses/LICENSE-2.0
-// 
-// Unless required by applicable law or agreed to in writing, software
-// distributed under the License is distributed on an "AS IS" BASIS,
-// WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
-// See the License for the specific language governing permissions and
-// limitations under the License.
 // $Id: GroupChannel.java,v 1.25 2004/08/29 19:35:03 belaban Exp $
-
 using System;
 
 using ProtocolStack = Alachisoft.NGroups.Stack.ProtocolStack;
 using Queue = Alachisoft.NCache.Common.DataStructures.Queue;
 using QueueClosedException = Alachisoft.NGroups.Util.QueueClosedException;
-using Alachisoft.NGroups.Util;
 using Alachisoft.NCache.Common.Net;
-using Alachisoft.NCache.Common;
-using Alachisoft.NGroups.Stack;
-using Alachisoft.NCache.Common.Util;
 using Alachisoft.NCache.Common.Logger;
-
-using Runtime = Alachisoft.NCache.Runtime;
+using Alachisoft.NCache.Common.Enum;
+using Alachisoft.NGroups.Stack;
 
 namespace Alachisoft.NGroups
 {
-	/// <summary> GroupChannel is a pure Java implementation of Channel
-	/// When a GroupChannel object is instantiated it automatically sets up the
-	/// protocol stack
-	/// </summary>
-	/// <author>  Bela Ban
-	/// </author>
-	/// <author>  Filip Hanik
-	/// </author>
-	/// <version>  $Revision: 1.25 $
-	/// </version>
-	public class GroupChannel : Channel
+    /// <summary> GroupChannel is a pure Java implementation of Channel
+    /// When a GroupChannel object is instantiated it automatically sets up the
+    /// protocol stack
+    /// </summary>
+    /// <author>  Bela Ban
+    /// </author>
+    /// <author>  Filip Hanik
+    /// </author>
+    /// <version>  $Revision: 1.25 $
+    /// </version>
+    public class GroupChannel : Channel
 	{
 		internal string FORCE_PROPS = "force.properties";
 		
@@ -57,7 +41,7 @@ namespace Alachisoft.NGroups
 		/*the queue that is used to receive messages (events) from the protocol stack*/
 		private Queue mq = new Queue();
 		/*the protocol stack, used to send and receive messages from the protocol stack*/
-		private ProtocolStack prot_stack = null;
+		private Stack.ProtocolStack prot_stack = null;
 		
 		/// <summary>Thread responsible for closing a channel and potentially reconnecting to it (e.g. when shunned) </summary>
 		internal CloserThread closer = null;
@@ -71,9 +55,13 @@ namespace Alachisoft.NGroups
 		private object disconnect_mutex = new object();
 		private bool disconnect_ok_event_received = false;
 		private object flow_control_mutex = new object();
-		
-		/// <summary>wait until we have a non-null local_addr </summary>
-		private long LOCAL_ADDR_TIMEOUT = 30000; //=Long.parseLong(System.getProperty("local_addr.timeout", "30000"));
+        private object maintenance_mutex = new object();
+        private bool maintenance_marked_event_received = false;
+        private object is_in_transfer_mutex = new object();
+        private bool is_in_transfer_event_received = false;
+
+        /// <summary>wait until we have a non-null local_addr </summary>
+        private long LOCAL_ADDR_TIMEOUT = 30000; //=Long.parseLong(System.getProperty("local_addr.timeout", "30000"));
 		/*flag to indicate whether to receive views from the protocol stack*/
 		private bool receive_views = true;
 		/*flag to indicate whether to receive suspect messages*/
@@ -90,12 +78,11 @@ namespace Alachisoft.NGroups
 		private bool block_sending = false; // block send()/down() if true (unlocked by UNBLOCK_SEND event)
 		/*channel closed flag*/
 		private bool closed = false; // close() has been called, channel is unusable
-
-		
         private bool _isStartedAsMirror = false;
+
+        private bool isClusterInStateTransfer = false;
         
-
-
+      
         private ILogger _ncacheLog;
 
         public ILogger NCacheLog
@@ -108,8 +95,6 @@ namespace Alachisoft.NGroups
             }
         }
 
-
-
 		/// <summary>Used to maintain additional data across channel disconnects/reconnects. This is a kludge and will be remove
 		/// as soon as JGroups supports logical addresses
 		/// </summary>
@@ -120,9 +105,7 @@ namespace Alachisoft.NGroups
 			Global.RegisterCompactTypes();
 		}
 
-        
-
-        internal ProtocolStack Stack
+        internal Stack.ProtocolStack Stack
         {
             get { return prot_stack; }
         }
@@ -146,7 +129,7 @@ namespace Alachisoft.NGroups
             this._ncacheLog = NCacheLog;
 
             /*create the new protocol stack*/
-			prot_stack = new ProtocolStack(this, props);
+			prot_stack = new Stack.ProtocolStack(this, props);
             prot_stack.NCacheLog = NCacheLog;
 
 
@@ -175,12 +158,12 @@ namespace Alachisoft.NGroups
 		/// Specific to GroupChannel, therefore
 		/// not visible in Channel
 		/// </summary>
-		internal ProtocolStack ProtocolStack
+		internal Stack.ProtocolStack ProtocolStack
 		{
 			get { return prot_stack; }
 		}
 
-        public override Alachisoft.NGroups.Stack.PerfStatsCollector ClusterStatCollector
+        public override PerfStatsCollector ClusterStatCollector
         {
             get { return this.prot_stack.perfStatsColl; }
         }
@@ -336,7 +319,7 @@ namespace Alachisoft.NGroups
 					throw new ChannelException(e.Message,e);
 				}
 				
-				/* try to get LOCAL_ADDR_TIMEOUT. Catch Exception thrown if called
+				/* try to get LOCAL_ADDR_TIMEOUT. Catch SecurityException thrown if called
 				* in an untrusted environment (e.g. using JNLP) */
 				LOCAL_ADDR_TIMEOUT = 30000;
 				
@@ -357,14 +340,14 @@ namespace Alachisoft.NGroups
 						wait_time -= ((System.DateTime.Now.Ticks - 621355968000000000) / 10000 - start);
 					}
 
-					
+					// SAL:
 					if (wait_time < 0)
 					{
 						NCacheLog.Fatal( "[Timeout]GroupChannel.connect:" + wait_time);
 					}
 				}
 				
-				// ProtocolStack.start() must have given us a valid local address; if not we won't be able to continue
+				// must have given us a valid local address; if not we won't be able to continue
 				if (local_addr == null)
 				{
 					NCacheLog.Error("GroupChannel",   "local_addr == null; cannot connect");
@@ -407,20 +390,87 @@ namespace Alachisoft.NGroups
 				if (channel_listener != null)
 					channel_listener.channelConnected(this);
 			}
-		}
-		
-		
-		/// <summary> Disconnects the channel if it is connected. If the channel is closed, this operation is ignored<BR>
-		/// Otherwise the following actions happen in the listed order<BR>
-		/// <ol>
-		/// <li> The GroupChannel sends a DISCONNECT event down the protocol stack<BR>
-		/// <li> Blocks until the channel to receives a DISCONNECT_OK event<BR>
-		/// <li> Sends a STOP_QUEING event down the stack<BR>
-		/// <li> Stops the protocol stack by calling ProtocolStack.stop()<BR>
-		/// <li> Notifies the listener, if the listener is available<BR>
-		/// </ol>
-		/// </summary>
-		public override void  disconnect()
+        }
+        
+        public override bool IsClusterInStateTransfer()
+        {
+            lock (this)
+            {
+                if (closed)
+                    return false;
+
+                if (connected)
+                {
+
+                    if (channel_name != null)
+                    {
+                        Event isClusterInStateTransferEvent = new Event(Event.IS_CLUSTER_IN_STATE_TRANSFER);
+
+                        lock (maintenance_mutex)
+                        {
+                            try
+                            {
+                                maintenance_marked_event_received = false;
+                                down(isClusterInStateTransferEvent); // DISCONNECT is handled by each layer
+                                while (!is_in_transfer_event_received)
+                                    System.Threading.Monitor.Wait(is_in_transfer_mutex);
+                                return isClusterInStateTransfer;
+                            }
+                            catch (System.Exception e)
+                            {
+                                NCacheLog.Error("GroupChannel.disconnect", e.ToString());
+                            }
+                        }
+                    }
+                }
+                return false;
+            }
+        }
+
+        public override void ExitMaintenance()
+        {
+            lock (this)
+            {
+                if (closed)
+                    return;
+
+                if (connected)
+                {
+
+                    if (channel_name != null)
+                    {
+                        Event unmarkForMaintenanceEvent = new Event(Event.UNMARK_FOR_MAINTENANCE);
+
+                        lock (maintenance_mutex)
+                        {
+                            try
+                            {
+                                maintenance_marked_event_received = false;
+                                down(unmarkForMaintenanceEvent); // DISCONNECT is handled by each layer
+                                while (!maintenance_marked_event_received)
+                                    System.Threading.Monitor.Wait(maintenance_mutex); // wait for DISCONNECT_OK event
+                            }
+                            catch (System.Exception e)
+                            {
+                                NCacheLog.Error("GroupChannel.disconnect", e.ToString());
+                            }
+                        }
+                    }
+                }
+            }
+        }
+
+        /// <summary> Disconnects the channel if it is connected. If the channel is closed, this operation is ignored<BR>
+        /// Otherwise the following actions happen in the listed order<BR>
+        /// <ol>
+        /// <li> The GroupChannel sends a DISCONNECT event down the protocol stack<BR>
+        /// <li> Blocks until the channel to receives a DISCONNECT_OK event<BR>
+        /// <li> Sends a STOP_QUEING event down the stack<BR>
+        /// <li> Stops the protocol stack by calling ProtocolStack.stop()<BR>
+        /// <li> Notifies the listener, if the listener is available<BR>
+        /// </ol>
+        /// </summary>
+        public override void  disconnect()
 		{
 			lock (this)
 			{
@@ -509,7 +559,7 @@ namespace Alachisoft.NGroups
 					mq.reset();
 					
 					// new stack is created on open() - bela June 12 2003
-					prot_stack = new ProtocolStack(this, props);
+					prot_stack = new Stack.ProtocolStack(this, props);
 					prot_stack.setup();
 					closed = false;
 				}
@@ -536,8 +586,7 @@ namespace Alachisoft.NGroups
 			checkClosed();
 			checkNotConnected();
 
-           
-           
+            //Rent an event
             Event evt = new Event();
             evt.Type = Event.MSG;
 			msg.IsUserMsg = true;
@@ -602,14 +651,14 @@ namespace Alachisoft.NGroups
 				evt = null;
 				return retval;
 			}
-			catch (QueueClosedException e)
+			catch (Util.QueueClosedException e)
 			{
 				NCacheLog.Error("GroupChannel.receive()",   e.ToString());
 				throw new ChannelClosedException();
 			}
-            catch (Runtime.Exceptions.TimeoutException t)
+
+            catch (NCache.Runtime.Exceptions.TimeoutException t)
             {
-				// SAL:
 				NCacheLog.Error("GroupChannel.receive()",   t.ToString());
 				
 				throw t;
@@ -644,7 +693,7 @@ namespace Alachisoft.NGroups
                 }
 				return evt;
 			}
-			catch (QueueClosedException queue_closed)
+			catch (Util.QueueClosedException queue_closed)
 			{
 				NCacheLog.Error("GroupChannel.peek()",   queue_closed.ToString());
 				return null;
@@ -774,13 +823,13 @@ namespace Alachisoft.NGroups
 		{
 			switch (option)
 			{
-				case BLOCK:					
+				case BLOCK: 
 					return receive_blocks?true:false;
 				
-				case SUSPECT:					
+				case SUSPECT: 
 					return receive_suspects?true:false;
 				
-				case LOCAL:					
+				case LOCAL: 
 					return receive_local_msgs?true:false;
 				
 				default: 
@@ -827,10 +876,9 @@ namespace Alachisoft.NGroups
 				
 				case Event.MSG: 
 					msg = (Message) evt.Arg;
-					
 					if (!receive_local_msgs)
 					{
-						
+						// discard local messages (sent by myself to me)
 						if (local_addr != null && msg.Src != null)
 							if (local_addr.Equals(msg.Src))
 								return ;
@@ -841,14 +889,12 @@ namespace Alachisoft.NGroups
 				case Event.VIEW_CHANGE: 
 					my_view = (View) evt.Arg;
 					
-					// crude solution to bug #775120: if we get our first view *before* the CONNECT_OK,
 					// we simply set the state to connected
 					if (connected == false)
 					{
 						connected = true;
 						lock (connect_mutex)
 						{
-							// bug fix contributed by Chris Wampler (bug #943881)
 							connect_ok_event_received = true;
 							System.Threading.Monitor.Pulse(connect_mutex);
 						}
@@ -859,7 +905,6 @@ namespace Alachisoft.NGroups
 					if (!receive_views)
 					// discard if client has not set receving views to on
 						return ;
-					
 					break;
 				
 				
@@ -871,7 +916,6 @@ namespace Alachisoft.NGroups
 				
 				case Event.CONFIG: 
 					System.Collections.Hashtable config = (System.Collections.Hashtable) evt.Arg;
-
 					break;
 				
 				
@@ -914,9 +958,25 @@ namespace Alachisoft.NGroups
 						System.Threading.Monitor.PulseAll(disconnect_mutex);
 					}
 					break;
-				
-				
-				case Event.SET_LOCAL_ADDRESS: 
+
+                case Event.MARKED_FOR_MAINTENANCE:
+                    lock (maintenance_mutex)
+                    {
+                        maintenance_marked_event_received = true;
+                        System.Threading.Monitor.PulseAll(maintenance_mutex);
+                    }
+                    break;
+
+                case Event.IS_CLUSTER_IN_STATE_TRANSFER_RSP:
+                    lock (is_in_transfer_mutex)
+                    {
+                        isClusterInStateTransfer = (bool)evt.Arg;
+                        is_in_transfer_event_received = true;
+                        System.Threading.Monitor.PulseAll(is_in_transfer_mutex);
+                    }
+                    break;
+
+                case Event.SET_LOCAL_ADDRESS: 
 					lock (local_addr_mutex)
 					{
 						local_addr = (Address) evt.Arg;
@@ -1020,8 +1080,6 @@ namespace Alachisoft.NGroups
 				}
 			}
 
-
-
 			if (prot_stack != null)
 				prot_stack.down(evt);
 			else
@@ -1065,12 +1123,10 @@ namespace Alachisoft.NGroups
 			local_addr = null;
 			channel_name = null;
 			my_view = null;
-			
-			
 			connect_ok_event_received = false;
 			disconnect_ok_event_received = false;
 			connected = false;
-			block_sending = false; 
+			block_sending = false; // block send()/down() if true (unlocked by UNBLOCK_SEND event)
 		}
 		
 		
@@ -1210,11 +1266,16 @@ namespace Alachisoft.NGroups
 				closer.Start();
 			}
 		}
-		
-		/* ------------------------------- End of Private Methods ---------------------------------- */
-		
-		
-		internal class CloserThread: ThreadClass
+
+        public override void SetOperationModeOnMerge(OperationMode mode)
+        {
+            Stack.DisableOperationOnMerge = mode == OperationMode.OFFLINE;
+        }
+
+        /* ------------------------------- End of Private Methods ---------------------------------- */
+
+
+        internal class CloserThread: ThreadClass
 		{
 			private void  InitBlock(GroupChannel enclosingInstance)
 			{
@@ -1267,7 +1328,7 @@ namespace Alachisoft.NGroups
 					
 					if (Enclosing_Instance.mq != null)
 					{
-						Alachisoft.NGroups.Util.Util.sleep(500); // give the mq thread a bit of time to deliver EXIT to the application
+						Util.Util.sleep(500); // give the mq thread a bit of time to deliver EXIT to the application
 						try
 						{
 							Enclosing_Instance.mq.close(false);

@@ -1,7 +1,0 @@
-import "QueryInfo.proto";
-
-option java_outer_classname="ObjectQueryInfoProtocol";
-package Alachisoft.NCache.Common.Protobuf;
-message ObjectQueryInfo {
-	optional QueryInfo queryInfo = 1;	
-}

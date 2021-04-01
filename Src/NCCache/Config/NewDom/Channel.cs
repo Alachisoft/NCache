@@ -1,17 +1,16 @@
-// Copyright (c) 2017 Alachisoft
-// 
-// Licensed under the Apache License, Version 2.0 (the "License");
-// you may not use this file except in compliance with the License.
-// You may obtain a copy of the License at
-// 
-//    http://www.apache.org/licenses/LICENSE-2.0
-// 
-// Unless required by applicable law or agreed to in writing, software
-// distributed under the License is distributed on an "AS IS" BASIS,
-// WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
-// See the License for the specific language governing permissions and
-// limitations under the License.
-
+//  Copyright (c) 2021 Alachisoft
+//  
+//  Licensed under the Apache License, Version 2.0 (the "License");
+//  you may not use this file except in compliance with the License.
+//  You may obtain a copy of the License at
+//  
+//     http://www.apache.org/licenses/LICENSE-2.0
+//  
+//  Unless required by applicable law or agreed to in writing, software
+//  distributed under the License is distributed on an "AS IS" BASIS,
+//  WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+//  See the License for the specific language governing permissions and
+//  limitations under the License
 using System;
 using System.Collections;
 using System.Text;
@@ -25,10 +24,14 @@ namespace Alachisoft.NCache.Config.NewDom
     public class Channel : ICloneable, ICompactSerializable
     {
         int tcpPort, numInitHosts, connectionRetries = 2, connectionRetryInterval = 2;
-        int portRange = 1;  
+        int portRange = 1; //muds: default port-range is '1' 
         string initialHosts;
+
         int joinRetryInterval = 5;
         int joinRetries = 24;
+
+
+
         public Channel() { }
         public Channel(int defaultPortRange) { portRange = defaultPortRange; }
 
@@ -66,6 +69,7 @@ namespace Alachisoft.NCache.Config.NewDom
             set { initialHosts = value; }
         }
 
+      
         public int NumInitHosts
         {
             get { return numInitHosts; }
@@ -85,6 +89,7 @@ namespace Alachisoft.NCache.Config.NewDom
             get { return joinRetryInterval; }
             set { joinRetryInterval = value; }
         }
+
 
         #region ICloneable Members
 
@@ -111,7 +116,10 @@ namespace Alachisoft.NCache.Config.NewDom
             connectionRetryInterval = reader.ReadInt32();
             portRange = reader.ReadInt32();
             initialHosts = reader.ReadObject() as String;
+
             joinRetryInterval = reader.ReadInt32();
+            joinRetries = reader.ReadInt32();
+
         }
 
         public void Serialize(Runtime.Serialization.IO.CompactWriter writer)
@@ -122,8 +130,10 @@ namespace Alachisoft.NCache.Config.NewDom
             writer.Write(connectionRetryInterval);
             writer.Write(portRange);
             writer.WriteObject(initialHosts);
+
             writer.Write(joinRetryInterval);
             writer.Write(joinRetries);
+
         }
         #endregion
     }

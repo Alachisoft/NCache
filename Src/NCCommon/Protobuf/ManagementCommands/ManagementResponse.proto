@@ -5,9 +5,9 @@ package Alachisoft.NCache.Common.Protobuf;
 message ManagementResponse {
 
 	optional int64 requestId = 1;	
-	optional Exception exception = 2;
-	optional int32 version = 3;
-	optional bytes returnVal = 4;	
-	optional string methodName = 5;
+	optional Exception exception = 3;
+	optional int32 version = 4;
+	optional bytes returnVal = 5;	
+	optional string methodName = 6;
 
 }

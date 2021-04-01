@@ -1,69 +1,71 @@
-﻿// Copyright (c) 2017 Alachisoft
-// 
-// Licensed under the Apache License, Version 2.0 (the "License");
-// you may not use this file except in compliance with the License.
-// You may obtain a copy of the License at
-// 
-//    http://www.apache.org/licenses/LICENSE-2.0
-// 
-// Unless required by applicable law or agreed to in writing, software
-// distributed under the License is distributed on an "AS IS" BASIS,
-// WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
-// See the License for the specific language governing permissions and
-// limitations under the License.
-
+﻿//  Copyright (c) 2021 Alachisoft
+//  
+//  Licensed under the Apache License, Version 2.0 (the "License");
+//  you may not use this file except in compliance with the License.
+//  You may obtain a copy of the License at
+//  
+//     http://www.apache.org/licenses/LICENSE-2.0
+//  
+//  Unless required by applicable law or agreed to in writing, software
+//  distributed under the License is distributed on an "AS IS" BASIS,
+//  WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+//  See the License for the specific language governing permissions and
+//  limitations under the License
 using System;
 using System.IO;
 using System.Collections;
 using System.Collections.Specialized;
 using System.Configuration;
 using System.Configuration.Provider;
+using System.Diagnostics;
 using System.Threading;
+using Alachisoft.NCache.Common;
 using Alachisoft.NCache.Runtime;
-using Alachisoft.NCache.Web.Caching;
 using Alachisoft.NCache.Web.SessionStateManagement;
-
 using System.Runtime.Serialization.Formatters.Binary;
 using Alachisoft.NCache.Common.Logger;
-using Alachisoft.NCache.Common;
-using System.Diagnostics;
 using Alachisoft.NCache.Runtime.Exceptions;
+using Alachisoft.NCache.Client;
 
 namespace Alachisoft.NCache.Web.SessionState
 {
-    /// <summary>
-    /// Identifies whether a session item from a data store is for a session that requires initialization.
-    /// </summary>
-    [Flags]
-    public enum SessionInitializationActions
-    {
-        None = 0,
-        InitializeItem = 1,
-    }
-
     public abstract class SessionStoreBase
     {
         private const string SOURCE = "NCacheSessionProvider";
+        private const string APPLOCKKEY = "SSPAppLocked";
+        private const string APPID = "SSPAppId";
         private const string SESSION_LOCK_COUNT = "LockCount";
+        private const string LOC_IDENTIFIER = "New_Location";
+        private const string ITEMS_KEY = "I";
+        private const string STATIC_ITEMS_KEY = "O";
         private const string TIMEOUT_KEY = "T";
         private const string ACTIONS_KEY = "F";
         private const string SESSION_DATA = "SD";
         private static string s_applicationId = null;
         private static ISessionCache _cache = null;
         private string _cacheId = null;
+        private int _defaultTimeout;
+        private bool _writeExceptionsToEventLog = false;
         private bool _exceptionsEnabled = true;
         private bool _logs = false;
         protected bool _detailedLogs = false;
         private static bool s_cacheNeedInit = true;
+
+        ///-1 by default i.e do as microsoft does(retry till request timeout). 
+        /// otherwise if after retries completed and session is still locked return empty session.
+        private int _sessionLockingRetries = -1;
+        private bool _emptySessionWhenLocked = false;///for Ryan Air                                           
         private static EventHandler s_onAppDomainUnload;
-        private bool _writeExceptionsToEventLog = false;
+
         private static object s_dataLock = new object();
         private static int _inprocDelay = 5000;
         private string _appName;
         private bool _lockSessions = true;
+        protected bool _isLocationAffinityEnabled = false;
         private static ILogger _ncacheLog;
         private int _operationRetry;
         private int _operationRetryInterval;
+       // private NCacheSessionStateSettings _regionalCacheSessionStateSettings;
 
         public static ILogger NCacheLog
         {
@@ -114,10 +116,15 @@ namespace Alachisoft.NCache.Web.SessionState
 
 
             if (string.IsNullOrEmpty(config["description"])) config["description"] = "NCache Session Storage Provider";
-
             if (name == null || name.Length == 0) name = SOURCE;
 
-            string[] boolValStrings = {"exceptionsEnabled", "writeExceptionsToEventLog", "enableLogs", "enableDetailLogs", "enableSessionLocking"};
+            /* RECONSIDER
+            //get the application virtual path
+            _appName = System.Web.Hosting.HostingEnvironment.ApplicationVirtualPath;
+            */
+
+            string[] boolValStrings = {"exceptionsEnabled", "writeExceptionsToEventLog",
+                                       "enableLogs", "enableDetailLogs", "enableSessionLocking"};
             string configVal = null;
             bool value = false;
 
@@ -129,7 +136,8 @@ namespace Alachisoft.NCache.Web.SessionState
                     if (!configVal.Equals("true", StringComparison.OrdinalIgnoreCase) &&
                         !configVal.Equals("false", StringComparison.OrdinalIgnoreCase))
                     {
-                        throw new ConfigurationErrorsException("The '" + boolValStrings[i] + "' attribute must be one of the following values: true, false.");
+                        throw new ConfigurationErrorsException("The '" + boolValStrings[i] +
+                                                               "' attribute must be one of the following values: true, false.");
                     }
                     value = Convert.ToBoolean(configVal);
                     switch (i)
@@ -161,9 +169,30 @@ namespace Alachisoft.NCache.Web.SessionState
             if (config["sessionAppId"] != null)
                 s_applicationId = config["sessionAppId"];
 
+            if (config["sessionLockingRetry"] != null)
+                this._sessionLockingRetries = Convert.ToInt32(config["sessionLockingRetry"]);
+
+            if (config["emptySessionWhenLocked"] != null)
+                this._emptySessionWhenLocked = Convert.ToBoolean(config["emptySessionWhenLocked"]);
+
             //get cache name from configurations            
             _cacheId = config["cacheName"];
 
+            //if (!string.IsNullOrEmpty(config["exceptionsEnabled"]) && config["exceptionsEnabled"].ToLower() == "true")
+            //    _exceptionsEnabled = true;
+
+            /* RECONSIDER
+            //get session state configuration section
+            Configuration cfg = WebConfigurationManager.OpenWebConfiguration(_appName);
+            SessionStateSection sessionConfig = (SessionStateSection)cfg.GetSection("system.web/sessionState");
+
+             _defaultTimeout = sessionConfig.Timeout.Minutes;
+            */
+
+            if (config["defaultSessionTimeout"] != null)
+                this._defaultTimeout = Convert.ToInt32(config["defaultSessionTimeout"]);
+
+           
             string inprocDelay = config["inprocDelay"];
 
             if (!string.IsNullOrEmpty(inprocDelay))
@@ -182,6 +211,8 @@ namespace Alachisoft.NCache.Web.SessionState
                     throw new Exception("Invalid value specified for operationRetry.");
                 }
             }
+
+
             if (!String.IsNullOrEmpty(config["operationRetryInterval"]))
             {
                 try
@@ -193,8 +224,13 @@ namespace Alachisoft.NCache.Web.SessionState
                     throw new Exception("Invalid value specified for operationRetryInterval.");
                 }
             }
+
+
             InitializeCache();
+
         }
+
+    
 
         private string GetUniqueSessionId(string sessionId)
         {
@@ -213,8 +249,10 @@ namespace Alachisoft.NCache.Web.SessionState
                         {
                             if (_ncacheLog == null)
                             {
+                                string logFileNmae = _cacheId;
+
                                 _ncacheLog = new NCacheLogger();
-                                _ncacheLog.Initialize(LoggerNames.SessionStoreProvider, _cacheId);
+                                _ncacheLog.Initialize(LoggerNames.SessionStoreProvider, logFileNmae);
 
                                 if (_detailedLogs)
                                 {
@@ -229,8 +267,8 @@ namespace Alachisoft.NCache.Web.SessionState
                         }
 
                         _cache = new SingleRegionCache(_operationRetry, _operationRetryInterval);
+                        
                         _cache.InitializeCache(_cacheId);
-                        _cache.ExceptionsEnabled = true;
                         s_cacheNeedInit = false;
                         OnCacheInitialize();
                         if (_logs) LogInfo("NSessionStoreProvider initialized", null);
@@ -252,6 +290,7 @@ namespace Alachisoft.NCache.Web.SessionState
 
         public virtual void Dispose()
         {
+            //GC.Collect();
         }
 
         private void OnAppDomainUnload(object unusedObject, EventArgs unusedEventArgs)
@@ -283,10 +322,12 @@ namespace Alachisoft.NCache.Web.SessionState
             }
         }
 
+
         public virtual void CreateUninitializedItem(IAspEnvironmentContext context, string id, int timeOut)
         {
             try
             {
+                _cache.IsSessionCookieless = IsSessionCookieless(context);
                 PutInNCache(context, id, InsertContents(context, null, SessionInitializationActions.InitializeItem, timeOut), null, true);
                 if (_detailedLogs) LogDebug("New session added to cache.", id);
             }
@@ -296,7 +337,8 @@ namespace Alachisoft.NCache.Web.SessionState
                 {
                     if (_cache != null)
                     {
-                        _cache.Remove(GetUniqueSessionId(id), false);
+                        string locationID = GetLocationID(context, id);
+                        _cache.Remove(locationID, GetUniqueSessionId(id), false);
                     }
                 }
                 catch (Exception)
@@ -315,6 +357,10 @@ namespace Alachisoft.NCache.Web.SessionState
             }
         }
 
+       
+
+
+
         /**<summary>
          * Inserts item in store. 
          * When an items expires, its automatically been removed from cache, so we do not have
@@ -325,29 +371,31 @@ namespace Alachisoft.NCache.Web.SessionState
         {
             try
             {
+                _cache.IsSessionCookieless = IsSessionCookieless(context);
                 PutInNCache(context, id, InsertContents(context, items, SessionInitializationActions.None, timeout), lockID, true);
             }
-            catch (Exception)
+            catch (Exception ex1)
             {
                 try
                 {
                     if (_cache != null)
                     {
-                        _cache.Remove(GetUniqueSessionId(id), true);
+                        string locationID = GetLocationID(context, id);
+                        _cache.Remove(locationID, GetUniqueSessionId(id), true);
                     }
                 }
-                catch (Exception ex)
+                catch (Exception ex2)
                 {
-                    if (_detailedLogs) LogDebug("SetAndReleaseItemExclusive failed, Exception:" + ex, id);
+                    if (_detailedLogs) LogDebug("SetAndReleaseItemExclusive failed, Exception:" + ex2, id);
                 }
 
                 try
                 {
                     PutInNCache(context, id, InsertContents(context, items, SessionInitializationActions.None, timeout), lockID, false);
                 }
-                catch (Exception exc)
+                catch (Exception ex3)
                 {
-                    LogError(exc, id);
+                    LogError(ex3, id);
                 }
             }
         }
@@ -366,8 +414,11 @@ namespace Alachisoft.NCache.Web.SessionState
         {
             try
             {
+                _cache.IsSessionCookieless = IsSessionCookieless(context);
                 if (_cache != null)
                 {
+                    string locationID = GetLocationID(context, id);
+
                     lock (_cache)
                     {
                         bool removeFromCache = true;
@@ -377,10 +428,10 @@ namespace Alachisoft.NCache.Web.SessionState
                         {
                             if (_lockSessions)
                             {
-                                _cache.Remove(GetUniqueSessionId(id), lockID as LockHandle, true);
+                                _cache.Remove(locationID, GetUniqueSessionId(id), lockID as LockHandle, true);
                             }
                             else
-                                _cache.Remove(GetUniqueSessionId(id), true);
+                                _cache.Remove(locationID, GetUniqueSessionId(id), true);
                         }
                     }
                 }
@@ -392,16 +443,19 @@ namespace Alachisoft.NCache.Web.SessionState
                 {
                     if (_cache != null)
                     {
+                        string locationID = GetLocationID(context, id);
+
                         lock (_cache)
                         {
                             if (_lockSessions)
                             {
-                                _cache.Remove(GetUniqueSessionId(id), lockID as LockHandle, false);
+                                _cache.Remove(locationID, GetUniqueSessionId(id), lockID as LockHandle, false);
                             }
                             else
-                                _cache.Remove(GetUniqueSessionId(id), false);
+                                _cache.Remove(locationID, GetUniqueSessionId(id), false);
                         }
                     }
+
                     if (_detailedLogs) LogDebug("Session removed from cache. ", id);
                 }
                 catch (Exception exc)
@@ -431,14 +485,14 @@ namespace Alachisoft.NCache.Web.SessionState
             string locationID = sessionid;
             try
             {
-                _cache.Unlock(GetUniqueSessionId(sessionid));
+                _cache.Unlock(locationID, GetUniqueSessionId(sessionid));//, lockID);
                 return true;
             }
             catch (Exception)
             {
                 try
                 {
-                    _cache.Unlock(GetUniqueSessionId(sessionid));
+                    _cache.Unlock(locationID, GetUniqueSessionId(sessionid));
                     return true;
                 }
                 catch (Exception e)
@@ -471,13 +525,18 @@ namespace Alachisoft.NCache.Web.SessionState
             object items = null;
             Hashtable table = null;
             bool lockTimedOut = false;
+            string locationID = GetLocationID(context, id);
 
+            
             if (_cache == null)
             {
                 LogError(new OperationFailedException("The specified cache is not running. "), id);
+                return null;
             }
+
             try
             {
+                _cache.IsSessionCookieless = IsSessionCookieless(context);
                 byte[] buffer = null;
                 lock (s_dataLock)
                 {
@@ -487,11 +546,11 @@ namespace Alachisoft.NCache.Web.SessionState
                 {
                     try
                     {
-                        buffer = (byte[])_cache.Get(GetUniqueSessionId(id), ref lockHandle, acquireLock, true);
+                        buffer = (byte[])_cache.Get(locationID, GetUniqueSessionId(id), ref lockHandle, acquireLock, true);
                     }
                     catch (Exception)
                     {
-                        buffer = (byte[])_cache.Get(GetUniqueSessionId(id), ref lockHandle, acquireLock, false);
+                        buffer = (byte[])_cache.Get(locationID, GetUniqueSessionId(id), ref lockHandle, acquireLock, false);
                     }
 
 
@@ -502,14 +561,15 @@ namespace Alachisoft.NCache.Web.SessionState
                 {
                     try
                     {
-                        buffer = (byte[])_cache.Get( GetUniqueSessionId(id), true);
+                        buffer = (byte[])_cache.Get(locationID, GetUniqueSessionId(id), true);
                     }
                     catch (Exception)
                     {
-                        buffer = (byte[])_cache.Get( GetUniqueSessionId(id), false);
+                        buffer = (byte[])_cache.Get(locationID, GetUniqueSessionId(id), false);
                     }
 
                 }
+
                 if (buffer != null)
                 {
                     using (MemoryStream stream = new MemoryStream(buffer))
@@ -519,6 +579,7 @@ namespace Alachisoft.NCache.Web.SessionState
                         stream.Close();
                     }
                 }
+
                 if (_lockSessions && !String.IsNullOrEmpty(lockHandle.LockId))
                 {
                     DateTime now = DateTime.UtcNow;
@@ -536,6 +597,32 @@ namespace Alachisoft.NCache.Web.SessionState
                     /// Note: Item exists in cache but is locked.
                     if (table == null)
                     {
+                        if (this._sessionLockingRetries >= 0)
+                        {
+                            if (!context.ContainsItem(SESSION_LOCK_COUNT))
+                                context[SESSION_LOCK_COUNT] = 0;
+
+                            int retriesCompleted = (int)context[SESSION_LOCK_COUNT];
+
+                            if (retriesCompleted < this._sessionLockingRetries)
+                                context[SESSION_LOCK_COUNT] = retriesCompleted + 1;
+                            else ///this will construct and send a dummy session to application
+                            {
+                                if (this._emptySessionWhenLocked)
+                                {
+                                    locked = false;///a dummy session is going to be returned
+                                    lockID = null;
+                                    lockTimedOut = true;
+
+                                    return CreateEmptySession(context,_defaultTimeout);
+                                }
+                                else
+                                {
+                                    throw new ProviderException("Cannot acquire session lock. Session is already locked.");
+                                }
+                            }
+                        }
+
                         locked = true;
                         return null;
                     }
@@ -558,12 +645,18 @@ namespace Alachisoft.NCache.Web.SessionState
             }
             catch (Exception exc)
             {
-                LogError(exc, id);
+                /// If item is not found in Remote cache. 
+                /// Update cookies to do any further operations for this session request on current primary cache;
+                /// and do not raise exception.
+
+                    LogError(exc, id);
+
             }
             finally
             {
                 if ((lockTimedOut || table != null) && context.ContainsItem(SESSION_LOCK_COUNT))
                     context.RemoveItem(SESSION_LOCK_COUNT);
+               //    throw new ProviderException("Cannot acquire session lock. Session is already locked.");
             }
             return items;
         }
@@ -577,7 +670,48 @@ namespace Alachisoft.NCache.Web.SessionState
         {
             return null;
         }
-        
+
+        /// <summary>
+        /// Adds the Current Primary cache's location identifier in the Response cookie collection.
+        /// </summary>
+        /// <param name="context">Context of current HttpRequest.</param>
+        protected void UpdateCookies(IAspEnvironmentContext context)
+        {
+            if (_cache != null)
+            {
+                if (!string.IsNullOrEmpty(_cache.PrimaryPrefix))
+                {
+                    context.SetLocationCookie(_cache.PrimaryPrefix);
+                    //context.Response.Cookies.Set(new HttpCookie(LOC_IDENTIFIER, _cache.PrimaryPrefix));
+                    if (_logs) LogInfo("Session Location Changed: New_Location=" + _cache.PrimaryPrefix, null);
+                }
+            }
+        }
+
+        /// <summary>
+        /// Returns the location identifier for this HttpRequest context. Response cookies are searched first 
+        /// and if no cookie is found then Requeset cookies are searched for location identifier.
+        /// If there isno cookie in Request or Response then the Location Identifier in the SessionId id returned.
+        /// </summary>
+        /// <param name="context">Context of current HttpRequest</param>
+        /// <param name="sessionId">SessionId for the Request</param>
+        /// <returns>Location Identifer if cookie is found other wise the sessionId is returned.</returns>
+        private string GetLocationID(IAspEnvironmentContext context, string sessionId)
+        {
+            string locationID = sessionId;
+            return locationID;
+        }
+
+        private int GetIndexOfLocationCookie(string[] allKeys)
+        {
+            for (int i = 0; i < allKeys.Length; i++)
+            {
+                if (allKeys[i].Equals(LOC_IDENTIFIER))
+                    return i;
+            }
+            return -1;
+        }
+
         /// <summary>
         /// Insert information in cache, along with the expirations and callback.
         /// </summary>
@@ -586,6 +720,8 @@ namespace Alachisoft.NCache.Web.SessionState
         /// 
         private void PutInNCache(IAspEnvironmentContext context, string id, Hashtable table, object lockID, bool enableRetry)
         {
+            
+
             byte[] buffer = null;
             using (MemoryStream stream = new MemoryStream())
             {
@@ -596,25 +732,26 @@ namespace Alachisoft.NCache.Web.SessionState
             }
             CacheItem sessionItem = new CacheItem(buffer);
             sessionItem.Priority = CacheItemPriority.NotRemovable;
-            sessionItem.SlidingExpiration = new TimeSpan(0, (int)table[TIMEOUT_KEY], 0);
+            sessionItem.Expiration = new Runtime.Caching.Expiration(Runtime.Caching.ExpirationType.Sliding, new TimeSpan(0, (int)table[TIMEOUT_KEY], 0));
             lock (s_dataLock)
             {
                 if (s_cacheNeedInit) InitializeCache();
             }
 
+            string locationID = GetLocationID(context, id);
+
             if (_cache == null)
             {
                 LogError(new OperationFailedException("The specified cache is not running. "), id);
+                return;
             }
-
-
 
             if (_lockSessions)
             {
-                _cache.Insert(GetUniqueSessionId(id), sessionItem, lockID as LockHandle, true, enableRetry);
+                _cache.Insert(locationID, GetUniqueSessionId(id), sessionItem, lockID as LockHandle, true, enableRetry);
             }
             else
-                _cache.Insert(GetUniqueSessionId(id), sessionItem, enableRetry);
+                _cache.Insert(locationID, GetUniqueSessionId(id), sessionItem, enableRetry);
             _cache.CurrentSessionCache = null;
         }
 
@@ -638,7 +775,7 @@ namespace Alachisoft.NCache.Web.SessionState
             }
             else
                 items.Add(TIMEOUT_KEY, (int)timeout);
-            
+           
             items.Add(ACTIONS_KEY, flag);
 
             return items;
@@ -656,13 +793,42 @@ namespace Alachisoft.NCache.Web.SessionState
             flag = (SessionInitializationActions)items[ACTIONS_KEY];
             byte[] buffer = items[SESSION_DATA] as byte[];
             int timeout = (int)items[TIMEOUT_KEY];
+
             return DeserializeSession(buffer,timeout);
+    
         }
 
         protected abstract object DeserializeSession(byte[] buffer, int timeout);
+    
 
         protected abstract byte[] SerializeSession(object sessionData);
-  
+
+        private bool IsSessionCookieless(IAspEnvironmentContext context)
+        {
+            if (_isLocationAffinityEnabled)
+            {
+                try
+                {
+                    if (!string.IsNullOrEmpty(context.GetLocationCookie()))
+                        return false;
+
+                }
+                catch (Exception e)
+                {
+                    if (NCacheLog != null) LogError(e.ToString(), null);
+                }
+            }
+            return true;
+        }
+
+        /// <summary>
+        /// Called when items in cache expires
+        /// </summary>
+        /// <param name="key">Expired item key</param>
+        /// <param name="value">Expired item value</param>
+        /// <param name="reason">Reason of expiration</param>
+       
+
         public void LogError(Exception exception, string sessionID)
         {
             try

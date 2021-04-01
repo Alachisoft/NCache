@@ -1,5 +1,6 @@
 option java_outer_classname="DeleteResponseProtocol";
 package Alachisoft.NCache.Common.Protobuf;
 message DeleteResponse {
-	
+	optional int64 requestId = 1;
+	optional int32 commandID = 2;
 }

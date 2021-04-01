@@ -2,4 +2,7 @@
 option java_outer_classname="AddResponseProtocol";
 package Alachisoft.NCache.Common.Protobuf;
 message AddResponse {
+	optional uint64 itemversion=1;
+	optional int64 requestId = 2;
+	optional int32 commandID = 3;
 }

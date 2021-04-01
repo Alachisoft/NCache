@@ -1,17 +1,16 @@
-// Copyright (c) 2017 Alachisoft
-// 
-// Licensed under the Apache License, Version 2.0 (the "License");
-// you may not use this file except in compliance with the License.
-// You may obtain a copy of the License at
-// 
-//    http://www.apache.org/licenses/LICENSE-2.0
-// 
-// Unless required by applicable law or agreed to in writing, software
-// distributed under the License is distributed on an "AS IS" BASIS,
-// WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
-// See the License for the specific language governing permissions and
-// limitations under the License.
-
+﻿//  Copyright (c) 2021 Alachisoft
+//  
+//  Licensed under the Apache License, Version 2.0 (the "License");
+//  you may not use this file except in compliance with the License.
+//  You may obtain a copy of the License at
+//  
+//     http://www.apache.org/licenses/LICENSE-2.0
+//  
+//  Unless required by applicable law or agreed to in writing, software
+//  distributed under the License is distributed on an "AS IS" BASIS,
+//  WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+//  See the License for the specific language governing permissions and
+//  limitations under the License
 using System;
 using System.Collections.Generic;
 using System.Text;
@@ -25,14 +24,14 @@ namespace Alachisoft.NCache.SocketServer
     {
         SortedDictionary<string, IQueue> _reqisteredQueues = new SortedDictionary<string, IQueue>();
         List<SlaveQueue> _qeueues = new List<SlaveQueue>();
-        private PerfStatsCollector _perfStatsCollector;
+        private StatisticsCounter _perfStatsCollector;
 
 
         long _count;
         int _currentQueueIndex =0;
         bool _closed;
        
-        public DistributedQueue(PerfStatsCollector statsCollector)
+        public DistributedQueue(StatisticsCounter statsCollector)
         {
             _perfStatsCollector = statsCollector;
         }
@@ -43,14 +42,6 @@ namespace Alachisoft.NCache.SocketServer
 
             do
             {
-
-                if (SocketServer.IsServerCounterEnabled)
-                {
-                    if (_perfStatsCollector != null)
-                        _perfStatsCollector.SettNotificationQueueSizeStats(ConnectionManager.CallbackQueue.Count);
-                }
-
-
                 lock (this)
                 {
                     if (_qeueues.Count != 0 && _count >0)

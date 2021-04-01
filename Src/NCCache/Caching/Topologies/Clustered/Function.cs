@@ -1,21 +1,23 @@
-// Copyright (c) 2017 Alachisoft
-// 
-// Licensed under the Apache License, Version 2.0 (the "License");
-// you may not use this file except in compliance with the License.
-// You may obtain a copy of the License at
-// 
-//    http://www.apache.org/licenses/LICENSE-2.0
-// 
-// Unless required by applicable law or agreed to in writing, software
-// distributed under the License is distributed on an "AS IS" BASIS,
-// WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
-// See the License for the specific language governing permissions and
-// limitations under the License.
-
+//  Copyright (c) 2021 Alachisoft
+//  
+//  Licensed under the Apache License, Version 2.0 (the "License");
+//  you may not use this file except in compliance with the License.
+//  You may obtain a copy of the License at
+//  
+//     http://www.apache.org/licenses/LICENSE-2.0
+//  
+//  Unless required by applicable law or agreed to in writing, software
+//  distributed under the License is distributed on an "AS IS" BASIS,
+//  WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+//  See the License for the specific language governing permissions and
+//  limitations under the License
 using System;
 using Alachisoft.NCache.Common;
 using Alachisoft.NCache.Runtime.Serialization;
 using Alachisoft.NCache.Runtime.Serialization.IO;
+using Alachisoft.NCache.Common.Monitoring;
+using System.Threading;
+using System.Diagnostics;
 
 namespace Alachisoft.NCache.Caching.Topologies.Clustered
 {
@@ -24,7 +26,7 @@ namespace Alachisoft.NCache.Caching.Topologies.Clustered
     /// defined by the clients/derivations of clustered cache.
     /// </summary>
     [Serializable]
-    internal class Function : ICompactSerializable, IRentableObject
+    internal class Function : ICompactSerializable, IRentableObject,ICancellableRequest
     {
         /// <summary> The function code. </summary>
         private byte _opcode;
@@ -42,6 +44,19 @@ namespace Alachisoft.NCache.Caching.Topologies.Clustered
         private Array _userDataPayload;
 
         private bool _responseEpected = false;
+
+        private TimeSpan _clientRequestTimeout = TimeSpan.FromSeconds(90);
+
+        [NonSerialized]
+        private CancellationTokenSource _cancellationSource;
+
+        [NonSerialized]
+        private Stopwatch _executionWatch;
+
+        private bool _cancellable;
+        //Usefull for debugging (dump analysis)
+        private TimeSpan _elapsedTime;
+
         /// <summary>
         /// Constructor.
         /// </summary>
@@ -122,6 +137,8 @@ namespace Alachisoft.NCache.Caching.Topologies.Clustered
             _operand = reader.ReadObject();
             _syncKey = reader.ReadObject();
             _responseEpected = reader.ReadBoolean();
+            _cancellable = reader.ReadBoolean();
+            _clientRequestTimeout = (TimeSpan)reader.ReadObject();
         }
 
         void ICompactSerializable.Serialize(CompactWriter writer)
@@ -131,6 +148,8 @@ namespace Alachisoft.NCache.Caching.Topologies.Clustered
             writer.WriteObject(_operand);
             writer.WriteObject(_syncKey);
             writer.Write(_responseEpected);
+            writer.Write(_cancellable);
+            writer.WriteObject(_clientRequestTimeout);
         }
 
         #endregion
@@ -163,9 +182,98 @@ namespace Alachisoft.NCache.Caching.Topologies.Clustered
             set { _responseEpected = value; }
         }
 
+        public TimeSpan ClientRequestTimeout
+        {
+            get { return _clientRequestTimeout; }
+            set { _clientRequestTimeout = value; }
+        }
+
+        public bool Cancellable
+        {
+            get { return _cancellable; }
+            set { _cancellable = value; }
+        }
+
+        public CancellationToken CancellationToken
+        {
+            get
+            {
+                if (_cancellationSource == null)
+                    _cancellationSource = new CancellationTokenSource();
+
+                return _cancellationSource.Token;
+            }
+        }
+
+        public void InitializeCanellationToken()
+        {
+            CancellationToken token = CancellationToken;
+
+            if(_operand is object[])
+            {
+                object[] args = _operand as object[];
+
+                for(int i=0; i<args.Length; i++)
+                {
+                    object argument = args[i];
+                    if (argument is OperationContext)
+                    {
+                        ((OperationContext)argument).CancellationToken = token;
+
+                        TimeSpan timeout = TimeSpan.FromMilliseconds(((OperationContext)argument).ClientOperationTimeout);
+                        if (timeout >= _clientRequestTimeout)
+                            _clientRequestTimeout = timeout;
+                        break;
+                    }
+                }
+            }
+        }
+
+        public void StartExecution()
+        {
+            if (_executionWatch == null)
+                _executionWatch = new Stopwatch();
+
+            _executionWatch.Start();
+        }
+
+        public void StopExecution()
+        {
+            if (_executionWatch != null)
+                _executionWatch.Stop();
+        }
+
+        public bool IsCancelled
+        {
+            get
+            {
+                return _cancellationSource != null ? _cancellationSource.IsCancellationRequested : false;
+            }
+        }
+
+        public bool HasTimedout
+        {
+            get
+            {
+                _elapsedTime = _executionWatch != null ? _executionWatch.Elapsed : TimeSpan.Zero;
+                return _elapsedTime > _clientRequestTimeout ? true : false;
+                
+            }
+        }
+
         public override string ToString()
         {
             return (Enum.Parse(typeof(Alachisoft.NCache.Caching.Topologies.Clustered.ClusterCacheBase.OpCodes), this.Opcode.ToString())).ToString();
+        }
+
+        public bool Cancel()
+        {
+            if (_cancellationSource != null && !_cancellationSource.IsCancellationRequested)
+            {
+                _cancellationSource.Cancel();
+                return true;
+            }
+            return false;
         }
     }
 }

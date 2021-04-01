@@ -2,4 +2,6 @@
 option java_outer_classname="UnregisterBulkKeyNotifResponseProtocol";
 package Alachisoft.NCache.Common.Protobuf;
 message UnregisterBulkKeyNotifResponse {
+optional int32 commandID = 1;
+	optional int64 requestId = 2;
 }

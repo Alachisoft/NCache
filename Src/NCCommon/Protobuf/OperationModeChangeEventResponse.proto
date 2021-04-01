@@ -1,0 +1,7 @@
+option java_outer_classname="OperationModeChangeEventResponseProtocol";
+package Alachisoft.NCache.Common.Protobuf;
+message OperationModeChangeEventResponse 
+{
+	optional string serverIP = 1;
+	optional int32 port = 2;
+}

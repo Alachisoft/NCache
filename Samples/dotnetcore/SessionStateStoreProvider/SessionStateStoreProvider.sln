@@ -1,0 +1,39 @@
+Microsoft Visual Studio Solution File, Format Version 12.00
+# Visual Studio 15
+VisualStudioVersion = 15.0.27703.2035
+MinimumVisualStudioVersion = 10.0.40219.1
+Project("{E24C65DC-7377-472B-9ABA-BC803B73C61A}") = "SessionStateStoreProvider", ".", "{0E0593D4-CA1E-4622-A714-7E74B11B4673}"
+	ProjectSection(WebsiteProperties) = preProject
+		TargetFrameworkMoniker = ".NETFramework,Version%3Dv4.0"
+		Debug.AspNetCompiler.VirtualPath = "/SessionStateStoreProvider"
+		Debug.AspNetCompiler.PhysicalPath = "..\SessionStateStoreProvider\"
+		Debug.AspNetCompiler.TargetPath = "PrecompiledWeb\SessionStateStoreProvider\"
+		Debug.AspNetCompiler.Updateable = "true"
+		Debug.AspNetCompiler.ForceOverwrite = "true"
+		Debug.AspNetCompiler.FixedNames = "false"
+		Debug.AspNetCompiler.Debug = "True"
+		Release.AspNetCompiler.VirtualPath = "/SessionStateStoreProvider"
+		Release.AspNetCompiler.PhysicalPath = "..\SessionStateStoreProvider\"
+		Release.AspNetCompiler.TargetPath = "PrecompiledWeb\SessionStateStoreProvider\"
+		Release.AspNetCompiler.Updateable = "true"
+		Release.AspNetCompiler.ForceOverwrite = "true"
+		Release.AspNetCompiler.FixedNames = "false"
+		Release.AspNetCompiler.Debug = "False"
+		VWDPort = "65104"
+	EndProjectSection
+EndProject
+Global
+	GlobalSection(SolutionConfigurationPlatforms) = preSolution
+		Debug|.NET = Debug|.NET
+	EndGlobalSection
+	GlobalSection(ProjectConfigurationPlatforms) = postSolution
+		{0E0593D4-CA1E-4622-A714-7E74B11B4673}.Debug|.NET.ActiveCfg = Debug|Any CPU
+		{0E0593D4-CA1E-4622-A714-7E74B11B4673}.Debug|.NET.Build.0 = Debug|Any CPU
+	EndGlobalSection
+	GlobalSection(SolutionProperties) = preSolution
+		HideSolutionNode = FALSE
+	EndGlobalSection
+	GlobalSection(ExtensibilityGlobals) = postSolution
+		SolutionGuid = {BC0E4C85-E70D-48D1-A1C8-94F98D8776B5}
+	EndGlobalSection
+EndGlobal

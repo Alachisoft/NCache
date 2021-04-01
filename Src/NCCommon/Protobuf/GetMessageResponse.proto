@@ -1,0 +1,12 @@
+import "TopicMessages.proto";
+
+
+option java_outer_classname="GetMessageResponseProtocol";
+package Alachisoft.NCache.Common.Protobuf;
+message GetMessageResponse
+{
+	repeated TopicMessages topicMessages = 1;
+	repeated string RegisteredPatterns = 2;
+	optional int32 commandID = 3 [default = -1];
+	optional int64 requestId = 4;
+}

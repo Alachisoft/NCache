@@ -1,22 +1,17 @@
-﻿// Copyright (c) 2017 Alachisoft
-// 
-// Licensed under the Apache License, Version 2.0 (the "License");
-// you may not use this file except in compliance with the License.
-// You may obtain a copy of the License at
-// 
-//    http://www.apache.org/licenses/LICENSE-2.0
-// 
-// Unless required by applicable law or agreed to in writing, software
-// distributed under the License is distributed on an "AS IS" BASIS,
-// WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
-// See the License for the specific language governing permissions and
-// limitations under the License.
-
-using System;
+﻿//  Copyright (c) 2021 Alachisoft
+//  
+//  Licensed under the Apache License, Version 2.0 (the "License");
+//  you may not use this file except in compliance with the License.
+//  You may obtain a copy of the License at
+//  
+//     http://www.apache.org/licenses/LICENSE-2.0
+//  
+//  Unless required by applicable law or agreed to in writing, software
+//  distributed under the License is distributed on an "AS IS" BASIS,
+//  WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+//  See the License for the specific language governing permissions and
+//  limitations under the License
 using System.Collections.Generic;
-using System.Linq;
-using System.Text;
-using System.Collections;
 
 namespace Alachisoft.NCache.Common.Util
 {
@@ -26,7 +21,7 @@ namespace Alachisoft.NCache.Common.Util
         const string MULTIPLE_CONFIGS = "Multiple cache configurations provided in config.conf.";
         const string PATH_INVALID = "Cache configuration [config.conf] path is not provided or File does not exist.";
         const string CACHE_NOT_EXIST = "Provided cache is not specified in cache.conf.";
-        const string CLUSTER_IP = "Invalid BindToClusterIP address specified.";
+        const string CLUSTER_IP = "Invalid BindToIP address specified.";
         const string CLIENT_SERVER_IP = "Invalid BindToClientServerIP address specified";
         const string SOCKET_CONNECTION = "Client listener can not be started. The port might already be in use";
         const string MANAGEMENT_CONNECTION = "Management listener can not be started. The port might already be in use";
@@ -35,7 +30,7 @@ namespace Alachisoft.NCache.Common.Util
         const string GENERAL_EXCEPTION = "An Exception has occurred while starting Separate Process. Please refer to Windows Event Logs for details.";
         
         public static Dictionary<int, string> list = new Dictionary<int, string>();
-         
+           
         static ProcessExitCodes()
         {
             list.Add(500, GENERAL_EXCEPTION);

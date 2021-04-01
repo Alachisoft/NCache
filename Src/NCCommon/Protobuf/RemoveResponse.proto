@@ -1,7 +1,12 @@
 
 option java_outer_classname="RemoveResponseProtocol";
+import "CacheItemType.proto";
+
 package Alachisoft.NCache.Common.Protobuf;
 message RemoveResponse {
 	optional int32 flag = 1;
 	repeated bytes value = 2;
+	optional CacheItemType.ItemType itemType = 3 [ default = CACHEITEM];
+	optional int64 requestId = 4;
+	optional int32 commandID = 5;
 }

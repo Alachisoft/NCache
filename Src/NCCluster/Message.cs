@@ -1,64 +1,45 @@
-// Licensed under the Apache License, Version 2.0 (the "License");
-// you may not use this file except in compliance with the License.
-// You may obtain a copy of the License at
-// 
-//    http://www.apache.org/licenses/LICENSE-2.0
-// 
-// Unless required by applicable law or agreed to in writing, software
-// distributed under the License is distributed on an "AS IS" BASIS,
-// WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
-// See the License for the specific language governing permissions and
-// limitations under the License.
-
 using System;
-using System.Runtime.Serialization;
-using System.Runtime.Serialization.Formatters.Binary;
-using System.Diagnostics;
 using System.Collections;
 using System.IO;
-using System.Data;
-
-
-
 using Alachisoft.NCache.Runtime.Serialization.IO;
-
-
 using Alachisoft.NCache.Runtime.Serialization;
-
-
-
 using Alachisoft.NCache.Serialization.Formatters;
 using Alachisoft.NCache.Common;
 using Alachisoft.NCache.Common.Net;
 using Alachisoft.NCache.Common.Stats;
-using Alachisoft.NCache.Common.Util;
-using Alachisoft.NGroups.Stack;
-using Alachisoft.NGroups.Protocols;
-using Alachisoft.NGroups.Blocks;
-using Alachisoft.NGroups.Protocols.pbcast;
 using System.Text;
 using Alachisoft.NCache.Common.Enum;
+using Alachisoft.NCache.Common.DataStructures.Clustered;
+using Alachisoft.NGroups.Blocks;
+using Alachisoft.NGroups.Protocols;
 
 namespace Alachisoft.NGroups
 {
     /// <summary>
-	/// Enumeration that defines the quality-of-service for messages.
-	/// </summary>
-
-
-	/// <remarks>
-	/// A Message encapsulates data sent to members of a group. 
-	/// It contains among other things the address of the sender, 
-	/// the destination address, a payload (byte buffer) and a list of 
-	/// headers. Headers are added by protocols on the sender side and 
-	/// removed by protocols on the receiver's side.
-	/// </remarks>
-	/// <summary>
-	/// Message passed between members of a group.
-	/// <p><b>Author:</b> Chris Koiak, Bela Ban</p>
-	/// <p><b>Date:</b>  12/03/2003</p>
-	/// </summary>
-	[Serializable]
+    /// Enumeration that defines the quality-of-service for messages.
+    /// </summary>
+    //	[Flags]
+    //	public enum Qos
+    //	{
+    //		None			= 0x0000,
+    //		Reliable		= 0x0001,
+    //		Ordered			= 0x0002,
+    //		Default			= Ordered | Reliable
+    //	}
+    //
+    /// <remarks>
+    /// A Message encapsulates data sent to members of a group. 
+    /// It contains among other things the address of the sender, 
+    /// the destination address, a payload (byte buffer) and a list of 
+    /// headers. Headers are added by protocols on the sender side and 
+    /// removed by protocols on the receiver's side.
+    /// </remarks>
+    /// <summary>
+    /// Message passed between members of a group.
+    /// <p><b>Author:</b> Chris Koiak, Bela Ban</p>
+    /// <p><b>Date:</b>  12/03/2003</p>
+    /// </summary>
+    [Serializable]
 	public class Message : ICompactSerializable, IRentableObject, ICustomSerializable
 	{
 		/// <summary>Destination of the message</summary>
@@ -119,9 +100,6 @@ namespace Alachisoft.NGroups
 		/// <summary>The number of bytes in the buffer (usually buf.length is buf != null) </summary>
 		[NonSerialized]
 		private int				length = 0;
-
-		
-		
 		internal const long ADDRESS_OVERHEAD = 400; // estimated size of Address (src and dest)
 
         private Array _payload;
@@ -133,6 +111,8 @@ namespace Alachisoft.NGroups
         DateTime arrivalTime;
 
         private Stream stream = null;
+        private IList buffers;
+
 
 		/// <summary>Only used for Externalization (creating an initial object) </summary>
 		public  Message()
@@ -154,6 +134,21 @@ namespace Alachisoft.NGroups
 			setBuffer(buf);
 			headers = new Hashtable();
 			isUserMsg = false;
+        }
+
+        /// <summary>
+        /// Constructor
+        /// </summary>
+        /// <param name="dest">Destination of the message</param>
+        /// <param name="src">Source of the message</param>
+        /// <param name="buf">Byte buffer of payload associated with the message</param>
+        public Message(Address dest, Address src, IList buffers)
+        {
+            dest_addr = dest;
+            src_addr = src;
+            Buffers = buffers;
+            headers = new Hashtable();
+            isUserMsg = false;
         }
 
 		/// <summary> Constructs a message. The index and length parameters allow to provide a <em>reference</em> to
@@ -257,17 +252,12 @@ namespace Alachisoft.NGroups
 			headers = new Hashtable();
 			if(obj!=null)
 			{
-//				if(obj is Array)
-//					setMessageArray((Array)obj);
-//				else 
-			
 				if(obj.GetType().IsSerializable)
 					setObject(obj);
 				else
 					throw new Exception("Message can only contain an Array of messages or an ISerializable object");
 			}
 		}
-
 
 		public Address Dest
 		{
@@ -313,7 +303,25 @@ namespace Alachisoft.NGroups
 		{
 			get{return length;}
 			set { length = value; }
-		}		
+		}
+
+        /// <summary>Returns the number of bytes in the buffer </summary>
+        public int BufferLength
+        {
+            get 
+            {
+                if (Buffers != null)
+                {
+                    int blength = 0;
+                    foreach (byte[] buffer in buffers)
+                    {
+                        blength += buffer.Length; 
+                    }
+                    return blength;
+                }
+                return 0;
+            }
+        }		
 
 		/// <summary>
 		/// The number of backup caches configured with this instance.
@@ -395,7 +403,7 @@ namespace Alachisoft.NGroups
 			else if(src_addr != null && !src_addr.Equals(msg2.Src))
 				return false;
 
-			if (buf != msg2.RawBuffer ||
+			if (buf != msg2.RawBuffer ||buffers != msg2.buffers||
 				headers.Count != msg2.Headers.Count)
 				return false;
 
@@ -475,8 +483,10 @@ namespace Alachisoft.NGroups
 				hc.Add(dest_addr.GetHashCode());
 			if (src_addr!=null)
 				hc.Add(src_addr.GetHashCode());
-			if (buf!=null)
-				hc.Add(buf.GetHashCode());
+            if (buf != null)
+                hc.Add(buf.GetHashCode());
+            if (buffers!=null)
+				hc.Add(buffers.GetHashCode());
 
 			for(int i=0;i<hc.Count;i++)
 				retValue = retValue.GetHashCode() ^ hc[i].GetHashCode();
@@ -514,6 +524,12 @@ namespace Alachisoft.NGroups
 				offset = length = 0;
 			}
 		}
+
+        public IList Buffers
+        {
+            get { return buffers; }
+            set { buffers = value; }
+        }
 
 		/// <summary> Set the internal buffer to point to a subset of a given buffer</summary>
 		/// <param name="b">The reference to a given buffer. If null, we'll reset the buffer to null
@@ -673,18 +689,19 @@ namespace Alachisoft.NGroups
 			{
 				retval.setBuffer(buf, offset, length);
 			}
-            
+            if (copy_buffer && buffers != null)
+            {
+                retval.buffers = buffers;
+            }
             if (headers != null)
             {
                 retval.headers = (Hashtable)headers.Clone();
-                
             }
             retval.Payload = this.Payload;
 			return retval;
 		}
 
-
-		
+       
 		public virtual object Clone()
 		{
 			return copy();
@@ -713,6 +730,7 @@ namespace Alachisoft.NGroups
             m.profileid = profileid;
             m.isProfilable = isProfilable;
             if(IsProfilable)  m.TraceMsg = traceMsg + "-->complete";
+            m.Priority = prio;
             return m;
         }
 		/// <summary> Returns size of buffer, plus some constant overhead for src and dest, plus number of headers time
@@ -772,19 +790,10 @@ namespace Alachisoft.NGroups
 		{
 			try
 			{
-				/*
-				if(last != null)
-				{
-					last.nextUp = key;
-				}
-				last = hdr;
-				hdr.ID = key;
-				*/
 				headers[key] = hdr;
 			}
 			catch(ArgumentException e)
 			{
-				//Trace.error("Message.putHeader()", e.ToString());
 			}
 		}
 
@@ -839,16 +848,30 @@ namespace Alachisoft.NGroups
 			dest_addrs = (ArrayList)reader.ReadObject();
             src_addr = (Address)reader.ReadObject();
 			prio = (Priority) Enum.ToObject(typeof(Priority), reader.ReadInt16());
-             Boolean isStream = reader.ReadBoolean();
-             if (isStream)
-             {
-                 int len = reader.ReadInt32();
-                 buf = reader.ReadBytes(len);
-             }
-             else
-             {
-                 buf = (byte[])reader.ReadObject();
-             }
+            Boolean isStream = reader.ReadBoolean();
+            if (isStream)
+            {
+                int len = reader.ReadInt32();
+                buf = reader.ReadBytes(len);
+            }
+            else
+            {
+                buf = (byte[])reader.ReadObject();
+            }
+
+            int bufferCount = reader.ReadInt32();
+
+            if (bufferCount > 0)
+            {
+                buffers = new ClusteredArrayList(bufferCount);
+
+                for (int i = 0; i < bufferCount; i++)
+                {
+                    buffers.Add(reader.ReadBytes(reader.ReadInt32()));
+                }
+            }
+
+            
             headers = (Hashtable)reader.ReadObject();
             handledAsynchronously = reader.ReadBoolean();
             responseExpected = reader.ReadBoolean();
@@ -876,11 +899,25 @@ namespace Alachisoft.NGroups
                 writer.Write(false);
                 writer.WriteObject((object)buf);
             }
+
+            if (Buffers != null)
+            {
+                writer.Write(buffers.Count);
+                foreach (byte[] buff in Buffers)
+                {
+                    writer.Write(buff.Length);
+                    writer.Write(buff, 0, buff.Length);
+                }
+            }
+            else
+                writer.Write((int)0);
+
             writer.WriteObject(headers);
             writer.Write(handledAsynchronously);
             writer.Write(responseExpected);
             writer.Write(_type);
             writer.WriteObject(_stackTrace);
+
 		}
 
 		#endregion
@@ -906,7 +943,7 @@ namespace Alachisoft.NGroups
 		public void DeserializeLocal(BinaryReader reader)
 		{
 			isUserMsg = true;
-			reader.BaseStream.Position = 0;
+			reader.BaseStream.Position -= 1;
 			byte flags = reader.ReadByte();
 			FlagsByte bFlags = new FlagsByte();
 			bFlags.DataByte = flags;
@@ -942,13 +979,29 @@ namespace Alachisoft.NGroups
             sendTime = new DateTime(ticks);
             responseExpected = reader.ReadBoolean();
             _type = reader.ReadByte();
+          
+            bool bufferNotNull = reader.ReadBoolean();
            
-			length = reader.ReadInt32();
-			buf = (byte[])reader.ReadBytes(length);
-			
+                length = reader.ReadInt32();
+            if(bufferNotNull)
+                buf = (byte[])reader.ReadBytes(length);
+
+            bool bufferListNotNull = reader.ReadBoolean();
+                int bufferCount = reader.ReadInt32();
+                
+                if (bufferListNotNull)
+                {
+                    buffers = new ClusteredArrayList(bufferCount);
+
+                    for (int i = 0; i < bufferCount; i++)
+                    {
+                        buffers.Add(reader.ReadBytes(reader.ReadInt32()));
+                    }
+                }
+                           
 		}
 
-		public void SerializeLocal(BinaryWriter writer)
+        public void SerializeLocal(BinaryWriter writer)
 		{
 			//Check in sequence of headers.. 
 			FlagsByte bFlags = new FlagsByte();
@@ -988,15 +1041,32 @@ namespace Alachisoft.NGroups
             writer.Write(_type);
             if (stream != null)
             {
+                writer.Write(true);
                 writer.Write(length);
                 writer.Write(((MemoryStream)stream).GetBuffer(), 0, length);
             }
             else
             {
-                int length = buf.Length;
+                writer.Write(buf != null);
+                int length =  buf != null ? buf.Length: 0;
                 writer.Write(length);
-                writer.Write(buf);
+                if(buf != null) writer.Write(buf);
+                
             }
+
+            writer.Write(Buffers != null);
+            int bufferCount = Buffers != null ? Buffers.Count : 0;
+            writer.Write(bufferCount);
+
+            if (Buffers != null)
+            {
+                foreach (byte[] buff in Buffers)
+                {
+                    writer.Write(buff.Length);
+                    writer.Write(buff, 0, buff.Length);
+                }
+            }
+           
 			long curPos = writer.BaseStream.Position;
 			writer.BaseStream.Position = 8; //afte 4 bytes of total size and 4 bytes of message size ..here comes the flag.
 			writer.Write(bFlags.DataByte);

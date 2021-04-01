@@ -1,0 +1,10 @@
+import "EventId.proto";
+
+option java_outer_classname="PollNotifyEventResponseProtocol";
+package Alachisoft.NCache.Common.Protobuf;
+message PollNotifyEventResponse 
+{
+	optional sint32 callbackId = 1;
+	optional EventId eventId = 2;
+	optional sint32 eventType=3;
+}

@@ -1,17 +1,16 @@
-// Copyright (c) 2017 Alachisoft
-// 
-// Licensed under the Apache License, Version 2.0 (the "License");
-// you may not use this file except in compliance with the License.
-// You may obtain a copy of the License at
-// 
-//    http://www.apache.org/licenses/LICENSE-2.0
-// 
-// Unless required by applicable law or agreed to in writing, software
-// distributed under the License is distributed on an "AS IS" BASIS,
-// WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
-// See the License for the specific language governing permissions and
-// limitations under the License.
-
+//  Copyright (c) 2021 Alachisoft
+//  
+//  Licensed under the Apache License, Version 2.0 (the "License");
+//  you may not use this file except in compliance with the License.
+//  You may obtain a copy of the License at
+//  
+//     http://www.apache.org/licenses/LICENSE-2.0
+//  
+//  Unless required by applicable law or agreed to in writing, software
+//  distributed under the License is distributed on an "AS IS" BASIS,
+//  WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+//  See the License for the specific language governing permissions and
+//  limitations under the License
 using System;
 using System.Collections;
 using System.Text;
@@ -31,14 +30,15 @@ namespace Alachisoft.NCache.Config.NewDom
     {
         int opTimeout = 60;
         int statsRepInterval;
-       
-        bool useHeartBeat;
+        Alachisoft.NCache.Config.Dom.ReplicationStrategy _replicationStrategy;
+
         Channel channel;
 
         public Cluster()
         {
             channel = new Channel();
         }
+
 
         [ConfigurationAttribute("operation-timeout", true, false, "sec")]
         public int OpTimeout
@@ -47,6 +47,7 @@ namespace Alachisoft.NCache.Config.NewDom
             set { opTimeout = value; }
         }
 
+
         [ConfigurationAttribute("stats-repl-interval", true, false, "sec")]
         public int StatsRepInterval
         {
@@ -54,12 +55,13 @@ namespace Alachisoft.NCache.Config.NewDom
             set { statsRepInterval = value; }
         }
 
-       
-        [ConfigurationAttribute("use-heart-beat", true, false, "")]
-        public bool UseHeartbeat
+#if SERVER || CLIENT 
+        [ConfigurationSection("data-replication", true, false)]
+#endif
+        public Alachisoft.NCache.Config.Dom.ReplicationStrategy ReplicationStrategy
         {
-            get { return useHeartBeat; }
-            set { useHeartBeat = value; }
+            get { return _replicationStrategy; }
+            set { _replicationStrategy = value; }
         }
 
         [ConfigurationSection("cluster-connection-settings", true, false)]
@@ -76,8 +78,8 @@ namespace Alachisoft.NCache.Config.NewDom
             Cluster cluster = new Cluster();
             cluster.OpTimeout = OpTimeout;
             cluster.StatsRepInterval = StatsRepInterval;
-            
-            cluster.UseHeartbeat = UseHeartbeat;
+            cluster.ReplicationStrategy = ReplicationStrategy != null ? (Alachisoft.NCache.Config.Dom.ReplicationStrategy)ReplicationStrategy.Clone() : null;
+
             cluster.Channel = Channel != null ? (Channel)Channel.Clone() : null;
             return cluster;
         }
@@ -89,16 +91,16 @@ namespace Alachisoft.NCache.Config.NewDom
         {
             opTimeout = reader.ReadInt32();
             statsRepInterval = reader.ReadInt32();
-            useHeartBeat = reader.ReadBoolean();
-           channel = reader.ReadObject() as Channel;
+            this._replicationStrategy=reader.ReadObject() as ReplicationStrategy;
+            channel = reader.ReadObject() as Channel;
         }
 
         public void Serialize(Runtime.Serialization.IO.CompactWriter writer)
         {
             writer.Write(opTimeout);
             writer.Write(statsRepInterval);
-            writer.Write(useHeartBeat);
-           writer.WriteObject(channel);
+            writer.WriteObject(this._replicationStrategy);
+            writer.WriteObject(channel);
         }
         #endregion
     

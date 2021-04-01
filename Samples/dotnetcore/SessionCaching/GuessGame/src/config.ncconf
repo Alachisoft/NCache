@@ -1,0 +1,15 @@
+<?xml version="1.0" encoding="UTF-8" standalone="yes"?>
+<configuration>
+  <cache-config cache-name="myCache" alias="" config-id="147de838-263d-4fd6-bd91-edcbf6cf950f" config-version="0">
+    <cache-settings inproc="False">
+      <logging enable-logs="True" trace-errors="True" trace-debug="False" log-path=""/>
+      <performance-counters enable-counters="True" snmp-port="0"/>
+      <cache-notifications item-remove="False" item-add="False" item-update="False" cache-clear="False"/>
+      <cleanup interval="15sec"/>
+      <storage type="heap" cache-size="1024mb"/>
+      <eviction-policy default-priority="normal" eviction-ratio="5%"/>
+      <cache-topology topology="local-cache"/>
+      <client-death-detection enable="False" grace-interval="60sec"/>
+    </cache-settings>
+  </cache-config>
+</configuration>

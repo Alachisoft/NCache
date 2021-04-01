@@ -1,51 +1,23 @@
-// Licensed under the Apache License, Version 2.0 (the "License");
-// you may not use this file except in compliance with the License.
-// You may obtain a copy of the License at
-// 
-//    http://www.apache.org/licenses/LICENSE-2.0
-// 
-// Unless required by applicable law or agreed to in writing, software
-// distributed under the License is distributed on an "AS IS" BASIS,
-// WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
-// See the License for the specific language governing permissions and
-// limitations under the License.
 // $Id: TOTAL.java,v 1.6 2004/07/05 14:17:16 belaban Exp $
 
+using Alachisoft.NCache.Common.Enum;
+using Alachisoft.NCache.Common.Net;
+using Alachisoft.NCache.Common.Stats;
+using Alachisoft.NCache.Common.Threading;
+using Alachisoft.NCache.Common.Util;
+using Alachisoft.NCache.Runtime.Serialization;
+using Alachisoft.NCache.Runtime.Serialization.IO;
 using System;
 using System.Collections;
 using System.Net;
-using Alachisoft.NGroups;
+using System.Threading;
+using Alachisoft.NGroups.Blocks;
+using Alachisoft.NGroups.Protocols.pbcast;
 using Alachisoft.NGroups.Stack;
 using Alachisoft.NGroups.Util;
-using Alachisoft.NGroups.Blocks;
-using Alachisoft.NCache.Common.Net;
-using Alachisoft.NCache.Common;
-
-
-using Alachisoft.NCache.Runtime.Serialization.IO;
-
-
-using Alachisoft.NCache.Runtime.Serialization;
-
-
-using Alachisoft.NCache.Common.Stats;
-using Alachisoft.NCache.Common.Threading;
-using System.Threading;
-using System.IO;
-using System.Text;
-using Alachisoft.NCache.Serialization.Formatters;
-using System.Configuration;
-using Alachisoft.NCache.Common.Enum;
-using System.Net.Sockets;
-using Alachisoft.NCache.Common.Util;
-using Alachisoft.NGroups.Protocols.pbcast;
 
 namespace Alachisoft.NGroups.Protocols
 {
-
-
-
-
     /// <summary> TCP based protocol. Creates a server socket, which gives us the local address of this group member. For
     /// each accept() on the server socket, a new thread is created that listens on the socket.
     /// For each outgoing message m, if m.dest is in the ougoing hashtable, the associated socket will be reused
@@ -59,6 +31,8 @@ namespace Alachisoft.NGroups.Protocols
     /// </author>
     class TCP : Protocol, ConnectionTable.Receiver, ConnectionTable.ConnectionListener
     {
+       
+
         override public System.String Name
         {
             get
@@ -85,16 +59,18 @@ namespace Alachisoft.NGroups.Protocols
         private Address local_addr = null;
         private string group_addr = null;
         private string subGroup_addr = null;
-        //These should be fetch from the current worker role instance  incase of AZURE
+        //These should be fetch from the current worker role instance @UH incase of AZURE
         private System.Net.IPAddress bind_addr1 = null; // local IP address to bind srv sock to (m-homed systems)
         private System.Net.IPAddress bind_addr2 = null; // local IP address to bind srv sock to (m-homed systems)
 
         private int start_port = 7800; // find first available port starting at this port
+
+        // decision changing the default port-range to '1'
         private System.Collections.ArrayList members = System.Collections.ArrayList.Synchronized(new System.Collections.ArrayList(11));
 
         private int port_range = 1;
-        
-       
+
+
         private long reaper_interval = 0; // time in msecs between connection reaps
         private long conn_expire_time = 0; // max time a conn can be idle before being reaped
 
@@ -160,7 +136,9 @@ namespace Alachisoft.NGroups.Protocols
         HPTimeStats _multicastSendTimeStats;
         HPTimeStats _totalToTcpDownStats;
         private bool _leaving;
+        private string environmentName="";
         private string versionType;
+        private bool isInproc;
 
         public TCP()
         {
@@ -174,8 +152,7 @@ namespace Alachisoft.NGroups.Protocols
             return "Protocol TCP(local address: " + local_addr + ')';
         }
 
-        
-
+      
         public override void receiveDownEvent(Event evt)
         {
             int type = evt.Type;
@@ -259,9 +236,6 @@ namespace Alachisoft.NGroups.Protocols
 
         private void HasStarted()
         {
-            
-            Stack.NCacheLog.CriticalInfo("TCP.HasStarted()", "HasStarted");
-
             this.isStarting = false;
         }
 
@@ -285,7 +259,7 @@ namespace Alachisoft.NGroups.Protocols
 
 
                     //We don't queue the critical priority events
-                    if (evt.Priority == Priority.Critical)
+                    if (evt.Priority == Priority.High)
                     {
                         GMS.HDR hdr = msg.getHeader(HeaderType.GMS) as GMS.HDR;
                         bool allowAsyncPassup = false;
@@ -310,12 +284,23 @@ namespace Alachisoft.NGroups.Protocols
                         PingHeader pingHdr = msg.getHeader(HeaderType.TCPPING) as PingHeader;
                         if (pingHdr != null && pingHdr.type == PingHeader.GET_MBRS_REQ)
                             allowAsyncPassup = true;
-
                         if (allowAsyncPassup)
                         {
                             System.Threading.ThreadPool.QueueUserWorkItem(new WaitCallback(ThreadPoolPassup), evt);
                             return;
                         }
+                    }
+                    //To fix issue of cyclic dependency during double clustered operations
+                    else if(evt.Priority==Priority.Critical)
+                    {
+                        if (Stack != null && Stack.NCacheLog != null && Stack.NCacheLog.IsDebugEnabled)
+                        {
+                            Stack.NCacheLog.Debug("Protocol.receiveUpEvent()", "Event with critical priority received...");
+                        }
+
+                        System.Threading.ThreadPool.QueueUserWorkItem(new WaitCallback(ThreadPoolPassup), evt);
+
+                        return;
                     }
 
                     switch (msg.Type)
@@ -337,7 +322,6 @@ namespace Alachisoft.NGroups.Protocols
                             break;
                     }
                 }
-                                
             }
             catch (System.Exception e)
             {
@@ -352,34 +336,12 @@ namespace Alachisoft.NGroups.Protocols
                 {
                     _unicastDownQueue = new Alachisoft.NCache.Common.DataStructures.Queue();
                     _unicastDownHandler = new DownHandler(_unicastDownQueue, this, Name + ".unicast.DownHandler", 1);
-                    if (down_thread_prio >= 0)
-                    {
-                        try
-                        {
-                            
-                        }
-                        catch (System.Exception t)
-                        {
-                            Stack.NCacheLog.Error("Protocol.startDownHandler()", "priority " + down_thread_prio + " could not be set for thread: " + t.StackTrace);
-                        }
-                    }
                     _unicastDownHandler.Start();
                 }
                 if (_multicastDownHandler == null)
                 {
                     _multicastDownQueue = new Alachisoft.NCache.Common.DataStructures.Queue();
                     _multicastDownHandler = new DownHandler(_multicastDownQueue, this, Name + ".muticast.DownHandler", 2);
-                    if (down_thread_prio >= 0)
-                    {
-                        try
-                        {
-                            
-                        }
-                        catch (System.Exception t)
-                        {
-                            Stack.NCacheLog.Error("Protocol.startDownHandler()", "priority " + down_thread_prio + " could not be set for thread: " + t.StackTrace);
-                        }
-                    }
                     _multicastDownHandler.Start();
                 }
 
@@ -387,17 +349,6 @@ namespace Alachisoft.NGroups.Protocols
                 {
                     _tokenSeekingMsgDownQueue = new Alachisoft.NCache.Common.DataStructures.Queue();
                     _tokenSeekingMsgDownHandler = new DownHandler(_tokenSeekingMsgDownQueue, this, Name + ".token.DownHandler", 3);
-                    if (down_thread_prio >= 0)
-                    {
-                        try
-                        {
-                            
-                        }
-                        catch (System.Exception t)
-                        {
-                            Stack.NCacheLog.Error("Protocol.startDownHandler()", "priority " + down_thread_prio + " could not be set for thread: " + t.StackTrace);
-                        }
-                    }
                     _tokenSeekingMsgDownHandler.Start();
                 }
             }
@@ -411,17 +362,6 @@ namespace Alachisoft.NGroups.Protocols
                 {
                     _tokenMsgUpQueue = new Alachisoft.NCache.Common.DataStructures.Queue();
                     _tokenSeekingUpHandler = new UpHandler(_tokenMsgUpQueue, this, Name + ".token.UpHandler", 3);
-                    if (up_thread_prio >= 0)
-                    {
-                        try
-                        {
-                            
-                        }
-                        catch (System.Exception t)
-                        {
-                            Stack.NCacheLog.Error("Protocol", "priority " + up_thread_prio + " could not be set for thread: " + t.StackTrace);
-                        }
-                    }
                     _tokenSeekingUpHandler.Start();
                 }
 
@@ -429,17 +369,6 @@ namespace Alachisoft.NGroups.Protocols
                 {
                     _sequenecedMsgUpQueue = new Alachisoft.NCache.Common.DataStructures.Queue();
                     _sequencedMsgUpHandler = new UpHandler(_sequenecedMsgUpQueue, this, Name + ".seq.UpHandler", 2);
-                    if (up_thread_prio >= 0)
-                    {
-                        try
-                        {
-                            
-                        }
-                        catch (System.Exception t)
-                        {
-                            Stack.NCacheLog.Error("Protocol", "priority " + up_thread_prio + " could not be set for thread: " + t.StackTrace);
-                        }
-                    }
                     _sequencedMsgUpHandler.Start();
                 }
 
@@ -447,17 +376,7 @@ namespace Alachisoft.NGroups.Protocols
                 {
                     _sequencelessMsgUpQueue = new Alachisoft.NCache.Common.DataStructures.Queue();
                     _sequencelessMsgUpHandler = new UpHandler(_sequencelessMsgUpQueue, this, Name + ".seqless.UpHandler", 1);
-                    if (up_thread_prio >= 0)
-                    {
-                        try
-                        {
-                            
-                        }
-                        catch (System.Exception t)
-                        {
-                            Stack.NCacheLog.Error("Protocol", "priority " + up_thread_prio + " could not be set for thread: " + t.StackTrace);
-                        }
-                    }
+                    
                     _sequencelessMsgUpHandler.Start();
                 }
             }
@@ -650,29 +569,28 @@ namespace Alachisoft.NGroups.Protocols
             // protocol in our case.
             upper = Stack.findProtocol("TOTAL");
 
-            ct = getConnectionTable(reaper_interval, conn_expire_time, bind_addr1, bind_addr2, start_port, _retries, _retryInterval);
+            ct = getConnectionTable(reaper_interval, conn_expire_time, bind_addr1, bind_addr2, start_port, _retries, _retryInterval, isInproc,environmentName);
 
-            
             ct.addConnectionListener(this);
             ct.ReceiveBufferSize = recv_buf_size;
             ct.SendBufferSize = send_buf_size;
+         
             local_addr = ct.LocalAddress;
             if (additional_data != null /*&& local_addr is Address*/)
                 ((Address)local_addr).AdditionalData = additional_data;
-            passUp(new Event(Event.SET_LOCAL_ADDRESS, local_addr, Priority.Critical));
+            passUp(new Event(Event.SET_LOCAL_ADDRESS, local_addr, Priority.High));
             _asyncProcessor = new AsyncProcessor(stack.NCacheLog);
             _asyncProcessor.Start();
 
-            _keepAlive = new ConnectionKeepAlive(this, ct, _heartBeatInterval);
+            _keepAlive = new ConnectionKeepAlive(this, ct, 32000/*default value*/);
             if (_useKeepAlive)
                 _keepAlive.Start();
 
 
             Stack.NCacheLog.CriticalInfo("TCP.start", "operating parameters -> [ heart_beat:" + _useKeepAlive + " ;heart_beat_interval: " + _heartBeatInterval + " ;async_up_deliver: " + asyncPassup + " ;connection_retries: " + _retries + " ;connection_retry_interval: " + _retryInterval + " ]");
-            
         }
 
-        /// <param name="">ri
+        /// <param name="">
         /// </param>
         /// <param name="">cet
         /// </param>
@@ -687,14 +605,14 @@ namespace Alachisoft.NGroups.Protocols
         /// </returns>
         /// 
 
-        protected internal virtual ConnectionTable getConnectionTable(long ri, long cet, System.Net.IPAddress b_addr1, System.Net.IPAddress b_addr2, int s_port, int retries, int retryInterval)
+        protected internal virtual ConnectionTable getConnectionTable(long ri, long cet, System.Net.IPAddress b_addr1, System.Net.IPAddress b_addr2, int s_port, int retries, int retryInterval, bool isInproc,string environmentName)
 
         {
             ConnectionTable cTable = null;
 
             if (ri == 0 && cet == 0)
             {
-                cTable = new ConnectionTable(this, b_addr1, bind_addr2, start_port, port_range, stack.NCacheLog, retries, retryInterval);
+                cTable = new ConnectionTable(this, b_addr1, bind_addr2, start_port, port_range, stack.NCacheLog, retries, retryInterval, isInproc, environmentName);
             }
             else
             {
@@ -723,7 +641,7 @@ namespace Alachisoft.NGroups.Protocols
             _asyncProcessor = null;
 
             if (_keepAlive != null) _keepAlive.Stop();
-
+       
             ct.stop();
             upper = null;
         }
@@ -749,107 +667,80 @@ namespace Alachisoft.NGroups.Protocols
             Message msg;
             System.Object dest_addr;
             bool reEstablishCon = false;
-
-            
             stats = new TimeStats(1);
-            
+
             if (evt.Type != Event.MSG && evt.Type != Event.MSG_URGENT)
             {
                 handleDownEvent(evt);
-                
                 return;
             }
 
             reEstablishCon = evt.Type == Event.MSG_URGENT ? true : false;
-
-
-            msg = (Message)evt.Arg;
+            msg = (Message) evt.Arg;
             msg.Priority = evt.Priority;
-           
-
-
             if (Stack.NCacheLog.IsInfoEnabled) stack.NCacheLog.Info("Tcp.down()", " message headers = " + Global.CollectionToString(msg.Headers));
 
             if (group_addr != null)
             {
-                                
                 msg.putHeader(HeaderType.TCP, new TcpHeader(group_addr));
             }
 
             dest_addr = msg.Dest;
-
-
-            /* Because we don't call Protocol.passDown(), we notify the observer directly (e.g. PerfObserver). This way,
-            we still have performance numbers for TCP */
-            
-            try
+            if (dest_addr == null)
             {
-                if (dest_addr == null)
+                // broadcast (to all members)
+                if (group_addr == null)
                 {
-                    // broadcast (to all members)
-                    if (group_addr == null)
+                    Stack.NCacheLog.Info("dest address of message is null, and " + "sending to default address fails as group_addr is null, too !" + " Discarding message.");
+                    return;
+                }
+                if (reEstablishCon && _asyncProcessor != null)
+                {
+                    lock (async_mutex)
                     {
-                        Stack.NCacheLog.Info("dest address of message is null, and " + "sending to default address fails as group_addr is null, too !" + " Discarding message.");
-                        return;
-                    }
-                    else
-                    {
-                        if (reEstablishCon && _asyncProcessor != null)
+                        if (asyncThreads != null)
                         {
-                            lock (async_mutex)
-                            {
-                                if (asyncThreads != null)
-                                {
-                                    TCP.AsnycMulticast asyncMcast = new TCP.AsnycMulticast(this, msg, reEstablishCon);
+                            TCP.AsnycMulticast asyncMcast = new TCP.AsnycMulticast(this, msg, reEstablishCon);
 
-                                    Thread asyncThread = new Thread(new ThreadStart(asyncMcast.Process));
-                                    asyncThreads.Add(asyncThread);
-                                    asyncThread.Start();
-                                }
-                            }
-                            if (Stack.NCacheLog.IsInfoEnabled) stack.NCacheLog.Info("Tcp.down", "broadcasting message asynchronously ");
-                            
+                            Thread asyncThread = new Thread(new ThreadStart(asyncMcast.Process));
+                            asyncThreads.Add(asyncThread);
+                            asyncThread.Start();
                         }
-                        else
+                    }
+
+                    if (Stack.NCacheLog.IsInfoEnabled) stack.NCacheLog.Info("Tcp.down", "broadcasting message asynchronously ");
+                }
+                else
+                {
+                    sendMulticastMessage(msg, reEstablishCon, evt.Priority); // send to current membership
+                }
+            }
+            else
+            {
+                if (Stack.NCacheLog.IsInfoEnabled) stack.NCacheLog.Info("Tcp.down()", " destination address " + msg.Dest.ToString());
+                if (reEstablishCon && _asyncProcessor != null)
+                {
+                    lock (async_mutex)
+                    {
+                        if (asyncThreads != null)
                         {
-                            sendMulticastMessage(msg, reEstablishCon, evt.Priority); // send to current membership
+                            TCP.AsnycUnicast asyncUcast = new TCP.AsnycUnicast(this, msg, reEstablishCon);
+
+                            Thread asyncThread = new Thread(new ThreadStart(asyncUcast.Process));
+                            asyncThreads.Add(asyncThread);
+                            asyncThread.Start();
                         }
                     }
                 }
                 else
                 {
-                    if (Stack.NCacheLog.IsInfoEnabled) stack.NCacheLog.Info("Tcp.down()", " destination address " + msg.Dest.ToString());
-                    if (reEstablishCon && _asyncProcessor != null)
-                    {
-                        lock (async_mutex)
-                        {
-                            if (asyncThreads != null)
-                            {
-                                TCP.AsnycUnicast asyncUcast = new TCP.AsnycUnicast(this, msg, reEstablishCon);
-
-                                Thread asyncThread = new Thread(new ThreadStart(asyncUcast.Process));
-                                asyncThreads.Add(asyncThread);
-                                asyncThread.Start();
-                            }
-                        }
-                    }
-                    else
-                    {
-                        sendUnicastMessage(msg, reEstablishCon, msg.Payload, evt.Priority); // send to a single member
-                    }
+                    sendUnicastMessage(msg, reEstablishCon, msg.Payload, evt.Priority); // send to a single member
                 }
             }
-            finally
-            {
-            }
-
         }
-
-        
 
         public override void PublishDownQueueStats(long count, int queueId)
         {
-
             switch (queueId)
             {
                 case 1:
@@ -871,12 +762,10 @@ namespace Alachisoft.NGroups.Protocols
         {
             TcpHeader hdr = null;
             msg.Dest = local_addr;
-            
             Event evt = new Event();
             evt.Arg = msg;
             evt.Priority = msg.Priority;
             evt.Type = Event.MSG;
-
 
             HearBeat hrtBeat = msg.removeHeader(HeaderType.KEEP_ALIVE) as HearBeat;
             if (hrtBeat != null && _keepAlive != null)
@@ -884,11 +773,6 @@ namespace Alachisoft.NGroups.Protocols
                 _keepAlive.ReceivedHeartBeat(msg.Src, hrtBeat);
                 return;
             }
-
-
-            TOTAL.HDR totalhdr = msg.getHeader(HeaderType.TOTAL) as TOTAL.HDR;
-
-
             if (!asyncPassup)
                 this.receiveUpEvent(evt);
             else
@@ -910,7 +794,6 @@ namespace Alachisoft.NGroups.Protocols
                 Stack.NCacheLog.Error("ThreadPoolPassUp", e.ToString());
             }
         }
-        // ConnectionTable.ConnectionListener interface
         public virtual void connectionOpened(Address peer_addr)
         {
             if (Stack.NCacheLog.IsInfoEnabled) Stack.NCacheLog.Info("opened connection to " + peer_addr);
@@ -922,7 +805,7 @@ namespace Alachisoft.NGroups.Protocols
             {
                 if (Stack.NCacheLog.IsInfoEnabled) Stack.NCacheLog.Info("closed connection to " + peer_addr + " added to the suspected list");
                 suspected_mbrs.add(peer_addr);
-                Event evt = new Event(Event.SUSPECT, peer_addr, Priority.Critical);
+                Event evt = new Event(Event.SUSPECT, peer_addr, Priority.High);
                 evt.Reason = "Connection closed called for suspect event";
                 passUp(evt);
             }
@@ -930,10 +813,11 @@ namespace Alachisoft.NGroups.Protocols
 
         public void couldnotConnectTo(Address peer_addr)
         {
-            passUp(new Event(Event.CONNECTION_NOT_OPENED, peer_addr, Priority.Critical));
+            passUp(new Event(Event.CONNECTION_NOT_OPENED,peer_addr,Priority.High));
         }
 
-       public override void up(Event evt)
+
+        public override void up(Event evt)
         {
             TcpHeader hdr = null;
             Message msg = null;
@@ -949,10 +833,7 @@ namespace Alachisoft.NGroups.Protocols
                         stack.NCacheLog.Error("TCP", msg.TraceMsg + " received from ---> " + msg.Src.ToString());
                     }
                     if (Stack.NCacheLog.IsInfoEnabled) Stack.NCacheLog.Info("TCP.up()", "src: " + msg.Src + " ,priority: " + evt.Priority + ", hdrs: " + Global.CollectionToString(msg.Headers));
-                    if (msg.IsProfilable)
-                    {
                    
-                    }
                     hdr = (TcpHeader)msg.removeHeader(HeaderType.TCP);
 
                     if (hdr != null)
@@ -963,7 +844,6 @@ namespace Alachisoft.NGroups.Protocols
                         if (hdr.group_addr != null)
                             ch_name = hdr.group_addr;
 
-                       
                         // Discard if message's group name is not the same as our group name unless the
                         // message is a diagnosis message (special group name DIAG_GROUP)
                         if (ch_name != null && !group_addr.Equals(ch_name))
@@ -971,18 +851,11 @@ namespace Alachisoft.NGroups.Protocols
                             Stack.NCacheLog.Info("discarded message from different group (" + ch_name + "). Sender was " + msg.Src);
                             return;
                         }
-                       
 
                     }
-
-
-
                     passUp(evt);
                     break;
-
             }
-
-
         }
 
         /// <summary>Setup the Protocol instance acording to the configuration string </summary>
@@ -992,21 +865,19 @@ namespace Alachisoft.NGroups.Protocols
 
             base.setProperties(props);
 
-            if (System.Configuration.ConfigurationSettings.AppSettings["asyncTcpUpQueue"] != null)
-            {
-                asyncPassup = Convert.ToBoolean(System.Configuration.ConfigurationSettings.AppSettings["asyncTcpUpQueue"]);
-            }
+            asyncPassup = ServiceConfiguration.AsyncTcpUpQueue;
+         
             down_thread = false;
-            
-
             if (props.Contains("start_port"))
             {
-
                 start_port = Convert.ToInt32(props["start_port"]);
                 props.Remove("start_port");
-
             }
-
+            if (props.Contains("is_inproc"))
+            {
+                isInproc = Convert.ToBoolean(props["is_inproc"]);
+                props.Remove("is_inproc");
+            }
 
             if (props.Contains("port_range"))
             {
@@ -1014,10 +885,11 @@ namespace Alachisoft.NGroups.Protocols
                 if (port_range <= 0) port_range = 1;
                 props.Remove("port_range");
             }
+            Version.Initialize();
+      
            
             if (props.Contains("heart_beat_interval"))
             {
-                
                 props.Remove("heart_beat_interval");
             }
 
@@ -1033,45 +905,29 @@ namespace Alachisoft.NGroups.Protocols
                 props.Remove("connection_retry_interval");
             }
 
-                if (ConfigurationSettings.AppSettings["NCacheServer.HeartbeatInterval"] != null)
-            {
-                _heartBeatInterval = Convert.ToInt32(ConfigurationSettings.AppSettings["NCacheServer.HeartbeatInterval"]);
+            _heartBeatInterval = 32000;
 
-                _heartBeatInterval = _heartBeatInterval * 1000;
-            }
-
-            
             // It is supposed that bind_addr will be provided only through props.
-
-                IPAddress ip = ServiceConfiguration.BindToIP;
-             
-            if (ip != null)
-            {
-                try
-                {
-                    bind_addr1 = ip;
-                    Stack.NCacheLog.CriticalInfo("TCP.setProperties()", "bind_addr1 :  " + bind_addr1);
-                }
-                catch (Exception)
-                {
-                    throw new Exception("Invalid BindToIP address specified");
-                }
-
-               
-            }
-            else
+            bind_addr1 =ServiceConfiguration.BindToIP;
+            
+            if(bind_addr1 == null)
             {
                 try
                 {
                     str = Dns.GetHostName();
                     IPHostEntry ipEntry = Dns.GetHostByName(str);
                     bind_addr1 = ipEntry.AddressList[0];
-                    if (Stack.NCacheLog.IsInfoEnabled) Stack.NCacheLog.Info("TCP.SetProperties()",   "Bind address = " + bind_addr1.ToString());
+                    if (Stack.NCacheLog.IsInfoEnabled) Stack.NCacheLog.Info("TCP.SetProperties()", "Bind address = " + bind_addr1.ToString());
                 }
                 catch (Exception ex)
                 {
-                    stack.NCacheLog.Error("TCP.SetProperties()",   "bind address failure :" + ex.ToString());
+                    stack.NCacheLog.Error("TCP.SetProperties()", "bind address failure :" + ex.ToString());
                 }
+            }
+
+            if (props.Contains("bind_addr"))
+            {
+                props.Remove("bind_addr");
             }
 
             if (props.Contains("reaper_interval"))
@@ -1116,14 +972,9 @@ namespace Alachisoft.NGroups.Protocols
                 props.Remove("skip_suspected_members");
             }
 
-            if (props.Contains("bind_addr"))
-            {
-                props.Remove("bind_addr");
-            }
-
             if (props.Count > 0)
             {
-                stack.NCacheLog.Error("TCP.setProperties()",   "the following properties are not recognized:");
+                stack.NCacheLog.Error("TCP.setProperties()", "the following properties are not recognized:");
                 return true;
             }
 
@@ -1157,8 +1008,6 @@ namespace Alachisoft.NGroups.Protocols
 
             SourceAddress = msg;
 
-
-
             /* Don't send if destination is local address. Instead, switch dst and src and put in up_queue  */
             if (loopback && local_addr != null)
             {
@@ -1169,7 +1018,6 @@ namespace Alachisoft.NGroups.Protocols
                 if (hdr != null && hdr is TcpHeader)
                 {
                     copy.removeHeader(HeaderType.TCP);
-                    
                 }
 
                 copy.Src = local_addr;
@@ -1180,11 +1028,6 @@ namespace Alachisoft.NGroups.Protocols
                     stack.NCacheLog.Error("TCP", msg.TraceMsg + " sending to ---> " + msg.Dest.ToString());
                 }
                 evt = new Event(Event.MSG, copy, copy.Priority);
-
-                /* Because Protocol.up() is never called by this bottommost layer, we call up() directly in the observer.
-                This allows e.g. PerfObserver to get the time of reception of a message */
-               
-
                 if (!asyncPassup)
                     this.receiveUpEvent(evt);
                 else
@@ -1211,24 +1054,20 @@ namespace Alachisoft.NGroups.Protocols
                     sendLocalMessage(msg);
                 else
                 {
-                    byte[] binaryMessage = Util.Util.serializeMessage(msg);
+                    IList binaryMessage = Util.Util.serializeMessage(msg);
                     sendUnicastMessage(dest, binaryMessage, reEstablishConnection, msg.Payload, priority);
                 }
             }
             catch (Exception e)
             {
-                //Originally commented because connection can be broken(Thread.Abort()) at any time especially when a view is changed and some members are excluded from the new map
-                
             }
         }
 
         /// <summary>Send a message to the address specified in msg.dest </summary>
-        private void sendUnicastMessage(Address dest, byte[] msg, bool reEstablishCon, Array UserPayload, Priority priority)
+        private void sendUnicastMessage(Address dest, IList msg, bool reEstablishCon, Array UserPayload, Priority priority)
         {
-
             try
             {
-
                 if (skip_suspected_members)
                 {
                     if (suspected_mbrs.contains(dest))
@@ -1247,7 +1086,7 @@ namespace Alachisoft.NGroups.Protocols
                     if (!suspected_mbrs.contains(dest) && local_addr != null)
                     {
                         suspected_mbrs.add(dest);
-                        Event evt = new Event(Event.SUSPECT, dest, Priority.Critical);
+                        Event evt = new Event(Event.SUSPECT, dest, Priority.High);
                         evt.Reason = "Tcp.sendUnicastMesssage caused suspect event";
                         passUp(evt);
                     }
@@ -1295,12 +1134,12 @@ namespace Alachisoft.NGroups.Protocols
                 if (dest_addrs.Contains(local_addr))
                 {
                     dest_addrs.Remove(local_addr);
-                    
+                    //mbrs.Add(local_addr);
                     deliverLocal = true;
                 }
             }
 
-            byte[] binaryMsg = Util.Util.serializeMessage(msg);
+            IList binaryMsg = Util.Util.serializeMessage(msg);
 
             if (mbrs != null)
             {
@@ -1335,13 +1174,26 @@ namespace Alachisoft.NGroups.Protocols
         }
 
 
+ 	    public void HandleFailedNodes(object failedNodes)
+        {
+            if (failedNodes is ArrayList)
+            {
+                ArrayList nodes = (ArrayList)failedNodes;
+                if (nodes.Count > 0)
+                {
+                    NCacheLog.CriticalInfo("TCP.HandleFailedNodes()", " can not establish connection with all the nodes ");
+
+                    passUp(new Event(Event.CONNECTION_FAILURE, nodes, Priority.High));
+                }
+            }
+
+        }
+
         private void handleDownEvent(Event evt)
         {
             switch (evt.Type)
             {
-
                 case Event.GET_NODE_STATUS:
-
                     Address suspect = evt.Arg as Address;
 
                     if (_keepAlive != null)
@@ -1356,7 +1208,12 @@ namespace Alachisoft.NGroups.Protocols
                         for (int i = 0; i < asyncThreads.Count; i++)
                         {
                             Thread t = asyncThreads[i] as Thread;
-                            if (t != null && t.IsAlive) t.Abort();
+                            if (t != null && t.IsAlive)
+#if !NETCORE
+                                t.Abort();
+#elif NETCORE
+                                t.Interrupt();
+#endif
                         }
                         asyncThreads.Clear();
                     }
@@ -1368,7 +1225,6 @@ namespace Alachisoft.NGroups.Protocols
 
                 case Event.TMP_VIEW:
                 case Event.VIEW_CHANGE:
-                   
                     ArrayList temp_mbrs = new ArrayList();
                     ArrayList nodeJoiningList = new ArrayList();
                     lock_members.AcquireWriterLock(Timeout.Infinite);
@@ -1384,13 +1240,9 @@ namespace Alachisoft.NGroups.Protocols
                         for (int i = 0; i < tmpvec.Count; i++)
                         {
 
+
                             address = tmpvec[i] as Address;
-                            //Goes false only when isStarting is true along with the ip matches
-                            //Dont want to exclude membership of the physical node replica since membership is changing and to avoid thread synchronization to go haywire 
-                            if (address != null && !(isStarting && address.IpAddress.Equals(local_addr.IpAddress)))
-                            {
-                                temp_mbrs.Add(tmpvec[i]); 
-                            }
+                            temp_mbrs.Add(tmpvec[i]);
 
                             members.Add(tmpvec[i]);
                             nodeJoiningList.Add(tmpvec[i]);
@@ -1410,32 +1262,27 @@ namespace Alachisoft.NGroups.Protocols
                         for (int i = 0; i < asyncThreads.Count; i++)
                         {
                             Thread t = asyncThreads[i] as Thread;
-                            if (t != null && t.IsAlive) t.Abort();
+                            if (t != null && t.IsAlive)
+#if !NETCORE
+                                t.Abort();
+#elif NETCORE
+                                t.Interrupt();
+#endif
                         }
                         asyncThreads.Clear();
                     }
-                    ct.ConfigureNodeRejoining(nodeJoiningList);
-                    
-                    ArrayList failedNodes = ct.synchronzeMembership(temp_mbrs, false);
 
+                    ct.ConfigureNodeRejoining(nodeJoiningList);
+                    ArrayList failedNodes = ct.synchronzeMembership(temp_mbrs, false);
                     passUp(evt);
 
-                    if (failedNodes.Count > 0)
-                    {
-                        if (Stack.NCacheLog.IsInfoEnabled) Stack.NCacheLog.Info("TCP.HandleDownEvent()", " can not establish connection with all the nodes ");
-
-                        passUp(new Event(Event.CONNECTION_FAILURE, failedNodes, Priority.Critical));
-                    }
-
                     break;
-                case Event.GET_LOCAL_ADDRESS:  // return local address -> Event(SET_LOCAL_ADDRESS, local)
+
+                case Event.GET_LOCAL_ADDRESS:  
                     passUp(new Event(Event.SET_LOCAL_ADDRESS, local_addr));
                     break;
-
-
                 case Event.CONNECT:
                     object[] addrs = ((object[])evt.Arg);
-                    
                     group_addr = (string)addrs[0];
                     subGroup_addr = (string)addrs[1];
                     bool twoPhaseConnect = (bool)addrs[2];
@@ -1444,21 +1291,17 @@ namespace Alachisoft.NGroups.Protocols
                     // removed March 18 2003 (bela), not needed (handled by GMS)
                     // Can't remove it; otherwise TCPGOSSIP breaks (bela May 8 2003) !
                     Address addr = new Address(ct.srv_port);
-                    
                     passUp(new Event(Event.CONNECT_OK, (object)addr));
                     break;
-
 
                 case Event.DISCONNECT:
                     passUp(new Event(Event.DISCONNECT_OK));
                     break;
 
-
                 case Event.CONFIG:
                     if (Stack.NCacheLog.IsInfoEnabled) Stack.NCacheLog.Info("received CONFIG event: " + evt.Arg);
                     handleConfigEvent((System.Collections.Hashtable)evt.Arg);
                     break;
-
 
                 case Event.ACK:
                     passUp(new Event(Event.ACK_OK));
@@ -1484,7 +1327,6 @@ namespace Alachisoft.NGroups.Protocols
                 lock_members.AcquireReaderLock(Timeout.Infinite);
                 try
                 {
-                    
                     if (members != null && members.Contains(node))
                         return true;
 
@@ -1523,7 +1365,7 @@ namespace Alachisoft.NGroups.Protocols
                 if (_parent != null)
                 {
                     if (_parent.Stack.NCacheLog.IsInfoEnabled) _parent.Stack.NCacheLog.Info("TCP.AsnycUnicast.Process", "sending message to " + _message.Dest.ToString());
-                    _parent.sendUnicastMessage(_message, _reEstablishConnection, _message.Payload, Priority.Critical);
+                    _parent.sendUnicastMessage(_message, _reEstablishConnection, _message.Payload, Priority.High);
                 }
             }
 
@@ -1558,7 +1400,7 @@ namespace Alachisoft.NGroups.Protocols
                 if (_parent != null)
                 {
                     if (_parent.Stack.NCacheLog.IsInfoEnabled) _parent.Stack.NCacheLog.Info("TCP.AsnycMulticast.Process", "broadcasting message");
-                    _parent.sendMulticastMessage(_message, _reEstablishConnection, Priority.Critical);
+                    _parent.sendMulticastMessage(_message, _reEstablishConnection, Priority.High);
                 }
             }
 
@@ -1606,12 +1448,20 @@ namespace Alachisoft.NGroups.Protocols
                 if (_enclosingInstance.Stack.NCacheLog != null) _enclosingInstance.Stack.NCacheLog.Flush();
                 if (_thread != null)
                 {
+#if !NETCORE
                     _thread.Abort();
+#elif NETCORE
+                    _thread.Interrupt();
+#endif
                     _thread = null;
                 }
                 if (_statusCheckingThread != null)
                 {
+#if !NETCORE
                     _statusCheckingThread.Abort();
+#elif NETCORE
+                    _statusCheckingThread.Interrupt();
+#endif
                     _statusCheckingThread = null;
                 }
             }
@@ -1637,7 +1487,7 @@ namespace Alachisoft.NGroups.Protocols
                                 {
                                     Address member = idleMembers[i] as Address;
 
-                                    if (_enclosingInstance.Stack.NCacheLog.IsInfoEnabled) _enclosingInstance.Stack.NCacheLog.Info("ConnectionKeepAlive.Run",  "pining idle member ->:" + member.ToString());
+                                    if (_enclosingInstance.Stack.NCacheLog.IsInfoEnabled) _enclosingInstance.Stack.NCacheLog.Info("ConnectionKeepAlive.Run", "pining idle member ->:" + member.ToString());
 
                                     if (!_idleConnections.Contains(member))
                                         _idleConnections.Add(idleMembers[i], (int)1);
@@ -1654,7 +1504,7 @@ namespace Alachisoft.NGroups.Protocols
                                         }
                                         else
                                         {
-                                            if (_enclosingInstance.Stack.NCacheLog.IsErrorEnabled) _enclosingInstance.Stack.NCacheLog.Error("ConnectionKeepAlive.Run",  attemptCount + " did not received any heart beat ->:" + member.ToString());
+                                            if (_enclosingInstance.Stack.NCacheLog.IsErrorEnabled) _enclosingInstance.Stack.NCacheLog.Error("ConnectionKeepAlive.Run", attemptCount + " did not received any heart beat ->:" + member.ToString());
 
                                             _idleConnections[member] = attemptCount;
                                         }
@@ -1666,13 +1516,13 @@ namespace Alachisoft.NGroups.Protocols
                             AskHeartBeats(idleMembers);
                         }
 
-                        if (_enclosingInstance.Stack.NCacheLog.IsInfoEnabled) _enclosingInstance.Stack.NCacheLog.Info("ConnectionKeepAlive.Run",  "setting connections status to idle ->:");
+                        if (_enclosingInstance.Stack.NCacheLog.IsInfoEnabled) _enclosingInstance.Stack.NCacheLog.Info("ConnectionKeepAlive.Run", "setting connections status to idle ->:");
 
                         _ct.SetConnectionsStatus(true);
 
                         foreach (Address suspected in suspectedList)
                         {
-                            if (_enclosingInstance.Stack.NCacheLog.IsErrorEnabled) _enclosingInstance.Stack.NCacheLog.Error("ConnectionKeepAlive.Run",  "member being suspected ->:" + suspected.ToString());
+                            if (_enclosingInstance.Stack.NCacheLog.IsErrorEnabled) _enclosingInstance.Stack.NCacheLog.Error("ConnectionKeepAlive.Run", "member being suspected ->:" + suspected.ToString());
 
                             _ct.remove(suspected, true);
                             _enclosingInstance.connectionClosed(suspected);
@@ -1684,11 +1534,12 @@ namespace Alachisoft.NGroups.Protocols
 
                 }
                 catch (ThreadAbortException) { }
+                catch (ThreadInterruptedException) { }
                 catch (Exception e)
                 {
-                    _enclosingInstance.Stack.NCacheLog.Error("ConnectionKeepAlive.Run",   e.ToString());
+                    _enclosingInstance.Stack.NCacheLog.Error("ConnectionKeepAlive.Run", e.ToString());
                 }
-                if (_enclosingInstance.Stack.NCacheLog.IsInfoEnabled) _enclosingInstance.Stack.NCacheLog.Info("ConnectionKeepAlive.Run",   "exiting keep alive thread");
+                if (_enclosingInstance.Stack.NCacheLog.IsInfoEnabled) _enclosingInstance.Stack.NCacheLog.Info("ConnectionKeepAlive.Run", "exiting keep alive thread");
             }
 
             /// <summary>
@@ -1697,7 +1548,6 @@ namespace Alachisoft.NGroups.Protocols
             /// <param name="node"></param>
             public void CheckStatus(Address node)
             {
-
                 lock (_checkStatusList.SyncRoot)
                 {
                     _checkStatusList.Add(node);
@@ -1709,8 +1559,6 @@ namespace Alachisoft.NGroups.Protocols
                         _statusCheckingThread.Start();
                     }
                 }
-
-
             }
 
             /// <summary>
@@ -1720,7 +1568,6 @@ namespace Alachisoft.NGroups.Protocols
             /// </summary>
             private void CheckStatus()
             {
-
                 while (_statusCheckingThread != null)
                 {
                     lock (_checkStatusList.SyncRoot)
@@ -1753,7 +1600,7 @@ namespace Alachisoft.NGroups.Protocols
                                 if (_enclosingInstance.Stack.NCacheLog.IsInfoEnabled) _enclosingInstance.Stack.NCacheLog.Info("ConnectionKeepAlive.CheckStatus", "sending status request to " + _currentSuspect);
 
 
-                                _enclosingInstance.sendUnicastMessage(msg, false, msg.Payload, Priority.Critical);
+                                _enclosingInstance.sendUnicastMessage(msg, false, msg.Payload, Priority.High);
                                 _statusReceived = null;
 
                                 //wait for the result or timeout occurs first;
@@ -1763,9 +1610,7 @@ namespace Alachisoft.NGroups.Protocols
                                 {
                                     HearBeat status = _statusReceived as HearBeat;
 
-                                    
                                     if (_enclosingInstance.Stack.NCacheLog.IsInfoEnabled) _enclosingInstance.Stack.NCacheLog.Info("ConnectionKeepAlive.CheckStatus", "received status " + status + " from " + _currentSuspect);
-
 
                                     if (status.Type == HearBeat.I_AM_NOT_DEAD)
                                         nodeStatus = new NodeStatus(_currentSuspect, NodeStatus.IS_ALIVE);
@@ -1773,7 +1618,6 @@ namespace Alachisoft.NGroups.Protocols
                                         nodeStatus = new NodeStatus(_currentSuspect, NodeStatus.IS_LEAVING);
                                     else if (status.Type == HearBeat.I_AM_STARTING)
                                         nodeStatus = new NodeStatus(_currentSuspect, NodeStatus.IS_DEAD);
-
                                 }
                                 else
                                 {
@@ -1800,7 +1644,6 @@ namespace Alachisoft.NGroups.Protocols
                             _statusReceived = null;
                         }
                     }
-
                 }
             }
             private void AskHeartBeats(ArrayList idleMembers)
@@ -1808,8 +1651,7 @@ namespace Alachisoft.NGroups.Protocols
                 Message msg = new Message(null, null, new byte[0]);
                 msg.putHeader(HeaderType.KEEP_ALIVE, new HearBeat(HearBeat.SEND_HEART_BEAT));
                 msg.Dests = idleMembers.Clone() as ArrayList;
-                _enclosingInstance.sendMulticastMessage(msg, false,Priority.Critical);
-
+                _enclosingInstance.sendMulticastMessage(msg, false, Priority.High);
             }
 
             private bool CheckConnected(Address member)
@@ -1846,27 +1688,23 @@ namespace Alachisoft.NGroups.Protocols
                         rspMsg.putHeader(HeaderType.KEEP_ALIVE, new HearBeat(HearBeat.HEART_BEAT));
                         if (_enclosingInstance.Stack.NCacheLog.IsInfoEnabled) _enclosingInstance.Stack.NCacheLog.Info("ConnectionKeepAlive.ReceivedHeartBeat", "seding heartbeat to ->:" + sender.ToString());
 
-                        _enclosingInstance.sendUnicastMessage(rspMsg, false, rspMsg.Payload, Priority.Critical);
+                        _enclosingInstance.sendUnicastMessage(rspMsg, false, rspMsg.Payload, Priority.High);
                         break;
 
                     case HearBeat.ARE_YOU_ALIVE:
 
                         rspMsg = new Message(sender, null, new byte[0]);
-
-
-
                         HearBeat rsphrtBeat = (_enclosingInstance.isClosing || _enclosingInstance._leaving) ? new HearBeat(HearBeat.I_AM_LEAVING) : new HearBeat(HearBeat.I_AM_NOT_DEAD);
                         rsphrtBeat = _enclosingInstance.isStarting ? new HearBeat(HearBeat.I_AM_STARTING) : rsphrtBeat;
                         rspMsg.putHeader(HeaderType.KEEP_ALIVE, rsphrtBeat);
                         if (_enclosingInstance.Stack.NCacheLog.IsInfoEnabled) _enclosingInstance.Stack.NCacheLog.Info("ConnectionKeepAlive.ReceivedHeartBeat", "seding status" + rsphrtBeat + " to ->:" + sender.ToString());
 
-                        _enclosingInstance.sendUnicastMessage(rspMsg, false, rspMsg.Payload, Priority.Critical);
+                        _enclosingInstance.sendUnicastMessage(rspMsg, false, rspMsg.Payload, Priority.High);
                         break;
 
                     case HearBeat.I_AM_STARTING:
                     case HearBeat.I_AM_LEAVING:
                     case HearBeat.I_AM_NOT_DEAD:
-
 
                         lock (_status_mutex)
                         {
@@ -1876,9 +1714,7 @@ namespace Alachisoft.NGroups.Protocols
                                 Monitor.Pulse(_status_mutex);
                             }
                         }
-
                         break;
-
                 }
             }
         }
@@ -1906,7 +1742,7 @@ namespace Alachisoft.NGroups.Protocols
                 set { _type = value; }
             }
 
-        #region ICompactSerializable Members
+            #region ICompactSerializable Members
 
             public void Deserialize(CompactReader reader)
             {
@@ -1959,6 +1795,4 @@ namespace Alachisoft.NGroups.Protocols
 
     }
 
-
-    
 }

@@ -1,16 +1,4 @@
-// Licensed under the Apache License, Version 2.0 (the "License");
-// you may not use this file except in compliance with the License.
-// You may obtain a copy of the License at
-// 
-//    http://www.apache.org/licenses/LICENSE-2.0
-// 
-// Unless required by applicable law or agreed to in writing, software
-// distributed under the License is distributed on an "AS IS" BASIS,
-// WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
-// See the License for the specific language governing permissions and
-// limitations under the License.
 // $Id: CoordGmsImpl.java,v 1.13 2004/09/08 09:17:17 belaban Exp $
-
 using System;
 using System.Collections;
 using Alachisoft.NGroups;
@@ -35,7 +23,6 @@ namespace Alachisoft.NGroups.Protocols.pbcast
         internal bool merging = false;
         internal MergeTask merge_task;
         internal System.Collections.ArrayList merge_rsps = System.Collections.ArrayList.Synchronized(new System.Collections.ArrayList(11));
-        // for MERGE_REQ/MERGE_RSP correlation, contains MergeData elements
         internal object merge_id = null;
         private object connection_break_mutex = new object(); //synchronizes the thread informing the connection breakage.
 
@@ -49,9 +36,7 @@ namespace Alachisoft.NGroups.Protocols.pbcast
         internal int conNodesReqId = 0;
         ArrayList viewRejectingMembers = new ArrayList();
 
-
         private const int MAX_CLUSTER_MBRS = 2;
-
 
         public CoordGmsImpl(GMS g)
         {
@@ -272,20 +257,18 @@ namespace Alachisoft.NGroups.Protocols.pbcast
         /// <summary> Computes the new view (including the newly joined member) and get the digest from PBCAST.
         /// Returns both in the form of a JoinRsp
         /// </summary>
-        public override JoinRsp handleJoin(Address mbr, string subGroup_name, bool isStartedAsMirror, string gmsId, ref bool acquireHashmap)
+        public override JoinRsp handleJoin(Address mbr, string subGroup_name, bool isStartedAsMirror, string gmsId)
         {
             lock (this)
             {
-
                 System.Collections.ArrayList new_mbrs = System.Collections.ArrayList.Synchronized(new System.Collections.ArrayList(1));
                 View v = null;
                 Digest d, tmp;
-                
-                gms.Stack.NCacheLog.CriticalInfo("CoordGmsImpl.handleJoin", "mbr=" + mbr);
+
+                gms.Stack.NCacheLog.CriticalInfo("CoordGmsImpl.HandleJoin", "Member: " + mbr + " is joining the cluster.");
 
                 if (gms.local_addr.Equals(mbr))
                 {
-                    
                     gms.Stack.NCacheLog.Error("CoordGmsImpl.handleJoin", "cannot join myself !");
                     return null;
                 }
@@ -293,7 +276,6 @@ namespace Alachisoft.NGroups.Protocols.pbcast
                 if (gms.members.contains(mbr))
                 {
                     gms.Stack.NCacheLog.Error("CoordGmsImpl.handleJoin()", "member " + mbr + " already present; returning existing view " + Global.CollectionToString(gms.members.Members));
-                    acquireHashmap = false;
                     View view = new View(gms.view_id, gms.members.Members);
                     view.CoordinatorGmsId = gms.unique_id;
                     JoinRsp rsp = new JoinRsp(view, gms.Digest);
@@ -342,7 +324,6 @@ namespace Alachisoft.NGroups.Protocols.pbcast
                 gms.Stack.NCacheLog.Debug("got digest=" + tmp);
 
                 d = new Digest(tmp.size() + 1);
-                // create a new digest, which contains 1 more member
                 d.add(tmp); // add the existing digest to the new one
                 d.add(mbr, 0, 0);
                 // ... and add the new member. it's first seqno will be 1
@@ -366,7 +347,6 @@ namespace Alachisoft.NGroups.Protocols.pbcast
 
                 gms.Stack.NCacheLog.Debug("joined member " + mbr + ", view is " + v);
 
-               
                 return new JoinRsp(v, d);
             }
         }
@@ -469,11 +449,10 @@ namespace Alachisoft.NGroups.Protocols.pbcast
                         }
                     }
                     v.Add(leavingNode);
-                    
                     //requests the gms to acquire a new map after this member leaves.
                     System.Collections.ArrayList mbrs = new System.Collections.ArrayList(1);
                     mbrs.Add(leavingNode);
-                    gms.acquireHashmap(mbrs, false, subGroup, false);
+                   
                 }
                 //===============================================
 
@@ -596,7 +575,7 @@ namespace Alachisoft.NGroups.Protocols.pbcast
                     header.view.CoordinatorGmsId = gms.unique_id;
                     Message rejoiningMsg = new Message(null, null, new byte[0]);
                     rejoiningMsg.putHeader(HeaderType.GMS, header);
-                    gms.passDown(new Event(Event.MSG, rejoiningMsg, Priority.Critical));
+                    gms.passDown(new Event(Event.MSG, rejoiningMsg, Priority.High));
                 }
             }
         }
@@ -619,32 +598,6 @@ namespace Alachisoft.NGroups.Protocols.pbcast
                 if (!gms.VerifySuspect(suspected))
                 {
                     if (gms.Stack.NCacheLog.IsInfoEnabled) gms.Stack.NCacheLog.Info("CoodGmsImpl.handleConnectionBroken", suspected + " is not dead");
-
-                    //Do not delete this code, we may use it in future.
-                    //Node is not dead. it means that there is some trouble on the network
-                    //let's solve the puzzle. We get the connection mesh from all the nodes.
-                    //connectedNodesPromise.Reset();
-                    //lock (connectedNodesMap.SyncRoot)
-                    //{
-                    //    conNodesReqId++;
-                    //    connectedNodesMap.Clear();
-                    //    ArrayList currentMbrs = gms.members.Members;
-                    //    currentMbrs.Remove(gms.local_addr); //exclude ourself
-                    //    foreach (Address mbr in currentMbrs)
-                    //    {
-                    //        connectedNodesMap.Add(mbr, null);
-                    //    }
-                    //    missingResults = currentMbrs.Count; 
-                    //}
-                    ////Approximate time for waiting = 1000 (ms) * no of nodes
-                    //long timeToWait = 1000 * connectedNodesMap.Count; 
-
-                    //Message msg = new Message(null, null, new byte[0]);
-                    //msg.putHeader(HeaderType.GMS, new GMS.HDR(GMS.HDR.CONNECTED_NODES_REQUEST,conNodesReqId));
-                    //gms.passDown(new Event(Event.MSG, msg, Priority.Critical));
-
-                    ////wait for the response from all the nodes.
-                    //connectedNodesPromise.WaitResult(timeToWait);
 
                     Membership mbrs = gms.members.copy();
                     Address seniorNode = mbrs.DetermineSeniority(informer, suspected);
@@ -708,7 +661,7 @@ namespace Alachisoft.NGroups.Protocols.pbcast
             GMS.HDR  hdr =  new GMS.HDR(GMS.HDR.LEAVE_CLUSTER, gms.local_addr);
             hdr.arg = urGmsId;
             msg.putHeader(HeaderType.GMS,hdr);
-            gms.passDown(new Event(Event.MSG, msg, Priority.Critical)); ;
+            gms.passDown(new Event(Event.MSG, msg, Priority.High)); ;
         }
 
         /* ------------------------------------------ Private methods ----------------------------------------- */
@@ -1164,16 +1117,14 @@ namespace Alachisoft.NGroups.Protocols.pbcast
                 {
                     if (!((initial_mbrs.Count > 2) && (gms.members.Members.Count <= 2)))
                     {
-                       
                         return true;
                     }
                 }
                 else
                 {
-                     FindAliveMembers();
+                    FindAliveMembers();
                     if (!((initial_mbrs.Count > 1) && (gms.members.Members.Count == 1)))
                     {
-                       
                         return true;
                     }
                 }
@@ -1191,10 +1142,8 @@ namespace Alachisoft.NGroups.Protocols.pbcast
                 while (!leaving)
                 {
                      
-                    
-                    gms.Stack.NCacheLog.CriticalInfo("CoordGmsImpl.Join()", "CheckOwnClusterHealth - Retry Count: " + retryCount.ToString());
+                    gms.Stack.NCacheLog.CriticalInfo("CoordGmsImpl.Join", "CheckOwnClusterHealth - Retry Count: " + retryCount.ToString());
                     ArrayList initMembers = FindAliveMembers();
-                    
 
                     join_promise.Reset();
                     if (initMembers.Count == 0)
@@ -1210,9 +1159,6 @@ namespace Alachisoft.NGroups.Protocols.pbcast
                     //This will determine that coord that is already a coord of a cluster or the one with the lowest IP
                     Address coord = determineCoord(initMembers);
 
-                    
-
-
                     if (coord == null)
                     {
                         Util.Util.sleep(gms.join_retry_timeout);
@@ -1225,11 +1171,9 @@ namespace Alachisoft.NGroups.Protocols.pbcast
                         sendJoinMessage(coord, gms.local_addr, gms.subGroup_addr, false);
                         rsp = (JoinRsp)join_promise.WaitResult(gms._castViewChangeTimeOut);
                     }
-                   
-
+                    
                     if (rsp == null)
                     {
-                        
                         gms.Stack.NCacheLog.CriticalInfo("CoordGmsImpl.Join()", "Reply was NULL");
                         retryCount--;
                         if (retryCount <= 0)
@@ -1308,12 +1252,8 @@ namespace Alachisoft.NGroups.Protocols.pbcast
                 gms.Stack.NCacheLog.Error("pb.ClientGmsImpl.installView()",   "I (" + gms.local_addr + ") am not member of " + Global.CollectionToString(mems) + ", will not install view");
 				return false;
 			}
-           
-
-
             //Cast view to the replica node as well
 			gms.installView(new_view);
-            
 			gms.becomeParticipant();
 			gms.Stack.IsOperational = true;
 
@@ -1352,7 +1292,6 @@ namespace Alachisoft.NGroups.Protocols.pbcast
                     ping_rsp = (PingRsp)initial_mbrs[i];
                     if (ping_rsp.OwnAddress != null && gms.local_addr != null && ping_rsp.OwnAddress.Equals(gms.local_addr))
                     {
-                      
                         break;
                     }
                     if (!ping_rsp.IsStarted) initial_mbrs.RemoveAt(i);
@@ -1410,8 +1349,8 @@ namespace Alachisoft.NGroups.Protocols.pbcast
                     if (((int)votes[mbr.CoordAddress]) > max_votecast)
                         max_votecast = ((int)votes[mbr.CoordAddress]);
 
-                   
-                    gms.Stack.NCacheLog.CriticalInfo("pb.CoordGmsImpl.determineCoord()", "Owner " + mbr.OwnAddress + " -- CoordAddress " + mbr.CoordAddress + " -- Vote " + (int)votes[mbr.CoordAddress]);
+                    //Console.WriteLine("Owner " + mbr.OwnAddress + " -- CoordAddress " + mbr.CoordAddress + " -- Vote " + (int)votes[mbr.CoordAddress]);
+                    gms.Stack.NCacheLog.CriticalInfo("CoordGmsImpl.DetermineCoord", "Owner " + mbr.OwnAddress + " -- CoordAddress " + mbr.CoordAddress + " -- Vote " + (int)votes[mbr.CoordAddress]);
 
                 }
             }
@@ -1436,15 +1375,13 @@ namespace Alachisoft.NGroups.Protocols.pbcast
 
             if (candidates.Count > 1)
                 gms.Stack.NCacheLog.Warn("pb.CoordGmsImpl.determineCoord()", "there was more than 1 candidate for coordinator: " + Global.CollectionToString(candidates));
-            gms.Stack.NCacheLog.CriticalInfo("pb.CoordGmsImpl.determineCoord()", "election winner: " + winner + " with votes " + max_votecast);
+            gms.Stack.NCacheLog.CriticalInfo("CoordGmsImpl.DetermineCoord", "election winner: " + winner + " with votes " + max_votecast);
 
             return winner;
         }
 
         internal virtual void sendJoinMessage(Address coord, Address mbr, string subGroup_name, bool isStartedAsMirror)
         {
-            
-
             Message msg;
             GMS.HDR hdr;
 
@@ -1452,13 +1389,12 @@ namespace Alachisoft.NGroups.Protocols.pbcast
             hdr = new GMS.HDR(GMS.HDR.JOIN_REQ, mbr, subGroup_name, isStartedAsMirror);
             hdr.GMSId = gms.unique_id;
             msg.putHeader(HeaderType.GMS, hdr);
-            gms.passDown(new Event(Event.MSG_URGENT, msg, Priority.Critical));
+            gms.passDown(new Event(Event.MSG_URGENT, msg, Priority.High));
         }
 
 
         internal virtual void SendCheckClusterHealth(Address destination, Address coord)
         {
-            
             Message msg;
             GMS.HDR hdr;
 
@@ -1466,7 +1402,7 @@ namespace Alachisoft.NGroups.Protocols.pbcast
             hdr = new GMS.HDR(GMS.HDR.RE_CHECK_CLUSTER_HEALTH, coord);
             hdr.GMSId = gms.unique_id;
             msg.putHeader(HeaderType.GMS, hdr);
-            gms.passDown(new Event(Event.MSG_URGENT, msg, Priority.Critical));
+            gms.passDown(new Event(Event.MSG_URGENT, msg, Priority.High));
         }
     }
 }

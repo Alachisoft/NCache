@@ -1,0 +1,9 @@
+
+option java_outer_classname="RaiseCustomEventCommandProtocol";
+package Alachisoft.NCache.Common.Protobuf;
+message RaiseCustomEventCommand {
+	optional int64 requestId = 1;
+	optional bytes notifIf = 2;
+	optional bytes data = 3;
+	optional int32 MethodOverload = 4 [default=0];
+}

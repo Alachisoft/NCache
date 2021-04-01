@@ -1,0 +1,8 @@
+
+option java_outer_classname="TagInfoProtocol";
+package Alachisoft.NCache.Common.Protobuf;
+message TagInfo {
+	optional string type = 1;
+	repeated string tags = 2;
+
+}

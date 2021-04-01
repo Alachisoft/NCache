@@ -1,24 +1,19 @@
-// Licensed under the Apache License, Version 2.0 (the "License");
-// you may not use this file except in compliance with the License.
-// You may obtain a copy of the License at
-// 
-//    http://www.apache.org/licenses/LICENSE-2.0
-// 
-// Unless required by applicable law or agreed to in writing, software
-// distributed under the License is distributed on an "AS IS" BASIS,
-// WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
-// See the License for the specific language governing permissions and
-// limitations under the License.
-
-// $Id: Queue.java,v 1.13 2004/03/30 06:47:28 belaban Exp $
+//  Copyright (c) 2021 Alachisoft
+//  
+//  Licensed under the Apache License, Version 2.0 (the "License");
+//  you may not use this file except in compliance with the License.
+//  You may obtain a copy of the License at
+//  
+//     http://www.apache.org/licenses/LICENSE-2.0
+//  
+//  Unless required by applicable law or agreed to in writing, software
+//  distributed under the License is distributed on an "AS IS" BASIS,
+//  WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+//  See the License for the specific language governing permissions and
+//  limitations under the License
 using System;
-using System.Collections;
 using System.Threading;
 using Alachisoft.NCache.Common.Enum;
-
-using TimeoutException = Alachisoft.NCache.Common.Exceptions.TimeoutException;
-
-using Runtime = Alachisoft.NCache.Runtime;
 
 namespace Alachisoft.NCache.Common.DataStructures
 {
@@ -26,7 +21,7 @@ namespace Alachisoft.NCache.Common.DataStructures
     /// 1 producer and 1 consumer may add/remove elements concurrently. The class is not
     /// explicitely designed for multiple producers or consumers.
     /// </summary>
-    /// <author>  S.Hameed
+    /// <author> 
     /// </author>
     public class Queue
     {
@@ -60,7 +55,7 @@ namespace Alachisoft.NCache.Common.DataStructures
         /// <summary> creates an empty queue</summary>
         public Queue()
         {
-            _queues[(int)Priority.Critical] = new System.Collections.Queue(11, 1.0f);
+            _queues[(int)Priority.High] = new System.Collections.Queue(11, 1.0f);
             _queues[(int)Priority.Normal] = new System.Collections.Queue(11, 1.0f);
             _queues[(int)Priority.Low] = new System.Collections.Queue(11, 1.0f);
         }
@@ -113,6 +108,9 @@ namespace Alachisoft.NCache.Common.DataStructures
             {
                 return;
             }
+            if (priority == Priority.Critical)
+                priority = Priority.High;
+
             lock (mutex)
             {
                 if (closed)
@@ -195,8 +193,8 @@ namespace Alachisoft.NCache.Common.DataStructures
         protected virtual Object RemoveItemFromQueue()
         {
             Object retval = null;
-            if (_queues[(int)Priority.Critical].Count > 0)
-                retval = removeInternal(_queues[(int)Priority.Critical]);
+            if (_queues[(int)Priority.High].Count > 0)
+                retval = removeInternal(_queues[(int)Priority.High]);
             else if (_queues[(int)Priority.Normal].Count > 0)
                 retval = removeInternal(_queues[(int)Priority.Normal]);
             else if (_queues[(int)Priority.Low].Count > 0)
@@ -267,8 +265,8 @@ namespace Alachisoft.NCache.Common.DataStructures
         private object peekInternal()
         {
             object retval = null;
-            if (_queues[(int)Priority.Critical].Count > 0)
-                retval = _queues[(int)Priority.Critical].Peek();
+            if (_queues[(int)Priority.High].Count > 0)
+                retval = _queues[(int)Priority.High].Peek();
             else if (_queues[(int)Priority.Normal].Count > 0)
                 retval = _queues[(int)Priority.Normal].Peek();
             else if (_queues[(int)Priority.Low].Count > 0)
@@ -319,7 +317,7 @@ namespace Alachisoft.NCache.Common.DataStructures
 
                 size = 0;
 
-                _queues[(int)Priority.Critical].Clear();
+                _queues[(int)Priority.High].Clear();
                 _queues[(int)Priority.Normal].Clear();
                 _queues[(int)Priority.Low].Clear();
 

@@ -1,0 +1,7 @@
+
+option java_outer_classname="SignlEndOfStateTransferCommandProtocol";
+package Alachisoft.NCache.Common.Protobuf;
+message SignlEndOfStateTransferCommand 
+{
+	optional int64 requestId = 1;
+}

@@ -1,24 +1,33 @@
-// Copyright (c) 2017 Alachisoft
-// 
-// Licensed under the Apache License, Version 2.0 (the "License");
-// you may not use this file except in compliance with the License.
-// You may obtain a copy of the License at
-// 
-//    http://www.apache.org/licenses/LICENSE-2.0
-// 
-// Unless required by applicable law or agreed to in writing, software
-// distributed under the License is distributed on an "AS IS" BASIS,
-// WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
-// See the License for the specific language governing permissions and
-// limitations under the License.
-
+//  Copyright (c) 2021 Alachisoft
+//  
+//  Licensed under the Apache License, Version 2.0 (the "License");
+//  you may not use this file except in compliance with the License.
+//  You may obtain a copy of the License at
+//  
+//     http://www.apache.org/licenses/LICENSE-2.0
+//  
+//  Unless required by applicable law or agreed to in writing, software
+//  distributed under the License is distributed on an "AS IS" BASIS,
+//  WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+//  See the License for the specific language governing permissions and
+//  limitations under the License
 using System;
 using System.IO;
 using System.Text;
 using System.Collections;
+
 using Alachisoft.NCache.Config;
 using Alachisoft.NCache.Caching.Util;
+using Alachisoft.NCache.Common.Configuration;
+using Alachisoft.NCache.Config.NewDom;
+using Alachisoft.NCache.Common;
+using Alachisoft.NCache.Common.Net;
+using System.Collections.Generic;
+using System.Net;
 using Alachisoft.NCache.Runtime.Exceptions;
+using Alachisoft.NCache.Config.Dom;
+
+
 
 namespace Alachisoft.NCache.Config
 {
@@ -28,6 +37,11 @@ namespace Alachisoft.NCache.Config
 
 	public class ConfigHelper
 	{
+
+        private const string DIRNAME = @"config";
+        /// <summary>Configuration file name</summary>
+        private const string FILENAME = @"config.ncconf";
+
         public static OnClusterConfigUpdate OnConfigUpdated;
         
         /// <summary>
@@ -50,6 +64,7 @@ namespace Alachisoft.NCache.Config
 		/// <returns>cache name.</returns>
 		static private CacheInfo GetCacheInfo(IDictionary properties)
 		{
+
 			if(!properties.Contains("cache"))
 				throw new ConfigurationException("Missing configuration attribute 'cache'");
 
@@ -141,6 +156,7 @@ namespace Alachisoft.NCache.Config
             return returnStr.ToString();
 		}
 
+
         static public string CreatePropertiesXml2(IDictionary properties, int indent, bool format)
         {
             IDictionaryEnumerator it = properties.GetEnumerator();
@@ -162,6 +178,7 @@ namespace Alachisoft.NCache.Config
                 {
                     Hashtable subproperties = (Hashtable)pair.Value;
 
+                  
                     if (subproperties.Contains("type") && subproperties.Contains("name"))
                     {
                         cacheName = subproperties["name"] as string;
@@ -419,6 +436,7 @@ namespace Alachisoft.NCache.Config
 			return b.ToString();
 		}
 
+#if SERVER 
 		/// <summary>
 		/// Builds and returns a property string understood by the lower layer, i.e., Cluster
 		/// Uses the properties specified in the configuration, and defaults for others.
@@ -446,12 +464,15 @@ namespace Alachisoft.NCache.Config
 			return ChannelConfigBuilder.BuildTCPConfiguration(channelprops,opTimeout);
 		}
 
-		public static string GetClusterPropertyString(IDictionary properties, long opTimeout,bool isPor)
+		public static string GetClusterPropertyString(IDictionary properties,long opTimeout,bool isPor)
 		{
 			bool udpCluster = true;
 
 			// check if a reference to some scheme is specified
-            udpCluster = false;
+
+			string cacheScheme = SafeGet(properties, "class").ToLower();
+			if (cacheScheme == "tcp") udpCluster = false;
+
 			if (!properties.Contains("channel"))
 			{
 				throw new ConfigurationException("Cannot find channel properties");
@@ -464,5 +485,36 @@ namespace Alachisoft.NCache.Config
 			}
 			return ChannelConfigBuilder.BuildTCPConfiguration(channelprops, opTimeout,isPor);
 		}
-	}
+
+        public static ISet<IPAddress> GetServerListFromConfig(string cacheId)
+        {
+            var serverList = new HashSet<IPAddress>();
+            string path = Path.Combine(AppUtil.InstallDir, DIRNAME, FILENAME);
+            try
+            {
+                var builder = new ConfigurationBuilder(path);
+                builder.RegisterRootConfigurationObject(typeof(NewDom.CacheServerConfig));
+                builder.ReadConfiguration();
+                var newCaches = new NewDom.CacheServerConfig[builder.Configuration.Length];
+                builder.Configuration.CopyTo(newCaches, 0);
+                
+                foreach (var cacheServerConfig in newCaches)
+                {
+                    if (cacheServerConfig.Name.Equals(cacheId,StringComparison.CurrentCultureIgnoreCase))
+                    {
+                        List<Address> list = cacheServerConfig.CacheDeployment.Servers.GetAllConfiguredNodes();
+                        foreach(Address item in list)
+                            serverList.Add(item.IpAddress);
+                        break;
+                    }                        
+                }
+                return serverList;
+            }
+            catch { return serverList; }
+        }
+
+       
+
+#endif
+    }
 }

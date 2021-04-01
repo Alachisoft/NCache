@@ -1,4 +1,6 @@
 import "ProductVersion.proto";
+import "ClientInfo.proto";
+
 option java_outer_classname="InitCommandProtocol";
 package Alachisoft.NCache.Common.Protobuf;
 message InitCommand {
@@ -10,10 +12,19 @@ message InitCommand {
 	optional string licenceCode = 6;
 	optional string licenceInfo = 7;
 	optional bool isDotnetClient = 8;
-	optional string clientEditionId = 9;
-	optional int32 clientVersion = 10;
-	optional string clientIP = 11;
-	optional bool isAzureClient = 12;
-	optional ProductVersion productVersion = 13;
-	optional bytes token = 14;
+	optional bytes binaryUserid = 10;
+	optional bytes binaryPwd = 11;
+	optional string clientEditionId = 12;
+	optional int32 clientVersion = 13;
+	optional string clientIP = 14;
+	optional bool isAzureClient = 15;
+	optional ProductVersion productVersion = 16;
+	optional ClientInfo clientInfo = 17;
+	optional bool secureConnectionEnabled = 18 [default = false];
+	optional int32 operationTimeout =19 [default = -1];
+	optional string macAddress = 20; 
+	optional bool FromClientCache = 21;
+	optional string OperationSystem = 22;
+	optional bool isDotNetCoreClient = 23;
+	optional int32 memory = 24;
 }

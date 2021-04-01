@@ -1,0 +1,10 @@
+
+option java_outer_classname="InquiryRequestResponseProtocol";
+package Alachisoft.NCache.Common.Protobuf;
+message InquiryRequestResponse {
+	optional int64 requestId = 1;
+	optional int32 status = 2;
+	repeated bytes value = 3;
+	optional int32 expirationInterval = 4;
+	optional int32 commandID = 5;
+}

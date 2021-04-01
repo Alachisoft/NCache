@@ -1,24 +1,28 @@
-// Copyright (c) 2017 Alachisoft
-// 
-// Licensed under the Apache License, Version 2.0 (the "License");
-// you may not use this file except in compliance with the License.
-// You may obtain a copy of the License at
-// 
-//    http://www.apache.org/licenses/LICENSE-2.0
-// 
-// Unless required by applicable law or agreed to in writing, software
-// distributed under the License is distributed on an "AS IS" BASIS,
-// WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
-// See the License for the specific language governing permissions and
-// limitations under the License.
-
+//  Copyright (c) 2021 Alachisoft
+//  
+//  Licensed under the Apache License, Version 2.0 (the "License");
+//  you may not use this file except in compliance with the License.
+//  You may obtain a copy of the License at
+//  
+//     http://www.apache.org/licenses/LICENSE-2.0
+//  
+//  Unless required by applicable law or agreed to in writing, software
+//  distributed under the License is distributed on an "AS IS" BASIS,
+//  WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+//  See the License for the specific language governing permissions and
+//  limitations under the License
 using System;
 using System.Collections;
+using System.Collections.Generic;
 using Alachisoft.NCache.Caching.DataGrouping;
 using Alachisoft.NCache.Common;
+using Alachisoft.NCache.Common.DataStructures.Clustered;
 using Alachisoft.NCache.Common.Net;
+using Alachisoft.NCache.Common.Util;
+using Alachisoft.NCache.Runtime.Caching;
 using Alachisoft.NCache.Runtime.Serialization;
 using Alachisoft.NCache.Runtime.Serialization.IO;
+using System.Collections.Concurrent;
 
 namespace Alachisoft.NCache.Caching.Statistics
 {
@@ -30,44 +34,53 @@ namespace Alachisoft.NCache.Caching.Statistics
     public class NodeInfo : ICloneable, IComparable, ICompactSerializable
     {
         /// <summary> The IP address, port tuple;  uniquely identifying the node. </summary>
-        private Address				_address;
+        private Address _address;
 
         /// <summary> The name of the sub-cluster this node belongs to. </summary>
-        private string				_subgroupName;
+        private string _subgroupName;
 
         /// <summary> The statistics of the node. </summary>
-        private CacheStatistics		_stats;
+        public CacheStatistics _stats;
 
         /// <summary> Up status of node. </summary>
-        private BitSet				_status = new BitSet();
+        private BitSet _status = new BitSet();
 
         /// <summary>Data groups associated with this node</summary>
-        private DataAffinity    _dataAffinity;
+        private DataAffinity _dataAffinity;
 
         private ArrayList _connectedClients = ArrayList.Synchronized(new ArrayList());
-        
+
         /// <summary>Client/Server address of the node.</summary>
-        private Address         _rendererAddress;
+        private Address _rendererAddress;
+
+        /// <summary>For sequencing stats replication, we will keep node guid to identify if node is restarted</summary>
+        private string _nodeGuid = System.Guid.NewGuid().ToString();
+
+        /// <summary>For sequencing stats replication </summary>
+        private int _statsReplicationCounter = 0;
 
         private bool _isInproc;
 
         private bool _isStartedAsMirror;
 
+        private ArrayList _localConnectedClientsInfo = ArrayList.Synchronized(new ArrayList());
         /// <summary>
         /// Constructor.
         /// </summary>
-        private NodeInfo() {}
+        public NodeInfo()
+        {
+        }
 
         /// <summary>
         /// Overloaded Constructor
         /// </summary>
         /// <param name="address"></param>
-        public NodeInfo(Address address) 
-        { 
-            _address = address; 
+        public NodeInfo(Address address)
+        {
+            _address = address;
         }
 
-        public NodeInfo(Address address,bool isStartedAsMirror)
+        public NodeInfo(Address address, bool isStartedAsMirror)
         {
             _address = address;
             _isStartedAsMirror = isStartedAsMirror;
@@ -81,16 +94,23 @@ namespace Alachisoft.NCache.Caching.Statistics
         {
             this._address = info._address == null ? null : info._address.Clone() as Address;
             this._rendererAddress = info._rendererAddress != null ? info._rendererAddress.Clone() as Address : null;
-            this._stats = info._stats == null ? null:info._stats.Clone() as CacheStatistics;
+            this._stats = info._stats == null ? null : info._stats.Clone() as CacheStatistics;
             this._status = info._status;
             this._subgroupName = info._subgroupName;
             this._isInproc = info._isInproc;
             this._dataAffinity = info._dataAffinity == null ? null : info._dataAffinity.Clone() as DataAffinity;
             _isStartedAsMirror = info.IsStartedAsMirror;
-            if(info._connectedClients != null)
+            this._nodeGuid = info._nodeGuid;
+            _statsReplicationCounter = info._statsReplicationCounter;
+            this.CacheNodeStatus = info.CacheNodeStatus;
+            if (info._connectedClients != null)
             {
-                lock(info._connectedClients.SyncRoot) 
+                lock (info._connectedClients.SyncRoot)
+                {
                     this._connectedClients = info._connectedClients.Clone() as ArrayList;
+                    this._localConnectedClientsInfo = info._localConnectedClientsInfo.Clone() as ArrayList;
+
+                }
             }
         }
 
@@ -100,8 +120,10 @@ namespace Alachisoft.NCache.Caching.Statistics
         public Address Address
         {
             get { return _address; }
-            set { _address = value; }  
+            set { _address = value; }
         }
+
+       
 
         public Address RendererAddress
         {
@@ -122,6 +144,18 @@ namespace Alachisoft.NCache.Caching.Statistics
         {
             get { return _isInproc; }
             set { _isInproc = value; }
+        }
+
+        public string NodeGuid
+        {
+            get { return _nodeGuid; }
+            set { _nodeGuid = value; }
+        }
+
+        public int StatsReplicationCounter
+        {
+            get { return _statsReplicationCounter; }
+            set { _statsReplicationCounter = value; }
         }
 
         /// <summary> 
@@ -148,7 +182,7 @@ namespace Alachisoft.NCache.Caching.Statistics
         public CacheStatistics Statistics
         {
             get { return _stats; }
-            set { _stats = value; }  
+            set { _stats = value; }
         }
 
         /// <summary>
@@ -157,7 +191,7 @@ namespace Alachisoft.NCache.Caching.Statistics
         internal BitSet Status
         {
             get { return _status; }
-            set { _status = value; }  
+            set { _status = value; }
         }
 
         public ArrayList ConnectedClients
@@ -166,6 +200,11 @@ namespace Alachisoft.NCache.Caching.Statistics
             set { _connectedClients = value; }
         }
 
+        public ArrayList OldConnectedClientsInfo
+        {
+            get { return _localConnectedClientsInfo; }
+            set { _localConnectedClientsInfo = value; }
+        }
         /// <summary>
         /// Get/Set the value indicating whether this node is active or not.
         /// This property is valid only for Mirror Cache Topology.
@@ -184,7 +223,7 @@ namespace Alachisoft.NCache.Caching.Statistics
         /// <returns>A 32-bit signed integer that indicates the relative order of the comparands.</returns>
         public int CompareTo(object obj)
         {
-            return _address.CompareTo(((NodeInfo)obj).Address);
+            return _address.CompareTo(((NodeInfo) obj).Address);
         }
 
         #endregion
@@ -217,11 +256,11 @@ namespace Alachisoft.NCache.Caching.Statistics
             try
             {
                 ret.Append("Node[Adr:" + _address);
-                if(_stats != null)
+                if (_stats != null)
                     ret.Append(", " + _stats);
                 ret.Append("]");
             }
-            catch(Exception e)
+            catch (Exception e)
             {
             }
             return ret.ToString();
@@ -235,12 +274,17 @@ namespace Alachisoft.NCache.Caching.Statistics
             _address = Address.ReadAddress(reader);
             _subgroupName = reader.ReadObject() as string;
             _stats = CacheStatistics.ReadCacheStatistics(reader);
-            _status = new BitSet(reader.ReadByte());
+            _status = reader.ReadObject() as BitSet;
             _dataAffinity = DataAffinity.ReadDataAffinity(reader);
-            _connectedClients = (ArrayList)reader.ReadObject();
+            _connectedClients = (ArrayList) reader.ReadObject();
             _isInproc = reader.ReadBoolean();
             _rendererAddress = Address.ReadAddress(reader);
             _isStartedAsMirror = reader.ReadBoolean();
+            _nodeGuid = reader.ReadObject() as string;
+            _statsReplicationCounter = reader.ReadInt32();
+            this.CacheNodeStatus =(Alachisoft.NCache.Common.Monitoring.CacheNodeStatus) reader.ReadByte();
+            _localConnectedClientsInfo = (ArrayList)reader.ReadObject();
+
         }
 
         public void Serialize(CompactWriter writer)
@@ -248,13 +292,19 @@ namespace Alachisoft.NCache.Caching.Statistics
             Address.WriteAddress(writer, _address);
             writer.WriteObject(_subgroupName);
             CacheStatistics.WriteCacheStatistics(writer, _stats);
-            writer.Write(_status.Data);
+            writer.WriteObject(_status);
             DataAffinity.WriteDataAffinity(writer, _dataAffinity);
             writer.WriteObject(_connectedClients);
             writer.Write(_isInproc);
             Address.WriteAddress(writer, _rendererAddress);
             writer.Write(_isStartedAsMirror);
+            writer.WriteObject(_nodeGuid);
+            writer.Write(_statsReplicationCounter);
+            writer.Write((byte)CacheNodeStatus);
+            writer.WriteObject(_localConnectedClientsInfo);
+
         }
+
         #endregion
 
         public static NodeInfo ReadNodeInfo(CompactReader reader)
@@ -279,6 +329,8 @@ namespace Alachisoft.NCache.Caching.Statistics
                 nodeInfo.Serialize(writer);
             }
             return;
-        }  		
+        }
+        
+        public Common.Monitoring.CacheNodeStatus CacheNodeStatus { get; set; }
     }
 }

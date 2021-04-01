@@ -1,23 +1,20 @@
-// Copyright (c) 2017 Alachisoft
-// 
-// Licensed under the Apache License, Version 2.0 (the "License");
-// you may not use this file except in compliance with the License.
-// You may obtain a copy of the License at
-// 
-//    http://www.apache.org/licenses/LICENSE-2.0
-// 
-// Unless required by applicable law or agreed to in writing, software
-// distributed under the License is distributed on an "AS IS" BASIS,
-// WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
-// See the License for the specific language governing permissions and
-// limitations under the License.
-
+//  Copyright (c) 2021 Alachisoft
+//  
+//  Licensed under the Apache License, Version 2.0 (the "License");
+//  you may not use this file except in compliance with the License.
+//  You may obtain a copy of the License at
+//  
+//     http://www.apache.org/licenses/LICENSE-2.0
+//  
+//  Unless required by applicable law or agreed to in writing, software
+//  distributed under the License is distributed on an "AS IS" BASIS,
+//  WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+//  See the License for the specific language governing permissions and
+//  limitations under the License
 using System;
 using System.Collections;
-
 using Alachisoft.NCache.Config;
 using Alachisoft.NCache.Runtime.Exceptions;
-
 using Alachisoft.NCache.Config.Dom;
 using System.Globalization;
 using System.Threading;
@@ -29,7 +26,7 @@ namespace Alachisoft.NCache.Management
     /// </summary>
     public class CacheConfig
     {
-        /// <summary> Type of the cache partitioned-server, partitioned-replica-server, local-cache.</summary>
+        /// <summary> Type of the cache. i.e mirror-server, replicated-server, partitioned-server, partitioned-replica-server, local-cache.</summary>
         private string _cacheType = "";
         /// <summary> ID of the cache. </summary>
         private string _cacheId = "";
@@ -45,6 +42,8 @@ namespace Alachisoft.NCache.Management
         private long _port;
         /// <summary> Property string of the cache. </summary>
         private string _propertyString = "";
+        ///<summary>Regisered DataSharing types.</summary>
+        private Hashtable _dataSharingKnownTypes; 
         ///<summary>Regisered Backing Source.</summary>
         private Hashtable _backingSource;
         ///<summary>Regisered compact types.</summary>
@@ -53,66 +52,61 @@ namespace Alachisoft.NCache.Management
         private int _clusterPort;
         ///<summary>Cluster port.</summary>
         private int _managementPort;
-
-        
         ///<summary>Cluster port.</summary>
         private int _socketPort;
-
-        
         ///<summary>Cluster port range.</summary>
         private int _clusterPortRange;
         /// <summary>Fatal and error logs.</summary>
         private bool _errorLogsEnabled;
         /// <summary>info, debug and warning logs.</summary>
         private bool _detailedLogsEnabled;
-
         private long _cacheMaxSize;
-
         private long _cleanInterval;
-
         private float _evictRatio;
-        
+        private bool _compressionEnabled;
+        private bool _securityEnabled;
+        private string _securityDomainController;
+        private Hashtable _securityUsers;
+        private long _compressionThreshold;
         /// <summary>list of all the servers participating in a clustered cache.</summary>
         private ArrayList _servers;
-
-        private bool _expirationEnabled;
-
-        private bool _absoluteLongerEnabled;
-        private bool _absoluteLongestEnabled;
-
-        private long _absoluteDefault;
-        private long _absoluteLonger;
-        private long _absoluteLongest;
-
-        private bool _slidingLongerEnabled;
-        private bool _slidingLongestEnabled;
-
-        private long _slidingDefault;
-        private long _slidingLonger;
-        private long _slidingLongest;
-        
     
-        private bool _useHeartBeat = false;        
-		
-		private Hashtable _alertNotifications;
-
         private static readonly string NET_TYPE = "net";
         private static readonly string NET_TYPE_WITH_COLON = ":net";
         private static readonly string JAVA_TYPE = "java";        
         private static readonly string JAVA_TYPE_WITH_COLON = ":java";
         private static string PLATFORM_TYPE = string.Empty;
-
-      
+        
+        
         public ArrayList Servers
         {
             get { return _servers; }
         }
 
-		public Hashtable AlertNotification
-		{
-			get { return _alertNotifications; }
-		}
+        public bool CompressionEnabled
+        {
+            get { return _compressionEnabled; }
+        }
 
+        public long CompressionThreshold
+        {
+            get { return _compressionThreshold; }
+        }
+
+        public bool SecurityEnabled
+        {
+            get { return _securityEnabled; }
+        }
+
+        public string SecurityDomainController
+        {
+            get { return _securityDomainController; }
+        }
+
+        public Hashtable SecurityUsers
+        {
+            get { return _securityUsers; }
+        }
 
         public long CacheMaxSize
         {
@@ -127,61 +121,6 @@ namespace Alachisoft.NCache.Management
         public float EvictRatio
         {
             get { return _evictRatio; }
-        }
-
-        public bool ExpirationEnabled
-        {
-            get { return _expirationEnabled; }
-        }
-
-        public bool AbsoluteLongerEnabled
-        {
-            get { return _absoluteLongerEnabled; }
-        }
-
-        public bool AbsoluteLongestEnabled
-        {
-            get { return _absoluteLongestEnabled; }
-        }
-
-        public bool SlidingLongerEnabled
-        {
-            get { return _slidingLongerEnabled; }
-        }
-
-        public bool SlidingLongestEnabled
-        {
-            get { return _slidingLongestEnabled; }
-        }
-
-        public long SlidingDefault
-        {
-            get { return _slidingDefault; }
-        }
-
-        public long SlidingLonger
-        {
-            get { return _slidingLonger; }
-        }
-
-        public long SlidingLongest
-        {
-            get { return _slidingLongest; }
-        }
-
-        public long AbsoluteDefault
-        {
-            get { return _absoluteDefault; }
-        }
-
-        public long AbsoluteLonger
-        {
-            get { return _absoluteLonger; }
-        }
-
-        public long AbsoluteLongest
-        {
-            get { return _absoluteLongest; }
         }
 
         /// <summary> Type of the cache. i.e mirror-server, replicated-server, partitioned-server, partitioned-replica-server, local-cache.</summary>
@@ -238,6 +177,13 @@ namespace Alachisoft.NCache.Management
         {
             get { return _propertyString; }
             set { _propertyString = value; }
+        }
+
+        /// <summary> Registered DataSharing known types. </summary>
+        public Hashtable DataSharingKnownTypes
+        {
+            get { return _dataSharingKnownTypes; }
+            set { _dataSharingKnownTypes = value; }
         }
 
         /// <summary> Registered compact known types. </summary>
@@ -305,12 +251,6 @@ namespace Alachisoft.NCache.Management
             set { _detailedLogsEnabled = value; }
         }
 
-        public bool UseHeartBeat
-        {
-            get { return _useHeartBeat; }
-            set { _useHeartBeat = value; }
-        }
-       
         /// <summary> 
         /// Constructor
         /// </summary>
@@ -351,6 +291,21 @@ namespace Alachisoft.NCache.Management
                 cConfig._useInProc = configuration.InProc;
                 cConfig.CacheId = configuration.Name;
                 
+                if (configuration.Security != null)
+                {
+                    cConfig._securityEnabled = configuration.Security.Enabled;
+                    cConfig._securityDomainController = configuration.Security.DomainController;
+
+                    Hashtable users = new Hashtable();
+                    if (configuration.Security.Users != null)
+                    {
+                        for (int i = 0; i < configuration.Security.Users.Length; i++)
+                        {
+                            users.Add(configuration.Security.Users[i].Id, null);
+                        }
+                    }
+                    cConfig._securityUsers = users;
+                }
 
                 if (configuration.Cluster != null)
                 {
@@ -359,14 +314,15 @@ namespace Alachisoft.NCache.Management
                         cConfig._clusterPort = configuration.Cluster.Channel.TcpPort;
                         cConfig._clusterPortRange = configuration.Cluster.Channel.PortRange;
                     }
-                    cConfig._useHeartBeat = configuration.Cluster.UseHeartbeat;
                     cConfig._servers = FromHostListToServers(configuration.Cluster.Channel.InitialHosts);
 
                     string topology = string.Empty;
                     switch (configuration.Cluster.Topology)
                     {
-                       case "partitioned": topology = "partitioned-server"; break;
-                       case "replicated": topology = "replicated-server"; break;
+                        case "replicated": topology = "replicated-server"; break;
+                        case "partitioned": topology = "partitioned-server"; break;
+                        case "partition-replica": topology = "partitioned-replicas-server"; break;
+                        case "mirror": topology = "mirror-server"; break;
                     }
                     cConfig._cacheType = topology;
                 }
@@ -396,11 +352,163 @@ namespace Alachisoft.NCache.Management
                     cConfig._detailedLogsEnabled = configuration.Log.TraceDebug;
                 }
 
+                if (configuration.BackingSource != null)
+                {
+                    Hashtable settings = new Hashtable();
+                    settings.Add("backing-source", GetBackingSource(configuration.BackingSource));
+                    cConfig._backingSource = settings;
+                }
             }
             return cConfig;
         }
+        private static Hashtable GetCompactClass(CompactClass cls)
+        {
+            Hashtable settings = new Hashtable();
+            settings.Add("id", cls.ID);
+            settings.Add("name", cls.Name);
+            settings.Add("assembly", cls.Assembly);
+            settings.Add("portable", cls.Portable);
+            settings.Add("type", cls.Type);
+            settings.Add("generic-id", cls.GenericId);
+            settings.Add("is-generic", cls.IsGeneric);
+            settings.Add("num-of-args", cls.NumberOfArgs);
+            Hashtable argTypes = null;
+            if (cls.IsGeneric && cls.GenericArgumentTypeList != null)
+            {
+                argTypes = new Hashtable();
+                foreach (GenericArgumentType gat in cls.GenericArgumentTypeList)
+                    argTypes.Add(gat.ID, GetArgumentType(gat));
+                settings.Add("arg-types", argTypes);
+            }
+            return settings;
+        }
+
+        private static Hashtable GetArgumentType(GenericArgumentType gat)
+        {
+            Hashtable concreteArgTypes = new Hashtable(gat.GenericArgsCompactTypeList.Count);
+            Hashtable concreteArgType = null;
+            if (gat.GenericArgsCompactTypeList != null)
+                foreach (CompactClass cls in gat.GenericArgsCompactTypeList)
+                {
+                    concreteArgType = new Hashtable();
+                    concreteArgType.Add("id", cls.ID);
+                    concreteArgType.Add("name", cls.Name);
+                    concreteArgType.Add("assembly", cls.Assembly);
+                    concreteArgType.Add("portable", cls.Portable);
+                    concreteArgType.Add("type", cls.Type);
+                    concreteArgType.Add("generic-id", cls.GenericId);
+                    concreteArgType.Add("is-generic", cls.IsGeneric);
+                    concreteArgType.Add("num-of-args", cls.NumberOfArgs);
+                    Hashtable argTypes = null;
+                    if (cls.IsGeneric && cls.GenericArgumentTypeList != null)
+                    {
+                        argTypes = new Hashtable();
+                        foreach (GenericArgumentType gat2 in cls.GenericArgumentTypeList)
+                            argTypes.Add(gat2.ID, GetArgumentType(gat2));
+                        concreteArgType.Add("arg-types", argTypes);
+                    }
+                    concreteArgTypes.Add(cls.ID, concreteArgType);
+                }
+            return concreteArgTypes;
+        }
         
-     private static Hashtable GetParameters(Parameter[] parameters)
+        private static Hashtable GetBackingSource(BackingSource backingSource)
+        {
+            Hashtable settings = new Hashtable();
+            if (backingSource.Readthru != null)
+                settings.Add("read-thru", GetReadThru(backingSource.Readthru));
+            if (backingSource.Writethru != null)
+                settings.Add("write-thru", GetWriteThru(backingSource.Writethru));
+            return settings;
+        }
+        private static Hashtable GetWriteThru(Writethru writethru)
+        {
+            Hashtable settings = new Hashtable();
+            settings["enabled"] = writethru.Enabled.ToString();
+
+            if (writethru.Providers != null)
+                settings.Add("write-thru-providers", GetProviders(writethru.Providers));
+
+            if (writethru.WriteBehind != null)
+                settings.Add("write-behind", GetWriteBehind(writethru.WriteBehind));
+
+            return settings;
+        }
+
+        private static Hashtable GetReadThru(Readthru readthru)
+        {
+            Hashtable settings = new Hashtable();
+            settings["enabled"] = readthru.Enabled.ToString();
+
+            if (readthru.Providers != null)
+                settings.Add("read-thru-providers", GetProviders(readthru.Providers));
+
+            return settings;
+        }
+
+        private static Hashtable GetWriteBehind(WriteBehind writeBehind)
+        {
+            Hashtable settings = new Hashtable();
+
+            if (writeBehind != null)
+            {
+                settings["mode"] = writeBehind.Mode;
+                settings["throttling-rate-per-sec"] = writeBehind.Throttling;
+                settings["failed-operations-queue-limit"] = writeBehind.RequeueLimit;
+                settings["failed-operations-eviction-ratio"] = writeBehind.Eviction;
+                if (writeBehind.BatchConfig != null)
+                    settings.Add("batch-mode-config", GetBatchConfig(writeBehind.BatchConfig));
+            }
+
+            return settings;
+        }
+
+        private static Hashtable GetBatchConfig(BatchConfig batchConfig)
+        {
+            Hashtable settings = new Hashtable();
+            if (batchConfig != null)
+            {
+                settings["batch-interval"] = batchConfig.BatchInterval;
+                settings["operation-delay"] = batchConfig.OperationDelay;
+            }
+            return settings;
+        }
+
+        private static Hashtable GetProviders(Provider[] providers)
+        {
+            Hashtable settings = new Hashtable();
+
+            if (providers != null && providers.Length > 0)
+            {
+                for (int i = 0; i < providers.Length; i++)
+                {
+                    settings[providers[i].ProviderName] = GetProvider(providers[i]);
+                }
+            }
+
+            return settings;
+        }
+
+        private static Hashtable GetProvider(Provider provider)
+        {
+            Hashtable settings = new Hashtable();
+
+            if (provider != null)
+            {
+                settings["provider-name"] = provider.ProviderName;
+                settings["assembly-name"] = provider.AssemblyName;
+                settings["class-name"] = provider.ClassName;
+                settings["full-name"] = provider.FullProviderName;
+                settings["default-provider"] = provider.IsDefaultProvider.ToString();
+                Hashtable paramss = GetParameters(provider.Parameters);
+                if (paramss != null)
+                    settings["parameters"] = paramss;
+            }
+
+            return settings;
+        }
+
+        private static Hashtable GetParameters(Parameter[] parameters)
         {
             if (parameters == null)
                 return null;
@@ -413,7 +521,63 @@ namespace Alachisoft.NCache.Management
             return settings;
         }
 
+        private static Hashtable GetCompactType(Alachisoft.NCache.Config.Dom.Type type)
+        {
+            Hashtable settings = new Hashtable();
+            settings.Add("id", type.ID);
+            settings.Add("handle", type.Name);
+            settings.Add("portable", type.Portable);
+            if (type.PortableClasses != null)
+            {
+                settings.Add("known-classes", GetCompactPortableClasses(type.PortableClasses));
+                settings.Add("attribute-union-list", GetCompactAttributeListUnion(type.AttributeList));
+            }
+            return settings;
+        }
+        private static Hashtable GetCompactPortableClasses(PortableClass[] classes)
+        {
+            Hashtable settings = new Hashtable();
+            foreach (PortableClass clas in classes)                
+                settings.Add(clas.Name, GetCompactPortableClass(clas));
+            return settings;
+        }
+        private static Hashtable GetCompactAttributeListUnion(AttributeListUnion attributeList)
+        {
+            Hashtable settings = new Hashtable();
+            if (attributeList != null && attributeList.PortableAttributes != null)
+                settings.Add("attribute", GetCompactPortableAttributes(attributeList.PortableAttributes));
+            return settings;
 
+        }
+        private static Hashtable GetCompactPortableClass(PortableClass clas)
+        {
+            Hashtable settings = new Hashtable();
+            settings.Add("name", clas.Name);
+            settings.Add("handle-ID", clas.ID);
+            settings.Add("assembly", clas.Assembly);
+            settings.Add("type", clas.Type);
+            if (clas.PortableAttributes != null)
+                settings.Add("attribute", GetCompactPortableAttributes(clas.PortableAttributes));
+            return settings;
+        }
+
+        private static Hashtable GetCompactPortableAttributes(PortableAttribute[] attributes)
+        {
+            Hashtable settings = new Hashtable();
+            foreach (PortableAttribute attrib in attributes)
+                settings.Add(attrib.Name + ":" + attrib.Type, GetCompactPortableAttribute(attrib));
+            return settings;
+        }
+
+        private static Hashtable GetCompactPortableAttribute(PortableAttribute attrib)
+        {
+            Hashtable settings = new Hashtable();
+            settings.Add("name", attrib.Name);
+            settings.Add("type", attrib.Type);
+            settings.Add("order", attrib.Order);            
+            return settings;
+        }
+        
         private static Hashtable GetServerMapping(ServerMapping serverMapping)
         {
             Hashtable settings = new Hashtable();
@@ -463,9 +627,7 @@ namespace Alachisoft.NCache.Management
             foreach (Hashtable properties in props)
             {
                 CacheConfig config = null;
-
                 config = FromProperties(properties);
-
                 if (config != null)
                 {
                     configList.Add(config);
@@ -482,9 +644,7 @@ namespace Alachisoft.NCache.Management
             foreach (Hashtable properties in props)
             {
                 CacheConfig config = null;
-
                 config = FromProperties(properties, tcpPort);
-
                 if (config != null)
                 {
                     configList.Add(config);
@@ -534,7 +694,6 @@ namespace Alachisoft.NCache.Management
 
         internal static CacheConfig GetUpdatedConfig(IDictionary properties, string partId, string joiningNode, ref ArrayList affectedNodes, ref ArrayList affectedPartitions, string oldCacheId, string newCacheId)
         {
-           
             //update the properties...
 
             string list = "";
@@ -629,12 +788,14 @@ namespace Alachisoft.NCache.Management
                 }
             }
 
+            //send the updated properties...
             return FromProperties(properties);
         }
 
         internal static CacheConfig GetUpdatedConfig(IDictionary properties, string partId, string newNode, ref ArrayList affectedNodes, ref ArrayList affectedPartitions, bool isJoining)
         {
-            
+            //update the properties...
+
             string list = "";
             int clusterPort = 0;
 
@@ -749,12 +910,12 @@ namespace Alachisoft.NCache.Management
                 }
             }
 
+            //send the updated properties...
             return FromProperties(properties);
         }
 
         internal static CacheConfig GetUpdatedConfig2(IDictionary properties, string partId, string joiningNode, ref ArrayList affectedNodes, ref ArrayList affectedPartitions)
         {
-           
             //update the properties...
             if (properties.Count == 1)
             {
@@ -826,22 +987,9 @@ namespace Alachisoft.NCache.Management
             if (properties == null)
                 throw new ManagementException(@"Invalid configuration; missing 'web-cache' element.");
 
-            if (cacheprops != null)
-            {
-                if (!(cacheprops.Contains("class") && cacheprops.Contains("name")))
-                {
-                    if (properties.Contains("id"))
-                    {
-                        cacheprops["name"] = properties["id"].ToString();
-                        cacheprops["class"] = properties["id"].ToString();
-                    }
-                }
-            }
-
 
             try
             {
-                // Get start_port (ClusterPort) and port_range (ClusterPortRange) from the config file
                 if (cacheprops.Contains("cache-classes"))
                 {
                     IDictionary cacheClassesProps = cacheprops["cache-classes"] as IDictionary;
@@ -918,13 +1066,18 @@ namespace Alachisoft.NCache.Management
 
             if (webprops.Contains("port"))
                 data.Port = Convert.ToUInt32(webprops["port"]);
-           
+
             if (webprops.Contains("server"))
                 data.ServerName = Convert.ToString(webprops["server"]);
 
             properties.Remove("id");
             properties.Remove("type");
             data.PropertyString = ConfigReader.ToPropertiesString(properties);
+
+            if (properties.Contains("data-sharing"))
+            {
+                data.DataSharingKnownTypes = (Hashtable)properties["data-sharing"];
+            }
 
             return data;
         }
@@ -939,7 +1092,8 @@ namespace Alachisoft.NCache.Management
             CultureInfo cultureInfo = Thread.CurrentThread.CurrentCulture;
             try
             {
-                Thread.CurrentThread.CurrentCulture =  new System.Globalization.CultureInfo("en-US");
+                System.Threading.Thread.CurrentThread.CurrentCulture =
+         new System.Globalization.CultureInfo("en-US");
                 if (properties.Contains("partitionid"))
                     data.PartitionId = properties["partitionid"].ToString().ToLower();
 
@@ -948,11 +1102,23 @@ namespace Alachisoft.NCache.Management
 
                 if (properties == null)
                     throw new ManagementException(@"Invalid configuration; missing 'web-cache' element.");
-
-
                 try
                 {
-                    // Get start_port (ClusterPort) and port_range (ClusterPortRange) from the config file
+                    if (cacheprops.Contains("compression"))
+                    {
+                        IDictionary compressionProps = cacheprops["compression"] as IDictionary;
+                        data._compressionEnabled = Convert.ToBoolean(compressionProps["enabled"]);
+                        data._compressionThreshold = Convert.ToInt64(compressionProps["threshold"]);
+                    }
+
+                    if (cacheprops.Contains("security"))
+                    {
+                        IDictionary securityProps = cacheprops["security"] as IDictionary;
+                        data._securityEnabled = Convert.ToBoolean(securityProps["enabled"]);
+                        data._securityDomainController = (string)securityProps["domain-controller"];
+                        data._securityUsers = (Hashtable)securityProps["user"];
+                    }
+
                     if (cacheprops.Contains("cache-classes"))
                     {
                         IDictionary cacheClassesProps = cacheprops["cache-classes"] as IDictionary;
@@ -973,10 +1139,6 @@ namespace Alachisoft.NCache.Management
                                         if (tcpProps.Contains("start_port"))
                                         {
                                             data.ClusterPort = Convert.ToInt32(tcpProps["start_port"]);
-                                        }
-                                        if (tcpProps.Contains("use_heart_beat"))
-                                        {
-                                            data.UseHeartBeat = Convert.ToBoolean(tcpProps["use_heart_beat"]);
                                         }
                                         if (tcpProps.Contains("port_range"))
                                         {
@@ -1115,12 +1277,16 @@ namespace Alachisoft.NCache.Management
                 properties.Remove("type");
                 data.PropertyString = ConfigReader.ToPropertiesString(properties);
 
+                if (properties.Contains("data-sharing"))
+                {
+                    data.DataSharingKnownTypes = (Hashtable)properties["data-sharing"];
+                }
+
             }
             finally
             {
-                Thread.CurrentThread.CurrentCulture = cultureInfo;
+                System.Threading.Thread.CurrentThread.CurrentCulture = cultureInfo;
             }
-
             return data;
         }
 

@@ -1,25 +1,24 @@
-// Copyright (c) 2017 Alachisoft
-// 
-// Licensed under the Apache License, Version 2.0 (the "License");
-// you may not use this file except in compliance with the License.
-// You may obtain a copy of the License at
-// 
-//    http://www.apache.org/licenses/LICENSE-2.0
-// 
-// Unless required by applicable law or agreed to in writing, software
-// distributed under the License is distributed on an "AS IS" BASIS,
-// WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
-// See the License for the specific language governing permissions and
-// limitations under the License.
-
+//  Copyright (c) 2021 Alachisoft
+//  
+//  Licensed under the Apache License, Version 2.0 (the "License");
+//  you may not use this file except in compliance with the License.
+//  You may obtain a copy of the License at
+//  
+//     http://www.apache.org/licenses/LICENSE-2.0
+//  
+//  Unless required by applicable law or agreed to in writing, software
+//  distributed under the License is distributed on an "AS IS" BASIS,
+//  WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+//  See the License for the specific language governing permissions and
+//  limitations under the License
 using System;
 using System.Text;
 using System.Threading;
-
 using Alachisoft.NCache.Common.Threading;
 using Alachisoft.NCache.Common.Net;
 using Alachisoft.NCache.Runtime.Serialization;
 using Alachisoft.NCache.Runtime.Serialization.IO;
+
 
 namespace Alachisoft.NCache.Common.DataStructures
 {
@@ -29,22 +28,25 @@ namespace Alachisoft.NCache.Common.DataStructures
     /// its owner.
     /// </summary>
 
-    public class HashMapBucket : ICompactSerializable,ICloneable
+
+    public class HashMapBucket : ICompactSerializable, ICloneable
     {
         private int _bucketId;
         private Address _tempAddress;
         private Address _permanentAddress;
-        
+
         private Latch _stateTxfrLatch = new Latch(BucketStatus.Functional);
         private object _status_wait_mutex = new object();
+
         public HashMapBucket(Address address, int id)
         {
             _tempAddress = _permanentAddress = address;
             _bucketId = id;
             _stateTxfrLatch = new Latch(BucketStatus.Functional);
         }
+
         public HashMapBucket(Address address, int id, byte status)
-            :this(address,id)
+            : this(address, id)
         {
             Status = status;
         }
@@ -110,7 +112,7 @@ namespace Alachisoft.NCache.Common.DataStructures
                         //these are valid status,we allow them to be set.
                         byte oldStatus = _stateTxfrLatch.Status.Data;
                         if (oldStatus == value) return;
-                        _stateTxfrLatch.SetStatusBit(value,oldStatus);
+                        _stateTxfrLatch.SetStatusBit(value, oldStatus);
                         break;
                 }
             }
@@ -122,9 +124,10 @@ namespace Alachisoft.NCache.Common.DataStructures
 
         public override bool Equals(object obj)
         {
-            if (obj is HashMapBucket)
+            HashMapBucket bucket = obj as HashMapBucket;
+            if (bucket != null)
             {
-                return this.BucketId == ((HashMapBucket)obj).BucketId;
+                return this.BucketId == bucket.BucketId;
             }
             return false;
         }
@@ -146,7 +149,6 @@ namespace Alachisoft.NCache.Common.DataStructures
             _permanentAddress = (Address)reader.ReadObject();
             byte status = reader.ReadByte();
             _stateTxfrLatch = new Latch(status);
-
         }
 
         void ICompactSerializable.Serialize(CompactWriter writer)
@@ -154,7 +156,6 @@ namespace Alachisoft.NCache.Common.DataStructures
             writer.Write(_bucketId);
             writer.WriteObject(_tempAddress);
             writer.WriteObject(_permanentAddress);
-
             writer.Write(_stateTxfrLatch.Status.Data);
         }
 
@@ -167,7 +168,7 @@ namespace Alachisoft.NCache.Common.DataStructures
             sb.Append("owner = " + _permanentAddress + " ; ");
             sb.Append("temp = " + _tempAddress + " ; ");
             string status = null;
-            // object can be zero object(initialization without default values), which may cause exception.
+            //object can be zero object(initialization without default values), which may cause exception.
             if (_stateTxfrLatch != null)
                 status = BucketStatus.StatusToString(_stateTxfrLatch.Status.Data);
             sb.Append(status + " ]");

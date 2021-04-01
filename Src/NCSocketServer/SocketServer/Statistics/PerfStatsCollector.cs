@@ -1,58 +1,57 @@
-// Copyright (c) 2017 Alachisoft
-// 
-// Licensed under the Apache License, Version 2.0 (the "License");
-// you may not use this file except in compliance with the License.
-// You may obtain a copy of the License at
-// 
-//    http://www.apache.org/licenses/LICENSE-2.0
-// 
-// Unless required by applicable law or agreed to in writing, software
-// distributed under the License is distributed on an "AS IS" BASIS,
-// WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
-// See the License for the specific language governing permissions and
-// limitations under the License.
-
+//  Copyright (c) 2021 Alachisoft
+//  
+//  Licensed under the Apache License, Version 2.0 (the "License");
+//  you may not use this file except in compliance with the License.
+//  You may obtain a copy of the License at
+//  
+//     http://www.apache.org/licenses/LICENSE-2.0
+//  
+//  Unless required by applicable law or agreed to in writing, software
+//  distributed under the License is distributed on an "AS IS" BASIS,
+//  WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+//  See the License for the specific language governing permissions and
+//  limitations under the License
 using System;
 using System.Diagnostics;
 
 using Alachisoft.NCache.Util;
 using Alachisoft.NCache.Common.Stats;
 using Alachisoft.NCache.Common;
-
+using Alachisoft.NCache.Common.Util;
 
 namespace Alachisoft.NCache.SocketServer.Statistics
 {
-	/// <summary>
-	/// Summary description for PerfStatsCollector.
-	/// </summary>
-	public class PerfStatsCollector : IDisposable
-	{
-		/// <summary> Instance name. </summary>
-		private string					_instanceName;
+    /// <summary>
+    /// Summary description for PerfStatsCollector.
+    /// </summary>
+    public class PerfStatsCollector : IDisposable, StatisticsCounter
+    {
+        /// <summary> Instance name. </summary>
+        private string _instanceName;
         /// <summary> Port number. </summary>
-        private string                     _port;
+        private string _port;
 
-		/// <summary> performance counter for bytes sent per second. </summary>
-		private PerformanceCounter 		_pcClientBytesSentPerSec = null;
+        /// <summary> performance counter for bytes sent per second. </summary>
+        private PerformanceCounter _pcClientBytesSentPerSec = null;
         /// <summary> performance counter for bytes received per second. </summary>
-        private PerformanceCounter      _pcClientBytesReceiedPerSec = null;
+        private PerformanceCounter _pcClientBytesReceiedPerSec = null;
         /// <summary> performance counter for cache requests per second. </summary>
-        private PerformanceCounter      _pcRequestsPerSec = null;
+        private PerformanceCounter _pcRequestsPerSec = null;
         /// <summary> performance counter for cache responses per second. </summary>
-        private PerformanceCounter      _pcResponsesPerSec = null;
+        private PerformanceCounter _pcResponsesPerSec = null;
 
         /// <summary> performance counter for avgerage per milli-second time of all cache operations. </summary>
-        private PerformanceCounter      _pcMsecPerCacheOperation = null;
+        private PerformanceCounter _pcMsecPerCacheOperation = null;
         /// <summary> performance counter for Cache max. per milli-second time of all cache operations. </summary>
-        private PerformanceCounter      _pcMsecPerCacheOperationBase = null;
+        private PerformanceCounter _pcMsecPerCacheOperationBase = null;
 
         private PerformanceCounter _pcResponseQueueCount = null;
         private PerformanceCounter _pcResponseQueueSize = null;
 
         /// <summary> usage statistics for per milli-second time of all cache operations. </summary>
-        private UsageStats              _usMsecPerCacheOperation = null;
+        private UsageStats _usMsecPerCacheOperation = null;
         /// <summary> usage statistics for per milli-second time of all cache operations. </summary>
-        private NanoSecTimeStats        _nsMsecPerCacheOperation = null;
+        private NanoSecTimeStats _nsMsecPerCacheOperation = null;
 
         /// <summary> usage statistics for number of events currently in queue for cache general event notifications. </summary>
         private PerformanceCounter _generalNotificationQueueSize = null;
@@ -60,6 +59,12 @@ namespace Alachisoft.NCache.SocketServer.Statistics
         ///<summary> stats for event queue count</summary>
         private PerformanceCounter _pcEventQueueCount = null;
 
+        /// <summary> statistics for number of client request being logged on server </summary>
+        private PerformanceCounter _requestLogCount = null;
+
+        private PerformanceCounter _requestLogPerSecond = null;
+
+        private PerformanceCounter _requestLogSize = null;
 
 
         //Bulk Counters
@@ -73,11 +78,16 @@ namespace Alachisoft.NCache.SocketServer.Statistics
         private PerformanceCounter _pcMsecPerDelBulkBase = null;
 
 
-		/// <summary> Category name of counter performance data.</summary>
+        /// <summary> Category name of counter performance data.</summary>
         /// 
 
-        private const string			PC_CATEGORY = "NCache";
+        private PerformanceCounter _pcConnectedClients = null;
+
+
+
+        private const string PC_CATEGORY = "NCache";
         private long _queueSize;
+
 
 
         /// <summary>
@@ -91,57 +101,58 @@ namespace Alachisoft.NCache.SocketServer.Statistics
             _instanceName = instanceName;
         }
 
-		/// <summary>
-		/// Returns true if the current user has the rights to read/write to performance counters
-		/// under the category of object cache.
-		/// </summary>
-		public string InstanceName
-		{
-			get { return _instanceName; }
-			set { _instanceName = value; }
-		}
+        /// <summary>
+        /// Returns true if the current user has the rights to read/write to performance counters
+        /// under the category of object cache.
+        /// </summary>
+        public string InstanceName
+        {
+            get { return _instanceName; }
+            set { _instanceName = value; }
+        }
 
 
-		/// <summary>
-		/// Returns true if the current user has the rights to read/write to performance counters
-		/// under the category of object cache.
-		/// </summary>
-		public bool UserHasAccessRights
-		{
-			get
-			{
-				try
-				{
-					PerformanceCounterPermission permissions = new
-						PerformanceCounterPermission(PerformanceCounterPermissionAccess.Instrument,
-						".", PC_CATEGORY);
-					permissions.Demand();
+        /// <summary>
+        /// Returns true if the current user has the rights to read/write to performance counters
+        /// under the category of object cache.
+        /// </summary>
+        public bool UserHasAccessRights
+        {
+            get
+            {
+                try
+                {
+                    PerformanceCounterPermission permissions = new
+                        PerformanceCounterPermission(PerformanceCounterPermissionAccess.Instrument,
+                        ".", PC_CATEGORY);
+                    permissions.Demand();
 
-					if(!PerformanceCounterCategory.Exists(PC_CATEGORY, "."))
-					{
-						return false;
-					}
-				}
-				catch(Exception e)
-				{
+                    if (!PerformanceCounterCategory.Exists(PC_CATEGORY, "."))
+                    {
+                        return false;
+                    }
+                }
+                catch (Exception e)
+                {
 
                     AppUtil.LogEvent("NCache", "User has no access to NCache Server counters. " + e.ToString(), EventLogEntryType.Error, EventCategories.Error, EventID.GeneralError);
-					return false;
-				}
-				return true;
-			}
-		}
+                    //if(nTrace.isInfoEnabled) nTrace.info("SocketServer.Statistics.PerfStatsCollector.UserHasAccessRights", e.Message);
+                    return false;
+                }
+                return true;
+            }
+        }
 
 
 
-		#region	/                 --- IDisposable ---           /
+        #region	/                 --- IDisposable ---           /
 
-		/// <summary>
-		/// Performs application-defined tasks associated with freeing, releasing, or 
-		/// resetting unmanaged resources.
-		/// </summary>
-		public void Dispose()
-		{
+        /// <summary>
+        /// Performs application-defined tasks associated with freeing, releasing, or 
+        /// resetting unmanaged resources.
+        /// </summary>
+        public void Dispose()
+        {
             lock (this)
             {
                 if (_pcClientBytesReceiedPerSec != null)
@@ -209,69 +220,102 @@ namespace Alachisoft.NCache.SocketServer.Statistics
                     _pcEventQueueCount = null;
                 }
 
+                if (_requestLogCount != null)
+                {
+                    _requestLogCount.RemoveInstance();
+                    _requestLogCount.Dispose();
+                    _requestLogCount = null;
+                }
+
+                if (_requestLogPerSecond != null)
+                {
+                    _requestLogPerSecond.RemoveInstance();
+                    _requestLogPerSecond.Dispose();
+                    _requestLogPerSecond = null;
+                }
+
+                if (_requestLogSize != null)
+                {
+                    _requestLogSize.RemoveInstance();
+                    _requestLogSize.Dispose();
+                    _requestLogSize = null;
+                }
+
                 //Bulk counters
-                 if (_pcMsecPerAddBulkAvg != null)
-                 {
-                     _pcMsecPerAddBulkAvg.RemoveInstance();
-                     _pcMsecPerAddBulkAvg.Dispose();
-                     _pcMsecPerAddBulkAvg = null;
-                 }
-                 if (_pcMsecPerAddBulkBase != null)
-                 {
-                     _pcMsecPerAddBulkBase.RemoveInstance();
-                     _pcMsecPerAddBulkBase.Dispose();
-                     _pcMsecPerAddBulkBase = null;
-                 }
-                 if (_pcMsecPerGetBulkAvg != null)
-                 {
-                     _pcMsecPerGetBulkAvg.RemoveInstance();
-                     _pcMsecPerGetBulkAvg.Dispose();
-                     _pcMsecPerGetBulkAvg = null;
-                 }
-                 if (_pcMsecPerUpdBulkAvg != null)
-                 {
-                     _pcMsecPerUpdBulkAvg.RemoveInstance();
-                     _pcMsecPerUpdBulkAvg.Dispose();
-                     _pcMsecPerUpdBulkAvg = null;
-                 }
-                 if (_pcMsecPerDelBulkAvg != null)
-                 {
-                     _pcMsecPerDelBulkAvg.RemoveInstance();
-                     _pcMsecPerDelBulkAvg.Dispose();
-                     _pcMsecPerDelBulkAvg = null;
-                 }
-                 if (_pcMsecPerGetBulkBase != null)
-                 {
-                     _pcMsecPerGetBulkBase.RemoveInstance();
-                     _pcMsecPerGetBulkBase.Dispose();
-                     _pcMsecPerGetBulkBase = null;
-                 }
-                 if (_pcMsecPerUpdBulkBase != null)
-                 {
-                     _pcMsecPerUpdBulkBase.RemoveInstance();
-                     _pcMsecPerUpdBulkBase.Dispose();
-                     _pcMsecPerUpdBulkBase = null;
-                 }
-                 if (_pcMsecPerDelBulkBase != null)
-                 {
-                     _pcMsecPerDelBulkBase.RemoveInstance();
-                     _pcMsecPerDelBulkBase.Dispose();
-                     _pcMsecPerDelBulkBase = null;
-                 }
+                if (_pcMsecPerAddBulkAvg != null)
+                {
+                    _pcMsecPerAddBulkAvg.RemoveInstance();
+                    _pcMsecPerAddBulkAvg.Dispose();
+                    _pcMsecPerAddBulkAvg = null;
+                }
+                if (_pcMsecPerAddBulkBase != null)
+                {
+                    _pcMsecPerAddBulkBase.RemoveInstance();
+                    _pcMsecPerAddBulkBase.Dispose();
+                    _pcMsecPerAddBulkBase = null;
+                }
+                if (_pcMsecPerGetBulkAvg != null)
+                {
+                    _pcMsecPerGetBulkAvg.RemoveInstance();
+                    _pcMsecPerGetBulkAvg.Dispose();
+                    _pcMsecPerGetBulkAvg = null;
+                }
+                if (_pcMsecPerUpdBulkAvg != null)
+                {
+                    _pcMsecPerUpdBulkAvg.RemoveInstance();
+                    _pcMsecPerUpdBulkAvg.Dispose();
+                    _pcMsecPerUpdBulkAvg = null;
+                }
+                if (_pcMsecPerDelBulkAvg != null)
+                {
+                    _pcMsecPerDelBulkAvg.RemoveInstance();
+                    _pcMsecPerDelBulkAvg.Dispose();
+                    _pcMsecPerDelBulkAvg = null;
+                }
+                if (_pcMsecPerGetBulkBase != null)
+                {
+                    _pcMsecPerGetBulkBase.RemoveInstance();
+                    _pcMsecPerGetBulkBase.Dispose();
+                    _pcMsecPerGetBulkBase = null;
+                }
+                if (_pcMsecPerUpdBulkBase != null)
+                {
+                    _pcMsecPerUpdBulkBase.RemoveInstance();
+                    _pcMsecPerUpdBulkBase.Dispose();
+                    _pcMsecPerUpdBulkBase = null;
+                }
+                if (_pcMsecPerDelBulkBase != null)
+                {
+                    _pcMsecPerDelBulkBase.RemoveInstance();
+                    _pcMsecPerDelBulkBase.Dispose();
+                    _pcMsecPerDelBulkBase = null;
+                }
+
+                if (_pcConnectedClients != null)
+                {
+                    _pcConnectedClients.RemoveInstance();
+                    _pcConnectedClients.Dispose();
+                    _pcConnectedClients = null;
+                }
+
 
             }
-		}
+        }
 
 
-		#endregion
+        #endregion
 
-		#region	/                 --- Initialization ---           /
+        #region	/                 --- Initialization ---           /
 
-		/// <summary>
-		/// Initializes the counter instances and category.
-		/// </summary>
-		public void InitializePerfCounters()
-		{
+        /// <summary>
+        /// Initializes the counter instances and category.
+        /// </summary>
+        public void InitializePerfCounters()
+        {
+#if NETCORE
+            if (System.Runtime.InteropServices.RuntimeInformation.IsOSPlatform(System.Runtime.InteropServices.OSPlatform.Linux))
+                return;
+#endif
             try
             {
                 if (!UserHasAccessRights)
@@ -295,6 +339,10 @@ namespace Alachisoft.NCache.SocketServer.Statistics
                     _pcResponseQueueSize = new PerformanceCounter(PC_CATEGORY, "Response Queue Size", _instanceName, false);
                     _pcEventQueueCount = new PerformanceCounter(PC_CATEGORY, "Event Queue Count", _instanceName, false);
 
+                    _requestLogPerSecond = new PerformanceCounter(PC_CATEGORY, "Requests Logged/sec", _instanceName, false);
+                    _requestLogSize = new PerformanceCounter(PC_CATEGORY, "Request Log Ledger Size", _instanceName, false);
+
+                    _pcConnectedClients = new PerformanceCounter(PC_CATEGORY, "# Clients", _instanceName, false);
 
                     //Bulk Counters
                     _pcMsecPerAddBulkAvg = new PerformanceCounter(PC_CATEGORY, "Average us/addbulk", _instanceName, false);
@@ -305,18 +353,22 @@ namespace Alachisoft.NCache.SocketServer.Statistics
                     _pcMsecPerGetBulkBase = new PerformanceCounter(PC_CATEGORY, "Average us/fetchbulk base", _instanceName, false);
                     _pcMsecPerUpdBulkBase = new PerformanceCounter(PC_CATEGORY, "Average us/insertbulk base", _instanceName, false);
                     _pcMsecPerDelBulkBase = new PerformanceCounter(PC_CATEGORY, "Average us/removebulk base", _instanceName, false);
+                
 
                 }
             }
             catch (Exception e)
             {
+
                 AppUtil.LogEvent("NCache", "An error occurred while initializing counters for NCache Server. " + e.ToString(), EventLogEntryType.Error, EventCategories.Error, EventID.GeneralError);
+
+                //nTrace.warn("SocketServer.PerfStatsCollector.PerfStatsCollector()", e.ToString());
             }
 
-		}
+        }
 
 
-		#endregion
+        #endregion
 
         /// <summary> 
         /// Increment the performance counter for Client bytes sent. 
@@ -477,27 +529,88 @@ namespace Alachisoft.NCache.SocketServer.Statistics
             {
                 lock (_pcMsecPerCacheOperation)
                 {
+                    //_usMsecPerCacheOperation.EndSample();
                     _nsMsecPerCacheOperation.Stop();
-                    _pcMsecPerCacheOperation.IncrementBy((long)_nsMsecPerCacheOperation.Duration(1));
+                    long timeSpent = (long)_nsMsecPerCacheOperation.Duration(1);
+                    if (timeSpent < 0)
+                        timeSpent = timeSpent * -1;
+
+                    _pcMsecPerCacheOperation.IncrementBy((long)timeSpent);//_usMsecPerCacheOperation.Current);
                     _pcMsecPerCacheOperationBase.Increment();
                 }
             }
         }
 
         /// <summary> 
-        /// Increment the performance counter for Cache General Notification Queue. 
+        /// Increment the Number of client requests logged on server. 
         /// </summary>
-        public void SettNotificationQueueSizeStats(long count)
+        public void IncrementRequestLogCount(long requests)
         {
-            if (_generalNotificationQueueSize != null)
+            if (_requestLogCount != null)
             {
-                lock (_generalNotificationQueueSize)
+                lock (_requestLogCount)
                 {
-                    _generalNotificationQueueSize.RawValue = count;
+                    _requestLogCount.IncrementBy(requests);
                 }
             }
         }
-        
+
+        /// <summary> 
+        /// Decrement the Number of client requests logged on server. 
+        /// </summary>
+        public void DecrementRequestLogCount()
+        {
+            if (_requestLogCount != null)
+            {
+                lock (_requestLogCount)
+                {
+                    _requestLogCount.Decrement();
+                }
+            }
+        }
+
+        public void DecrementRequestLogCount(long value)
+        {
+            if (_requestLogCount != null)
+                lock (_requestLogCount)
+                {
+                    _requestLogCount.RawValue -= value;
+                }
+        }
+
+        public long RequestLogCount
+        {
+            set
+            {
+                if (_requestLogCount != null)
+                    lock (_requestLogCount)
+                    {
+                        _requestLogCount.RawValue = value;
+                    }
+            }
+        }
+
+        public long RequestLogSize
+        {
+            set
+            {
+                if (_requestLogSize != null)
+                    lock (_requestLogSize)
+                        _requestLogSize.RawValue = value < 0 ? 0 : value;
+            }
+        }
+
+        public void IncrementRequestLogPerSec()
+        {
+            if (_requestLogPerSecond != null)
+                lock (_requestLogPerSecond)
+                {
+                    _requestLogPerSecond.Increment();
+                }
+        }
+
+
+
         //Bulk Counters
         public void IncrementMsecPerAddBulkAvg(long value)
         {
@@ -521,6 +634,88 @@ namespace Alachisoft.NCache.SocketServer.Statistics
                 }
             }
         }
+
+        public double GetCounterValue(string counterName)
+        {
+            double value = 0.0;
+
+            PerformanceCounter counter = null;
+
+            switch (counterName)
+            {
+                case CustomCounterNames.RequestsPerSec:
+                    counter = _pcRequestsPerSec;
+                    break;
+                case CustomCounterNames.ResponsesPerSec:
+                    counter = _pcResponsesPerSec;
+                    break;
+                case CustomCounterNames.ClientBytesSentPerSec:
+                    counter = _pcClientBytesSentPerSec;
+                    break;
+                case CustomCounterNames.ClientBytesReceiedPerSec:
+                    counter = _pcClientBytesReceiedPerSec;
+                    break;
+                case CustomCounterNames.MsecPerCacheOperation:
+                    counter = _pcMsecPerCacheOperation;
+                    break;
+                case CustomCounterNames.MsecPerCacheOperationBase:
+                    counter = _pcMsecPerCacheOperationBase;
+                    break;
+                case CustomCounterNames.ResponseQueueCount:
+                    counter = _pcResponseQueueCount;
+                    break;
+                case CustomCounterNames.ResponseQueueSize:
+                    counter = _pcResponseQueueSize;
+                    break;
+                case CustomCounterNames.EventQueueCount:
+                    counter = _pcEventQueueCount;
+                    break;
+                case CustomCounterNames.RequestLogPerSecond:
+                    counter = _requestLogPerSecond;
+                    break;
+                case CustomCounterNames.RequestLogSize:
+                    counter = _requestLogSize;
+                    break;
+                case CustomCounterNames.ConnectedClients:
+                    counter = _pcConnectedClients;
+                    break;
+                case CustomCounterNames.MsecPerAddBulkAvg:
+                    counter = _pcMsecPerAddBulkAvg;
+                    break;
+                case CustomCounterNames.MsecPerGetBulkAvg:
+                    counter = _pcMsecPerGetBulkAvg;
+                    break;
+                case CustomCounterNames.MsecPerUpdBulkAvg:
+                    counter = _pcMsecPerUpdBulkAvg;
+                    break;
+                case CustomCounterNames.MsecPerDelBulkAvg:
+                    counter = _pcMsecPerDelBulkAvg;
+                    break;
+                case CustomCounterNames.MsecPerAddBulkBase:
+                    counter = _pcMsecPerAddBulkBase;
+                    break;
+                case CustomCounterNames.MsecPerGetBulkBase:
+                    counter = _pcMsecPerGetBulkBase;
+                    break;
+                case CustomCounterNames.MsecPerUpdBulkBase:
+                    counter = _pcMsecPerUpdBulkBase;
+                    break;
+                case CustomCounterNames.MsecPerDelBulkBase:
+                    counter = _pcMsecPerDelBulkBase;
+                    break;
+            }
+
+            if (counter != null)
+            {
+                lock (counter)
+                {
+                    value = counter.NextValue();
+                }
+            }
+
+            return value;
+        }
+
         public void IncrementMsecPerUpdBulkAvg(long value)
         {
             if (_pcMsecPerUpdBulkAvg != null)
@@ -544,5 +739,24 @@ namespace Alachisoft.NCache.SocketServer.Statistics
             }
         }
 
-	}
+        public long ConncetedClients
+        {
+            set
+            {
+                if (_pcConnectedClients != null)
+                    lock (_pcConnectedClients)
+                        _pcConnectedClients.RawValue = value < 0 ? 0 : value;
+            }
+            get
+            {
+                if (_pcConnectedClients != null)
+                    lock (_pcConnectedClients)
+                        return _pcConnectedClients.RawValue;
+                else
+                    return ConnectionManager.ConnectionTable.Count;
+            }
+        }
+
+
+    }
 }

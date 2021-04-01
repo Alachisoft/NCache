@@ -10,4 +10,5 @@ enum AggregateFunctionType
         MAX = 3;
         AVG = 4;
         NOTAPPLICABLE = 5;
+		TERMFREQ = 6;
 }

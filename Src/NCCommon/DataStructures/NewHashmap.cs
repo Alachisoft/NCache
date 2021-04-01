@@ -1,23 +1,20 @@
-// Copyright (c) 2017 Alachisoft
-// 
-// Licensed under the Apache License, Version 2.0 (the "License");
-// you may not use this file except in compliance with the License.
-// You may obtain a copy of the License at
-// 
-//    http://www.apache.org/licenses/LICENSE-2.0
-// 
-// Unless required by applicable law or agreed to in writing, software
-// distributed under the License is distributed on an "AS IS" BASIS,
-// WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
-// See the License for the specific language governing permissions and
-// limitations under the License.
+//  Copyright (c) 2021 Alachisoft
+//  
+//  Licensed under the Apache License, Version 2.0 (the "License");
+//  you may not use this file except in compliance with the License.
+//  You may obtain a copy of the License at
+//  
+//     http://www.apache.org/licenses/LICENSE-2.0
+//  
+//  Unless required by applicable law or agreed to in writing, software
+//  distributed under the License is distributed on an "AS IS" BASIS,
+//  WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+//  See the License for the specific language governing permissions and
+//  limitations under the License
 
-using System;
 using System.Text;
-
 using Alachisoft.NCache.Runtime.Serialization;
 using Alachisoft.NCache.Runtime.Serialization.IO;
-
 using System.Collections;
 using Alachisoft.NCache.Common.Net;
 using System.Runtime.Serialization.Formatters.Binary;
@@ -35,6 +32,8 @@ namespace Alachisoft.NCache.Common.DataStructures
         private ArrayList _members;
         private byte[] _buffer;
         private bool _updateMap = false;
+        private bool _forcefulUpdate = false;
+
 
         /// <summary>
         /// Default constructor
@@ -96,6 +95,12 @@ namespace Alachisoft.NCache.Common.DataStructures
             get { return this._buffer; }
         }
 
+        public bool ForcefulUpdate
+        {
+            get { return _forcefulUpdate; }
+            set { _forcefulUpdate = value; }
+        }
+
         /// <summary>
         /// Serialize NewHashmap
         /// </summary>
@@ -111,6 +116,7 @@ namespace Alachisoft.NCache.Common.DataStructures
                 mapInfo.Add("Members", instance._members);
                 mapInfo.Add("Map", instance._map);
                 mapInfo.Add("UpdateMap", updateClientMap);
+                mapInfo.Add("ForcefulUpdate", instance.ForcefulUpdate);
 
                 BinaryFormatter formatter = new BinaryFormatter();
                 MemoryStream stream = new MemoryStream();
@@ -140,6 +146,7 @@ namespace Alachisoft.NCache.Common.DataStructures
                     hashmap._members = (ArrayList)map["Members"];
                     hashmap._map = (Hashtable)map["Map"];
                     hashmap._updateMap = (map["UpdateMap"] != null) ? (bool)map["UpdateMap"] : false;
+                    hashmap._forcefulUpdate = (map["ForcefulUpdate"] != null) ? (bool)map["ForcefulUpdate"] : false;
                 }
             }
             return hashmap;
@@ -157,6 +164,7 @@ namespace Alachisoft.NCache.Common.DataStructures
             this._members = reader.ReadObject() as ArrayList;
             this._map = reader.ReadObject() as Hashtable;
             this._updateMap = reader.ReadBoolean();
+            this._forcefulUpdate = reader.ReadBoolean();
         }
 
         /// <summary>
@@ -169,6 +177,7 @@ namespace Alachisoft.NCache.Common.DataStructures
             writer.WriteObject(this._members);
             writer.WriteObject(this._map);
             writer.Write(this._updateMap);
+            writer.Write(this._forcefulUpdate);
         }
 
         #endregion

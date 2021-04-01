@@ -1,17 +1,16 @@
-// Copyright (c) 2017 Alachisoft
-// 
-// Licensed under the Apache License, Version 2.0 (the "License");
-// you may not use this file except in compliance with the License.
-// You may obtain a copy of the License at
-// 
-//    http://www.apache.org/licenses/LICENSE-2.0
-// 
-// Unless required by applicable law or agreed to in writing, software
-// distributed under the License is distributed on an "AS IS" BASIS,
-// WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
-// See the License for the specific language governing permissions and
-// limitations under the License.
-
+//  Copyright (c) 2021 Alachisoft
+//  
+//  Licensed under the Apache License, Version 2.0 (the "License");
+//  you may not use this file except in compliance with the License.
+//  You may obtain a copy of the License at
+//  
+//     http://www.apache.org/licenses/LICENSE-2.0
+//  
+//  Unless required by applicable law or agreed to in writing, software
+//  distributed under the License is distributed on an "AS IS" BASIS,
+//  WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+//  See the License for the specific language governing permissions and
+//  limitations under the License
 using System;
 using System.Collections;
 using System.Runtime.Serialization;
@@ -21,7 +20,7 @@ namespace Alachisoft.NCache.Runtime.Exceptions
 {
     /// <summary>
     /// This exception is thrown when multiple exceptions occur from multiple nodes. It combines all
-    /// the exceptions as inner exceptions and throw it to the client application.
+    /// the exceptions as an inner exception and throw it to the client application.
     /// </summary>
     /// <example>The following example demonstrates how to use this exception in your code.
     /// <code>
@@ -46,7 +45,7 @@ namespace Alachisoft.NCache.Runtime.Exceptions
         private Exception[] _exceptions;
 
         /// <summary> 
-        /// constructor, takes the exceptions that are the cause of the current exception as parameter. 
+        /// It takes the exceptions that are the cause of the current exception as parameter. 
         /// </summary>
         /// <param name="exceptions">The exceptions that are the cause of the current exception</param>
         public AggregateException(params Exception[] exceptions)
@@ -55,7 +54,7 @@ namespace Alachisoft.NCache.Runtime.Exceptions
         }
 
         /// <summary> 
-        /// constructor, takes the exceptions that are the cause of the current exception as parameter. 
+        /// It takes the exceptions that are the cause of the current exception as parameter. 
         /// </summary>
         /// <param name="exceptions">The exceptions that are the cause of the current exception</param>
         public AggregateException(ArrayList exceptions)
@@ -65,9 +64,9 @@ namespace Alachisoft.NCache.Runtime.Exceptions
         }
 
         /// <summary> 
-        /// overloaded constructor, takes the reason as additional parameter. 
+        /// Overloaded constructor, takes the reason as additional parameter. 
         /// </summary>
-        /// <param name="reason">reason for exception</param>
+        /// <param name="reason">The reason for exception</param>
         /// <param name="exceptions">The exceptions that are the cause of the current exception</param>
         public AggregateException(string reason, ArrayList exceptions)
             : base(reason)
@@ -75,7 +74,31 @@ namespace Alachisoft.NCache.Runtime.Exceptions
             if (exceptions != null)
                 _exceptions = (Exception[])exceptions.ToArray(typeof(Exception));
         }
-
+        /// <summary>
+        /// overloaded constructor
+        /// </summary>
+        /// <param name="errorCode">assigned errorcode</param>
+        /// <param name="reason">exception message</param>
+        /// <param name="exceptions">The exceptions that are the cause of the current exception</param>
+        public AggregateException(int errorCode,string reason, ArrayList exceptions)
+         : base(errorCode,reason)
+        {
+            if (exceptions != null)
+                _exceptions = (Exception[])exceptions.ToArray(typeof(Exception));
+        }
+        /// <summary>
+        /// overloaded constructor
+        /// </summary>
+        /// <param name="errorCode">assigned errorcode</param>
+        /// <param name="reason">exception message</param>
+        /// <param name="exceptions">The exceptions that are the cause of the current exception</param>
+        /// <param name="stackTrace">stacktrace for exception</param>
+        public AggregateException(int errorCode, string reason, ArrayList exceptions,string stackTrace)
+       : base(errorCode, reason,stackTrace)
+        {
+            if (exceptions != null)
+                _exceptions = (Exception[])exceptions.ToArray(typeof(Exception));
+        }
         /// <summary>
         /// The exceptions that are the cause of the current exception.
         /// </summary>
@@ -93,7 +116,7 @@ namespace Alachisoft.NCache.Runtime.Exceptions
             {
                 if (_exceptions != null && _exceptions.Length > 0)
                 {
-                    string aggregateMsg = "Aggregate Excetpion was found";
+                    string aggregateMsg = "Aggregate Exception was found";
                     for (int i = 0; i < _exceptions.Length; i++)
                     {
                         aggregateMsg += "\r\n";

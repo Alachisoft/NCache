@@ -1,0 +1,10 @@
+import "EventId.proto";
+
+option java_outer_classname="CustomEventResponseProtocol";
+package Alachisoft.NCache.Common.Protobuf;
+message CustomEventResponse 
+{
+	optional bytes key = 1;
+	optional bytes value = 2;
+	optional EventId eventId = 3;
+}

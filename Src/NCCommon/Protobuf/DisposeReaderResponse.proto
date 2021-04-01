@@ -1,4 +1,6 @@
 option java_outer_classname="DisposeReaderResponseProtocol";
 package Alachisoft.NCache.Common.Protobuf;
 message DisposeReaderResponse { 
+	optional int32 commandID = 1 [default = -1];
+	optional int64 requestId = 2;
 }

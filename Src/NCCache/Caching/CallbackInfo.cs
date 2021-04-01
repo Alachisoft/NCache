@@ -1,48 +1,34 @@
-// Copyright (c) 2017 Alachisoft
-// 
-// Licensed under the Apache License, Version 2.0 (the "License");
-// you may not use this file except in compliance with the License.
-// You may obtain a copy of the License at
-// 
-//    http://www.apache.org/licenses/LICENSE-2.0
-// 
-// Unless required by applicable law or agreed to in writing, software
-// distributed under the License is distributed on an "AS IS" BASIS,
-// WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
-// See the License for the specific language governing permissions and
-// limitations under the License.
+//  Copyright (c) 2021 Alachisoft
+//  
+//  Licensed under the Apache License, Version 2.0 (the "License");
+//  you may not use this file except in compliance with the License.
+//  You may obtain a copy of the License at
+//  
+//     http://www.apache.org/licenses/LICENSE-2.0
+//  
+//  Unless required by applicable law or agreed to in writing, software
+//  distributed under the License is distributed on an "AS IS" BASIS,
+//  WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+//  See the License for the specific language governing permissions and
+//  limitations under the License
 
 using System;
-using Alachisoft.NCache.Runtime.Events;
-using Alachisoft.NCache.Runtime.Serialization;
-using Alachisoft.NCache.Runtime.Serialization.IO;
 using Alachisoft.NCache.Common;
+using Alachisoft.NCache.Runtime.Events;
+using Alachisoft.NCache.Runtime.Serialization.IO;
 
 namespace Alachisoft.NCache.Caching
 {
     [Serializable]
-    public class CallbackInfo : ICompactSerializable, ISizable
+    public class CallbackInfo : CallbackInfoBase
     {
-        protected string theClient;
-        protected object theCallback;
-        protected bool notifyOnItemExpiration = true;
+        #region -------------------- Fields --------------------
 
-        protected EventDataFilter _dataFilter = EventDataFilter.None;
+        private EventDataFilter _dataFilter = EventDataFilter.None;
 
+        #endregion
 
-        public CallbackInfo(string client, object callback, EventDataFilter datafilter)
-            : this(client, callback, datafilter, true)
-        {
-        }
-
-        public CallbackInfo(string client, object callback, EventDataFilter datafilter, bool notifyOnItemExpiration)
-        {
-            this.theClient = client;
-            this.theCallback = callback;
-            this.notifyOnItemExpiration = notifyOnItemExpiration;
-            this._dataFilter = datafilter;
-        }
-
+        #region ------------------ Properties ------------------
 
         public EventDataFilter DataFilter
         {
@@ -50,113 +36,76 @@ namespace Alachisoft.NCache.Caching
             set { _dataFilter = value; }
         }
 
-        /// <summary>
-        /// Gets/sets the client inteded to listen for the event
-        /// </summary>
-        public string Client
+        #endregion
+
+        #region ----------------- Constructors -----------------
+
+        [Obsolete("data filter required", true)]
+        public CallbackInfo()
+            : this(default(string), default(object))
         {
-            get { return theClient; }
-            set { theClient = value; }
         }
 
-        /// <summary>
-        /// Gets/sets the callback.
-        /// </summary>
-        public object Callback
+        [Obsolete("data filter required", true)]
+        public CallbackInfo(string client, object callback, CallbackType callbackType = CallbackType.PushBasedNotification)
+            : this(client, callback, true, callbackType)
         {
-            get { return theCallback; }
-            set { theCallback = value; }
         }
 
-        /// <summary>
-        /// Gets the flag which indicates whether client is interested in itemRemovedNotification
-        /// when expired due to Time based expiration.
-        /// </summary>
-        public bool NotifyOnExpiration
+        [Obsolete("data filter required", true)]
+        public CallbackInfo(string client, object callback, bool notifyOnItemExpiration, CallbackType callbackType = CallbackType.PushBasedNotification)
+            : this(client, callback, EventDataFilter.None, notifyOnItemExpiration, callbackType)
         {
-            get { return notifyOnItemExpiration; }
         }
 
-
-        /// <summary>
-        /// Compares on Callback and DataFilter
-        /// </summary>
-        /// <param name="obj"></param>
-        /// <returns></returns>
-        public override bool Equals(object obj)
+        public CallbackInfo(string client, object callback, EventDataFilter datafilter, CallbackType callbackType = CallbackType.PushBasedNotification)
+            : this(client, callback, datafilter, true, callbackType)
         {
-            if (obj is CallbackInfo)
-            {
-                CallbackInfo other = obj as CallbackInfo;
-                if (other.Client != theClient) return false;
-                if (other.Callback is short && theCallback is short)
-                {
-                    if ((short)other.Callback == (short)theCallback)
-                    {
-                        return true;
-                    }
-                    else
-                        return false;
-
-                }
-                else if (other.Callback == theCallback)
-                {
-                    return true;
-                }
-                else
-                    return true;
-            }
-            return false;
         }
 
-        public override string ToString()
+        public CallbackInfo(string client, object callback, EventDataFilter datafilter, bool notifyOnItemExpiration, CallbackType callbackType = CallbackType.PushBasedNotification)
+            : base(client, callback, notifyOnItemExpiration, callbackType)
         {
-            string cnt = theClient != null ? theClient : "NULL";
-            string cback = theCallback != null ? theCallback.ToString() : "NULL";
-            string dataFilter = _dataFilter.ToString();
-            return cnt + ":" + cback + ":" + dataFilter;
+            _dataFilter = datafilter;
         }
 
-        public int Size
-        {
-            get { return CallbackInfoSize; }
-        }
+        #endregion
 
-        public int InMemorySize
-        {
-            get { return Common.MemoryUtil.GetInMemoryInstanceSize(this.Size); }
-        }
+        #region ------------------- ISizable -------------------
 
-        private int CallbackInfoSize
+        public new int Size
         {
             get
             {
-                int temp = 0;
-                temp += Common.MemoryUtil.GetStringSize(theClient); // for theClient
-                temp += Common.MemoryUtil.NetReferenceSize; // for theCallback
-                temp += Common.MemoryUtil.NetByteSize; // for notifyOnItemExpiration
-                temp += Common.MemoryUtil.NetEnumSize;  //for _dataFilter
-                return temp;
+                int size = base.Size;
+                size += MemoryUtil.NetEnumSize;     // For _dataFilter
+                return size;
             }
         }
 
-        
-        #region ICompactSerializable Members
+        #endregion
 
-        public void Deserialize(CompactReader reader)
+        #region ------------- ICompactSerializable -------------
+
+        public override void Deserialize(CompactReader reader)
         {
-            theClient = (string)reader.ReadObject();
-            theCallback = reader.ReadObject();
-            notifyOnItemExpiration = reader.ReadBoolean();
+            base.Deserialize(reader);
             _dataFilter = (EventDataFilter)reader.ReadByte();
         }
 
-        public void Serialize(CompactWriter writer)
+        public override void Serialize(CompactWriter writer)
         {
-            writer.WriteObject(theClient);
-            writer.WriteObject(theCallback);
-            writer.Write(notifyOnItemExpiration);
+            base.Serialize(writer);
             writer.Write((byte)_dataFilter);
+        }
+
+        #endregion
+
+        #region ------------------- ToString() -----------------
+
+        public override string ToString()
+        {
+            return base.ToString() + ":" + _dataFilter;
         }
 
         #endregion

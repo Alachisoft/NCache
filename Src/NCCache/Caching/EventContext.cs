@@ -1,39 +1,33 @@
-// Copyright (c) 2017 Alachisoft
-// 
-// Licensed under the Apache License, Version 2.0 (the "License");
-// you may not use this file except in compliance with the License.
-// You may obtain a copy of the License at
-// 
-//    http://www.apache.org/licenses/LICENSE-2.0
-// 
-// Unless required by applicable law or agreed to in writing, software
-// distributed under the License is distributed on an "AS IS" BASIS,
-// WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
-// See the License for the specific language governing permissions and
-// limitations under the License.
-
+//  Copyright (c) 2021 Alachisoft
+//  
+//  Licensed under the Apache License, Version 2.0 (the "License");
+//  you may not use this file except in compliance with the License.
+//  You may obtain a copy of the License at
+//  
+//     http://www.apache.org/licenses/LICENSE-2.0
+//  
+//  Unless required by applicable law or agreed to in writing, software
+//  distributed under the License is distributed on an "AS IS" BASIS,
+//  WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+//  See the License for the specific language governing permissions and
+//  limitations under the License
 using System;
-using System.Collections.Generic;
-using System.Text;
 using System.Collections;
 using Alachisoft.NCache.Runtime.Serialization;
-using Alachisoft.NCache.Common.DataStructures;
-using Alachisoft.NCache.Caching.Queries;
-using Runtime = Alachisoft.NCache.Runtime;
+using Alachisoft.NCache.Runtime.Caching;
 
 namespace Alachisoft.NCache.Caching
 {
     /// <summary>
     /// make it serializable coz cache operations performed through remoting will fail 
     /// otherwise.
-    /// 
     /// Class is Serailizble for whenever remoting is used
-    /// 
     /// </summary>
     public class EventContext : ICompactSerializable, ICloneable
     {
         private Hashtable _fieldValueTable;
-        
+        private string _uniqueId="";
+        private string _cqUniqueId="";
         public EventCacheEntry Item
         {
             get { return (EventCacheEntry)this.GetValueByField(EventContextFieldName.EventCacheEntry); }
@@ -46,7 +40,27 @@ namespace Alachisoft.NCache.Caching
             set { Add(EventContextFieldName.OldEventCacheEntry, value); }
         }
 
-        public EventContext() { }
+      
+
+        public object CollectionItem
+        {
+            get { return GetValueByField(EventContextFieldName.CollectionEventItem); }
+            set { Add(EventContextFieldName.CollectionEventItem, value); }
+        }
+
+        public object OldCollectionItem
+        {
+            get { return GetValueByField(EventContextFieldName.OldCollectionEventItem); }
+            set { Add(EventContextFieldName.OldCollectionEventItem, value); }
+        }
+
+        public string TaskFailureReason
+        {
+            get { return (string)this.GetValueByField(EventContextFieldName.TaskFailureReason); }
+            set { Add(EventContextFieldName.TaskFailureReason, value); }
+        }
+
+        public EventContext() {  }
 
         public EventContext(EventContextFieldName fieldName, object fieldValue)
         {
@@ -113,11 +127,37 @@ namespace Alachisoft.NCache.Caching
             }
         }
 
+        public string UniqueId
+        {
+            get
+            {
+                return _uniqueId;
+            }
+
+            set
+            {
+                _uniqueId = value;
+            }
+        }
+        public string CQUniqueId
+        {
+            get
+            {
+                return _cqUniqueId;
+            }
+
+            set
+            {
+                _cqUniqueId = value;
+            }
+        }
         #region ICompactSerializable Members
 
         public void Deserialize(Runtime.Serialization.IO.CompactReader reader)
         {
             _fieldValueTable = (Hashtable)reader.ReadObject();
+            _uniqueId = (string)reader.ReadObject();
+            _cqUniqueId =(string) reader.ReadObject();
         }
 
         public void Serialize(Runtime.Serialization.IO.CompactWriter writer)
@@ -125,6 +165,8 @@ namespace Alachisoft.NCache.Caching
             lock (this)
             {
                 writer.WriteObject(_fieldValueTable);
+                writer.WriteObject(_uniqueId);
+                writer.WriteObject(_cqUniqueId);
             }
         }
 
@@ -154,6 +196,9 @@ namespace Alachisoft.NCache.Caching
                         oc._fieldValueTable.Add(ide.Key, clone);
                     }
                 }
+                oc.UniqueId =String.Copy(UniqueId);
+                oc.CQUniqueId =String.Copy(CQUniqueId);
+
             }
             return oc;
         }

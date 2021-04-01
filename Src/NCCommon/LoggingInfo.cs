@@ -1,22 +1,18 @@
-// Copyright (c) 2017 Alachisoft
-// 
-// Licensed under the Apache License, Version 2.0 (the "License");
-// you may not use this file except in compliance with the License.
-// You may obtain a copy of the License at
-// 
-//    http://www.apache.org/licenses/LICENSE-2.0
-// 
-// Unless required by applicable law or agreed to in writing, software
-// distributed under the License is distributed on an "AS IS" BASIS,
-// WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
-// See the License for the specific language governing permissions and
-// limitations under the License.
-
+//  Copyright (c) 2021 Alachisoft
+//  
+//  Licensed under the Apache License, Version 2.0 (the "License");
+//  you may not use this file except in compliance with the License.
+//  You may obtain a copy of the License at
+//  
+//     http://www.apache.org/licenses/LICENSE-2.0
+//  
+//  Unless required by applicable law or agreed to in writing, software
+//  distributed under the License is distributed on an "AS IS" BASIS,
+//  WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+//  See the License for the specific language governing permissions and
+//  limitations under the License
 using System;
-using System.Text;
-
 using System.Collections.Generic;
-using Runtime = Alachisoft.NCache.Runtime;
 
 namespace Alachisoft.NCache.Common
 {
@@ -99,7 +95,7 @@ namespace Alachisoft.NCache.Common
         /// <param name="status">Status of logging</param>
         public void SetStatus(LoggingType type, LogsStatus status)
         {
-                this._logMap[type] = status;
+            this._logMap[type] = status;
         }
 
         /// <summary>
@@ -109,18 +105,19 @@ namespace Alachisoft.NCache.Common
         /// <returns>Logging status for that type</returns>
         public LogsStatus GetStatus(LoggingType type)
         {
-            return this._logMap[type]; 
+            return this._logMap[type];            
+
         }
 
         #region ICompactSerializable Members
         public void Deserialize(Runtime.Serialization.IO.CompactReader reader)
         {
-            _logMap=Common.Util.SerilizationUtility.DeserializeDictionary<LoggingType,LogsStatus>(reader);
+            _logMap=Common.Util.SerializationUtility.DeserializeDictionary<LoggingType,LogsStatus>(reader);
         }
 
         public void Serialize(Runtime.Serialization.IO.CompactWriter writer)
         {
-            Common.Util.SerilizationUtility.SerializeDictionary(_logMap,writer);
+            Common.Util.SerializationUtility.SerializeDictionary(_logMap,writer);
         } 
         #endregion
     }

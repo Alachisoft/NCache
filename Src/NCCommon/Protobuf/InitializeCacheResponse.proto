@@ -1,6 +1,17 @@
+import "ShutDownServerInfo.proto";
+
 option java_outer_classname="InitializeCacheResponseProtocol";
 package Alachisoft.NCache.Common.Protobuf;
 message InitializeCacheResponse {
 	optional string cacheType = 1;
-	optional bytes token = 2;
+	optional string targetCacheUniqueID = 2;
+	optional bool isPersistenceEnabled = 3;
+	optional int32 persistenceInterval = 4;
+
+	optional bool isShutDownProcessEnabled = 5;
+	repeated ShutDownServerInfo shutDownServerInfo = 6; 
+    optional bool requestLoggingEnabled = 7;
+	optional bool secureConnectionEnabled = 8 [default = false];
+	
+
 }

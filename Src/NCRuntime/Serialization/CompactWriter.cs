@@ -1,24 +1,26 @@
-// Copyright (c) 2017 Alachisoft
-// 
-// Licensed under the Apache License, Version 2.0 (the "License");
-// you may not use this file except in compliance with the License.
-// You may obtain a copy of the License at
-// 
-//    http://www.apache.org/licenses/LICENSE-2.0
-// 
-// Unless required by applicable law or agreed to in writing, software
-// distributed under the License is distributed on an "AS IS" BASIS,
-// WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
-// See the License for the specific language governing permissions and
-// limitations under the License.
-
+//  Copyright (c) 2021 Alachisoft
+//  
+//  Licensed under the Apache License, Version 2.0 (the "License");
+//  you may not use this file except in compliance with the License.
+//  You may obtain a copy of the License at
+//  
+//     http://www.apache.org/licenses/LICENSE-2.0
+//  
+//  Unless required by applicable law or agreed to in writing, software
+//  distributed under the License is distributed on an "AS IS" BASIS,
+//  WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+//  See the License for the specific language governing permissions and
+//  limitations under the License
 using System;
+using System.IO;
 
 namespace Alachisoft.NCache.Runtime.Serialization.IO
 {
     /// <summary>
     /// CompactWriter is the  base class for CompactBinaryWriter.
     /// </summary>
+
+    //[CLSCompliant(false)]
     public abstract class CompactWriter
     {
         /// <summary>
@@ -27,7 +29,17 @@ namespace Alachisoft.NCache.Runtime.Serialization.IO
         /// <param name="graph">Object to write</param>
         public abstract void WriteObject(object graph);
 
+        /// <summary>
+        /// Writes the specified type to the current stream and advances the stream position.
+        /// </summary>
+        /// <typeparam name="T"></typeparam>
+        /// <param name="graph"></param>
         public abstract void WriteObjectAs<T>(T graph);
+
+        /// <summary>
+        /// Memory stream on which the bytes are written to
+        /// </summary>
+        public abstract Stream BaseStream { get; }
 
         #region /      CompactBinaryWriter.Write(XXX)      /
 

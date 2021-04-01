@@ -1,0 +1,19 @@
+import "Commands/Value.proto";
+import "InternalPayload.proto";
+import "SubscriptionIdRecepientList.proto";
+
+option java_outer_classname="MessageProtocol";
+package Alachisoft.NCache.Common.Protobuf;
+message Message {
+	optional string messageId = 1;
+	optional Value payload = 2;
+	optional int32 flag = 3;
+	optional int64 creationTime = 4;
+	optional int64 expirationTime=5;
+	optional int32 deliveryOption = 6;
+	optional int32 subscriptionType = 7;
+	optional int32 messageRemoveReason = 8;
+	repeated string recipientList=9;
+	optional InternalPayload internalPayload = 10;
+	repeated SubscriptionIdRecepientList subscriptionIdentifiers=11;
+}

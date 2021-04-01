@@ -1,0 +1,11 @@
+option java_outer_classname="RemoveTopicCommandProtocol";
+package Alachisoft.NCache.Common.Protobuf;
+message RemoveTopicCommand {
+    optional string topicName = 1;
+	optional int64 requestId = 2;
+	optional bool forcefully = 3;
+	optional int64 clientLastViewId = 6 [default=-1];
+	optional string version = 7;
+	optional int32 commandVersion = 8 [default=0];
+	optional string intendedRecipient = 9 [default = ""];
+}

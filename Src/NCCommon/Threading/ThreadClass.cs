@@ -1,28 +1,16 @@
-// Copyright (c) 2017 Alachisoft
-// 
-// Licensed under the Apache License, Version 2.0 (the "License");
-// you may not use this file except in compliance with the License.
-// You may obtain a copy of the License at
-// 
-//    http://www.apache.org/licenses/LICENSE-2.0
-// 
-// Unless required by applicable law or agreed to in writing, software
-// distributed under the License is distributed on an "AS IS" BASIS,
-// WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
-// See the License for the specific language governing permissions and
-// limitations under the License.
-
-//
-// In order to convert some functionality to Visual C#, the Java Language Conversion Assistant
-// creates "support classes" that duplicate the original functionality.  
-//
-// Support classes replicate the functionality of the original code, but in some cases they are 
-// substantially different architecturally. Although every effort is made to preserve the 
-// original architecture of the application in the converted project, the user should be aware that 
-// the primary goal of these support classes is to replicate functionality, and that at times 
-// the architecture of the resulting solution may differ somewhat.
-//
-
+//  Copyright (c) 2021 Alachisoft
+//  
+//  Licensed under the Apache License, Version 2.0 (the "License");
+//  you may not use this file except in compliance with the License.
+//  You may obtain a copy of the License at
+//  
+//     http://www.apache.org/licenses/LICENSE-2.0
+//  
+//  Unless required by applicable law or agreed to in writing, software
+//  distributed under the License is distributed on an "AS IS" BASIS,
+//  WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+//  See the License for the specific language governing permissions and
+//  limitations under the License
 using System;
 using System.Threading;
 
@@ -215,7 +203,11 @@ namespace Alachisoft.NCache.Common.Threading
         /// </summary>
         public void Abort()
         {
+#if !NETCORE
             threadField.Abort();
+#elif NETCORE
+            threadField.Interrupt();
+#endif
         }
 
         /// <summary>
@@ -229,7 +221,11 @@ namespace Alachisoft.NCache.Common.Threading
         {
             lock (this)
             {
+#if !NETCORE
                 threadField.Abort(stateInfo);
+#elif NETCORE
+                threadField.Interrupt();
+#endif
             }
         }
 

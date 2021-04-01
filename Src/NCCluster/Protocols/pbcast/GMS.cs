@@ -1,41 +1,20 @@
-// Licensed under the Apache License, Version 2.0 (the "License");
-// you may not use this file except in compliance with the License.
-// You may obtain a copy of the License at
-// 
-//    http://www.apache.org/licenses/LICENSE-2.0
-// 
-// Unless required by applicable law or agreed to in writing, software
-// distributed under the License is distributed on an "AS IS" BASIS,
-// WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
-// See the License for the specific language governing permissions and
-// limitations under the License.
 // $Id: GMS.java,v 1.17 2004/09/03 12:28:04 belaban Exp $
-
 using System;
 using System.Threading;
 using System.Collections;
-
-using Alachisoft.NGroups;
-using Alachisoft.NGroups.Protocols;
-using Alachisoft.NGroups.Util;
-using Alachisoft.NGroups.Stack;
-using Alachisoft.NCache.Common.Mirroring;
 using Alachisoft.NCache.Runtime.Serialization.IO;
-
-
 using Alachisoft.NCache.Runtime.Serialization;
-
-
+using Alachisoft.NCache.Common.Mirroring;
 using Alachisoft.NCache.Common.Threading;
 using Alachisoft.NCache.Common.Net;
 using Alachisoft.NCache.Common.DataStructures;
 using Alachisoft.NCache.Common.Enum;
-using Alachisoft.NCache.Common.Util;
+using Alachisoft.NGroups.Stack;
+using Alachisoft.NGroups.Util;
+using System.Collections.Generic;
 
 namespace Alachisoft.NGroups.Protocols.pbcast
 {
-
-
 
     /// <summary> Group membership protocol. Handles joins/leaves/crashes (suspicions) and emits new views
     /// accordingly. Use VIEW_ENFORCER on top of this layer to make sure new members don't receive
@@ -63,8 +42,6 @@ namespace Alachisoft.NGroups.Protocols.pbcast
                 lock (impl_mutex)
                 {
                     impl = value;
-                    //string msg = (local_addr != null?local_addr.ToString() + " ":"") + "changed role to " + value.GetType().FullName;
-                    //stack.nTrace.debug("pb.GmsImpl.Impl", msg);					
                 }
             }
 
@@ -152,7 +129,8 @@ namespace Alachisoft.NGroups.Protocols.pbcast
 
         internal TimeScheduler timer = null;
         private object acquireMap_mutex = new object(); //synchronizes the HASHMAP_REQ/HASHMAP_RESP events
-
+        
+        private object _mapMainMutex = new object();
         internal object _hashmap;
 
         //=======================================
@@ -172,7 +150,7 @@ namespace Alachisoft.NGroups.Protocols.pbcast
         internal bool isPartReplica;
         internal ArrayList disconnected_nodes = new ArrayList();
         internal string unique_id;
-        internal Hashtable nodeGmsIds = new Hashtable();        
+        internal Hashtable nodeGmsIds = new Hashtable();
         private String _uniqueID = String.Empty;
 
         private bool _nodeJoiningInProgress = false;
@@ -189,7 +167,7 @@ namespace Alachisoft.NGroups.Protocols.pbcast
 
         private object membership_mutex = new object(); //synchronizes the ASK_JOIN/ASK_JOIN_RESP events
 
-   
+        private bool _membershipChangeInProgress = false;
 
         private object resume_mutex = new object(); //synchronizes the ASK_JOIN/ASK_JOIN_RESP events
 
@@ -201,8 +179,9 @@ namespace Alachisoft.NGroups.Protocols.pbcast
         internal SateTransferPromise _stateTransferPromise;
         internal int _stateTransferQueryTimesout = 3000;
         private bool _startedAsMirror;
-      
-      
+        internal string versionType;
+        internal string environmentName;
+        internal bool isExpress;
 
         public GMS()
         {
@@ -242,8 +221,6 @@ namespace Alachisoft.NGroups.Protocols.pbcast
 
         public override void start()
         {
-            if (Stack != null && Stack.NCacheLog != null)
-                Stack.NCacheLog.CriticalInfo("gms_id :" + _uniqueID);
             if (impl != null)
                 impl.start();
 
@@ -418,7 +395,6 @@ namespace Alachisoft.NGroups.Protocols.pbcast
                 }
 
                 Stack.NCacheLog.Debug("pb.GMS.getNextView()", "new view is " + v);
-				v.BridgeSourceCacheId = impl.UniqueId;
                 return v;
             }
         }
@@ -453,10 +429,8 @@ namespace Alachisoft.NGroups.Protocols.pbcast
         /// </returns>
         public virtual View castViewChange(System.Collections.ArrayList new_mbrs, System.Collections.ArrayList old_mbrs, System.Collections.ArrayList suspected_mbrs, object mapsPackage)
         {
-            
             View new_view;
 
-            // next view: current mbrs + new_mbrs - old_mbrs - suspected_mbrs
             new_view = getNextView(new_mbrs, old_mbrs, suspected_mbrs);
 
             if (new_view == null) 
@@ -468,7 +442,6 @@ namespace Alachisoft.NGroups.Protocols.pbcast
                 if (distributionAndMirrorMaps[0] != null)
                 {
                     DistributionMaps maps = (DistributionMaps)distributionAndMirrorMaps[0];
-                    
                     new_view.DistributionMaps = maps;
                 }
 
@@ -504,31 +477,27 @@ namespace Alachisoft.NGroups.Protocols.pbcast
             HDR hdr;
 
             Stack.NCacheLog.Debug("pb.GMS.castViewChange()", "mcasting view {" + new_view + "} (" + new_view.size() + " mbrs)\n");
-
-            if (new_view != null)
-                new_view.BridgeSourceCacheId = impl.UniqueId;
-
+            
             view_change_msg = new Message(); // bcast to all members
-           
+
 
             hdr = new HDR(HDR.VIEW, new_view);
             hdr.digest = digest;
             view_change_msg.putHeader(HeaderType.GMS, hdr);
             view_change_msg.Dests = new_view.Members.Clone() as ArrayList;
 
-            if(stack.NCacheLog.IsInfoEnabled) Stack.NCacheLog.Info("CastView.Watch", "Count of members: " + new_view.Members.Count.ToString());
-            //TODO: we need to handle scenario when we dont recive castView change from a node
+            if (stack.NCacheLog.IsInfoEnabled) Stack.NCacheLog.Info("CastView.Watch", "Count of members: " + new_view.Members.Count.ToString());
             _promise = new ViewPromise(new_view.Members.Count);
 
-            bool waitForViewAcknowledgement = true ;
+            bool waitForViewAcknowledgement = true;
             if (!new_view.containsMember(local_addr)) //i am leaving
             {
                 waitForViewAcknowledgement = false;
                 if (Stack.NCacheLog.IsInfoEnabled) Stack.NCacheLog.Info("GMS.castViewChange()", "I am coordinator and i am leaving");
-                passDown(new Event(Event.MSG, view_change_msg, Priority.Critical));
+                passDown(new Event(Event.MSG, view_change_msg, Priority.High));
             }
             else
-                passDown(new Event(Event.MSG, view_change_msg, Priority.Critical));
+                passDown(new Event(Event.MSG, view_change_msg, Priority.High));
 
             if (waitForViewAcknowledgement)
             {
@@ -537,13 +506,13 @@ namespace Alachisoft.NGroups.Protocols.pbcast
                 if (!_promise.AllResultsReceived()) //retry
                 {
                     view_change_msg.Dests = new_view.Members.Clone() as ArrayList;
-                    passDown(new Event(Event.MSG, view_change_msg, Priority.Critical));
+                    passDown(new Event(Event.MSG, view_change_msg, Priority.High));
                     _promise.WaitResult(_castViewChangeTimeOut);
                 }
 
                 if (_promise.AllResultsReceived())
                 {
-                    Stack.NCacheLog.CriticalInfo("GMS.castViewChange()", "View applied");
+                    Stack.NCacheLog.CriticalInfo("GMS.CastViewChange", "View applied on cluster.");
                 }
             }
         }
@@ -564,7 +533,7 @@ namespace Alachisoft.NGroups.Protocols.pbcast
             Message m = new Message(coordinator, null, null);
             HDR hdr = new HDR(HDR.VIEW_RESPONSE, true);
             m.putHeader(HeaderType.GMS, hdr);
-            passDown(new Event(Event.MSG, m, Priority.Critical));
+            passDown(new Event(Event.MSG, m, Priority.High));
         }
 
         /// <summary> Sets the new view and sends a VIEW_CHANGE event up and down the stack.</summary>
@@ -577,14 +546,11 @@ namespace Alachisoft.NGroups.Protocols.pbcast
             {
                 //Lest inform coordinator about view receiption
                 SendViewAcknowledgment(new_view.Coordinator);
-                
+
                 int rc;
                 ViewId vid = new_view.Vid;
                 System.Collections.ArrayList mbrs = new_view.Members;
-
-                impl.UniqueId = new_view.BridgeSourceCacheId;
-                _uniqueID = new_view.BridgeSourceCacheId;
-
+                
                 if (Stack.NCacheLog.IsInfoEnabled) Stack.NCacheLog.Info("[local_addr=" + local_addr + "] view is " + new_view);
 
                 // Discards view with id lower than our own. Will be installed without check if first view
@@ -594,7 +560,7 @@ namespace Alachisoft.NGroups.Protocols.pbcast
                     if (rc <= 0)
                     {
                         Stack.NCacheLog.Error("[" + local_addr + "] received view <= current view;" + " discarding it (current vid: " + view_id + ", new vid: " + vid + ')');
-                        Event viewEvt = new Event(Event.VIEW_CHANGE_OK, null, Priority.Critical);
+                        Event viewEvt = new Event(Event.VIEW_CHANGE_OK, null, Priority.High);
                         passDown(viewEvt);
                         return;
                     }
@@ -610,18 +576,25 @@ namespace Alachisoft.NGroups.Protocols.pbcast
                         {
                             if (!VerifySuspect(currentCoodinator))
                             {
-                                Stack.NCacheLog.Error("GMS.installView", "rejecting the view from " + newCoordinator + " as my own coordinator[" + currentCoodinator + "] is not down");
-                                Event viewEvt = new Event(Event.VIEW_CHANGE_OK, null, Priority.Critical);
-                                passDown(viewEvt);
+                                if (isPartReplica && newCoordinator.IpAddress.Equals(local_addr.IpAddress))
+                                {
+                                    Stack.NCacheLog.Error("GMS.installView", " though my coordinator is not down, however view is accepted because it is generated on my main node");
+                                }
+                                else
+                                {
+                                    Stack.NCacheLog.Error("GMS.installView", "rejecting the view from " + newCoordinator + " as my own coordinator[" + currentCoodinator + "] is not down");
+                                    Event viewEvt = new Event(Event.VIEW_CHANGE_OK, null, Priority.High);
+                                    passDown(viewEvt);
 
-                                //we should inform the coordinator of this view that i can't be the member
-                                //of your view as my own coordinator is alive.
+                                    //we should inform the coordinator of this view that i can't be the member
+                                    //of your view as my own coordinator is alive.
 
-                                Message msg = new Message(new_view.Coordinator, null, new byte[0]);
-                                msg.putHeader(HeaderType.GMS, new GMS.HDR(GMS.HDR.VIEW_REJECTED, local_addr));
-                                passDown(new Event(Event.MSG, msg, Priority.Critical));
+                                    Message msg = new Message(new_view.Coordinator, null, new byte[0]);
+                                    msg.putHeader(HeaderType.GMS, new GMS.HDR(GMS.HDR.VIEW_REJECTED, local_addr));
+                                    passDown(new Event(Event.MSG, msg, Priority.High));
 
-                                return;
+                                    return;
+                                }
                             }
                         }
                     }
@@ -650,7 +623,7 @@ namespace Alachisoft.NGroups.Protocols.pbcast
 
                 lock (members)
                 {
-                    // Members are same as in the previous view. No need to apply view
+                    //@UH Members are same as in the previous view. No need to apply view
                     if (view_id != null)
                     {
                         Membership newMembers = new Membership(mbrs);
@@ -658,14 +631,16 @@ namespace Alachisoft.NGroups.Protocols.pbcast
                         {
 
                             Stack.NCacheLog.Error("GMS.InstallView", "[" + local_addr + "] received view has the same members as current view;" + " discarding it (current vid: " + view_id + ", new vid: " + vid + ')');
-                            Event viewEvt = new Event(Event.VIEW_CHANGE_OK, null, Priority.Critical);
-                            //joining, leaving and tmp_members are needed to be synchronized even if view is same
+                            Event viewEvt = new Event(Event.VIEW_CHANGE_OK, null, Priority.High);
+
+                            //3 joining, leaving and tmp_members are needed to be synchronized even if view is same
                             Global.ICollectionSupport.RemoveAll(joining, mbrs); // remove all members in mbrs from joining
                             // remove all elements from 'leaving' that are not in 'mbrs'
                             Global.ICollectionSupport.RetainAll(leaving, mbrs);
 
                             tmp_members.add(joining); // add members that haven't yet shown up in the membership
                             tmp_members.remove(leaving); // remove members that haven't yet been removed from the membership
+
                             passDown(viewEvt);
                             return;
                         }
@@ -673,7 +648,7 @@ namespace Alachisoft.NGroups.Protocols.pbcast
 
                     //=========================================
                     //
-                    Stack.NCacheLog.CriticalInfo("GMS.InstallView", "Installing view in gms");
+                    Stack.NCacheLog.CriticalInfo("GMS.InstallView", "Installing view in GMS Layer.");
 
                     if (Stack.NCacheLog.IsInfoEnabled) Stack.NCacheLog.Info("GMS.InstallView " + new_view.ToString() + "\\n" + "seq tble : " + new_view.SequencerTbl.Count);
                     this._subGroupMbrsMap = new_view.SequencerTbl.Clone() as System.Collections.Hashtable;
@@ -683,7 +658,7 @@ namespace Alachisoft.NGroups.Protocols.pbcast
                     // serialize access to views
                     // assign new_view to view_id
                     view_id = vid.Copy();
-                    Stack.NCacheLog.CriticalInfo("GMS.InstallView", "=== View ID = " + view_id.ToString());
+                    Stack.NCacheLog.CriticalInfo("GMS.InstallView", "View ID = " + view_id.ToString());
 
                     // Set the membership. Take into account joining members
                     if (mbrs != null && mbrs.Count > 0)
@@ -701,7 +676,7 @@ namespace Alachisoft.NGroups.Protocols.pbcast
                             IDictionaryEnumerator ide = gmsIds.GetEnumerator();
                             while (ide.MoveNext())
                             {
-                                if(Stack.NCacheLog.IsInfoEnabled) Stack.NCacheLog.Info("GMS.InstallView", "mbr  = " + ide.Key + " ; gms_id = " + ide.Value);
+                                if (Stack.NCacheLog.IsInfoEnabled) Stack.NCacheLog.Info("GMS.InstallView", "mbr  = " + ide.Key + " ; gms_id = " + ide.Value);
                                 AddGmsId((Address)ide.Key, (string)ide.Value);
                             }
                         }
@@ -731,10 +706,8 @@ namespace Alachisoft.NGroups.Protocols.pbcast
                     // Send VIEW_CHANGE event up and down the stack:
                     if (Stack.NCacheLog.IsInfoEnabled) Stack.NCacheLog.Info("GMS.installView", "broadcasting view change within stack");
 
-                   
 
                     coord = determineCoordinator();
-                   
                     // changed on suggestion by yaronr and Nicolas Piedeloupe
                     if (coord != null && coord.Equals(local_addr) && !haveCoordinatorRole())
                     {
@@ -745,11 +718,9 @@ namespace Alachisoft.NGroups.Protocols.pbcast
                         if (haveCoordinatorRole() && !local_addr.Equals(coord))
                             becomeParticipant();
                     }
-                    if (string.IsNullOrEmpty(new_view.BridgeSourceCacheId))
-                        new_view.BridgeSourceCacheId = impl.UniqueId;
-
+                  
                     MarkStateTransferInProcess();
-                    Event view_event = new Event(Event.VIEW_CHANGE, new_view.Clone(), Priority.Critical);
+                    Event view_event = new Event(Event.VIEW_CHANGE, new_view.Clone(), Priority.High);
                     passDown(view_event); // needed e.g. by failure detector or UDP
                 }
             }
@@ -908,7 +879,7 @@ namespace Alachisoft.NGroups.Protocols.pbcast
                             args[2] = hdr.isStartedAsMirror;
                             args[3] = hdr.GMSId;
                             ThreadPool.QueueUserWorkItem(new WaitCallback(handleJoinrequestAsync), args);
-                           
+                            //handleJoinRequest(hdr.mbr, hdr.subGroup_name, hdr.isStartedAsMirror, hdr.GMSId);
                             break;
 
                         case HDR.SPECIAL_JOIN_REQUEST:
@@ -920,15 +891,15 @@ namespace Alachisoft.NGroups.Protocols.pbcast
                             impl.handleJoinResponse(hdr.join_rsp);
                             break;
 
+                        
                         case HDR.LEAVE_REQ:
                             Stack.NCacheLog.Debug("received LEAVE_REQ " + hdr + " from " + msg.Src);
 
                             if (hdr.mbr == null)
                             {
-                                Stack.NCacheLog.Error( "LEAVE_REQ's mbr field is null");
+                                Stack.NCacheLog.Error("LEAVE_REQ's mbr field is null");
                                 return;
                             }
-                           
                             if (isPartReplica && IsCoordinator)
                             {
                                 //if replica node on the coordinator is leaving then send a special event to TCP
@@ -940,7 +911,7 @@ namespace Alachisoft.NGroups.Protocols.pbcast
                                 }
                             }
                             ThreadPool.QueueUserWorkItem(new WaitCallback(handleLeaveAsync), new object[] { hdr.mbr, false });
-                            
+
                             break;
 
                         case HDR.LEAVE_RSP:
@@ -959,7 +930,7 @@ namespace Alachisoft.NGroups.Protocols.pbcast
                                 return;
                             }
                             else
-                                Stack.NCacheLog.CriticalInfo("gms.Up", "received view from :" + msg.Src + " ; view = " + hdr.view);  
+                                Stack.NCacheLog.CriticalInfo("GMS.Up", "received view from :" + msg.Src + " ; view = " + hdr.view);
                             impl.handleViewChange(hdr.view, hdr.digest);
                             break;
 
@@ -990,7 +961,6 @@ namespace Alachisoft.NGroups.Protocols.pbcast
                             break;
 
                         case HDR.LEAVE_CLUSTER:
-                           
                             string gmsId = hdr.arg as string;//reported gms id
                             string myGmsId = GetNodeGMSId(local_addr);
 
@@ -1017,10 +987,8 @@ namespace Alachisoft.NGroups.Protocols.pbcast
                             break;
 
                         case HDR.RE_CHECK_CLUSTER_HEALTH:
-                           
                             Thread t = new Thread(new ParameterizedThreadStart(impl.ReCheckClusterHealth));
                             t.Start(hdr.mbr);
-                           
                             break;
 
                         case HDR.INFORM_ABOUT_NODE_DEATH:
@@ -1037,18 +1005,17 @@ namespace Alachisoft.NGroups.Protocols.pbcast
                         case HDR.IS_NODE_IN_STATE_TRANSFER_RSP:
                             if (_stateTransferPromise != null)
                             {
-                                if(Stack.NCacheLog.IsInfoEnabled) Stack.NCacheLog.Info("gms.UP", "(state transfer rsp) sender: " + msg.Src + " ->" + hdr.arg);
+                                if (Stack.NCacheLog.IsInfoEnabled) Stack.NCacheLog.Info("gms.UP", "(state transfer rsp) sender: " + msg.Src + " ->" + hdr.arg);
                                 _stateTransferPromise.SetResult(hdr.arg);
                             }
                             break;
 
                         default:
-                            Stack.NCacheLog.Error( "HDR with type=" + hdr.type + " not known");
+                            Stack.NCacheLog.Error("HDR with type=" + hdr.type + " not known");
                             break;
 
                     }
 
-                   
                     return; // don't pass up
 
 
@@ -1071,7 +1038,6 @@ namespace Alachisoft.NGroups.Protocols.pbcast
 
                 case Event.SET_LOCAL_ADDRESS:
                     local_addr = (Address)evt.Arg;
-                  
                     break; // pass up
 
 
@@ -1090,12 +1056,10 @@ namespace Alachisoft.NGroups.Protocols.pbcast
                     return; // don't pass up
 
                 case Event.CONNECTION_FAILURE:
-                   
                     impl.handleConnectionFailure(evt.Arg as ArrayList);
                     return;//dont passup
 
                 case Event.NODE_REJOINING:
-                   
                     impl.handleNodeRejoining(evt.Arg as Address);
                     return;
 
@@ -1155,6 +1119,7 @@ namespace Alachisoft.NGroups.Protocols.pbcast
         {
             bool isDead = true;
             string gmsId = null;
+
             if (suspect != null)
             {
                 Stack.NCacheLog.CriticalInfo("GMS.VerifySuspect", " verifying the death of node " + suspect);
@@ -1165,9 +1130,9 @@ namespace Alachisoft.NGroups.Protocols.pbcast
                 {
                     nodeStatus = null;
                     nodeTobeSuspect = suspect;
-                    passDown(new Event(Event.GET_NODE_STATUS, suspect, Priority.Critical));
+                    passDown(new Event(Event.GET_NODE_STATUS, suspect, Priority.High));
                     //we wait for the verification
-                    
+
                     Monitor.Wait(suspect_verify_mutex);
                     if (nodeStatus != null)
                     {
@@ -1189,14 +1154,16 @@ namespace Alachisoft.NGroups.Protocols.pbcast
                 //we verify whether current gms id is same as when node was reported suspect.
                 string currentGmsId = GmsIds[suspect] as string;
 
-                if (currentGmsId != null && gmsId != null && currentGmsId.Equals(gmsId))
+               if (currentGmsId != null && gmsId != null && currentGmsId.Equals(gmsId))
                     return true;
+                
                 else
                 {
-                    if (Stack.NCacheLog.IsErrorEnabled) Stack.NCacheLog.CriticalInfo("GMS.VerifySuspect", "node gms ids differ; old : " + gmsId + " new: " + currentGmsId +  nodeStatus.ToString());
+                    if (Stack.NCacheLog.IsErrorEnabled) Stack.NCacheLog.CriticalInfo("GMS.VerifySuspect", "node gms ids differ; old : " + gmsId + " new: " + currentGmsId + nodeStatus.ToString());
                     return false;
                 }
             }
+           
 
             return isDead;
         }
@@ -1215,7 +1182,7 @@ namespace Alachisoft.NGroups.Protocols.pbcast
                 GMS.HDR hdr = new HDR(GMS.HDR.INFORM_ABOUT_NODE_DEATH);
                 hdr.arg = deadNode;
                 msg.putHeader(HeaderType.GMS, hdr);
-                down(new Event(Event.MSG,msg,Priority.Critical));
+                down(new Event(Event.MSG, msg, Priority.High));
             }
         }
 
@@ -1228,10 +1195,8 @@ namespace Alachisoft.NGroups.Protocols.pbcast
         /// <returns></returns>
         public bool IsClusterInStateTransfer()
         {
-            
-            if(GetStateTransferStatus()) return true;
+            if (GetStateTransferStatus()) return true;
             //check with other members
-            
             if (this.members != null)
             {
                 ArrayList allmembers = this.members.Members;
@@ -1242,18 +1207,14 @@ namespace Alachisoft.NGroups.Protocols.pbcast
                     msg.Dests = allmembers;
                     GMS.HDR hdr = new HDR(GMS.HDR.IS_NODE_IN_STATE_TRANSFER);
                     msg.putHeader(HeaderType.GMS, hdr);
-                    down(new Event(Event.MSG, msg, Priority.Critical));
-
-                    
+                    down(new Event(Event.MSG, msg, Priority.High));
                     Object objectState = _stateTransferPromise.WaitResult(_stateTransferQueryTimesout);
-                    // Service crash fix.
+                    //huma: Service crash fix.
                     bool isInstateTransfer = objectState != null ? (bool)objectState : false;
                     if (Stack.NCacheLog.IsInfoEnabled) Stack.NCacheLog.Info("gms.IsClusterInStateTransfer", "result : " + (isInstateTransfer));
                     return isInstateTransfer;
-
                 }
             }
-
             return false;
         }
 
@@ -1262,6 +1223,7 @@ namespace Alachisoft.NGroups.Protocols.pbcast
         {
             switch (evt.Type)
             {
+
                 case Event.NOTIFY_LEAVING:
                     impl.handleNotifyLeaving();
                     return;
@@ -1289,13 +1251,13 @@ namespace Alachisoft.NGroups.Protocols.pbcast
                         object[] addrs = (object[])evt.Arg;
                         group_addr = (string)addrs[0];
                         subGroup_addr = (string)addrs[1];
-                        
+                        //group_addr = (string)evt.Arg;
                         isStartedAsMirror = (bool)addrs[2];
                         twoPhaseConnect = (bool)addrs[3];
                     }
                     catch (System.InvalidCastException e)
                     {
-                        Stack.NCacheLog.Error( "[CONNECT]: group address must be a string (channel name)", e.Message);
+                        Stack.NCacheLog.Error("[CONNECT]: group address must be a string (channel name)", e.Message);
                     }
                     if (local_addr == null)
                         if (Stack.NCacheLog.IsInfoEnabled) Stack.NCacheLog.Info("[CONNECT] local_addr is null");
@@ -1305,6 +1267,16 @@ namespace Alachisoft.NGroups.Protocols.pbcast
                     passUp(new Event(Event.CONNECT_OK));
                     return; // don't pass down: was already passed down
 
+             
+                case Event.IS_CLUSTER_IN_STATE_TRANSFER:
+
+                    bool isClusterUnderStateTransfer = IsClusterInStateTransfer();
+
+                    passUp(new Event(Event.IS_CLUSTER_IN_STATE_TRANSFER_RSP, isClusterUnderStateTransfer));
+                    break;
+
+                    passUp(new Event(Event.MARKED_FOR_MAINTENANCE));
+                    break;
 
                 case Event.DISCONNECT:
                     impl.leave((Address)evt.Arg);
@@ -1321,7 +1293,7 @@ namespace Alachisoft.NGroups.Protocols.pbcast
                         _hashmap = evt.Arg;
                         Stack.NCacheLog.Debug("pbcast.GMS.down()", " DistributionMap and MirrorMap response received.");
                         Stack.NCacheLog.Debug("pbcast.GMS.down()", _hashmap == null ? "null map..." : "maps package received.");
-                        
+                        //pulse the thread waiting to send join response.
                         System.Threading.Monitor.Pulse(acquireMap_mutex);
                     }
                     break;
@@ -1335,37 +1307,25 @@ namespace Alachisoft.NGroups.Protocols.pbcast
                     //If the cluster is singleton perform network cluster checkup
                     if (isPOR)
                     {
-                        if ( members.Members.Count > 2)
+                        if (members.Members.Count > 2)
                         {
-                           
                             return;
                         }
                     }
                     //This will always be true but to be sure
 
-                    if (haveCoordinatorRole())
-                    {
-                        CoordGmsImpl coordImpl = impl as CoordGmsImpl;
-                        if (coordImpl != null)
-                            if (!coordImpl.CheckOwnClusterHealth(isPOR, retryNumber))
-                            {
-                                
-
-                            }
-                    }
-                    
                     return;
                 case Event.HAS_STARTED:
                     lock (join_mutex)
                     {
-                        _isStarting = false; 
+                        _isStarting = false;
                     }
                     break;
                 case Event.ASK_JOIN_RESPONSE:
                     lock (acquirePermission_mutex)
                     {
                         _allowJoin = Convert.ToBoolean(evt.Arg);
-                       
+                        //pulse the thread waiting to send join response.
                         System.Threading.Monitor.Pulse(acquirePermission_mutex);
                     }
                     break;
@@ -1386,7 +1346,7 @@ namespace Alachisoft.NGroups.Protocols.pbcast
             {
                 if (view_id == null)
                 {
-                    Stack.NCacheLog.Error( "pb.GMS.getNextView()", "view_id is null");
+                    Stack.NCacheLog.Error("pb.GMS.getNextView()", "view_id is null");
                     return null; // this should *never* happen !
                 }
                 vid = System.Math.Max(view_id.Id, ltime) + 1;
@@ -1410,6 +1370,12 @@ namespace Alachisoft.NGroups.Protocols.pbcast
                 shun = Convert.ToBoolean(props["shun"]);
                 props.Remove("shun");
             }
+          
+            //if (props.Contains("env_name"))
+            //{
+            //    environmentName = Convert.ToString(props["env_name"]);                
+            //    props.Remove("env_name");
+            //}
             
             if (props.Contains("is_part_replica"))
             {
@@ -1437,7 +1403,7 @@ namespace Alachisoft.NGroups.Protocols.pbcast
 
             if (props.Contains("join_retry_timeout"))
             {
-                join_retry_timeout = Convert.ToInt64(props["join_retry_timeout"] )* 1000;
+                join_retry_timeout = Convert.ToInt64(props["join_retry_timeout"]) * 1000;
                 props.Remove("join_retry_timeout");
             }
 
@@ -1473,7 +1439,7 @@ namespace Alachisoft.NGroups.Protocols.pbcast
 
             if (props.Count > 0)
             {
-                Stack.NCacheLog.Error( "GMS.setProperties(): the following properties are not recognized: \n" + Global.CollectionToString(props.Keys));
+                Stack.NCacheLog.Error("GMS.setProperties(): the following properties are not recognized: \n" + Global.CollectionToString(props.Keys));
                 return true;
             }
             return true;
@@ -1488,6 +1454,11 @@ namespace Alachisoft.NGroups.Protocols.pbcast
         private void sendUp(object data)
         {
             Event evt = data as Event;
+            lock (evt)
+            {
+                Monitor.PulseAll(evt);
+            }
+
             up(evt);
         }
 
@@ -1497,63 +1468,19 @@ namespace Alachisoft.NGroups.Protocols.pbcast
             view_id = null;
         }
 
-        internal void acquireHashmap(System.Collections.ArrayList mbrs, bool isJoining, string subGroup, bool isStartedAsMirror)
-        {
-            int maxTries = 3;
-       
-                //new code for getting hash map from caching layer.
-                lock (acquireMap_mutex)
-                {
-                    // In NCache there was a problem when sometime on starting the cache the 
-                    //Everything get's hang we get null reference exception.
-                    //The problem fixed here was that we were not reseting the _hashmap before requesting the 
-                    //new hashmap and in that case even when we wont get hashmap in three seconds we sent the old hashmap
-                    //to the joining node. For more details you can compare this code with the previous version in VSS.
-                    Event evt = new Event();
-                    evt.Type = Event.HASHMAP_REQ;
-                    evt.Arg = new object[] { mbrs, isJoining, subGroup, isStartedAsMirror };
-                    _hashmap = null; //Reseting because it will be set by the down() method of GMS when upper layer will give the new hashmap
-                    System.Threading.ThreadPool.QueueUserWorkItem(new System.Threading.WaitCallback(sendUp), evt);
-                    Stack.NCacheLog.CriticalInfo("pbcast.GMS.acquireHashmap()", (isStartedAsMirror ? "Mirror" : "") + " request the caching layer for hashmap");
-                    if (Stack.NCacheLog.IsInfoEnabled) Stack.NCacheLog.Info("pbcast.GMS.acquireHashmap()", (isStartedAsMirror ? "Mirror" : "") + " request the caching layer for hashmap");
-                    //we wait for maximum 3 seconds to acquire a hashmap ( 3 * 3[retries]] = 9 seconds MAX)
-                    do
-                    {
-
-                        Stack.NCacheLog.CriticalInfo("pbcast.GMS.acquireHashmap()", "Going to wait on acquireMap_mutex try->" + maxTries.ToString());                    
-                        bool acquired = System.Threading.Monitor.Wait(acquireMap_mutex, 3000);
-                        Stack.NCacheLog.CriticalInfo("pbcast.GMS.acquireHashmap()", "Return from wait on acquireMap_mutex try->" + maxTries.ToString());
-
-                        if (_hashmap != null)
-                        {
-                            Stack.NCacheLog.CriticalInfo("pbcast.GMS.acquireHashmap()", "hashmap:" + _hashmap.ToString());
-                            break;
-                        }
-
-                        maxTries--;
-                        if (Stack.NCacheLog.IsInfoEnabled) Stack.NCacheLog.Info("pbcast.GMS.acquireHashmap()", (isStartedAsMirror ? "Mirror" : "") + "null map received... requesting the hashmap again");
-                        
-                    } while (maxTries > 0);
-                }
-
-            if (maxTries < 0 && _hashmap == null)
-            {
-                Stack.NCacheLog.Error( "GMS.AcquireHashmap", "Hashmap acquisition failure for :" + Global.CollectionToString(mbrs) + " joining? " + isJoining);
-            }
-            if (Stack.NCacheLog.IsInfoEnabled) Stack.NCacheLog.Info("pbcast.GMS.acquireHashmap()", (isStartedAsMirror ? "Mirror" : "") + "request for hashmap end");
-        }
 
         internal bool allowJoin(Address mbr, bool isStartedAsMirror)
         {
-            
+           
+            //Stack.NCacheLog.DevTrace("gms.allowJoin", "start");
+
             if (!isPartReplica) return true;
-            //
             //new code for disabling the join while in state transfer.
             lock (acquirePermission_mutex)
             {
                 _allowJoin = false;
 
-              
+
                 ArrayList existingMembers = members.Members;
                 Address lastJoiney = null;
                 if (existingMembers.Count > 0)
@@ -1579,18 +1506,14 @@ namespace Alachisoft.NGroups.Protocols.pbcast
 
                 if (isStartedAsMirror)
                 {
-                    //if members contain my active then i need to join
                     if (members.ContainsIP(mbr))
                     {
                         _allowJoin = true;
                     }
-                    
                 }
                 else
                 {
-                   
-                    
-                    Stack.NCacheLog.CriticalInfo("pbcast.GMS.allowJoin()", "Join permission for " + mbr.ToString());
+                    Stack.NCacheLog.CriticalInfo("GMS.AllowJoin", "Join permission for " + mbr.ToString());
                     bool inStateTransfer = IsClusterInStateTransfer();
                     _allowJoin = !inStateTransfer;
                 }
@@ -1607,8 +1530,6 @@ namespace Alachisoft.NGroups.Protocols.pbcast
             {
                 return;
             }
-
-           
             Address new_coord = null;
             System.Collections.ArrayList mbrs = members.Members; // getMembers() returns a *copy* of the membership vector            
 
@@ -1640,13 +1561,12 @@ namespace Alachisoft.NGroups.Protocols.pbcast
 
             mbrs.Remove(mbr);
             mbrs.Remove(sameNode);
-           
-            for (int i = 0; i < mbrs.Count-1; i++)
+
+            for (int i = 0; i < mbrs.Count - 1; i++)
             {
                 new_coord = (Address)mbrs[i];
                 if (local_addr.Equals(new_coord))
                 {
-                   
                     becomeCoordinator();
                     impl.handleSuspect(mbr);
                     return;
@@ -1666,6 +1586,7 @@ namespace Alachisoft.NGroups.Protocols.pbcast
         internal void handleLeaveAsync(object args)
         {
             object[] arr = (object[])args;
+            
             impl.handleLeave(arr[0] as Address, (bool)arr[1]);
         }
 
@@ -1687,14 +1608,13 @@ namespace Alachisoft.NGroups.Protocols.pbcast
 
         internal virtual void handleJoinRequest(Address mbr, string subGroup_name, bool isStartedAsMirror, string gmsId)
         {
-          
             JoinRsp join_rsp = null;
             Message m;
             HDR hdr;
 
             if (mbr == null)
             {
-                Stack.NCacheLog.Error( "mbr is null");
+                Stack.NCacheLog.Error("mbr is null");
                 return;
             }
 
@@ -1704,28 +1624,25 @@ namespace Alachisoft.NGroups.Protocols.pbcast
             {
                 lock (join_mutex)
                 {
-                   
                     if (_nodeJoiningInProgress || _isLeavingInProgress || (_isStarting && !local_addr.IpAddress.Equals(mbr.IpAddress)))
                     {
-                        Stack.NCacheLog.CriticalInfo("GMS.HandleJoinRequest()", "node join already in progess" + mbr);
-                       
+                        Stack.NCacheLog.CriticalInfo("GMS.HandleJoinRequest", "node :" + mbr + "joining is in progress.");
                         join_rsp = new JoinRsp(null, null);
                         join_rsp.JoinResult = JoinResult.MembershipChangeAlreadyInProgress;
-                        
+                       
                         m = new Message(mbr, null, null);
                         hdr = new HDR(HDR.JOIN_RSP, join_rsp);
                         m.putHeader(HeaderType.GMS, hdr);
-                        passDown(new Event(Event.MSG, m, Priority.Critical));
+                        passDown(new Event(Event.MSG, m, Priority.High));
                         return;
                     }
                     else
                     {
                         _nodeJoiningInProgress = true;
                     }
-                } 
+                }
             }
 
-           
             // 1. Get the new view and digest
             if (members.contains(mbr))
             {
@@ -1735,17 +1652,15 @@ namespace Alachisoft.NGroups.Protocols.pbcast
                 if (oldGmsId != null && oldGmsId != gmsId)
                 {
                     Stack.NCacheLog.Error("pbcast.GMS.handleJoinRequest()", mbr + " has sent a joining request while it is already in member list and has wrong gmsID");
-                    
-                   
                     join_rsp = null;
                     m = new Message(mbr, null, null);
                     hdr = new HDR(HDR.JOIN_RSP, join_rsp);
                     m.putHeader(HeaderType.GMS, hdr);
-                    passDown(new Event(Event.MSG, m, Priority.Critical));
+                    passDown(new Event(Event.MSG, m, Priority.High));
 
-                    
+
                     impl.handleSuspect(mbr);
-                    
+
                     lock (join_mutex)
                     {
                         _nodeJoiningInProgress = false;
@@ -1756,14 +1671,13 @@ namespace Alachisoft.NGroups.Protocols.pbcast
                 {
 
                     Stack.NCacheLog.Error("pbcast.GMS.handleJoinRequest()", mbr + " has sent a joining request while it is already in member list - Resending current view and digest");
-                   
                     View view = new View(this.view_id, members.Members);
                     view.CoordinatorGmsId = unique_id;
                     join_rsp = new JoinRsp(view, this.digest, JoinResult.Success);
                     m = new Message(mbr, null, null);
                     hdr = new HDR(HDR.JOIN_RSP, join_rsp);
                     m.putHeader(HeaderType.GMS, hdr);
-                    passDown(new Event(Event.MSG, m, Priority.Critical));
+                    passDown(new Event(Event.MSG, m, Priority.High));
                     lock (join_mutex)
                     {
                         _nodeJoiningInProgress = false;
@@ -1772,46 +1686,45 @@ namespace Alachisoft.NGroups.Protocols.pbcast
                 }
             }
 
-            
 
             if (allowJoin(mbr, isStartedAsMirror))
             {
                 Stack.NCacheLog.Debug("pbcast.GMS.handleJoinRequest()", " joining allowed");
-                bool acauireHashmap = true;
+             
 
-                join_rsp = impl.handleJoin(mbr, subGroup_name, isStartedAsMirror, gmsId, ref acauireHashmap);
+                join_rsp = impl.handleJoin(mbr, subGroup_name, isStartedAsMirror, gmsId);
 
                 if (join_rsp == null)
                     Stack.NCacheLog.Error("pbcast.GMS.handleJoinRequest()", impl.GetType().ToString() + ".handleJoin(" + mbr + ") returned null: will not be able to multicast new view");
-                         
+
+              
                 //sends a request to the caching layer for the new hashmap after this member joins.
                 System.Collections.ArrayList mbrs = new System.Collections.ArrayList(1);
                 mbrs.Add(mbr);
-         
-                //some time coordinator gms impl returns the same existing view in join response. 
-                //we dont need to acquire the hashmap again in this case coz that hashmap has already been acquired.
-                if (acauireHashmap)
-                    acquireHashmap(mbrs, true, subGroup_name, isStartedAsMirror);
+                
+               
 
                 // 2. Send down a local TMP_VIEW event. This is needed by certain layers (e.g. NAKACK) to compute correct digest
                 //    in case client's next request (e.g. getState()) reaches us *before* our own view change multicast.
                 // Check NAKACK's TMP_VIEW handling for details
                 if (join_rsp != null && join_rsp.View != null)
                 {
-                                 //add the hash map as part of view.
+                   
+                    //add the hash map as part of view.
                     if (_hashmap != null)
                     {
                         Object[] mapsArray = (Object[])_hashmap;
                         DistributionMaps maps = (DistributionMaps)mapsArray[0];
                         if (maps != null)
                         {
-                           
                             join_rsp.View.DistributionMaps = maps;
                         }
+
                         join_rsp.View.MirrorMapping = mapsArray[1] as CacheNode[];
+
                     }
                     passDown(new Event(Event.TMP_VIEW, join_rsp.View));
-                } 
+                }
             }
             else
                 Stack.NCacheLog.Debug("pbcast.GMS.handleJoinRequest()", " joining not allowed");
@@ -1820,7 +1733,7 @@ namespace Alachisoft.NGroups.Protocols.pbcast
             m = new Message(mbr, null, null);
             hdr = new HDR(HDR.JOIN_RSP, join_rsp);
             m.putHeader(HeaderType.GMS, hdr);
-            passDown(new Event(Event.MSG, m, Priority.Critical));
+            passDown(new Event(Event.MSG, m, Priority.High));
 
             // 4. Bcast the new view
             if (join_rsp != null)
@@ -1831,7 +1744,6 @@ namespace Alachisoft.NGroups.Protocols.pbcast
                 _nodeJoiningInProgress = false;
             }
 
-           
         }
 
         public void handleResetOnNodeRejoining(Address sender, Address node, View view)
@@ -1881,6 +1793,8 @@ namespace Alachisoft.NGroups.Protocols.pbcast
             public const byte INFORM_ABOUT_NODE_DEATH = 21;
             public const byte IS_NODE_IN_STATE_TRANSFER = 22;
             public const byte IS_NODE_IN_STATE_TRANSFER_RSP = 23;
+            public const byte MARK_FOR_MAINTENANCE = 24;
+            public const byte UNMARK_FOR_MAINTENANCE = 25;
 
 
             internal byte type = 0;
@@ -2115,7 +2029,7 @@ namespace Alachisoft.NGroups.Protocols.pbcast
 
                     case IS_NODE_IN_STATE_TRANSFER_RSP:
                         return "IS_NODE_IN_STATE_TRANSFER_RSP";
-                            
+
 
                     default:
                         return "<unknown>";

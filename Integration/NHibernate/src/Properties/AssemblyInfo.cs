@@ -1,17 +1,4 @@
-// Copyright (c) 2017 Alachisoft
-// 
-// Licensed under the Apache License, Version 2.0 (the "License");
-// you may not use this file except in compliance with the License.
-// You may obtain a copy of the License at
-// 
-//    http://www.apache.org/licenses/LICENSE-2.0
-// 
-// Unless required by applicable law or agreed to in writing, software
-// distributed under the License is distributed on an "AS IS" BASIS,
-// WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
-// See the License for the specific language governing permissions and
-// limitations under the License.
-using System.Reflection;
+﻿using System.Reflection;
 using System.Runtime.CompilerServices;
 using System.Runtime.InteropServices;
 
@@ -20,12 +7,11 @@ using System.Runtime.InteropServices;
 // associated with an assembly.
 [assembly: AssemblyTitle("NHibernateNCache")]
 [assembly: AssemblyDescription("NHibernate Second level cache provider for NCache")]
-[assembly: AssemblyProduct("Alachisoft® NCache Open Source")]
-[assembly: AssemblyTrademark("NCache ™ is a registered trademark of Alachisoft.")]
 [assembly: AssemblyConfiguration("")]
 [assembly: AssemblyCompany("Alachisoft")]
-
-[assembly: AssemblyCopyright("Copyright © 2005-2017 Alachisoft")]
+[assembly: AssemblyProduct("NHibernateNCache")]
+[assembly: AssemblyCopyright("Copyright ©  2021")]
+[assembly: AssemblyTrademark("NCache")]
 [assembly: AssemblyCulture("")]
 
 // Setting ComVisible to false makes the types in this assembly not visible 
@@ -46,5 +32,5 @@ using System.Runtime.InteropServices;
 // You can specify all the values or you can default the Build and Revision Numbers 
 // by using the '*' as shown below:
 // [assembly: AssemblyVersion("1.0.*")]
-[assembly: AssemblyVersion("1.0.0.0")]
-[assembly: AssemblyFileVersion("1.0.0.0")]
+[assembly: AssemblyVersion("5.0.0.0")]
+[assembly: AssemblyFileVersion("5.0.5.0")]

@@ -1,17 +1,16 @@
-// Copyright (c) 2017 Alachisoft
-// 
-// Licensed under the Apache License, Version 2.0 (the "License");
-// you may not use this file except in compliance with the License.
-// You may obtain a copy of the License at
-// 
-//    http://www.apache.org/licenses/LICENSE-2.0
-// 
-// Unless required by applicable law or agreed to in writing, software
-// distributed under the License is distributed on an "AS IS" BASIS,
-// WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
-// See the License for the specific language governing permissions and
-// limitations under the License.
-
+//  Copyright (c) 2021 Alachisoft
+//  
+//  Licensed under the Apache License, Version 2.0 (the "License");
+//  you may not use this file except in compliance with the License.
+//  You may obtain a copy of the License at
+//  
+//     http://www.apache.org/licenses/LICENSE-2.0
+//  
+//  Unless required by applicable law or agreed to in writing, software
+//  distributed under the License is distributed on an "AS IS" BASIS,
+//  WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+//  See the License for the specific language governing permissions and
+//  limitations under the License
 using System;
 using Alachisoft.NCache.IO;
 
@@ -22,7 +21,7 @@ namespace Alachisoft.NCache.Serialization.Surrogates
     /// </summary>
     sealed class ObjectArraySerializationSurrogate : ContextSensitiveSerializationSurrogate
     {
-        public ObjectArraySerializationSurrogate() : base(typeof(object[])) { }
+        public ObjectArraySerializationSurrogate() : base(typeof(object[]), null) { }
 
         public override object Instantiate(CompactBinaryReader reader)
         {
@@ -36,6 +35,11 @@ namespace Alachisoft.NCache.Serialization.Surrogates
 
             short handle = reader.ReadInt16();
             ISerializationSurrogate surrogate = TypeSurrogateSelector.GetSurrogateForTypeHandle(handle, reader.CacheContext);
+
+            if (surrogate == null)
+            {
+                surrogate = TypeSurrogateSelector.GetSurrogateForSubTypeHandle(handle, reader.ReadInt16(), reader.Context.CacheContext);
+            }
 
             Object obj = Array.CreateInstance(surrogate.ActualType, array.Length);
 
@@ -82,6 +86,12 @@ namespace Alachisoft.NCache.Serialization.Surrogates
             object[] array = (object[])graph;
             short handle = reader.ReadInt16();
             ISerializationSurrogate surrogate = TypeSurrogateSelector.GetSurrogateForTypeHandle(handle, reader.CacheContext);
+
+            if (surrogate == null)
+            {
+                surrogate = TypeSurrogateSelector.GetSurrogateForSubTypeHandle(handle, reader.ReadInt16(), reader.Context.CacheContext);
+            }
+
             for (int i = 0; i < array.Length; i++)
                 reader.SkipObject();
         }

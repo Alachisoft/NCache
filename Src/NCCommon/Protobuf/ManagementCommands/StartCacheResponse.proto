@@ -1,0 +1,8 @@
+
+option java_outer_classname="StartCacheResponseProtocol";
+package Alachisoft.NCache.Common.Protobuf;
+message StartCacheResponse {
+
+	optional bool started = 1;
+
+}

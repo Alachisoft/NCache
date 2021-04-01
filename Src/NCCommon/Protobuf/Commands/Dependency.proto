@@ -1,0 +1,97 @@
+import "Commands/KeyValue.proto";
+
+option java_outer_classname="DependencyProtocol";
+package Alachisoft.NCache.Common.Protobuf;
+message Dependency {
+	repeated KeyDependency keyDep = 1;
+	repeated FileDependency fileDep = 2;
+	repeated OracleDependency oracleDep = 3;
+	repeated YukonDependency yukonDep = 4;
+	repeated Sql7Dependency sql7Dep = 5;
+	repeated OleDbDependency oleDbDep = 6;
+	repeated ExtensibleDependency xtDep = 7;
+    repeated NosDbDependency NosDep = 8;
+
+}
+
+message KeyDependency {
+	repeated string keys = 1;
+	optional int64 startAfter = 2;
+	optional int32 keyDependencyType = 3;
+}
+
+message FileDependency {
+	repeated string filePaths = 1;
+	optional int64 startAfter = 2;
+}
+
+message OracleDependency {
+	optional string connectionString = 1;
+	optional string query = 2;
+	optional int32 commandType = 3;	
+	repeated OracleParam param = 4;
+}
+
+message OracleParam {
+	optional string key = 1;
+	optional OracleCommandParam cmdParam = 2;
+}
+
+message OracleCommandParam {
+	optional int32 dbType = 1;
+	optional int32 direction = 2;
+	optional string value = 3;
+}
+
+message YukonDependency {
+	optional string connectionString = 1;
+	optional string query = 2;
+	optional int32 commandType = 3;	
+	repeated YukonParam param = 4;
+}
+
+message YukonParam {
+	optional string key = 1;
+	optional YukonCommandParam cmdParam = 2;
+}
+
+message YukonCommandParam { 
+	optional int32 typeId = 1;
+	optional int32 direction = 2;
+	optional int32 dbType = 3;
+	optional int32 cmpOptions = 4;
+	optional int32 version = 5;
+	optional string value = 6;
+	optional bool isNullable = 7;
+	optional int32 localeId = 8;
+	optional int32 offset = 9;
+	optional int32 precision = 10;
+	optional int32 scale = 11;
+	optional int32 size = 12;
+	optional string sourceColumn = 13;
+	optional bool sourceColumnNull = 14;
+	optional string sqlValue = 15;
+	optional string typeName = 16;
+	optional string udtTypeName = 17;
+	optional bool nullValueProvided = 18;
+}
+
+message Sql7Dependency {
+	optional string connectionString = 1;
+	optional string dbCacheKey = 2;	
+}
+
+message OleDbDependency {
+	optional string connectionString = 1;
+	optional string dbCacheKey = 2;
+}
+
+message ExtensibleDependency {
+	optional bytes data = 1;
+}
+message NosDbDependency {
+    optional string connectionString = 1;
+    optional string query = 2;
+    optional int32 timeout = 3;    
+    repeated KeyValue param = 4;
+}

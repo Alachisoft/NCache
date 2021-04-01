@@ -1,31 +1,31 @@
-// Copyright (c) 2017 Alachisoft
-// 
-// Licensed under the Apache License, Version 2.0 (the "License");
-// you may not use this file except in compliance with the License.
-// You may obtain a copy of the License at
-// 
-//    http://www.apache.org/licenses/LICENSE-2.0
-// 
-// Unless required by applicable law or agreed to in writing, software
-// distributed under the License is distributed on an "AS IS" BASIS,
-// WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
-// See the License for the specific language governing permissions and
-// limitations under the License.
-
+//  Copyright (c) 2021 Alachisoft
+//  
+//  Licensed under the Apache License, Version 2.0 (the "License");
+//  you may not use this file except in compliance with the License.
+//  You may obtain a copy of the License at
+//  
+//     http://www.apache.org/licenses/LICENSE-2.0
+//  
+//  Unless required by applicable law or agreed to in writing, software
+//  distributed under the License is distributed on an "AS IS" BASIS,
+//  WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+//  See the License for the specific language governing permissions and
+//  limitations under the License
 using System;
-using System.Collections.Generic;
-
-using Runtime = Alachisoft.NCache.Runtime;
+using System.Diagnostics;
 
 namespace Alachisoft.NCache.Common
 {
-       //This class is to serve as the basis for live upgrades and cross version communication in future
+    //This class is to serve as the basis for live upgrades and cross version communication in future
 
     /// <summary>
     /// Returns the version of the NCache running on a particular Node. 
     /// This returns a single instance per installation
     /// </summary>
-    
+    struct ProductVersionType
+    {
+        public static int Major, Minor, Build, Revision;
+    }
     public class ProductVersion: IComparable, Runtime.Serialization.ICompactSerializable
     {
         #region members
@@ -34,7 +34,7 @@ namespace Alachisoft.NCache.Common
         private byte _majorVersion2=0;
         private byte _minorVersion1=0;
         private byte _minorVersion2=0;
-        private string _productName= string.Empty;//JvCache,NCache
+        private string _productName= string.Empty;
         private int _editionID=-1;
         private static volatile ProductVersion _productInfo;
         private static object _syncRoot = new object(); // this object is to serve as locking instance to avoid deadlocks
@@ -59,8 +59,8 @@ namespace Alachisoft.NCache.Common
                         if (_productInfo == null)
                         {
                             _productInfo = new ProductVersion();
-
-                            _productInfo._editionID = 34;
+#if SERVER
+                            _productInfo._editionID = 32;
                             _productInfo._majorVersion1 = 4;
                             _productInfo._majorVersion2 = 3;
                             _productInfo._minorVersion1 = 0;
@@ -68,6 +68,16 @@ namespace Alachisoft.NCache.Common
                             _productInfo._productName = "NCACHE";
                             _productInfo._additionalData = new byte[0];
 
+#elif CLIENT
+                            _productInfo._editionID = 33;
+                            _productInfo._majorVersion1 = 4;
+                            _productInfo._majorVersion2 = 3;
+                            _productInfo._minorVersion1 = 0;
+                            _productInfo._minorVersion2 = 0;
+                            _productInfo._productName = "NCACHE";
+                            _productInfo._additionalData = new byte[0];
+
+#endif
                         }
                     }
                     
@@ -76,6 +86,8 @@ namespace Alachisoft.NCache.Common
             }
             
         }
+
+
 
         /// <summary>
         /// Gets/Sets the Product Name(JvCache/NCache)
@@ -173,9 +185,55 @@ namespace Alachisoft.NCache.Common
             else
                 return false;
         }
-      
+
+        public static string GetVersion()
+        {
+            string version;
+            System.Reflection.Assembly assembly = System.Reflection.Assembly.GetExecutingAssembly();
+            FileVersionInfo fvi = FileVersionInfo.GetVersionInfo(assembly.Location);
+            version = fvi.FileVersion;
+            try
+            {
+                string[] components = version.Split('.');
+                int.TryParse(components[0], out ProductVersionType.Major);
+                int.TryParse(components[1], out ProductVersionType.Minor);
+                int.TryParse(components[2], out ProductVersionType.Build);
+                int.TryParse(components[3], out ProductVersionType.Revision);
+
+                //Example: AssemblyFileVersion is 4.9.0.0
+                // productVersion = 4.8 (Major and Minor together form a product version)
+                // servicePack = SP-2 (Build tells the service pack number)
+                // privatePatch = PP-2 (Revision tells the private patch number)
+
+                string productVersion = string.Format("{0}.{1}", ProductVersionType.Major, ProductVersionType.Minor);
+                string servicePack = string.Format("{0}{1}", ProductVersionType.Build > 0 ? "SP" : string.Empty, ProductVersionType.Build > 0 ? ProductVersionType.Build.ToString() : string.Empty);
+                string privatePatch = string.Format("{0}{1}", ProductVersionType.Revision > 0 ? "PP" : string.Empty, ProductVersionType.Revision > 0 ? ProductVersionType.Revision.ToString() : string.Empty);
+
+                version = (string.Format("{0} {1} {2}", productVersion, servicePack, privatePatch)).TrimEnd();
+                return version;
+
+            }
+            catch (Exception ex)
+            {
+                AppUtil.LogEvent("Error occured while reading product info: " + ex.ToString(), EventLogEntryType.Error);
+                try
+                {
+                    string spVersion = (string)Alachisoft.NCache.Common.RegHelper.GetRegValue(Alachisoft.NCache.Common.RegHelper.ROOT_KEY, "SPVersion", 0);
+                    return (string.Format("{0} {1} ", version, spVersion));
+
+                }
+                catch
+                {
+                    return null;
+                }
+
+            }
+
+
+        }
+
         #endregion
-        
+
         #region ICompact Serializable Members
         public void Deserialize(Runtime.Serialization.IO.CompactReader reader)
         {
@@ -247,7 +305,6 @@ namespace Alachisoft.NCache.Common
                 }
                 else
                     result = -1;
-                // Suggestion- Incase of invalid type an exception should be thrown!!
 
             }
             return result;
@@ -255,5 +312,4 @@ namespace Alachisoft.NCache.Common
         #endregion
         
     }
-   
 }

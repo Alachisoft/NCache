@@ -1,26 +1,29 @@
-// Copyright (c) 2017 Alachisoft
-// 
-// Licensed under the Apache License, Version 2.0 (the "License");
-// you may not use this file except in compliance with the License.
-// You may obtain a copy of the License at
-// 
-//    http://www.apache.org/licenses/LICENSE-2.0
-// 
-// Unless required by applicable law or agreed to in writing, software
-// distributed under the License is distributed on an "AS IS" BASIS,
-// WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
-// See the License for the specific language governing permissions and
-// limitations under the License.
-
+//  Copyright (c) 2021 Alachisoft
+//  
+//  Licensed under the Apache License, Version 2.0 (the "License");
+//  you may not use this file except in compliance with the License.
+//  You may obtain a copy of the License at
+//  
+//     http://www.apache.org/licenses/LICENSE-2.0
+//  
+//  Unless required by applicable law or agreed to in writing, software
+//  distributed under the License is distributed on an "AS IS" BASIS,
+//  WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+//  See the License for the specific language governing permissions and
+//  limitations under the License
 using System;
 using System.Collections;
 using System.Data;
 
 using Alachisoft.NCache.Common;
 using Alachisoft.NCache.Common.Monitoring;
+using Alachisoft.NCache.Common.Propagator;
 using Alachisoft.NCache.Common.Logger;
 using Alachisoft.NCache.Common.DataStructures.Clustered;
 using Alachisoft.NCache.Common.Util;
+using Alachisoft.NCache.Common.Enum;
+using Alachisoft.NCache.Common.Collections;
+using Alachisoft.NCache.Common.Pooling;
 
 namespace Alachisoft.NCache.Storage
 {
@@ -30,7 +33,11 @@ namespace Alachisoft.NCache.Storage
     class ClrHeapStorageProvider : StorageProviderBase
     {
         /// <summary> Storage Map </summary>
-        protected HashVector _itemDict;    
+        protected HashVector _itemDict;
+        protected bool _evictionEnabled;
+
+        ///// <summary> Size of data, in bytes, stored in store</summary>
+      
 
         /// <summary>
         /// Default constructor.
@@ -55,9 +62,10 @@ namespace Alachisoft.NCache.Storage
         /// Overloaded constructor. Takes the properties as a map.
         /// </summary>
         /// <param name="properties">properties collection</param>
-        public ClrHeapStorageProvider(IDictionary properties, bool evictionEnabled, ILogger NCacheLog)
-            : base(properties, evictionEnabled, NCacheLog)
+        public ClrHeapStorageProvider(IDictionary properties, bool evictionEnabled, ILogger NCacheLog, IAlertPropagator alertPropagator)
+            : base(properties, evictionEnabled, NCacheLog, alertPropagator)
         {
+            _evictionEnabled = evictionEnabled;
             _itemDict = new HashVector(DEFAULT_CAPACITY, 0.7f);
         }
 
@@ -69,8 +77,11 @@ namespace Alachisoft.NCache.Storage
         /// </summary>
         public override void Dispose()
         {
-            _itemDict.Clear();
-            _itemDict = null;
+            lock (_itemDict.SyncRoot)
+            {
+                _itemDict.Clear();
+                _itemDict = null;
+            }
             base.Dispose();
         }
 
@@ -103,7 +114,7 @@ namespace Alachisoft.NCache.Storage
         /// with the specified key; otherwise, false.</returns>
         public override bool Contains(object key)
         {
-            if (ServerMonitor.MonitorActivity) ServerMonitor.LogClientActivity("Store.Cont", "");
+            //if (ServerMonitor.MonitorActivity) ServerMonitor.LogClientActivity("Store.Cont", "");
 
             return _itemDict.ContainsKey(key);
         }
@@ -118,9 +129,12 @@ namespace Alachisoft.NCache.Storage
         {
             try
             {
-                if (ServerMonitor.MonitorActivity) ServerMonitor.LogClientActivity("Store.Get", "");
+                //if (ServerMonitor.MonitorActivity) ServerMonitor.LogClientActivity("Store.Get", "");
 
-                return (object)_itemDict[key];
+                lock (_itemDict.SyncRoot)
+                {
+                    return _itemDict[key];
+                }
             }
             catch (Exception e)
             {
@@ -138,9 +152,13 @@ namespace Alachisoft.NCache.Storage
         {
             try
             {
-                ISizable item = _itemDict[key] as ISizable;
-
-                return item != null ? item.InMemorySize : 0;
+                object item = null;
+                lock (_itemDict.SyncRoot)
+                {
+                    item = _itemDict[key];
+                }
+                var iSizableItem = item as ISizable;
+                return iSizableItem != null ? (iSizableItem.InMemorySize + Common.MemoryUtil.GetStringSize(key)) : 0;
             }
             catch (Exception e)
             {
@@ -156,20 +174,24 @@ namespace Alachisoft.NCache.Storage
         /// <param name="key">key</param>
         /// <param name="item">object</param>
         /// <returns>returns the result of operation.</returns>
-        public override StoreAddResult Add(object key, object item, Boolean allowExtendedSize)
+        public override StoreAddResult Add(object key, IStorageEntry item,  Boolean allowExtendedSize)
         {
             try
             {
-                if (ServerMonitor.MonitorActivity) ServerMonitor.LogClientActivity("Store.Add", "");
+                //if (ServerMonitor.MonitorActivity) ServerMonitor.LogClientActivity("Store.Add", "");
 
-                if (_itemDict.ContainsKey(key))
+                lock (_itemDict.SyncRoot)
                 {
-                    return StoreAddResult.KeyExists;
+                    if (_itemDict.ContainsKey(key))
+                    {
+                        return StoreAddResult.KeyExists;
+                    }
                 }
+				
                 StoreStatus status = HasSpace((ISizable)item,Common.MemoryUtil.GetStringSize(key),allowExtendedSize);
-                
-                if (ServiceConfiguration.CacheSizeThreshold > 0) _reportCacheNearEviction = true;
-                if (_reportCacheNearEviction) CheckForStoreNearEviction();
+
+                CheckIfCacheNearEviction();
+
                 if (status == StoreStatus.HasNotEnoughSpace)
                 {
                     return StoreAddResult.NotEnoughSpace;
@@ -178,7 +200,8 @@ namespace Alachisoft.NCache.Storage
                 lock (_itemDict.SyncRoot)
                 {
                     _itemDict.Add(key, item);
-                    base.Added(item as ISizable, Common.MemoryUtil.GetStringSize(key));
+                    base.Added(item , Common.MemoryUtil.GetStringSize(key));
+                    item.MarkInUse(NCModulesConstants.CacheStore);
                 }
                 if (status == StoreStatus.NearEviction)
                 {
@@ -187,10 +210,13 @@ namespace Alachisoft.NCache.Storage
             }
             catch (OutOfMemoryException e)
             {
+                //Trace.error("ClrHeapStorageProvider.Add()", e.ToString());
                 return StoreAddResult.NotEnoughSpace;
             }
             catch (Exception e)
             {
+                //Trace.error("ClrHeapStorageProvider.Add()", e.ToString());
+                //return StoreAddResult.Failure;
                 throw e;
             }
             return StoreAddResult.Success;
@@ -203,18 +229,18 @@ namespace Alachisoft.NCache.Storage
         /// <param name="key">key</param>
         /// <param name="item">object</param>        
         /// <returns>returns the result of operation.</returns>
-        public override StoreInsResult Insert(object key, object item, Boolean allowExtendedSize)
+        public override StoreInsResult Insert(object key, IStorageEntry item, Boolean allowExtendedSize)
         {
             try
             {
-                if (ServerMonitor.MonitorActivity) ServerMonitor.LogClientActivity("Store.Insert", "");
+                //if (ServerMonitor.MonitorActivity) ServerMonitor.LogClientActivity("Store.Insert", "");
 
-                object oldItem = _itemDict[key];
-
-                StoreStatus status = HasSpace(oldItem as ISizable, (ISizable)item, Common.MemoryUtil.GetStringSize(key), allowExtendedSize);
-
-                if (ServiceConfiguration.CacheSizeThreshold > 0) _reportCacheNearEviction = true;
-                if (_reportCacheNearEviction) CheckForStoreNearEviction();
+                IStorageEntry oldItem = (IStorageEntry)_itemDict[key];
+				
+                StoreStatus status = HasSpace(oldItem as ISizable, (ISizable)item,Common.MemoryUtil.GetStringSize(key),allowExtendedSize);
+                
+                if(_evictionEnabled)
+                    CheckIfCacheNearEviction();
 
                 if (status == StoreStatus.HasNotEnoughSpace)
                 {
@@ -224,13 +250,16 @@ namespace Alachisoft.NCache.Storage
                 lock (_itemDict.SyncRoot)
                 {
                     _itemDict[key] = item;
-                    base.Inserted(oldItem as ISizable, item as ISizable, Common.MemoryUtil.GetStringSize(key));
+                    base.Inserted(oldItem, item, Common.MemoryUtil.GetStringSize(key));
                 }
                 if (status == StoreStatus.NearEviction)
                 {
                     //the store is almost full, need to evict.
                     return oldItem != null ? StoreInsResult.SuccessOverwriteNearEviction : StoreInsResult.SuccessNearEviction;
                 }
+
+                if (item != null)
+                    item.MarkInUse(NCModulesConstants.CacheStore);
 
                 return oldItem != null ? StoreInsResult.SuccessOverwrite : StoreInsResult.Success;
             }
@@ -239,7 +268,7 @@ namespace Alachisoft.NCache.Storage
                 return StoreInsResult.NotEnoughSpace;
             }
             catch (Exception e)
-            {               
+            {
                 throw e;
             }
         }
@@ -252,20 +281,20 @@ namespace Alachisoft.NCache.Storage
         /// <returns>object</returns>
         public override object Remove(object key)
         {
-            if (ServerMonitor.MonitorActivity) ServerMonitor.LogClientActivity("Store.Remove", "");
 
-            object e = Get(key);
+            IStorageEntry e = (IStorageEntry)Get(key);
             if (e != null)
             {
                 lock (_itemDict.SyncRoot)
                 {
                     _itemDict.Remove(key);
-                    base.Removed(e as ISizable, Common.MemoryUtil.GetStringSize(key));
+                    base.Removed(e , Common.MemoryUtil.GetStringSize(key),e.Type);
+                    e?.MarkInUse(NCModulesConstants.Global);
+                    e?.MarkFree(NCModulesConstants.CacheStore);
                 }
             }
             return e;
         }
-
         /// <summary>
         /// Returns a .NET IEnumerator interface so that a client should be able
         /// to iterate over the elements of the cache store.

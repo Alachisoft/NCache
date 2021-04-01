@@ -1,0 +1,33 @@
+{
+  "version": 2,
+  "exports": {
+    "NCacheSessionServices/1.0.0": {
+      "type": "project",
+      "framework": ".NETFramework,Version=v4.5.2",
+      "compile": {
+        "bin/Debug/Alachisoft.NCache.CoreSessionStoreProvider.dll": {}
+      },
+      "runtime": {
+        "../packages/Microsoft.AspNetCore.DataProtection.1.1.0/lib/net451/Microsoft.AspNetCore.DataProtection.dll": {},
+        "../packages/Microsoft.AspNetCore.DataProtection.Abstractions.1.1.0/lib/net451/Microsoft.AspNetCore.DataProtection.Abstractions.dll": {},
+        "../packages/Microsoft.AspNetCore.Http.Abstractions.1.1.0/lib/net451/Microsoft.AspNetCore.Http.Abstractions.dll": {},
+        "../packages/Microsoft.AspNetCore.Http.Features.1.1.0/lib/net451/Microsoft.AspNetCore.Http.Features.dll": {},
+        "../packages/Microsoft.Extensions.Caching.Abstractions.1.1.0/lib/netstandard1.0/Microsoft.Extensions.Caching.Abstractions.dll": {},
+        "../packages/Microsoft.Extensions.Configuration.1.1.0/lib/netstandard1.1/Microsoft.Extensions.Configuration.dll": {},
+        "../packages/Microsoft.Extensions.Configuration.Abstractions.1.1.0/lib/netstandard1.0/Microsoft.Extensions.Configuration.Abstractions.dll": {},
+        "../packages/Microsoft.Extensions.Configuration.Json.1.1.0/lib/net451/Microsoft.Extensions.Configuration.Json.dll": {},
+        "../packages/Microsoft.Extensions.DependencyInjection.Abstractions.1.1.0/lib/netstandard1.0/Microsoft.Extensions.DependencyInjection.Abstractions.dll": {},
+        "../packages/Microsoft.Extensions.Options.1.1.0/lib/netstandard1.0/Microsoft.Extensions.Options.dll": {},
+        "../packages/Microsoft.Extensions.Options.ConfigurationExtensions.1.1.0/lib/netstandard1.1/Microsoft.Extensions.Options.ConfigurationExtensions.dll": {},
+        "../packages/Microsoft.Extensions.Primitives.1.1.0/lib/netstandard1.0/Microsoft.Extensions.Primitives.dll": {},
+        "C:/Program Files/NCache/bin/assembly/4.0/Alachisoft.NCache.Common.dll": {},
+        "C:/Program Files/NCache/bin/assembly/4.0/Alachisoft.NCache.Runtime.dll": {},
+        "C:/Program Files/NCache/bin/assembly/4.0/Alachisoft.NCache.Serialization.dll": {},
+        "C:/Program Files/NCache/bin/assembly/4.0/Alachisoft.NCache.SessionStateManagement.dll": {},
+        "C:/Program Files/NCache/bin/assembly/4.0/Alachisoft.NCache.SessionStoreProvider.dll": {},
+        "C:/Program Files/NCache/bin/assembly/4.0/Alachisoft.NCache.Web.dll": {},
+        "bin/Debug/Alachisoft.NCache.CoreSessionStoreProvider.dll": {}
+      }
+    }
+  }
+}

@@ -1,5 +1,5 @@
 import "Commands/Value.proto";
-
+import "CacheItemType.proto";
 
 option java_outer_classname="KeyValuePackageResponseProtocol";
 package Alachisoft.NCache.Common.Protobuf;
@@ -7,4 +7,5 @@ message KeyValuePackageResponse {
 	repeated string keys = 1;
 	repeated Value values = 2;
 	repeated int32 flag = 3;
+	repeated CacheItemType.ItemType itemType = 4 ;
 }

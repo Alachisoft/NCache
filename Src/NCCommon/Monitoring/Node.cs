@@ -1,24 +1,22 @@
-// Copyright (c) 2017 Alachisoft
-// 
-// Licensed under the Apache License, Version 2.0 (the "License");
-// you may not use this file except in compliance with the License.
-// You may obtain a copy of the License at
-// 
-//    http://www.apache.org/licenses/LICENSE-2.0
-// 
-// Unless required by applicable law or agreed to in writing, software
-// distributed under the License is distributed on an "AS IS" BASIS,
-// WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
-// See the License for the specific language governing permissions and
-// limitations under the License.
-
+//  Copyright (c) 2021 Alachisoft
+//  
+//  Licensed under the Apache License, Version 2.0 (the "License");
+//  you may not use this file except in compliance with the License.
+//  You may obtain a copy of the License at
+//  
+//     http://www.apache.org/licenses/LICENSE-2.0
+//  
+//  Unless required by applicable law or agreed to in writing, software
+//  distributed under the License is distributed on an "AS IS" BASIS,
+//  WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+//  See the License for the specific language governing permissions and
+//  limitations under the License
 using System;
 using Alachisoft.NCache.Common.Net;
-
 using Alachisoft.NCache.Runtime.Serialization;
 
 namespace Alachisoft.NCache.Common.Monitoring
-{
+{   
     /// <summary>
     /// Node represent a physical machine participating either as server
     /// or client.
@@ -49,8 +47,6 @@ namespace Alachisoft.NCache.Common.Monitoring
                     _name = value.ToLower(); 
             }
         }
-
-        
         /// <summary>
         /// Gets/Sets the IPAddress of the node.
         /// </summary>
@@ -63,9 +59,12 @@ namespace Alachisoft.NCache.Common.Monitoring
         public override bool Equals(object obj)
         {
             Node other = obj as Node;
-            bool equal =false;
+            bool equal = false;
             if (other != null)
             {
+                if (!String.IsNullOrEmpty(Name) || String.IsNullOrEmpty(other.Name))
+                    equal = string.CompareOrdinal(Name, other.Name) == 0 ? true : false;  
+
                 if (Name == null && other.Name == null) equal = true;
 
                 if (equal)

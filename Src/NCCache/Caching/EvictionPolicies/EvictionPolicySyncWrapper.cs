@@ -1,28 +1,24 @@
-// Copyright (c) 2017 Alachisoft
-// 
-// Licensed under the Apache License, Version 2.0 (the "License");
-// you may not use this file except in compliance with the License.
-// You may obtain a copy of the License at
-// 
-//    http://www.apache.org/licenses/LICENSE-2.0
-// 
-// Unless required by applicable law or agreed to in writing, software
-// distributed under the License is distributed on an "AS IS" BASIS,
-// WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
-// See the License for the specific language governing permissions and
-// limitations under the License.
-
+//  Copyright (c) 2021 Alachisoft
+//  
+//  Licensed under the Apache License, Version 2.0 (the "License");
+//  you may not use this file except in compliance with the License.
+//  You may obtain a copy of the License at
+//  
+//     http://www.apache.org/licenses/LICENSE-2.0
+//  
+//  Unless required by applicable law or agreed to in writing, software
+//  distributed under the License is distributed on an "AS IS" BASIS,
+//  WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+//  See the License for the specific language governing permissions and
+//  limitations under the License
 using System;
-using System.Collections;
 using System.Threading;
-
 using Alachisoft.NCache.Caching.Topologies;
-using Alachisoft.NCache.Util;
-
-using Alachisoft.NCache.Common.DataStructures;
+using Alachisoft.NCache.Common.Pooling;
 
 namespace Alachisoft.NCache.Caching.EvictionPolicies
 {
+
     /// <summary>
     /// Provides a thread-safe wrapper over the eviction policy.
     /// </summary>
@@ -68,17 +64,17 @@ namespace Alachisoft.NCache.Caching.EvictionPolicies
             }
         }
 
-        public EvictionHint CompatibleHint(EvictionHint eh)
+        public EvictionHint CompatibleHint(EvictionHint eh,PoolManager poolManager)
         {
-            return _evctPolicy.CompatibleHint(eh);
+            return _evctPolicy.CompatibleHint(eh,poolManager);
         }
 
-        public void Execute(CacheBase cache, CacheRuntimeContext context, long count)
+        public long Execute(CacheBase cache, CacheRuntimeContext context, long count)
         {
             Sync.AcquireWriterLock(Timeout.Infinite);
             try
             {
-                _evctPolicy.Execute(cache,context, count);
+                return _evctPolicy.Execute(cache,context, count);
             }
             finally
             {
@@ -128,11 +124,11 @@ namespace Alachisoft.NCache.Caching.EvictionPolicies
             }
         }
 
+        #endregion
+
         public long IndexInMemorySize
         {
-            get { throw new NotImplementedException("EvictionPolicySyncWrapper.IndexInMemorySize"); }
+            get { throw new NotImplementedException("EvictionPolicySyncWrapper.IndexInMemorySize"); }            
         }
-
-        #endregion
     }
 }

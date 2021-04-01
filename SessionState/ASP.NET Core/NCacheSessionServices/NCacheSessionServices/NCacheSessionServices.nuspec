@@ -1,0 +1,30 @@
+<?xml version="1.0"?>
+<package xmlns="http://schemas.microsoft.com/packaging/2013/05/nuspec.xsd">
+  <metadata>
+    <id>Alachisoft.NCacheSessionServices.Enterprise</id>
+	<title>NCache ASP.NET Core Session Services  for NCache Enterprise Edition</title>
+    <version>4.8.0.3</version>
+    <authors>alachisoft</authors>
+	<iconUrl>http://www.alachisoft.com/images/ext-logos/nuget/ncache-insignia-logo-155X155.png</iconUrl>
+    <owners>Alachisoft</owners>
+    <requireLicenseAcceptance>false</requireLicenseAcceptance>
+    <description>Deploys the NCache Session Storage Services in an ASP.NET Core web application for .NET Framework. The services include complete session management module to replace the default ASP.NET Core session management with additional NCache exclusive features such as session locking that follows the flow of conventional ASP.NET session locking. The services also include an implementation of distributed cache to be used with the default session management of ASP.NET Core. </description>
+    <copyright>Copyright 2017</copyright>
+    <tags>asp .net core ncache enterprise session locking alachisoft caching</tags>	
+  </metadata>   
+  <!--Files added for debug purposes, comment out for release, the application should pick these from GAC, if NCache is installed. -->
+  <!--<files>
+		<file src="bin\release\Alachisoft.NCache.Cache.dll" target="lib\net452\Alachisoft.NCache.Cache.dll" />
+		<file src="bin\release\Alachisoft.NCache.Management.dll" target="lib\net452\Alachisoft.NCache.Management.dll" />
+		<file src="bin\release\Alachisoft.NCache.Common.dll" target="lib\net452\Alachisoft.NCache.Common.dll" />
+		<file src="bin\release\Alachisoft.NCache.Runtime.dll" target="lib\net452\Alachisoft.NCache.Runtime.dll" />
+		<file src="bin\release\Alachisoft.NCache.Security.dll" target="lib\net452\Alachisoft.NCache.Security.dll" />
+		<file src="bin\release\Alachisoft.NCache.Serialization.dll" target="lib\net452\Alachisoft.NCache.Serialization.dll" />
+		<file src="bin\release\Alachisoft.NCache.SessionStateManagement.dll" target="lib\net452\Alachisoft.NCache.SessionStateManagement.dll" />
+		<file src="bin\release\Alachisoft.NCache.SessionStoreProvider.dll" target="lib\net452\Alachisoft.NCache.SessionStoreProvider.dll" />
+		<file src="bin\release\Alachisoft.NCache.Web.dll" target="lib\net452\Alachisoft.NCache.Web.dll" />
+	</files>-->
+	<files>
+		<file src="readme.txt" target="" />
+	</files>
+</package>

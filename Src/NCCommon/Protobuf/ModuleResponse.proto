@@ -1,0 +1,7 @@
+
+option java_outer_classname="ModuleResponseProtocol";
+package Alachisoft.NCache.Common.Protobuf;
+
+message ModuleResponse {
+  repeated bytes payload = 1;
+}

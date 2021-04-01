@@ -1,5 +1,6 @@
 // ===============================================================================
 // Alachisoft (R) NCache Sample Code.
+// NCache NHibernate sample
 // ===============================================================================
 // Copyright © Alachisoft.  All rights reserved.
 // THIS CODE AND INFORMATION IS PROVIDED "AS IS" WITHOUT WARRANTY

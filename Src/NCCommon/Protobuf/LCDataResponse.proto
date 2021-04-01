@@ -1,0 +1,6 @@
+option java_outer_classname="LCDataResponseProtocol";
+package Alachisoft.NCache.Common.Protobuf;
+message LCDataResponse {
+	optional bytes lcData = 1;
+	optional int32 opCode = 2;
+}

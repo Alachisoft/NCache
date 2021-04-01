@@ -1,24 +1,21 @@
-// Copyright (c) 2017 Alachisoft
-// 
-// Licensed under the Apache License, Version 2.0 (the "License");
-// you may not use this file except in compliance with the License.
-// You may obtain a copy of the License at
-// 
-//    http://www.apache.org/licenses/LICENSE-2.0
-// 
-// Unless required by applicable law or agreed to in writing, software
-// distributed under the License is distributed on an "AS IS" BASIS,
-// WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
-// See the License for the specific language governing permissions and
-// limitations under the License.
-
+//  Copyright (c) 2021 Alachisoft
+//  
+//  Licensed under the Apache License, Version 2.0 (the "License");
+//  you may not use this file except in compliance with the License.
+//  You may obtain a copy of the License at
+//  
+//     http://www.apache.org/licenses/LICENSE-2.0
+//  
+//  Unless required by applicable law or agreed to in writing, software
+//  distributed under the License is distributed on an "AS IS" BASIS,
+//  WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+//  See the License for the specific language governing permissions and
+//  limitations under the License
 using System;
-using System.Text;
-
-using Alachisoft.NCache.Common.Interop;
 using Alachisoft.NCache.Runtime.Serialization.IO;
+using System.Diagnostics;
 using Alachisoft.NCache.Runtime.Serialization;
-using Alachisoft.NCache.Common.Util;
+using Alachisoft.NCache.Common.Pooling;
 
 namespace Alachisoft.NCache.Common.Stats
 {
@@ -27,6 +24,7 @@ namespace Alachisoft.NCache.Common.Stats
     /// It is a relative time not synchronized with system time. The time accuracy
     /// is upto micro seconds.
     /// </summary>
+    /// <author></author>
     public class HPTime : IComparable, ICompactSerializable
     {
         private int _hr;
@@ -47,11 +45,8 @@ namespace Alachisoft.NCache.Common.Stats
         {
             lock (_synObj)
             {
-                using (ProcessorAffinity.BeginAffinity(0))
-                {
-                    Win32.QueryPerformanceFrequency(ref _frequency);
-                    Win32.QueryPerformanceCounter(ref _baseTicks);
-                }
+                _frequency = Stopwatch.Frequency;
+                _baseTicks = Stopwatch.GetTimestamp();
             }
         }
 
@@ -113,40 +108,36 @@ namespace Alachisoft.NCache.Common.Stats
         {
             get
             {
-                using (ProcessorAffinity.BeginAffinity(0))
-                {
+                double rem = 0;
+                long currentTicks = 0;
+                long diff;
 
-                    double rem = 0;
-                    long currentTicks = 0;
-                    long diff;
+                HPTime time = new HPTime();
+                currentTicks = Stopwatch.GetTimestamp();
 
-                    HPTime time = new HPTime();
-         
-                    Win32.QueryPerformanceCounter(ref currentTicks);
+                diff = currentTicks - _baseTicks;
+                rem = ((double)diff / (double)_frequency) * 1000;
 
-                    diff = currentTicks - _baseTicks;
-                    rem = ((double)diff / (double)_frequency) * 1000;
-
-                    _baseTime = rem;
-                    time._baseTime = rem;
-                    rem += _baseRem;
+                //double baseTime = 0;//it will be server time;                
+                _baseTime = rem;
+                time._baseTime = rem;
+                rem += _baseRem;
 
 
-                    time._hr = (int)(rem / 3600000);
-                    rem = rem - (time._hr * 3600000);
+                time._hr = (int)(rem / 3600000);
+                rem = rem - (time._hr * 3600000);
 
-                    time._min = (int)rem / 60000;
-                    rem = rem - (time._min * 60000);
+                time._min = (int)rem / 60000;
+                rem = rem - (time._min * 60000);
 
-                    time._sec = (int)rem / 1000;
-                    rem = rem - (time._sec * 1000);
+                time._sec = (int)rem / 1000;
+                rem = rem - (time._sec * 1000);
 
-                    time._mlSec = (int)rem;
-                    rem = (rem - (double)time._mlSec) * 1000;
-                    time._micSec = (int)rem;
+                time._mlSec = (int)rem;
+                rem = (rem - (double)time._mlSec) * 1000;
+                time._micSec = (int)rem;
 
-                    return time;
-                }
+                return time;
             }
         }
 
@@ -162,8 +153,8 @@ namespace Alachisoft.NCache.Common.Stats
                 long diff;
 
                 HPTime time = new HPTime();
-         
-                Win32.QueryPerformanceCounter(ref currentTicks);
+                currentTicks = Stopwatch.GetTimestamp();
+                
 
                 diff = currentTicks - _baseTicks;
                 rem = ((double)diff / (double)_frequency) * 1000;
@@ -231,7 +222,7 @@ namespace Alachisoft.NCache.Common.Stats
                 }
                 return result;
             }
-            throw new ArgumentException("Object is not HPTime");
+            return 1;
         }
 
         #endregion
@@ -254,6 +245,24 @@ namespace Alachisoft.NCache.Common.Stats
             writer.Write(_min);
             writer.Write(_mlSec);
             writer.Write(_sec);
+        }
+
+        #endregion
+
+        #region - [Deep Cloning] -
+
+        public HPTime DeepClone(PoolManager poolManager)
+        {
+            var clonedHPTime = new HPTime();
+            clonedHPTime._baseRem = _baseRem;
+            clonedHPTime._baseTime = _baseTime;
+            clonedHPTime._hr = _hr;
+            clonedHPTime._micSec = _micSec;
+            clonedHPTime._min = _min;
+            clonedHPTime._mlSec = _mlSec;
+            clonedHPTime._sec = _sec;
+
+            return clonedHPTime;
         }
 
         #endregion

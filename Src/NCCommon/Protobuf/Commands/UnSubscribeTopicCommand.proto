@@ -1,0 +1,16 @@
+option java_outer_classname="UnSubscribeTopicCommandProtocol";
+package Alachisoft.NCache.Common.Protobuf;
+message UnSubscribeTopicCommand {
+    optional string topicName = 1;
+	optional string recepientId = 2;
+	optional int64 requestId = 3;
+	optional int32 pubSubType = 4;
+	optional int32 subscriptionPolicy=5;
+	optional bool isDispose=6;
+	optional int32 commandVersion = 7 [default=0];
+	optional int64 clientLastViewId = 8 [default=-1];
+	optional string version = 9;
+	optional string intendedRecipient = 10 [default = ""];
+
+	
+}

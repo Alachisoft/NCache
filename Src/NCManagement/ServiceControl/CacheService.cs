@@ -1,20 +1,20 @@
-// Copyright (c) 2017 Alachisoft
-// 
-// Licensed under the Apache License, Version 2.0 (the "License");
-// you may not use this file except in compliance with the License.
-// You may obtain a copy of the License at
-// 
-//    http://www.apache.org/licenses/LICENSE-2.0
-// 
-// Unless required by applicable law or agreed to in writing, software
-// distributed under the License is distributed on an "AS IS" BASIS,
-// WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
-// See the License for the specific language governing permissions and
-// limitations under the License.
-
+//  Copyright (c) 2021 Alachisoft
+//  
+//  Licensed under the Apache License, Version 2.0 (the "License");
+//  you may not use this file except in compliance with the License.
+//  You may obtain a copy of the License at
+//  
+//     http://www.apache.org/licenses/LICENSE-2.0
+//  
+//  Unless required by applicable law or agreed to in writing, software
+//  distributed under the License is distributed on an "AS IS" BASIS,
+//  WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+//  See the License for the specific language governing permissions and
+//  limitations under the License
 using System;
 using System.Net.Sockets;
 using Alachisoft.NCache.Management;
+using Alachisoft.NCache.Management.ServiceControl;
 using Alachisoft.NCache.Runtime.Exceptions;
 
 namespace Alachisoft.NCache.ServiceControl
@@ -28,36 +28,24 @@ namespace Alachisoft.NCache.ServiceControl
     {
         private string _serviceName;
         protected ICacheServer cacheServer;
-        
+
+        public event EventHandler<CredentialsEventArgs> OnGetSecurityCredentials = delegate { };
+        private string address;
+        private bool p;
+
         /// <summary>
         /// Overloaded Constructor
         /// </summary>
         /// <param name="server">name of machine where the service is running.</param>
         /// <param name="port">port used by the remote server.</param>
         /// <param name="useTcp">use tcp channel for remoting.</param>
-        public CacheService(string serviceName,string server, long port):base(server,port,true)
-        {
-            this._serviceName = serviceName;
-        }
+        public CacheService(string serviceName,string server, long port):base(server,port,true) { this._serviceName = serviceName;}
 
-        public CacheService(string server, int port, bool useTCP)
-            : base(server, port, useTCP)
-        {
-            ;
-        }
+        public CacheService(string server, int port, bool useTCP)  : base(server, port, useTCP) { }
 
-        public CacheService(string address, bool p) : this(address, CacheConfigManager.HttpPort, true)
-        {
-            ;
-        }
+        public CacheService(string address, bool p) : this(address, CacheConfigManager.HttpPort, true) { }
 
-        public ICacheServer CacheServer
-        {
-            get
-            {
-                return this.cacheServer;
-            }
-        }
+        public ICacheServer CacheServer { get { return this.cacheServer; } }
 
         /// <summary>
         /// Returns the instance of Cache manager running on the node, starts the service
@@ -69,8 +57,6 @@ namespace Alachisoft.NCache.ServiceControl
             ICacheServer cm = null;
             try
             {
-                // Try to connect to cache manager first, saves time if the 
-                // service is already running.
                 cm = ConnectCacheServer();
             }
             catch (SocketException socketException)
@@ -100,6 +86,7 @@ namespace Alachisoft.NCache.ServiceControl
                 try
                 {
                     Start(timeout);
+
                     cm = ConnectCacheServer();
                  
                 }
@@ -114,6 +101,8 @@ namespace Alachisoft.NCache.ServiceControl
             }
             return cm;
         }
+
+
 
         public virtual void RestartSvcAfterNICChanged(TimeSpan timeout, string previousServerNode)
         {
@@ -158,6 +147,11 @@ namespace Alachisoft.NCache.ServiceControl
         public bool isRunning(TimeSpan timeout)
         {
             return isServiceRunning(timeout, _serviceName);
+        }
+
+        public void GetSecurityCredentials(object sender,CredentialsEventArgs e)
+        {
+            OnGetSecurityCredentials(sender, e);
         }
     }
 }

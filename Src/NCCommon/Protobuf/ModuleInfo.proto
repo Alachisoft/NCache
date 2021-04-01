@@ -1,0 +1,6 @@
+package Alachisoft.NCache.Common.Protobuf;
+message ModuleInfo {
+	optional string name = 1;
+	optional string version = 2;
+	
+}

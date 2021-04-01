@@ -1,28 +1,8 @@
-// Licensed under the Apache License, Version 2.0 (the "License");
-// you may not use this file except in compliance with the License.
-// You may obtain a copy of the License at
-// 
-//    http://www.apache.org/licenses/LICENSE-2.0
-// 
-// Unless required by applicable law or agreed to in writing, software
-// distributed under the License is distributed on an "AS IS" BASIS,
-// WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
-// See the License for the specific language governing permissions and
-// limitations under the License.
 // $Id: RequestCorrelator.java,v 1.12 2004/09/05 04:54:21 ovidiuf Exp $
-
 using System;
 using System.IO;
-using Alachisoft.NGroups;
-using Alachisoft.NGroups.Stack;
-using Alachisoft.NGroups.Util;
-
-
 using Alachisoft.NCache.Runtime.Serialization;
-
-
 using Alachisoft.NCache.Runtime.Serialization.IO;
-
 
 using Alachisoft.NCache.Serialization.Formatters;
 using Alachisoft.NCache.Common;
@@ -30,10 +10,9 @@ using Alachisoft.NCache.Common.Net;
 using Alachisoft.NCache.Common.Stats;
 using System.Threading;
 using System.Collections;
-using Alachisoft.NCache.Common.Util;
 using Alachisoft.NCache.Common.Logger;
-
-using Runtime = Alachisoft.NCache.Runtime;
+using Alachisoft.NGroups.Stack;
+using Alachisoft.NGroups.Util;
 
 namespace Alachisoft.NGroups.Blocks
 {
@@ -116,7 +95,6 @@ namespace Alachisoft.NGroups.Blocks
 		/// <summary>makes the instance unique (together with IDs) </summary>
 		protected internal string name = null;
 		
-
 		
 		
 		/// <summary>The address of this group member </summary>
@@ -134,11 +112,6 @@ namespace Alachisoft.NGroups.Blocks
 		/// </summary>
 		protected internal bool deadlock_detection = false;
 		
-		/// <summary> This field is used only if deadlock detection is enabled.
-		/// It sets the calling stack for to that for the currently running request
-		/// </summary>
-
-		
 		/// <summary>Process items on the queue concurrently (Scheduler). The default is to wait until the processing of an item
 		/// has completed before fetching the next item from the queue. Note that setting this to true
 		/// may destroy the properties of a protocol stack, e.g total or causal order may not be
@@ -149,9 +122,6 @@ namespace Alachisoft.NGroups.Blocks
         private bool stopReplying;
 
 		protected internal bool started = false;
-
-        
-        //private string _cacheName = null;
 
         private ILogger _ncacheLog = null;
 
@@ -193,7 +163,6 @@ namespace Alachisoft.NGroups.Blocks
 			this.transport = transport;
 			request_handler = handler;
             this._ncacheLog = NCacheLog;
-            
 			start();
 		}
 		
@@ -205,7 +174,6 @@ namespace Alachisoft.NGroups.Blocks
 			this.local_addr = local_addr;
 			request_handler = handler;
             this._ncacheLog = NCacheLog;
-            
 			start();
 		}
 
@@ -370,7 +338,6 @@ namespace Alachisoft.NGroups.Blocks
 			{
                 if (transport is Protocol)
                 {
-                   
                     Event evt = new Event();
                     evt.Type = Event.MSG;
                     evt.Arg = msg;
@@ -480,7 +447,6 @@ namespace Alachisoft.NGroups.Blocks
 		
 		protected virtual void  startScheduler()
         {
-			
 		}
 		
 		public virtual void  stop()
@@ -493,7 +459,11 @@ namespace Alachisoft.NGroups.Blocks
                 try
                 {
                     NCacheLog.Flush();
+#if !NETCORE
                     _statusCleanerThread.Abort();
+#elif NETCORE
+                    _statusCleanerThread.Interrupt();
+#endif
                 }
                 catch (Exception) { }
             }
@@ -503,7 +473,6 @@ namespace Alachisoft.NGroups.Blocks
 		
 		protected virtual void  stopScheduler()
 		{
-			
 		}
 		
 		
@@ -550,7 +519,6 @@ namespace Alachisoft.NGroups.Blocks
 			NCacheLog.Debug("suspect=" + mbr);
 					
 			// copy so we don't run into bug #761804 - Bela June 27 2003
-			//lock (requests.SyncRoot)
             req_lock.AcquireReaderLock(Timeout.Infinite);
             try
             {
@@ -855,7 +823,6 @@ namespace Alachisoft.NGroups.Blocks
 
                     //In case of NHop requests, the response is not sent to the sender of the request. Instead, 
                     //response is sent back to a node whose address is informed by the sender.
-                   
 
 					handleRequest(msg,hdr.whomToReply);
                     break;
@@ -869,11 +836,13 @@ namespace Alachisoft.NGroups.Blocks
 					coll = findEntry(hdr.id);
 					if (coll != null)
 					{
+
 						coll.receiveResponse(msg);
+
 					}
 					break;
 
-                case HDR.NHOP_RSP:                    
+                case HDR.NHOP_RSP:
                     msg.removeHeader(HeaderType.REQUEST_COORELATOR);
                     coll = findEntry(hdr.id);
 
@@ -888,7 +857,6 @@ namespace Alachisoft.NGroups.Blocks
                                 groupRequest.AddNHopDefaultStatus(hdr.expectResponseFrom);
                             }
                         }
-                       
                         coll.receiveResponse(msg);
                     }
                     break;
@@ -910,7 +878,7 @@ namespace Alachisoft.NGroups.Blocks
             {
                 lock (req_mutex)
                 {
-                    //TAIM: Request id ranges from 0 to long.Max. If it reaches the max we
+                    // Request id ranges from 0 to long.Max. If it reaches the max we
                     //re-initialize it to -1;
                     if (last_req_id == long.MaxValue) last_req_id = -1;
                     long result = ++last_req_id;
@@ -926,7 +894,6 @@ namespace Alachisoft.NGroups.Blocks
 		private void  addEntry(long id, RequestEntry entry,ArrayList dests)
 		{
 			System.Int64 id_obj = (long) id;
-			
             req_lock.AcquireWriterLock(Timeout.Infinite);
             try
             {
@@ -964,7 +931,7 @@ namespace Alachisoft.NGroups.Blocks
 			// changed by bela Feb 28 2003 (bug fix for 690606)
 			// changed back to use synchronization by bela June 27 2003 (bug fix for #761804),
 			// we can do this because we now copy for iteration (viewChange() and suspect())
-			
+			//lock (requests.SyncRoot)
             req_lock.AcquireWriterLock(Timeout.Infinite);
             try
             {
@@ -1008,6 +975,7 @@ namespace Alachisoft.NGroups.Blocks
         {
             object retval = null;
             byte[] rsp_buf = null;
+            IList rsp_buffers = null;
             HDR hdr, rsp_hdr, replicaMsg_hdr;
             Message rsp;
 
@@ -1089,7 +1057,7 @@ namespace Alachisoft.NGroups.Blocks
                     NCacheLog.Error("RequestCorrelator.handleRequest()", e.ToString());
                 }
             }
-            
+
             //2. send reply back to original node
             //   and inform the original node that it must expect another response 
             //   from the replica node. (the response of the request sent in part 1)
@@ -1099,12 +1067,21 @@ namespace Alachisoft.NGroups.Blocks
             {
                 if (retval is OperationResponse)
                 {
-                    rsp_buf = (byte[])((OperationResponse)retval).SerializablePayload;
+                    
+                    if(((OperationResponse)retval).SerializablePayload is byte[])
+                        rsp_buf = (byte[])((OperationResponse)retval).SerializablePayload;
+                    else if (((OperationResponse)retval).SerializablePayload is IList)
+                        rsp_buffers = (IList)((OperationResponse)retval).SerializablePayload;
+
                     rsp.Payload = ((OperationResponse)retval).UserPayload;
                     rsp.responseExpected = true;
                 }
+
                 else if (retval is Byte[])
                     rsp_buf = (byte[])retval;
+                else if (retval is IList)
+                    rsp_buffers = (IList)retval;
+
                 else
                     rsp_buf = CompactBinaryFormatter.ToByteBuffer(retval, null); // retval could be an exception, or a real value
             }
@@ -1124,6 +1101,8 @@ namespace Alachisoft.NGroups.Blocks
 
             if (rsp_buf != null)
                 rsp.setBuffer(rsp_buf);
+            if (rsp_buffers != null)
+                rsp.Buffers = rsp_buffers;
 
             rsp_hdr = new HDR();
             rsp_hdr.type = HDR.NHOP_RSP;
@@ -1134,7 +1113,7 @@ namespace Alachisoft.NGroups.Blocks
             {
                 rsp_hdr.expectResponseFrom = destination;
             }
-            
+
             rsp.putHeader(HeaderType.REQUEST_COORELATOR, rsp_hdr);
 
             if (NCacheLog.IsInfoEnabled) NCacheLog.Info("RequestCorrelator.handleRequest()", "sending rsp for " + rsp_hdr.id + " to " + rsp.Dest);
@@ -1170,6 +1149,7 @@ namespace Alachisoft.NGroups.Blocks
 		{
 			object retval;
 			byte[] rsp_buf = null;
+            IList rsp_buffers = null;
 			HDR hdr, rsp_hdr;
 			Message rsp;
 			
@@ -1213,6 +1193,7 @@ namespace Alachisoft.NGroups.Blocks
                 //request is being handled asynchronously, so response will be send by
                 //the the user itself.
                 
+
 			}
 			catch (System.Exception t)
 			{
@@ -1240,17 +1221,22 @@ namespace Alachisoft.NGroups.Blocks
                     if (((OperationResponse)retval).SerilizationStream != null)
                     {
                         rsp.SerlizationStream = ((OperationResponse)retval).SerilizationStream;
-                        //MemoryStream stream=((MemoryStream)((OperationResponse)retval).SerilizationStream);
-                        //rsp_buf = stream.ToArray();
-                        //stream.Seek(0, SeekOrigin.Begin);
                     }
                     else
-                        rsp_buf = (byte[])((OperationResponse)retval).SerializablePayload;
+                    {
+                        if(((OperationResponse)retval).SerializablePayload is byte[])
+                            rsp_buf = (byte[])((OperationResponse)retval).SerializablePayload;
+                        else if(((OperationResponse)retval).SerializablePayload is IList)
+                            rsp_buffers = (IList)((OperationResponse)retval).SerializablePayload;
+                    }
+                    
                     rsp.Payload = ((OperationResponse)retval).UserPayload;
                     rsp.responseExpected = true;
                 }
                 else if(retval is Byte[])
 					rsp_buf = (byte[])retval;
+                else if (retval is IList)
+                    rsp_buffers = (IList)retval;
 				else
 					rsp_buf = CompactBinaryFormatter.ToByteBuffer(retval,null); // retval could be an exception, or a real value
 			}
@@ -1271,19 +1257,20 @@ namespace Alachisoft.NGroups.Blocks
             if (rsp_buf != null)
 				rsp.setBuffer(rsp_buf);
 
+            if (rsp_buffers != null)
+                rsp.Buffers = rsp_buffers;
+
             if (rsp.Dest.Equals(local_addr))
-            {                
+            {
                 //we need not to put our response on the stack.
                 rsp.Src = local_addr;
                 ReceiveLocalResponse(rsp,hdr.id);
                 return;
             }
-            
             rsp_hdr = new HDR();
             rsp_hdr.type = HDR.RSP;
             rsp_hdr.id = hdr.id;
             rsp_hdr.rsp_expected = false;
-
 
 			rsp.putHeader(HeaderType.REQUEST_COORELATOR, rsp_hdr);
 			
@@ -1294,7 +1281,6 @@ namespace Alachisoft.NGroups.Blocks
                
                 if (transport is Protocol)
                 {
-                    
                     Event evt = new Event();
                     evt.Type = Event.MSG;
                     evt.Arg = rsp;
@@ -1361,7 +1347,6 @@ namespace Alachisoft.NGroups.Blocks
 
                 if (transport is Protocol)
                 {
-                    
                     Event evt = new Event();
                     evt.Type = Event.MSG;
                     evt.Arg = rsp;
@@ -1404,7 +1389,6 @@ namespace Alachisoft.NGroups.Blocks
 
                 if (transport is Protocol)
                 {
-                    
                     Event evt = new Event();
                     evt.Type = Event.MSG;
                     evt.Arg = response;
@@ -1440,13 +1424,14 @@ namespace Alachisoft.NGroups.Blocks
             {
 
                 coll.receiveResponse(rsp);
+
             }
         }
 		
 		
 		/// <summary> The header for <tt>RequestCorrelator</tt> messages</summary>
 		[Serializable]
-		internal class HDR: Alachisoft.NGroups.Header, ICompactSerializable , IRentableObject
+		internal class HDR: Header, ICompactSerializable , IRentableObject
 		{
 			public const byte REQ = 0;
 			public const byte RSP = 1;
@@ -1503,7 +1488,7 @@ namespace Alachisoft.NGroups.Blocks
 				this.type = type;
 				this.id = id;
 				this.rsp_expected = rsp_expected;
-				
+				//this.name = name;
 			}
 
             /// <param name="type">type of header (<tt>REQ</tt>/<tt>RSP</tt>)
@@ -1522,13 +1507,13 @@ namespace Alachisoft.NGroups.Blocks
                 this.type = type;
                 this.id = id;
                 this.rsp_expected = rsp_expected;
-               
-            }
+               // this.name = name;
 
+            }
 			public override string ToString()
 			{
 				System.Text.StringBuilder ret = new System.Text.StringBuilder();
-				
+				//ret.Append("[HDR: name=" + name + ", type=");
                 string typeStr = "<unknown>";
                 switch (type)
                 {
@@ -1613,11 +1598,16 @@ namespace Alachisoft.NGroups.Blocks
 				rsp_expected = reader.ReadBoolean();
                 reqStatus = reader.ReadObject() as RequestStatus;
                 status_reqId = reader.ReadInt64();
-				
+				//name = reader.ReadString();
+				//call_stack = (System.Collections.ArrayList)reader.ReadObject();
+                //byte[] arr = (byte[])reader.ReadObject();
+                //dest_mbrs = arr != null ?(System.Collections.IList)CompactBinaryFormatter.FromByteBuffer(arr, null): null;
+				//dest_mbrs = (System.Collections.IList)reader.ReadObject();
                 dest_mbrs = (System.Collections.ArrayList)reader.ReadObject();
                 doProcess = reader.ReadBoolean();
                 whomToReply = (Address)reader.ReadObject();
                 expectResponseFrom = (Address)reader.ReadObject();
+
 			}
 
 			public void Serialize(CompactWriter writer)
@@ -1627,7 +1617,6 @@ namespace Alachisoft.NGroups.Blocks
 				writer.Write(rsp_expected);
                 writer.WriteObject(reqStatus);
                 writer.Write(status_reqId);
-				
                 if (serializeFlag)
                     writer.WriteObject(dest_mbrs);
                 else
@@ -1689,6 +1678,8 @@ namespace Alachisoft.NGroups.Blocks
 
             #endregion
         }
+		
+		
 		
 		
 		

@@ -1,27 +1,22 @@
-// Copyright (c) 2017 Alachisoft
-// 
-// Licensed under the Apache License, Version 2.0 (the "License");
-// you may not use this file except in compliance with the License.
-// You may obtain a copy of the License at
-// 
-//    http://www.apache.org/licenses/LICENSE-2.0
-// 
-// Unless required by applicable law or agreed to in writing, software
-// distributed under the License is distributed on an "AS IS" BASIS,
-// WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
-// See the License for the specific language governing permissions and
-// limitations under the License.
+//  Copyright (c) 2021 Alachisoft
+//  
+//  Licensed under the Apache License, Version 2.0 (the "License");
+//  you may not use this file except in compliance with the License.
+//  You may obtain a copy of the License at
+//  
+//     http://www.apache.org/licenses/LICENSE-2.0
+//  
+//  Unless required by applicable law or agreed to in writing, software
+//  distributed under the License is distributed on an "AS IS" BASIS,
+//  WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+//  See the License for the specific language governing permissions and
+//  limitations under the License
 
 using System;
-using System.Net;
 using System.Collections;
-
 using Alachisoft.NCache.Runtime.Serialization.IO;
 using Alachisoft.NCache.Runtime.Serialization;
-
-using Alachisoft.NCache.Util;
 using Alachisoft.NCache.Common.Net;
-using System.IO;
 
 
 namespace Alachisoft.NCache.Caching.Statistics
@@ -108,7 +103,10 @@ namespace Alachisoft.NCache.Caching.Statistics
         {
             get
             {
-                return this.LocalNode.Statistics.MaxSize;
+				if (LocalNode != null)
+					return LocalNode.Statistics.MaxSize;
+				else
+					return 0;
             }
             set
             {
@@ -245,6 +243,22 @@ namespace Alachisoft.NCache.Caching.Statistics
 			}
 			return null;
 		}
+
+	    internal NodeInfo[] GetNodesClone()
+	    {
+	        NodeInfo[] nodes = null;
+
+            lock (this)
+	        {
+	            if (_nodeInfos != null)
+	            {
+	                nodes = new NodeInfo[_nodeInfos.Count];
+                    _nodeInfos.CopyTo(nodes);
+	            }
+	        }
+	        return nodes;
+
+	    }
 		
 		/// <summary>
 		/// Sets the values of the server/member/other counts

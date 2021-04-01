@@ -6,6 +6,12 @@ package Alachisoft.NCache.Common.Protobuf;
 message GetCacheItemCommand {
 	optional string key = 1;
 	optional int64 requestId = 2;
-	optional LockInfo lockInfo = 3;
-	optional int32 flag = 4;
+	optional string group = 3;
+	optional string subGroup = 4;
+	optional LockInfo lockInfo = 5;
+	optional int32 flag = 6;
+	optional uint64 version = 7;
+	optional string providerName = 8;
+	optional int32 readMode = 9 [default = -1];
+	optional int32 MethodOverload = 10 [default=0];
 }

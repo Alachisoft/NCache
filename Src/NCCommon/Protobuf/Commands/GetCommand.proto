@@ -7,5 +7,13 @@ message GetCommand {
 	optional string key = 1;
 	optional int64 requestId = 2;
 	optional int32 flag = 3;
-	optional LockInfo lockInfo = 4;
+	optional string group = 4;
+	optional string subGroup = 5;
+	optional LockInfo lockInfo = 6;
+	optional uint64 version = 7;
+	optional string providerName = 8;
+	optional int32 threadId = 9 [default = -1];
+	optional int32 readMode = 10 [default = -1];
+	optional int32 MethodOverload = 11 [default=0];
+	optional int32 commandID = 12 [default = -1];
 }

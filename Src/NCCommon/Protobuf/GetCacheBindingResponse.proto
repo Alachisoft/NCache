@@ -1,5 +1,4 @@
 option java_outer_classname="GetCacheBindingResponseProtocol";
-
 package Alachisoft.NCache.Common.Protobuf;
 
 message GetCacheBindingResponse {

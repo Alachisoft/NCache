@@ -64,6 +64,7 @@ namespace nhibernator.DLL
 			Customer customer = null;
 			ITransaction tx = null;
 			
+			//int ordercount =0;
             try
             {
                 if (!session.IsConnected)
@@ -130,7 +131,7 @@ namespace nhibernator.DLL
                 session.Save(customer);
                 session.Flush();
                 tx.Commit();
-                Console.WriteLine("\nCustomer with ID: " + customer.CustomerID + " succefully added into database");
+                Console.WriteLine("\nCustomer with ID: " + customer.CustomerID + " successfully added into database");
 			}
 			catch (Exception ex)
 			{
@@ -160,7 +161,7 @@ namespace nhibernator.DLL
                 session.Merge(customer);
                 session.Flush();
                 tx.Commit();
-                Console.WriteLine("\nCustomer with ID: " + customer.CustomerID + " succefully updated into database");
+                Console.WriteLine("\nCustomer with ID: " + customer.CustomerID + " successfully updated into database");
             }
             catch (Exception ex)
             {
@@ -199,7 +200,7 @@ namespace nhibernator.DLL
                     factory.Evict(typeof(Customer), CustomerID);
                     factory.EvictCollection(typeof(Customer).ToString() + ".Orders", CustomerID);
 
-                    Console.WriteLine("\nCustomer with ID: " + CustomerID + " succefully deleted from database");
+                    Console.WriteLine("\nCustomer with ID: " + CustomerID + " successfully deleted from database");
                 }
                 else
                 {
@@ -218,7 +219,7 @@ namespace nhibernator.DLL
         }
 
         /// <summary>
-        /// Clears and dissconnects the session
+        /// Clears and disconnects the session
         /// </summary>
         public void SessionDisconnect()
         {

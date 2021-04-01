@@ -1,31 +1,15 @@
-// Licensed under the Apache License, Version 2.0 (the "License");
-// you may not use this file except in compliance with the License.
-// You may obtain a copy of the License at
-// 
-//    http://www.apache.org/licenses/LICENSE-2.0
-// 
-// Unless required by applicable law or agreed to in writing, software
-// distributed under the License is distributed on an "AS IS" BASIS,
-// WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
-// See the License for the specific language governing permissions and
-// limitations under the License.
 // $Id: ParticipantGmsImpl.java,v 1.7 2004/07/28 22:46:59 belaban Exp $
-
+using Alachisoft.NCache.Common.Enum;
+using Alachisoft.NCache.Common.Net;
+using Alachisoft.NCache.Common.Threading;
 using System;
 using System.Collections;
-using Alachisoft.NGroups;
-using Alachisoft.NGroups.Util;
-
-using Alachisoft.NCache.Common.Threading;
-using Alachisoft.NCache.Common.Net;
-using Alachisoft.NCache.Common.Enum;
-using Alachisoft.NCache.Common.Util;
 
 namespace Alachisoft.NGroups.Protocols.pbcast
 {
-	
-	
-	internal class ParticipantGmsImpl:GmsImpl
+
+
+    internal class ParticipantGmsImpl:GmsImpl
 	{
 		internal System.Collections.ArrayList suspected_mbrs = System.Collections.ArrayList.Synchronized(new System.Collections.ArrayList(11));
 		internal Promise leave_promise = new Promise();
@@ -46,8 +30,11 @@ namespace Alachisoft.NGroups.Protocols.pbcast
 
         public override void handleNotifyLeaving()
         {
+
             leaving = true;
+           
         }
+
 		
 		public override void  join(Address mbr, bool isStartedAsMirror)
 		{
@@ -128,7 +115,7 @@ namespace Alachisoft.NGroups.Protocols.pbcast
 		}
 
 
-        public override JoinRsp handleJoin(Address mbr, string subGroup_name, bool isStartedAsMirror, string gmsId, ref bool acquireHashmap)
+        public override JoinRsp handleJoin(Address mbr, string subGroup_name, bool isStartedAsMirror, string gmsId)
 		{
 			wrongMethod("handleJoin");
 			return null;
@@ -193,9 +180,7 @@ namespace Alachisoft.NGroups.Protocols.pbcast
                 ArrayList suspectedMembers = new ArrayList();
 
                 if (gms.Stack.NCacheLog.IsErrorEnabled) gms.Stack.NCacheLog.CriticalInfo("ParticipantGmsImp.handleInformAboutNodeDeath", sender + " reported node " + deadNode + " as down");
-
-               
-
+                
                 if (gms.members.contains(deadNode))
                 {
                     ArrayList members = gms.members.Members;
@@ -238,7 +223,8 @@ namespace Alachisoft.NGroups.Protocols.pbcast
                                 }
                             }
 
-                           if (sameNode != null && suspectedMembers.Contains(sameNode)&& !suspectedMembers.Contains(mbr))
+                            //In case of POR if any other of either main/replica is veriifed dead, we consider the other one to be dead as well.
+                            if (sameNode != null && suspectedMembers.Contains(sameNode)&& !suspectedMembers.Contains(mbr))
                             {
                                 suspectedMembers.Add(mbr);
                                 continue;
@@ -287,7 +273,6 @@ namespace Alachisoft.NGroups.Protocols.pbcast
 
 		public override void  handleSuspect(Address mbr)
 		{
-            
 			System.Collections.ArrayList suspects = null;
 
             lock (this)
@@ -384,7 +369,7 @@ namespace Alachisoft.NGroups.Protocols.pbcast
                             //=====================================================
                             ArrayList list = new ArrayList(1);
                             list.Add(leavingMbr);
-                            gms.acquireHashmap(list, false, subGroup, false);
+                           
                         }
                         gms.castViewChange(null, null, suspects, gms._hashmap);
                     }
@@ -406,7 +391,7 @@ namespace Alachisoft.NGroups.Protocols.pbcast
             GMS.HDR hdr = new GMS.HDR(GMS.HDR.CONNECTION_BROKEN, suspected);
             Message nodeLeftMsg = new Message(coordinator, null, new byte[0]);
             nodeLeftMsg.putHeader(HeaderType.GMS, hdr);
-            gms.passDown(new Event(Event.MSG, nodeLeftMsg, Priority.Critical));
+            gms.passDown(new Event(Event.MSG, nodeLeftMsg, Priority.High));
         }
 
         public override void handleConnectedNodesRequest(Address src,int reqId)
@@ -427,7 +412,7 @@ namespace Alachisoft.NGroups.Protocols.pbcast
                 GMS.HDR hdr = new GMS.HDR(GMS.HDR.CONNECTED_NODES_RESPONSE,(Object)reqId);
                 hdr.nodeList = mbrs;
                 rspMsg.putHeader(HeaderType.GMS,hdr);
-                gms.passDown(new Event(Event.MSG,rspMsg,Priority.Critical));
+                gms.passDown(new Event(Event.MSG,rspMsg,Priority.High));
             }
         }
         /// <summary>
@@ -445,21 +430,27 @@ namespace Alachisoft.NGroups.Protocols.pbcast
                 header.nodeList = nodes;
                 Message msg = new Message(gms.determineCoordinator(),null,new byte[0]);
                 msg.putHeader(HeaderType.GMS,header);
-                gms.passDown(new Event(Event.MSG,msg,Priority.Critical));
+                gms.passDown(new Event(Event.MSG,msg,Priority.High));
             }
             
         }
 
         public override void handleLeaveClusterRequest(Address sender)
         {
-            if (gms.Stack.NCacheLog.IsInfoEnabled) gms.Stack.NCacheLog.Info("ParticipantGmsImp.handleLeaveClusterRequest", sender + " has asked me to leave the cluster");
+            if (gms.Stack.NCacheLog.IsInfoEnabled) gms.Stack.NCacheLog.Error("ParticipantGmsImp.handleLeaveClusterRequest", sender + " has asked me to leave the cluster");
 
             if (gms.determineCoordinator().Equals(sender))
             {
-                if (gms.Stack.NCacheLog.IsInfoEnabled) gms.Stack.NCacheLog.Info("ParticipantGmsImp.handleLeaveClusterRequest", "leaving the cluster on coordinator request");
+                if (gms.Stack.NCacheLog.IsInfoEnabled) gms.Stack.NCacheLog.Error("ParticipantGmsImp.handleLeaveClusterRequest", "leaving the cluster on coordinator request");
 
                 ArrayList suspected = gms.members.Members;
                 suspected.Remove(gms.local_addr);
+
+                if (gms.isPartReplica)
+                {
+                    //In leave cluster scenario, we remove all other nodes except replica residing on the physical node
+                    suspected.Remove(new Address(gms.local_addr.IpAddress, gms.local_addr.Port + 1));
+                }
 
                 foreach (Address leavingMbr in suspected)
                 {
@@ -488,7 +479,7 @@ namespace Alachisoft.NGroups.Protocols.pbcast
 
                     ArrayList list = new ArrayList(1);
                     list.Add(leavingMbr);
-                    gms.acquireHashmap(list, false, subGroup, false);
+        
                 }
 
                 suspected_mbrs.Clear();
@@ -510,7 +501,7 @@ namespace Alachisoft.NGroups.Protocols.pbcast
                     GMS.HDR header = new GMS.HDR(GMS.HDR.INFORM_NODE_REJOINING, node);
                     Message rejoiningMsg = new Message(gms.determineCoordinator(), null, new byte[0]);
                     rejoiningMsg.putHeader(HeaderType.GMS, header);
-                    gms.passDown(new Event(Event.MSG, rejoiningMsg, Priority.Critical));
+                    gms.passDown(new Event(Event.MSG, rejoiningMsg, Priority.High));
                 }
             }
         }
@@ -567,7 +558,6 @@ namespace Alachisoft.NGroups.Protocols.pbcast
             {
                 while (!leaving)
                 {
-                
                     if (coordinator != null && !coordinator.Equals(gms.local_addr))
                     {
                         sendJoinMessage(coordinator, gms.local_addr, gms.subGroup_addr, true);
@@ -580,13 +570,8 @@ namespace Alachisoft.NGroups.Protocols.pbcast
                             return;
                         continue;
                     }
-
-
-                   
-
                     if (rsp == null)
                     {
-                       
                         Util.Util.sleep(gms.join_retry_timeout * 5);
                         initial_mbrs_received = false;
                         retry_count--;
@@ -633,7 +618,6 @@ namespace Alachisoft.NGroups.Protocols.pbcast
             }
             catch (Exception ex)
             {
-                
                 gms.Stack.NCacheLog.Error("pb.ClientGmsImpl.join()", ex.ToString());
             }
 
@@ -654,7 +638,7 @@ namespace Alachisoft.NGroups.Protocols.pbcast
 
             //Cast view to the replica node as well
             gms.installView(new_view);
-           
+            //gms.castViewChange(new_view);
 
             gms.becomeParticipant();
             gms.Stack.IsOperational = true;
@@ -683,11 +667,9 @@ namespace Alachisoft.NGroups.Protocols.pbcast
                     }
 
                     /// Find the maximum vote cast value. This will be used to resolve a
-                    /// tie later on. 
+                    /// tie later on. (shoaib)
                     if (((int)votes[mbr.CoordAddress]) > max_votecast)
                         max_votecast = ((int)votes[mbr.CoordAddress]);
-
-                  
                     if ((mbr.OwnAddress.IpAddress.Equals(gms.local_addr.IpAddress)) && (mbr.OwnAddress.Port < gms.local_addr.Port))
                     {
                         gms.Stack.NCacheLog.Debug("pb.ClientGmsImpl.determineCoord()", "WINNER SET TO ACTIVE NODE's Coord = " + Convert.ToString(mbr.CoordAddress));
@@ -732,7 +714,7 @@ namespace Alachisoft.NGroups.Protocols.pbcast
                 ping_rsp = (PingRsp)initial_mbrs[i];
                 if (ping_rsp.OwnAddress != null && gms.local_addr != null && ping_rsp.OwnAddress.Equals(gms.local_addr))
                 {
-                    
+                    //initial_mbrs.RemoveAt(i);
                     break;
                 }
                 if (!ping_rsp.IsStarted) initial_mbrs.RemoveAt(i);
@@ -764,7 +746,6 @@ namespace Alachisoft.NGroups.Protocols.pbcast
 
         internal virtual void sendJoinMessage(Address coord, Address mbr, string subGroup_name, bool isStartedAsMirror)
         {
-            
             Message msg;
             GMS.HDR hdr;
 
@@ -772,7 +753,7 @@ namespace Alachisoft.NGroups.Protocols.pbcast
             hdr = new GMS.HDR(GMS.HDR.JOIN_REQ, mbr, subGroup_name, isStartedAsMirror);
             hdr.GMSId = gms.unique_id;
             msg.putHeader(HeaderType.GMS, hdr);
-            gms.passDown(new Event(Event.MSG_URGENT, msg, Priority.Critical));
+            gms.passDown(new Event(Event.MSG_URGENT, msg, Priority.High));
         }
 
 

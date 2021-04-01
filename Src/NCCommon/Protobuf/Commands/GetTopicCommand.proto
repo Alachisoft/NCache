@@ -1,0 +1,11 @@
+option java_outer_classname="GetTopicCommandProtocol";
+package Alachisoft.NCache.Common.Protobuf;
+message GetTopicCommand {
+    optional string topicName = 1;
+	optional int64 requestId = 2;
+	optional int32 type=3;
+	optional int64 clientLastViewId = 4 [default=-1];
+	optional string version = 5;
+	optional int32 commandVersion = 6 [default=0];
+	optional string intendedRecipient = 7 [default = ""];
+}

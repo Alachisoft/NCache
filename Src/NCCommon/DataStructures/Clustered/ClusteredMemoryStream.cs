@@ -36,7 +36,6 @@
 using System;
 using System.Collections;
 using System.Runtime;
-using System.Runtime.CompilerServices;
 using System.Runtime.InteropServices;
 #if DEBUG
 using System.Diagnostics.Contracts;
@@ -118,6 +117,20 @@ namespace Alachisoft.NCache.Common.DataStructures.Clustered
         {
         }
 
+        public ClusteredMemoryStream(ClusteredArray<byte> buffer)
+        {
+            if (buffer == null) throw new ArgumentNullException("buffer", ResourceHelper.GetResourceString("ArgumentNull_Buffer"));
+#if DEBUG
+            Contract.EndContractBlock();
+#endif
+            _buffer = buffer;
+            _length = _capacity = buffer.Length;
+            _writable = true;
+            _exposable = false;
+            _origin = 0;
+            _isOpen = true;
+        }
+
         public ClusteredMemoryStream(byte[] buffer, bool writable)
         {
             if (buffer == null) throw new ArgumentNullException("buffer", ResourceHelper.GetResourceString("ArgumentNull_Buffer"));
@@ -141,6 +154,22 @@ namespace Alachisoft.NCache.Common.DataStructures.Clustered
         {
             int position = 0;
             foreach (byte[] bytes in buffer)
+            {
+                _buffer.CopyFrom(bytes, 0, position, bytes.Length);
+                position += bytes.Length;
+            }
+            _length = _capacity = position;
+            _writable = writable;
+            _expandable = false;
+            _origin = 0;
+            _isOpen = true;
+        }
+
+        public ClusteredMemoryStream(IList buffers, bool writable)
+        {
+            int position = 0;
+            _buffer = new ClusteredArray<byte>(0);
+            foreach (byte[] bytes in buffers)
             {
                 _buffer.CopyFrom(bytes, 0, position, bytes.Length);
                 position += bytes.Length;

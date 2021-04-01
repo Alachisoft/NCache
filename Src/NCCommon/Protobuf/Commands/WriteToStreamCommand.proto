@@ -1,0 +1,13 @@
+
+option java_outer_classname="WriteToStreamCommandProtocol";
+package Alachisoft.NCache.Common.Protobuf;
+message WriteToStreamCommand 
+{
+	optional string key = 1;
+	optional string lockHandle = 2;
+	optional int64 requestId = 3;
+	optional int32 srcOffSet = 4;
+	optional int32 dstOffSet = 5;
+	optional int32 length = 6;
+	repeated bytes buffer = 7;
+}

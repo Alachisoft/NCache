@@ -1,21 +1,22 @@
-// Licensed under the Apache License, Version 2.0 (the "License");
-// you may not use this file except in compliance with the License.
-// You may obtain a copy of the License at
-// 
-//    http://www.apache.org/licenses/LICENSE-2.0
-// 
-// Unless required by applicable law or agreed to in writing, software
-// distributed under the License is distributed on an "AS IS" BASIS,
-// WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
-// See the License for the specific language governing permissions and
-// limitations under the License.
-
+//  Copyright (c) 2021 Alachisoft
+//  
+//  Licensed under the Apache License, Version 2.0 (the "License");
+//  you may not use this file except in compliance with the License.
+//  You may obtain a copy of the License at
+//  
+//     http://www.apache.org/licenses/LICENSE-2.0
+//  
+//  Unless required by applicable law or agreed to in writing, software
+//  distributed under the License is distributed on an "AS IS" BASIS,
+//  WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+//  See the License for the specific language governing permissions and
+//  limitations under the License
 using System;
 using System.Net;
 using System.IO;
 using Alachisoft.NCache.Runtime.Serialization;
+using System.Runtime.Serialization;
 using Alachisoft.NCache.Runtime.Serialization.IO;
-
 namespace Alachisoft.NCache.Common.Net
 {
 	/// <summary> Abstract address. Used to identify members on a group to send messages to.
@@ -31,8 +32,8 @@ namespace Alachisoft.NCache.Common.Net
 	/// <author>  Bela Ban
 	/// </author>
 	[Serializable]
-	public class Address : ICloneable, IComparable,ICompactSerializable
-	{
+	public class Address : ICloneable, IComparable,ICompactSerializable, ISerializable
+    {
 		private IPAddress ip_addr;
 		private int port;
 		private byte[] additional_data;
@@ -79,8 +80,25 @@ namespace Alachisoft.NCache.Common.Net
 			}
 		}
 
+        protected Address(SerializationInfo info, StreamingContext context)
+        {
+            byte[] ip = (byte[])info.GetValue("ip", typeof(byte[]));
 
-		public IPAddress IpAddress { get { return ip_addr; } }
+            if (ip != null)
+            {
+                try
+                {
+                    ip_addr = new IPAddress(ip);
+                }
+                catch (Exception) { }
+            }
+
+            port = info.GetInt32("port");
+            additional_data = (byte[])info.GetValue("additional_data", typeof(byte[]));
+        }
+
+
+        public IPAddress IpAddress { get { return ip_addr; } }
 		public int Port { get { return port; } }
 		public bool MulticastAddress { get { return ip_addr != null ? isMulticastAddress(ip_addr) : false; } }
 		public byte[] AdditionalData
@@ -130,7 +148,6 @@ namespace Alachisoft.NCache.Common.Net
 
             if ((o == null))
                 return 1;
-
 			Address other = o as Address;
             if (other == null) return 1;
 			if (ip_addr == null)
@@ -139,11 +156,20 @@ namespace Alachisoft.NCache.Common.Net
 				else
 					return -1;
 
-            
-			h1 = ip_addr.GetHashCode();
+
+#if NETCORE
+            h1 = ip_addr.Address.GetHashCode();
+#else
+            h1 = ip_addr.GetHashCode();
+#endif
             if (other.ip_addr != null)
+#if NETCORE
+                h2 = other.ip_addr.Address.GetHashCode();
+#else
                 h2 = other.ip_addr.GetHashCode();
-			rc = h1 < h2 ? -1 : (h1 > h2 ? 1 : 0);
+#endif
+
+            rc = h1 < h2 ? -1 : (h1 > h2 ? 1 : 0);
 			return rc != 0 ? rc : (port < other.port ? -1 : (port > other.port ? 1 : 0));
 		}
 
@@ -184,7 +210,6 @@ namespace Alachisoft.NCache.Common.Net
 				}
 			}
 			sb.Append(":" + port);
-
 			return sb.ToString();
 		}
 
@@ -341,11 +366,10 @@ namespace Alachisoft.NCache.Common.Net
                 writer.Write(0);
         }
 
-        #region ICompactSerializable Members
+#region ICompactSerializable Members
 
         public void Deserialize(CompactReader reader)
         {
-
             byte[] ip = (byte[])reader.ReadObject();
             if (ip != null)
             {
@@ -355,7 +379,6 @@ namespace Alachisoft.NCache.Common.Net
                 }
                 catch (Exception) { }
             }
-
             port = reader.ReadInt32();
             additional_data = (byte[])reader.ReadObject();
 
@@ -369,7 +392,7 @@ namespace Alachisoft.NCache.Common.Net
             writer.WriteObject(additional_data);
         }
 
-        #endregion
+#endregion
 
         public static Address ReadAddress(CompactReader reader)
         {
@@ -400,9 +423,16 @@ namespace Alachisoft.NCache.Common.Net
             string[] hostPort = address.Split(':');
             return new Address(hostPort[0], Convert.ToInt32(hostPort[1]));
         }
+
+        public void GetObjectData(SerializationInfo info, StreamingContext context)
+        {
+            byte[] ip = ip_addr != null ? ParseIPAddress(ip_addr.ToString()) : null;
+
+            info.AddValue("ip", ip);
+            info.AddValue("port", port);
+            info.AddValue("additional_data", additional_data);
+        }
     }
 }
 
-namespace Alachisoft.NCache.Common
-{
-}
+

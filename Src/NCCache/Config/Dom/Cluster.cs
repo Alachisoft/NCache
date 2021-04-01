@@ -1,17 +1,16 @@
-// Copyright (c) 2017 Alachisoft
-// 
-// Licensed under the Apache License, Version 2.0 (the "License");
-// you may not use this file except in compliance with the License.
-// You may obtain a copy of the License at
-// 
-//    http://www.apache.org/licenses/LICENSE-2.0
-// 
-// Unless required by applicable law or agreed to in writing, software
-// distributed under the License is distributed on an "AS IS" BASIS,
-// WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
-// See the License for the specific language governing permissions and
-// limitations under the License.
-
+//  Copyright (c) 2021 Alachisoft
+//  
+//  Licensed under the Apache License, Version 2.0 (the "License");
+//  you may not use this file except in compliance with the License.
+//  You may obtain a copy of the License at
+//  
+//     http://www.apache.org/licenses/LICENSE-2.0
+//  
+//  Unless required by applicable law or agreed to in writing, software
+//  distributed under the License is distributed on an "AS IS" BASIS,
+//  WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+//  See the License for the specific language governing permissions and
+//  limitations under the License
 using System;
 using System.Collections;
 using System.Text;
@@ -29,18 +28,21 @@ namespace Alachisoft.NCache.Config.Dom
     public class Cluster: ICloneable,ICompactSerializable
     {
         string topology;
-        
+        string activeMirrorNode = null;
         int opTimeout = 60;
         int statsRepInterval;
-        bool useHeartBeat;
+
         Channel channel;
+
         Dictionary<NodeIdentity, StatusInfo> nodes;
+
 
         public Cluster() 
         {
             channel = new Channel();
 
             nodes = new Dictionary<NodeIdentity, StatusInfo>();
+
         }
          
         [ConfigurationAttribute("topology")]
@@ -49,6 +51,7 @@ namespace Alachisoft.NCache.Config.Dom
             get { return this.topology; }
             set { this.topology = value; }
         }
+
         /// <summary>
         /// Get the topology type
         /// </summary>
@@ -62,9 +65,8 @@ namespace Alachisoft.NCache.Config.Dom
                     value = value.ToLower();
                     switch (value)
                     {
-                       case "replicated": return "replicated-server"; 
-                       case "partitioned": return "partitioned-server";
-                       
+                        case "replicated": return "replicated-server";
+                        case "partitioned": return "partitioned-server";
                     }
                 }
                 return value;
@@ -86,13 +88,6 @@ namespace Alachisoft.NCache.Config.Dom
             set { statsRepInterval = value; }
         }
 
-        [ConfigurationAttribute("use-heart-beat")]
-        public bool UseHeartbeat
-        {
-            get { return useHeartBeat; }
-            set { useHeartBeat = value; }
-        }
-
         [ConfigurationSection("channel")]
         public Channel Channel
         {
@@ -105,10 +100,13 @@ namespace Alachisoft.NCache.Config.Dom
             get { return nodes; }
             set { nodes = value; }
         }
+
+
         public List<NodeIdentity> NodeIdentities
         {
             get
             {
+
                 NodeIdentity[] nodeIdentities = new NodeIdentity[nodes.Count];
                 nodes.Keys.CopyTo(nodeIdentities, 0);
                 return new List<NodeIdentity>(nodeIdentities);
@@ -116,7 +114,12 @@ namespace Alachisoft.NCache.Config.Dom
             }
         }
 
-     
+        [ConfigurationAttribute("active-mirror-node")]
+        public string ActiveMirrorNode
+        {
+            get { return activeMirrorNode; }
+            set { activeMirrorNode = value; }
+        }
 
         public int NewNodePriority
         {
@@ -189,8 +192,8 @@ namespace Alachisoft.NCache.Config.Dom
             cluster.topology = this.topology != null ? (string) this.topology.Clone(): null;
             cluster.OpTimeout = OpTimeout;
             cluster.StatsRepInterval = StatsRepInterval;
-            cluster.UseHeartbeat = UseHeartbeat;
-            
+            cluster.activeMirrorNode = activeMirrorNode;
+
             if (nodes != null)
             {
 
@@ -214,11 +217,12 @@ namespace Alachisoft.NCache.Config.Dom
         {
            
             topology = reader.ReadObject() as string;
-          
+            activeMirrorNode = reader.ReadObject() as string;
             opTimeout = reader.ReadInt32();
             statsRepInterval = reader.ReadInt32();
-            useHeartBeat = reader.ReadBoolean();
+
             channel = reader.ReadObject() as Channel;
+
             bool nodeExists = reader.ReadBoolean();
             if (nodeExists)
             {
@@ -230,16 +234,16 @@ namespace Alachisoft.NCache.Config.Dom
                     nodes.Add(reader.ReadObject() as NodeIdentity , reader.ReadObject() as StatusInfo);
                 }
             }
+
         }
 
         public void Serialize(Runtime.Serialization.IO.CompactWriter writer)
         {
            
             writer.WriteObject(topology);
-           
+            writer.WriteObject(activeMirrorNode);
             writer.Write(opTimeout);
             writer.Write(statsRepInterval);
-            writer.Write(useHeartBeat);
 
             writer.WriteObject(channel);
 
@@ -257,6 +261,7 @@ namespace Alachisoft.NCache.Config.Dom
             }
             else
                 writer.Write(false);
+            
         }
 
         #endregion      

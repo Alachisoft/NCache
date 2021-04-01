@@ -1,19 +1,19 @@
-// Copyright (c) 2017 Alachisoft
-// 
-// Licensed under the Apache License, Version 2.0 (the "License");
-// you may not use this file except in compliance with the License.
-// You may obtain a copy of the License at
-// 
-//    http://www.apache.org/licenses/LICENSE-2.0
-// 
-// Unless required by applicable law or agreed to in writing, software
-// distributed under the License is distributed on an "AS IS" BASIS,
-// WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
-// See the License for the specific language governing permissions and
-// limitations under the License.
-
+//  Copyright (c) 2021 Alachisoft
+//  
+//  Licensed under the Apache License, Version 2.0 (the "License");
+//  you may not use this file except in compliance with the License.
+//  You may obtain a copy of the License at
+//  
+//     http://www.apache.org/licenses/LICENSE-2.0
+//  
+//  Unless required by applicable law or agreed to in writing, software
+//  distributed under the License is distributed on an "AS IS" BASIS,
+//  WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+//  See the License for the specific language governing permissions and
+//  limitations under the License
 using System;
 using System.Collections;
+using System.Runtime.Serialization;
 using Alachisoft.NCache.Common;
 namespace Alachisoft.NCache.IO
 {
@@ -45,7 +45,11 @@ namespace Alachisoft.NCache.IO
         public int GetCookie(object graph)
         {
             if (cookieList.ContainsKey(graph))
-                return (int)cookieList[graph];
+            {
+                object cookie = cookieList[graph];
+                if (cookie != null)
+                    return (int)cookie;
+            }
             return INVALID_COOKIE;
         }
 
@@ -66,6 +70,9 @@ namespace Alachisoft.NCache.IO
             get { return _memManager; }
             set { _memManager = value; }
         }
+
+        public SerializationBinder Binder { get; internal set; }
+
         /// <summary>
         /// Returns a graph by its cookie. If there is no such cookie null is returned.
         /// </summary>
@@ -88,10 +95,10 @@ namespace Alachisoft.NCache.IO
         {
             int cookie = graphList.Count;
             graphList.Add(cookie, graph);
-            // We will add in cookieList in serialization flow only.
+            //huma: BigCluster fix: We will add in cookieList in serialization flow only.
             //In case of deserilization, we have zero object which may cause exception while insertion in hastable.
-            if (updateCookieList) 
-                    cookieList.Add(graph, cookie);
+            if(updateCookieList) 
+                cookieList.Add(graph, cookie);
             return cookie;
         }
     }

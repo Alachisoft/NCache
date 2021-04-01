@@ -1,39 +1,16 @@
-// Licensed under the Apache License, Version 2.0 (the "License");
-// you may not use this file except in compliance with the License.
-// You may obtain a copy of the License at
-// 
-//    http://www.apache.org/licenses/LICENSE-2.0
-// 
-// Unless required by applicable law or agreed to in writing, software
-// distributed under the License is distributed on an "AS IS" BASIS,
-// WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
-// See the License for the specific language governing permissions and
-// limitations under the License.
 // $Id: TOTAL.java,v 1.6 2004/07/05 14:17:16 belaban Exp $
-
 using System;
 using System.IO;
 using System.Threading;
 using System.Collections;
-
-using Alachisoft.NGroups;
-using Alachisoft.NGroups.Stack;
-using Alachisoft.NGroups.Util;
-
-
 using Alachisoft.NCache.Runtime.Serialization.IO;
-
-
 using Alachisoft.NCache.Runtime.Serialization;
-
-
-
 using Alachisoft.NCache.Common.Threading;
 using Alachisoft.NCache.Common.Net;
 using Alachisoft.NCache.Common;
 using Alachisoft.NCache.Common.Stats;
 using Alachisoft.NCache.Common.Enum;
-using Alachisoft.NCache.Common.Util;
+using Alachisoft.NGroups.Stack;
 
 namespace Alachisoft.NGroups.Protocols
 {
@@ -87,7 +64,7 @@ namespace Alachisoft.NGroups.Protocols
         /// inter-stack communication
         /// </summary>
         [Serializable]
-        internal class HDR : Alachisoft.NGroups.Header, ICompactSerializable, IRentableObject
+        internal class HDR : Header, ICompactSerializable, IRentableObject
         {
             // HDR types
             /// <summary>Null value for the tag </summary>
@@ -339,7 +316,6 @@ namespace Alachisoft.NGroups.Protocols
 
                 string subGroupID = Enclosing_Instance._mbrsSubgroupMap[mbrs[0]] as string;
 
-               
                 ArrayList groupMbrs = (ArrayList)Enclosing_Instance._sequencerTbl[subGroupID] as ArrayList;
                 Address groupSequencerAddr = groupMbrs[0] as Address;
                 if (groupSequencerAddr != null)
@@ -452,10 +428,8 @@ namespace Alachisoft.NGroups.Protocols
         private ReaderWriterLock request_lock = new ReaderWriterLock();
 
         long start_time = 0;
-        //private long timeout = 5000;
 
         long start_time_bcast = 0;
-        //private long time_left;
 
         /// <summary>used for monitoring</summary>
         HPTimeStats _timeToTakeBCastSeq = new HPTimeStats();
@@ -472,8 +446,6 @@ namespace Alachisoft.NGroups.Protocols
         {
             return (addr == null ? "<null>" : ((addr is Address) ? (((Address)addr).IpAddress.ToString() + ':' + ((Address)addr).Port) : addr.ToString()));
         }
-
-
 
         override public string Name { get { return PROT_NAME; } }
 
@@ -631,7 +603,6 @@ namespace Alachisoft.NGroups.Protocols
                 }
 
             } while (true);
-            
         }
 
         /// <summary> Extract as many messages as possible from the pending up queue and send
@@ -696,7 +667,6 @@ namespace Alachisoft.NGroups.Protocols
                 }
 
             } while (true);
-            
         }
 
 
@@ -734,7 +704,7 @@ namespace Alachisoft.NGroups.Protocols
                 }
                 start_time_bcast = 0;
                 upTbl.Clear();
-            } // synchronized(upTbl)
+            } 
         }
 
         /// <summary> Add all undelivered mcasts sent by this member in the req queue and then
@@ -751,10 +721,9 @@ namespace Alachisoft.NGroups.Protocols
             if (Stack.NCacheLog.IsInfoEnabled) Stack.NCacheLog.Info("TOTAL._replayBcast()", "upTabl size = " + _mcastUpTbl.Count.ToString());
             lock (_mcastUpTbl.SyncRoot)
             {
-               
                 start_time = 0;
                 _mcastUpTbl.Clear();
-            }
+            } 
         }
 
 
@@ -861,14 +830,12 @@ namespace Alachisoft.NGroups.Protocols
                 }
                 //Rent the event
                 Event evt = null;
-               
                 evt = new Event();
                 evt.Type = Event.MSG;
                 evt.Priority = msg.Priority;
                 evt.Arg = msg;
 
                 //Rent the header
-                
                 HDR hdr = new HDR();
                 hdr.type = HDR.MCAST;
                 hdr.localSeqID = id;
@@ -878,7 +845,6 @@ namespace Alachisoft.NGroups.Protocols
 
                 msg.putHeader(HeaderType.TOTAL, hdr);
 
-                //msg.Dest = null;
                 //===================================================
                 //now the message will contain a list of addrs in case of multicast.
                 //=======================================================
@@ -887,7 +853,7 @@ namespace Alachisoft.NGroups.Protocols
                 if (Stack.NCacheLog.IsInfoEnabled) Stack.NCacheLog.Info("TOTAL._sendMcastRequest()", "shortcut mcast seq# " + seqid);
                 return;
             }
-           
+            //lock (reqTbl.SyncRoot)
             request_lock.AcquireWriterLock(Timeout.Infinite);
             try
             {
@@ -933,14 +899,12 @@ namespace Alachisoft.NGroups.Protocols
                 }
                 //Rent the event
                 Event evt = null;
-               
                 evt = new Event();
                 evt.Type = Event.MSG;
                 evt.Priority = msg.Priority;
                 evt.Arg = msg;
 
                 //Rent the header
-              
                 HDR hdr = new HDR();
                 hdr.type = HDR.BCAST;
                 hdr.localSeqID = id;
@@ -954,7 +918,6 @@ namespace Alachisoft.NGroups.Protocols
                 if (Stack.NCacheLog.IsInfoEnabled) Stack.NCacheLog.Info("TOTAL._sendBcastRequest()", "shortcut bcast seq# " + seqid);
                 return;
             }
-            
             request_lock.AcquireWriterLock(Timeout.Infinite);
             try
             {
@@ -992,7 +955,6 @@ namespace Alachisoft.NGroups.Protocols
             if (state == BLOCK)
                 return;
 
-           
             request_lock.AcquireReaderLock(Timeout.Infinite);
             try
             {
@@ -1007,11 +969,13 @@ namespace Alachisoft.NGroups.Protocols
                 request_lock.ReleaseReaderLock();
             }
 
+            //Rent the message
             reqMsg = new Message();
             reqMsg.Dest = sequencerAddr;
             reqMsg.Src = addr;
             reqMsg.setBuffer(new byte[0]);
-           
+
+            //Rent the header
             HDR hdr = new HDR();
             hdr.type = HDR.REQ;
             hdr.localSeqID = seqID;
@@ -1020,7 +984,7 @@ namespace Alachisoft.NGroups.Protocols
             reqMsg.putHeader(HeaderType.TOTAL, hdr);
             reqMsg.IsUserMsg = true;
             reqMsg.Type = MsgType.TOKEN_SEEKING;
-           
+            //rent the event
             Event evt = new Event();
             evt.Type = Event.MSG;
             evt.Arg = reqMsg;
@@ -1051,7 +1015,6 @@ namespace Alachisoft.NGroups.Protocols
             if (state == BLOCK)
                 return;
 
-            
             request_lock.AcquireReaderLock(Timeout.Infinite);
             try
             {
@@ -1066,13 +1029,11 @@ namespace Alachisoft.NGroups.Protocols
                 request_lock.ReleaseReaderLock();
             }
 
-           
             reqMsg = new Message();
-          
             reqMsg.Dest = groupSequencerAddr;
             reqMsg.Src = addr;
             reqMsg.setBuffer(new byte[0]);
-            
+
             HDR hdr = new HDR();
             hdr.type = HDR.REQMCAST;
             hdr.localSeqID = seqID;
@@ -1084,7 +1045,6 @@ namespace Alachisoft.NGroups.Protocols
             reqMsg.IsUserMsg = true;
             reqMsg.Type = MsgType.TOKEN_SEEKING;
 
-          
             Event evt = new Event();
             evt.Type = Event.MSG;
             evt.Arg = reqMsg;
@@ -1144,7 +1104,6 @@ namespace Alachisoft.NGroups.Protocols
                 }
                 upTbl[(long)header.seqID] = msg;
             }
-            
             _deliverBcast();
         }
 
@@ -1181,7 +1140,6 @@ namespace Alachisoft.NGroups.Protocols
                     if (header.viewId > existingViewId)
                     {
                         //this messages is of latest view therefore we put it into the table.
-                       
                         lock (_undeliveredMessages.SyncRoot)
                         {
                             _undeliveredMessages.Add(new Event(Event.MSG, msg, msg.Priority));
@@ -1201,6 +1159,8 @@ namespace Alachisoft.NGroups.Protocols
                 }
                 _mcastUpTbl[(long)header.seqID] = msg;
             }
+
+            if (Stack.NCacheLog.IsInfoEnabled) Stack.NCacheLog.Info("muds: delivering mcast a message with seq : " + header.seqID);
             _deliverMcast();
         }
 
@@ -1329,7 +1289,6 @@ namespace Alachisoft.NGroups.Protocols
                 if (Stack.NCacheLog.IsInfoEnabled) Stack.NCacheLog.Info("Blocked, discard bcast rep");
                 return;
             }
-         
             request_lock.AcquireWriterLock(Timeout.Infinite);
             try
             {
@@ -1355,7 +1314,7 @@ namespace Alachisoft.NGroups.Protocols
             }
 
 
-            
+            //Rent the header
             HDR hdr = new HDR();
             hdr.type = HDR.BCAST;
             hdr.localSeqID = id;
@@ -1365,7 +1324,7 @@ namespace Alachisoft.NGroups.Protocols
             msg.putHeader(HeaderType.TOTAL, hdr);
             msg.IsUserMsg = true;
             msg.Type = MsgType.SEQUENCED;
-           
+            //rent the event
             Event evt = new Event();
             evt.Type = Event.MSG;
             evt.Arg = msg;
@@ -1402,7 +1361,6 @@ namespace Alachisoft.NGroups.Protocols
                 if (Stack.NCacheLog.IsInfoEnabled) Stack.NCacheLog.Info("Blocked, discard mcast rep");
                 return;
             }
-           
             request_lock.AcquireWriterLock(Timeout.Infinite);
             try
             {
@@ -1444,7 +1402,7 @@ namespace Alachisoft.NGroups.Protocols
             }
 
 
-           
+            //Rent the header
             HDR hdr = new HDR();
             hdr.type = HDR.MCAST;
             hdr.localSeqID = id;
@@ -1455,7 +1413,6 @@ namespace Alachisoft.NGroups.Protocols
             msg.putHeader(HeaderType.TOTAL, hdr);
             msg.IsUserMsg = true;
             msg.Type = MsgType.SEQUENCED;
-           
             Event evt = new Event();
             evt.Type = Event.MSG;
             evt.Arg = msg;
@@ -1539,11 +1496,10 @@ namespace Alachisoft.NGroups.Protocols
             // *** Get an exclusive lock
             try
             {
-                stateLock.AcquireWriterLock(Timeout.Infinite); try
+                stateLock.AcquireWriterLock(Timeout.Infinite);
+                try
                 {
-
                     state = FLUSH;
-
                     // *** Revoke the exclusive lock
                 }
                 finally
@@ -1577,7 +1533,6 @@ namespace Alachisoft.NGroups.Protocols
             try
             {
 
-               
                 try
                 {
                     msg = (Message)evt.Arg;
@@ -1613,7 +1568,7 @@ namespace Alachisoft.NGroups.Protocols
                     // (REP) A broadcast reply from the sequencer - Handle specially
                     if (!((obj = msg.getHeader(HeaderType.TOTAL)) is TOTAL.HDR))
                     {
-                        
+                       
                     }
                     else
                     {
@@ -1624,29 +1579,27 @@ namespace Alachisoft.NGroups.Protocols
 
                             case HDR.UCAST:
                                 _recvUcast(msg);
-                              
                                 return (true);
 
                             case HDR.BCAST:
                                 _recvBcast(msg);
-                                
                                 return (false);
 
                             case HDR.MCAST:
+                                if (Stack.NCacheLog.IsInfoEnabled) Stack.NCacheLog.Info("muds: a command for mcast from " + msg.Src + " to me[" + addr + "],  local-seq : " + header.localSeqID + " seq : " + header.seqID);
                                 _recvMcast(msg);
                                 return (false);
 
                             case HDR.REQ:
                                 _recvBcastRequest(msg);
-                               
                                 return (false);
 
                             case HDR.REP:
                                 _recvBcastReply(header, msg);
-                                
                                 return (false);
 
                             case HDR.REQMCAST:
+                                if (Stack.NCacheLog.IsInfoEnabled) Stack.NCacheLog.Info("muds: recieved mcast request " + " local-seq : " + header.localSeqID + " seq : " + header.seqID);
                                 _recvMcastRequest(msg);
                                 return (false);
 
@@ -1664,7 +1617,6 @@ namespace Alachisoft.NGroups.Protocols
                 }
                 finally
                 {
-                   
                 }
             }
             catch (ThreadInterruptedException ex)
@@ -1682,7 +1634,6 @@ namespace Alachisoft.NGroups.Protocols
         {
             try
             {
-                
                 lock (_undeliveredMessages.SyncRoot)
                 {
                     if (_undeliveredMessages.Count > 0)
@@ -1701,8 +1652,6 @@ namespace Alachisoft.NGroups.Protocols
             ArrayList pendingMessages = msgs as ArrayList;
             if (pendingMessages != null)
             {
-               
-
                 for (int i = 0; i < pendingMessages.Count; i++)
                 {
                     try
@@ -1835,7 +1784,7 @@ namespace Alachisoft.NGroups.Protocols
                     _replayBcast();
 
                     if (Stack.NCacheLog.IsInfoEnabled) Stack.NCacheLog.Info("Total.upViewChange()", "VIEW_CHANGE_OK");
-                    Event viewEvt = new Event(Event.VIEW_CHANGE_OK, null, Priority.Critical);
+                    Event viewEvt = new Event(Event.VIEW_CHANGE_OK, null, Priority.High);
                     passDown(viewEvt);
 
                     // *** Revoke the exclusive lock
@@ -1849,7 +1798,6 @@ namespace Alachisoft.NGroups.Protocols
             {
                 Stack.NCacheLog.Error("Protocols.TOTAL._upViewChange", ex.ToString());
             }
-          
             return (true);
         }
 
@@ -1900,7 +1848,6 @@ namespace Alachisoft.NGroups.Protocols
             {
                 Stack.NCacheLog.Error("Protocols.TOTAL._upResetSequence", ex.ToString());
             }
-           
             return (true);
         }
 
@@ -1965,7 +1912,6 @@ namespace Alachisoft.NGroups.Protocols
             // *** Get a shared lock
             try
             {
-               
                 try
                 {
 
@@ -1974,13 +1920,11 @@ namespace Alachisoft.NGroups.Protocols
                     if (state == NULL_STATE)
                     {
                         Stack.NCacheLog.Error("TOTAL._downMsg()", "Discard msg in NULL_STATE");
-                       
                         return (false);
                     }
                     if (state == BLOCK)
                     {
                         Stack.NCacheLog.Error("TOTAL._downMsg()", "Blocked, discard msg");
-                       
                         return (false);
                     }
 
@@ -1994,7 +1938,7 @@ namespace Alachisoft.NGroups.Protocols
                             //if it is a unicast msg with a single destination.
                             if (msg.Dests == null)
                             {
-                               
+                                //msg = _sendUcast(msg);
                                 evt.Arg = msg;
                             }
                             // if it is a multicast msg with multiple destinations.
@@ -2040,9 +1984,6 @@ namespace Alachisoft.NGroups.Protocols
             // Incase of TCP stack we'll get a reference to TCP, which is the transport
             // protocol in our case. For udp stack we'll fail.
             transport = Stack.findProtocol("TCP");
-
-            
-
             reqTbl = Hashtable.Synchronized(new Hashtable());
             upTbl = Hashtable.Synchronized(new Hashtable());
 
@@ -2051,7 +1992,7 @@ namespace Alachisoft.NGroups.Protocols
             _mcastUpTbl = Hashtable.Synchronized(new Hashtable());
             //======================================================
 
-            
+            //NewTrace nTrace = stack.nTrace;
             retransmitter = new AckSenderWindow(new Command(this), AVG_RETRANSMIT_INTERVAL, stack.NCacheLog);
             _mcastRetransmitter = new AckSenderWindow(new MCastCommand(this), AVG_MCAST_RETRANSMIT_INTERVAL, stack.NCacheLog);
         }
@@ -2114,7 +2055,6 @@ namespace Alachisoft.NGroups.Protocols
                 case Event.MSG:
                     if (!_upMsg(evt))
                     {
-                        
                         return;
                     }
                     break;
@@ -2162,7 +2102,6 @@ namespace Alachisoft.NGroups.Protocols
                 case Event.MSG:
                     if (!_downMsg(evt))
                     {
-                       
                         return;
                     }
                     break;
@@ -2180,32 +2119,27 @@ namespace Alachisoft.NGroups.Protocols
             passDown(evt);
         }
 
-       
+      
         /// <summary> Create the TOTAL layer</summary>
         public TOTAL()
         {
         }
-        // javadoc inherited from superclass
         public override bool setProperties(Hashtable properties)
         {
             return (_setProperties(properties));
         }
-        // javadoc inherited from superclass
         public override ArrayList requiredDownServices()
         {
             return (_requiredDownServices());
         }
-        // javadoc inherited from superclass
         public override ArrayList requiredUpServices()
         {
             return (_requiredUpServices());
         }
-        // javadoc inherited from superclass
         public override void up(Event evt)
         {
             _up(evt);
         }
-        // javadoc inherited from superclass
         public override void down(Event evt)
         {
             _down(evt);

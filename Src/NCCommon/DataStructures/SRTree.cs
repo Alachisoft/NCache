@@ -1,19 +1,19 @@
-// Copyright (c) 2017 Alachisoft
-// 
-// Licensed under the Apache License, Version 2.0 (the "License");
-// you may not use this file except in compliance with the License.
-// You may obtain a copy of the License at
-// 
-//    http://www.apache.org/licenses/LICENSE-2.0
-// 
-// Unless required by applicable law or agreed to in writing, software
-// distributed under the License is distributed on an "AS IS" BASIS,
-// WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
-// See the License for the specific language governing permissions and
-// limitations under the License.
-
+//  Copyright (c) 2021 Alachisoft
+//  
+//  Licensed under the Apache License, Version 2.0 (the "License");
+//  you may not use this file except in compliance with the License.
+//  You may obtain a copy of the License at
+//  
+//     http://www.apache.org/licenses/LICENSE-2.0
+//  
+//  Unless required by applicable law or agreed to in writing, software
+//  distributed under the License is distributed on an "AS IS" BASIS,
+//  WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+//  See the License for the specific language governing permissions and
+//  limitations under the License
 using System;
 using System.Text;
+
 using System.Collections;
 using Alachisoft.NCache.Common.DataStructures.Clustered;
 
@@ -21,16 +21,16 @@ namespace Alachisoft.NCache.Common.DataStructures
 {
     public class SRTree : ICloneable
     {
-        private ArrayList _leftList;
-        private ArrayList _rightList;
+        private ClusteredArrayList _leftList;
+        private ClusteredArrayList _rightList;
 
         public SRTree()
         {
-            _leftList = new ArrayList();
-            _rightList = new ArrayList();
+            _leftList = new ClusteredArrayList();
+            _rightList = new ClusteredArrayList();
         }
 
-        public ArrayList LeftList
+        public ClusteredArrayList LeftList
         {
             get { return _leftList; }
             set 
@@ -40,7 +40,7 @@ namespace Alachisoft.NCache.Common.DataStructures
             }
         }
 
-        public ArrayList RightList
+        public ClusteredArrayList RightList
         {
             get { return _rightList; }
             set
@@ -52,6 +52,7 @@ namespace Alachisoft.NCache.Common.DataStructures
             }
         }
 
+
         /// <summary>
         /// Populates the trees' right list with objects contained in the enumerator.
         /// </summary>
@@ -60,13 +61,12 @@ namespace Alachisoft.NCache.Common.DataStructures
         {
             if (e != null)
             {
-                if (_rightList == null) _rightList = new ArrayList();
+                if (_rightList == null) _rightList = new ClusteredArrayList();
                 if (e is RedBlackEnumerator)
                 {
                     while (e.MoveNext())
                     {
                         HashVector tbl = e.Value as HashVector;
-                        
                         _rightList.AddRange(tbl.Keys);
                     }
                 }
@@ -87,8 +87,7 @@ namespace Alachisoft.NCache.Common.DataStructures
         /// </summary>
         public void Reduce()
         {
-            _leftList = _rightList.Clone() as ArrayList;
-            
+            _leftList = _rightList.Clone() as ClusteredArrayList;
             _rightList.Clear();
         }
         
@@ -100,10 +99,9 @@ namespace Alachisoft.NCache.Common.DataStructures
             if (_leftList.Contains(key))
             {
                 if (_rightList == null)
-                    _rightList = new ArrayList();
+                    _rightList = new ClusteredArrayList();
 
                 _leftList.Remove(key);
-                
                 _rightList.Add(key);
             }
         }
@@ -132,7 +130,7 @@ namespace Alachisoft.NCache.Common.DataStructures
                 tree = new SRTree();
             
             if (tree.RightList == null)
-                tree.RightList = new ArrayList();
+                tree.RightList = new ClusteredArrayList();
 
             if (this.RightList != null)
             {
@@ -142,7 +140,6 @@ namespace Alachisoft.NCache.Common.DataStructures
                     if (!tree.RightList.Contains(en.Current))
                         tree.RightList.Add(en.Current);
                 }
-
             }
         }
 
@@ -153,9 +150,9 @@ namespace Alachisoft.NCache.Common.DataStructures
             SRTree tmp = new SRTree();
             
             if (this.LeftList != null)
-                tmp.LeftList = this.LeftList.Clone() as ArrayList;
+                tmp.LeftList = this.LeftList.Clone() as ClusteredArrayList;
             if (this.RightList != null)
-                tmp.RightList = this.RightList.Clone() as ArrayList;
+                tmp.RightList = this.RightList.Clone() as ClusteredArrayList;
 
             return tmp;
         }

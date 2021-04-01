@@ -6,4 +6,6 @@ message VerifyLockResponse
 	optional string lockId = 1;
 	optional int64 lockExpiration = 2;
 	optional bool success = 3;
+	optional int32 commandID = 4 [default = -1];
+	optional int64 requestId = 5;
 }

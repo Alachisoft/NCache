@@ -1,0 +1,7 @@
+import "KeyValuePair.proto";
+
+option java_outer_classname="MessageKeyValueResponseProtocol";
+package Alachisoft.NCache.Common.Protobuf;
+message MessageKeyValueResponse{	
+	repeated KeyValuePair keyValuePair = 6;
+}

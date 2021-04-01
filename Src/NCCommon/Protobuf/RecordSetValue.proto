@@ -9,4 +9,5 @@ message RecordSetValue
 	optional AverageResult avgResult = 2;
 	optional Value binaryObject = 3;
 	optional int32 flag = 4;
+	optional int32 type = 5;
 }

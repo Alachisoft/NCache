@@ -1,37 +1,43 @@
-// Copyright (c) 2017 Alachisoft
-// 
-// Licensed under the Apache License, Version 2.0 (the "License");
-// you may not use this file except in compliance with the License.
-// You may obtain a copy of the License at
-// 
-//    http://www.apache.org/licenses/LICENSE-2.0
-// 
-// Unless required by applicable law or agreed to in writing, software
-// distributed under the License is distributed on an "AS IS" BASIS,
-// WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
-// See the License for the specific language governing permissions and
-// limitations under the License.
+//  Copyright (c) 2021 Alachisoft
+//  
+//  Licensed under the Apache License, Version 2.0 (the "License");
+//  you may not use this file except in compliance with the License.
+//  You may obtain a copy of the License at
+//  
+//     http://www.apache.org/licenses/LICENSE-2.0
+//  
+//  Unless required by applicable law or agreed to in writing, software
+//  distributed under the License is distributed on an "AS IS" BASIS,
+//  WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+//  See the License for the specific language governing permissions and
+//  limitations under the License
 
 using System;
 using Alachisoft.NCache.Runtime.Serialization.IO;
+using Alachisoft.NCache.Common.Caching;
+using Alachisoft.NCache.Common.Pooling.Lease;
+using Alachisoft.NCache.Common.Pooling;
+using Alachisoft.NCache.Util;
 
 namespace Alachisoft.NCache.Caching
 {
     [Serializable]
-    public class CacheItemBase: Runtime.Serialization.ICompactSerializable
+    public class CacheItemBase: BookKeepingLease, Runtime.Serialization.ICompactSerializable
     {
         /// <summary> The actual object provided by the client application </summary>
-        private object _v = null;
+        private object _value = null;
 
         protected CacheItemBase() { }
 
-        /// <summary>
-        /// Default constructor. No call back.
-        /// </summary>
-        public CacheItemBase(object obj)
+
+        protected static void Construct(CacheItemBase cacheItem, object value)
         {
-            if (obj is byte[]) obj = UserBinaryObject.CreateUserBinaryObject((byte[])obj);
-            _v = obj;
+            var bytes = value as byte[];
+
+            if (bytes != null)
+                value = UserBinaryObject.CreateUserBinaryObject(bytes, cacheItem.PoolManager);
+
+            cacheItem.Value = value;
         }
 
         /// <summary> 
@@ -39,19 +45,45 @@ namespace Alachisoft.NCache.Caching
         /// </summary>
         public virtual object Value
         {
-            get { return _v; }
-            set { _v = value; }
+            get
+            {
+                return _value;
+            }
+            set
+            {
+                if (ReferenceEquals(_value, value))
+                    return;
+
+                if (_value is UserBinaryObject userBinaryObject)
+                    MiscUtil.ReturnUserBinaryObjectToPool(userBinaryObject, userBinaryObject.PoolManager);
+
+                _value = value;
+            }
         }
+
+        #region ILeasable
+
+        public override void ResetLeasable()
+        {
+            _value = null;
+        }
+
+        public override void ReturnLeasableToPool()
+        {
+            throw new InvalidOperationException("Cannot return CacheItemBase to pool.");
+        }
+
+        #endregion
 
         #region ICompact Serializable
-        public void Deserialize(CompactReader reader)
+        public virtual void Deserialize(CompactReader reader)
         {
-            _v = reader.ReadObject();
+            _value = reader.ReadObject();
         }
 
-        public void Serialize(CompactWriter writer)
+        public virtual void Serialize(CompactWriter writer)
         {
-            writer.WriteObject(_v);
+            writer.WriteObject(_value);
         } 
         #endregion
     }

@@ -34,6 +34,7 @@ using System.Diagnostics;
 using System.Diagnostics.CodeAnalysis;
 using System.Security.Permissions;
 using System.Collections.Generic;
+using Alachisoft.NCache.Common.Transactions;
 
 namespace Alachisoft.NCache.Common.DataStructures.Clustered
 {
@@ -52,6 +53,8 @@ namespace Alachisoft.NCache.Common.DataStructures.Clustered
         private int _tail;       // Last valid element in the queue
         private int _size;       // Number of elements.
         private int _version;
+        [NonSerialized]
+        private Transaction _transaction;
 #if !SILVERLIGHT
         [NonSerialized]
 #endif
@@ -125,6 +128,14 @@ namespace Alachisoft.NCache.Common.DataStructures.Clustered
             }
         }
 
+        private void SetSize(int size)
+        {
+            _size = size;
+        }
+        private void SetVersion(int version)
+        {
+            _version = version;
+        }
 
         /// <include file='doc\Queue.uex' path='docs/doc[@for="Queue.Count"]/*' />
         public virtual int Count
@@ -154,7 +165,13 @@ namespace Alachisoft.NCache.Common.DataStructures.Clustered
         /// <include file='doc\Queue.uex' path='docs/doc[@for="Queue.Clear"]/*' />
         public virtual void Clear()
         {
-            if (_head < _tail)
+            ClusteredArray<T> oldArray = null;
+            if (_transaction != null)
+            {
+                 oldArray = _array;
+                _array = new ClusteredArray<T>(0);
+            }
+            else if (_head < _tail)
                 ClusteredArray<T>.Clear(_array, _head, _size);
             else
             {
@@ -166,6 +183,12 @@ namespace Alachisoft.NCache.Common.DataStructures.Clustered
             _tail = 0;
             _size = 0;
             _version++;
+
+            if (_transaction != null)
+            {
+                _transaction.AddRollbackOperation(new ClearRollbackOperation(this, oldArray));
+            }
+
         }
 
         public static ClusteredQueue<T> Synchronized(ClusteredQueue<T> map)
@@ -258,7 +281,6 @@ namespace Alachisoft.NCache.Common.DataStructures.Clustered
 
                 if (numToCopy > 0)
                 {
-                    //Array.Copy(_array, 0, array, index + _array.Length - _head, numToCopy);
                     _array.CopyTo(array, index + _array.Length - _head, 0, numToCopy);
                 }
             }
@@ -282,11 +304,15 @@ namespace Alachisoft.NCache.Common.DataStructures.Clustered
                 }
                 SetCapacity(newcapacity);
             }
-
             _array[_tail] = item;
             _tail = (_tail + 1) % _array.Length;
             _size++;
             _version++;
+
+            if (_transaction != null)
+            {
+                _transaction.AddRollbackOperation(new EnqueueRollbackOperation(this, (_tail - 1== -1)? _array.Length-1: _tail - 1));
+            }
         }
 
         // GetEnumerator returns an IEnumerator over this Queue.  This
@@ -323,6 +349,11 @@ namespace Alachisoft.NCache.Common.DataStructures.Clustered
             _head = (_head + 1) % _array.Length;
             _size--;
             _version++;
+            if (_transaction != null)
+            {
+                _transaction.AddRollbackOperation(new DequeueRollbackOperation(this, (_head - 1==-1)? _array.Length - 1:_head-1, removed));
+
+            }
             return removed;
         }
 
@@ -366,9 +397,14 @@ namespace Alachisoft.NCache.Common.DataStructures.Clustered
             return false;
         }
 
-        internal T GetElement(int i)
+        public T GetElement(int i)
         {
             return _array[(_head + i) % _array.Length];
+        }
+
+        public void SetElement(int i, T item)
+        {
+            _array[(_head + i) % _array.Length] = item;
         }
 
         // Iterates over the objects in the queue, returning an array of the
@@ -457,7 +493,6 @@ namespace Alachisoft.NCache.Common.DataStructures.Clustered
                 _index = -1;
                 _currentElement = default(T);
             }
-
             /// <include file='doc\Queue.uex' path='docs/doc[@for="QueueEnumerator.Dispose"]/*' />
             public void Dispose()
             {
@@ -543,7 +578,7 @@ namespace Alachisoft.NCache.Common.DataStructures.Clustered
                 get { return true; }
             }
 
-            public Object SyncRoot
+            public new Object SyncRoot
             {
                 get
                 {
@@ -649,5 +684,86 @@ namespace Alachisoft.NCache.Common.DataStructures.Clustered
             newMap._version = _version;
             return newMap;
         }
+        #region /*         Transactions */
+        private void EnqueueRollback(int index)
+        {
+            _array[index] = default(T);
+            _tail = (index) % _array.Length;
+            _size--;
+        }
+        private void DequeueRollback(int index,T item)
+        {
+            _array[index] = item;
+            _head = (index) % _array.Length;
+            _size++;
+        }
+        public bool BeginTransaction()
+        {
+            if (_transaction == null)
+                _transaction = new Transaction();
+            return true;
+        }
+        public void CommitTransaction()
+        {
+            if (_transaction != null) _transaction.Commit();
+        }
+        public void RollbackTransaction()
+        {
+            if (_transaction != null) _transaction.Rollback();
+        }
+        #endregion
+
+        #region /                       ---- Rollback Operations ----                           /
+
+        class EnqueueRollbackOperation : IRollbackOperation
+        {
+            private int _index;
+            private ClusteredQueue<T> _parent;
+
+            public EnqueueRollbackOperation(ClusteredQueue<T> parent, int index)
+            {
+                _index = index;
+                _parent = parent;
+            }
+
+            public void Execute()
+            {
+                _parent.EnqueueRollback(_index);
+            }
+        }
+        class DequeueRollbackOperation : IRollbackOperation
+        {
+            private int _index;
+            private T _item;
+            private ClusteredQueue<T> _parent;
+
+            public DequeueRollbackOperation(ClusteredQueue<T> parent, int index,T item)
+            {
+                _index = index;
+                _parent = parent;
+                _item = item;
+            }
+
+            public void Execute()
+            {
+                _parent.DequeueRollback(_index,_item);
+            }
+        }
+        class ClearRollbackOperation : IRollbackOperation
+        {
+            private ClusteredArray<T> _items;
+            private ClusteredQueue<T> _parent;
+
+            public ClearRollbackOperation(ClusteredQueue<T> parent, ClusteredArray<T> items)
+            {
+                _items = items;
+                _parent = parent;
+            }
+            public void Execute()
+            {
+                _parent._array = _items;
+            }
+        }
+        #endregion
     }
 }

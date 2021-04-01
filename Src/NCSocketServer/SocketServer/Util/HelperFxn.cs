@@ -1,17 +1,16 @@
-// Copyright (c) 2017 Alachisoft
-// 
-// Licensed under the Apache License, Version 2.0 (the "License");
-// you may not use this file except in compliance with the License.
-// You may obtain a copy of the License at
-// 
-//    http://www.apache.org/licenses/LICENSE-2.0
-// 
-// Unless required by applicable law or agreed to in writing, software
-// distributed under the License is distributed on an "AS IS" BASIS,
-// WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
-// See the License for the specific language governing permissions and
-// limitations under the License.
-
+//  Copyright (c) 2021 Alachisoft
+//  
+//  Licensed under the Apache License, Version 2.0 (the "License");
+//  you may not use this file except in compliance with the License.
+//  You may obtain a copy of the License at
+//  
+//     http://www.apache.org/licenses/LICENSE-2.0
+//  
+//  Unless required by applicable law or agreed to in writing, software
+//  distributed under the License is distributed on an "AS IS" BASIS,
+//  WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+//  See the License for the specific language governing permissions and
+//  limitations under the License
 using System;
 using System.Text;
 using System.IO;
@@ -98,6 +97,13 @@ namespace Alachisoft.NCache.SocketServer.Util
             return cInt;
         }
 
+        public static long ToInt64(byte[] buffer, int offset, int size)
+        {
+            long cInt = 0;
+            cInt = Convert.ToInt64(UTF8Encoding.UTF8.GetString(buffer, offset, size));
+            return cInt;
+        }
+
         /// <summary>
         /// Convert the selected bytes to int
         /// </summary>
@@ -117,13 +123,6 @@ namespace Alachisoft.NCache.SocketServer.Util
                 throw;
             }
 
-            return cInt;
-        }
-
-        public static long ToInt64(byte[] buffer, int offset, int size)
-        {
-            long cInt = 0;
-            cInt = Convert.ToInt64(UTF8Encoding.UTF8.GetString(buffer, offset, size));
             return cInt;
         }
 
@@ -173,6 +172,55 @@ namespace Alachisoft.NCache.SocketServer.Util
                 copyIn[count] = copyFrom[i];
 
             return copyIn;
+        }
+
+        /// <summary>
+		/// Creates a byte buffer representation of a <c>int32</c>
+		/// </summary>
+		/// <param name="value"><c>int</c> to be converted</param>
+		/// <returns>Byte Buffer representation of a <c>Int32</c></returns>
+		public static byte[] WriteInt32(int value)
+        {
+            byte[] _byteBuffer = new byte[4];
+            _byteBuffer[0] = (byte)value;
+            _byteBuffer[1] = (byte)(value >> 8);
+            _byteBuffer[2] = (byte)(value >> 16);
+            _byteBuffer[3] = (byte)(value >> 24);
+
+            return _byteBuffer;
+        }
+#if !CLIENT || NETCORE
+        /// <summary>
+        /// Creates a <c>Int32</c> from a byte buffer representation
+        /// </summary>
+        /// <param name="readOnlySpan">Byte Buffer representation of a <c>Int32</c></param>
+        /// <returns></returns>
+        public static int ConvertToInt32(ReadOnlySpan<byte> readOnlySpan)
+        {
+            return (int)((readOnlySpan[0] & 0xFF) |
+                readOnlySpan[1] << 8 |
+                readOnlySpan[2] << 16 |
+                readOnlySpan[3] << 24);
+        }
+#endif
+        public static int ConvertToInt32(byte[] buffer)
+        {
+            return (int)((buffer[0] & 0xFF) |
+                buffer[1] << 8 |
+                buffer[2] << 16 |
+                buffer[3] << 24);
+        }
+#if !CLIENT || NETCORE
+        public static short ConvertToShort(ReadOnlySpan<byte> readOnlySpan)
+        {
+            return (short)((readOnlySpan[0] & 0xFF) |
+                readOnlySpan[1] << 8);
+        }
+#endif
+        public static short ConvertToShort(byte[] buffer)
+        {
+            return (short)((buffer[0] & 0xFF) |
+                buffer[1] << 8);
         }
     }
 }

@@ -1,22 +1,23 @@
-// Copyright (c) 2017 Alachisoft
-// 
-// Licensed under the Apache License, Version 2.0 (the "License");
-// you may not use this file except in compliance with the License.
-// You may obtain a copy of the License at
-// 
-//    http://www.apache.org/licenses/LICENSE-2.0
-// 
-// Unless required by applicable law or agreed to in writing, software
-// distributed under the License is distributed on an "AS IS" BASIS,
-// WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
-// See the License for the specific language governing permissions and
-// limitations under the License.
+﻿//  Copyright (c) 2021 Alachisoft
+//  
+//  Licensed under the Apache License, Version 2.0 (the "License");
+//  you may not use this file except in compliance with the License.
+//  You may obtain a copy of the License at
+//  
+//     http://www.apache.org/licenses/LICENSE-2.0
+//  
+//  Unless required by applicable law or agreed to in writing, software
+//  distributed under the License is distributed on an "AS IS" BASIS,
+//  WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+//  See the License for the specific language governing permissions and
+//  limitations under the License
 
 using System;
 using System.Collections.Generic;
-using System.Linq;
-using System.Text;
+using System.Threading;
+using System.Threading.Tasks;
 using Alachisoft.NCache.Integrations.NHibernate.Cache.Configuration;
+using Alachisoft.NCache.Runtime.Caching;
 using NHibernate;
 using NHibernate.Cache;
 
@@ -26,7 +27,6 @@ namespace Alachisoft.NCache.Integrations.NHibernate.Cache
     {
         private static readonly IInternalLogger _logger = LoggerProvider.LoggerFor(typeof(Alachisoft.NCache.Integrations.NHibernate.Cache.NCacheProvider));
         private static Dictionary<string, CacheHandler> _caches = new Dictionary<string, CacheHandler>();
-       
         private CacheHandler _cacheHandler = null;
         private readonly RegionConfiguration _regionConfig = null;
         private string _regionName = null;
@@ -157,7 +157,7 @@ namespace Alachisoft.NCache.Integrations.NHibernate.Cache
                     _logger.Debug(String.Format("Fetching object from the cache with key = {0}", cacheKey));
                 }
 
-                return _cacheHandler.Cache.Get(cacheKey);
+                return _cacheHandler.Cache.Get<object>(cacheKey);
             }
             catch (Exception e)
             {
@@ -169,9 +169,32 @@ namespace Alachisoft.NCache.Integrations.NHibernate.Cache
             }
         }
 
+        /// <summary>
+        /// Lock the item with the key provided
+        /// </summary>
+        /// <param name="key">The Key of the Item in the Cache to lock.</param>
+        /// <exception cref="CacheException"></exception>
         public void Lock(object key)
         {
-            
+            if (key == null)
+                throw new ArgumentNullException("key", "null key not allowed");
+
+            string cacheKey = ConfigurationManager.Instance.GetCacheKey(key);
+
+            Alachisoft.NCache.Client.LockHandle lockHandle = new Alachisoft.NCache.Client.LockHandle();
+
+            try
+            {
+                if (!_cacheHandler.Cache.Lock(cacheKey, TimeSpan.MaxValue, out lockHandle))
+                {
+                    throw new CacheException("Unable to acquire lock on the key provided.");
+                }
+            }
+            catch (Exception e)
+            {
+                throw new CacheException(e.Message);
+            }
+
         }
 
         public long NextTimestamp()
@@ -196,18 +219,16 @@ namespace Alachisoft.NCache.Integrations.NHibernate.Cache
 
                 string cacheKey = ConfigurationManager.Instance.GetCacheKey(key);
 
-                Alachisoft.NCache.Web.Caching.CacheItem item = new Web.Caching.CacheItem(value);
+                Alachisoft.NCache.Client.CacheItem item = new Alachisoft.NCache.Client.CacheItem(value);
                 item.Priority = _regionConfig.CacheItemPriority;
-               
                 
-
                 if (_regionConfig.ExpirationType.ToLower() == "sliding")
-                    item.SlidingExpiration = new TimeSpan(0, 0, _regionConfig.ExpirationPeriod);
+                    item.Expiration = new Expiration(ExpirationType.Sliding, new TimeSpan(0, 0, _regionConfig.ExpirationPeriod));
                 else if (_regionConfig.ExpirationType.ToLower() == "absolute")
-                    item.AbsoluteExpiration = DateTime.Now.AddSeconds(_regionConfig.ExpirationPeriod);
+                    item.Expiration = new Expiration(ExpirationType.Absolute, new TimeSpan(0, 0, _regionConfig.ExpirationPeriod));
 
 
-                    if (_logger.IsDebugEnabled)
+                if (_logger.IsDebugEnabled)
                     {
                         _logger.Debug(String.Format("Inserting: key={0}&value={1}", key, value.ToString()));
                     }
@@ -240,12 +261,15 @@ namespace Alachisoft.NCache.Integrations.NHibernate.Cache
             try
             {
                 string cacheKey = ConfigurationManager.Instance.GetCacheKey(key);
+  //              if (_regionConfig.UseAsync)
+   //             {
                    
                     if (_logger.IsDebugEnabled)
                     {
                         _logger.Debug("Removing item with key: " + cacheKey);
                     }
                     _cacheHandler.Cache.Remove(cacheKey);
+   //             }
             }
             catch (Exception e)
             {
@@ -262,9 +286,100 @@ namespace Alachisoft.NCache.Integrations.NHibernate.Cache
             get { return Timestamper.OneMs*60000; }
         }
 
+        /// <summary>
+        /// Unlock the item with the key provided
+        /// </summary>
+        /// <param name="key">The Key of the Item in the Cache to lock.</param>
+        /// <exception cref="CacheException"></exception>
         public void Unlock(object key)
         {
+            if (key == null)
+                throw new ArgumentNullException("key", "null key not allowed");
 
+            string cacheKey = ConfigurationManager.Instance.GetCacheKey(key);
+
+            try
+            {
+                _cacheHandler.Cache.Unlock(cacheKey);
+            }
+            catch (Exception e)
+            {
+                throw new CacheException(e.Message);
+            }
+        }
+
+        public Task<object> GetAsync(object key, CancellationToken cancellationToken)
+        {
+            if (key == null)
+                throw new ArgumentNullException("key", "null key not allowed");
+
+            TaskFactory<object> factory = new TaskFactory<object>(cancellationToken);
+
+            Task<object> task = Task.Run(() => {
+                return Get(key);
+            }, cancellationToken);
+
+            return task;
+        }
+
+        public Task PutAsync(object key, object value, CancellationToken cancellationToken)
+        {
+            if (key == null)
+                throw new ArgumentNullException("key", "null key not allowed");
+
+            if (value == null)
+                throw new ArgumentNullException("value", "null value not allowed");
+
+            Task task = Task.Run(() => {
+                Put(key, value);
+            }, cancellationToken);
+
+            return task;
+        }
+
+        public Task RemoveAsync(object key, CancellationToken cancellationToken)
+        {
+            if (key == null)
+                throw new ArgumentNullException("key", "null key not allowed");
+
+            Task task = Task.Run(() => {
+                Remove(key);
+            });
+
+            return task;
+        }
+
+        public Task ClearAsync(CancellationToken cancellationToken)
+        {
+            Task task = Task.Run(() => {
+                Clear();
+            });
+
+            return task;
+        }
+
+        public Task LockAsync(object key, CancellationToken cancellationToken)
+        {
+            if (key == null)
+                throw new ArgumentNullException("key", "null key not allowed");
+
+            Task task = Task.Run(() => {
+                Lock(key);
+            });
+
+            return task;
+        }
+
+        public Task UnlockAsync(object key, CancellationToken cancellationToken)
+        {
+            if (key == null)
+                throw new ArgumentNullException("key", "null key not allowed");
+
+            Task task = Task.Run(() => {
+                Unlock(key);
+            });
+
+            return task;
         }
 
         #endregion

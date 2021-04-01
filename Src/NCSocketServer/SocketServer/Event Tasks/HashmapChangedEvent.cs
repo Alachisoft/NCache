@@ -1,21 +1,20 @@
-// Copyright (c) 2017 Alachisoft
-// 
-// Licensed under the Apache License, Version 2.0 (the "License");
-// you may not use this file except in compliance with the License.
-// You may obtain a copy of the License at
-// 
-//    http://www.apache.org/licenses/LICENSE-2.0
-// 
-// Unless required by applicable law or agreed to in writing, software
-// distributed under the License is distributed on an "AS IS" BASIS,
-// WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
-// See the License for the specific language governing permissions and
-// limitations under the License.
-
+//  Copyright (c) 2021 Alachisoft
+//  
+//  Licensed under the Apache License, Version 2.0 (the "License");
+//  you may not use this file except in compliance with the License.
+//  You may obtain a copy of the License at
+//  
+//     http://www.apache.org/licenses/LICENSE-2.0
+//  
+//  Unless required by applicable law or agreed to in writing, software
+//  distributed under the License is distributed on an "AS IS" BASIS,
+//  WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+//  See the License for the specific language governing permissions and
+//  limitations under the License
 using System;
-
+using System.Collections;
 using Alachisoft.NCache.SocketServer.Util;
-using Alachisoft.NCache.Web.Util;
+
 using Alachisoft.NCache.Common.DataStructures;
 using System.Text;
 
@@ -60,9 +59,9 @@ namespace Alachisoft.NCache.SocketServer.EventTask
                     {
                         if (_newmap != null) 
                         {
-                            String map = HashtableUtil.ToString(this._newmap.Map);
-                            String members = HashtableUtil.ToString(this._newmap.Members);
-                            String lastViewId = this._newmap.LastViewId.ToString();
+                            string map = HashtableUtil.ToString(_newmap.Map);
+                            string members = HashtableUtil.ToString(_newmap.Members);
+                            string lastViewId = _newmap.LastViewId.ToString();
                             StringBuilder toStr = new StringBuilder();
                             toStr.Append(map);
                             toStr.Append("\t");
@@ -84,10 +83,9 @@ namespace Alachisoft.NCache.SocketServer.EventTask
                     response.hashmapChanged = hashmapChangedResponse;
                     response.responseType = Alachisoft.NCache.Common.Protobuf.Response.Type.HASHMAP_CHANGED_EVENT;
 
-                    byte[] serializedResponse = Alachisoft.NCache.Common.Util.ResponseHelper.SerializeResponse(response);
+                    IList serializedResponse = Alachisoft.NCache.Common.Util.ResponseHelper.SerializeResponse(response,Common.Protobuf.Response.Type.HASHMAP_CHANGED_EVENT);
 
-                    ConnectionManager.AssureSend(clientManager, serializedResponse, Alachisoft.NCache.Common.Enum.Priority.Critical);
-
+                    ConnectionManager.AssureSend(clientManager, serializedResponse, false);
                 }
             }
             catch (Exception exc)

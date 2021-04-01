@@ -1,41 +1,40 @@
-// Copyright (c) 2017 Alachisoft
-// 
-// Licensed under the Apache License, Version 2.0 (the "License");
-// you may not use this file except in compliance with the License.
-// You may obtain a copy of the License at
-// 
-//    http://www.apache.org/licenses/LICENSE-2.0
-// 
-// Unless required by applicable law or agreed to in writing, software
-// distributed under the License is distributed on an "AS IS" BASIS,
-// WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
-// See the License for the specific language governing permissions and
-// limitations under the License.
-
+//  Copyright (c) 2021 Alachisoft
+//  
+//  Licensed under the Apache License, Version 2.0 (the "License");
+//  you may not use this file except in compliance with the License.
+//  You may obtain a copy of the License at
+//  
+//     http://www.apache.org/licenses/LICENSE-2.0
+//  
+//  Unless required by applicable law or agreed to in writing, software
+//  distributed under the License is distributed on an "AS IS" BASIS,
+//  WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+//  See the License for the specific language governing permissions and
+//  limitations under the License
 using System;
 using System.Collections;
 using Alachisoft.NCache.Caching.AutoExpiration;
+using Alachisoft.NCache.Common.Locking;
 
 namespace Alachisoft.NCache.Caching.Topologies
 {
     /// <summary>
-	/// This interface defines the basic set of operations a Cache is required to implement. 
-	/// </summary>
+    /// This interface defines the basic set of operations a Cache is required to implement. 
+    /// </summary>
 
-	internal interface ICache
-
+    internal interface ICache
 	{
 		/// <summary>
 		/// returns the number of objects contained in the cache.
 		/// </summary>
 		long Count{ get; }
 
-	    /// <summary>
-	    /// Removes all entries from the cache.
-	    /// </summary>
-	    /// <param name="cbEntry">callback entry for write behind</param>
-	    /// <param name="operationContext"></param>
-	    void Clear(CallbackEntry cbEntry, OperationContext operationContext);
+		/// <summary>
+		/// Removes all entries from the cache.
+		/// </summary>
+        /// <param name="notification">callback entry for write behind</param>
+        /// <param name="updateOptions">data source update options</param>
+        void Clear(Notifications notification, DataSourceUpdateOptions updateOptions, OperationContext operationContext);
 
 		/// <summary>
 		/// Determines whether the cache contains a specific key.
@@ -45,17 +44,12 @@ namespace Alachisoft.NCache.Caching.Topologies
 		/// with the specified key; otherwise, false.</returns>
         bool Contains(object key, OperationContext operationContext);
 
-	    /// <summary>
-	    /// Retrieve the object from the cache. A string key is passed as parameter.
-	    /// </summary>
-	    /// <param name="key">key of the entry.</param>
-	    /// <param name="lockId"></param>
-	    /// <param name="lockDate"></param>
-	    /// <param name="lockExpiration"></param>
-	    /// <param name="accessType"></param>
-	    /// <param name="operationContext"></param>
-	    /// <returns>cache entry.</returns>
-	    CacheEntry Get(object key, ref object lockId, ref DateTime lockDate, LockExpiration lockExpiration, LockAccessType accessType, OperationContext operationContext);
+		/// <summary>
+		/// Retrieve the object from the cache. A string key is passed as parameter.
+		/// </summary>
+		/// <param name="key">key of the entry.</param>
+		/// <returns>cache entry.</returns>
+        CacheEntry Get(object key, ref ulong version, ref object lockId, ref DateTime lockDate, LockExpiration lockExpiration, LockAccessType accessType, OperationContext operationContext);
 
 		/// <summary>
 		/// Adds a pair of key and value to the cache. Throws an exception or reports error 
@@ -73,22 +67,18 @@ namespace Alachisoft.NCache.Caching.Topologies
 		/// <param name="key">key of the entry.</param>
 		/// <param name="cacheEntry">the cache entry.</param>
 		/// <returns>returns the result of operation.</returns>
-        CacheInsResultWithEntry Insert(object key, CacheEntry cacheEntry, bool notify, object lockId, LockAccessType accessType, OperationContext operationContext);
+        CacheInsResultWithEntry Insert(object key, CacheEntry cacheEntry, bool notify, object lockId, ulong version, LockAccessType accessType, OperationContext operationContext);
 
-	    /// <summary>
-	    /// Removes the object and key pair from the cache. The key is specified as parameter.
-	    /// Moreover it take a removal reason and a boolean specifying if a notification should
-	    /// be raised.
-	    /// </summary>
-	    /// <param name="key">key of the entry.</param>
-	    /// <param name="ir"></param>
-	    /// <param name="notify">boolean specifying to raise the event.</param>
-	    /// <param name="lockId"></param>
-	    /// <param name="accessType"></param>
-	    /// <param name="operationContext"></param>
-	    /// <param name="removalReason">reason for the removal.</param>
-	    /// <returns>item value</returns>
-	    CacheEntry Remove(object key, ItemRemoveReason ir, bool notify, object lockId, LockAccessType accessType, OperationContext operationContext);
+		/// <summary>
+		/// Removes the object and key pair from the cache. The key is specified as parameter.
+		/// Moreover it take a removal reason and a boolean specifying if a notification should
+		/// be raised.
+		/// </summary>
+		/// <param name="key">key of the entry.</param>
+		/// <param name="removalReason">reason for the removal.</param>
+		/// <param name="notify">boolean specifying to raise the event.</param>
+		/// <returns>item value</returns>
+        CacheEntry Remove(object key, ItemRemoveReason ir, bool notify, object lockId, ulong version, LockAccessType accessType, OperationContext operationContext);
 
 
 		/// <summary>
@@ -96,14 +86,14 @@ namespace Alachisoft.NCache.Caching.Topologies
 		/// </summary>
 		/// <param name="keys">The keys to locate in the cache.</param>
 		/// <returns>List of keys that are not found in the cache.</returns>
-        Hashtable Contains(object[] keys, OperationContext operationContext);
+        Hashtable Contains(IList keys, OperationContext operationContext);
 
 		/// <summary>
 		/// Retrieve the objectd from the cache. An array of keys is passed as parameter.
 		/// </summary>
 		/// <param name="keys">keys of the entries.</param>
 		/// <returns>key and value pairs</returns>
-        Hashtable Get(object[] keys, OperationContext operationContext);
+        IDictionary Get(object[] keys, OperationContext operationContext);
 
 		/// <summary>
 		/// Adds key and value pairs to the cache. Throws an exception or returns a list
@@ -146,5 +136,10 @@ namespace Alachisoft.NCache.Caching.Topologies
         /// </summary>
         Array Keys { get; }
 
-	}
+        void LogBackingSource();
+
+        double GetReplicaCounters(string counterName);
+
+
+    }
 }

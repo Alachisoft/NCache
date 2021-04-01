@@ -5,5 +5,13 @@ option java_outer_classname="BulkAddCommandProtocol";
 package Alachisoft.NCache.Common.Protobuf;
 message BulkAddCommand {
 	optional int64 requestId = 1;
-	repeated AddCommand addCommand = 2;	
+	optional sint32 datasourceItemAddedCallbackId = 2; 
+	optional string providerName = 3;
+	repeated AddCommand addCommand = 4;	
+    optional bool returnVersions = 5;
+	optional int64 clientLastViewId = 6 [default=-1];
+	optional string intendedRecipient = 7 [default = ""];
+	optional string version = 8;
+	optional int32 MethodOverload = 9 [default=0];
+
 }

@@ -1,23 +1,22 @@
-// Copyright (c) 2017 Alachisoft
-// 
-// Licensed under the Apache License, Version 2.0 (the "License");
-// you may not use this file except in compliance with the License.
-// You may obtain a copy of the License at
-// 
-//    http://www.apache.org/licenses/LICENSE-2.0
-// 
-// Unless required by applicable law or agreed to in writing, software
-// distributed under the License is distributed on an "AS IS" BASIS,
-// WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
-// See the License for the specific language governing permissions and
-// limitations under the License.
-
+//  Copyright (c) 2021 Alachisoft
+//  
+//  Licensed under the Apache License, Version 2.0 (the "License");
+//  you may not use this file except in compliance with the License.
+//  You may obtain a copy of the License at
+//  
+//     http://www.apache.org/licenses/LICENSE-2.0
+//  
+//  Unless required by applicable law or agreed to in writing, software
+//  distributed under the License is distributed on an "AS IS" BASIS,
+//  WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+//  See the License for the specific language governing permissions and
+//  limitations under the License
 using System;
 using System.Collections;
-using Alachisoft.NGroups.Blocks;
-using Alachisoft.NGroups.Util;
 using Alachisoft.NCache.Common.Logger;
 using Alachisoft.NCache.Common.Net;
+using Alachisoft.NGroups.Util;
+using Alachisoft.NGroups.Blocks;
 
 namespace Alachisoft.NCache.Caching.Topologies.Clustered
 {
@@ -28,6 +27,8 @@ namespace Alachisoft.NCache.Caching.Topologies.Clustered
 
         private ClusterService _service;
 
+        //private NewTrace nTrace;
+        //private string loggerName;
         private ILogger _ncacheLog;
         ILogger NCacheLog
         {

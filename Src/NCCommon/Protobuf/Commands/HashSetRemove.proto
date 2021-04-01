@@ -1,0 +1,18 @@
+﻿package Alachisoft.NCache.Common.Protobuf;
+
+import "CollectionItem.proto";
+
+message DictionaryRemove {	
+	
+	enum OperationType {
+			Remove = 1;
+			RemoveRandom			
+		}
+	
+	optional OperationType operationType = 1;
+	
+	repeated string collection = 2;
+	
+	optional string key = 3;
+	optional CollectionItem value = 4;
+}

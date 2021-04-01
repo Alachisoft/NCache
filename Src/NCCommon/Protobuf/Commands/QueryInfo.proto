@@ -1,7 +1,0 @@
-
-option java_outer_classname="QueryInfoProtocol";
-package Alachisoft.NCache.Common.Protobuf;
-message QueryInfo {	
-	optional int32 handleId = 1;
-	repeated string attributes = 2;
-}

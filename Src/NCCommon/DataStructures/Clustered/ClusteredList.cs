@@ -34,13 +34,15 @@
 
 using System;
 using System.Collections.Generic;
-
+using System.Linq;
+using System.Text;
 #if DEBUG
 using System.Diagnostics.Contracts;
 #endif
+using System.Diagnostics;
 using System.Collections.ObjectModel;
 using System.Runtime;
-using System.Diagnostics;
+using Alachisoft.NCache.Common.Transactions;
 
 namespace Alachisoft.NCache.Common.DataStructures.Clustered
 {
@@ -54,7 +56,7 @@ namespace Alachisoft.NCache.Common.DataStructures.Clustered
     [DebuggerDisplay("Count = {Count}")]
 #endif
     [Serializable]
-    public class ClusteredList<T> : IList<T>, System.Collections.IList, ICloneable
+    public class ClusteredList<T> : IClusteredList<T>, System.Collections.IList, ICloneable, ITransactableStore
     {
         private const int _defaultCapacity = 4;
 
@@ -66,6 +68,8 @@ namespace Alachisoft.NCache.Common.DataStructures.Clustered
         private int _version;
         [NonSerialized]
         private Object _syncRoot;
+        [NonSerialized]
+        private Transaction _transaction;
 
         static readonly ClusteredArray<T> _emptyArray = new ClusteredArray<T>(0);
 
@@ -75,6 +79,10 @@ namespace Alachisoft.NCache.Common.DataStructures.Clustered
 #if DEBUG
         [TargetedPatchingOptOut("Performance critical to inline across NGen image boundaries")]
 #endif
+        private void SetSize(int size)
+        {
+            _size = size;
+        }
         public ClusteredList()
         {
             _items = _emptyArray;
@@ -272,8 +280,10 @@ namespace Alachisoft.NCache.Common.DataStructures.Clustered
 #if DEBUG
                 Contract.EndContractBlock();
 #endif
+                T oldItem = _items[index];
                 _items[index] = value;
                 _version++;
+
             }
         }
 
@@ -313,7 +323,12 @@ namespace Alachisoft.NCache.Common.DataStructures.Clustered
         {
             if (_size == _items.Length) EnsureCapacity(_size + 1);
             _items[_size++] = item;
+            
             _version++;
+            if (_transaction != null)
+            {
+                _transaction.AddRollbackOperation(new AddRollbackOperation(this, _size-1));
+            }
         }
 
         int System.Collections.IList.Add(Object item)
@@ -353,7 +368,7 @@ namespace Alachisoft.NCache.Common.DataStructures.Clustered
             return new ReadOnlyCollection<T>(this);
         }
 
-        //   Usman: Search requires sort and sort is a bit problem at the moment, given our whole clustered array scenario.
+        //   Search requires sort and sort is a bit problem at the moment, given our whole clustered array scenario.
 
         // Searches a section of the list for a given element using a binary search
         // algorithm. Elements of the list are compared to the search value using
@@ -397,7 +412,17 @@ namespace Alachisoft.NCache.Common.DataStructures.Clustered
         {
             if (_size > 0)
             {
-                ClusteredArray<T>.Clear(_items, 0, _size); // Don't need to doc this but we clear the elements so that the gc can reclaim the references.
+                ClusteredArray<T> oldList = _items;
+                if (_transaction!=null)
+                    _items=new ClusteredArray<T>(0);
+                else
+                    ClusteredArray<T>.Clear(_items, 0, _size); // Don't need to doc this but we clear the elements so that the gc can reclaim the references.
+
+                if (_transaction != null)
+                {
+                    _transaction.AddRollbackOperation(new ClearRollbackOperation( this, oldList));
+                }
+                
                 _size = 0;
             }
             _version++;
@@ -525,136 +550,6 @@ namespace Alachisoft.NCache.Common.DataStructures.Clustered
             }
         }
 
-#if FEATURE_LIST_PREDICATES || FEATURE_NETCORE
-        //public bool Exists(Predicate<T> match) {
-        //    return FindIndex(match) != -1;
-        //}
-
-        //public T Find(Predicate<T> match) {
-        //    if( match == null) {
-        //        ThrowHelper.ThrowArgumentNullException(ExceptionArgument.match);
-        //    }
-        //    Contract.EndContractBlock();
-
-        //    for(int i = 0 ; i < _size; i++) {
-        //        if(match(_items[i])) {
-        //            return _items[i];
-        //        }
-        //    }
-        //    return default(T);
-        //}
-  
-        //public List<T> FindAll(Predicate<T> match) { 
-        //    if( match == null) {
-        //        ThrowHelper.ThrowArgumentNullException(ExceptionArgument.match);
-        //    }
-        //    Contract.EndContractBlock();
-
-        //    List<T> list = new List<T>(); 
-        //    for(int i = 0 ; i < _size; i++) {
-        //        if(match(_items[i])) {
-        //            list.Add(_items[i]);
-        //        }
-        //    }
-        //    return list;
-        //}
-  
-        //public int FindIndex(Predicate<T> match) {
-        //    Contract.Ensures(Contract.Result<int>() >= -1);
-        //    Contract.Ensures(Contract.Result<int>() < Count);
-        //    return FindIndex(0, _size, match);
-        //}
-  
-        //public int FindIndex(int startIndex, Predicate<T> match) {
-        //    Contract.Ensures(Contract.Result<int>() >= -1);
-        //    Contract.Ensures(Contract.Result<int>() < startIndex + Count);
-        //    return FindIndex(startIndex, _size - startIndex, match);
-        //}
- 
-        //public int FindIndex(int startIndex, int count, Predicate<T> match) {
-        //    if( (uint)startIndex > (uint)_size ) {
-        //        ThrowHelper.ThrowArgumentOutOfRangeException(ExceptionArgument.startIndex, ExceptionResource.ArgumentOutOfRange_Index);                
-        //    }
-
-        //    if (count < 0 || startIndex > _size - count) {
-        //        ThrowHelper.ThrowArgumentOutOfRangeException(ExceptionArgument.count, ExceptionResource.ArgumentOutOfRange_Count);
-        //    }
-
-        //    if( match == null) {
-        //        ThrowHelper.ThrowArgumentNullException(ExceptionArgument.match);
-        //    }
-        //    Contract.Ensures(Contract.Result<int>() >= -1);
-        //    Contract.Ensures(Contract.Result<int>() < startIndex + count);
-        //    Contract.EndContractBlock();
-
-        //    int endIndex = startIndex + count;
-        //    for( int i = startIndex; i < endIndex; i++) {
-        //        if( match(_items[i])) return i;
-        //    }
-        //    return -1;
-        //}
- 
-        //public T FindLast(Predicate<T> match) {
-        //    if( match == null) {
-        //        ThrowHelper.ThrowArgumentNullException(ExceptionArgument.match);
-        //    }
-        //    Contract.EndContractBlock();
-
-        //    for(int i = _size - 1 ; i >= 0; i--) {
-        //        if(match(_items[i])) {
-        //            return _items[i];
-        //        }
-        //    }
-        //    return default(T);
-        //}
-
-        //public int FindLastIndex(Predicate<T> match) {
-        //    Contract.Ensures(Contract.Result<int>() >= -1);
-        //    Contract.Ensures(Contract.Result<int>() < Count);
-        //    return FindLastIndex(_size - 1, _size, match);
-        //}
-   
-        //public int FindLastIndex(int startIndex, Predicate<T> match) {
-        //    Contract.Ensures(Contract.Result<int>() >= -1);
-        //    Contract.Ensures(Contract.Result<int>() <= startIndex);
-        //    return FindLastIndex(startIndex, startIndex + 1, match);
-        //}
-
-        //public int FindLastIndex(int startIndex, int count, Predicate<T> match) {
-        //    if( match == null) {
-        //        ThrowHelper.ThrowArgumentNullException(ExceptionArgument.match);
-        //    }
-        //    Contract.Ensures(Contract.Result<int>() >= -1);
-        //    Contract.Ensures(Contract.Result<int>() <= startIndex);
-        //    Contract.EndContractBlock();
-
-        //    if(_size == 0) {
-        //        // Special case for 0 length List
-        //        if( startIndex != -1) {
-        //            ThrowHelper.ThrowArgumentOutOfRangeException(ExceptionArgument.startIndex, ExceptionResource.ArgumentOutOfRange_Index);
-        //        }
-        //    }
-        //    else {
-        //        // Make sure we're not out of range            
-        //        if ( (uint)startIndex >= (uint)_size) {
-        //            ThrowHelper.ThrowArgumentOutOfRangeException(ExceptionArgument.startIndex, ExceptionResource.ArgumentOutOfRange_Index);
-        //        }
-        //    }
-            
-        //    // 2nd have of this also catches when startIndex == MAXINT, so MAXINT - 0 + 1 == -1, which is < 0.
-        //    if (count < 0 || startIndex - count + 1 < 0) {
-        //        ThrowHelper.ThrowArgumentOutOfRangeException(ExceptionArgument.count, ExceptionResource.ArgumentOutOfRange_Count);
-        //    }
-                        
-        //    int endIndex = startIndex - count;
-        //    for( int i = startIndex; i > endIndex; i--) {
-        //        if( match(_items[i])) {
-        //            return i;
-        //        }
-        //    }
-        //    return -1;
-        //}
-#endif // FEATURE_LIST_PREDICATES || FEATURE_NETCORE
 
         public void ForEach(Action<T> action)
         {
@@ -688,9 +583,9 @@ namespace Alachisoft.NCache.Common.DataStructures.Clustered
 #if DEBUG
         [TargetedPatchingOptOut("Performance critical to inline across NGen image boundaries")]
 #endif
-        public ClusteredListEnumerator GetEnumerator()
+        public ClusteredListImmutableEnumerator GetEnumerator()
         {
-            return new ClusteredListEnumerator(this);
+            return new ClusteredListImmutableEnumerator(this);
         }
 
         /// <internalonly/>
@@ -699,7 +594,7 @@ namespace Alachisoft.NCache.Common.DataStructures.Clustered
 #endif
         IEnumerator<T> IEnumerable<T>.GetEnumerator()
         {
-            return new ClusteredListEnumerator(this);
+            return new ClusteredListImmutableEnumerator(this);
         }
 
 #if DEBUG
@@ -707,10 +602,10 @@ namespace Alachisoft.NCache.Common.DataStructures.Clustered
 #endif
         System.Collections.IEnumerator System.Collections.IEnumerable.GetEnumerator()
         {
-            return new ClusteredListEnumerator(this);
+            return new ClusteredListImmutableEnumerator(this);
         }
 
-        public ClusteredList<T> GetRange(int index, int count)
+        public IClusteredList<T> GetRange(int index, int count)
         {
             if (index < 0)
             {
@@ -836,6 +731,7 @@ namespace Alachisoft.NCache.Common.DataStructures.Clustered
 #if DEBUG
             Contract.EndContractBlock();
 #endif
+
             if (_size == _items.Length) EnsureCapacity(_size + 1);
             if (index < _size)
             {
@@ -844,6 +740,12 @@ namespace Alachisoft.NCache.Common.DataStructures.Clustered
             _items[index] = item;
             _size++;
             _version++;
+
+            if (_transaction != null)
+            {
+                 _transaction.AddRollbackOperation(new AddRollbackOperation(this, index));
+            }
+
         }
 
         void System.Collections.IList.Insert(int index, Object item)
@@ -906,6 +808,11 @@ namespace Alachisoft.NCache.Common.DataStructures.Clustered
                         _items.CopyFrom(itemsToInsert, 0, index, count);
                     }
                     _size += count;
+
+                    if (_transaction != null)
+                    {
+                        _transaction.AddRollbackOperation(new BulkAddRollbackOperation(this, index, count));
+                    }
                 }
             }
             else
@@ -1024,6 +931,13 @@ namespace Alachisoft.NCache.Common.DataStructures.Clustered
             if (index >= 0 && index < _size)
             {
                 RemoveAt(index);
+
+                if (_transaction != null)
+                {
+                    _transaction.AddRollbackOperation(new RemoveRollbackOperation(this, index, item));
+
+                }
+
                 return true;
             }
             return false;
@@ -1081,10 +995,6 @@ namespace Alachisoft.NCache.Common.DataStructures.Clustered
         // 
         public void RemoveAt(int index)
         {
-            //if ((uint)index > (uint)_size)
-            //{
-            //    ThrowHelper.ThrowArgumentOutOfRangeException();
-            //}
 #if DEBUG
             Contract.EndContractBlock();
 #endif
@@ -1095,6 +1005,8 @@ namespace Alachisoft.NCache.Common.DataStructures.Clustered
             }
             _items[_size] = default(T);
             _version++;
+
+
         }
 
         // Removes a range of elements from this list.
@@ -1118,6 +1030,7 @@ namespace Alachisoft.NCache.Common.DataStructures.Clustered
 #endif
             if (count > 0)
             {
+                IList<T> oldItems = this.GetRange(index, count);
                 int i = _size;
                 _size -= count;
                 if (index < _size)
@@ -1126,11 +1039,15 @@ namespace Alachisoft.NCache.Common.DataStructures.Clustered
                 }
                 ClusteredArray<T>.Clear(_items, _size, count);
                 _version++;
+                if (_transaction != null)
+                {
+                    _transaction.AddRollbackOperation(new BulkRemoveRollbackOperation(this, index, oldItems));
+
+                }
             }
+
+        // Not sure if reversal is necessary
         }
-
-
-        // Usman: Not sure if reversal is necessary
 
         //Reverses the elements in this list.
         public void Reverse()
@@ -1153,7 +1070,7 @@ namespace Alachisoft.NCache.Common.DataStructures.Clustered
 
 
 
-        //Usman: Need an algorithm to sort clustered data.
+        // Need an algorithm to sort clustered data.
 
         // Sorts the elements in this list.  Uses the default comparer and 
         // Array.Sort.
@@ -1223,6 +1140,347 @@ namespace Alachisoft.NCache.Common.DataStructures.Clustered
             {
                 Capacity = _size;
             }
+        }
+
+        /// <summary>
+        /// Trim an existing list so that it will contain only the specified 
+        /// range of elements specified.
+        /// </summary>
+        /// <param name="start">Starting index.</param>
+        /// <param name="end">Ending index.</param>
+        public void Trim(int start, int end)
+        {
+            if (start < 0)
+            {
+                ThrowHelper.ThrowArgumentOutOfRangeException(ExceptionArgument.index, ExceptionResource.ArgumentOutOfRange_NeedNonNegNum);
+            }
+
+            if (end < 0)
+            {
+                ThrowHelper.ThrowArgumentOutOfRangeException(ExceptionArgument.count, ExceptionResource.ArgumentOutOfRange_NeedNonNegNum);
+            }
+
+            if (start > end)
+            {
+                ThrowHelper.ThrowArgumentOutOfRangeException(ExceptionArgument.startIndex, ExceptionResource.ArgumentOutOfRange_Index);
+            }
+
+            if (end > _size)
+            {
+                ThrowHelper.ThrowArgumentException(ExceptionResource.Argument_InvalidOffLen);
+            }
+            IList<T> startList = GetRange(0, start);
+            IList<T> endList = GetRange(end, _size-1);
+
+            int trimmedLength = (end - start) + 1;
+            ClusteredArray<T> trimmed = new ClusteredArray<T>(trimmedLength);
+            ClusteredArray<T>.Copy(_items, start, trimmed, 0, trimmedLength);
+            _items = trimmed;
+            _size = _items.Length;
+            _version++;
+
+            if (_transaction != null)
+            {
+                _transaction.AddRollbackOperation(new TrimRollbackOperation(this, startList, endList));
+            }
+
+        }
+
+        /// <summary>
+        /// Removes the elements of the specified collection from the List<T>.
+        /// </summary>
+        /// <param name="collection">The collection whose elements should be removed from the List<T></param>
+        /// <returns>The number of removed elements.</returns>
+        public int RemoveRange(IEnumerable<T> collection)
+        {
+            if (collection == null)
+            {
+                ThrowHelper.ThrowArgumentNullException(ExceptionArgument.collection);
+            }
+
+            int count = 0;
+            foreach (var item in collection)
+                if (Remove(item)) count++;
+
+            return count;
+        }
+
+        /// <summary>
+        /// Inserts the element in the list after the first occurrence of specified element.
+        /// </summary>
+        /// <param name="pivot">Element after which value will be inserted.</param>
+        /// <param name="value">Element to insert in the list.</param>
+        /// <returns> False when the value pivot was not found; else true.</returns>
+        public bool InsertAfter(T pivot, T value)
+        {
+            int index = IndexOf(pivot);
+            if (index < 0) return false;
+
+            Insert(index + 1, value);
+
+            return true;
+        }
+
+        /// <summary>
+        /// Inserts the element in the list before the first occurrence of specified element.
+        /// </summary>
+        /// <param name="pivot">Element before which value will be inserted.</param>
+        /// <param name="value">Element to insert in the list.</param>
+        /// <returns>False when the value pivot was not found; else true.</returns>
+        public bool InsertBefore(T pivot, T value)
+        {
+            int index = IndexOf(pivot);
+            if (index < 0) return false;
+
+            Insert(index, value);
+
+            return true;
+        }
+
+        /// <summary>
+        /// Returns the first element of the list.
+        /// </summary>
+        /// <returns>First element of the list if any otherwise default value.</returns>
+        public T First()
+        {
+            if (_size > 0) return _items[0];
+            throw new InvalidOperationException("Sequence contains no elements");
+        }
+
+        /// <summary>
+        /// Returns the Last element of the list.
+        /// </summary>
+        /// <returns>Last element of the list if any otherwise default value.</returns>
+        public T Last()
+        {
+            if (_size > 0) return _items[_size - 1];
+            throw new InvalidOperationException("Sequence contains no elements");
+        }
+
+        /// <summary>
+        /// Insert the specified value at the head of the list.
+        /// </summary>
+        /// <param name="value">Element to insert in the list.</param>
+        public void InsertAtHead(T item)
+        {
+            ThrowHelper.IfNullAndNullsAreIllegalThenThrow<T>(item, ExceptionArgument.item);
+
+            Insert(0, item);
+        }
+
+        /// <summary>
+        /// Insert the specified value at the tail of the list.
+        /// </summary>
+        /// <param name="value">Element to insert in the list.</param>
+        public void InsertAtTail(T item)
+        {
+            ThrowHelper.IfNullAndNullsAreIllegalThenThrow<T>(item, ExceptionArgument.item);
+
+            Insert(_size, item);
+        }
+
+        public void InsertAtHead(T item, out int size)
+        {
+            size = default(int);
+            InsertAtHead(item);
+            ISizable sizeable = item as ISizable;
+            if (sizeable != null) size += sizeable.InMemorySize;
+        }
+
+        public void InsertAtTail(T item, out int size)
+        {
+            size = default(int);
+            InsertAtTail(item);
+            ISizable sizeable = item as ISizable;
+            if (sizeable != null) size += sizeable.InMemorySize;
+        }
+
+        public void Insert(int index , T item, out int size)
+        {
+            size = default(int);
+            Insert(index, item);
+            ISizable sizeable = item as ISizable;
+            if (sizeable != null) size += sizeable.InMemorySize;
+        }
+
+        public bool InsertAfter(T pivot, T value, out int size)
+        {
+            size = default(int);
+            if(InsertAfter(pivot, value))
+            {
+                ISizable sizeable = value as ISizable;
+                if (sizeable != null) size += sizeable.InMemorySize;
+                return true;
+            }
+
+            return false;
+        }
+
+        public bool InsertBefore(T pivot, T value, out int size)
+        {
+            size = default(int);
+            if (InsertBefore(pivot, value))
+            {
+                ISizable sizeable = value as ISizable;
+                if (sizeable != null) size += sizeable.InMemorySize;
+                return true;
+            }
+
+            return false;
+        }
+
+        public T RemoveAt(int index, out int removedSize)
+        {
+            removedSize = default(int);
+            T item = _items[index];
+            ISizable sizeable = item as ISizable;
+            if (sizeable != null) removedSize += sizeable.InMemorySize;
+            RemoveAt(index);
+            if (_transaction != null)
+            {
+                _transaction.AddRollbackOperation(new RemoveRollbackOperation(this, index, item));
+
+            }
+            return item;
+        }
+
+        public void AddRange(IEnumerable<T> collection, out int addedSize)
+        {
+            addedSize = default(int);
+            AddRange(collection);
+            foreach (var item in collection)
+            {
+                ISizable sizeable = item as ISizable;
+                if (sizeable != null) addedSize += sizeable.InMemorySize;
+            }
+        }
+
+        public T Update(int index, T item, out int oldItemSize)
+        {
+            oldItemSize = default(int);
+            T olditem = this[index];
+            ISizable sizeable = olditem as ISizable;
+            if (sizeable != null) oldItemSize = sizeable.InMemorySize;
+            this[index] = item;
+            if (_transaction != null)
+            {
+                _transaction.AddRollbackOperation(new UpdateRollbackOperation(this, index, olditem));
+
+            }
+
+            return olditem;
+        }
+
+        public IList<T> RemoveRange(int index, int count, bool getRemovedData, out int removedSize)
+        {
+            removedSize = default(int);
+            IList<T> removedData = default(IList<T>);
+
+            if (index < 0)
+            {
+                ThrowHelper.ThrowArgumentOutOfRangeException(ExceptionArgument.index, ExceptionResource.ArgumentOutOfRange_NeedNonNegNum);
+            }
+
+            if (count < 0)
+            {
+                ThrowHelper.ThrowArgumentOutOfRangeException(ExceptionArgument.count, ExceptionResource.ArgumentOutOfRange_NeedNonNegNum);
+            }
+
+            if (_size - index < count)
+                ThrowHelper.ThrowArgumentException(ExceptionResource.Argument_InvalidOffLen);
+#if DEBUG
+            Contract.EndContractBlock();
+#endif
+            if (count > 0)
+            {
+                int i = _size;
+                _size -= count;
+
+                 removedData = new ClusteredList<T>(count);
+
+                for (int k = 0; k < count; k++)
+                {
+                    T item = _items[k + index];
+                    ISizable sizeable = item as ISizable;
+                    if (sizeable != null) removedSize += sizeable.InMemorySize;
+                    removedData.Add(item);
+                }
+
+                if (index < _size)
+                {
+                    ClusteredArray<T>.Copy(_items, index + count, _items, index, _size - index);
+                }
+                ClusteredArray<T>.Clear(_items, _size, count);
+                _version++;
+                if (_transaction != null)
+                {
+                    _transaction.AddRollbackOperation(new BulkRemoveRollbackOperation(this, index, removedData));
+
+                }
+
+            }
+            if (getRemovedData)
+                return removedData;
+
+            return default(IList<T>);
+        }
+
+        public IList<T> Trim(int start, int end, bool getTrimmedData, out int trimmedSize)
+        {
+            trimmedSize = default(int);
+            IList<T> trimmedData = default(IList<T>);
+
+            if (start < 0)
+            {
+                ThrowHelper.ThrowArgumentOutOfRangeException(ExceptionArgument.index, ExceptionResource.ArgumentOutOfRange_NeedNonNegNum);
+            }
+
+            if (end < 0)
+            {
+                ThrowHelper.ThrowArgumentOutOfRangeException(ExceptionArgument.count, ExceptionResource.ArgumentOutOfRange_NeedNonNegNum);
+            }
+
+            if (start > end)
+            {
+                ThrowHelper.ThrowArgumentOutOfRangeException(ExceptionArgument.startIndex, ExceptionResource.ArgumentOutOfRange_Index);
+            }
+
+            if (end >= _size)
+            {
+                ThrowHelper.ThrowArgumentException(ExceptionResource.Argument_InvalidOffLen);
+            }
+
+            int trimmedLength = (end - start) + 1;
+            ClusteredArray<T> trimmed = new ClusteredArray<T>(trimmedLength);
+
+            ClusteredArray<T>.Copy(_items, start, trimmed, 0, trimmedLength);
+
+            trimmedData = new ClusteredList<T>();
+
+            for (int i = 0; i < start; i++)
+            {
+                T item = _items[i];
+                ISizable sizeable = item as ISizable;
+                if (sizeable != null) trimmedSize += sizeable.InMemorySize;
+                trimmedData.Add(item);
+            }
+
+            for (int i = end + 1; i < _size; i++)
+            {
+                T item = _items[i];
+                ISizable sizeable = item as ISizable;
+                if (sizeable != null) trimmedSize += sizeable.InMemorySize;
+                trimmedData.Add(item);
+            }
+
+            _items = trimmed;
+            _size = _items.Length;
+            _version++;
+
+            if (getTrimmedData)
+                return trimmedData;
+
+            return default(IList<T>);
         }
 
 #if FEATURE_LIST_PREDICATES || FEATURE_NETCORE
@@ -1458,6 +1716,76 @@ namespace Alachisoft.NCache.Common.DataStructures.Clustered
 
         }
 
+
+
+        [Serializable]
+        public struct ClusteredListImmutableEnumerator : IEnumerator<T>, System.Collections.IEnumerator
+        {
+            private ClusteredList<T> _list;
+            private int index;
+            
+            private T current;
+
+            internal ClusteredListImmutableEnumerator(ClusteredList<T> list)
+            {
+                _list = (ClusteredList<T>)list.Clone();
+                index = 0;
+                current = default(T);
+            }
+
+#if DEBUG
+            [TargetedPatchingOptOut("Performance critical to inline across NGen image boundaries")]
+#endif
+            public void Dispose()
+            {
+            }
+
+            public bool MoveNext()
+            {
+                if (((uint)index < (uint)_list._size))
+                {
+                    current = _list[index];
+                    index++;
+                    return true;
+                }
+                return MoveNextRare();
+            }
+
+            private bool MoveNextRare()
+            {
+                index = _list._size + 1;
+                current = default(T);
+                return false;
+            }
+
+            public T Current
+            {
+                get
+                {
+                    return current;
+                }
+            }
+
+            Object System.Collections.IEnumerator.Current
+            {
+                get
+                {
+                    if (index == 0 || index == _list._size + 1)
+                    {
+                        ThrowHelper.ThrowInvalidOperationException(ExceptionResource.InvalidOperation_EnumOpCantHappen);
+                    }
+                    return Current;
+                }
+            }
+
+            void System.Collections.IEnumerator.Reset()
+            {
+                index = 0;
+                current = default(T);
+            }
+
+        }
+
         public object Clone()
         {
             ClusteredList<T> clone = new ClusteredList<T>(this.Capacity);
@@ -1466,5 +1794,156 @@ namespace Alachisoft.NCache.Common.DataStructures.Clustered
             clone._version = this._version;
             return clone;
         }
+
+        public bool BeginTransaction()
+        {
+            if (_transaction == null)
+                _transaction = new Transaction();
+            return true;
+        }
+        public void CommitTransaction()
+        {
+            if (_transaction != null) _transaction.Commit();
+        }
+        public void RollbackTransaction()
+        {
+            if(_transaction != null) _transaction.Rollback();
+        }
+
+        #region /                       ---- Rollback Operations ----                           /
+        
+        class ClearRollbackOperation : IRollbackOperation
+        {
+            private ClusteredArray<T> _items;
+            private ClusteredList<T> _parent;
+
+            public ClearRollbackOperation(ClusteredList<T> parent, ClusteredArray<T> items)
+            {
+                _items = items;
+                _parent = parent;
+            }
+
+            public void Execute()
+            {
+                _parent._items = _items;
+            }
+        }
+
+        class AddRollbackOperation : IRollbackOperation
+        {
+            private int _index;
+            private ClusteredList<T> _parent;
+
+            public AddRollbackOperation(ClusteredList<T> parent, int index)
+            {
+                _index = index;
+                _parent=parent;
+            }
+
+            public void Execute()
+            {
+                _parent.RemoveAt(_index);
+            }
+        }
+
+        class BulkAddRollbackOperation : IRollbackOperation
+        {
+            private int _index;
+            private int _count;
+            private ClusteredList<T> _parent;
+
+            public BulkAddRollbackOperation(ClusteredList<T> parent, int index, int count)
+            {
+                _count = count;
+                _index = index;
+                _parent = parent;
+            }
+
+            public void Execute()
+            {
+                _parent.RemoveRange(_index, _count);
+
+            }
+        }
+
+        class UpdateRollbackOperation : IRollbackOperation
+        {
+            private int _index;
+            private T _item;
+            private ClusteredList<T> _parent;
+
+            public UpdateRollbackOperation(ClusteredList<T> parent, int index,T  item)
+            {
+                _index = index;
+                _parent = parent;
+                _item = item;
+            }
+
+            public void Execute()
+            {
+                _parent[_index]= _item;
+            }
+        }
+        class RemoveRollbackOperation : IRollbackOperation
+        {
+            private int _index;
+            private T _item;
+            private ClusteredList<T> _parent;
+
+            public RemoveRollbackOperation(ClusteredList<T> parent, int index, T item)
+            {
+                _index = index;
+                _parent = parent;
+                _item = item;
+            }
+
+            public void Execute()
+            {
+                _parent.Insert(_index, _item);
+
+            }
+        }
+        class TrimRollbackOperation : IRollbackOperation
+        {
+            private int _index;
+            private IList<T> _itemsOnStart;
+            private IList<T> _itemsOnEnd;
+
+            private ClusteredList<T> _parent;
+
+            public TrimRollbackOperation(ClusteredList<T> parent, IList<T> itemsOnStart, IList<T> itemsOnEnd)
+            {
+                _itemsOnStart = itemsOnStart;
+                _itemsOnEnd = itemsOnEnd;
+            }
+
+            public void Execute()
+            {
+                _parent.InsertRange(0, _itemsOnStart);
+                _parent.AddRange( _itemsOnEnd);
+
+            }
+        }
+        class BulkRemoveRollbackOperation : IRollbackOperation
+        {
+            private int _index;
+            private IList<T> _items;
+            private ClusteredList<T> _parent;
+
+            public BulkRemoveRollbackOperation(ClusteredList<T> parent, int index, IList<T> items)
+            {
+                _index = index;
+                _parent = parent;
+                _items = items;
+            }
+
+            public void Execute()
+            {
+                _parent.InsertRange(_index, _items);
+            }
+        }
+        #endregion
+
+
     }
 }

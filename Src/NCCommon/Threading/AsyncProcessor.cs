@@ -1,29 +1,26 @@
-// Copyright (c) 2017 Alachisoft
-// 
-// Licensed under the Apache License, Version 2.0 (the "License");
-// you may not use this file except in compliance with the License.
-// You may obtain a copy of the License at
-// 
-//    http://www.apache.org/licenses/LICENSE-2.0
-// 
-// Unless required by applicable law or agreed to in writing, software
-// distributed under the License is distributed on an "AS IS" BASIS,
-// WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
-// See the License for the specific language governing permissions and
-// limitations under the License.
-
+//  Copyright (c) 2021 Alachisoft
+//  
+//  Licensed under the Apache License, Version 2.0 (the "License");
+//  you may not use this file except in compliance with the License.
+//  You may obtain a copy of the License at
+//  
+//     http://www.apache.org/licenses/LICENSE-2.0
+//  
+//  Unless required by applicable law or agreed to in writing, software
+//  distributed under the License is distributed on an "AS IS" BASIS,
+//  WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+//  See the License for the specific language governing permissions and
+//  limitations under the License
 using System;
 using System.Collections;
 using System.Threading;
-using Alachisoft.NCache.Common.Util;
 using Alachisoft.NCache.Common.Logger;
-using Alachisoft.NCache.Common.Stats;
 
 namespace Alachisoft.NCache.Common.Threading
 {
-	/// <summary>
-	/// A class that helps doing things that can be done asynchronously
-	/// </summary>
+    /// <summary>
+    /// A class that helps doing things that can be done asynchronously
+    /// </summary>
     public class AsyncProcessor
     {
         /// <summary>
@@ -32,7 +29,9 @@ namespace Alachisoft.NCache.Common.Threading
         public interface IAsyncTask
         {
             /// <summary> Process itself. </summary>
+
             void Process();
+
         }
 
         /// <summary> The worker thread. </summary>
@@ -41,7 +40,6 @@ namespace Alachisoft.NCache.Common.Threading
         /// <summary> The queue of events. </summary>
         private Queue _eventsHi, _eventsLow;
 
-        
         private int _numProcessingThreads = 1;
         private Boolean _started;
         ILogger NCacheLog;
@@ -74,6 +72,45 @@ namespace Alachisoft.NCache.Common.Threading
             _numProcessingThreads = numProcessingThread;
             _eventsHi = new Queue(256);
             _eventsLow = new Queue(256);
+        }
+
+        public void WindUpTask()
+        {
+            NCacheLog.CriticalInfo("AsyncProcessor", "WindUp Task Started.");
+
+            if (_eventsHi != null)
+            {
+                NCacheLog.CriticalInfo("AsyncProcessor", "Async operation(s) Queue Count: " + _eventsHi.Count);
+            }
+
+            _isShutdown = true;
+            lock (this)
+            {
+                Monitor.Pulse(this);
+            }
+            NCacheLog.CriticalInfo("AsyncProcessor", "WindUp Task Ended.");
+        }
+
+        public void WaitForShutDown(long interval)
+        {
+            NCacheLog.CriticalInfo("AsyncProcessor", "Waiting for  async process queue shutdown task completion.");
+            if (interval > 0)
+            {
+                bool waitlock = false;
+                lock (_shutdownMutex)
+                {
+                    if(_eventsHi.Count > 0)
+                        waitlock = Monitor.Wait(_shutdownMutex, (int)interval * 1000);
+                }
+
+                if (!waitlock)
+                {
+                    if(_eventsHi.Count > 0)
+                        NCacheLog.CriticalInfo("AsyncProcessor", "Remaining Async operations in queue: " + _eventsHi.Count);
+                }
+            }
+
+           NCacheLog.CriticalInfo("AsyncProcessor", "Shutdown task completed.");
         }
 
         /// <summary>
@@ -153,7 +190,11 @@ namespace Alachisoft.NCache.Common.Threading
 
                             if (thread != null && thread.IsAlive)
                             {
+#if !NETCORE
                                 thread.Abort();
+#elif NETCORE
+                                thread.Interrupt();
+#endif
                                 _workerThreads[i] = null;
                             }
                         }
@@ -169,6 +210,7 @@ namespace Alachisoft.NCache.Common.Threading
                 }
             }
         }
+
 
         /// <summary>
         /// Thread function, keeps running.
@@ -213,8 +255,17 @@ namespace Alachisoft.NCache.Common.Threading
                     if (evnt == null) continue;
 
                     evnt.Process();
+
                 }
                 catch (ThreadAbortException e)
+                {
+                    if (NCacheLog != null)
+                    {
+                        NCacheLog.Flush();
+                    }
+                    break;
+                }
+                catch (ThreadInterruptedException e)
                 {
                     if (NCacheLog != null)
                     {
@@ -226,17 +277,12 @@ namespace Alachisoft.NCache.Common.Threading
                 catch (Exception e)
                 { 
                     string exceptionString = e.ToString();
-                    if (exceptionString != "ChannelNotConnectedException" && exceptionString != "ChannelClosedException")
+                    if (NCacheLog != null && exceptionString != "ChannelNotConnectedException" && exceptionString != "ChannelClosedException")
                     {
-                        if (NCacheLog != null)
-                        {
-                            NCacheLog.Error("AsyncProcessor.Run()", "Task name: " + evnt.GetType().FullName + " Exception: " + exceptionString);
-
-                        }
+                        NCacheLog.Error("AsyncProcessor.Run()", "Task name: " + evnt.GetType().FullName + " Exception: " + exceptionString);
                     }
                 }
             }
-
         }
     }
 }

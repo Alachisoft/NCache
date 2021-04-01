@@ -1,17 +1,17 @@
-// Copyright (c) 2017 Alachisoft
-// 
-// Licensed under the Apache License, Version 2.0 (the "License");
-// you may not use this file except in compliance with the License.
-// You may obtain a copy of the License at
-// 
-//    http://www.apache.org/licenses/LICENSE-2.0
-// 
-// Unless required by applicable law or agreed to in writing, software
-// distributed under the License is distributed on an "AS IS" BASIS,
-// WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
-// See the License for the specific language governing permissions and
-// limitations under the License.
-
+//  Copyright (c) 2021 Alachisoft
+//  
+//  Licensed under the Apache License, Version 2.0 (the "License");
+//  you may not use this file except in compliance with the License.
+//  You may obtain a copy of the License at
+//  
+//     http://www.apache.org/licenses/LICENSE-2.0
+//  
+//  Unless required by applicable law or agreed to in writing, software
+//  distributed under the License is distributed on an "AS IS" BASIS,
+//  WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+//  See the License for the specific language governing permissions and
+//  limitations under the License
+using Alachisoft.NCache.Runtime.Exceptions;
 using System;
 using System.Configuration;
 using System.Xml;
@@ -41,7 +41,7 @@ namespace Alachisoft.NCache.Web.SessionStateManagement
                 catch (Exception e)
                 {
 
-                    throw new ConfigurationException("Error reading NCache Section. Exception: "+e.ToString());
+                    throw new System.Configuration.ConfigurationException("Error reading NCache Section. Exception: "+e.ToString());
 
                 }
 
@@ -52,7 +52,7 @@ namespace Alachisoft.NCache.Web.SessionStateManagement
                     NCacheSessionStateSettings sessionStateSettings = new NCacheSessionStateSettings();
                     XmlNode sessionLocation = ncacheSection.SelectSingleNode("sessionLocation");
 
-                   
+                    //muds:
                     if (sessionLocation.Attributes["secondary-connection-recycle-interval"] != null)
                     {
                         sessionStateSettings.RecycleInterval = Convert.ToInt32(sessionLocation.Attributes["secondary-connection-recycle-interval"].Value);
@@ -67,13 +67,12 @@ namespace Alachisoft.NCache.Web.SessionStateManagement
 
                             string sidPrefix = primaryCache.Attributes["sid-prefix"].Value.ToLower();
                             if (sidPrefix == null || sidPrefix.Length != 4)
-                                throw new ConfigurationException("Invalid sid-prefix value specified for \"" + cacheId + "\".");
-
+                                throw new System.Configuration.ConfigurationException("Invalid sid-prefix value specified for \"" + cacheId + "\".");
                             sessionStateSettings.PrimaryCache.Add(sidPrefix, cacheId);
                         }
                         else
                         {
-                            throw new ConfigurationException("Missing attribute 'id' in primaryCache section.");
+                            throw new System.Configuration.ConfigurationException("Missing attribute 'id' in primaryCache section.");
                         }
 
                         XmlNodeList nodeList = sessionLocation.SelectNodes("secondaryCache");
@@ -82,11 +81,9 @@ namespace Alachisoft.NCache.Web.SessionStateManagement
                             if (secondaryCache.Attributes["id"] != null)
                             {
                                 string cacheId = secondaryCache.Attributes["id"].Value.ToLower();
-
                                 string sidPrefix = secondaryCache.Attributes["sid-prefix"].Value.ToLower();
                                 if (sidPrefix == null || sidPrefix.Length != 4)
-                                    throw new ConfigurationException("Invalid sid-prefix value specified for \"" + cacheId + "\".");
-
+                                    throw new System.Configuration.ConfigurationException("Invalid sid-prefix value specified for \"" + cacheId + "\".");
                                 if (!sessionStateSettings.SecondaryCaches.Contains(sidPrefix))
                                 {
                                     sessionStateSettings.SecondaryCaches.Add(sidPrefix, cacheId);
@@ -94,7 +91,7 @@ namespace Alachisoft.NCache.Web.SessionStateManagement
                             }
                             else
                             {
-                                throw new ConfigurationException("Missing attribute 'id' in SecondaryCache section.");
+                                throw new System.Configuration.ConfigurationException("Missing attribute 'id' in SecondaryCache section.");
                             }
                         }
                     }

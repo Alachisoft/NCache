@@ -1,20 +1,17 @@
-// Copyright (c) 2017 Alachisoft
-// 
-// Licensed under the Apache License, Version 2.0 (the "License");
-// you may not use this file except in compliance with the License.
-// You may obtain a copy of the License at
-// 
-//    http://www.apache.org/licenses/LICENSE-2.0
-// 
-// Unless required by applicable law or agreed to in writing, software
-// distributed under the License is distributed on an "AS IS" BASIS,
-// WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
-// See the License for the specific language governing permissions and
-// limitations under the License.
-
+//  Copyright (c) 2021 Alachisoft
+//  
+//  Licensed under the Apache License, Version 2.0 (the "License");
+//  you may not use this file except in compliance with the License.
+//  You may obtain a copy of the License at
+//  
+//     http://www.apache.org/licenses/LICENSE-2.0
+//  
+//  Unless required by applicable law or agreed to in writing, software
+//  distributed under the License is distributed on an "AS IS" BASIS,
+//  WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+//  See the License for the specific language governing permissions and
+//  limitations under the License
 using System;
-using System.Collections;
-using System.Collections.Generic;
 using Alachisoft.NCache.Common.DataStructures;
 using Alachisoft.NCache.Common.DataStructures.Clustered;
 
@@ -33,8 +30,11 @@ namespace Alachisoft.NCache.Caching.Topologies.Clustered
         private long _size;
         private long _count;
 
-        internal OptimizedQueue()
+        private readonly CacheRuntimeContext _context;
+
+        internal OptimizedQueue(CacheRuntimeContext context)
         {
+            _context = context;
         }
 
         public long Size
@@ -60,7 +60,7 @@ namespace Alachisoft.NCache.Caching.Topologies.Clustered
                 lock (_sync_mutex)
                 {
 
-                    if (_keyToIndexMap.ContainsKey(cacheKey))   //Optimized Queue, so checking in the map if the current cache key is already mapped to some index of Queue or not
+                    if (_keyToIndexMap.ContainsKey(cacheKey))    //Optimized Queue, so checking in the map if the current cache key is already mapped to some index of Queue or not
                     {
                         //just update the old operation without chaning it's order in the queue.
                         int index1 = (int)_keyToIndexMap[cacheKey];
@@ -69,6 +69,7 @@ namespace Alachisoft.NCache.Caching.Topologies.Clustered
                         isNewItem = false;
                         _size -= oldOperation.Size; //subtract old operation size
                         _size += operation.Size;
+                        oldOperation.ReturnPooledItemsToPool(_context?.TransactionalPoolManager);
                         return isNewItem;
                     }
 
@@ -143,7 +144,6 @@ namespace Alachisoft.NCache.Caching.Topologies.Clustered
         {
             lock (_sync_mutex) { return !_keyToIndexMap.ContainsKey(cacheKey); }
         }
-
 
         /// <summary>
         /// Clears queue and helping datastructures like map, cache, itemstobereplicated

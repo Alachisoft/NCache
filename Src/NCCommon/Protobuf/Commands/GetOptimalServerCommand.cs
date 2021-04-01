@@ -11,50 +11,86 @@
 // Note: requires additional types generated from: ProductVersion.proto
 namespace Alachisoft.NCache.Common.Protobuf
 {
-  [global::System.Serializable, global::ProtoBuf.ProtoContract(Name=@"GetOptimalServerCommand")]
-  public partial class GetOptimalServerCommand : global::ProtoBuf.IExtensible
-  {
-    public GetOptimalServerCommand() {}
-    
-
-    private long _requestId = default(long);
-    [global::ProtoBuf.ProtoMember(1, IsRequired = false, Name=@"requestId", DataFormat = global::ProtoBuf.DataFormat.TwosComplement)]
-    [global::System.ComponentModel.DefaultValue(default(long))]
-    public long requestId
+    [global::System.Serializable, global::ProtoBuf.ProtoContract(Name = @"GetOptimalServerCommand")]
+    public partial class GetOptimalServerCommand : global::ProtoBuf.IExtensible
     {
-      get { return _requestId; }
-      set { _requestId = value; }
+        public GetOptimalServerCommand() { }
+
+
+        private long _requestId = default(long);
+        [global::ProtoBuf.ProtoMember(1, IsRequired = false, Name = @"requestId", DataFormat = global::ProtoBuf.DataFormat.TwosComplement)]
+        [global::System.ComponentModel.DefaultValue(default(long))]
+        public long requestId
+        {
+            get { return _requestId; }
+            set { _requestId = value; }
+        }
+
+        private string _cacheId = "";
+        [global::ProtoBuf.ProtoMember(2, IsRequired = false, Name = @"cacheId", DataFormat = global::ProtoBuf.DataFormat.Default)]
+        [global::System.ComponentModel.DefaultValue("")]
+        public string cacheId
+        {
+            get { return _cacheId; }
+            set { _cacheId = value; }
+        }
+
+        private string _userId = @"dummyUID";
+        [global::ProtoBuf.ProtoMember(3, IsRequired = false, Name = @"userId", DataFormat = global::ProtoBuf.DataFormat.Default)]
+        [global::System.ComponentModel.DefaultValue(@"dummyUID")]
+        public string userId
+        {
+            get { return _userId; }
+            set { _userId = value; }
+        }
+
+        private string _pwd = @"dummyPwd";
+        [global::ProtoBuf.ProtoMember(4, IsRequired = false, Name = @"pwd", DataFormat = global::ProtoBuf.DataFormat.Default)]
+        [global::System.ComponentModel.DefaultValue(@"dummyPwd")]
+        public string pwd
+        {
+            get { return _pwd; }
+            set { _pwd = value; }
+        }
+
+        private bool _isDotnetClient = (bool)true;
+        [global::ProtoBuf.ProtoMember(5, IsRequired = false, Name = @"isDotnetClient", DataFormat = global::ProtoBuf.DataFormat.Default)]
+        [global::System.ComponentModel.DefaultValue((bool)true)]
+        public bool isDotnetClient
+        {
+            get { return _isDotnetClient; }
+            set { _isDotnetClient = value; }
+        }
+
+        private byte[] _binaryUserId = null;
+        [global::ProtoBuf.ProtoMember(6, IsRequired = false, Name = @"binaryUserId", DataFormat = global::ProtoBuf.DataFormat.Default)]
+        [global::System.ComponentModel.DefaultValue(null)]
+        public byte[] binaryUserId
+        {
+            get { return _binaryUserId; }
+            set { _binaryUserId = value; }
+        }
+
+        private byte[] _binaryPassword = null;
+        [global::ProtoBuf.ProtoMember(7, IsRequired = false, Name = @"binaryPassword", DataFormat = global::ProtoBuf.DataFormat.Default)]
+        [global::System.ComponentModel.DefaultValue(null)]
+        public byte[] binaryPassword
+        {
+            get { return _binaryPassword; }
+            set { _binaryPassword = value; }
+        }
+
+        private Alachisoft.NCache.Common.Protobuf.ProductVersion _productVersion = null;
+        [global::ProtoBuf.ProtoMember(8, IsRequired = false, Name = @"productVersion", DataFormat = global::ProtoBuf.DataFormat.Default)]
+        [global::System.ComponentModel.DefaultValue(null)]
+        public Alachisoft.NCache.Common.Protobuf.ProductVersion productVersion
+        {
+            get { return _productVersion; }
+            set { _productVersion = value; }
+        }
+        private global::ProtoBuf.IExtension extensionObject;
+        global::ProtoBuf.IExtension global::ProtoBuf.IExtensible.GetExtensionObject(bool createIfMissing)
+        { return global::ProtoBuf.Extensible.GetExtensionObject(ref extensionObject, createIfMissing); }
     }
 
-    private string _cacheId = "";
-    [global::ProtoBuf.ProtoMember(2, IsRequired = false, Name=@"cacheId", DataFormat = global::ProtoBuf.DataFormat.Default)]
-    [global::System.ComponentModel.DefaultValue("")]
-    public string cacheId
-    {
-      get { return _cacheId; }
-      set { _cacheId = value; }
-    }
-
-    private bool _isDotnetClient = (bool)true;
-    [global::ProtoBuf.ProtoMember(3, IsRequired = false, Name=@"isDotnetClient", DataFormat = global::ProtoBuf.DataFormat.Default)]
-    [global::System.ComponentModel.DefaultValue((bool)true)]
-    public bool isDotnetClient
-    {
-      get { return _isDotnetClient; }
-      set { _isDotnetClient = value; }
-    }
-
-    private Alachisoft.NCache.Common.Protobuf.ProductVersion _productVersion = null;
-    [global::ProtoBuf.ProtoMember(4, IsRequired = false, Name=@"productVersion", DataFormat = global::ProtoBuf.DataFormat.Default)]
-    [global::System.ComponentModel.DefaultValue(null)]
-    public Alachisoft.NCache.Common.Protobuf.ProductVersion productVersion
-    {
-      get { return _productVersion; }
-      set { _productVersion = value; }
-    }
-    private global::ProtoBuf.IExtension extensionObject;
-    global::ProtoBuf.IExtension global::ProtoBuf.IExtensible.GetExtensionObject(bool createIfMissing)
-      { return global::ProtoBuf.Extensible.GetExtensionObject(ref extensionObject, createIfMissing); }
-  }
-  
 }

@@ -1,0 +1,801 @@
+<api-configuration assembly-version="4.6.1.1">
+  <class name="Alachisoft.NCache.Web.Caching.Cache">
+    <methodName title="incrementbycounter">
+      <overload number="1">
+        <parameter name="key" type="string" sequence-no="1" />
+        <parameter name="writeThruOptions" type="writeThruOptions" sequence-no="2" />
+      </overload>
+    </methodName>
+    <methodName title="decrementbycounter">
+      <overload number="1">
+        <parameter name="key" type="string" sequence-no="1" />
+        <parameter name="writeThruOptions" type="writeThruOptions" sequence-no="2" />
+      </overload>
+    </methodName>
+    <methodName title="setvaluecounter">
+      <overload number="1">
+        <parameter name="key" type="string" sequence-no="1" />
+        <parameter name="writeThruOptions" type="writeThruOptions" sequence-no="2" />
+      </overload>
+    </methodName>
+    <methodName title="addhashset">
+      <overload number="1">
+        <parameter name="key" type="string" sequence-no="1" />
+        <parameter name="writeThruOptions" type="writeThruOptions" sequence-no="2" />
+      </overload>
+    </methodName>
+    <methodName title="containshashset">
+      <overload number="1">
+        <parameter name="key" type="string" sequence-no="1" />
+      </overload>
+    </methodName>
+    <methodName title="getrandomhashset">
+      <overload number="1">
+        <parameter name="key" type="string" sequence-no="1" />
+      </overload>
+    </methodName>
+    <methodName title="removehashset">
+      <overload number="1">
+        <parameter name="key" type="string" sequence-no="1" />
+        <parameter name="writeThruOptions" type="writeThruOptions" sequence-no="2" />
+      </overload>
+    </methodName>
+    <methodName title="removerandomhashset">
+      <overload number="1">
+        <parameter name="key" type="string" sequence-no="1" />
+        <parameter name="writeThruOptions" type="writeThruOptions" sequence-no="2" />
+		</overload>
+    </methodName>
+    <methodName title="QueueDequeue">
+      <overload number="1">
+      </overload>
+    </methodName>
+    <methodName title="QueueEnqueue">
+      <overload number="1">
+      </overload>
+    </methodName>
+    <methodName title="QueuePeek">
+      <overload number="1">
+      </overload>
+    </methodName>
+    <methodName title="QueueSearch">
+      <overload number="1">
+      </overload>
+    </methodName>
+    <methodName title="listCount">
+      <overload number="1">
+        <parameter name="resultSetCount" type="int" sequence-no="2" />
+      </overload>
+    </methodName>
+     <methodName title="queueCount">
+      <overload number="1">
+        <parameter name="resultSetCount" type="int" sequence-no="2" />
+      </overload>
+    </methodName>
+     <methodName title="hashSetCount">
+      <overload number="1">
+        <parameter name="resultSetCount" type="int" sequence-no="2" />
+      </overload>
+    </methodName>
+     <methodName title="dictionaryCount">
+      <overload number="1">
+        <parameter name="resultSetCount" type="int" sequence-no="2" />
+      </overload>
+    </methodName>
+    <methodName title="listClear">
+      <overload number="1">
+      </overload>
+    </methodName>
+     <methodName title="queueClear">
+      <overload number="1">
+      </overload>
+    </methodName>
+     <methodName title="hashSetClear">
+      <overload number="1">
+      </overload>
+    </methodName>
+     <methodName title="dictionaryClear">
+      <overload number="1">
+      </overload>
+    </methodName>
+    <methodName title="listGetChunk">
+      <overload number="1">
+        <parameter name="resultSetGetChunk" type="int" sequence-no="2" />
+      </overload>
+    </methodName>
+     <methodName title="queueGetChunk">
+      <overload number="1">
+        <parameter name="resultSetGetChunk" type="int" sequence-no="2" />
+      </overload>
+    </methodName>
+     <methodName title="hashSetGetChunk">
+      <overload number="1">
+        <parameter name="resultSetGetChunk" type="int" sequence-no="2" />
+      </overload>
+    </methodName>
+     <methodName title="dictionaryGetChunk">
+      <overload number="1">
+        <parameter name="resultSetGetChunk" type="int" sequence-no="2" />
+      </overload>
+    </methodName>
+    <methodName title="getCounter">
+      <overload number="1">
+        <parameter name="key" type="string" sequence-no="1" />
+        <parameter name="readThruOptions" type="ReadThruOptions" sequence-no="2" />
+      </overload>
+    </methodName>
+    <methodName title="getDictionary">
+      <overload number="1">
+        <parameter name="key" type="string" sequence-no="1" />
+        <parameter name="readThruOptions" type="ReadThruOptions" sequence-no="2" />
+      </overload>
+    </methodName>
+    <methodName title="getList">
+      <overload number="1">
+        <parameter name="key" type="string" sequence-no="1" />
+        <parameter name="readThruOptions" type="ReadThruOptions" sequence-no="2" />
+      </overload>
+    </methodName>
+    <methodName title="getQueue">
+      <overload number="1">
+        <parameter name="key" type="string" sequence-no="1" />
+        <parameter name="readThruOptions" type="ReadThruOptions" sequence-no="2" />
+      </overload>
+    </methodName>
+    <methodName title="getHashSet">
+      <overload number="1">
+        <parameter name="key" type="string" sequence-no="1" />
+        <parameter name="readThruOptions" type="ReadThruOptions" sequence-no="2" />
+      </overload>
+    </methodName>
+    <methodName title="createCounter">
+      <overload number="1">
+        <parameter name="key" type="string" sequence-no="1" />
+        <parameter name="dataTypeAttributes" type="DataTypeAttributes" sequence-no="2" />
+        <parameter name="writeThruOptions" type="WriteThruOptions" sequence-no="3" />
+        <parameter name="initialValue" type="long" sequence-no="4" />
+      </overload>
+    </methodName>
+    <methodName title="createList">
+      <overload number="1">
+        <parameter name="key" type="string" sequence-no="1" />
+        <parameter name="dataTypeAttributes" type="DataTypeAttributes" sequence-no="2" />
+        <parameter name="writeThruOptions" type="WriteThruOptions" sequence-no="3" />
+      </overload>
+    </methodName>
+    <methodName title="createDictionary">
+      <overload number="1">
+        <parameter name="key" type="string" sequence-no="1" />
+        <parameter name="dataTypeAttributes" type="DataTypeAttributes" sequence-no="2" />
+        <parameter name="writeThruOptions" type="WriteThruOptions" sequence-no="3" />
+      </overload>
+    </methodName>
+    <methodName title="createHashSet">
+      <overload number="1">
+        <parameter name="key" type="string" sequence-no="1" />
+        <parameter name="dataTypeAttributes" type="DataTypeAttributes" sequence-no="2" />
+        <parameter name="writeThruOptions" type="WriteThruOptions" sequence-no="3" />
+      </overload>
+    </methodName>
+    <methodName title="createQueue">
+      <overload number="1">
+        <parameter name="key" type="string" sequence-no="1" />
+        <parameter name="dataTypeAttributes" type="DataTypeAttributes" sequence-no="2" />
+        <parameter name="writeThruOptions" type="WriteThruOptions" sequence-no="3" />
+      </overload>
+    </methodName>
+    <methodName title="ExecuteTask">
+      <overload number="1">
+        <parameter name="task" type="MapReduceTask" sequence-no="1" />
+        <parameter name="keyFilter" type="IKeyFilter" sequence-no="2" />
+        <parameter name="query" type="String" sequence-no="2" />
+        <parameter name="parameters" type="Hashtable" sequence-no="3" />
+      </overload>
+    </methodName>
+    <methodName title="GetTaskResult">
+      <overload number="1">
+        <parameter name="taskId" type="String" sequence-no="1" />
+      </overload>
+    </methodName>
+    <methodName title="GetRunningTasks">
+      <overload number="1" />
+    </methodName>
+    <methodName title="Invoke">
+      <overload number="1">
+        <parameter name="key" type="String" sequence-no="1" />
+        <parameter name="keys" type="String[]" sequence-no="1" />
+        <parameter name="entryProcessor" type="IEntryProcessor" sequence-no="2" />
+        <parameter name="dsReadOption" type="DSReadOption" sequence-no="3" />
+        <parameter name="readProviderName" type="String" sequence-no="4" />
+        <parameter name="dsWriteOption" type="DSWriteOption" sequence-no="5" />
+        <parameter name="writeProviderName" type="String" sequence-no="6" />
+        <parameter name="arguments" type="Object[]" sequence-no="7" />
+      </overload>
+    </methodName>
+    <methodName title="Aggregate">
+      <overload number="1">
+        <parameter name="extractor" type="IValueExtractor" sequence-no="1" />
+        <parameter name="aggregator" type="IAggregator" sequence-no="2" />
+        <parameter name="timeout" type="Int32" sequence-no="3" />
+        <parameter name="keyFilter" type="IKeyFilter" sequence-no="3" />
+        <parameter name="query" type="String" sequence-no="3" />
+        <parameter name="parameters" type="Hashtable" sequence-no="4" />
+      </overload>
+    </methodName>
+    <methodName title="UnRegisterCQ">
+      <overload number="1">
+        <parameter name="query" type="ContinuousQuery" sequence-no="1" />
+      </overload>
+    </methodName>
+    <methodName title="RegisterCQ">
+      <overload number="1">
+        <parameter name="query" type="ContinuousQuery" sequence-no="1" />
+      </overload>
+    </methodName>
+    <methodName title="SearchCQ">
+      <overload number="1">
+        <parameter name="query" type="ContinuousQuery" sequence-no="1" />
+      </overload>
+    </methodName>
+    <methodName title="SearchEntriesCQ">
+      <overload number="1">
+        <parameter name="query" type="ContinuousQuery" sequence-no="1" />
+      </overload>
+    </methodName>
+    <methodName title="Insert">
+      <overload number="1">
+        <parameter name="key" type="String" sequence-no="1" />
+        <parameter name="item" type="CacheItem" sequence-no="2" />
+        <parameter name="value" type="Object" sequence-no="2" />
+        <parameter name="tags" type="Tag[]" sequence-no="3" />
+        <parameter name="dependency" type="CacheDependency" sequence-no="3" />
+        <parameter name="absoluteExpiration" type="DateTime" sequence-no="4" />
+        <parameter name="slidingExpiration" type="TimeSpan" sequence-no="5" />
+        <parameter name="priority" type="CacheItemPriority" sequence-no="6" />
+        <parameter name="dsWriteOption" type="DSWriteOption" sequence-no="3" />
+        <parameter name="onDataSourceItemUpdatedCallback" type="DataSourceItemsUpdatedCallback" sequence-no="4" />
+        <parameter name="providerName" type="String" sequence-no="4" />
+        <parameter name="lockHandle" type="LockHandle" sequence-no="3" />
+        <parameter name="releaseLock" type="Boolean" sequence-no="4" />
+        <parameter name="namedTags" type="NamedTagsDictionary" sequence-no="3" />
+        <parameter name="group" type="String" sequence-no="3" />
+        <parameter name="subGroup" type="String" sequence-no="4" />
+      </overload>
+    </methodName>
+    <methodName title="InsertBulk">
+      <overload number="1">
+        <parameter name="keys" type="String[]" sequence-no="1" />
+        <parameter name="items" type="CacheItem[]" sequence-no="2" />
+        <parameter name="dsWriteOption" type="DSWriteOption" sequence-no="3" />
+        <parameter name="onDataSourceItemUpdatedCallback" type="DataSourceItemsUpdatedCallback" sequence-no="4" />
+        <parameter name="providerName" type="String" sequence-no="4" />
+      </overload>
+    </methodName>
+    <methodName title="InsertAsync">
+      <overload number="1">
+        <parameter name="key" type="String" sequence-no="1" />
+        <parameter name="value" type="Object" sequence-no="2" />
+        <parameter name="item" type="CacheItem" sequence-no="2" />
+        <parameter name="onAsyncItemUpdateCallback" type="AsyncItemUpdatedCallback" sequence-no="3" />
+        <parameter name="group" type="String" sequence-no="4" />
+        <parameter name="subGroup" type="String" sequence-no="5" />
+        <parameter name="dsWriteOption" type="DSWriteOption" sequence-no="3" />
+        <parameter name="onDataSourceItemUpdatedCallback" type="DataSourceItemsUpdatedCallback" sequence-no="4" />
+        <parameter name="providerName" type="String" sequence-no="3" />
+      </overload>
+    </methodName>
+    <methodName title="RegisterKeyNotificationCallback">
+      <overload number="1">
+        <parameter name="key" type="String" sequence-no="1" />
+        <parameter name="updateCallback" type="CacheItemUpdatedCallback" sequence-no="2" />
+        <parameter name="removeCallback" type="CacheItemRemovedCallback" sequence-no="3" />
+      </overload>
+    </methodName>
+    <methodName title="RegisterCacheNotification">
+      <overload number="1">
+        <parameter name="key" type="String" sequence-no="1" />
+        <parameter name="keys" type="String[]" sequence-no="1" />
+        <parameter name="cacheDataNotificationCallback" type="CacheDataNotificationCallback" sequence-no="1" />
+        <parameter name="eventType" type="EventType" sequence-no="2" />
+        <parameter name="datafilter" type="EventDataFilter" sequence-no="3" />
+        <parameter name="selectiveCacheDataNotificationCallback" type="CacheDataNotificationCallback" sequence-no="2" />
+      </overload>
+    </methodName>
+    <methodName title="UnRegisterCacheNotification">
+      <overload number="1">
+        <parameter name="key" type="String[]" sequence-no="1" />
+        <parameter name="callback" type="CacheDataNotificationCallback" sequence-no="2" />
+        <parameter name="eventType" type="EventType" sequence-no="3" />
+        <parameter name="discriptor" type="CacheEventDescriptor" sequence-no="1" />
+      </overload>
+    </methodName>
+    <methodName title="UnRegisterKeyNotificationCallback">
+      <overload number="1">
+        <parameter name="key" type="String" sequence-no="1" />
+        <parameter name="keys" type="String[]" sequence-no="1" />
+        <parameter name="updateCallback" type="CacheItemUpdatedCallback" sequence-no="2" />
+        <parameter name="removeCallback" type="CacheItemRemovedCallback" sequence-no="3" />
+      </overload>
+    </methodName>
+    <methodName title="Unlock">
+      <overload number="1">
+        <parameter name="key" type="String" sequence-no="1" />
+        <parameter name="lockHandle" type="LockHandle" sequence-no="2" />
+      </overload>
+    </methodName>
+    <methodName title="Lock">
+      <overload number="1">
+        <parameter name="key" type="String" sequence-no="1" />
+        <parameter name="lockTimeout" type="TimeSpan" sequence-no="2" />
+        <parameter name="lockHandle" type="LockHandle&amp;" sequence-no="3" />
+      </overload>
+    </methodName>
+    <methodName title="Remove">
+      <overload number="1">
+        <parameter name="key" type="String" sequence-no="1" />
+        <parameter name="providerName" type="String" sequence-no="3" />
+        <parameter name="dsWriteOption" type="DSWriteOption" sequence-no="2" />
+        <parameter name="onDataSourceItemRemovedCallback" type="DataSourceItemsRemovedCallback" sequence-no="3" />
+        <parameter name="lockHandle" type="LockHandle" sequence-no="2" />
+        <parameter name="version" type="CacheItemVersion" sequence-no="2" />
+      </overload>
+    </methodName>
+    <methodName title="Delete">
+      <overload number="1">
+        <parameter name="key" type="String" sequence-no="1" />
+        <parameter name="dsWriteOption" type="DSWriteOption" sequence-no="2" />
+        <parameter name="onDataSourceItemRemovedCallback" type="DataSourceItemsRemovedCallback" sequence-no="3" />
+        <parameter name="providerName" type="String" sequence-no="3" />
+        <parameter name="lockHandle" type="LockHandle" sequence-no="2" />
+        <parameter name="version" type="CacheItemVersion" sequence-no="2" />
+      </overload>
+    </methodName>
+    <methodName title="RemoveBulk">
+      <overload number="1">
+        <parameter name="keys" type="String[]" sequence-no="1" />
+        <parameter name="dsWriteOption" type="DSWriteOption" sequence-no="2" />
+        <parameter name="onDataSourceItemsRemovedCallback" type="DataSourceItemsRemovedCallback" sequence-no="3" />
+        <parameter name="providerName" type="String" sequence-no="3" />
+      </overload>
+    </methodName>
+    <methodName title="DeleteBulk">
+      <overload number="1">
+        <parameter name="keys" type="String[]" sequence-no="1" />
+        <parameter name="dsWriteOption" type="DSWriteOption" sequence-no="2" />
+        <parameter name="providerName" type="String" sequence-no="3" />
+        <parameter name="onDataSourceItemsRemovedCallback" type="DataSourceItemsRemovedCallback" sequence-no="3" />
+      </overload>
+    </methodName>
+    <methodName title="ExecuteNonQuery">
+      <overload number="1">
+        <parameter name="query" type="String" sequence-no="1" />
+        <parameter name="values" type="IDictionary" sequence-no="2" />
+      </overload>
+    </methodName>
+    <methodName title="RemoveAsync">
+      <overload number="1">
+        <parameter name="key" type="String" sequence-no="1" />
+        <parameter name="onAsyncItemRemoveCallback" type="AsyncItemRemovedCallback" sequence-no="2" />
+        <parameter name="dsWriteOption" type="DSWriteOption" sequence-no="3" />
+        <parameter name="providerName" type="String" sequence-no="4" />
+        <parameter name="onDataSourceItemRemovedCallback" type="DataSourceItemsRemovedCallback" sequence-no="4" />
+      </overload>
+    </methodName>
+    <methodName title="RemoveGroupData">
+      <overload number="1">
+        <parameter name="group" type="String" sequence-no="1" />
+        <parameter name="subGroup" type="String" sequence-no="2" />
+      </overload>
+    </methodName>
+    <methodName title="Search">
+      <overload number="1">
+        <parameter name="query" type="String" sequence-no="1" />
+        <parameter name="values" type="IDictionary" sequence-no="2" />
+      </overload>
+    </methodName>
+    <methodName title="SearchEntries">
+      <overload number="1">
+        <parameter name="query" type="String" sequence-no="1" />
+        <parameter name="values" type="IDictionary" sequence-no="2" />
+      </overload>
+    </methodName>
+    <methodName title="ExecuteReader">
+      <overload number="1">
+        <parameter name="query" type="String" sequence-no="1" />
+        <parameter name="values" type="IDictionary" sequence-no="2" />
+        <parameter name="getData" type="Boolean" sequence-no="3" />
+        <parameter name="chunkSize" type="Int32" sequence-no="4" />
+      </overload>
+    </methodName>
+    <methodName title="ExecuteReaderCQ">
+      <overload number="1">
+        <parameter name="cquery" type="ContinuousQuery" sequence-no="1" />
+        <parameter name="query" type="ContinuousQuery" sequence-no="1" />
+        <parameter name="getData" type="Boolean" sequence-no="2" />
+        <parameter name="chunkSize" type="Int32" sequence-no="3" />
+      </overload>
+    </methodName>
+    <methodName title="Log">
+      <overload number="">
+        <parameter name="module" type="String" sequence-no="1" />
+        <parameter name="message" type="String" sequence-no="2" />
+      </overload>
+    </methodName>
+    <methodName title="GetEnumerator">
+      <overload number="1" />
+    </methodName>
+    <methodName title="ToString">
+      <overload number="" />
+    </methodName>
+    <methodName title="AddDependency">
+      <overload number="1">
+        <parameter name="key" type="String" sequence-no="1" />
+        <parameter name="dependency" type="CacheDependency" sequence-no="2" />
+        <parameter name="isResyncRequired" type="Boolean" sequence-no="3" />
+        <parameter name="syncDependency" type="CacheSyncDependency" sequence-no="2" />
+      </overload>
+    </methodName>
+    <methodName title="SetAttributes">
+      <overload number="1">
+        <parameter name="key" type="String" sequence-no="1" />
+        <parameter name="attributes" type="CacheItemAttributes" sequence-no="2" />
+      </overload>
+    </methodName>
+    <methodName title="Add">
+      <overload number="1">
+        <parameter name="key" type="String" sequence-no="1" />
+        <parameter name="value" type="Object" sequence-no="2" />
+        <parameter name="item" type="CacheItem" sequence-no="3" />
+        <parameter name="tags" type="Tag[]" sequence-no="4" />
+        <parameter name="namedTags" type="NamedTagsDictionary" sequence-no="5" />
+        <parameter name="group" type="String" sequence-no="6" />
+        <parameter name="subGroup" type="String" sequence-no="7" />
+        <parameter name="dependency" type="CacheDependency" sequence-no="8" />
+        <parameter name="absoluteExpiration" type="DateTime" sequence-no="10" />
+        <parameter name="slidingExpiration" type="TimeSpan" sequence-no="11" />
+        <parameter name="priority" type="CacheItemPriority" sequence-no="12" />
+        <parameter name="providerName" type="String" sequence-no="13" />
+        <parameter name="dsWriteOption" type="DSWriteOption" sequence-no="14" />
+        <parameter name="onDataSourceItemAdded" type="DataSourceItemsAddedCallback" sequence-no="15" />
+      </overload>
+    </methodName>
+    <methodName title="AddBulk">
+      <overload number="1">
+        <parameter name="keys" type="String[]" sequence-no="1" />
+        <parameter name="items" type="CacheItem[]" sequence-no="2" />
+        <parameter name="dsWriteOption" type="DSWriteOption" sequence-no="3" />
+        <parameter name="providerName" type="String" sequence-no="4" />
+        <parameter name="onDataSourceItemsAdded" type="DataSourceItemsAddedCallback" sequence-no="4" />
+      </overload>
+    </methodName>
+    <methodName title="AddAsync">
+      <overload number="1">
+        <parameter name="key" type="String" sequence-no="1" />
+        <parameter name="value" type="Object" sequence-no="2" />
+        <parameter name="item" type="CacheItem" sequence-no="2" />
+        <parameter name="onAsyncItemAddCallback" type="AsyncItemAddedCallback" sequence-no="3" />
+        <parameter name="group" type="String" sequence-no="4" />
+        <parameter name="subGroup" type="String" sequence-no="5" />
+        <parameter name="dsWriteOption" type="DSWriteOption" sequence-no="3" />
+        <parameter name="providerName" type="String" sequence-no="4" />
+        <parameter name="onDataSourceItemAdded" type="DataSourceItemsAddedCallback" sequence-no="4" />
+      </overload>
+    </methodName>
+    <methodName title="Get">
+      <overload number="1">
+        <parameter name="key" type="String" sequence-no="1" />
+        <parameter name="lockTimeout" type="TimeSpan" sequence-no="2" />
+        <parameter name="lockHandle" type="LockHandle&amp;" sequence-no="3" />
+        <parameter name="acquireLock" type="Boolean" sequence-no="4" />
+        <parameter name="providerName" type="String" sequence-no="2" />
+        <parameter name="dsReadOption" type="DSReadOption" sequence-no="2" />
+        <parameter name="version" type="CacheItemVersion&amp;" sequence-no="3" />
+        <parameter name="group" type="String" sequence-no="2" />
+        <parameter name="subGroup" type="String" sequence-no="3" />
+      </overload>
+    </methodName>
+    <methodName title="GetBulk">
+      <overload number="1">
+        <parameter name="keys" type="String[]" sequence-no="1" />
+        <parameter name="providerName" type="String" sequence-no="2" />
+        <parameter name="dsReadOption" type="DSReadOption" sequence-no="3" />
+      </overload>
+    </methodName>
+    <methodName title="GetCacheStream">
+      <overload number="1">
+        <parameter name="key" type="String" sequence-no="1" />
+        <parameter name="group" type="String" sequence-no="2" />
+        <parameter name="subGroup" type="String" sequence-no="3" />
+        <parameter name="streamMode" type="StreamMode" sequence-no="4" />
+        <parameter name="dependency" type="CacheDependency" sequence-no="5" />
+        <parameter name="absoluteExpiration" type="DateTime" sequence-no="6" />
+        <parameter name="slidingExpiration" type="TimeSpan" sequence-no="7" />
+        <parameter name="priority" type="CacheItemPriority" sequence-no="8" />
+      </overload>
+    </methodName>
+    <methodName title="GetGroupKeys">
+      <overload number="1">
+        <parameter name="group" type="String" sequence-no="1" />
+        <parameter name="subGroup" type="String" sequence-no="2" />
+      </overload>
+    </methodName>
+    <methodName title="GetGroupData">
+      <overload number="1">
+        <parameter name="group" type="String" sequence-no="1" />
+        <parameter name="subGroup" type="String" sequence-no="2" />
+      </overload>
+    </methodName>
+    <methodName title="GetByTag">
+      <overload number="1">
+        <parameter name="tag" type="Tag" sequence-no="1" />
+      </overload>
+    </methodName>
+    <methodName title="GetKeysByTag">
+      <overload number="1">
+        <parameter name="tag" type="Tag" sequence-no="1" />
+      </overload>
+    </methodName>
+    <methodName title="GetByAllTags">
+      <overload number="1">
+        <parameter name="tags" type="Tag[]" sequence-no="1" />
+      </overload>
+    </methodName>
+    <methodName title="GetKeysByAllTags">
+      <overload number="1">
+        <parameter name="tags" type="Tag[]" sequence-no="1" />
+      </overload>
+    </methodName>
+    <methodName title="GetByAnyTag">
+      <overload number="1">
+        <parameter name="tags" type="Tag[]" sequence-no="1" />
+      </overload>
+    </methodName>
+    <methodName title="GetKeysByAnyTag">
+      <overload number="1">
+        <parameter name="tags" type="Tag[]" sequence-no="1" />
+      </overload>
+    </methodName>
+    <methodName title="RemoveByAnyTag">
+      <overload number="1">
+        <parameter name="tags" type="Tag[]" sequence-no="1" />
+      </overload>
+    </methodName>
+    <methodName title="RemoveByAllTags">
+      <overload number="1">
+        <parameter name="tags" type="Tag[]" sequence-no="1" />
+      </overload>
+    </methodName>
+    <methodName title="RemoveByTag">
+      <overload number="1">
+        <parameter name="tag" type="Tag" sequence-no="1" />
+      </overload>
+    </methodName>
+    <methodName title="GetIfNewer">
+      <overload number="1">
+        <parameter name="key" type="String" sequence-no="1" />
+        <parameter name="group" type="String" sequence-no="2" />
+        <parameter name="subGroup" type="String" sequence-no="3" />
+        <parameter name="version" type="CacheItemVersion&amp;" sequence-no="4" />
+      </overload>
+    </methodName>
+    <methodName title="GetCacheItem">
+      <overload number="1">
+        <parameter name="key" type="String" sequence-no="1" />
+        <parameter name="group" type="String" sequence-no="2" />
+        <parameter name="subGroup" type="String" sequence-no="3" />
+        <parameter name="lockTimeout" type="TimeSpan" sequence-no="2" />
+        <parameter name="lockHandle" type="LockHandle&amp;" sequence-no="3" />
+        <parameter name="acquireLock" type="Boolean" sequence-no="4" />
+        <parameter name="providerName" type="String" sequence-no="2" />
+        <parameter name="dsReadOption" type="DSReadOption" sequence-no="3" />
+        <parameter name="version" type="CacheItemVersion&amp;" sequence-no="2" />
+      </overload>
+    </methodName>
+    <methodName title="add_CacheStopped">
+      <overload number="">
+        <parameter name="value" type="CacheStoppedCallback" sequence-no="1" />
+      </overload>
+    </methodName>
+    <methodName title="remove_CacheStopped">
+      <overload number="">
+        <parameter name="value" type="CacheStoppedCallback" sequence-no="1" />
+      </overload>
+    </methodName>
+    <methodName title="add_CacheCleared">
+      <overload number="">
+        <parameter name="value" type="CacheClearedCallback" sequence-no="1" />
+      </overload>
+    </methodName>
+    <methodName title="remove_CacheCleared">
+      <overload number="">
+        <parameter name="value" type="CacheClearedCallback" sequence-no="1" />
+      </overload>
+    </methodName>
+    <methodName title="add_MemberJoined">
+      <overload number="">
+        <parameter name="value" type="MemberJoinedCallback" sequence-no="1" />
+      </overload>
+    </methodName>
+    <methodName title="remove_MemberJoined">
+      <overload number="">
+        <parameter name="value" type="MemberJoinedCallback" sequence-no="1" />
+      </overload>
+    </methodName>
+    <methodName title="add_MemberLeft">
+      <overload number="">
+        <parameter name="value" type="MemberLeftCallback" sequence-no="1" />
+      </overload>
+    </methodName>
+    <methodName title="remove_MemberLeft">
+      <overload number="">
+        <parameter name="value" type="MemberLeftCallback" sequence-no="1" />
+      </overload>
+    </methodName>
+    <methodName title="add_ItemAdded">
+      <overload number="">
+        <parameter name="value" type="CacheItemAddedCallback" sequence-no="1" />
+      </overload>
+    </methodName>
+    <methodName title="remove_ItemAdded">
+      <overload number="">
+        <parameter name="value" type="CacheItemAddedCallback" sequence-no="1" />
+      </overload>
+    </methodName>
+    <methodName title="add_ItemUpdated">
+      <overload number="">
+        <parameter name="value" type="CacheItemUpdatedCallback" sequence-no="1" />
+      </overload>
+    </methodName>
+    <methodName title="remove_ItemUpdated">
+      <overload number="">
+        <parameter name="value" type="CacheItemUpdatedCallback" sequence-no="1" />
+      </overload>
+    </methodName>
+    <methodName title="add_ItemRemoved">
+      <overload number="">
+        <parameter name="value" type="CacheItemRemovedCallback" sequence-no="1" />
+      </overload>
+    </methodName>
+    <methodName title="remove_ItemRemoved">
+      <overload number="">
+        <parameter name="value" type="CacheItemRemovedCallback" sequence-no="1" />
+      </overload>
+    </methodName>
+    <methodName title="add_CustomEvent">
+      <overload number="">
+        <parameter name="value" type="CustomEventCallback" sequence-no="1" />
+      </overload>
+    </methodName>
+    <methodName title="remove_CustomEvent">
+      <overload number="">
+        <parameter name="value" type="CustomEventCallback" sequence-no="1" />
+      </overload>
+    </methodName>
+    <methodName title="Dispose">
+      <overload number="" />
+    </methodName>
+    <methodName title="get_ExceptionsEnabled">
+      <overload number="" />
+    </methodName>
+    <methodName title="set_ExceptionsEnabled">
+      <overload number="">
+        <parameter name="value" type="Boolean" sequence-no="1" />
+      </overload>
+    </methodName>
+    <methodName title="get_Item">
+      <overload number="">
+        <parameter name="key" type="String" sequence-no="1" />
+      </overload>
+    </methodName>
+    <methodName title="set_Item">
+      <overload number="">
+        <parameter name="key" type="String" sequence-no="1" />
+        <parameter name="value" type="Object" sequence-no="2" />
+      </overload>
+    </methodName>
+    <methodName title="Count">
+      <overload number="1" />
+    </methodName>
+    <methodName title="Clear">
+      <overload number="1">
+        <parameter name="updateOpt" type="DSWriteOption" sequence-no="1" />
+        <parameter name="dataSourceClearedCallback" type="DataSourceClearedCallback" sequence-no="2" />
+      </overload>
+    </methodName>
+    <methodName title="ClearClientCache">
+      <overload number="1" />
+    </methodName>
+    <methodName title="ClearAsync">
+      <overload number="1">
+        <parameter name="updateOpt" type="DSWriteOption" sequence-no="1" />
+        <parameter name="onAsyncCacheClearCallback" type="AsyncCacheClearedCallback" sequence-no="2" />
+        <parameter name="dataSourceClearedCallback" type="DataSourceClearedCallback" sequence-no="3" />
+      </overload>
+    </methodName>
+    <methodName title="ClearClientCacheAsync">
+      <overload number="1">
+        <parameter name="onAsyncCacheClearCallback" type="AsyncCacheClearedCallback" sequence-no="1" />
+      </overload>
+    </methodName>
+    <methodName title="Contains">
+      <overload number="1">
+        <parameter name="key" type="String" sequence-no="1" />
+      </overload>
+    </methodName>
+    <methodName title="RaiseCustomEvent">
+      <overload number="1">
+        <parameter name="notifId" type="Object" sequence-no="1" />
+        <parameter name="data" type="Object" sequence-no="2" />
+      </overload>
+    </methodName>
+    <methodName title="GetReaderChunkCommand">
+      <overload number="1">
+        <parameter name="readerId" type="string" sequence-no="1" />
+      </overload>
+    </methodName>
+    <methodName title="TouchCommand">
+      <overload number="1">
+        <parameter name="keys" type="List" sequence-no="1" />
+      </overload>
+    </methodName>
+    <methodName title="PollCommand">
+      <overload number="1">
+      </overload>
+    </methodName>
+    <methodName title="PingCommand">
+      <overload number="1">
+      </overload>
+    </methodName>
+  </class>
+  <class name="Alachisoft.NCache.Web.Caching.MessagingService">
+    <methodName title="CreateTopic">
+      <overload number="1">
+        <parameter name="topicName" type="String" sequence-no="1" />
+      </overload>
+    </methodName>
+    <methodName title="GetTopic">
+      <overload number="1">
+        <parameter name="topicName" type="String" sequence-no="1" />
+      </overload>
+    </methodName>
+    <methodName title="DeleteTopic">
+      <overload number="1">
+        <parameter name="topicName" type="String" sequence-no="1" />
+      </overload>
+    </methodName>
+    <methodName title="GetAssingedMessages">
+      <overload number="1">
+      </overload>
+    </methodName>
+    <methodName title="AacknowledgeMessages">
+      <overload number="1">
+        <parameter name="topicWiseMessageIds" type="Dictionary" sequence-no="1" />
+      </overload>
+    </methodName>
+  </class>
+  <class name="Alachisoft.NCache.Web.Caching.Topic">
+    <methodName title="CreateSubscription">
+      <overload number="1">
+        <parameter name="topicName" type="String" sequence-no="1" />
+        <parameter name="subscriptonType" type="Sting" sequence-no="2" />
+      </overload>
+    </methodName>
+    <methodName title="Publish">
+      <overload number="1">
+        <parameter name="topicName" type="String" sequence-no="1" />
+        <parameter name="message" type="Message" sequence-no="2" />
+        <parameter name="expiration" type="Long" sequence-no="3" />
+        <parameter name="deliverOption" type="DeliveryOption" sequence-no="4" />
+        <parameter name="notifyDeliveryFailure" type="Bool" sequence-no="5" />
+      </overload>
+    </methodName>
+  </class>
+  <class name="Alachisoft.NCache.Web.Caching.TopicSubscription">
+    <methodName title="UnSubscribe">
+      <overload number="1">
+        <parameter name="topicName" type="String" sequence-no="1" />
+        <parameter name="subscriptonType" type="Sting" sequence-no="2" />
+      </overload>
+    </methodName>
+  </class>
+</api-configuration>

@@ -1,18 +1,19 @@
-// Copyright (c) 2017 Alachisoft
-// 
-// Licensed under the Apache License, Version 2.0 (the "License");
-// you may not use this file except in compliance with the License.
-// You may obtain a copy of the License at
-// 
-//    http://www.apache.org/licenses/LICENSE-2.0
-// 
-// Unless required by applicable law or agreed to in writing, software
-// distributed under the License is distributed on an "AS IS" BASIS,
-// WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
-// See the License for the specific language governing permissions and
-// limitations under the License.
-
+//  Copyright (c) 2021 Alachisoft
+//  
+//  Licensed under the Apache License, Version 2.0 (the "License");
+//  you may not use this file except in compliance with the License.
+//  You may obtain a copy of the License at
+//  
+//     http://www.apache.org/licenses/LICENSE-2.0
+//  
+//  Unless required by applicable law or agreed to in writing, software
+//  distributed under the License is distributed on an "AS IS" BASIS,
+//  WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+//  See the License for the specific language governing permissions and
+//  limitations under the License
 using System;
+using Alachisoft.NCache.Caching.Pooling;
+using Alachisoft.NCache.Common.Pooling;
 using Alachisoft.NCache.Runtime;
 using Alachisoft.NCache.Runtime.Serialization;
 using Alachisoft.NCache.Runtime.Serialization.IO;
@@ -26,10 +27,9 @@ namespace Alachisoft.NCache.Caching.EvictionPolicies
     public class PriorityEvictionHint : EvictionHint, ICompactSerializable
     {
 
-
         new internal static int InMemorySize = 24;
 
-        static PriorityEvictionHint()
+        static PriorityEvictionHint() 
         {
             InMemorySize = Common.MemoryUtil.GetInMemoryInstanceSize(EvictionHint.InMemorySize + Common.MemoryUtil.NetEnumSize);
         }
@@ -84,6 +84,11 @@ namespace Alachisoft.NCache.Caching.EvictionPolicies
             return false;
         }
 
+        public override void Reset(CacheItemPriority cacheItemPriority)
+        {
+            _priority = cacheItemPriority;
+        }
+
         #region	/                 --- ICompactSerializable ---           /
 
         void ICompactSerializable.Deserialize(CompactReader reader)
@@ -99,6 +104,50 @@ namespace Alachisoft.NCache.Caching.EvictionPolicies
         }
 
         #endregion
-       
+
+        #region Creating PriorityEvictionHint
+
+        public static PriorityEvictionHint Create(PoolManager poolManager)
+        {
+            return poolManager.GetPriorityEvictionHintPool()?.Rent(true) ?? new PriorityEvictionHint();
+        }
+
+        public static PriorityEvictionHint Create(PoolManager poolManager, CacheItemPriority priority)
+        {
+            var instance = Create(poolManager);
+            instance._priority = priority;
+            return instance;
+        }
+
+        #endregion
+
+        #region ILeaseable
+
+        public override void ResetLeasable()
+        {
+            base.ResetLeasable();
+            _priority = CacheItemPriority.Normal;
+            _hintType = EvictionHintType.PriorityEvictionHint;
+        }
+
+        public override void ReturnLeasableToPool()
+        {
+
+        }
+
+        #endregion
+
+        #region - [Deep Cloning] -
+
+        public override EvictionHint DeepClone(PoolManager poolManager)
+        {
+            var clonedPriorityEvictionHint = poolManager.GetPriorityEvictionHintPool()?.Rent() ?? new PriorityEvictionHint();
+            clonedPriorityEvictionHint._priority = _priority;
+            clonedPriorityEvictionHint._hintType = _hintType;
+
+            return clonedPriorityEvictionHint;
+        }
+
+        #endregion
     }
 }

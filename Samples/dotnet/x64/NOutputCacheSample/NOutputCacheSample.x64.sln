@@ -1,0 +1,35 @@
+﻿
+Microsoft Visual Studio Solution File, Format Version 10.00
+# Visual Studio 2008
+Project("{E24C65DC-7377-472B-9ABA-BC803B73C61A}") = "NOutputCacheSample", "..\NOutputCacheSample", "{A5A0D70A-BB9C-4DF2-B619-C62F9EA8B7E2}"
+	ProjectSection(WebsiteProperties) = preProject
+		TargetFramework = "3.5"
+		Debug.AspNetCompiler.VirtualPath = "/NOutputCacheSample"
+		Debug.AspNetCompiler.PhysicalPath = "..\NOutputCacheSample\"
+		Debug.AspNetCompiler.TargetPath = "PrecompiledWeb\NOutputCacheSample\"
+		Debug.AspNetCompiler.Updateable = "true"
+		Debug.AspNetCompiler.ForceOverwrite = "true"
+		Debug.AspNetCompiler.FixedNames = "false"
+		Debug.AspNetCompiler.Debug = "True"
+		Release.AspNetCompiler.VirtualPath = "/NOutputCacheSample"
+		Release.AspNetCompiler.PhysicalPath = "..\NOutputCacheSample\"
+		Release.AspNetCompiler.TargetPath = "PrecompiledWeb\NOutputCacheSample\"
+		Release.AspNetCompiler.Updateable = "true"
+		Release.AspNetCompiler.ForceOverwrite = "true"
+		Release.AspNetCompiler.FixedNames = "false"
+		Release.AspNetCompiler.Debug = "False"
+		VWDPort = "1061"
+	EndProjectSection
+EndProject
+Global
+	GlobalSection(SolutionConfigurationPlatforms) = preSolution
+		Debug|.NET = Debug|.NET
+	EndGlobalSection
+	GlobalSection(ProjectConfigurationPlatforms) = postSolution
+		{A5A0D70A-BB9C-4DF2-B619-C62F9EA8B7E2}.Debug|.NET.ActiveCfg = Debug|.NET
+		{A5A0D70A-BB9C-4DF2-B619-C62F9EA8B7E2}.Debug|.NET.Build.0 = Debug|.NET
+	EndGlobalSection
+	GlobalSection(SolutionProperties) = preSolution
+		HideSolutionNode = FALSE
+	EndGlobalSection
+EndGlobal

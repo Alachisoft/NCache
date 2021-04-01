@@ -1,16 +1,16 @@
-// Copyright (c) 2017 Alachisoft
-// 
-// Licensed under the Apache License, Version 2.0 (the "License");
-// you may not use this file except in compliance with the License.
-// You may obtain a copy of the License at
-// 
-//    http://www.apache.org/licenses/LICENSE-2.0
-// 
-// Unless required by applicable law or agreed to in writing, software
-// distributed under the License is distributed on an "AS IS" BASIS,
-// WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
-// See the License for the specific language governing permissions and
-// limitations under the License.
+//  Copyright (c) 2021 Alachisoft
+//  
+//  Licensed under the Apache License, Version 2.0 (the "License");
+//  you may not use this file except in compliance with the License.
+//  You may obtain a copy of the License at
+//  
+//     http://www.apache.org/licenses/LICENSE-2.0
+//  
+//  Unless required by applicable law or agreed to in writing, software
+//  distributed under the License is distributed on an "AS IS" BASIS,
+//  WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+//  See the License for the specific language governing permissions and
+//  limitations under the License
 using System;
 using System.Reflection;
 using System.Runtime.CompilerServices;
@@ -24,14 +24,34 @@ using System.Runtime.InteropServices;
 //
 [assembly: CLSCompliant(true)]
 [assembly: ComVisible(false)]
+
+
+#if NETCORE
+#if CLIENT 
+[assembly: AssemblyTitle("Alachisoft.NCache.Cache (.NETCore Client)")]
+#else
+[assembly: AssemblyTitle("Alachisoft.NCache.Cache (.NETCore)")]
+#endif
+#else
 [assembly: AssemblyTitle("Alachisoft.NCache.Cache")]
-[assembly: AssemblyProduct("AlachisoftÂ® NCache Open Source")]
-[assembly: AssemblyTrademark("NCache â„¢ is a registered trademark of Alachisoft.")]
+#endif
+
+[assembly: AssemblyProduct("Alachisoft® NCache OpenSource")]
+[assembly: AssemblyTrademark("NCache ™ is a registered trademark of Alachisoft.")]
+
+
 [assembly: AssemblyConfiguration("")]
 [assembly: AssemblyCompany("Alachisoft")]
 
-[assembly: AssemblyCopyright("Copyright Â© 2005-2017 Alachisoft")]
+
+
+[assembly: AssemblyCopyright("Copyright © 2005-2021 Alachisoft")]
 [assembly: AssemblyCulture("")]
+
+[assembly: InternalsVisibleTo("Alachisoft.NCache.Client, PublicKey=00240000048000009400000006020000002400005253413100040000010001001d52e880bc916ccf859cdcec2e364e066e86136ffef5b9dae06fd02970d1a2b224658f100c17216c40532dfe8f0c274342b20ebfa506067ad95a92891a0381df679be792585190a38e36e117aea93773923bba28bb185ef03ffc5fbec4351ba7fff68bce21d378f30acff1fc1fabdcbf0afc8b6287060fc6fc66bcd75db006bb")]
+[assembly: InternalsVisibleTo("Alachisoft.NCache.SocketServer, PublicKey=00240000048000009400000006020000002400005253413100040000010001001d52e880bc916ccf859cdcec2e364e066e86136ffef5b9dae06fd02970d1a2b224658f100c17216c40532dfe8f0c274342b20ebfa506067ad95a92891a0381df679be792585190a38e36e117aea93773923bba28bb185ef03ffc5fbec4351ba7fff68bce21d378f30acff1fc1fabdcbf0afc8b6287060fc6fc66bcd75db006bb")]
+[assembly: InternalsVisibleTo("Alachisoft.NCache.Runtime, PublicKey=00240000048000009400000006020000002400005253413100040000010001001d52e880bc916ccf859cdcec2e364e066e86136ffef5b9dae06fd02970d1a2b224658f100c17216c40532dfe8f0c274342b20ebfa506067ad95a92891a0381df679be792585190a38e36e117aea93773923bba28bb185ef03ffc5fbec4351ba7fff68bce21d378f30acff1fc1fabdcbf0afc8b6287060fc6fc66bcd75db006bb")]
+
 
 //
 // Version information for an assembly consists of the following four values:
@@ -44,7 +64,7 @@ using System.Runtime.InteropServices;
 // You can specify all the values or you can default the Revision and Build Numbers 
 // by using the '*' as shown below:
 
-[assembly: AssemblyVersion("4.6.0.0")]
+[assembly: AssemblyVersion("5.0.0")]
 
 //
 // In order to sign your assembly you must specify a key to use. Refer to the 
@@ -73,7 +93,13 @@ using System.Runtime.InteropServices;
 //
 [assembly: AssemblyDelaySign(false)]
 [assembly: AssemblyKeyName("")]
-[assembly: AssemblyKeyFile("..\\..\\..\\..\\Resources\\ncache.snk")]
+#if DEBUG
+[assembly: AssemblyKeyFile("..\\..\\Resources\\ncache.snk")]
+#else
+[assembly: AssemblyKeyFile("..\\..\\Resources\\ncache.snk")]
+#endif
 [assembly: AssemblyDescriptionAttribute("Cache Core")]
-[assembly: AssemblyFileVersionAttribute("4.6.3.0")]
-[assembly: AssemblyInformationalVersion("4.6.0")]
+
+[assembly: AssemblyFileVersionAttribute("5.0.5.0")]
+
+[assembly: AssemblyInformationalVersion("5.0.0")]

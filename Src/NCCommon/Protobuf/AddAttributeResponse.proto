@@ -3,4 +3,6 @@ option java_outer_classname="AddAttributeResponseProtocol";
 package Alachisoft.NCache.Common.Protobuf;
 message AddAttributeResponse {
 	optional bool success = 1;
+	optional int32 commandID = 2 [default = -1];
+	optional int64 requestId = 3;
 }

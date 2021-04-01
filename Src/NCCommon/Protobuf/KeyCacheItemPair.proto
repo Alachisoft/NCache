@@ -1,0 +1,8 @@
+import "GetCacheItemResponse.proto";
+
+package Alachisoft.NCache.Common.Protobuf;
+
+message KeyCacheItemPair {
+	optional string key = 1;
+	optional GetCacheItemResponse cacheItem = 2;
+}

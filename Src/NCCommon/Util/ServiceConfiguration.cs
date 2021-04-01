@@ -1,38 +1,40 @@
-// Copyright (c) 2017 Alachisoft
-// 
-// Licensed under the Apache License, Version 2.0 (the "License");
-// you may not use this file except in compliance with the License.
-// You may obtain a copy of the License at
-// 
-//    http://www.apache.org/licenses/LICENSE-2.0
-// 
-// Unless required by applicable law or agreed to in writing, software
-// distributed under the License is distributed on an "AS IS" BASIS,
-// WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
-// See the License for the specific language governing permissions and
-// limitations under the License.
-
+//  Copyright (c) 2021 Alachisoft
+//  
+//  Licensed under the Apache License, Version 2.0 (the "License");
+//  you may not use this file except in compliance with the License.
+//  You may obtain a copy of the License at
+//  
+//     http://www.apache.org/licenses/LICENSE-2.0
+//  
+//  Unless required by applicable law or agreed to in writing, software
+//  distributed under the License is distributed on an "AS IS" BASIS,
+//  WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+//  See the License for the specific language governing permissions and
+//  limitations under the License
 using System;
 using System.Configuration;
 using System.Net;
 using System.IO;
 using System.Diagnostics;
+using Alachisoft.NCache.Common.Enum;
 
 namespace Alachisoft.NCache.Common.Util
 {
     public class ServiceConfiguration
     {
-        private static int MB = 1024 * 1024;
         private static int _port = 9800;
+        private static long MB = 1024 * 1024;
         private static int _managementPort = 8250;
         private static int _sendBufferSize = 131072;
+        private static bool _licenseLogging = false;
         private static int _receiveBufferSize = 131072;
-        private static IPAddress _bindToIP;
+        private static IPAddress _BindToIP;
         private static IPAddress _bindToClientServerIP;
         private static bool _enableDualSocket = false;
         private static bool _enableNagling = true;
         private static int _naglingSize = 500 * 1024; //500 kb
         private static string _cacheUserName;
+        private static IPAddress _bindToIP;
         private static string _cacheUserPassword;
         private static bool _enableDebuggingCounters = false;
         private static bool _enableBadClientDetection = false;
@@ -48,12 +50,14 @@ namespace Alachisoft.NCache.Common.Util
         private static bool _enableCacheLastAccessCount = false;
         private static bool _enableCacheLastAccessCountLogging = false;
         private static int _cacheLastAccessCountInterval = 10;
+        private static DependencyLibrary _dependencyLibrary;
         private static int _cacheLastAccessLogInterval = 40;
         private static int _lOHPoolSize = 40;
         private static int _lOHPoolBufferSize = 512;
         private static int _cacheSizeThreshold = 80;
         private static int _cacheSizeReportInterval = 15; //minutes
         private static bool _logClientEvents = false;
+        private static string _eventLogLevel;
         private static bool _enableForcedGC = true;
         private static int _forcedGCThreshold = 80; //percentage
         private static int _forcedGCInterval = 20; //seconds
@@ -61,32 +65,32 @@ namespace Alachisoft.NCache.Common.Util
         private static bool _enableDetailedLogs = false;
         private static int _bufferSize = 1;
         private static bool _allowRequestEnquiry = false;
-        private static int _requestEnquiryInterval = 10;//s
+        private static int _requestEnquiryInterval = 10;
         private static int _requestEnquiryRetries = 1;
         private static string _nCacheSQLNotificationService;
         private static string _nCacheSQLNotificationQueue;
-        private static int _responseDataSize = 1024 * 1024 * 1024; //1024 MB's
+        private static int _responseDataSize = 30 * 1024; //1024 MB's
         private static int _enableSnapshotPoolingCacheSize = 100000; //number of item
         private static int _snapshotPoolSize = 10;
         private static int _snapshotCreationThreshold = 30; //seconds
         private static int _enumeratorChunkSize = 1000;
-        private static int _requestInquiryCleanInterval = 10; // seconds 
+        private static int _requestInquiryCleanInterval = 10;
         private static bool _enableRequestInquiry = false;
         private static bool _eventsPersistence = false;
         private static int _eventsPersistenceInterval = 10;
-        private static int _maxPendingConnections = 10;
+        private static int _maxPendingConnections = 300;
         private static bool _enableServerCounters = true;
         private static int _maxResponseLength = 1;
-        private static int _gracefullTimeout=1;
-        private static int _blockingActivity=1;
+        private static int _gracefullTimeout = 1;
+        private static int _blockingActivity = 1;
         private static bool _disableIndexNotDefinedException = false;
-        private static bool _enableDataSourceCounters = true;
         private static float _stateTransferDataSizePerSecond = 10;
         private static bool _enableGCDuringStateTransfer = false;
         private static long _gCThreshold = 1024 * MB * 2;
         private static bool _enableGCCollection = true;
         private static int _preparedQueryTableSize = 1000;
         private static int _preparedQueryEvictionPercentage = 10;
+        private static long _licenseCheckInterval = 24 * 60 * 60 * 1000;
         private static bool _simulateSocketClose = false;
         private static int _socketCloseInterval = 60;
         private static bool _useAvgStats = false;
@@ -97,69 +101,698 @@ namespace Alachisoft.NCache.Common.Util
         private static bool _enableDebugLog = false;
         private static int _autoStartDelay = 0;
         private static int _cacheStartDelay = 0;
-        private static string _unInstallInProgress= "false";
+        private static string _unInstallInProgress = "false";
         private static string _mgmtEndPoint = "";
         private static string _serverEndPoint = "";
         private static int _gCCollectInterval = 0;
         private static decimal _clusterHealthDetectionInterval = 3;
-        private static int _cacheLoaderStartupDelay = 0;
-        private static int _dataChunkSize = 512*1024;
+        
+        private static int _dataChunkSize = 512 * 1024;
         private static int _managementPortLower = 8300;
         private static int _managementPortUpper = 8400;
-
-        
-
-        //private static string _stateTransferDataSizePerThread;
-        //private static string _autoStartCaches;
         private static string tempString;
         private static int tempInt;
         private static bool tempBool;
         private static long tempLong;
+        private static bool turnOffRandomStartTime = false;
         private static decimal tempDecimal;
         private static TimeSpan tempTimeSpan;
+        private static double _commandExecutionThreshold = 5; // seconds
+        private static bool _enableCommandThresholdLogging = false;
+        private static int _interval = 2 * 60;
+        private static bool _enable = false;
+        private static bool _archive = false;
+        private static bool _perfmonHasChange = false;
+        private static string _perfmonPath;
+
+        private static int _touchInterval = 5; // seconds
+
+        private static int _licenseInterval = 6;
+        private static bool _enableLicenseInterval = false;
+        private static bool _enableRequestCancellation = true;
+        private static bool _publishCountersToCacheHost = false;
+
+        private static int _acquireClientLicenseRetryInterval = 3;
+        private static int _acquireClientLicenseRetries = 3;
+
+        private static long _collectionChunkSize = 80000; // Bytes
+        private static TimeSpan _pubSubClientInactivityTimeout = TimeSpan.FromSeconds(120);
+        private static int _relicaJoinDelay = 0;//in seconds
+        private static bool _enableObjectPooling = true;
+        private static bool _enableAutoStartWebManagement = true;
+        private static int _webManagerStartRetries = 5; //default 5 retries
+
+        private static int _pauseWriterThreshold = 1024 * 1024 * 8; // default to 8 MB
+        public static int _maxFeatureDataPostingDelay = 20 * 24 * 60;  //20 days
+
+        public const string NETCORE_SERVICE_UNIX = "Alachisoft.NCache.Daemon.dll";
+        public const string NETCORE_SERVICE_WIN = "Alachisoft.NCache.Service.dll";
+        /// <summary>
+        /// Touch interval in seconds
+        /// </summary>
+        public static int ItemTouchInterval
+        {
+            get { return _touchInterval; }
+            set { _touchInterval = value; }
+        }
+
+        public static int RelicaJoinDelay
+        {
+            get { return _relicaJoinDelay; }
+            set { _relicaJoinDelay = value; }
+        }
+
+        public static int AcquireClientLicenseRetries
+        {
+            get { return _acquireClientLicenseRetries; }
+            set { _acquireClientLicenseRetries = value; }
+        }
+        public static int AcquireClientLicenseRetryInterval
+        {
+            get { return _acquireClientLicenseRetryInterval; }
+            set { _acquireClientLicenseRetryInterval = value; }
+        }
+        public static IPAddress BindToIP
+        {
+            get { return _bindToIP; }
+            private set { _bindToIP = value; }
+        }
+
+        public static int LicenseInterval
+        {
+            get { return _licenseInterval; }
+            set { _licenseInterval = value; }
+        }
+
+        public static bool EnableCacheDebugging{ get; set;}
+
+        public static bool EnableLicenseInterval
+        {
+            get { return _enableLicenseInterval; }
+            set { _enableLicenseInterval = value; }
+        }
+
+        private static int loaderServicePort = 9850;
+        private static int _serviceGCInterval = 180; //in minutes
+
         static bool isHotApply = false;
-        
+
+
+        private static int _notificationEventInterval = 1;
+        private static string _nosdbDependencyProviderVersion = "1.0.0.0";
+        private static int _nodeFailureRetryDelayInterval = 2000;//in msec
+
+
+        private static int _threadsPerProcessor = 2;
+        private static int _readerExpiration = -1;
+
+        private static int _eventThreadPoolCount = 1;
+        private static bool _useCommandThreadPool;
+
+        private static Mechanism _communicationMechanism;
+        private static bool _executeOperations;
+        private static int _transactinalPoolCapacity = 3000;
+        private static bool _enableUsageInfoLogs = true;
+        private static bool _enableUsageInfoLogsForTesting = false;
+
+
+        #region FeatureUsage
+        private static int _featureDataCollectionInterval = 60;   //1 hour converted into milliseconds
+        #endregion
+        private static string _urlUsageInfo = "https://app.alachisoft.com/ncache";
+
+        public static int EventThreadPoolCount 
+        {
+            get { return _eventThreadPoolCount; }
+        }
+
+        public static int ReaderExpiration
+        {
+            get { return _readerExpiration; }
+            set { _readerExpiration = value; }
+        }
+
+        public static int ThreadsPerProcessor
+        {
+            get { return _threadsPerProcessor; }
+        }
+
+        public static Mechanism CommunicationMechanism
+        {
+            get { return _communicationMechanism; }
+        }
+
+        public static bool ExecuteOperations
+        {
+            get { return _executeOperations; }
+        }
+
+        public static bool UseCommandThreadPool
+        {
+            get { return _useCommandThreadPool; }
+        }
+
+        public static bool EnableUsageInfoLogs
+        {
+            get { return _enableUsageInfoLogs; }
+            private set { _enableUsageInfoLogs = value; }
+        }
+
+        public static bool EnableUsageInfoLogsForTesting
+        {
+            get { return _enableUsageInfoLogsForTesting; }
+            private set { _enableUsageInfoLogsForTesting = value; }
+        }
+
+        #region FeatureUsage
+        public static int FeatureDataCollectionInterval { get => _featureDataCollectionInterval; set => _featureDataCollectionInterval = value; }
+        public static int InitialLoggingDelayAtStartup { get; set; } = 20; //milliseconds
+
+        public static int FeatureDataPostingDelay { get; set; } = 29 * 24 * 60;  // 30 days
+        public static int FeatureDataPostingWaitTime { get; set; } = 24 * 60;  // 1 day
+
+        public static int InitailFeatureDataPostingDelay { get; set; } = 3 * 24 * 60;  // 3 days
+
+        public static bool EnableFeatureUsageLogging { get; set; } = true;
+
+        public static bool UploadFeatureUsageStats { get; set; } = true;
+
+        public static int UsageFailureRetriesCount { get; set; } = 3;
+        #endregion
 
         static ServiceConfiguration()
         {
             Load();
+
+        }
+
+        public static bool LoadAutoRenewal()
+        {
+            System.Configuration.Configuration config;
+
+            try
+            {
+                string serviceEXE1 = Path.Combine(AppUtil.InstallDir, "bin");
+                string serviceEXE2 = Path.Combine(serviceEXE1, "service");
+                string serviceEXE3 = "";
+#if NETCORE
+                if (System.Runtime.InteropServices.RuntimeInformation.IsOSPlatform(System.Runtime.InteropServices.OSPlatform.Windows))
+                    serviceEXE3 = Path.Combine(serviceEXE2, NETCORE_SERVICE_WIN);
+                if (System.Runtime.InteropServices.RuntimeInformation.IsOSPlatform(System.Runtime.InteropServices.OSPlatform.Linux))
+                    serviceEXE3 = Path.Combine(serviceEXE2, NETCORE_SERVICE_UNIX);
+#else
+                serviceEXE3 = Path.Combine(serviceEXE2, "Alachisoft.NCache.Service.exe");
+#endif
+                config = ConfigurationManager.OpenExeConfiguration(serviceEXE3);
+            }
+            catch (Exception ex) { return true; }
+
+            bool autoRenewal = true;
+            try
+            {
+                if (config.AppSettings.Settings["NCacheServer.AutoRenewal"] != null)
+                {
+                    autoRenewal = bool.Parse(config.AppSettings.Settings["NCacheServer.AutoRenewal"].Value);
+                }
+            }
+            catch (Exception ex) { }
+
+            return autoRenewal;
+
+        }
+
+        public static IPAddress LoadBindToIP()
+        {
+            System.Configuration.Configuration config = null;
+
+            try
+            {
+                string serviceEXE1 = Path.Combine(AppUtil.InstallDir, "bin");
+                string serviceEXE2 = Path.Combine(serviceEXE1, "service");
+                string serviceEXE3 = "";
+#if NETCORE
+                if (System.Runtime.InteropServices.RuntimeInformation.IsOSPlatform(System.Runtime.InteropServices.OSPlatform.Windows))
+                {
+                    serviceEXE3 = Path.Combine(serviceEXE2, NETCORE_SERVICE_WIN);
+
+                    if(!File.Exists(serviceEXE3))
+                    {
+                        var otherPath = Path.Combine(serviceEXE2, "Alachisoft.NCache.Service.exe");
+
+                        if (File.Exists(otherPath))
+                        {
+                            serviceEXE3 = otherPath;
+                        }
+                    }
+                }
+
+                if (System.Runtime.InteropServices.RuntimeInformation.IsOSPlatform(System.Runtime.InteropServices.OSPlatform.Linux))
+                {
+                    serviceEXE3 = Path.Combine(serviceEXE2, NETCORE_SERVICE_UNIX);
+                }
+#else
+                serviceEXE3 = Path.Combine(serviceEXE2, "Alachisoft.NCache.Service.exe");
+#endif
+                config = ConfigurationManager.OpenExeConfiguration(serviceEXE3);
+            }
+            catch
+            {
+            }
+
+            var address = default(IPAddress);
+
+            try
+            {
+                if (config != null && config.AppSettings.Settings["NCacheServer.BindToIP"] != null)
+                {
+                    address = IPAddress.Parse(config.AppSettings.Settings["NCacheServer.BindToIP"].Value);
+                }
+            }
+            catch
+            {
+            }
+
+            return address;
         }
 
         public static void Load()
         {
             System.Configuration.Configuration config;
+
             try
             {
-
                 string serviceEXE1 = Path.Combine(AppUtil.InstallDir, "bin");
                 string serviceEXE2 = Path.Combine(serviceEXE1, "service");
-                string serviceEXE3 = Path.Combine(serviceEXE2, "Alachisoft.NCache.Service.exe");
+                string serviceEXE3 = "";
+#if NETCORE
+                if (System.Runtime.InteropServices.RuntimeInformation.IsOSPlatform(System.Runtime.InteropServices.OSPlatform.Windows))
+                {
+                    serviceEXE3 = Path.Combine(serviceEXE2, NETCORE_SERVICE_WIN);
+                    if(!File.Exists(serviceEXE3))
+                    {
+                        var otherPath = Path.Combine(serviceEXE2, "Alachisoft.NCache.Service.exe");
+                        if (File.Exists(otherPath))
+                            serviceEXE3 = otherPath;
+                    }
+                }
+
+                if (System.Runtime.InteropServices.RuntimeInformation.IsOSPlatform(System.Runtime.InteropServices.OSPlatform.Linux))
+                    serviceEXE3 = Path.Combine(serviceEXE2, NETCORE_SERVICE_UNIX);
+#else
+                serviceEXE3 = Path.Combine(serviceEXE2, "Alachisoft.NCache.Service.exe");
+#endif
                 config = ConfigurationManager.OpenExeConfiguration(serviceEXE3);
             }
             catch (Exception ex) { return; }
 
-
             if (!isHotApply)
-            {
+                {
+
+                    try
+                    {
+                        if (config.AppSettings.Settings["NCacheServer.ThreadsPerProcessor"] != null)
+                        {
+                            tempInt = Int32.Parse(config.AppSettings.Settings["NCacheServer.ThreadsPerProcessor"].Value);
+
+                            if (tempInt > 0)
+                                _threadsPerProcessor = tempInt;
+                        }
+                    }
+                    catch (Exception ex) { }
+
+
                 try
                 {
-                    if (config.AppSettings.Settings["NCacheServer.Port"] != null)
+                    if (config.AppSettings.Settings["NCacheServer.CommunicationMechanism"] != null)
                     {
-                        tempInt = Int32.Parse(config.AppSettings.Settings["NCacheServer.Port"].Value);
+                        switch (config.AppSettings.Settings["NCacheServer.CommunicationMechanism"].Value.ToLower())
+                        {
+                            case "pipelining":
+                                _communicationMechanism = Mechanism.Pipelining;
+                                break;
+
+                            case "selector":
+                                _communicationMechanism = Mechanism.Select;
+                                break;
+
+                            case "multibuffer":
+                                _communicationMechanism = Mechanism.MultiBufferReceiving;
+                                break;
+                        }
+                    }
+                }
+                catch { }
+
+                try
+                {
+                    if (config.AppSettings.Settings["NCacheServer.ExecuteOperations"] != null)
+                    {
+                        switch (config.AppSettings.Settings["NCacheServer.ExecuteOperations"].Value.ToLower())
+                        {
+                            case "true":
+                                _executeOperations = true;
+                                break;
+
+                            case "false":
+                                _executeOperations = false;
+                                break;
+                        }
+                    }
+                }
+                catch { }
+                try
+                {
+                    if (config.AppSettings.Settings["NCacheServer.BindToIP"] != null)
+                        BindToIP = IPAddress.Parse(config.AppSettings.Settings["NCacheServer.BindToIP"].Value);
+                }
+                catch (Exception ex) { }
+                try
+                    {
+                    if (config.AppSettings.Settings["NCacheServer.UseCommandThreadPool"] != null)
+                        {
+                        _useCommandThreadPool  = Boolean.Parse(config.AppSettings.Settings["NCacheServer.UseCommandThreadPool"].Value);
+                        }
+                    }
+                    catch (Exception ex) { }
+
+                try
+                    {
+                        if (config.AppSettings.Settings["NCacheServer.Port"] != null)
+                        {
+                            tempInt = Int32.Parse(config.AppSettings.Settings["NCacheServer.Port"].Value);
+
                         if (tempInt > 0)
-                            Port = tempInt;
+                                Port = tempInt;
+                        }
+                    }
+                    catch (Exception ex) { }
+
+                    try
+                    {
+                        if (config.AppSettings.Settings["NCacheServer.ManagementPort"] != null)
+                        {
+                            tempInt = Int32.Parse(config.AppSettings.Settings["NCacheServer.ManagementPort"].Value);
+                        if (tempInt > 0)
+                            ManagementPort = tempInt;
+                        }
+                    }
+                    catch (Exception ex) { }
+
+                    try
+                    {
+                        if (config.AppSettings.Settings["NCacheServer.SendBufferSize"] != null)
+                        {
+                            tempInt = Int32.Parse(config.AppSettings.Settings["NCacheServer.SendBufferSize"].Value);
+                            if (tempInt > 0)
+                                SendBufferSize = tempInt;
+                        }
+                    }
+                    catch (Exception ex) { }
+
+
+                    try
+                    {
+                        if (config.AppSettings.Settings["NCacheServer.ServiceGCCollectionInterval"] != null)
+                        {
+                            tempInt = Int32.Parse(config.AppSettings.Settings["NCacheServer.ServiceGCCollectionInterval"].Value);
+
+                                ServiceGCInterval = tempInt;
+                        }
+                    }
+                    catch (Exception ex) { }
+
+                    try
+                    {
+                        if (config.AppSettings.Settings["NCacheServer.ReceiveBufferSize"] != null)
+                        {
+                            tempInt = Int32.Parse(config.AppSettings.Settings["NCacheServer.ReceiveBufferSize"].Value);
+                        if (tempInt > 0)
+                            ReceiveBufferSize = tempInt;
+                        }
+                    }
+                    catch (Exception ex) { }
+
+                    try
+                    {
+                        if (config.AppSettings.Settings["NCacheServer.BindToIP"] != null)
+                            BindToIP = IPAddress.Parse(config.AppSettings.Settings["NCacheServer.BindToIP"].Value);
+                    }
+                    catch (Exception ex) { }
+
+                    try
+                    {
+                        if (config.AppSettings.Settings["NCacheServer.BindToClientServerIP"] != null)
+                            BindToClientServerIP = IPAddress.Parse(config.AppSettings.Settings["NCacheServer.BindToIP"].Value);
+                    }
+                    catch (Exception ex) { }
+
+                    try
+                    {
+                        if (config.AppSettings.Settings["NCacheServer.EnableDualSocket"] != null)
+                            EnableDualSocket = bool.Parse(config.AppSettings.Settings["NCacheServer.EnableDualSocket"].Value);
+                    }
+                    catch (Exception ex) { }
+
+                    if (config.AppSettings.Settings["NCacheServer.CacheUser"] != null)
+                        CacheUserName = config.AppSettings.Settings["NCacheServer.CacheUser"].Value;
+
+                    if (config.AppSettings.Settings["NCacheServer.CachePassword"] != null)
+                        CacheUserPassword = config.AppSettings.Settings["NCacheServer.CachePassword"].Value;
+                    try
+                    {
+                        if (config.AppSettings.Settings["NCacheServer.NCacheSQLNotificationService"] != null)
+                            NCacheSQLNotificationService = config.AppSettings.Settings["NCacheServer.NCacheSQLNotificationService"].Value;
+                    }
+                    catch (Exception ex) { }
+
+                    try
+                    {
+                        if (config.AppSettings.Settings["NCacheServer.NCacheSQLNotificationQueue"] != null)
+                            NCacheSQLNotificationQueue = config.AppSettings.Settings["NCacheServer.NCacheSQLNotificationQueue"].Value;
+                    }
+                    catch (Exception ex) { }
+
+                    try
+                    {
+                        if (config.Sections["DependencyLibrary"] != null)
+                        {
+                            DependencyLibrary = (DependencyLibrary)config.GetSection("DependencyLibrary");
+                        }
+                    }
+                    catch (Exception ex) { }
+
+                    try
+                    {
+                        if (config.AppSettings.Settings["NCacheServer.ManagementPortLower"] != null)
+                        {
+                            tempInt = Int32.Parse(config.AppSettings.Settings["NCacheServer.ManagementPortLower"].Value);
+                            if (tempInt > 0)
+                                ManagementPortLower = tempInt;
+                        }
+                    }
+                    catch (Exception ex) { }
+
+                    try
+                    {
+                        if (config.AppSettings.Settings["NCacheServer.ManagementPortUpper"] != null)
+                        {
+                            tempInt = Int32.Parse(config.AppSettings.Settings["NCacheServer.ManagementPortUpper"].Value);
+                            if (tempInt > 0)
+                                ManagementPortUpper = tempInt;
+                        }
+                    }
+                    catch (Exception ex) { }
+
+                    isHotApply = true;
+
+                    try
+                    {
+                        if (config.AppSettings.Settings["NCacheServer.EnableCacheDebugging"] != null)
+                        {
+                            EnableCacheDebugging = Boolean.Parse(config.AppSettings.Settings["NCacheServer.EnableCacheDebugging"].Value);
+                        }
+                    }
+                    catch (Exception ex) { }
+
+            try
+                {
+                    if (config.AppSettings.Settings["NCacheServer.LicenseLogging"] != null)
+                        LicenseLogging = bool.Parse(config.AppSettings.Settings["NCacheServer.LicenseLogging"].Value);
+                }
+                catch (Exception ex) { }
+
+                try
+                {
+                    if (config.AppSettings.Settings["NCacheServer.TouchInterval"] != null)
+                        _touchInterval = Int32.Parse(config.AppSettings.Settings["NCacheServer.TouchInterval"].Value);
+                    if (_touchInterval < 1)
+                        _touchInterval = 5;
+                }
+                catch (Exception ex) { }
+
+                try
+                {
+                    if (config.AppSettings.Settings["NCacheServer.EnableNagling"] != null)
+                        EnableNagling = bool.Parse(config.AppSettings.Settings["NCacheServer.EnableNagling"].Value);
+                    }
+                catch (Exception ex) { }
+
+                //need to identify range for nagling size
+                try
+                {
+                    if (config.AppSettings.Settings["NCache.NagglingSize"] != null)
+                    {
+                        tempInt = Int32.Parse(config.AppSettings.Settings["NCache.NagglingSize"].Value);
+                        if (tempInt > 0)
+                            NaglingSize = tempInt;
                     }
                 }
                 catch (Exception ex) { }
 
                 try
                 {
+                    if (config.AppSettings.Settings["NCacheServer.EnableDebuggingCounters"] != null)
+                        EnableDebuggingCounters = bool.Parse(config.AppSettings.Settings["NCacheServer.EnableDebuggingCounters"].Value);
+                }
+                catch (Exception ex) { }
 
-                    if (config.AppSettings.Settings["NCacheServer.ManagementPort"] != null)
+                try
+                {
+                    if (config.AppSettings.Settings["NCacheServer.EnableBadClientDetection"] != null)
+                        EnableBadClientDetection = bool.Parse(config.AppSettings.Settings["NCacheServer.EnableBadClientDetection"].Value);
+                }
+                catch (Exception ex) { }
+
+                //need to identify range for clientSocketSendTimeout 
+                try
+                {
+                    if (config.AppSettings.Settings["NCacheServer.ClientSocketSendTimeOut"] != null)
                     {
-                        tempInt = Int32.Parse(config.AppSettings.Settings["NCacheServer.ManagementPort"].Value);
+                        tempInt = Int32.Parse(config.AppSettings.Settings["NCacheServer.ClientSocketSendTimeOut"].Value);
+                        if (tempInt > 5)
+                            ClientSocketSendTimeout = tempInt;
+                    }
+                }
+                catch (Exception ex) { }
+
+                try
+                {
+                    if (config.AppSettings.Settings["NCacheServer.EventPriorityRatio"] != null)
+                    {
+                        tempInt = Int32.Parse(config.AppSettings.Settings["NCacheServer.EventPriorityRatio"].Value);
+                        if (tempInt > 0 &&  tempInt < 100)
+                            EventPriorityRatio = tempInt;
+                    }
+                }
+                catch (Exception ex) { }
+
+                try
+                {
+                    if (config.AppSettings.Settings["NCacheServer.EventBulkCount"] != null)
+                    {
+                        tempInt = Int32.Parse(config.AppSettings.Settings["NCacheServer.EventBulkCount"].Value);
                         if (tempInt > 0)
-                            ManagementPort = tempInt;
+                            EventBulkCount = tempInt;
+                    }
+                }
+                catch (Exception ex) { }
+
+                try
+                {
+                    if (config.AppSettings.Settings["NCacheServer.BulkEventCollectionInterval"] != null)
+                    {
+                        tempInt = Int32.Parse(config.AppSettings.Settings["NCacheServer.BulkEventCollectionInterval"].Value);
+                        if (tempInt > 0)
+                            BulkEventCollectionInterval = tempInt;
+                    }
+                }
+                catch (Exception ex) { }
+
+                try
+                {
+                    if (config.AppSettings.Settings["NCacheServer.ExpirationBulkRemoveSize"] != null)
+                        tempInt = Int32.Parse(config.AppSettings.Settings["NCacheServer.ExpirationBulkRemoveSize"].Value);
+                    if (tempInt > 0)
+                        ExpirationBulkRemoveSize = tempInt;
+                }
+                catch (Exception ex) { }
+
+                try
+                {
+                    if (config.AppSettings.Settings["NCacheServer.ExpirationBulkRemoveDelay"] != null)
+                    {
+                        tempInt = Int32.Parse(config.AppSettings.Settings["NCacheServer.ExpirationBulkRemoveDelay"].Value);
+                        if (tempInt > 0)
+                            ExpirationBulkRemoveDelay = tempInt;
+                    }
+                }
+                catch (Exception ex) { }
+
+                try
+                {
+                    if (config.AppSettings.Settings["NCacheServer.EvictionBulkRemoveSize"] != null)
+                    {
+                        tempInt = Int32.Parse(config.AppSettings.Settings["NCacheServer.EvictionBulkRemoveSize"].Value);
+                        if (tempInt > 0)
+                            EvictionBulkRemoveSize = tempInt;
+                    }
+                }
+                catch (Exception ex) { }
+
+                try
+                {
+                    if (config.AppSettings.Settings["NCacheServer.EvictionBulkRemoveDelay"] != null)
+                    {
+                        tempInt = Int32.Parse(config.AppSettings.Settings["NCacheServer.EvictionBulkRemoveDelay"].Value);
+                        if (tempInt > 0)
+                            EvictionBulkRemoveDelay = tempInt;
+                    }
+                }
+                catch (Exception ex) { }
+
+                try
+                {
+                    if (config.AppSettings.Settings["NCacheServer.BulkItemsToReplicate"] != null)
+                    {
+                        tempInt = Int32.Parse(config.AppSettings.Settings["NCacheServer.BulkItemsToReplicate"].Value);
+                        if (tempInt > 0)
+                            BulkItemsToReplicate = tempInt;
+                    }
+                }
+                catch (Exception ex) { }
+
+                try
+                {
+                    if (config.AppSettings.Settings["NCacheServer.EnableCacheLastAccessCount"] != null)
+                        EnableCacheLastAccessCount = bool.Parse(config.AppSettings.Settings["NCacheServer.EnableCacheLastAccessCount"].Value);
+                }
+                catch (Exception ex) { }
+
+                try
+                {
+                    if (config.AppSettings.Settings["NCacheServer.EnableCacheLastAccessCountLogging"] != null)
+                        EnableCacheLastAccessCountLogging = bool.Parse(config.AppSettings.Settings["NCacheServer.EnableCacheLastAccessCountLogging"].Value);
+                }
+                catch (Exception ex) { }
+
+                try
+                {
+                    if (config.AppSettings.Settings["NCacheServer.CacheLastAccessCountInterval"] != null)
+                    {
+                        tempInt = Int32.Parse(config.AppSettings.Settings["NCacheServer.CacheLastAccessCountInterval"].Value);
+                        if (tempInt > 0)
+                            CacheLastAccessCountInterval = tempInt;
+                    }
+                }
+                catch (Exception ex) { }
+
+                try
+                {
+                    if (config.AppSettings.Settings["NCacheServer.CacheLastAccessLogInterval"] != null)
+                    {
+                        tempInt = Int32.Parse(config.AppSettings.Settings["NCacheServer.CacheLastAccessLogInterval"].Value);
+                        if (tempInt > 0)
+                            CacheLastAccessLogInterval = tempInt;
                     }
                 }
                 catch (Exception ex) { }
@@ -170,9 +803,20 @@ namespace Alachisoft.NCache.Common.Util
                     if (config.AppSettings.Settings["NCacheServer.SendBufferSize"] != null)
                     {
                         tempInt = Int32.Parse(config.AppSettings.Settings["NCacheServer.SendBufferSize"].Value);
-
                         if (tempInt > 0)
                             SendBufferSize = tempInt;
+                    }
+                }
+                catch (Exception ex) { }
+
+
+                try
+                {
+                    if (config.AppSettings.Settings["NCacheServer.ServiceGCCollectionInterval"] != null)
+                    {
+                        tempInt = Int32.Parse(config.AppSettings.Settings["NCacheServer.ServiceGCCollectionInterval"].Value);
+
+                        ServiceGCInterval = tempInt;
                     }
                 }
                 catch (Exception ex) { }
@@ -183,7 +827,6 @@ namespace Alachisoft.NCache.Common.Util
                     if (config.AppSettings.Settings["NCacheServer.ReceiveBufferSize"] != null)
                     {
                         tempInt = Int32.Parse(config.AppSettings.Settings["NCacheServer.ReceiveBufferSize"].Value);
-
                         if (tempInt > 0)
                             ReceiveBufferSize = tempInt;
                     }
@@ -197,7 +840,12 @@ namespace Alachisoft.NCache.Common.Util
                 }
                 catch (Exception ex) { }
 
-
+                try
+                {
+                    if (config.AppSettings.Settings["NCacheServer.BindToIP"] != null)
+                        BindToClientServerIP = IPAddress.Parse(config.AppSettings.Settings["NCacheServer.BindToIP"].Value);
+                }
+                catch (Exception ex) { }
 
                 try
                 {
@@ -227,21 +875,97 @@ namespace Alachisoft.NCache.Common.Util
 
                 try
                 {
-                    if (config.AppSettings.Settings["NCacheServer.EnableRequestInquiry"] != null)
-                        EnableRequestInquiry = bool.Parse(config.AppSettings.Settings["NCacheServer.EnableRequestInquiry"].Value);
+                    if (config.Sections["DependencyLibrary"] != null)
+                    {
+                        DependencyLibrary = (DependencyLibrary)config.GetSection("DependencyLibrary");
+                    }
                 }
                 catch (Exception ex) { }
+
+                try
+                {
+                    if (config.AppSettings.Settings["NCacheServer.ManagementPortLower"] != null)
+                    {
+                        tempInt = Int32.Parse(config.AppSettings.Settings["NCacheServer.ManagementPortLower"].Value);
+                        if (tempInt > 0)
+                            ManagementPortLower = tempInt;
+                    }
+                }
+                catch (Exception ex) { }
+
+                try
+                {
+                    if (config.AppSettings.Settings["NCacheServer.ManagementPortUpper"] != null)
+                    {
+                        tempInt = Int32.Parse(config.AppSettings.Settings["NCacheServer.ManagementPortUpper"].Value);
+                        if (tempInt > 0)
+                            ManagementPortUpper = tempInt;
+                    }
+                }
+                catch (Exception ex) { }
+
+                try
+                {
+                    var enableObjectPoolingRaw = config.AppSettings.Settings["NCacheServer.EnableObjectPooling"];
+
+                    if (enableObjectPoolingRaw != null)
+                    {
+                        if (bool.TryParse(enableObjectPoolingRaw.Value, out var enableObjectPooling))
+                        {
+                            _enableObjectPooling = enableObjectPooling;
+                        }
+                    }
+                }
+                catch { }
+
+                try
+                {
+                    var poolCapacitySettings = config.AppSettings.Settings["NCacheServer.TransactionalPoolCapacity"];
+
+                    if (poolCapacitySettings != null)
+                    {
+                        if (int.TryParse(poolCapacitySettings.Value, out var poolCapacity))
+                        {
+                            if(poolCapacity>0)
+                                _transactinalPoolCapacity = poolCapacity;
+                        }
+                    }
+                }
+                catch { }
 
                 isHotApply = true;
 
             }
+            try
+            {
+                if (config.AppSettings.Settings["NCacheServer.LicenseLogging"] != null)
+                    LicenseLogging = bool.Parse(config.AppSettings.Settings["NCacheServer.LicenseLogging"].Value);
+            }
+            catch (Exception ex) { }
+
+            try
+            {
+                if (config.AppSettings.Settings["NCacheServer.TouchInterval"] != null)
+                    _touchInterval = Int32.Parse(config.AppSettings.Settings["NCacheServer.TouchInterval"].Value);
+                if (_touchInterval < 1)
+                    _touchInterval = 5;
+            }
+            catch (Exception ex) { }
+
+            try
+            {
+                if (config.AppSettings.Settings["NCacheServer.ReplicaJoinDelay"] != null)
+                    _relicaJoinDelay = Int32.Parse(config.AppSettings.Settings["NCacheServer.ReplicaJoinDelay"].Value);
+                if (_relicaJoinDelay < 1)
+                    _relicaJoinDelay = 0;
+            }
+            catch (Exception ex) { }
 
             try
             {
 
                 if (config.AppSettings.Settings["NCacheServer.EnableNagling"] != null)
                     EnableNagling = bool.Parse(config.AppSettings.Settings["NCacheServer.EnableNagling"].Value);
-
             }
             catch (Exception ex) { }
 
@@ -252,7 +976,6 @@ namespace Alachisoft.NCache.Common.Util
                 if (config.AppSettings.Settings["NCache.NagglingSize"] != null)
                 {
                     tempInt = Int32.Parse(config.AppSettings.Settings["NCache.NagglingSize"].Value);
-
                     if (tempInt > 0)
                         NaglingSize = tempInt;
                 }
@@ -264,7 +987,6 @@ namespace Alachisoft.NCache.Common.Util
 
                 if (config.AppSettings.Settings["NCacheServer.EnableDebuggingCounters"] != null)
                     EnableDebuggingCounters = bool.Parse(config.AppSettings.Settings["NCacheServer.EnableDebuggingCounters"].Value);
-
             }
             catch (Exception ex) { }
 
@@ -458,13 +1180,22 @@ namespace Alachisoft.NCache.Common.Util
             }
             catch (Exception ex) { }
 
+            try
+            {
+                if (config.AppSettings.Settings["NCacheServer.EventLogLevel"] != null)
+                {
+                    tempString = config.AppSettings.Settings["NCacheServer.EventLogLevel"].Value;
+                    if (!string.IsNullOrEmpty(tempString))
+                        EventLogLevel = tempString;
+                }
+            }
+            catch (Exception ex) { }
 
             try
             {
 
                 if (config.AppSettings.Settings["NCacheServer.EnableForcedGC"] != null)
                     EnableForcedGC = bool.Parse(config.AppSettings.Settings["NCacheServer.EnableForcedGC"].Value);
-
             }
             catch (Exception ex) { }
 
@@ -474,8 +1205,7 @@ namespace Alachisoft.NCache.Common.Util
                 if (config.AppSettings.Settings["NCacheServer.ForcedGCThreshold"] != null)
                 {
                     tempInt = Int32.Parse(config.AppSettings.Settings["NCacheServer.ForcedGCThreshold"].Value);
-
-                    if (tempInt > 0 || tempInt < 100)
+                    if (tempInt > 0 && tempInt < 100)
                         ForcedGCThreshold = tempInt;
                 }
             }
@@ -577,7 +1307,6 @@ namespace Alachisoft.NCache.Common.Util
                     if (tempInt > 1)
                         SnapshotCreationThreshold = tempInt;
                 }
-
             }
             catch (Exception ex) { }
 
@@ -594,23 +1323,15 @@ namespace Alachisoft.NCache.Common.Util
 
             try
             {
-                if (config.AppSettings.Settings["NCacheServer.RequestInquiryCleanInterval"] != null)
-                {
-                    tempInt = Int32.Parse(config.AppSettings.Settings["NCacheServer.RequestInquiryCleanInterval"].Value);
-                    if (tempInt > 10)
-                        RequestInquiryCleanInterval = tempInt;
-                }
-            }
-            catch (Exception ex) { }
-
-            try
-            {
                 if (config.AppSettings.Settings["NCacheServer.UninstallInProgress"] != null)
                 {
                     UninstallInProgress = config.AppSettings.Settings["NCacheServer.UninstallInProgress"].Value;
                 }
             }
             catch (Exception ex) { }
+
+
+
 
             try
             {
@@ -625,18 +1346,17 @@ namespace Alachisoft.NCache.Common.Util
                 if (config.AppSettings.Settings["NCache.MaxPendingConnections"] != null)
                 {
                     tempInt = Int32.Parse(config.AppSettings.Settings["NCache.MaxPendingConnections"].Value);
-
                     if (tempInt > 10)
-                        EventsPersistenceInterval = tempInt;
+                        MaxPendingConnections = tempInt;
                 }
             }
             catch (Exception ex) { }
 
             try
             {
+
                 if (config.AppSettings.Settings["NCache.EnableServerCounters"] != null)
                     EnableServerCounters = bool.Parse(config.AppSettings.Settings["NCache.EnableServerCounters"].Value);
-
             }
             catch (Exception ex) { }
 
@@ -646,7 +1366,7 @@ namespace Alachisoft.NCache.Common.Util
                 {
                     tempInt = Int32.Parse(config.AppSettings.Settings["NCacheServer.EventsPersistenceInterval"].Value);
                     if (tempInt > 10)
-                        MaxPendingConnections = tempInt;
+                        EventsPersistenceInterval = tempInt;
                 }
             }
             catch (Exception ex) { }
@@ -668,7 +1388,6 @@ namespace Alachisoft.NCache.Common.Util
                 if (config.AppSettings.Settings["NCacheServer.BlockingActivityTimeout"] != null)
                 {
                     tempInt = Int32.Parse(config.AppSettings.Settings["NCacheServer.BlockingActivityTimeout"].Value);
-
                     if (tempInt > 1)
                         BlockingActivity = tempInt;
                 }
@@ -681,7 +1400,6 @@ namespace Alachisoft.NCache.Common.Util
                 if (config.AppSettings.Settings["NCacheServer.GracefullShutdownTimeout"] != null)
                 {
                     tempInt = Int32.Parse(config.AppSettings.Settings["NCacheServer.GracefullShutdownTimeout"].Value);
-
                     if (tempInt > 1)
                         GracefullTimeout = tempInt;
                 }
@@ -693,20 +1411,10 @@ namespace Alachisoft.NCache.Common.Util
 
                 if (config.AppSettings.Settings["NCacheServer.DisableIndexNotDefinedException"] != null)
                     DisableIndexNotDefinedException = bool.Parse(config.AppSettings.Settings["NCacheServer.DisableIndexNotDefinedException"].Value);
-
             }
             catch (Exception ex) { }
 
-            try
-            {
-
-                if (config.AppSettings.Settings["NCacheServer.EnableDataSourceCounters"] != null)
-                    EnableDataSourceCounters = bool.Parse(config.AppSettings.Settings["NCacheServer.EnableDataSourceCounters"].Value);
-
-            }
-            catch (Exception ex) { }
-
-            try
+           try
             {
                 if (config.AppSettings.Settings["NCacheServer.StateTransferDataSizePerSecond"] != null)
                 {
@@ -740,7 +1448,6 @@ namespace Alachisoft.NCache.Common.Util
 
                 if (config.AppSettings.Settings["NCache.EnableGCCollection"] != null)
                     EnableGCCollection = bool.Parse(config.AppSettings.Settings["NCache.EnableGCCollection"].Value);
-
             }
             catch (Exception ex) { }
 
@@ -766,6 +1473,56 @@ namespace Alachisoft.NCache.Common.Util
             }
             catch (Exception ex) { }
 
+            try
+            {
+                if (config.AppSettings.Settings["NCacheServer.LicenseCheckInterval"] != null)
+                {
+                    tempLong = Int64.Parse(config.AppSettings.Settings["NCacheServer.LicenseCheckInterval"].Value);
+
+                    if (tempLong >= 1)
+                        _licenseCheckInterval = tempLong * 60 * 1000;
+
+                }
+            }
+            catch (Exception ex) { }
+
+            try
+            {
+                if (config.AppSettings.Settings["NCacheServer.TurnOffRandomStartTime"] != null)
+                {
+                    turnOffRandomStartTime = bool.Parse(config.AppSettings.Settings["NCacheServer.TurnOffRandomStartTime"].Value);
+                }
+            }
+            catch (Exception ex) { }
+
+
+
+            try
+            {
+                if (config.AppSettings.Settings["NCacheServer.LicenseInterval"] != null)
+                {
+                    EnableLicenseInterval = true;
+                    LicenseInterval = Int32.Parse(config.AppSettings.Settings["NCacheServer.LicenseInterval"].Value);
+                }
+            }
+            catch (Exception ex) { }
+
+            try
+            {
+                if (config.AppSettings.Settings["NCacheServer.AcquireClientLicenseRetries"] != null)
+                {
+                    AcquireClientLicenseRetries = Int32.Parse(config.AppSettings.Settings["NCacheServer.AcquireClientLicenseRetries"].Value);
+                }
+            }
+            catch (Exception ex) { }
+            try
+            {
+                if (config.AppSettings.Settings["NCacheServer.AcquireClientLicenseRetryInterval"] != null)
+                {
+                    AcquireClientLicenseRetryInterval = Int32.Parse(config.AppSettings.Settings["NCacheServer.AcquireClientLicenseRetryInterval"].Value);
+                }
+            }
+            catch (Exception ex) { }
 
 
             try
@@ -773,7 +1530,6 @@ namespace Alachisoft.NCache.Common.Util
 
                 if (config.AppSettings.Settings["NCache.SimulateSocketClose"] != null)
                     SimulateSocketClose = bool.Parse(config.AppSettings.Settings["NCache.SimulateSocketClose"].Value);
-
             }
             catch (Exception ex) { }
 
@@ -783,7 +1539,6 @@ namespace Alachisoft.NCache.Common.Util
                 if (config.AppSettings.Settings["NCacheServer.SocketCloseInterval"] != null)
                 {
                     tempInt = Int32.Parse(config.AppSettings.Settings["NCacheServer.SocketCloseInterval"].Value);
-
                     if (tempInt > 20)
                         SocketCloseInterval = tempInt;
                 }
@@ -801,19 +1556,6 @@ namespace Alachisoft.NCache.Common.Util
             {
                 if (config.AppSettings.Settings["asyncTcpUpQueue"] != null)
                     AsyncTcpUpQueue = bool.Parse(config.AppSettings.Settings["asyncTcpUpQueue"].Value);
-            }
-            catch (Exception ex) { }
-
-            try
-            {
-
-                if (config.AppSettings.Settings["NCacheServer.HeartbeatInterval"] != null)
-                {
-                    tempInt = Int32.Parse(config.AppSettings.Settings["NCacheServer.HeartbeatInterval"].Value);
-
-                    if (tempInt > 0)
-                        HeartbeatInterval = tempInt * 1000;
-                }
             }
             catch (Exception ex) { }
 
@@ -900,7 +1642,111 @@ namespace Alachisoft.NCache.Common.Util
                 }
             }
             catch (Exception ex) { }
+            try
+            {
+                if (config.AppSettings.Settings["NCacheServer.CommandExecutionThreshold"] != null)
+                {
+                    double tempdouble = double.Parse(config.AppSettings.Settings["NCacheServer.CommandExecutionThreshold"].Value);
+                    if (tempdouble > 0)
+                        CommandExecutionThreshold = tempdouble;
+                }
+            }
+            catch (Exception ex) { }
 
+            try
+            {
+                if (config.AppSettings.Settings["NCacheServer.EnableCommandThresholdLogging"] != null)
+                {
+                    bool tempbool = bool.Parse(config.AppSettings.Settings["NCacheServer.EnableCommandThresholdLogging"].Value);
+
+                    EnableCommandThresholdLogging = tempbool;
+                }
+            }
+            catch (Exception ex) { }
+            try
+            {
+                if (config.AppSettings.Settings["NCacheServer.PerfmonInterval"] != null)
+                {
+                    tempInt = Int32.Parse(config.AppSettings.Settings["NCacheServer.PerfmonInterval"].Value);
+                    if (tempInt > 5)
+                        _interval = tempInt * 60;
+                }
+            }
+            catch (Exception ex) { }
+            try
+            {
+                if (config.AppSettings.Settings["NCacheServer.PerfmonEnable"] != null)
+                {
+                    PerfmonEnable = bool.Parse(config.AppSettings.Settings["NCacheServer.PerfmonEnable"].Value);
+                }
+            }
+            catch (Exception ex) { PerfmonEnable = false; }
+
+            try
+            {
+                var enableAutoStartWebManagementRaw = config.AppSettings.Settings["NCacheServer.StartWebManagement"];
+
+                if (enableAutoStartWebManagementRaw != null)
+                {
+                    if (bool.TryParse(enableAutoStartWebManagementRaw.Value, out var enableAutoStartWebManagement))
+                    {
+                        _enableAutoStartWebManagement = enableAutoStartWebManagement;
+                    }
+                }
+                else
+                {
+                    _enableAutoStartWebManagement = true;
+                }
+            }
+            catch (Exception ex) { }
+
+            try
+            {
+                var webManagerStartRetriesRaw = config.AppSettings.Settings["NCacheServer.WebManagerStartRetries"];
+
+                if (webManagerStartRetriesRaw != null)
+                {
+                    if (int.TryParse(webManagerStartRetriesRaw.Value, out var TempWebManagerStartRetries))
+                    {
+                        if (TempWebManagerStartRetries > 20)
+                            _webManagerStartRetries = 20;
+                        else if (TempWebManagerStartRetries < 2)
+                            _webManagerStartRetries = 2;
+                        else
+                            _webManagerStartRetries = TempWebManagerStartRetries;
+                    }
+                }
+                else
+                {
+                    _webManagerStartRetries = 5;
+                }
+            }
+            catch (Exception ex) { }
+
+            try
+            {
+                if (config.AppSettings.Settings["NCacheServer.PerfmonArchive"] != null)
+                {
+                    PerfmonArchive = bool.Parse(config.AppSettings.Settings["NCacheServer.PerfmonArchive"].Value);
+                }
+            }
+            catch (Exception ex) { PerfmonArchive = false; }
+
+            try
+            {
+                if (config.AppSettings.Settings["NCacheServer.PerfmonLogPath"] != null)
+                {
+                    PerfmonPath = config.AppSettings.Settings["NCacheServer.PerfmonLogPath"].Value;
+                }
+                else
+                    PerfmonPath = System.IO.Path.Combine(AppUtil.InstallDir, "log-files\\PerfmonLogsstatistics");
+                if (String.IsNullOrEmpty(PerfmonPath))
+                    PerfmonPath = System.IO.Path.Combine(AppUtil.InstallDir, "log-files\\PerfmonLogsstatistics");
+            }
+            catch (Exception ex)
+            {
+                PerfmonPath = System.IO.Path.Combine(AppUtil.InstallDir, "log-files\\PerfmonLogsstatistics");
+            }
             try
             {
                 if (config.AppSettings.Settings["NCacheServer.ServerEndPoint"] != null)
@@ -962,15 +1808,36 @@ namespace Alachisoft.NCache.Common.Util
 
             try
             {
-                if (config.AppSettings.Settings["NCacheServer.CacheLoaderStartupDelay"] != null)
+                if (config.AppSettings.Settings["NCacheServer.CancelTimedOutRequests"] != null)
                 {
-                    tempInt = Int32.Parse(config.AppSettings.Settings["NCacheServer.CacheLoaderStartupDelay"].Value);
-                    if (tempInt > 0)
-                        CacheLoaderStartupDelay = tempInt;
+                    _enableRequestCancellation = bool.Parse(config.AppSettings.Settings["NCacheServer.CancelTimedOutRequests"].Value);
+
                 }
             }
             catch (Exception ex) { }
 
+         
+            try
+            {
+                if (config.AppSettings.Settings["NCacheServer.CommandExecutionThreshold"] != null)
+                {
+                    double tempdouble = double.Parse(config.AppSettings.Settings["NCacheServer.CommandExecutionThreshold"].Value);
+                    if (tempdouble > 0)
+                        CommandExecutionThreshold = tempdouble;
+                }
+            }
+            catch (Exception ex) { }
+
+            try
+            {
+                if (config.AppSettings.Settings["NCacheServer.EnableCommandThresholdLogging"] != null)
+                {
+                    bool tempbool = bool.Parse(config.AppSettings.Settings["NCacheServer.EnableCommandThresholdLogging"].Value);
+
+                    EnableCommandThresholdLogging = tempbool;
+                }
+            }
+            catch (Exception ex) { }
 
             try
             {
@@ -985,28 +1852,233 @@ namespace Alachisoft.NCache.Common.Util
 
             try
             {
-                if (config.AppSettings.Settings["NCacheServer.ManagementPortLower"] != null)
+                if (config.AppSettings.Settings["NCacheServer.NotificationEventInterval"] != null)
                 {
-                    tempInt = Int32.Parse(config.AppSettings.Settings["NCacheServer.ManagementPortLower"].Value);
-                    if (tempInt > 0)
-                        ManagementPortLower = tempInt;
+                    tempInt = Int32.Parse(config.AppSettings.Settings["NCacheServer.NotificationEventInterval"].Value);
+                    if (tempInt > 1)
+                        _notificationEventInterval = tempInt;
                 }
             }
             catch (Exception ex) { }
 
             try
             {
-                if (config.AppSettings.Settings["NCacheServer.ManagementPortUpper"] != null)
+                if (config.AppSettings.Settings["NosDBDependencyProviderVersion"] != null)
                 {
-                    tempInt = Int32.Parse(config.AppSettings.Settings["NCacheServer.ManagementPortUpper"].Value);
-                    if (tempInt > 0)
-                        ManagementPortUpper = tempInt;
+                    string temp = config.AppSettings.Settings["NosDBDependencyProviderVersion"].Value;
+                    if (!string.IsNullOrEmpty(temp))
+                        NosDBDependencyProviderVersion = temp;
+                }
+            }
+            catch (Exception ex)
+            {
+            }
+
+            if (config.AppSettings.Settings["NCacheServer.ServerFailureRetryDelayInterval"] != null)
+            {
+                int configuredValue = _nodeFailureRetryDelayInterval;
+                if (int.TryParse(config.AppSettings.Settings["NCacheServer.ServerFailureRetryDelayInterval"].Value, out configuredValue))
+                {
+                    if (configuredValue >= 0)
+                    {
+                        _nodeFailureRetryDelayInterval = configuredValue * 1000;//convert it into msec
+                    }
+                }
+            }
+
+            try
+            {
+                int readerExpire = -1;
+                if (config.AppSettings.Settings["NCacheServer.ReaderExpiration"] != null)
+                {
+                    readerExpire = Int32.Parse(config.AppSettings.Settings["ReaderExpiration"].Value);
+                    if (readerExpire > 0)
+                        ReaderExpiration = readerExpire;
                 }
             }
             catch (Exception ex) { }
 
+
+            try
+            {
+                int eventThreadPool = -1;
+                if (config.AppSettings.Settings["NCacheServer.EventThreadPoolCount"] != null)
+                {
+                    eventThreadPool = Int32.Parse(config.AppSettings.Settings["NCacheServer.EventThreadPoolCount"].Value);
+                    if (eventThreadPool > 0)
+                        _eventThreadPoolCount = eventThreadPool;
+                }
+            }
+            catch (Exception ex) { }
+
+            try
+            {
+                long collectionChunkSize = -1;
+
+                if (config.AppSettings.Settings["NCacheServer.CollectionChunkSize"] != null)
+                {
+                    collectionChunkSize = long.Parse(config.AppSettings.Settings["NCacheServer.CollectionChunkSize"].Value);
+
+                    if (collectionChunkSize > 0)
+                    {
+                        CollectionChunkSize = collectionChunkSize;
+                    }
+                }
+            }
+            catch (Exception)
+            {
+            }
+
+            try
+            {
+                if (config.AppSettings.Settings["NCacheServer.PublishCountersToCacheHost"] != null)
+                    PublishCountersToCacheHost = bool.Parse(config.AppSettings.Settings["NCacheServer.PublishCountersToCacheHost"].Value);
+            }
+            catch (Exception ex) { }
+
+
+            //if (config.AppSettings.Settings["NCacheServer.StateTransferDataSizePerThread"] != null)
+            //    StateTransferDataSizePerThread = config.AppSettings.Settings["NCacheServer.StateTransferDataSizePerThread"].Value;
+            try
+            {
+                if (config.AppSettings.Settings["NCacheServer.PubSubClientInactivityTimeout"] != null)
+                {
+                    int seconds = Int32.Parse(config.AppSettings.Settings["NCacheServer.PubSubClientInactivityTimeout"].Value);
+
+                    if ( seconds >= 30)
+                        _pubSubClientInactivityTimeout = new TimeSpan(0, 0, seconds);
+
+                    PubSubClientInactivityTimeout = _pubSubClientInactivityTimeout;
+                }
+            }
+            catch (Exception ex) { }
+
+            try
+            {
+                if (config.AppSettings.Settings["NCacheServer.PauseWriterThreshold"] != null)
+                {
+                    int threshold = Int32.Parse(config.AppSettings.Settings["NCacheServer.PauseWriterThreshold"].Value);
+                    if (threshold < 64) threshold = 64;
+
+                    _pauseWriterThreshold = threshold * 1024 ;
+                }
+            }
+            catch (Exception ex) { }
+            try
+            {
+                if (config.AppSettings.Settings["NCacheServer.EnableUsageInfoLogs"] != null)
+                    EnableUsageInfoLogs = bool.Parse(config.AppSettings.Settings["NCacheServer.EnableUsageInfoLogs"].Value);
+            }
+            catch (Exception ex) { }
+            try
+            {
+                if (EnableUsageInfoLogs && config.AppSettings.Settings["NCacheServer.EnableUsageInfoLogsForTesting"] != null)
+                    EnableUsageInfoLogsForTesting = bool.Parse(config.AppSettings.Settings["NCacheServer.EnableUsageInfoLogsForTesting"].Value);
+            }
+            catch (Exception ex) { }
+          
+            try
+            {
+                if (config.AppSettings.Settings["NCacheServer.UrlUsageInfo"] != null)
+                    UrlUsageInfo = config.AppSettings.Settings["NCacheServer.UrlusageInfo"].Value.ToString();
+            }
+            catch (Exception ex) { }
+
+            try
+            {
+                if (config.AppSettings.Settings["NCacheServer.FeatureDataCollectionDelay"] != null)
+                {
+                    tempInt = Int32.Parse(config.AppSettings.Settings["NCacheServer.FeatureDataCollectionDelay"].Value);
+
+                    if (tempInt > 0)
+                        FeatureDataCollectionInterval = tempInt;
+                }
+            }
+            catch (Exception ex) { }
+
+            try
+            {
+                if (config.AppSettings.Settings["NCacheServer.InitialLoggingDelayAtStartup"] != null)
+                {
+                    tempInt = Int32.Parse(config.AppSettings.Settings["NCacheServer.InitialLoggingDelayAtStartup"].Value);
+
+                    if (tempInt > 0)
+                        InitialLoggingDelayAtStartup = tempInt;
+                }
+            }
+            catch (Exception ex) { }
+
+            try
+            {
+                if (config.AppSettings.Settings["NCacheServer.FeatureDataPostingDelay"] != null)
+                {
+                    tempInt = Int32.Parse(config.AppSettings.Settings["NCacheServer.FeatureDataPostingDelay"].Value);
+
+                    if (tempInt > 0)
+                        FeatureDataPostingDelay = tempInt;
+                }
+            }
+            catch (Exception ex) { }
+
+            try
+            {
+                if (config.AppSettings.Settings["NCacheServer.EnableFeatureUsageLogging"] != null)
+                {
+                    tempBool = bool.Parse(config.AppSettings.Settings["NCacheServer.EnableFeatureUsageLogging"].Value);
+                    EnableFeatureUsageLogging = tempBool;
+                }
+            }
+            catch (Exception ex) { }
+
+
+            try
+            {
+                if (config.AppSettings.Settings["NCacheServer.UploadFeatureUsageStats"] != null)
+                {
+                    tempBool = bool.Parse(config.AppSettings.Settings["NCacheServer.UploadFeatureUsageStats"].Value);
+
+                    UploadFeatureUsageStats = tempBool;
+                }
+            }
+            catch (Exception ex) { }
+
+            try
+            {
+                if (config.AppSettings.Settings["NCacheServer.UsageFailureRetriesCount"] != null)
+                {
+                    tempInt = Int32.Parse(config.AppSettings.Settings["NCacheServer.UsageFailureRetriesCount"].Value);
+
+                    if (tempInt > 0)
+                        UsageFailureRetriesCount = tempInt;
+                }
+            }
+            catch (Exception ex) { }
+
+            try
+            {
+                if (config.AppSettings.Settings["NCacheServer.InitialFeatureDataPostingDelay"] != null)
+                {
+                    tempInt = Int32.Parse(config.AppSettings.Settings["NCacheServer.InitialFeatureDataPostingDelay"].Value);
+
+                    if (tempInt > 0 && tempInt <= _maxFeatureDataPostingDelay)
+                        InitailFeatureDataPostingDelay = tempInt;
+                }
+            }
+            catch (Exception ex) { }
+
+            try
+            {
+                if (config.AppSettings.Settings["NCacheServer.FeatureDataPostingWaitTime"] != null)
+                {
+                    tempInt = Int32.Parse(config.AppSettings.Settings["NCacheServer.FeatureDataPostingWaitTime"].Value);
+                    if (tempInt > 0 && tempInt <= _maxFeatureDataPostingDelay)
+                        FeatureDataPostingWaitTime = tempInt;
+                }
+            }
+            catch (Exception ex) { }
         }
 
+    
         public static int Port
         {
             get { return _port; }
@@ -1037,14 +2109,18 @@ namespace Alachisoft.NCache.Common.Util
             private set { _unInstallInProgress = value; }
         }
 
-    
-        public static IPAddress BindToIP
+        public static bool LicenseLogging
         {
-            get { return _bindToIP; }
-            private set { _bindToIP = value; }
+            get { return _licenseLogging; }
+            private set { _licenseLogging = value; }
         }
 
-     
+        public static IPAddress BindToClientServerIP
+        {
+            get { return _bindToClientServerIP; }
+            private set { _bindToClientServerIP = value; }
+        }
+
         public static bool EnableDualSocket
         {
             get { return _enableDualSocket; }
@@ -1062,7 +2138,12 @@ namespace Alachisoft.NCache.Common.Util
             get { return _naglingSize; }
             private set { _naglingSize = value; }
         }
-        
+
+        public static DependencyLibrary DependencyLibrary
+        {
+            get { return _dependencyLibrary; }
+            private set { _dependencyLibrary = value; }
+        }
         public static string CacheUserName
         {
             get { return _cacheUserName; }
@@ -1152,8 +2233,8 @@ namespace Alachisoft.NCache.Common.Util
             get { return _enableCacheLastAccessCountLogging; }
             private set { _enableCacheLastAccessCountLogging = value; }
         }
-
         public static int CacheLastAccessCountInterval
+
         {
             get { return _cacheLastAccessCountInterval; }
             private set { _cacheLastAccessCountInterval = value; }
@@ -1170,6 +2251,7 @@ namespace Alachisoft.NCache.Common.Util
             get { return _lOHPoolSize; }
             private set { _lOHPoolSize = value; }
         }
+
 
         public static int LOHPoolBufferSize
         {
@@ -1193,6 +2275,16 @@ namespace Alachisoft.NCache.Common.Util
         {
             get { return _logClientEvents; }
             private set { _logClientEvents = value; }
+        }
+
+        public static string EventLogLevel
+        {
+            get { return _eventLogLevel; }
+            private set 
+            { 
+                _eventLogLevel = value;
+                EventLogUtil.SetEventLogLevent();
+            }
         }
 
         public static bool EnableForcedGC
@@ -1299,18 +2391,6 @@ namespace Alachisoft.NCache.Common.Util
             private set { _enumeratorChunkSize = value; }
         }
 
-        public static int RequestInquiryCleanInterval
-        {
-            get { return _requestInquiryCleanInterval; }
-            private set { _requestInquiryCleanInterval = value; }
-        }
-
-        public static bool EnableRequestInquiry
-        {
-            get { return _enableRequestInquiry; }
-            private set { _enableRequestInquiry = value; }
-        }
-
         public static bool EventsPersistence
         {
             get { return ServiceConfiguration._eventsPersistence; }
@@ -1359,12 +2439,6 @@ namespace Alachisoft.NCache.Common.Util
             private set { ServiceConfiguration._disableIndexNotDefinedException = value; }
         }
 
-        public static bool EnableDataSourceCounters
-        {
-            get { return ServiceConfiguration._enableDataSourceCounters; }
-            private set { ServiceConfiguration._enableDataSourceCounters = value; }
-        }
-
         public static float StateTransferDataSizePerSecond
         {
             get { return ServiceConfiguration._stateTransferDataSizePerSecond; }
@@ -1401,6 +2475,17 @@ namespace Alachisoft.NCache.Common.Util
             private set { ServiceConfiguration._preparedQueryEvictionPercentage = value; }
         }
 
+        public static long LicenseCheckInterval
+        {
+            get { return ServiceConfiguration._licenseCheckInterval; }
+            private set { ServiceConfiguration._licenseCheckInterval = value; }
+        }
+
+        public static bool TurnOffRandomStartTime
+        {
+            get { return turnOffRandomStartTime; }
+        }
+
         public static bool SimulateSocketClose
         {
             get { return ServiceConfiguration._simulateSocketClose; }
@@ -1423,12 +2508,6 @@ namespace Alachisoft.NCache.Common.Util
         {
             get { return ServiceConfiguration._asyncTcpUpQueue; }
             private set { ServiceConfiguration._asyncTcpUpQueue = value; }
-        }
-
-        public static int HeartbeatInterval
-        {
-            get { return ServiceConfiguration._heartbeatInterval; }
-            private set { ServiceConfiguration._heartbeatInterval = value; }
         }
 
         public static bool PrintClusterStats
@@ -1485,16 +2564,17 @@ namespace Alachisoft.NCache.Common.Util
             private set { ServiceConfiguration._clusterHealthDetectionInterval = value; }
         }
 
-        public static int CacheLoaderStartupDelay
-        {
-            get { return ServiceConfiguration._cacheLoaderStartupDelay; }
-            private set { ServiceConfiguration._cacheLoaderStartupDelay = value; }
-        }
-
+        
         public static int DataChunkSize
         {
             get { return _dataChunkSize; }
             set { _dataChunkSize = value; }
+        }
+
+        public static int NotificationEventInterval
+        {
+            get { return _notificationEventInterval; }
+            set { _notificationEventInterval = value; }
         }
 
         public static int ManagementPortUpper
@@ -1506,6 +2586,248 @@ namespace Alachisoft.NCache.Common.Util
         {
             get { return ServiceConfiguration._managementPortLower; }
             private set { ServiceConfiguration._managementPortLower = value; }
+        }
+
+        public static double CommandExecutionThreshold
+        {
+            get { return _commandExecutionThreshold; }
+            private set { _commandExecutionThreshold = value; }
+        }
+        public static bool EnableRequestCancellation
+        {
+            get { return _enableRequestCancellation; }
+            private set { _enableRequestCancellation = value; }
+        }
+        public static bool EnableCommandThresholdLogging
+        {
+            get { return _enableCommandThresholdLogging; }
+            private set { _enableCommandThresholdLogging = value; }
+        }
+
+        public static int PerfmonInterval
+        {
+            get { return _interval; }
+            set { _interval = value; }
+        }
+        public static bool PerfmonArchive
+        {
+            get { return _archive; }
+            private set { _archive = value; }
+        }
+
+        public static string PerfmonPath
+        {
+            get { return _perfmonPath; }
+            private set { _perfmonPath = value; }
+        }
+
+        /// <summary>
+        /// GC collection interval in minutes
+        /// </summary>
+        public static int ServiceGCInterval
+        {
+            get { return _serviceGCInterval; }
+            set { _serviceGCInterval = value; }
+        }
+
+        public static bool PerfmonEnable
+        {
+            get { return _enable; }
+            private set {
+                bool prevValue = _enable;
+                _enable = value;
+                if (prevValue!= _enable)
+                {
+                    _perfmonHasChange = true;
+                }
+
+            }
+        }
+       
+        public static bool HasPerfmonChanged
+        {
+            get { return _perfmonHasChange; }
+            set { _perfmonHasChange = value; }
+        }
+
+        public static string NosDBDependencyProviderVersion
+        {
+            get { return _nosdbDependencyProviderVersion; }
+            set { _nosdbDependencyProviderVersion = value; }
+        }
+
+        public static int ServerFailureRetryDelayInterval
+        {
+            get { return _nodeFailureRetryDelayInterval; }
+        }
+
+        public static bool PublishCountersToCacheHost
+        {
+            get { return _publishCountersToCacheHost; }
+            private set { _publishCountersToCacheHost = value; }
+        }
+
+
+        public static long CollectionChunkSize
+        {
+            get { return _collectionChunkSize; }
+            private set { _collectionChunkSize = value; }
+        }
+        public static bool AutoRenewal
+        {
+            get { return LoadAutoRenewal(); }
+
+        }
+        public static TimeSpan PubSubClientInactivityTimeout
+        {
+
+            get { return ServiceConfiguration._pubSubClientInactivityTimeout; }
+            private set { ServiceConfiguration._pubSubClientInactivityTimeout = value; }
+        }
+        public static int GetLoaderServicePort
+        {
+            get
+            {
+
+                try
+                {
+                    string serviceEXE1 = Path.Combine(AppUtil.InstallDir, "bin");
+                    string serviceEXE2 = Path.Combine(serviceEXE1, "service");
+                    string serviceEXE3 = "";
+#if NETCORE
+                    if (System.Runtime.InteropServices.RuntimeInformation.IsOSPlatform(System.Runtime.InteropServices.OSPlatform.Windows))
+                        serviceEXE3 = Path.Combine(serviceEXE2, "Alachisoft.NCache.LoaderService.dll");
+                    if (System.Runtime.InteropServices.RuntimeInformation.IsOSPlatform(System.Runtime.InteropServices.OSPlatform.Linux))
+                        serviceEXE3 = Path.Combine(serviceEXE2, "Alachisoft.NCache.LoaderDaemon.dll");
+#else
+                    serviceEXE3 = Path.Combine(serviceEXE2, "Alachisoft.NCache.LoaderService.exe");
+#endif
+                    System.Configuration.Configuration config = ConfigurationManager.OpenExeConfiguration(serviceEXE3);
+                    if (config.AppSettings.Settings["LoaderPort"] != null)
+                    {
+                        tempInt = Int32.Parse(config.AppSettings.Settings["LoaderPort"].Value);
+                        if (tempInt > 1024 && tempInt < UInt16.MaxValue)
+                            loaderServicePort = tempInt;
+                    }
+
+                }
+                catch (Exception){}
+                return loaderServicePort;
+
+            }
+        }
+
+        public static bool EnableObjectPooling
+        {
+            get { return _enableObjectPooling; }
+            private set { _enableObjectPooling = value; }
+        }
+
+        /// <summary>
+        /// Flag in service configuration to determine auto start behavior of web manager.
+        /// </summary>
+        public static bool EnableAutoStartWebManagement
+        {
+            get { return _enableAutoStartWebManagement; }
+            private set { _enableAutoStartWebManagement = value; }
+        }
+
+        /// <summary>
+        /// Retries in service configuration to determine number of retries to ping web manager.
+        /// </summary>
+        public static int WebManagerStartRetries
+        {
+            get { return _webManagerStartRetries; }
+            private set { _webManagerStartRetries = value; }
+        }
+
+        public static int TransactionalPoolCapacity
+        {
+            get { return _transactinalPoolCapacity; }
+        }
+
+        public static int PauseWriterThreshold
+        {
+            get { return ServiceConfiguration._pauseWriterThreshold; }
+        }
+
+     
+        public static string UrlUsageInfo { get => _urlUsageInfo; set => _urlUsageInfo = value; }
+
+        public static void LoadHotApplicableConfigurations()
+        {
+            System.Configuration.Configuration config;
+            try
+            {
+                    string serviceEXE1 = Path.Combine(AppUtil.InstallDir, "bin");
+                    string serviceEXE2 = Path.Combine(serviceEXE1, "service");
+                    string serviceEXE3 = "";
+#if NETCORE
+                    if (System.Runtime.InteropServices.RuntimeInformation.IsOSPlatform(System.Runtime.InteropServices.OSPlatform.Windows))
+                        serviceEXE3 = Path.Combine(serviceEXE2, NETCORE_SERVICE_WIN);
+                    if (System.Runtime.InteropServices.RuntimeInformation.IsOSPlatform(System.Runtime.InteropServices.OSPlatform.Linux))
+                        serviceEXE3 = Path.Combine(serviceEXE2, NETCORE_SERVICE_UNIX);
+#else
+                serviceEXE3=Path.Combine(serviceEXE2,"Alachisoft.NCache.Service.exe");
+#endif
+                    config = ConfigurationManager.OpenExeConfiguration(serviceEXE3);
+                
+            }
+            catch (Exception ex) { return; }
+
+            try
+            {
+                if (config.AppSettings.Settings["NCacheServer.CommandExecutionThreshold"] != null)
+                {
+                    double tempdouble = double.Parse(config.AppSettings.Settings["NCacheServer.CommandExecutionThreshold"].Value);
+                    if (tempdouble > 0)
+                        CommandExecutionThreshold = tempdouble;
+                }
+            }
+            catch (Exception ex) { }
+
+            try
+            {
+                if (config.AppSettings.Settings["NCacheServer.EnableCommandThresholdLogging"] != null)
+                {
+                    bool tempbool = bool.Parse(config.AppSettings.Settings["NCacheServer.EnableCommandThresholdLogging"].Value);
+
+                    EnableCommandThresholdLogging = tempbool;
+                }
+            }
+            catch (Exception ex) { }
+        }
+        
+        public static void ChangePerfmonLogPath (string path)
+        {
+            System.Configuration.Configuration config;
+            try
+            {
+                string serviceEXE1 = Path.Combine(AppUtil.InstallDir, "bin");
+                string serviceEXE2 = Path.Combine(serviceEXE1, "service");
+                string serviceEXE3 = "";
+#if NETCORE
+                if (System.Runtime.InteropServices.RuntimeInformation.IsOSPlatform(System.Runtime.InteropServices.OSPlatform.Windows))
+                        serviceEXE3 = Path.Combine(serviceEXE2, NETCORE_SERVICE_WIN);
+                if (System.Runtime.InteropServices.RuntimeInformation.IsOSPlatform(System.Runtime.InteropServices.OSPlatform.Linux))
+                        serviceEXE3 = Path.Combine(serviceEXE2, NETCORE_SERVICE_UNIX);
+#else
+                serviceEXE3=Path.Combine(serviceEXE2,"Alachisoft.NCache.Service.exe");
+#endif
+                config = ConfigurationManager.OpenExeConfiguration(serviceEXE3);     
+            }
+            catch (Exception ex) { return; }
+            try
+            {
+                if (path != null)
+                {
+                    if (config.AppSettings.Settings["NCacheServer.PerfmonLogPath"] != null)
+                    {
+                        PerfmonPath = path; 
+                    }
+                }
+            }
+            catch (Exception ex) { PerfmonPath = System.IO.Path.Combine(AppUtil.InstallDir, "log-files\\PerfmonLogsstatistics\\"); }
         }
     }
 }

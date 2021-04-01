@@ -1,0 +1,27 @@
+import "Commands/TagInfo.proto";
+import "Commands/NamedTagInfo.proto";
+import "ModuleInfo.proto";
+
+option java_outer_classname="DumpCacheItemProtocol";
+package Alachisoft.NCache.Common.Protobuf;
+message DumpCacheItem {
+	optional int64 lockTicks = 1;
+	optional int32 priority = 2;
+	optional bool hasExpired = 3;
+	optional bool needsResync = 4;
+	optional int64 absExp = 5;
+	optional int64 sldExp = 6;
+	optional int32 flag = 7;
+	optional uint64 version = 8;
+	optional int64 creationTime = 9;
+	optional string group = 10;
+	optional string subGroup = 11;
+	optional TagInfo tagInfo = 12;
+	optional NamedTagInfo namedTagInfo = 14;
+	optional string key = 15;
+	optional int64 remainingabs = 16;
+	optional string provider = 17;
+	optional bytes onevalue = 18;
+	optional bool isModuleData = 19;
+	optional ModuleInfo moduleInfo = 20;
+}

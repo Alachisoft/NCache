@@ -1,17 +1,16 @@
-// Copyright (c) 2017 Alachisoft
-// 
-// Licensed under the Apache License, Version 2.0 (the "License");
-// you may not use this file except in compliance with the License.
-// You may obtain a copy of the License at
-// 
-//    http://www.apache.org/licenses/LICENSE-2.0
-// 
-// Unless required by applicable law or agreed to in writing, software
-// distributed under the License is distributed on an "AS IS" BASIS,
-// WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
-// See the License for the specific language governing permissions and
-// limitations under the License.
-
+//  Copyright (c) 2021 Alachisoft
+//  
+//  Licensed under the Apache License, Version 2.0 (the "License");
+//  you may not use this file except in compliance with the License.
+//  You may obtain a copy of the License at
+//  
+//     http://www.apache.org/licenses/LICENSE-2.0
+//  
+//  Unless required by applicable law or agreed to in writing, software
+//  distributed under the License is distributed on an "AS IS" BASIS,
+//  WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+//  See the License for the specific language governing permissions and
+//  limitations under the License
 using System;
 using System.Collections;
 using System.Collections.Generic;
@@ -19,9 +18,9 @@ using System.Reflection;
 using System.Text;
 using System.Xml;
 using System.IO;
+#if !NETCORE
 using System.Runtime.Remoting;
-
-using Runtime = Alachisoft.NCache.Runtime;
+#endif
 using System.Globalization;
 using System.Threading;
 
@@ -46,9 +45,7 @@ namespace Alachisoft.NCache.Common.Configuration
     /// .Net class which is populated by the framework from the the above XML.
     /// <example>
     ///  [ConfigurationRoot("Cache")]
-    
-    /// </example>
-    /// </summary>
+   
     public class ConfigurationBuilder
     {
         private Hashtable _baseConfigurationMap = Hashtable.Synchronized(new Hashtable());
@@ -87,9 +84,8 @@ namespace Alachisoft.NCache.Common.Configuration
         public object[] Configuration
         {
             get { return _lastLoadedConfiugration.ToArray(); }
-
-			internal
-
+			
+            internal
 			set 
             {
                 if (value != null)
@@ -111,6 +107,8 @@ namespace Alachisoft.NCache.Common.Configuration
                 }
             }
         }
+
+        public object HttpUtility { get; private set; }
 
         /// <summary>
         /// Registers a type to be matched for root configuration. ConfigurationBuilder map an XML config
@@ -193,6 +191,7 @@ namespace Alachisoft.NCache.Common.Configuration
             }
             catch (Exception e)
             {
+                AppUtil.LogEvent("Can not open file : " + fileName + ". Error" + e.ToString(), System.Diagnostics.EventLogEntryType.Error);
                 new Exception("Can not open " + fileName + " Error:" + e.ToString());
             }
 
@@ -307,15 +306,23 @@ namespace Alachisoft.NCache.Common.Configuration
                             sameSessionList = tmp["section-list"] as ArrayList;
                         }
 
+#if !NETCORE
                         ObjectHandle objHandle = Activator.CreateInstance(sectionType.Assembly.FullName,nonArrayType);
                         object singleSessionObject = objHandle.Unwrap();
+#elif NETCORE
+                        var singleSessionObject = Activator.CreateInstance(sectionType.GetElementType()); //TODO: ALACHISOFT (This method is changed)
+#endif
                         PopulateConfiugrationObject(singleSessionObject, sectionNode);
                         sameSessionList.Add(singleSessionObject);
                     }
                     else
                     {
+#if !NETCORE
                         ObjectHandle objHandle = Activator.CreateInstance(sectionType.Assembly.FullName, sectionType.FullName);
                         object sectionConfig = objHandle.Unwrap();
+#elif NETCORE
+                        var sectionConfig = Activator.CreateInstance(sectionType); //TODO: ALACHISOFT (This method is changed)
+#endif
                         PopulateConfiugrationObject(sectionConfig, sectionNode);
                         SetConfigSectionObject(config, sectionConfig, sectionNode.Name);
                     }
@@ -517,7 +524,7 @@ namespace Alachisoft.NCache.Common.Configuration
         public object ConvertToPrimitive(Type type, string value, string appendedText)
         {
             object primitiveValue = null;
-
+            
             if (appendedText != null && appendedText != string.Empty)
                 value = value.ToLower().Replace(appendedText.ToLower(), "");
 
@@ -531,7 +538,8 @@ namespace Alachisoft.NCache.Common.Configuration
             CultureInfo cultureInfo = Thread.CurrentThread.CurrentCulture;
             try
             {
-                Thread.CurrentThread.CurrentCulture = new CultureInfo("en-US");
+                System.Threading.Thread.CurrentThread.CurrentCulture =
+            new System.Globalization.CultureInfo("en-US");
                 if (targetType.IsPrimitive)
                 {
                     switch (targetType.FullName)
@@ -545,7 +553,7 @@ namespace Alachisoft.NCache.Common.Configuration
 
                         case "System.Int16":
                             if (isNullable)
-                                primitiveValue = (value != null && !string.IsNullOrEmpty(value.ToString())) ? Convert.ToInt16(value) : (Int16?)null;
+                                primitiveValue = value != null ? Convert.ToInt16(value) : (Int16?)null;
                             else
                                 primitiveValue = Convert.ToInt16(value);
                             break;
@@ -579,7 +587,7 @@ namespace Alachisoft.NCache.Common.Configuration
                             break;
 
                         case "System.Boolean":
-                            // in case of boolean we can ignore the the case as "True", "true" and "tRue" are the same
+                            //[bug-id: 1434] in case of boolean we can ignore the the case as "True", "true" and "tRue" are the same
                             if (isNullable)
                                 primitiveValue = value != null ? Convert.ToBoolean(value) : (Boolean?)null;
                             else
@@ -596,11 +604,6 @@ namespace Alachisoft.NCache.Common.Configuration
 
                 }
 
-                if (targetType.FullName == "System.DateTime")
-                    if (isNullable)
-                        primitiveValue = (!string.IsNullOrEmpty(value.ToString()) && value != null) ? Convert.ToDateTime(value) : (DateTime?)null;
-                    else
-                        primitiveValue = Convert.ToDateTime(value);
                 if (type.FullName == "System.Decimal")
                     if (isNullable)
                         primitiveValue = value != null ? Convert.ToDecimal(value) : (Decimal?)null;
@@ -612,7 +615,7 @@ namespace Alachisoft.NCache.Common.Configuration
             }
             finally
             {
-                Thread.CurrentThread.CurrentCulture = cultureInfo;
+                System.Threading.Thread.CurrentThread.CurrentCulture = cultureInfo;
             }
             return primitiveValue;
         }
@@ -728,11 +731,19 @@ namespace Alachisoft.NCache.Common.Configuration
                                 string appendedText = attrib.AppendedText != null ? attrib.AppendedText : "";
                                 if (propertyValue != null)
                                 {
-                                    sb.Append(" " + attrib.AttributeName + "=\"" + propertyValue.ToString() + appendedText + "\"");
+                                    string encodedPropertyValue = null;
+                                    if (sectionName.Equals("parameters", StringComparison.InvariantCultureIgnoreCase))
+                                        encodedPropertyValue = System.Web.HttpUtility.HtmlEncode(propertyValue.ToString());
+                                    else
+                                        encodedPropertyValue = propertyValue.ToString();
+                                        sb.Append(" " + attrib.AttributeName + "=\"" + encodedPropertyValue + appendedText + "\"");
                                 }
                                 else
                                 {
-                                    sb.Append(" " + attrib.AttributeName + "=\"\"");
+                                    if (attrib.WriteIfNull)
+                                        sb.Append(" " + attrib.AttributeName + "=\"\"");
+                                    else
+                                        sb.Append("");
                                 }
                             }
                         }

@@ -1,17 +1,16 @@
-// Copyright (c) 2017 Alachisoft
-// 
-// Licensed under the Apache License, Version 2.0 (the "License");
-// you may not use this file except in compliance with the License.
-// You may obtain a copy of the License at
-// 
-//    http://www.apache.org/licenses/LICENSE-2.0
-// 
-// Unless required by applicable law or agreed to in writing, software
-// distributed under the License is distributed on an "AS IS" BASIS,
-// WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
-// See the License for the specific language governing permissions and
-// limitations under the License.
-
+//  Copyright (c) 2021 Alachisoft
+//  
+//  Licensed under the Apache License, Version 2.0 (the "License");
+//  you may not use this file except in compliance with the License.
+//  You may obtain a copy of the License at
+//  
+//     http://www.apache.org/licenses/LICENSE-2.0
+//  
+//  Unless required by applicable law or agreed to in writing, software
+//  distributed under the License is distributed on an "AS IS" BASIS,
+//  WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+//  See the License for the specific language governing permissions and
+//  limitations under the License
 using System;
 using System.Collections;
 using System.Data;
@@ -19,11 +18,22 @@ using System.Threading;
 
 using Alachisoft.NCache.Common;
 using Alachisoft.NCache.Common.Stats;
+using Alachisoft.NCache.Common.Propagator;
 using Alachisoft.NCache.Common.Util;
 using Alachisoft.NCache.Common.Logger;
+using Alachisoft.NCache.Common.DataStructures.Clustered;
+using Alachisoft.NCache.Common.Enum;
+using Alachisoft.NCache.Common.Collections;
+using Alachisoft.NCache.Common.Caching;
 
 namespace Alachisoft.NCache.Storage
 {
+
+    #region /               --- Store Status ---                        /
+
+    #endregion
+
+
     /// <summary>
     /// This is the base class of all Cache stores. Provides additional optional 
     /// functions that can be overridden as well as default implementation of the
@@ -33,23 +43,6 @@ namespace Alachisoft.NCache.Storage
     internal class StorageProviderBase : ICacheStorage
     {
 
-        #region /               --- Store Status ---                        /
-        /// <summary>
-        /// Staus of the Store.
-        /// </summary>
-        protected enum StoreStatus
-        {
-            /// <summary> Store has space.</summary>
-            HasSpace,
-
-            /// <summary> Store is almost full,but can accomadate some data. </summary>
-            NearEviction,
-
-            /// <summary> Store has no space to accomodate new data.</summary>
-            HasNotEnoughSpace
-        }
-
-        #endregion
 
         public const uint KB = 1024;
         public const uint MB = KB * KB;
@@ -57,6 +50,17 @@ namespace Alachisoft.NCache.Storage
         private string _cacheContext;
         private Boolean _virtualUnlimitedSpace = false;
 
+        private ISizableIndex _isizableQueryIndexManager=null;
+
+        private ISizableIndex _isizableGroupIndexManager = null;
+
+        private ISizableIndex _isizableExpirationIndexManager = null;
+
+        private ISizableIndex _isizableEvictionIndexManager = null;
+
+        private ISizableIndex _bucketIndexManager = null;
+        private ISizableIndex _messageStore = null;
+        
         /// <summary>
         /// The default starting capacity of stores.
         /// </summary>
@@ -84,7 +88,41 @@ namespace Alachisoft.NCache.Storage
         /// <summary>
         /// Size of data, in bytes, stored in cache
         /// </summary>
-        protected long _dataSize;
+        private long _dataSize;
+     
+
+
+        protected long TotalDataSize
+        {
+            get
+            {
+                long temp=_dataSize;
+                
+                if (ISizableQueryIndexManager != null)
+                    temp += ISizableQueryIndexManager.IndexInMemorySize;
+                
+                if (ISizableGroupIndexManager != null)
+                    temp += ISizableGroupIndexManager.IndexInMemorySize;
+
+                if (ISizableExpirationIndexManager != null)
+                    temp += ISizableExpirationIndexManager.IndexInMemorySize;
+
+                if (ISizableEvictionIndexManager != null)
+                    temp += ISizableEvictionIndexManager.IndexInMemorySize;
+
+                if (ISizableBucketIndexManager != null)
+                    temp += ISizableBucketIndexManager.IndexInMemorySize;
+
+                if (ISizableMessageStore != null)
+                    temp += ISizableMessageStore.IndexInMemorySize;
+
+                return temp; 
+            }
+            set 
+            {
+                _dataSize = value; 
+            }
+        }
 
         /// <summary>
         /// Reader, writer lock to be used for synchronization.
@@ -92,44 +130,19 @@ namespace Alachisoft.NCache.Storage
         protected ReaderWriterLock _syncObj;
 
         protected bool _reportCacheNearEviction = false;
+
         protected int _evictionReportSize = 0;
         protected int _reportInterval = 5;
         protected DateTime _lastReportedTime = DateTime.MinValue;
         ILogger _ncacheLog;
 
-        private ISizableIndex _iSizableQueryIndexManager = null;
-        private ISizableIndex _iSizableExpirationIndexManager = null;
-        private ISizableIndex _iSizableEvictionIndexManager = null;
-
-        protected long TotalDataSize
-        {
-            get
-            {
-                long temp = _dataSize;
-
-                if (ISizableQueryIndexManager != null)
-                    temp += ISizableQueryIndexManager.IndexInMemorySize;
-             
-                if (ISizableExpirationIndexManager != null)
-                    temp += ISizableExpirationIndexManager.IndexInMemorySize;
-
-                if (ISizableEvictionIndexManager != null)
-                    temp += ISizableEvictionIndexManager.IndexInMemorySize;
-
-                return temp;
-            }
-            set
-            {
-                _dataSize = value;
-            }
-        }
-
-
         public ILogger NCacheLog
         {
             get { return _ncacheLog; }
         }
-        
+
+        protected IAlertPropagator _alertPropagator;
+
         /// <summary>
         /// Default contructor.
         /// </summary>
@@ -148,24 +161,31 @@ namespace Alachisoft.NCache.Storage
             _maxSize = maxSize;
         }
         public StorageProviderBase(IDictionary properties, bool evictionEnabled)
-            : this(properties, evictionEnabled, null)
+            : this(properties, evictionEnabled, null, null)
         {
         }
         /// <summary>
         /// Overloaded constructor. Takes the properties as a map.
         /// </summary>
         /// <param name="properties">property collection</param>
-        public StorageProviderBase(IDictionary properties, bool evictionEnabled, ILogger NCacheLog)
+        public StorageProviderBase(IDictionary properties, bool evictionEnabled, ILogger NCacheLog, IAlertPropagator alertPropagator)
         {
             Initialize(properties, evictionEnabled);
             _ncacheLog = NCacheLog;
 
+
+            _alertPropagator = alertPropagator;
+
+            string tmp ;
+
             _evictionReportSize = ServiceConfiguration.CacheSizeThreshold;
-            if (_evictionReportSize > 0)
+            if(_evictionReportSize > 0)
                 _reportCacheNearEviction = true;
 
             _reportInterval = ServiceConfiguration.CacheSizeReportInterval;
+           
         }
+
 
         protected void CheckForStoreNearEviction()
         {
@@ -175,7 +195,7 @@ namespace Alachisoft.NCache.Storage
 
             if (_reportCacheNearEviction && !VirtualUnlimitedSpace)
             {
-                if (_lastReportedTime.AddMinutes(_reportInterval) < DateTime.Now)
+                if (_lastReportedTime.AddMinutes(_reportInterval) < DateTime.UtcNow)
                 {
                     if (_maxSize > 0 && _evictionReportSize > 0)
                     {
@@ -183,7 +203,7 @@ namespace Alachisoft.NCache.Storage
                         if (currentSizeInPerc >= _evictionReportSize)
                         {
                             ThreadPool.QueueUserWorkItem(new WaitCallback(InformCacheNearEviction));
-                            _lastReportedTime = DateTime.Now;
+                            _lastReportedTime = DateTime.UtcNow;
                         }
                     }
                 }
@@ -199,7 +219,12 @@ namespace Alachisoft.NCache.Storage
                 long currentSizeInPerc = (TotalDataSize / _maxSize) * 100;
                 if (currentSizeInPerc > 100) currentSizeInPerc = 100;
                 AppUtil.LogEvent(cacheserver, "Cache '" + _cacheContext + "' has exceeded " + _evictionReportSize + "% of allocated cache size", System.Diagnostics.EventLogEntryType.Warning, EventCategories.Warning, EventID.CacheSizeWarning);
-                
+                //EMailNotifier : Cache Size Alert Propagation
+                if (_alertPropagator != null)
+                {
+                    _alertPropagator.RaiseAlert(EventID.CacheSizeWarning, cacheserver, "Cache '" + _cacheContext + "' has exceeded " + _evictionReportSize + "% of allocated cache size");
+                }
+                //-
                 NCacheLog.CriticalInfo("CacheStore", "cache has exceeded " + _evictionReportSize + "% of allocated cache size");
             }
             catch (Exception e)
@@ -221,7 +246,7 @@ namespace Alachisoft.NCache.Storage
                 try
                 {
                     _maxSize = ToBytes(Convert.ToInt64(properties["max-size"]));
-
+                    _maxCount = Convert.ToInt64(properties["max-objects"]);
                     if (evictionEnabled)
                     {
                         //we give user extra cution to add/insert data into the store even
@@ -251,6 +276,7 @@ namespace Alachisoft.NCache.Storage
         {
             _syncObj = null;
             this.Cleared();
+          
         }
 
         #endregion
@@ -304,7 +330,7 @@ namespace Alachisoft.NCache.Storage
         /// </summary>
         public virtual long Size
         {
-            get { return TotalDataSize; }
+            get { return this.TotalDataSize; }
         }
 
 
@@ -361,7 +387,7 @@ namespace Alachisoft.NCache.Storage
         /// <param name="key">key</param>
         /// <param name="item">object</param>
         /// <returns>returns the result of operation.</returns>
-        public virtual StoreAddResult Add(object key, object item, Boolean allowExtendedSize)
+        public virtual StoreAddResult Add(object key, IStorageEntry item,  Boolean allowExtendedSize)
         {
             return StoreAddResult.Failure;
         }
@@ -372,7 +398,7 @@ namespace Alachisoft.NCache.Storage
         /// <param name="key">key</param>
         /// <param name="item">object</param>
         /// <returns>returns the result of operation.</returns>
-        public virtual StoreInsResult Insert(object key, object item, Boolean allowExtendedSize)
+        public virtual StoreInsResult Insert(object key, IStorageEntry item,  Boolean allowExtendedSize)
         {
             return StoreInsResult.Failure;
         }
@@ -386,7 +412,6 @@ namespace Alachisoft.NCache.Storage
         {
             return null;
         }
-
         /// <summary>
         /// Returns a .NET IEnumerator interface so that a client should be able
         /// to iterate over the elements of the cache store.
@@ -397,6 +422,14 @@ namespace Alachisoft.NCache.Storage
             return null;
         }
 
+        /// <summary>
+        /// Increases/decreases cache size.
+        /// </summary>
+        /// <param name="change">Amount of change in cache size.</param>
+        public virtual void ChangeCacheSize(long change)
+        {
+            _dataSize += change;
+        }
         #endregion
 
         /// <summary>
@@ -404,8 +437,9 @@ namespace Alachisoft.NCache.Storage
         /// </summary>
         /// <param name="item">item to be added</param>
         /// <returns>true is store has space, else false</returns>
-        protected StoreStatus HasSpace(ISizable item, long keySize, Boolean allowExtendedSize)
+        public virtual StoreStatus HasSpace(ISizable item, long keySize , Boolean allowExtendedSize)
         {
+            //Keysize will be included in actual cachesize
             if (VirtualUnlimitedSpace)
                 return StoreStatus.HasSpace;
 
@@ -415,10 +449,9 @@ namespace Alachisoft.NCache.Storage
             {
                 maxSize = (long)(_maxSize * .95);
             }
-            
-            
-            //Keysize will be included in actual cachesize
+
             long nextSize = TotalDataSize + item.InMemorySize + keySize;
+
             StoreStatus status = StoreStatus.HasSpace;
 
             if (nextSize > maxSize)
@@ -438,11 +471,12 @@ namespace Alachisoft.NCache.Storage
         /// <param name="oldItem">old item</param>
         /// <param name="newItem">new item to be inserted</param>
         /// <returns>true is store has space, else false</returns>
-        protected StoreStatus HasSpace(ISizable oldItem, ISizable newItem, long keySize, Boolean allowExtendedSize)
-        {
 
+        protected StoreStatus HasSpace(ISizable oldItem, ISizable newItem,long keySize,  Boolean allowExtendedSize)
+        {
+         
             if (VirtualUnlimitedSpace)
-                return StoreStatus.HasSpace;
+            return StoreStatus.HasSpace;
 
             long maxSize = _maxSize;
 
@@ -450,12 +484,11 @@ namespace Alachisoft.NCache.Storage
             {
                 maxSize = (long)(_maxSize * .95);
             }
-
-
+            
             long nextSize = TotalDataSize + newItem.InMemorySize - (oldItem == null ? -keySize : oldItem.InMemorySize);
+			
             StoreStatus status = StoreStatus.HasSpace;
 
-           
 
             if (nextSize > maxSize)
             {
@@ -471,9 +504,10 @@ namespace Alachisoft.NCache.Storage
         /// Increments the data size in cache, after item is Added
         /// </summary>
         /// <param name="itemSize">item added</param>
-        protected void Added(ISizable item,long keySize)
+        protected void Added(IStorageEntry item,long keySize)
         {
             _dataSize += (item.InMemorySize + keySize);
+           
         }
 
         /// <summary>
@@ -481,26 +515,37 @@ namespace Alachisoft.NCache.Storage
         /// </summary>
         /// <param name="oldItem">old item</param>
         /// <param name="newItem">new item to be inserted</param>
-        protected void Inserted(ISizable oldItem, ISizable newItem, long keySize)
+        protected void Inserted(IStorageEntry oldItem, IStorageEntry newItem, long keySize)
         {
-            _dataSize += newItem.InMemorySize - (oldItem == null ? -keySize : oldItem.InMemorySize);
+            if (newItem.Type != EntryType.CacheItem)
+            {
+                _dataSize += newItem.InMemorySize - (oldItem == null ? -keySize : oldItem.OldInMemorySize);
+                
+                newItem.OldInMemorySize = newItem.InMemorySize ;
+            }
+            else
+            {
+                _dataSize += newItem.InMemorySize - (oldItem == null ? -keySize : oldItem.InMemorySize);
+
+            }
         }
 
         /// <summary>
         /// Decrement the data size in cache, after item is removed
         /// </summary>
         /// <param name="itemSize">item removed</param>
-        protected void Removed(ISizable item, long keySize)
+        public void Removed(ISizable item, long keySize,EntryType type)
         {
             _dataSize -= (item.InMemorySize + keySize);
+            
         }
-
         /// <summary>
         /// Reset data size when cache is cleared
         /// </summary>
         protected void Cleared()
         {
             TotalDataSize = 0;
+           
         }
 
         /// <summary>
@@ -511,6 +556,11 @@ namespace Alachisoft.NCache.Storage
         public static StorageProviderBase Synchronized(StorageProviderBase cacheStorage)
         {
             return new StorageProviderSyncWrapper(cacheStorage);
+        }
+
+        public ClusteredArrayList GetBucketKeyList(int bucketId)
+        {
+            throw new NotImplementedException();
         }
 
         public bool VirtualUnlimitedSpace
@@ -527,38 +577,102 @@ namespace Alachisoft.NCache.Storage
 
         public ISizableIndex ISizableQueryIndexManager 
         {
+            get 
+            {
+                return _isizableQueryIndexManager;
+            }
+            set 
+            {
+                _isizableQueryIndexManager = value;
+            }
+        }
+
+        public ISizableIndex ISizableGroupIndexManager
+        {
             get
             {
-                return _iSizableQueryIndexManager;
+                return _isizableGroupIndexManager;
             }
             set
             {
-                _iSizableQueryIndexManager = value;
+                _isizableGroupIndexManager = value;
             }
         }
 
         public ISizableIndex ISizableExpirationIndexManager
         {
-            get
+            get 
             {
-                return _iSizableExpirationIndexManager;
+                return _isizableExpirationIndexManager;
+                
             }
-            set
+            set 
             {
-                _iSizableExpirationIndexManager = value;
+                _isizableExpirationIndexManager = value;
             }
         }
 
-        public ISizableIndex ISizableEvictionIndexManager
+        public ISizableIndex ISizableEvictionIndexManager 
         {
-            get
+            get 
             {
-                return _iSizableEvictionIndexManager;
+                return _isizableEvictionIndexManager;
             }
             set
             {
-                _iSizableEvictionIndexManager = value;
+                _isizableEvictionIndexManager = value;
             }
+        }
+
+        public ISizableIndex ISizableBucketIndexManager
+        {
+            get
+            {
+                return _bucketIndexManager;
+            }
+            set
+            {
+                _bucketIndexManager = value;
+            }
+        }
+
+        public ISizableIndex ISizableMessageStore
+        {
+            get
+            {
+                return _messageStore;
+            }
+            set
+            {
+                _messageStore = value;
+            }
+        }
+
+        public long IndexInMemorySize
+        {
+            get
+            {
+                return _dataSize;
+            }
+        }
+
+        public ISizableIndex ISizableCacheStore
+        {
+            get
+            {
+                throw new NotImplementedException();
+            }
+
+            set
+            {
+                throw new NotImplementedException();
+            }
+        }
+
+        public void CheckIfCacheNearEviction()
+        {
+            if (ServiceConfiguration.CacheSizeThreshold > 0) _reportCacheNearEviction = true;
+            if (_reportCacheNearEviction) CheckForStoreNearEviction();
         }
 
     }

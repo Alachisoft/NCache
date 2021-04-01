@@ -1,20 +1,12 @@
-// Licensed under the Apache License, Version 2.0 (the "License");
-// you may not use this file except in compliance with the License.
-// You may obtain a copy of the License at
-// 
-//    http://www.apache.org/licenses/LICENSE-2.0
-// 
-// Unless required by applicable law or agreed to in writing, software
-// distributed under the License is distributed on an "AS IS" BASIS,
-// WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
-// See the License for the specific language governing permissions and
-// limitations under the License.
 // $Id: GmsImpl.java,v 1.4 2004/09/03 12:28:04 belaban Exp $
-
 using System;
 using Alachisoft.NGroups;
+using Alachisoft.NCache.Common.Enum;
 using Alachisoft.NCache.Common.Net;
 using Alachisoft.NCache.Common.Util;
+using System.Collections;
+using System.Collections.Generic;
+using System.Linq;
 
 namespace Alachisoft.NGroups.Protocols.pbcast
 {
@@ -23,7 +15,6 @@ namespace Alachisoft.NGroups.Protocols.pbcast
         protected string _uniqueId;
 		internal GMS gms = null;
 		internal bool leaving = false;
-		
 		public abstract void  join(Address mbr, bool isStartedAsMirror);
 		public abstract void  leave(Address mbr);
 		
@@ -60,7 +51,7 @@ namespace Alachisoft.NGroups.Protocols.pbcast
         } // only processed by participants
 
 
-        public abstract JoinRsp handleJoin(Address mbr, string subGroup_name, bool isStartedAsMirror, string gmsId, ref bool acquireHashmap);
+        public abstract JoinRsp handleJoin(Address mbr, string subGroup_name, bool isStartedAsMirror, string gmsId);
 		public abstract void  handleLeave(Address mbr, bool suspected);
 		public abstract void  handleViewChange(View new_view, Digest digest);
 		public abstract void  handleSuspect(Address mbr);
@@ -74,7 +65,7 @@ namespace Alachisoft.NGroups.Protocols.pbcast
             gms.Stack.NCacheLog.Debug("gmsImpl.handleIsClusterInStateTransfer", "(state transfer request) sender: " + sender + " ->" + isInStateTransfer);
             hdr.arg = isInStateTransfer;
             msg.putHeader(HeaderType.GMS,hdr);
-            gms.passDown(new Event(Event.MSG,msg,Alachisoft.NCache.Common.Enum.Priority.Critical));
+            gms.passDown(new Event(Event.MSG,msg,Priority.High));
         }
 
         /// <summary>
@@ -91,8 +82,8 @@ namespace Alachisoft.NGroups.Protocols.pbcast
                     _uniqueId = value;
             }
         }
-
-		public virtual bool handleUpEvent(Event evt)
+      
+        public virtual bool handleUpEvent(Event evt)
 		{
 			return true;
 		}
@@ -178,5 +169,7 @@ namespace Alachisoft.NGroups.Protocols.pbcast
         {
             wrongMethod("ReCheckClusterHealth()");
         }
-	}
+
+      
+    }
 }

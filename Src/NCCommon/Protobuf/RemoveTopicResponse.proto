@@ -1,0 +1,8 @@
+
+option java_outer_classname="RemoveTopicResponseProtocol";
+package Alachisoft.NCache.Common.Protobuf;
+message RemoveTopicResponse {
+	optional bool success = 1;
+	optional int32 commandID = 2[default = -1];
+	optional int64 requestId = 3;
+}

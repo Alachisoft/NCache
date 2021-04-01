@@ -1,33 +1,23 @@
-// Copyright (c) 2017 Alachisoft
-// 
-// Licensed under the Apache License, Version 2.0 (the "License");
-// you may not use this file except in compliance with the License.
-// You may obtain a copy of the License at
-// 
-//    http://www.apache.org/licenses/LICENSE-2.0
-// 
-// Unless required by applicable law or agreed to in writing, software
-// distributed under the License is distributed on an "AS IS" BASIS,
-// WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
-// See the License for the specific language governing permissions and
-// limitations under the License.
-
+//  Copyright (c) 2021 Alachisoft
+//  
+//  Licensed under the Apache License, Version 2.0 (the "License");
+//  you may not use this file except in compliance with the License.
+//  You may obtain a copy of the License at
+//  
+//     http://www.apache.org/licenses/LICENSE-2.0
+//  
+//  Unless required by applicable law or agreed to in writing, software
+//  distributed under the License is distributed on an "AS IS" BASIS,
+//  WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+//  See the License for the specific language governing permissions and
+//  limitations under the License
 using System;
 using System.Collections.Generic;
-using System.Text;
 using Alachisoft.NCache.Common.Configuration;
-
 using Alachisoft.NCache.Runtime.Serialization;
-
 using System.Collections;
 using Alachisoft.NCache.Common;
-
-
-using Runtime = Alachisoft.NCache.Runtime;
-
-
 using Alachisoft.NCache.Config;
-
 
 namespace Alachisoft.NCache.Management.ClientConfiguration.Dom
 {
@@ -35,19 +25,17 @@ namespace Alachisoft.NCache.Management.ClientConfiguration.Dom
     public class CacheConfiguration : ICloneable, ICompactSerializable
     {
         private string _cacheId;
+        private string _defaultReadThruProvider = string.Empty;
+        private string _defaultWriteThruProvider = string.Empty;
         private bool _loadBalance = true;
         private bool _enableClientLogs = false;
-        private bool _enableServerPriorities = false;
         private string _logLevel = "error";
         private bool _isRegisteredLocal;
-
         private Dictionary<int, CacheServer> _serversPriorityList = new Dictionary<int, CacheServer>();
         private static string _serverName;
         private static string _bindIp;
         private RtContextValue _serverRuntimeContext;
-
         private ServerMapping _serverMapping = null;
-
 
         static CacheConfiguration()
         {
@@ -71,9 +59,8 @@ namespace Alachisoft.NCache.Management.ClientConfiguration.Dom
             set { _cacheId = value; }
         }
 
-       
 
-      [ConfigurationAttribute("load-balance")]
+        [ConfigurationAttribute("load-balance")]
         public bool LoadBalance
         {
             get { return _loadBalance; }
@@ -100,7 +87,6 @@ namespace Alachisoft.NCache.Management.ClientConfiguration.Dom
             set { _serverRuntimeContext = value; }
         }
 
-        //[ConfigurationAttribute("server-runtime-context")]
         public string RuntimeContextString
         {
             get
@@ -109,9 +95,6 @@ namespace Alachisoft.NCache.Management.ClientConfiguration.Dom
 
                 switch (_serverRuntimeContext)
                 {
-                    case RtContextValue.JVCACHE:
-                        contextString = "JVCACHE";
-                        break;
                     case RtContextValue.NCACHE:
                         contextString = "NCACHE";
                         break;
@@ -126,9 +109,6 @@ namespace Alachisoft.NCache.Management.ClientConfiguration.Dom
                     case "NCACHE":
                         _serverRuntimeContext = RtContextValue.NCACHE;
                         break;
-                    case "JVCACHE":
-                        _serverRuntimeContext = RtContextValue.JVCACHE;
-                        break;
                 }
             }
         }
@@ -138,7 +118,6 @@ namespace Alachisoft.NCache.Management.ClientConfiguration.Dom
         {
             get
             {
-                //BringLocalServerToFirstPriority();
                 CacheServer[] servers = new CacheServer[_serversPriorityList.Count];
                 foreach (KeyValuePair<int, CacheServer> pair in _serversPriorityList)
                 {
@@ -158,7 +137,6 @@ namespace Alachisoft.NCache.Management.ClientConfiguration.Dom
                 }
             }
         }
-
         [ConfigurationSection("server-end-point")]
         public ServerMapping ServerMapping
         {
@@ -173,6 +151,8 @@ namespace Alachisoft.NCache.Management.ClientConfiguration.Dom
             }
         }
 
+
+     
 
         public Dictionary<int, CacheServer> ServersPriorityList
         {
@@ -190,7 +170,6 @@ namespace Alachisoft.NCache.Management.ClientConfiguration.Dom
             set { _bindIp = value; }
         }
 
-        
 
         public bool RemoveServer(string serverName)
         {
@@ -272,13 +251,14 @@ namespace Alachisoft.NCache.Management.ClientConfiguration.Dom
             CacheConfiguration configuration = new CacheConfiguration();
             configuration.BindIp = _bindIp;
             configuration._cacheId = _cacheId;
+            configuration._defaultReadThruProvider = _defaultReadThruProvider;
+            configuration._defaultWriteThruProvider = _defaultWriteThruProvider;
             configuration._loadBalance = _loadBalance;
             configuration.Servers = Servers != null ? Servers.Clone() as CacheServer[] : null;
             configuration._serverRuntimeContext = _serverRuntimeContext;
             configuration._serverMapping = _serverMapping != null ? _serverMapping.Clone() as ServerMapping : null;
             configuration._enableClientLogs = _enableClientLogs;
             configuration._logLevel = _logLevel;
-            configuration._enableServerPriorities = _enableServerPriorities;
             return configuration;
         }
 
@@ -289,34 +269,32 @@ namespace Alachisoft.NCache.Management.ClientConfiguration.Dom
         public void Deserialize(Runtime.Serialization.IO.CompactReader reader)
         {
             _cacheId = reader.ReadObject() as string;
+            _defaultReadThruProvider = reader.ReadObject() as string;
+            _defaultWriteThruProvider = reader.ReadObject() as string;
             _loadBalance = reader.ReadBoolean();
             _isRegisteredLocal = reader.ReadBoolean();
-            
-            //Needs to be intinalized at every read
             _serversPriorityList = new Dictionary<int, CacheServer>();
             int lenght = reader.ReadInt32();
             for (int i = 0; i < lenght; i++)
             {
                 _serversPriorityList.Add(reader.ReadInt32(), reader.ReadObject() as CacheServer);
             }
-            
             _serverName = reader.ReadObject() as string;
             _bindIp = reader.ReadObject() as string;
             _serverRuntimeContext = reader.ReadObject() as string == "1" ? RtContextValue.JVCACHE : RtContextValue.NCACHE;
-  
             if (reader.ReadBoolean())
             {
                 _serverMapping = reader.ReadObject() as ServerMapping;
             }
             _enableClientLogs = reader.ReadBoolean();
             _logLevel = reader.ReadObject() as string;
-            _enableServerPriorities = reader.ReadBoolean();
-
         }
 
         public void Serialize(Runtime.Serialization.IO.CompactWriter writer)
         {
             writer.WriteObject(_cacheId);
+            writer.WriteObject(_defaultReadThruProvider);
+            writer.WriteObject(_defaultWriteThruProvider);
             writer.Write(_loadBalance);
             writer.Write(_isRegisteredLocal);
             writer.Write(this._serversPriorityList.Count);
@@ -325,11 +303,9 @@ namespace Alachisoft.NCache.Management.ClientConfiguration.Dom
                 writer.Write((int)i.Key);
                 writer.WriteObject(i.Value);
             }
-          
             writer.WriteObject(_serverName);
             writer.WriteObject(_bindIp);
             writer.WriteObject(_serverRuntimeContext == RtContextValue.JVCACHE ? "1" : "0");
-
             if (_serverMapping == null)
             {
                 writer.Write(false);
@@ -341,8 +317,6 @@ namespace Alachisoft.NCache.Management.ClientConfiguration.Dom
             }
             writer.Write(_enableClientLogs);
             writer.WriteObject(_logLevel);
-            writer.Write(_enableServerPriorities);
-   
         }
 
         #endregion

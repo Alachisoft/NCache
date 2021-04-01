@@ -1,15 +1,4 @@
-// Licensed under the Apache License, Version 2.0 (the "License");
-// you may not use this file except in compliance with the License.
-// You may obtain a copy of the License at
-// 
-//    http://www.apache.org/licenses/LICENSE-2.0
-// 
-// Unless required by applicable law or agreed to in writing, software
-// distributed under the License is distributed on an "AS IS" BASIS,
-// WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
-// See the License for the specific language governing permissions and
-// limitations under the License.
-
+//
 // In order to convert some functionality to Visual C#, the Java Language Conversion Assistant
 // creates "support classes" that duplicate the original functionality.  
 //
@@ -20,26 +9,15 @@
 // the architecture of the resulting solution may differ somewhat.
 //
 
-using System;
-using System.IO;
 using System.Collections;
 using System.Collections.Specialized;
 
 using Alachisoft.NGroups;
 using Alachisoft.NGroups.Util;
-
 using Alachisoft.NGroups.Blocks;
 using Alachisoft.NGroups.Protocols;
 using Alachisoft.NGroups.Protocols.pbcast;
-
-
-
-
-using Alachisoft.NCache.Runtime.Serialization;
-
-
 using Alachisoft.NCache.Serialization;
-using Alachisoft.NCache.Serialization.Formatters;
 using Alachisoft.NCache.Common;
 using Alachisoft.NCache.Common.DataStructures;
 
@@ -47,42 +25,35 @@ using Alachisoft.NCache.Common.DataStructures;
 /// <summary>
 /// Contains conversion support elements such as classes, interfaces and static methods.
 /// </summary>
-
 public class Global
-
 {
 	static public void RegisterCompactTypes()
 	{
 		CompactFormatterServices.RegisterCompactType(typeof(List),81);
-        CompactFormatterServices.RegisterCompactType(typeof(Alachisoft.NCache.Common.ProductVersion), 302);
-
-       
-
+        CompactFormatterServices.RegisterCompactType(typeof(ProductVersion), 302);
+#if SERVER
 		CompactFormatterServices.RegisterCompactType(typeof(ViewId),82);
 		CompactFormatterServices.RegisterCompactType(typeof(View),83);
 		CompactFormatterServices.RegisterCompactType(typeof(PingRsp),85);
-		CompactFormatterServices.RegisterCompactType(typeof(Alachisoft.NGroups.Protocols.pbcast.Digest),87);
+		CompactFormatterServices.RegisterCompactType(typeof(Digest),87);
 		CompactFormatterServices.RegisterCompactType(typeof(Message),89);
 		CompactFormatterServices.RegisterCompactType(typeof(MergeView),90);
 		CompactFormatterServices.RegisterCompactType(typeof(MergeData),91);
-        CompactFormatterServices.RegisterCompactType(typeof(Alachisoft.NGroups.Protocols.pbcast.JoinRsp), 92);
+        CompactFormatterServices.RegisterCompactType(typeof(JoinRsp), 92);
 		CompactFormatterServices.RegisterCompactType(typeof(RequestCorrelator.HDR),93);
 		CompactFormatterServices.RegisterCompactType(typeof(TOTAL.HDR),94);
-		CompactFormatterServices.RegisterCompactType(typeof(Alachisoft.NGroups.Protocols.pbcast.GMS.HDR),98);
+		CompactFormatterServices.RegisterCompactType(typeof(GMS.HDR),98);
 		CompactFormatterServices.RegisterCompactType(typeof(PingHeader),103);
 		CompactFormatterServices.RegisterCompactType(typeof(TcpHeader),104);
         CompactFormatterServices.RegisterCompactType(typeof(ConnectionTable.Connection.ConnectionHeader), 108);
-
         CompactFormatterServices.RegisterCompactType(typeof(HashMapBucket), 114);
         CompactFormatterServices.RegisterCompactType(typeof(Alachisoft.NCache.Common.Net.Address), 110);
-
-        CompactFormatterServices.RegisterCompactType(typeof(Alachisoft.NGroups.Protocols.TCP.HearBeat), 115);
-
+        CompactFormatterServices.RegisterCompactType(typeof(TCP.HearBeat), 115);
         CompactFormatterServices.RegisterCompactType(typeof(Alachisoft.NCache.Common.Stats.HPTimeStats), 126);
         CompactFormatterServices.RegisterCompactType(typeof(Alachisoft.NCache.Common.Stats.HPTime), 127);
         CompactFormatterServices.RegisterCompactType(typeof(MessageTrace), 128);
         CompactFormatterServices.RegisterCompactType(typeof(ConnectInfo), 137);
-
+#endif
 	}
 
 	/*******************************/
@@ -142,108 +113,7 @@ public class Global
 	}
 
 	/*******************************/
-	/// <summary>
-	/// The class performs token processing in strings
-	/// </summary>
-    /// <summary>
-    /// This class breaks a string into set of tokens and returns them one by one
-    /// </summary>
-    /// Hasan Khan: Originally this class was written by someone else which highly
-    /// relied upon use of exceptions for its functionality and since it is used
-    /// in many places in the code it could affect the performance of NCache. 
-    /// I have been asked to fix this performance bottleneck so I will rewrite this class.
-    /// 
-    /// Design of this class is totally useless but I'm going to follow the old design
-    /// for the sake of compatibility of rest of the code.
-    /// 
-    /// Design flaws:
-    /// -------------
-    /// 1) HasMoreTokens() works same as MoveNext
-    /// 2) MoveNext() internally calls HasMoreTokens
-    /// 3) Current calls NextToken
-    /// 4) NextToken() gives the current token
-    /// 5) Count gives the number of remaining tokens
-    //internal class Tokenizer : IEnumerator
-    public class Tokenizer : IEnumerator
-    {
-        string text;
-        char[] delims;
-        string[] tokens;
-        int index;
 
-        public Tokenizer(string text, string delimiters)
-        {
-            this.text = text;
-            delims = delimiters.ToCharArray();
-
-			/// We do not need this function in 1x so contional compiling it
-			/// reason: StringSplitOptions.RemoveEmptyEntries is not defined in system assembly of .net 1x
-
-			tokens = text.Split(delims, StringSplitOptions.RemoveEmptyEntries);
-
-            index = -1; // First call of MoveNext will put the pointer on right position.
-        }
-
-        public string NextToken()
-        {
-            return tokens[index]; //Hasan: this is absurd
-        }
-
-        /// <summary>
-        /// Remaining tokens count
-        /// </summary>
-        public int Count //Hasan: bad design
-        {
-            get
-            {
-                if (index < tokens.Length)
-                    return tokens.Length - index - 1;
-                else
-                    return 0;
-            }
-        }
-
-        /// <summary>
-        /// Determines if there are more tokens to return from text.
-        /// Also moves the pointer to next token
-        /// </summary>
-        /// <returns>True if there are more tokens otherwise, false</returns>
-        public bool HasMoreTokens() //Hasan: bad design
-        {
-            if (index < tokens.Length - 1)
-            {
-                index++;
-                return true;
-            }
-            else
-                return false;
-        }
-        #region IEnumerator Members
-
-        /// <summary>
-        /// Performs the same action as NextToken
-        /// </summary>
-        public object Current
-        {
-            get { return NextToken(); }
-        }
-
-        /// <summary>
-        /// Performs the same function as HasMoreTokens
-        /// </summary>
-        /// <returns>True if there are more tokens otherwise, false</returns>
-        public bool MoveNext()
-        {
-            return HasMoreTokens(); //Hasan: this is absurd
-        }
-
-        public void Reset()
-        {
-            index = -1;
-        }
-
-        #endregion
-    }
 	
 	/// <summary>
 	/// Converts an array of bytes to an array of chars

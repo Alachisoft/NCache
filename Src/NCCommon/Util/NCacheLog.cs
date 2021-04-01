@@ -1,24 +1,23 @@
-// Copyright (c) 2017 Alachisoft
-// 
-// Licensed under the Apache License, Version 2.0 (the "License");
-// you may not use this file except in compliance with the License.
-// You may obtain a copy of the License at
-// 
-//    http://www.apache.org/licenses/LICENSE-2.0
-// 
-// Unless required by applicable law or agreed to in writing, software
-// distributed under the License is distributed on an "AS IS" BASIS,
-// WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
-// See the License for the specific language governing permissions and
-// limitations under the License.
-
+//  Copyright (c) 2021 Alachisoft
+//  
+//  Licensed under the Apache License, Version 2.0 (the "License");
+//  you may not use this file except in compliance with the License.
+//  You may obtain a copy of the License at
+//  
+//     http://www.apache.org/licenses/LICENSE-2.0
+//  
+//  Unless required by applicable law or agreed to in writing, software
+//  distributed under the License is distributed on an "AS IS" BASIS,
+//  WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+//  See the License for the specific language governing permissions and
+//  limitations under the License
 using System;
 using System.IO;
 using log4net.Appender;
 
 namespace Alachisoft.NCache.Common.Util
 {
-    public static class NCacheLog
+    public static class NCacheLog 
     {
         public const int bufferDefaultSize = 1;
         static DateTime _timeFired = DateTime.Now;
@@ -29,6 +28,11 @@ namespace Alachisoft.NCache.Common.Util
         static NCacheLog()
         {
 
+#if !NETCORE && !NETCOREAPP2_0
+            string serverconfig ="Alachisoft.NCache.Service.exe.config";
+#else
+            string serverconfig = "Alachisoft.NCache.Daemon.dll.config";
+#endif
         }
 
         public static void SetLevel(string cacheName, Level level)
@@ -73,8 +77,9 @@ namespace Alachisoft.NCache.Common.Util
 
                     }
 
+
                     //If the logger doesnot exist it will create one else fetches one
-                    log4net.ILog log = log4net.LogManager.GetLogger(loggerName);
+                    log4net.ILog log = log4net.LogManager.GetLogger(Log4net.LogRepository.Name, loggerName);
                     //adds the logger as a seperate hierchy, not dependant on any other logger
                     log4net.Repository.Hierarchy.Logger l = (log4net.Repository.Hierarchy.Logger)log.Logger;
 
@@ -109,7 +114,12 @@ namespace Alachisoft.NCache.Common.Util
         {
             lock (NCacheLog.syncLock)
             {
+#if !NETCORE
                 foreach (log4net.Appender.IAppender appender in log4net.LogManager.GetRepository().GetAppenders())
+#elif NETCORE
+                    //TODO: ALACHISOFT (Adding Repository directly here for now)
+                    foreach (log4net.Appender.IAppender appender in log4net.LogManager.GetRepository(Log4net.LogRepository.Name).GetAppenders())
+#endif
                 {
                     BufferingAppenderSkeleton buffered = appender as BufferingAppenderSkeleton;
                     if (buffered is BufferingForwardingAppender)
@@ -121,7 +131,7 @@ namespace Alachisoft.NCache.Common.Util
             }
         }
 
-        #region Main Loggers
+#region Main Loggers
         public static void Error(string cacheName, string message)
         {
             if (cacheName == null || cacheName == string.Empty)
@@ -132,7 +142,7 @@ namespace Alachisoft.NCache.Common.Util
             string loggerName = LoggingInformation.GetLoggerName(cacheName);
             if (loggerName != null && loggerName.Length > 0)
             {
-                log4net.ILog log = log4net.LogManager.GetLogger(loggerName);
+                log4net.ILog log = log4net.LogManager.GetLogger(Log4net.LogRepository.Name, loggerName);
                 if (message.Contains(Environment.NewLine))
                     message = message + "\r\n";
                 log.Error(message);
@@ -153,7 +163,7 @@ namespace Alachisoft.NCache.Common.Util
             string loggerName = LoggingInformation.GetLoggerName(cacheName);
             if (loggerName != null && loggerName.Length > 0)
             {
-                log4net.ILog log = log4net.LogManager.GetLogger(loggerName);
+                log4net.ILog log = log4net.LogManager.GetLogger(Log4net.LogRepository.Name, loggerName);
                 if (message.Contains(Environment.NewLine))
                     message = message + "\r\n";
                 log.Fatal(message);
@@ -174,7 +184,7 @@ namespace Alachisoft.NCache.Common.Util
             string loggerName = LoggingInformation.GetLoggerName(cacheName);
             if (loggerName != null && loggerName.Length > 0)
             {
-                log4net.ILog log = log4net.LogManager.GetLogger(loggerName);
+                log4net.ILog log = log4net.LogManager.GetLogger(Log4net.LogRepository.Name, loggerName);
                 if (message.Contains(Environment.NewLine))
                     message = message + "\r\n";
                 log.Logger.Log(null, Log4net.criticalInfo, message, null);
@@ -195,7 +205,7 @@ namespace Alachisoft.NCache.Common.Util
             string loggerName = LoggingInformation.GetLoggerName(cacheName);
             if (loggerName != null && loggerName.Length > 0)
             {
-                log4net.ILog log = log4net.LogManager.GetLogger(loggerName);
+                log4net.ILog log = log4net.LogManager.GetLogger(Log4net.LogRepository.Name, loggerName);
                 if (message.Contains(Environment.NewLine))
                     message = message + "\r\n";
                 log.Info(message);
@@ -216,7 +226,7 @@ namespace Alachisoft.NCache.Common.Util
             string loggerName = LoggingInformation.GetLoggerName(cacheName);
             if (loggerName != null && loggerName.Length > 0)
             {
-                log4net.ILog log = log4net.LogManager.GetLogger(loggerName);
+                log4net.ILog log = log4net.LogManager.GetLogger(Log4net.LogRepository.Name, loggerName);
                 if (message.Contains(Environment.NewLine))
                     message = message + "\r\n";
                 log.Debug(message);
@@ -237,7 +247,7 @@ namespace Alachisoft.NCache.Common.Util
             string loggerName = LoggingInformation.GetLoggerName(cacheName);
             if (loggerName != null && loggerName.Length > 0)
             {
-                log4net.ILog log = log4net.LogManager.GetLogger(loggerName);
+                log4net.ILog log = log4net.LogManager.GetLogger(Log4net.LogRepository.Name, loggerName);
                 if (message.Contains(Environment.NewLine))
                     message = message + "\r\n";
                 log.Warn(message);
@@ -247,13 +257,13 @@ namespace Alachisoft.NCache.Common.Util
                 NCacheLog.LogLoggingError("loggerName != null && loggerName.Length > 0");
             }
         }
-        #endregion
+#endregion
 
-        #region IfEnabled
+#region IfEnabled
 
         public static bool IsInfoEnabled(string cacheName)
         {
-            #region isEnalbedLogic
+#region isEnalbedLogic
             if (cacheName == null || cacheName == string.Empty)
             {
                 NCacheLog.LogLoggingError("Cache Name is null");
@@ -262,7 +272,7 @@ namespace Alachisoft.NCache.Common.Util
             string loggerName = LoggingInformation.GetLoggerName(cacheName);
             if (loggerName != null && loggerName.Length > 0)
             {
-                log4net.ILog log = log4net.LogManager.GetLogger(loggerName);
+                log4net.ILog log = log4net.LogManager.GetLogger(Log4net.LogRepository.Name, loggerName);
                 return log.IsInfoEnabled;
             }
             else
@@ -270,7 +280,7 @@ namespace Alachisoft.NCache.Common.Util
                 NCacheLog.LogLoggingError("loggerName != null && loggerName.Length > 0");
             }
             return false;
-            #endregion
+#endregion
 
             return true;
 
@@ -278,12 +288,16 @@ namespace Alachisoft.NCache.Common.Util
 
         public static bool IsErrorEnabled(string cacheName)
         {
+#region isEnabledLogic
+           
+#endregion
+
             return true;
         }
 
         public static bool IsWarnEnabled(string cacheName)
         {
-            #region isEnabledLogic
+#region isEnabledLogic
             if (cacheName == null || cacheName == string.Empty)
             {
                 NCacheLog.LogLoggingError("Cache Name is null");
@@ -292,7 +306,7 @@ namespace Alachisoft.NCache.Common.Util
             string loggerName = LoggingInformation.GetLoggerName(cacheName);
             if (loggerName != null && loggerName.Length > 0)
             {
-                log4net.ILog log = log4net.LogManager.GetLogger(loggerName);
+                log4net.ILog log = log4net.LogManager.GetLogger(Log4net.LogRepository.Name, loggerName);
                 return log.IsInfoEnabled;
             }
             else
@@ -301,14 +315,14 @@ namespace Alachisoft.NCache.Common.Util
             }
 
             return false;
-            #endregion
+#endregion
 
             return true;
         }
 
         public static bool IsDebugEnabled(string cacheName)
         {
-            #region isEnabledLogic
+#region isEnabledLogic
             if (cacheName == null || cacheName == string.Empty)
             {
                 NCacheLog.LogLoggingError("Cache Name is null");
@@ -317,7 +331,7 @@ namespace Alachisoft.NCache.Common.Util
             string loggerName = LoggingInformation.GetLoggerName(cacheName);
             if (loggerName != null && loggerName.Length > 0)
             {
-                log4net.ILog log = log4net.LogManager.GetLogger(loggerName);
+                log4net.ILog log = log4net.LogManager.GetLogger(Log4net.LogRepository.Name, loggerName);
                 return log.IsInfoEnabled;
             }
             else
@@ -326,19 +340,23 @@ namespace Alachisoft.NCache.Common.Util
             }
 
             return false;
-            #endregion
+#endregion
 
             return true;
         }
 
         public static bool IsFatalEnabled(string cacheName)
         {
+#region isEnabledLogic
+           
+#endregion
+
             return true;
         }
 
-        #endregion
+#endregion
 
-        #region Enum Overloads
+#region Enum Overloads
 
         public static void SetLevel(LoggerNames loggerEnum, Level level)
         {
@@ -377,8 +395,9 @@ namespace Alachisoft.NCache.Common.Util
 
                     }
 
+
                     //If the logger doesnot exist it will create one else fetches one
-                    log4net.ILog log = log4net.LogManager.GetLogger(loggerName);
+                    log4net.ILog log = log4net.LogManager.GetLogger(Log4net.LogRepository.Name, loggerName);
                     //adds the logger as a seperate hierchy, not dependant on any other logger
                     log4net.Repository.Hierarchy.Logger l = (log4net.Repository.Hierarchy.Logger)log.Logger;
 
@@ -413,17 +432,17 @@ namespace Alachisoft.NCache.Common.Util
             }
         }
 
-        #region  Enabled Enum Methods
+#region  Enabled Enum Methods
         public static bool IsInfoEnabled(NCacheLog.LoggerNames loggerEnum)
         {
-            #region isEnabledLogic
+#region isEnabledLogic
             string temp = LoggingInformation.GetStaticLoggerName(loggerEnum.ToString());
             if (temp != null && temp.Length > 0)
             {
                 string loggerName = LoggingInformation.GetLoggerName(temp);
                 if (loggerName != null && loggerName.Length > 0)
                 {
-                    log4net.ILog log = log4net.LogManager.GetLogger(loggerName);
+                    log4net.ILog log = log4net.LogManager.GetLogger(Log4net.LogRepository.Name, loggerName);
                     return log.IsInfoEnabled;
                 }
                 else
@@ -432,30 +451,38 @@ namespace Alachisoft.NCache.Common.Util
                 }
             }
             return false;
-            #endregion
+#endregion
 
         }
 
         public static bool IsErrorEnabled(NCacheLog.LoggerNames loggerEnum)
         {
+#region isEnabledLogic
+           
+#endregion
+
             return true;
         }
 
         public static bool IsWarnEnabled(NCacheLog.LoggerNames loggerEnum)
         {
+#region isEnabledLogic
+          
+#endregion
+
             return true;
         }
 
         public static bool IsDebugEnabled(NCacheLog.LoggerNames loggerEnum)
         {
-            #region isEnabledLogic
+#region isEnabledLogic
             string temp = LoggingInformation.GetStaticLoggerName(loggerEnum.ToString());
             if (temp != null && temp.Length > 0)
             {
                 string loggerName = LoggingInformation.GetLoggerName(temp);
                 if (loggerName != null && loggerName.Length > 0)
                 {
-                    log4net.ILog log = log4net.LogManager.GetLogger(loggerName);
+                    log4net.ILog log = log4net.LogManager.GetLogger(Log4net.LogRepository.Name, loggerName);
                     return log.IsDebugEnabled;
                 }
                 else
@@ -464,14 +491,18 @@ namespace Alachisoft.NCache.Common.Util
                 }
             }
             return false;
-            #endregion
+#endregion
         }
 
         public static bool IsFatalEnabled(NCacheLog.LoggerNames loggerEnum)
         {
+#region isEnabledLogic
+          
+#endregion
+
             return true;
         }
-        #endregion
+#endregion
 
         public static void Error(NCacheLog.LoggerNames loggerName, string message)
         {
@@ -522,6 +553,7 @@ namespace Alachisoft.NCache.Common.Util
             Warn(name, message);
         }
 
+
         //------------------------------------------------------------------------------------------------
         public static void Error(NCacheLog.LoggerNames loggerName, String module, String message)
         {
@@ -571,9 +603,9 @@ namespace Alachisoft.NCache.Common.Util
             Warn(name, module, message);
         }
 
-        #endregion
+#endregion
 
-        #region Overloaded Logging Methods
+#region Overloaded Logging Methods
 
         public static void Error(string cacheName, String module, String message)
         {
@@ -666,7 +698,7 @@ namespace Alachisoft.NCache.Common.Util
             Warn(cacheName, line);
         }
 
-        #endregion
+#endregion
 
         public enum Level
         {
@@ -688,8 +720,7 @@ namespace Alachisoft.NCache.Common.Util
             ClientLogs
 
         }
-
-
+        
         public static void OnChange()
         {
             bool[] logLevel = new bool[2];
@@ -711,14 +742,15 @@ namespace Alachisoft.NCache.Common.Util
 
             if (loggerName != null)
             {
-                log4net.ILog log = log4net.LogManager.GetLogger(loggerName);
+                log4net.ILog log = log4net.LogManager.GetLogger(Log4net.LogRepository.Name, loggerName);
                 log4net.Repository.Hierarchy.Logger l = (log4net.Repository.Hierarchy.Logger)log.Logger;
-                
+               
                 BufferingAppenderSkeleton buffered = (BufferingAppenderSkeleton)l.GetAppender("BufferingForwardingAppender" + loggerName);
                 if (buffered is BufferingForwardingAppender)
                 {
                     ((BufferingForwardingAppender)buffered).Flush();
                 }
+               
             }
 
             //if not already initialized
@@ -731,7 +763,7 @@ namespace Alachisoft.NCache.Common.Util
 
             NCacheLog.SetBufferSize(bufferSize);
         }
-
+        
         public static bool[] ReadConfig(out int bufferAppender)
         {
             try
@@ -739,6 +771,7 @@ namespace Alachisoft.NCache.Common.Util
                 string EnableLogs = System.Configuration.ConfigurationManager.AppSettings["EnableLogs"];
                 string EnableDetailedLogs = System.Configuration.ConfigurationManager.AppSettings["EnableDetailedLogs"];
                 string BufferSize = System.Configuration.ConfigurationManager.AppSettings["BufferSize"];
+
 
                 try
                 {
@@ -775,7 +808,7 @@ namespace Alachisoft.NCache.Common.Util
             {
                 bufferAppender = bufferDefaultSize;
                 return new bool[2] { false, false };
-                LogLoggingError(ex.Message);
+                NCacheLog.LogLoggingError(ex.Message);
             }
 
         }
@@ -798,16 +831,16 @@ namespace Alachisoft.NCache.Common.Util
             }
 
             //if not already initialized
-
+           
             foreach (string loggerName in LoggingInformation.cacheLogger.Values)
             {
-                SetLevel(loggerName, logLevel[1] == true ? Level.ALL : logLevel[0] == true ? Level.INFO : NCacheLog.Level.OFF);
+                NCacheLog.SetLevel(loggerName, logLevel[1] == true ? NCacheLog.Level.ALL : logLevel[0] == true ? NCacheLog.Level.INFO : NCacheLog.Level.OFF);
             }
 
             if (bufferSize < 1)
                 bufferSize = bufferDefaultSize;
 
-            SetBufferSize(bufferSize);
+            NCacheLog.SetBufferSize(bufferSize);
 
         }
 
@@ -855,17 +888,23 @@ namespace Alachisoft.NCache.Common.Util
             {
                 bufferAppender = bufferDefaultSize;
                 return new bool[2] { false, false };
-                LogLoggingError(ex.Message);
+                NCacheLog.LogLoggingError(ex.Message);
             }
 
         }
 
-        #region IDisposable Members
+
+#region IDisposable Members
 
         public static void Flush()
         {
-            //Problem was occuring because the Appender enumeration was modifying during iterations
+            //bug id- 1431 Problem was occuring because the Appender enumeration was modifying during iterations
+#if !NETCORE
             IAppender[] logAppenders = log4net.LogManager.GetRepository().GetAppenders();
+#elif NETCORE
+            //TODO: ALACHISOFT (Direct edit to code for now. It should be removed later on)
+            IAppender[] logAppenders = log4net.LogManager.GetRepository(Log4net.LogRepository.Name).GetAppenders();
+#endif
 
             foreach (log4net.Appender.IAppender appender in logAppenders)
             {
@@ -880,11 +919,13 @@ namespace Alachisoft.NCache.Common.Util
             }
         }
 
-        #endregion
+#endregion
 
         public static void LogLoggingError(string msg)
         {
+           
         }
+
 
     }
 }

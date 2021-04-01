@@ -1,17 +1,16 @@
-// Copyright (c) 2017 Alachisoft
-// 
-// Licensed under the Apache License, Version 2.0 (the "License");
-// you may not use this file except in compliance with the License.
-// You may obtain a copy of the License at
-// 
-//    http://www.apache.org/licenses/LICENSE-2.0
-// 
-// Unless required by applicable law or agreed to in writing, software
-// distributed under the License is distributed on an "AS IS" BASIS,
-// WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
-// See the License for the specific language governing permissions and
-// limitations under the License.
-
+//  Copyright (c) 2021 Alachisoft
+//  
+//  Licensed under the Apache License, Version 2.0 (the "License");
+//  you may not use this file except in compliance with the License.
+//  You may obtain a copy of the License at
+//  
+//     http://www.apache.org/licenses/LICENSE-2.0
+//  
+//  Unless required by applicable law or agreed to in writing, software
+//  distributed under the License is distributed on an "AS IS" BASIS,
+//  WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+//  See the License for the specific language governing permissions and
+//  limitations under the License
 using System;
 using System.IO;
 using System.Text;
@@ -21,6 +20,9 @@ using System.Configuration;
 using Alachisoft.NCache.Config;
 using Alachisoft.NCache.Caching;
 using Alachisoft.NCache.Runtime.Exceptions;
+using Alachisoft.NCache.Common.Util;
+
+
 
 namespace Alachisoft.NCache.Config
 {
@@ -29,6 +31,8 @@ namespace Alachisoft.NCache.Config
 	/// </summary>
 	internal class ChannelConfigBuilder
 	{
+
+
 		/// <summary>
 		/// 
 		/// </summary>
@@ -46,11 +50,11 @@ namespace Alachisoft.NCache.Config
 			return b.ToString();
 		}
 
-		public static string BuildTCPConfiguration(IDictionary properties, long opTimeout,bool isPor)
+		public static string BuildTCPConfiguration(IDictionary properties,long opTimeout,bool isPor)
 		{
 			StringBuilder b = new StringBuilder(2048);
 			b.Append(BuildTCP(properties["tcp"] as IDictionary)).Append(":");
-			b.Append(BuildTCPPING(properties["tcpping"] as IDictionary)).Append(":");
+            b.Append(BuildTCPPING(properties["tcpping"] as IDictionary)).Append(":");
             b.Append(BuildQueue(properties["queue"] as IDictionary)).Append(":");
             b.Append(Buildpbcast_GMS(properties["pbcast.gms"] as IDictionary,isPor)).Append(":");
             b.Append(BuildTOTAL(properties["total"] as IDictionary, opTimeout)).Append(":");
@@ -244,7 +248,8 @@ namespace Alachisoft.NCache.Config
 				.Append(ConfigHelper.SafeGetPair(properties,"down_thread", null))
 				.Append(ConfigHelper.SafeGetPair(properties,"up_thread", null))
                 .Append(ConfigHelper.SafeGetPair(properties, "is_part_replica", null))
-				.Append(")");
+                
+                .Append(")");
 			return b.ToString();
 		}
 
@@ -284,12 +289,16 @@ namespace Alachisoft.NCache.Config
 				.Append(ConfigHelper.SafeGetPair(properties,"down_thread", null))
 				.Append(ConfigHelper.SafeGetPair(properties,"up_thread", null))
 				.Append(")");
+
+
 			return b.ToString();
 		}
-        
+
 		private static string BuildTCP(IDictionary properties)
 		{
-            string bindIP = ConfigurationSettings.AppSettings["NCacheServer.BindToIP"];
+
+            string bindIP = ServiceConfiguration.BindToIP.ToString();
+
             StringBuilder b = new StringBuilder(256);
             b.Append("TCP(")
                 .Append(ConfigHelper.SafeGetPair(properties, "connection_retries", 0))
@@ -304,8 +313,6 @@ namespace Alachisoft.NCache.Config
 				.Append(ConfigHelper.SafeGetPair(properties, "skip_suspected_members", null))	//true
 				.Append(ConfigHelper.SafeGetPair(properties, "down_thread", true))
 				.Append(ConfigHelper.SafeGetPair(properties, "up_thread", true))
-                .Append(ConfigHelper.SafeGetPair(properties, "use_heart_beat", true))
-                .Append(ConfigHelper.SafeGetPair(properties, "heart_beat_interval", null))
 				.Append(")");
 			return b.ToString();
 		}

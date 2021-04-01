@@ -1,23 +1,23 @@
-// Copyright (c) 2017 Alachisoft
-// 
-// Licensed under the Apache License, Version 2.0 (the "License");
-// you may not use this file except in compliance with the License.
-// You may obtain a copy of the License at
-// 
-//    http://www.apache.org/licenses/LICENSE-2.0
-// 
-// Unless required by applicable law or agreed to in writing, software
-// distributed under the License is distributed on an "AS IS" BASIS,
-// WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
-// See the License for the specific language governing permissions and
-// limitations under the License.
-
+//  Copyright (c) 2021 Alachisoft
+//  
+//  Licensed under the Apache License, Version 2.0 (the "License");
+//  you may not use this file except in compliance with the License.
+//  You may obtain a copy of the License at
+//  
+//     http://www.apache.org/licenses/LICENSE-2.0
+//  
+//  Unless required by applicable law or agreed to in writing, software
+//  distributed under the License is distributed on an "AS IS" BASIS,
+//  WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+//  See the License for the specific language governing permissions and
+//  limitations under the License
 using System;
 
 using Alachisoft.NCache.Caching;
 using Alachisoft.NCache.Common;
 using Alachisoft.NCache.Common.Util;
 using System.Collections.Generic;
+using Alachisoft.NCache.SocketServer.Util;
 
 namespace Alachisoft.NCache.SocketServer.Command
 {
@@ -56,8 +56,9 @@ namespace Alachisoft.NCache.SocketServer.Command
                 _lockResult = OperationResult.Failure;
                 if (!base.immatureId.Equals("-2"))
                 {
+                 //   _resultPacket = clientManager.ReplyPacket(base.ExceptionPacket(arEx, base.immatureId), base.ParsingExceptionMessage(arEx));
                     //PROTOBUF:RESPONSE
-                    _serializedResponsePackets.Add(Alachisoft.NCache.Common.Util.ResponseHelper.SerializeExceptionResponse(arEx, command.requestID));
+                    _serializedResponsePackets.Add(Alachisoft.NCache.Common.Util.ResponseHelper.SerializeExceptionResponseWithType(arEx, command.requestID,command.commandID, clientManager.ClientVersion));
                 }
                 return;
             }
@@ -66,8 +67,9 @@ namespace Alachisoft.NCache.SocketServer.Command
                 _lockResult = OperationResult.Failure;
                 if (!base.immatureId.Equals("-2"))
                 {
+                    //_resultPacket = clientManager.ReplyPacket(base.ExceptionPacket(exc, base.immatureId), base.ParsingExceptionMessage(exc));
                     //PROTOBUF:RESPONSE
-                    _serializedResponsePackets.Add(Alachisoft.NCache.Common.Util.ResponseHelper.SerializeExceptionResponse(exc, command.requestID));
+                    _serializedResponsePackets.Add(Alachisoft.NCache.Common.Util.ResponseHelper.SerializeExceptionResponseWithType(exc, command.requestID, command.commandID, clientManager.ClientVersion));
                 }
                 return;
             }
@@ -77,30 +79,42 @@ namespace Alachisoft.NCache.SocketServer.Command
                 NCache nCache = clientManager.CmdExecuter as NCache;
                 object lockId = null;
                 DateTime lockDate = DateTime.Now;
-
-                bool res = nCache.Cache.Lock(cmdInfo.Key, cmdInfo.LockTimeout, out lockId, out lockDate, new OperationContext(OperationContextFieldName.OperationType, OperationContextOperationType.CacheOperation));
+                var operationContext = new OperationContext(OperationContextFieldName.OperationType, OperationContextOperationType.CacheOperation);
+                CommandsUtil.PopulateClientIdInContext(ref operationContext, clientManager.ClientAddress);
+                bool res = nCache.Cache.Lock(cmdInfo.Key, cmdInfo.LockTimeout, out lockId, out lockDate, operationContext);
 
                 //PROTOBUF:RESPONSE
-                Alachisoft.NCache.Common.Protobuf.Response response = new Alachisoft.NCache.Common.Protobuf.Response();
                 Alachisoft.NCache.Common.Protobuf.VerifyLockResponse verifyLockResponse = new Alachisoft.NCache.Common.Protobuf.VerifyLockResponse();
-				response.requestId = Convert.ToInt64(cmdInfo.RequestId);
-                response.responseType = Alachisoft.NCache.Common.Protobuf.Response.Type.LOCK_VERIFY;
-                response.lockVerify = verifyLockResponse;
 
                 verifyLockResponse.lockId = lockId.ToString();
                 verifyLockResponse.success = res;
                 verifyLockResponse.lockExpiration = lockDate.Ticks;
 
-                _serializedResponsePackets.Add(Alachisoft.NCache.Common.Util.ResponseHelper.SerializeResponse(response));             
+                if (clientManager.ClientVersion >= 5000)
+                {
+                    Common.Util.ResponseHelper.SetResponse(verifyLockResponse, command.requestID, command.commandID);
+                    _serializedResponsePackets.Add(Common.Util.ResponseHelper.SerializeResponse(verifyLockResponse, Common.Protobuf.Response.Type.LOCK_VERIFY));
+                }
+                else
+                {
+                    //PROTOBUF:RESPONSE
+                    Common.Protobuf.Response response = new Common.Protobuf.Response();
+                    response.lockVerify = verifyLockResponse;
+                    Common.Util.ResponseHelper.SetResponse(response, command.requestID, command.commandID, Common.Protobuf.Response.Type.LOCK_VERIFY);
+                    _serializedResponsePackets.Add(Alachisoft.NCache.Common.Util.ResponseHelper.SerializeResponse(response));
+                }
+
             }
             catch (Exception exc)
             {
                 _lockResult = OperationResult.Failure;
-
+                //_resultPacket = clientManager.ReplyPacket(base.ExceptionPacket(exc, cmdInfo.RequestId), base.ExceptionMessage(exc));
                 //PROTOBUF:RESPONSE
-                _serializedResponsePackets.Add(Alachisoft.NCache.Common.Util.ResponseHelper.SerializeExceptionResponse(exc, command.requestID));
+                _serializedResponsePackets.Add(Alachisoft.NCache.Common.Util.ResponseHelper.SerializeExceptionResponseWithType(exc, command.requestID, command.commandID, clientManager.ClientVersion));
             }
         }
+
+      
 
         //PROTOBUF
         private CommandInfo ParseCommand(Alachisoft.NCache.Common.Protobuf.Command command, ClientManager clientManager)
@@ -115,5 +129,8 @@ namespace Alachisoft.NCache.SocketServer.Command
 
             return cmdInfo;
         }
+
+     
+
     }
 }

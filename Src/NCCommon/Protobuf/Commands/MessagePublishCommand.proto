@@ -1,0 +1,18 @@
+import "KeyValuePair.proto";
+option java_outer_classname="MessagePublishCommandProtocol";
+package Alachisoft.NCache.Common.Protobuf;
+message MessagePublishCommand{
+	optional string messageId = 1;
+	optional int64 expiration = 2;
+	optional string topicName = 3;
+	optional int64 creationTime = 4;	
+	repeated bytes data = 5;
+	optional int64 requestId = 6;
+	optional bool isAsync = 7;
+	optional int32 flag = 8;
+	repeated KeyValuePair keyValuePair = 9;	
+	optional int64 clientLastViewId = 10 [default=-1];
+	optional string version = 11;
+	optional int32 commandVersion = 12 [default=0];
+	optional string intendedRecipient = 13 [default = ""];
+}

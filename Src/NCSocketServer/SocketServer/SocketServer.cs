@@ -1,54 +1,70 @@
-// Copyright (c) 2017 Alachisoft
-// 
-// Licensed under the Apache License, Version 2.0 (the "License");
-// you may not use this file except in compliance with the License.
-// You may obtain a copy of the License at
-// 
-//    http://www.apache.org/licenses/LICENSE-2.0
-// 
-// Unless required by applicable law or agreed to in writing, software
-// distributed under the License is distributed on an "AS IS" BASIS,
-// WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
-// See the License for the specific language governing permissions and
-// limitations under the License.
-
+//  Copyright (c) 2021 Alachisoft
+//  
+//  Licensed under the Apache License, Version 2.0 (the "License");
+//  you may not use this file except in compliance with the License.
+//  You may obtain a copy of the License at
+//  
+//     http://www.apache.org/licenses/LICENSE-2.0
+//  
+//  Unless required by applicable law or agreed to in writing, software
+//  distributed under the License is distributed on an "AS IS" BASIS,
+//  WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+//  See the License for the specific language governing permissions and
+//  limitations under the License
 using System;
 using System.Net;
 using Alachisoft.NCache.Caching;
 using Alachisoft.NCache.Common;
-using Alachisoft.NCache.Web.Util;
-
 using Alachisoft.NCache.SocketServer.Statistics;
+using System.Collections.Generic;
+using System.Collections;
+using Alachisoft.NCache.Common.Net;
+using Alachisoft.NCache.Common.Monitoring;
 using Alachisoft.NCache.Common.Util;
 using Alachisoft.NCache.Common.Logger;
+using Alachisoft.NCache.Management;
+using Alachisoft.NCache.Common.CacheManagement;
+using Alachisoft.NCache.Common.Topologies.Clustered;
+using Alachisoft.NCache.Client;
+using System.Runtime;
+using Alachisoft.NCache.Common.Pooling.Stats;
+using Alachisoft.NCache.Common.FeatureUsageData.Dom;
 
 namespace Alachisoft.NCache.SocketServer
 {
+
     /// <summary>
-    /// An object of this class is called when Ncache service starts and stops
+    /// An object of this class is called when NCache service starts and stops
+    /// as well as when NCache Bridge service starts and stops.
     /// </summary>
-    public sealed class  SocketServer: CacheRenderer
+    public sealed class SocketServer : CacheRenderer
     {
         int _serverPort;
         int _sendBuffer;
         int _recieveBuffer;
+        decimal _clusterHealthDetectionInterval = 3;
+        int _managementServerPort;
+        string _managementServerIP;
         public const int DEFAULT_SOCK_SERVER_PORT = 9800;
-        public const int DEFAULT_MANAGEMENT_PORT = 8250;  
+        public const int DEFAULT_MANAGEMENT_PORT = 8250;
         public const int DEFAULT_SOCK_BUFFER_SIZE = 32768;
 
         //Size is specified in bytes (.net stream if grow more then 1.9GB will give memory exception that's why
         //we send multiple responses each containing objects of specified size.
         // 1 GB = 1 * 1024 * 1024 * 1024 = 1073741824
         // 1 GB = 1 * MB * KB * Bytes = 1073741824
-        // If not specified in Service config then we will consider 1GB packeting
-        public static long CHUNK_SIZE_FOR_OBJECT = 1073741824;    
+        // If not specified in Service configuration then we will consider 1GB packeting
+        public static long CHUNK_SIZE_FOR_OBJECT = 35 * 1024;//1073741824;    
 
-        static Logs _logger = new Logs();        
+        static Logs _logger = new Logs();
 
         static bool _enableCacheServerCounters = true;
-        PerfStatsCollector _perfStatsColl = null;
-        static LoggingInfo _serverLoggingInfo = new LoggingInfo();
+#if !MONO
+        StatisticsCounter _perfStatsColl = null;
 
+#endif
+        static LoggingInfo _serverLoggingInfo = new LoggingInfo();
+        
         /// <summary>
         /// The garbage collection timer class.
         /// </summary>
@@ -59,10 +75,7 @@ namespace Alachisoft.NCache.SocketServer
         LoggerNames _loggerName;
 
 
-        private IConnectionManager _hostClientConnectionManager;
-        decimal _clusterHealthDetectionInterval = 3;
-        int _managementServerPort;
-        string _managementServerIP;
+        private static IConnectionManager _hostClientConnectionManager;
 
         private string cacheName;
 
@@ -71,12 +84,10 @@ namespace Alachisoft.NCache.SocketServer
             set { cacheName = value; }
         }
 
-        public  IConnectionManager HostClientConnectionManager
+        public static IConnectionManager HostClientConnectionManager
         {
             get { return _hostClientConnectionManager; }
         }
-
-
         /// <summary>
         /// Initializes the socket server with the given port.
         /// </summary>
@@ -88,8 +99,11 @@ namespace Alachisoft.NCache.SocketServer
             _serverPort = port;
             _sendBuffer = sendBufferSize;
             _recieveBuffer = recieveBufferSize;
+
+            if (ServiceConfiguration.ClusterHealthDetectionInterval != 3)
+                _clusterHealthDetectionInterval = ServiceConfiguration.ClusterHealthDetectionInterval;
         }
-        
+
         /// <summary>
         /// Gets the socket server port.
         /// </summary>
@@ -98,7 +112,7 @@ namespace Alachisoft.NCache.SocketServer
             get { return _serverPort; }
             set { _serverPort = value < 0 ? DEFAULT_SOCK_SERVER_PORT : value; }
         }
-
+        
         /// <summary>
         /// Gets the send buffer size of connected client socket.
         /// </summary>
@@ -108,7 +122,7 @@ namespace Alachisoft.NCache.SocketServer
             set { _sendBuffer = value < 0 ? DEFAULT_SOCK_BUFFER_SIZE : value; }
         }
 
-        public static Logs Logger
+        internal static Logs Logger
         {
             get { return _logger; }
         }
@@ -142,7 +156,7 @@ namespace Alachisoft.NCache.SocketServer
             set { _managementServerIP = value; }
         }
 
-   
+
         /// <summary>
         /// Starts the socket server.It registers some types with compact Framework, 
         /// enables simple logs as well as DetailedLogs, then it checks Ncache licence information.
@@ -157,22 +171,29 @@ namespace Alachisoft.NCache.SocketServer
             else
                 _loggerName = loggerName;
             InitializeLogging();
-        
-            _perfStatsColl = new PerfStatsCollector("NCache Server", _serverPort);
+
+
+            if (ServiceConfiguration.PublishCountersToCacheHost)
+                _perfStatsColl = new CustomStatsCollector(cacheName, _serverPort);
+            else
+                _perfStatsColl = new PerfStatsCollector(cacheName, _serverPort);
+
+
             _conManager = new ConnectionManager(_perfStatsColl);
-            
+
             _conManager.Start(bindIP, _serverPort, _sendBuffer, _recieveBuffer, _logger, cmdMgrType, conMgrType);
 
             if (ConnectionManagerType.HostClient == conMgrType)
             {
                 _hostClientConnectionManager = _conManager;
             }
-            
 
             //We initialize PerfstatsCollector only for SocketServer's instance for client.
+
             //Management socket server has just DUMMY stats collector.
             if (conMgrType == ConnectionManagerType.HostClient)
                 _perfStatsColl.InitializePerfCounters();
+
         }
 
         /// <summary>
@@ -188,6 +209,7 @@ namespace Alachisoft.NCache.SocketServer
 
                 enable_logs = ServiceConfiguration.EnableLogs;
                 detailed_logs = ServiceConfiguration.EnableDetailedLogs;
+
 
                 this.InitializeLogging(enable_logs, detailed_logs);
             }
@@ -205,7 +227,7 @@ namespace Alachisoft.NCache.SocketServer
             {
                 if (errorOnly || detailed)
                 {
-                    Logs localLogger=new Logs();
+                    Logs localLogger = new Logs();
                     localLogger.NCacheLog = new NCacheLogger();
                     localLogger.NCacheLog.Initialize(LoggerNames.SocketServerLogs);
 
@@ -226,11 +248,12 @@ namespace Alachisoft.NCache.SocketServer
                     if (detailed)
                         _serverLoggingInfo.SetStatus(LoggingInfo.LoggingType.Detailed,
                             (detailed ? LoggingInfo.LogsStatus.Enable : LoggingInfo.LogsStatus.Disable));
+                   
                     localLogger.IsDetailedLogsEnabled = detailed;
                     localLogger.IsErrorLogsEnabled = errorOnly;
 
-                    _logger= localLogger;
-                   
+                    _logger = localLogger;
+
                 }
                 else
                 {
@@ -270,7 +293,7 @@ namespace Alachisoft.NCache.SocketServer
 
             if (_perfStatsColl != null)
             {
-                _perfStatsColl.Dispose();
+                //_perfStatsColl.Dispose();
                 _perfStatsColl = null;
             }
 
@@ -315,6 +338,8 @@ namespace Alachisoft.NCache.SocketServer
                 }
             }
         }
+
+        public override List<string> DeadClients => ConnectionManager.DeadClients();
 
         /// <summary>
         /// Get current logging status for specified type
@@ -371,7 +396,7 @@ namespace Alachisoft.NCache.SocketServer
                 {
                     case LoggingInfo.LogsStatus.Disable:
 
-                       
+                      
                         ///If error logs are disabled, then disable both
                         if (type == LoggingInfo.LoggingType.Error ||
                             type == (LoggingInfo.LoggingType.Error | LoggingInfo.LoggingType.Detailed))
@@ -408,22 +433,127 @@ namespace Alachisoft.NCache.SocketServer
                 }
             }
         }
-        
+
 
         /// <summary>
         /// Start the gc timer to collect GEN#2 after specified intervals.
         /// </summary>
         /// <param name="dueTime">Time to wait (in minutes) before first collection.</param>
-        /// <param name="period">Time between two consective GEN#2 collections.</param>
+        /// <param name="period">Time between two consecutive GEN#2 collections.</param>
         public void StartGCTimer(int dueTime, int period)
         {
             try
             {
+               
             }
             catch (Exception e)
             {
-                if (SocketServer.Logger.IsErrorLogsEnabled) SocketServer.Logger.NCacheLog.Error( "SocketServer.StartGCTimer", e.ToString());
+                if (SocketServer.Logger.IsErrorLogsEnabled) SocketServer.Logger.NCacheLog.Error("SocketServer.StartGCTimer", e.ToString());
             }
         }
-	}
+
+        public override List<Alachisoft.NCache.Common.Monitoring.ClientNode> GetClientList(string cacheId)
+        {
+            List<ClientNode> clients = new List<ClientNode>();
+
+            lock (ConnectionManager.ConnectionTable)
+            {
+                IDictionaryEnumerator ide = ConnectionManager.ConnectionTable.GetEnumerator();
+
+                while (ide.MoveNext())
+                {
+                    ClientManager clientManager = ide.Value as ClientManager;
+
+                    if (!clientManager.IsDisposed && clientManager.CmdExecuter != null && clientManager.CmdExecuter.ID.ToLower() == cacheId.ToLower())
+                    {
+                        ClientNode client = new ClientNode();
+                        IPEndPoint endPoint = clientManager.ClientSocket.RemoteEndPoint as IPEndPoint;
+                        client.Address = new Address(endPoint.Address, endPoint.Port);
+                        client.ClientID = clientManager.ClientID;
+                        if (clientManager.IsDotNetClient)
+                        {
+                            client.ClientContext = RtContextValue.NCACHE;
+                        }
+                        else
+                        {
+                            client.ClientContext = RtContextValue.JVCACHE;
+                        }
+                        clients.Add(client);
+                    }
+                }
+            }
+            return clients;
+        }
+
+        //CLIENTSTATS : Add method in CacheRenderer as virtual
+
+        public override List<Alachisoft.NCache.Common.Monitoring.ClientProcessStats> GetClientProcessStats(string cacheId)
+        {
+            List<ClientProcessStats> clientProcessStats = new List<ClientProcessStats>();
+
+            lock (ConnectionManager.ConnectionTable)
+            {
+                IDictionaryEnumerator ide = ConnectionManager.ConnectionTable.GetEnumerator();
+
+                while (ide.MoveNext())
+                {
+                    ClientManager clientManager = ide.Value as ClientManager;
+                    if (clientManager.CmdExecuter != null && clientManager.CmdExecuter.ID.ToLower() == cacheId.ToLower())
+                    {
+                        IPEndPoint endPoint = clientManager.ClientSocket.RemoteEndPoint as IPEndPoint;
+                        Address address = new Address(endPoint.Address, endPoint.Port);
+
+                        ClientProcessStats cpStats = new ClientProcessStats(clientManager.ClientID, address, clientManager.ClientsBytesSent, clientManager.ClientsBytesRecieved, ConnectionManager.ServerIpAddress);
+
+                        clientProcessStats.Add(cpStats);
+                    }
+                }
+            }
+            return clientProcessStats;
+        }
+
+   
+
+        public override Alachisoft.NCache.Common.DataStructures.RequestStatus GetRequestStatus(string clientId, long requestId, long commandId)
+        {
+            return _conManager.GetRequestStatus(clientId, requestId, commandId);
+        }
+
+        public override double GetCounterValue(string counterName)
+
+        {
+            double value = 0.0;
+
+            if (_perfStatsColl != null)
+            {
+
+                value = _perfStatsColl.GetCounterValue(counterName);
+            }
+
+            return value;
+        }
+
+        public override void RegisterOperationModeChangeEvent()
+        {
+            if (_conManager == null || _conManager.CommandManager == null) return;
+
+            _conManager.CommandManager.RegisterOperationModeChangeEvent();
+        }
+
+        public sealed override void InitializePools(bool createFakePools)
+        {
+            _conManager.CreatePools(createFakePools);
+        }
+
+        public sealed override PoolStats GetPoolStats(PoolStatsRequest request)
+        {
+            return _conManager.PoolManager?.GetStats(request);
+        }
+
+        public override ClientProfileDom GetClientProfile()
+        {
+            return _hostClientConnectionManager.GetClientProfile();
+        }
+    }
 }
+

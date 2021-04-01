@@ -1,121 +1,139 @@
-// Copyright (c) 2017 Alachisoft
-// 
-// Licensed under the Apache License, Version 2.0 (the "License");
-// you may not use this file except in compliance with the License.
-// You may obtain a copy of the License at
-// 
-//    http://www.apache.org/licenses/LICENSE-2.0
-// 
-// Unless required by applicable law or agreed to in writing, software
-// distributed under the License is distributed on an "AS IS" BASIS,
-// WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
-// See the License for the specific language governing permissions and
-// limitations under the License.
-
+//  Copyright (c) 2021 Alachisoft
+//  
+//  Licensed under the Apache License, Version 2.0 (the "License");
+//  you may not use this file except in compliance with the License.
+//  You may obtain a copy of the License at
+//  
+//     http://www.apache.org/licenses/LICENSE-2.0
+//  
+//  Unless required by applicable law or agreed to in writing, software
+//  distributed under the License is distributed on an "AS IS" BASIS,
+//  WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+//  See the License for the specific language governing permissions and
+//  limitations under the License
 using System;
 using System.Collections;
 using System.Collections.Generic;
-using System.Text;
-
 using Alachisoft.NCache.Common.Protobuf;
 using Alachisoft.NCache.Caching.AutoExpiration;
 using System.Data;
-using Runtime = Alachisoft.NCache.Runtime;
+using System.Runtime.Serialization;
+using System.Runtime.Serialization.Formatters.Binary;
+using System.IO;
+using Alachisoft.NCache.Runtime.Exceptions;
+using Alachisoft.NCache.Common.Util;
+using Alachisoft.NCache.Common;
+using Alachisoft.NCache.Common.Pooling;
+
 namespace Alachisoft.NCache.Caching.Util
 {
     public sealed class ProtobufHelper
     {
-        public static Hashtable GetHashtableFromQueryInfoObj(QueryInfo queryInfo)
+      
+        public static Hashtable GetHashtableFromTagInfoObj(TagInfo tagInfo)
         {
-            if (queryInfo == null)
+            if (tagInfo == null)
             {
                 return null;
             }
 
-            Hashtable queryInfoTable = new Hashtable();
+            Hashtable tagInfoTable = new Hashtable();
 
-            // putting back null values
-            int nullIndex = 0;
+            tagInfoTable["type"] = tagInfo.type;
+            tagInfoTable["tags-list"] = new ArrayList(tagInfo.tags);
 
-            string[] queryAttribValues=new string[queryInfo.attributes.Count];
-            queryInfo.attributes.CopyTo(queryAttribValues);
-            foreach (string attrib in queryAttribValues)
-            {
-                if (attrib == "NCNULL")
-                {
-                    queryInfo.attributes.Insert(nullIndex, null);
-                    queryInfo.attributes.RemoveAt(nullIndex + 1);
-                }
-                nullIndex++;
-            }
-
-
-
-            ArrayList attributes = new ArrayList();
-            foreach (string attrib in queryInfo.attributes)
-            {
-                attributes.Add(attrib);
-            }
-
-            queryInfoTable.Add(queryInfo.handleId, attributes);
-
-            return queryInfoTable;
+            return tagInfoTable;
         }
 
-        public static QueryInfo GetQueryInfoObj(Hashtable queryInfoDic)
+        public static TagInfo GetTagInfoObj(Hashtable tagInfoDic)
         {
-            if (queryInfoDic == null)
+            if (tagInfoDic == null)
             {
                 return null;
             }
-            if (queryInfoDic.Count == 0)
+            if (tagInfoDic.Count == 0)
             {
                 return null;
             }
 
-            QueryInfo queryInfo = new QueryInfo();
+            TagInfo tagInfo = new TagInfo();
 
-            IDictionaryEnumerator queryInfoEnum = queryInfoDic.GetEnumerator();
-            while (queryInfoEnum.MoveNext())
+            tagInfo.type = (string)tagInfoDic["type"];
+            IEnumerator tagsEnum = ((ArrayList)tagInfoDic["tags-list"]).GetEnumerator();
+            while (tagsEnum.MoveNext())
             {
-                queryInfo.handleId = (int)queryInfoEnum.Key;
-                IEnumerator valuesEnum = ((ArrayList)queryInfoEnum.Value).GetEnumerator();
-                
-                while (valuesEnum.MoveNext())
+                if (tagsEnum.Current != null)
                 {
-                    string value = null;
-                    if (valuesEnum.Current != null)
-                    {
-                        if (valuesEnum.Current is DateTime)
-                        {
-                            value = ((DateTime)valuesEnum.Current).Ticks.ToString();
-                        }
-                        else
-                        {
-                            value = valuesEnum.Current.ToString();
-                        }
-                    }
-                    else  // we need to send null values too as a special placeholder
-                    {
-                        value = "NCNULL";
-                    }
-                    queryInfo.attributes.Add(value);
+                    tagInfo.tags.Add(tagsEnum.Current.ToString());
+                }
+                else
+                {
+                    tagInfo.tags.Add(null);
                 }
             }
-            return queryInfo;
-        }
-        
 
-        public static ExpirationHint GetExpirationHintObj(long absoluteExpiration, long slidingExpiration, string serializationContext)
+            return tagInfo;
+        }
+
+        public static ExpirationHint GetExpirationHintObj(PoolManager poolManager, Alachisoft.NCache.Common.Protobuf.Dependency dependency, long absoluteExpiration, long slidingExpiration, bool resyncOnExpiration, string serializationContext)
         {
             ExpirationHint hint = null;
             //We expect Web.Cache to send in UTC DateTime, AbsoluteExpiration is dealt in UTC
-            if (absoluteExpiration != 0 && absoluteExpiration != DateTime.MaxValue.ToUniversalTime().Ticks) hint = new FixedExpiration(new DateTime(absoluteExpiration, DateTimeKind.Utc));
-            if (slidingExpiration != 0) hint = new IdleExpiration(new TimeSpan(slidingExpiration));
+            if (absoluteExpiration != Common.Util.Time.MaxUniversalTicks &&  absoluteExpiration != 0 && absoluteExpiration != 1 && absoluteExpiration != 2) 
+                hint = FixedExpiration.Create(poolManager, new DateTime(absoluteExpiration, DateTimeKind.Utc));
 
+            if (slidingExpiration != 0 && slidingExpiration != 1 && slidingExpiration != 2) 
+                hint = IdleExpiration.Create (poolManager, new TimeSpan(slidingExpiration));
 
+            ExpirationHint depHint = GetExpirationHintObj(poolManager, dependency, false, serializationContext);
+
+            if (depHint != null)
+            {
+                if (hint != null)
+                {
+                    if (depHint is AggregateExpirationHint)
+                    {
+                        ((AggregateExpirationHint)depHint).Add(hint);
+                        hint = depHint;
+                    }
+                    else
+                    {
+                        hint = AggregateExpirationHint.Create(poolManager, hint, depHint);
+                    }
+                }
+                else
+                {
+                    hint = depHint;
+                }
+            }
+            if (hint != null && resyncOnExpiration)
+            {
+                hint.SetBit(ExpirationHint.NEEDS_RESYNC);
+            }
             return hint;
         }
-    }
 
+        
+        public static ExpirationHint GetExpirationHintObj(PoolManager poolManager, Alachisoft.NCache.Common.Protobuf.Dependency dependency, bool resyncOnExpiration, string serializationContext)
+        {
+            AggregateExpirationHint hints = AggregateExpirationHint.Create(poolManager);
+            
+            // POTeam
+            int hintCount = hints.HintsWithoutClone.Count;
+            if (hintCount == 0)
+            {
+                NCache.Util.MiscUtil.ReturnExpirationHintToPool(hints, poolManager);
+                return null;
+            }
+
+            if (resyncOnExpiration) hints.SetBit(ExpirationHint.NEEDS_RESYNC);
+
+            if (hintCount == 1)
+            {
+                return hints.Hints[0];
+            }
+
+            return hints;
+        }
+    }
 }

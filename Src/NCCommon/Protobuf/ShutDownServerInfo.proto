@@ -1,0 +1,10 @@
+
+option java_outer_classname="ShutDownServerInfoProtocol";
+package Alachisoft.NCache.Common.Protobuf;
+message ShutDownServerInfo 
+{
+	optional string serverIP = 1;
+	optional int64 timeoutInterval = 2;
+	optional string uniqueKey = 3;
+	optional int32 port = 4;
+}

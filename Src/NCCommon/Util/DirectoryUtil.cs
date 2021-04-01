@@ -1,17 +1,16 @@
-// Copyright (c) 2017 Alachisoft
-// 
-// Licensed under the Apache License, Version 2.0 (the "License");
-// you may not use this file except in compliance with the License.
-// You may obtain a copy of the License at
-// 
-//    http://www.apache.org/licenses/LICENSE-2.0
-// 
-// Unless required by applicable law or agreed to in writing, software
-// distributed under the License is distributed on an "AS IS" BASIS,
-// WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
-// See the License for the specific language governing permissions and
-// limitations under the License.
-
+//  Copyright (c) 2021 Alachisoft
+//  
+//  Licensed under the Apache License, Version 2.0 (the "License");
+//  you may not use this file except in compliance with the License.
+//  You may obtain a copy of the License at
+//  
+//     http://www.apache.org/licenses/LICENSE-2.0
+//  
+//  Unless required by applicable law or agreed to in writing, software
+//  distributed under the License is distributed on an "AS IS" BASIS,
+//  WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+//  See the License for the specific language governing permissions and
+//  limitations under the License
 using System;
 using System.IO;
 using System.Reflection;
@@ -28,7 +27,7 @@ namespace Alachisoft.NCache.Common
         /// <returns></returns>
         public static string GetFileLocalPath(string fileName)
         {
-            string path = new FileInfo(Assembly.GetExecutingAssembly().Location).DirectoryName + "\\" + fileName;
+            string path = new FileInfo(Assembly.GetExecutingAssembly().Location).DirectoryName + Path.DirectorySeparatorChar + fileName;
             if (File.Exists(path))
                 return path;
             return null;
@@ -77,7 +76,7 @@ namespace Alachisoft.NCache.Common
 
         public static bool SearchGlobalDirectory(string directoryName, bool createNew, out string path)
         {
-            string ncacheInstallDirectory = AppUtil.InstallDir;
+            string ncacheInstallDirectory = AppUtil.LogDir;
             path = string.Empty;            
             if (ncacheInstallDirectory == null)
                 return false;

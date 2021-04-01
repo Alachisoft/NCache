@@ -4,6 +4,7 @@
 
 using System;
 using System.Collections;
+using System.Collections.Generic;
 
 namespace nhibernator.BLL
 {
@@ -17,7 +18,7 @@ namespace nhibernator.BLL
 		#region Private Internal Members
 		
 		private string m_CustomerID,m_CompanyName,m_ContactName,m_Address,m_City,m_Region,m_PostalCode,m_Country;
-		private ICollection m_Orders;
+		private IEnumerable<Order> m_Orders;
 		#endregion
 		
 		#region Public Properties
@@ -126,7 +127,7 @@ namespace nhibernator.BLL
 			}
 		}
 
-        public virtual ICollection Orders
+        public virtual IEnumerable<Order> Orders
 		{
 			get
 			{

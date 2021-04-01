@@ -1,0 +1,7 @@
+
+option java_outer_classname="GetCompactTypesCommandProtocol";
+package Alachisoft.NCache.Common.Protobuf;
+message GetCompactTypesCommand {
+	optional int64 requestId = 1;
+	optional bool isDotnetClient = 2;
+}

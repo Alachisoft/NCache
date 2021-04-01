@@ -1,17 +1,16 @@
-// Copyright (c) 2017 Alachisoft
-// 
-// Licensed under the Apache License, Version 2.0 (the "License");
-// you may not use this file except in compliance with the License.
-// You may obtain a copy of the License at
-// 
-//    http://www.apache.org/licenses/LICENSE-2.0
-// 
-// Unless required by applicable law or agreed to in writing, software
-// distributed under the License is distributed on an "AS IS" BASIS,
-// WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
-// See the License for the specific language governing permissions and
-// limitations under the License.
-
+//  Copyright (c) 2021 Alachisoft
+//  
+//  Licensed under the Apache License, Version 2.0 (the "License");
+//  you may not use this file except in compliance with the License.
+//  You may obtain a copy of the License at
+//  
+//     http://www.apache.org/licenses/LICENSE-2.0
+//  
+//  Unless required by applicable law or agreed to in writing, software
+//  distributed under the License is distributed on an "AS IS" BASIS,
+//  WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+//  See the License for the specific language governing permissions and
+//  limitations under the License
 using System;
 using System.Collections;
 using System.Threading;
@@ -36,6 +35,7 @@ namespace Alachisoft.NCache.SocketServer
         private GarbageCollectionTimer()
         {
             timerCallback = new TimerCallback(StartColletion);
+            //timer = new Timer(timerCallback, 2, System.Threading.Timeout.Infinite, 0);
         }
 
         /// <summary>
@@ -57,6 +57,8 @@ namespace Alachisoft.NCache.SocketServer
         {
             if (!stopped)
             {
+                //GC.Collect(2);
+
                 if (SocketServer.Logger.IsErrorLogsEnabled) SocketServer.Logger.NCacheLog.Error( "GarbageCollectionTimer.StartCollection", "Generation #2 collected.");
             }
         }
@@ -76,6 +78,7 @@ namespace Alachisoft.NCache.SocketServer
             if (timer == null)
                 timer = new Timer(timerCallback, 2, new TimeSpan(0, dueTime, 0), new TimeSpan(0, period, 0));
             stopped = false;
+
         }
 
         public void Stop()

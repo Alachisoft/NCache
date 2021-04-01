@@ -1,5 +1,0 @@
-LIBRARY	ncregistry
-
-EXPORTS
-; public: CDyDobDotNetOptions::CDyDobDotNetOptions(class CDyDobDotNetOptions const &)
-;    ??0CDyDobDotNetOptions@@QAE@ABV0@@Z @1 NONAME

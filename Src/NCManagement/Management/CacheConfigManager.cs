@@ -1,17 +1,16 @@
-// Copyright (c) 2017 Alachisoft
-// 
-// Licensed under the Apache License, Version 2.0 (the "License");
-// you may not use this file except in compliance with the License.
-// You may obtain a copy of the License at
-// 
-//    http://www.apache.org/licenses/LICENSE-2.0
-// 
-// Unless required by applicable law or agreed to in writing, software
-// distributed under the License is distributed on an "AS IS" BASIS,
-// WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
-// See the License for the specific language governing permissions and
-// limitations under the License.
-
+//  Copyright (c) 2021 Alachisoft
+//  
+//  Licensed under the Apache License, Version 2.0 (the "License");
+//  you may not use this file except in compliance with the License.
+//  You may obtain a copy of the License at
+//  
+//     http://www.apache.org/licenses/LICENSE-2.0
+//  
+//  Unless required by applicable law or agreed to in writing, software
+//  distributed under the License is distributed on an "AS IS" BASIS,
+//  WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+//  See the License for the specific language governing permissions and
+//  limitations under the License
 using System;
 using System.Collections;
 using System.Collections.Generic;
@@ -30,10 +29,8 @@ namespace Alachisoft.NCache.Management
     /// </summary>
     public class CacheConfigManager
     {
-
         /// <summary> Default NCache tcp channel port. </summary>
         public const int NCACHE_DEF_TCP_PORT = 8250;
-
         /// <summary> Default JvCache tcp channel port. </summary>
         public const int JVCACHE_DEF_TCP_PORT = 8270;
         /// <summary> Default http channel port. </summary>
@@ -43,9 +40,7 @@ namespace Alachisoft.NCache.Management
         /// <summary>Configuration file folder name</summary>
         private const string DIRNAME = @"config";
         /// <summary>Configuration file name</summary>
-
         private const string FILENAME = @"config.ncconf";
-
         /// <summary>Path of the configuration file.</summary>
         static private string s_configFileName = "";
         /// <summary>Path of the configuration folder.</summary>
@@ -65,7 +60,6 @@ namespace Alachisoft.NCache.Management
         /// </summary>
         static CacheConfigManager()
         {
-          
             CacheConfigManager.ScanConfiguration();
         }
 
@@ -93,6 +87,11 @@ namespace Alachisoft.NCache.Management
             get { return s_ncacheTcpPort; }
         }
 
+        static public int JvCacheTcpPort
+        {
+            get { return s_jvcacheTcpPort; }
+        }
+
         /// <summary>
         /// Configuration file name.
         /// </summary>
@@ -114,30 +113,37 @@ namespace Alachisoft.NCache.Management
         /// </summary>
         static public void ScanConfiguration()
         {
-
             string REGKEY = @"Software\Alachisoft\NCache";
             try
             {
-
                 AppUtil myUtil = new AppUtil();
                 s_configDir = AppUtil.InstallDir;
                 if (s_configDir == null || s_configDir.Length == 0)
                 {
-
                     throw new ManagementException("Missing installation folder information: ROOTKEY= " + RegHelper.ROOT_KEY);
                 }
-
                 s_configDir = Path.Combine(s_configDir, DIRNAME);
-                if (!Directory.Exists(s_configDir))
-                    Directory.CreateDirectory(s_configDir);
-                s_configFileName = Path.Combine(s_configDir, FILENAME);
-
-
-
-                if (!File.Exists(s_configFileName))
+                try
                 {
-                    /// Save a dummy configuration.
-                    SaveConfiguration(null);
+                    if (!Directory.Exists(s_configDir))
+                        Directory.CreateDirectory(s_configDir);
+                }
+                catch
+                {
+
+                }
+                s_configFileName = Path.Combine(s_configDir, FILENAME);
+                try
+                {
+                    if (!File.Exists(s_configFileName))
+                    {
+                        /// Save a dummy configuration.
+                        SaveConfiguration(null);
+                    }
+                }
+                catch
+                {
+
                 }
 
             }
@@ -165,6 +171,18 @@ namespace Alachisoft.NCache.Management
             catch (FormatException) { }
             catch (OverflowException) { }
 
+            try
+            {
+                object v = RegHelper.GetRegValue(REGKEY, "TayzGridTcp.Port", 0);
+                if (v != null)
+                {
+                    int port = Convert.ToInt32(v);
+                    if (port >= System.Net.IPEndPoint.MinPort &&
+                        port <= System.Net.IPEndPoint.MaxPort) s_jvcacheTcpPort = port;
+                }
+            }
+            catch (FormatException) { }
+            catch (OverflowException) { }
 
             try
             {
@@ -197,7 +215,7 @@ namespace Alachisoft.NCache.Management
         /// Initialize a registered cache given by the ID.
         /// </summary>
         /// <param name="cacheId">A string identifier of configuration.</param>
-        static public ArrayList GetCacheConfig(string cacheId, bool inProc)
+        static public ArrayList GetCacheConfig(string cacheId, string userId, string password, bool inProc)
         {
             if (FileName.Length == 0)
             {
@@ -218,10 +236,18 @@ namespace Alachisoft.NCache.Management
                 if (inProc)
                 {
 
+                    bool isAuthorize = false;
+                    Hashtable ht = (Hashtable)propsList[0];
+                    Hashtable cache = (Hashtable)ht["cache"];
+                    
                     return configsList;
                 }
                 return null;
-               
+            }
+
+            catch (SecurityException)
+            {
+                throw;
             }
 
             catch (ManagementException)
@@ -349,7 +375,6 @@ namespace Alachisoft.NCache.Management
             }
         }
 
-//Method for converting New Dom into Old Dom for Passing to back to LoadConfig Method .. .. .. [Numan Hanif]
         private static Alachisoft.NCache.Config.Dom.CacheServerConfig[] convertToOldDom(Alachisoft.NCache.Config.NewDom.CacheServerConfig[] newCacheConfigsList)
         {
             IList<Alachisoft.NCache.Config.Dom.CacheServerConfig> oldCacheConfigsList = new List<Alachisoft.NCache.Config.Dom.CacheServerConfig>();
@@ -368,54 +393,6 @@ namespace Alachisoft.NCache.Management
             oldCacheConfigsList.CopyTo(oldCacheConfigsArray,0);
             return oldCacheConfigsArray;
         }
-
-
-
-        /// <summary>
-        /// Loads and returns all cache configurations from the configuration file.
-        /// </summary>
-        static public CacheConfig[] GetConfiguredCaches2()
-        {
-            if (FileName.Length == 0)
-            {
-                throw new ManagementException("Can not locate cache configuration file. Installation might be corrupt.");
-            }
-            try
-            {
-                XmlConfigReader xcr = new XmlConfigReader("", "");
-                IDictionary propMap = null;
-
-                propMap = xcr.GetProperties2(CacheConfigManager.FileName);
-
-                ArrayList configList = new ArrayList();
-
-                IDictionaryEnumerator ide = propMap.GetEnumerator();
-                while (ide.MoveNext())
-                {
-                    IDictionary properties = (IDictionary)ide.Value;
-                    configList.Add(CacheConfig.FromProperties2(properties));
-                }
-
-                CacheConfig[] configs = new CacheConfig[configList.Count];
-                for (int i = 0; i < configList.Count; i++)
-                {
-                    configs[i] = configList[i] as CacheConfig;
-                }
-
-                return configs;
-            }
-            catch (ManagementException)
-            {
-                throw;
-            }
-            catch (Exception e)
-            {
-                throw new ManagementException(e.Message, e);
-            }
-        }
-
-
-
         /// <summary>
         /// Save caches to configuration
         /// </summary>
@@ -442,36 +419,10 @@ namespace Alachisoft.NCache.Management
                     }
                 }
             }
-
-            if (partitionedCaches != null)
-            {
-                IDictionaryEnumerator ide = partitionedCaches.GetEnumerator();
-                while (ide.MoveNext())
-                {
-                    Hashtable partitionedTable = ide.Value as Hashtable;
-                    if (partitionedTable != null)
-                    {
-                        IDictionaryEnumerator ie = partitionedTable.GetEnumerator();
-                        while (ie.MoveNext())
-                        {
-                            try
-                            {
-                                CacheInfo cacheInfo = (CacheInfo)ie.Value;
-                                configurations.Add(cacheInfo.CacheProps);
-                            }
-                            catch (Exception ex)
-                            {
-                                Exception e = ex;
-                            }
-                        }
-                    }
-                }
-            }
-
+          
             SaveConfiguration(convertToNewDom(configurations).ToArray());
         }
 
-//Method for converting Old Dom into New Dom for Saving it on the nconf File 
         private static List<Alachisoft.NCache.Config.NewDom.CacheServerConfig> convertToNewDom(List<CacheServerConfig> oldCacheConfigsList)
         {
             List<Alachisoft.NCache.Config.NewDom.CacheServerConfig> newCacheConfigsList = new List<Alachisoft.NCache.Config.NewDom.CacheServerConfig>();
@@ -487,18 +438,12 @@ namespace Alachisoft.NCache.Management
                 }
                 catch (Exception)
                 {
-
+                    
                 }
             }
             return newCacheConfigsList;
-
-
         }
 
-
-        
-
- 
         /// <summary>
         /// Save the configuration
         /// </summary>

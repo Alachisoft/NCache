@@ -1,16 +1,16 @@
-// Copyright (c) 2017 Alachisoft
-// 
-// Licensed under the Apache License, Version 2.0 (the "License");
-// you may not use this file except in compliance with the License.
-// You may obtain a copy of the License at
-// 
-//    http://www.apache.org/licenses/LICENSE-2.0
-// 
-// Unless required by applicable law or agreed to in writing, software
-// distributed under the License is distributed on an "AS IS" BASIS,
-// WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
-// See the License for the specific language governing permissions and
-// limitations under the License.
+//  Copyright (c) 2021 Alachisoft
+//  
+//  Licensed under the Apache License, Version 2.0 (the "License");
+//  you may not use this file except in compliance with the License.
+//  You may obtain a copy of the License at
+//  
+//     http://www.apache.org/licenses/LICENSE-2.0
+//  
+//  Unless required by applicable law or agreed to in writing, software
+//  distributed under the License is distributed on an "AS IS" BASIS,
+//  WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+//  See the License for the specific language governing permissions and
+//  limitations under the License
 using System;
 using System.Collections;
 using System.ComponentModel;
@@ -95,9 +95,7 @@ namespace Alachisoft.NCache.Service
 			// 
 
             this.serviceInstaller.DisplayName = "NCache";
-
-
-
+            
             this.serviceInstaller.ServiceName = "NCacheSvc";
 
             this.serviceInstaller.StartType = System.ServiceProcess.ServiceStartMode.Automatic;
@@ -120,13 +118,14 @@ namespace Alachisoft.NCache.Service
 		/// associated with the installation.</param>
 		public override void Install(IDictionary stateSaver)
 		{
+			//HKEY_LOCAL_MACHINE\Services\CurrentControlSet
 			base.Install(stateSaver);
 			try
 			{
 				RegistryKey services = Registry.LocalMachine.OpenSubKey(@"System\CurrentControlSet\Services");
 				RegistryKey service = services.OpenSubKey(serviceInstaller.ServiceName, true);
-
                 service.SetValue("Description", "Provides out-proc caching and clustering. Allows local and remote management of NCache configuration.");
+
 			}
 			catch(Exception e)
 			{
@@ -150,7 +149,9 @@ namespace Alachisoft.NCache.Service
 				{
 					service.DeleteValue("Description");
 				}
-				
+				//services.DeleteSubKeyTree(serviceInstaller.ServiceName);
+				//Delete any keys you created during installation (or that your service created)
+				//service.DeleteSubKeyTree("Parameters");
 			}
 			catch(Exception e)
 			{
@@ -166,10 +167,20 @@ namespace Alachisoft.NCache.Service
         {
             try
             {
+
                 Process[] nCacheSvcProc = Process.GetProcessesByName("Alachisoft.NCache.Service");
+                Process[] nCacheBridgeSvcProc = Process.GetProcessesByName("Alachisoft.NCache.BridgeService");
+
                 if (nCacheSvcProc != null && nCacheSvcProc.Length > 0)
                     (nCacheSvcProc[0]).Kill();
+
+                if (nCacheBridgeSvcProc != null && nCacheBridgeSvcProc.Length > 0)
+                    (nCacheBridgeSvcProc[0]).Kill();
+
                 nCacheSvcProc = Process.GetProcessesByName("Alachisoft.NCache.Service.exe");
+
+                nCacheBridgeSvcProc = Process.GetProcessesByName("Alachisoft.NCache.BridgeService.exe");
+
             }
             catch (Exception)
             {

@@ -1,47 +1,52 @@
-// Copyright (c) 2017 Alachisoft
-// 
-// Licensed under the Apache License, Version 2.0 (the "License");
-// you may not use this file except in compliance with the License.
-// You may obtain a copy of the License at
-// 
-//    http://www.apache.org/licenses/LICENSE-2.0
-// 
-// Unless required by applicable law or agreed to in writing, software
-// distributed under the License is distributed on an "AS IS" BASIS,
-// WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
-// See the License for the specific language governing permissions and
-// limitations under the License.
-
+//  Copyright (c) 2021 Alachisoft
+//  
+//  Licensed under the Apache License, Version 2.0 (the "License");
+//  you may not use this file except in compliance with the License.
+//  You may obtain a copy of the License at
+//  
+//     http://www.apache.org/licenses/LICENSE-2.0
+//  
+//  Unless required by applicable law or agreed to in writing, software
+//  distributed under the License is distributed on an "AS IS" BASIS,
+//  WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+//  See the License for the specific language governing permissions and
+//  limitations under the License
 using System;
 using System.Threading;
+
 using Alachisoft.NCache.Util;
+
+using Alachisoft.NCache.Common;
 using Alachisoft.NCache.Runtime.Serialization;
 using Alachisoft.NCache.Runtime.Serialization.IO;
 using Alachisoft.NCache.Common.Logger;
 using Runtime = Alachisoft.NCache.Runtime;
-using Alachisoft.NCache.Common;
+using Alachisoft.NCache.Caching.Pooling;
+using Alachisoft.NCache.Common.Pooling.Lease;
+using Alachisoft.NCache.Common.Pooling;
 
 namespace Alachisoft.NCache.Caching.AutoExpiration
 {
     /// <summary>
 	/// Abstract base class that defines an interface used by the Cache. Different sort of 
-	/// expiration policies must derive from this class.
+	/// expiration policies must derive from this class including the complex CacheDependency 
+	/// classes in Web.Caching package.
 	/// </summary>	
     [Serializable]
-    public abstract class ExpirationHint : IComparable, IDisposable, ICompactSerializable, ISizable
+	public abstract class ExpirationHint : SimpleLease, IComparable, IDisposable, ICompactSerializable,ISizable
 	{
-		public const int EXPIRED = 1;
-		public const int NEEDS_RESYNC = 2;
-		public const int IS_VARIANT = 4;
-		public const int NON_ROUTABLE = 8;
-		public const int DISPOSED = 16;
+		public const int 				EXPIRED = 1;
+		public const int 				NEEDS_RESYNC = 2;
+		public const int 				IS_VARIANT = 4;
+		public const int 				NON_ROUTABLE = 8;
+		public const int 				DISPOSED = 16;
         public const int ExpirationHintSize = 24;
 
-        private string _cacheKey;
-		private int	_bits;
-		private IExpirationEventSink _objNotify;
+        private string                  _cacheKey;
+		private int						_bits;
+		private IExpirationEventSink	_objNotify;
 		[CLSCompliant(false)]
-        public ExpirationHintType _hintType;
+        public ExpirationHintType       _hintType;
 		protected ExpirationHint()
 		{            
             _hintType = ExpirationHintType.Parent;
@@ -53,7 +58,7 @@ namespace Alachisoft.NCache.Caching.AutoExpiration
 		/// Performs application-defined tasks associated with freeing, releasing, or 
 		/// resetting unmanaged resources.
 		/// </summary>
-		void IDisposable.Dispose()
+		public void Dispose()
 		{
             if (!IsDisposed)
             {
@@ -89,11 +94,12 @@ namespace Alachisoft.NCache.Caching.AutoExpiration
 		public bool NeedsReSync { get { return IsBitSet(NEEDS_RESYNC); } }
 		/// <summary> Return if hint is to be updated on Reset </summary>
 		public bool IsVariant { get { return IsBitSet(IS_VARIANT); } }
-			/// <summary> Returns true if the hint can be routed to other nodes, otherwise returns false.</summary>
+		/// <summary> Returns true if the hint can be routed to other nodes, otherwise returns false.</summary>
+		public bool IsRoutable { get { return !IsBitSet(NON_ROUTABLE); } }
+		/// <summary> Returns true if the hint can be routed to other nodes, otherwise returns false.</summary>
 		public bool IsDisposed { get { return IsBitSet(DISPOSED); } }
         /// <summary> Returns true if the hint is indexable in expiration manager, otherwise returns false.</summary>
-        virtual public bool IsIndexable { get { return true; } }
-
+        virtual public bool IsIndexable { get { return true; } }        
 
         virtual public string CacheKey { set { _cacheKey = value; } get { return _cacheKey; } }
 
@@ -127,7 +133,7 @@ namespace Alachisoft.NCache.Caching.AutoExpiration
 			_bits &= ~EXPIRED;
             if (_ncacheLog == null)
                 _ncacheLog = context.NCacheLog;
-			            return true;
+            return true;
 		}
 
         internal virtual void ResetVariant(CacheRuntimeContext context)
@@ -196,35 +202,58 @@ namespace Alachisoft.NCache.Caching.AutoExpiration
 			}
 			else
 			{
-				return 1; // Consider throwing an exception
+				return 1; 
 			}
 		}
 
 		#endregion
 
-        public static ExpirationHint ReadExpHint(CompactReader reader)
+        public static ExpirationHint ReadExpHint(CompactReader reader, PoolManager poolManager)
         {
             ExpirationHintType expHint = ExpirationHintType.Parent;
             expHint = (ExpirationHintType)reader.ReadInt16();
-            ExpirationHint tmpObj = null;
+
             switch (expHint)
             {
                 case ExpirationHintType.NULL:
                     return null;
                 
                 case ExpirationHintType.Parent:
-                    tmpObj = (ExpirationHint)reader.ReadObject();
-                    return (ExpirationHint)tmpObj;                    
+                    return (ExpirationHint)reader.ReadObject();
                 
                 case ExpirationHintType.FixedExpiration:
-                    FixedExpiration fe = new FixedExpiration();
-                    ((ICompactSerializable)fe).Deserialize(reader);
-                    return (ExpirationHint)fe;                    
+                    var fe = FixedExpiration.Create(poolManager);
+                    fe.Deserialize(reader);
+                    return fe;
                 
+                case ExpirationHintType.TTLExpiration:
+                    var ttle = TTLExpiration.Create(poolManager);
+                    ((ICompactSerializable)ttle).Deserialize(reader);
+                    return ttle;                    
+                
+                case ExpirationHintType.FixedIdleExpiration:
+                    var fie = FixedIdleExpiration.Create(poolManager);
+                    ((ICompactSerializable)fie).Deserialize(reader);
+                    return fie;     
+                    
+#if !( DEVELOPMENT || CLIENT)
+                case ExpirationHintType.NodeExpiration:
+                    var ne = NodeExpiration.Create(poolManager);
+                    ((ICompactSerializable)ne).Deserialize(reader);
+                    return ne;
+#endif
                 case ExpirationHintType.IdleExpiration:
-                    IdleExpiration ie = new IdleExpiration();
+                    var ie = IdleExpiration.Create(poolManager);
                     ((ICompactSerializable)ie).Deserialize(reader);
-                    return (ExpirationHint)ie;
+                    return ie;
+                    
+                case ExpirationHintType.AggregateExpirationHint:
+                    var aeh = AggregateExpirationHint.Create(poolManager);
+                    ((ICompactSerializable)aeh).Deserialize(reader);
+                    return aeh;
+                    
+                case ExpirationHintType.DependencyHint:                    
+                    break;
                 
                 default:
                     break;            
@@ -243,10 +272,14 @@ namespace Alachisoft.NCache.Caching.AutoExpiration
 
             writer.Write((short)expHint._hintType);
             ((ICompactSerializable)expHint).Serialize(writer);
+            
+            return;
         }
 
         /// <summary>
         /// Override this method for hints that should be reinitialized when they are moved to another partition.
+        /// e.g SqlYukondependency Hint must be reinitialized after state transfer so that its listeners are created on 
+        /// new subcoordinator.
         /// </summary>
         /// <param name="context">CacheRuntimeContex for required contextual information.</param>
         /// <returns>True if reinitialization was successfull.</returns>
@@ -281,7 +314,7 @@ namespace Alachisoft.NCache.Caching.AutoExpiration
 
         public virtual int Size
         {
-            get
+            get 
             {
                 return ExpirationHintSize;
             }
@@ -294,5 +327,43 @@ namespace Alachisoft.NCache.Caching.AutoExpiration
                 return ExpirationHintSize;
             }
         }
+
+        #region ILeasable
+
+        public override void ResetLeasable()
+        {
+            _bits = 0;
+            _cacheKey = string.Empty;
+            _objNotify = default(IExpirationEventSink); 
+        }
+
+        public override void ReturnLeasableToPool()
+        {
+
+        }
+
+        #endregion
+
+        #region - [Deep Cloning] -
+
+        // It's good for devirtualization that we override deep clone in child classes
+        // instead of having a single method that calls overriden DeepCloneInternal() 
+        // on a supposedly new method (that doesn't exist right now) that returns the 
+        // appropriate ExpirationHint derived instance to this method.
+        public abstract ExpirationHint DeepClone(PoolManager poolManager);
+
+        protected virtual void DeepCloneInternal(PoolManager poolManager, ExpirationHint clonedHint)
+        {
+            if (clonedHint == null)
+                return;
+
+            clonedHint._bits = _bits;
+            clonedHint._cacheKey = _cacheKey;
+            clonedHint._hintType = _hintType;
+            clonedHint._objNotify = _objNotify;
+            clonedHint._ncacheLog = _ncacheLog;
+        }
+
+        #endregion
     }
 }

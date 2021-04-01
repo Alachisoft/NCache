@@ -1,18 +1,4 @@
-// Licensed under the Apache License, Version 2.0 (the "License");
-// you may not use this file except in compliance with the License.
-// You may obtain a copy of the License at
-// 
-//    http://www.apache.org/licenses/LICENSE-2.0
-// 
-// Unless required by applicable law or agreed to in writing, software
-// distributed under the License is distributed on an "AS IS" BASIS,
-// WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
-// See the License for the specific language governing permissions and
-// limitations under the License.
-
-
 using System;
-using System.Collections;
 using System.Threading;
 
 namespace Alachisoft.NCache.Common.Threading
@@ -52,33 +38,24 @@ namespace Alachisoft.NCache.Common.Threading
 		/// <summary>
 		/// The interface that submitted tasks must implement
 		/// </summary>
-		public abstract class Task 
+		public interface Task 
 		{
 			/// <summary>
 			/// Returns true if task is cancelled and shouldn't be scheduled again
 			/// </summary>
 			/// <returns></returns>
-            public abstract bool IsCancelled();
-
-            /// <summary>
-            /// Returns true if task can be executed immediately after it is created. 
-            /// <Description>
-            /// The default behavior of all tasks is that they can be executed immediately after they are added to the time scheduler. 
-            /// However, this behavior can be overridden in the derived implementation.
-            /// </Description>
-            /// </summary>
-            public virtual bool Enabled { get { return true; } }
+			bool IsCancelled();
 
 			/// <summary>
 			/// The next schedule interval
 			/// </summary>
 			/// <returns>The next schedule interval</returns>
-			public abstract long GetNextInterval();
+			long GetNextInterval();
 
 			/// <summary>
 			/// Execute the task
 			/// </summary>
-            public abstract void Run();
+			void Run();
 		}
 
 
@@ -118,7 +95,16 @@ namespace Alachisoft.NCache.Common.Threading
 		/// <summary>Sorted list of <code>IntTask</code>s </summary>
 		private EventQueue queue;
 
-        bool _concurrent;
+	    bool _concurrent;
+
+        public int QueueCount
+        {
+            get
+            {
+                if (queue == null) return 0;
+                return queue.Count;
+            }
+        }
 
 		/// <summary>
 		/// Set the thread state to running, create and start the thread
@@ -202,8 +188,7 @@ namespace Alachisoft.NCache.Common.Threading
 		/// </summary>
 		private void _run() 
 		{
-			long elapsedTime;
-            long interval;
+			long    elapsedTime;
 			try 
 			{
 				while(true) 
@@ -228,7 +213,7 @@ namespace Alachisoft.NCache.Common.Threading
                             {
                                 lock (e)
                                 {
-                                    interval = e.Interval;
+                                    long interval = e.Interval;
                                     task = e.Task;
                                     if (task.IsCancelled())
                                     {
@@ -264,20 +249,20 @@ namespace Alachisoft.NCache.Common.Threading
                             return;
                         }
                     }
-                    try
-                    {
-                        if (task != null)
-                        {
-                            if (_concurrent)
+					try 
+					{
+					    if (task != null)
+					    {
+                            if(_concurrent)
                                 ThreadPool.QueueUserWorkItem(ExecuterCallback, task);
                             else
                                 task.Run();
                         }
-                    }
-                    catch (Exception ex)
-                    {
+                    } 
+					catch(Exception ex) 
+					{
                         Trace.error("TimeScheduler._run()", ex.ToString());
-                    }
+					}
 				}
 			}
 			catch(ThreadInterruptedException ex) 
@@ -296,54 +281,53 @@ namespace Alachisoft.NCache.Common.Threading
             }
         }
 
-		/// <summary>
-		/// Create a scheduler that executes tasks in dynamically adjustable
-		/// intervals
-		/// </summary>
-		/// <param name="suspend_interval">
-		/// The time that the scheduler will wait for
-		/// at least one task to be placed in the task queue before suspending
-		/// the scheduling thread
-		/// </param>
-		public TimeScheduler(long suspend_interval) 
+        /// <summary>
+        /// Create a scheduler that executes tasks in dynamically adjustable
+        /// intervals
+        /// </summary>
+        /// <param name="suspend_interval">
+        /// The time that the scheduler will wait for
+        /// at least one task to be placed in the task queue before suspending
+        /// the scheduling thread
+        /// </param>
+        public TimeScheduler(long suspend_interval) 
 		{
 			queue = new EventQueue();
 			this.suspend_interval = suspend_interval;
 		}
 
-        /// <summary>
-        /// Create a scheduler that executes tasks in dynamically adjustable
-        /// intervals
-        /// </summary>
-        public TimeScheduler() : this(2000) { }
+		/// <summary>
+		/// Create a scheduler that executes tasks in dynamically adjustable
+		/// intervals
+		/// </summary>
+		public TimeScheduler() : this(2000){}
 
-        public TimeScheduler(bool concurrent) : this(concurrent, 2000) { }
+        public TimeScheduler(bool concurrent): this(concurrent, 2000) { }
+        
 
-
-        public TimeScheduler(bool concurrent, long interval)
-            : this(interval)
+        public TimeScheduler(bool concurrent, long interval) : this(interval)
         {
             _concurrent = concurrent;
         }
 
-		/// <remarks>
-		/// <b>Relative Scheduling</b>
-		/// <tt>true</tt>:<br></br>
-		/// Task is rescheduled relative to the last time it <i>actually</i>
-		/// started execution
-		///	<p>
-		/// <tt>false</tt>:<br></br>
-		/// Task is scheduled relative to its <i>last</i> execution schedule. This
-		/// has the effect that the time between two consecutive executions of
-		/// the task remains the same.
-		/// </p>
-		/// </remarks>
-		/// <summary>
-		/// Add a task for execution at adjustable intervals
-		/// </summary>
-		/// <param name="t">The task to execute</param>
-		/// <param name="relative">Use relative scheduling</param>
-		public void AddTask(Task t, bool relative) 
+        /// <remarks>
+        /// <b>Relative Scheduling</b>
+        /// <tt>true</tt>:<br></br>
+        /// Task is rescheduled relative to the last time it <i>actually</i>
+        /// started execution
+        ///	<p>
+        /// <tt>false</tt>:<br></br>
+        /// Task is scheduled relative to its <i>last</i> execution schedule. This
+        /// has the effect that the time between two consecutive executions of
+        /// the task remains the same.
+        /// </p>
+        /// </remarks>
+        /// <summary>
+        /// Add a task for execution at adjustable intervals
+        /// </summary>
+        /// <param name="t">The task to execute</param>
+        /// <param name="relative">Use relative scheduling</param>
+        public void AddTask(Task t, bool relative) 
 		{
 			long interval;
 			lock(this) 
@@ -355,7 +339,7 @@ namespace Alachisoft.NCache.Common.Threading
 
 				switch(thread_state) 
 				{
-					case State.RUN: break; 
+					case State.RUN: break; //Monitor.PulseAll(queue); 
 					case State.SUSPEND: _unsuspend(); break;
 					case State.STOPPING: break;
 					case State.STOP: break;
@@ -436,11 +420,8 @@ namespace Alachisoft.NCache.Common.Threading
 					tmp.Interrupt();
 				}
 			}
-			if(tmp != null)
-			{
-				tmp.Join();
-				queue.Clear();
-			}
+            queue.Clear();
+           
 		}
 	}
 }

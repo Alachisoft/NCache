@@ -1,0 +1,6 @@
+
+option java_outer_classname="GetCompactTypeResponseProtocol";
+package Alachisoft.NCache.Common.Protobuf;
+message GetCompactTypeResponse {
+	optional string compactTypeString = 1;
+}

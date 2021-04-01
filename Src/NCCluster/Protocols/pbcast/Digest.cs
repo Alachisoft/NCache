@@ -1,24 +1,8 @@
-// Licensed under the Apache License, Version 2.0 (the "License");
-// you may not use this file except in compliance with the License.
-// You may obtain a copy of the License at
-// 
-//    http://www.apache.org/licenses/LICENSE-2.0
-// 
-// Unless required by applicable law or agreed to in writing, software
-// distributed under the License is distributed on an "AS IS" BASIS,
-// WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
-// See the License for the specific language governing permissions and
-// limitations under the License.
 // $Id: Digest.java,v 1.6 2004/07/05 05:49:41 belaban Exp $
-
 using System;
 
 using Alachisoft.NGroups;
-
-
 using Alachisoft.NCache.Runtime.Serialization.IO;
-
-
 using Alachisoft.NCache.Runtime.Serialization;
 
 
@@ -62,11 +46,11 @@ namespace Alachisoft.NGroups.Protocols.pbcast
 		{
 			if (index >= senders.Length)
 			{
-                return ;
+				return ;
 			}
 			if (sender == null)
 			{
-               return ;
+				return ;
 			}
 			senders[index] = sender;
 			low_seqnos[index] = low_seqno;
@@ -80,11 +64,11 @@ namespace Alachisoft.NGroups.Protocols.pbcast
 		{
 			if (index >= senders.Length)
 			{
-                return ;
+				return ;
 			}
 			if (sender == null)
 			{
-                return ;
+				return ;
 			}
 			senders[index] = sender;
 			low_seqnos[index] = low_seqno;
@@ -123,7 +107,7 @@ namespace Alachisoft.NGroups.Protocols.pbcast
 			
 			if (d == null)
 			{
-               return ;
+				return ;
 			}
 			for (int i = 0; i < d.size(); i++)
 			{
@@ -150,7 +134,6 @@ namespace Alachisoft.NGroups.Protocols.pbcast
 			long my_low_seqno, my_high_seqno, my_high_seqno_seen;
 			if (sender == null)
 			{
-                //Trace.error("Digest", "sender == null");
 				return ;
 			}
 			index = getIndex(sender);
@@ -247,7 +230,7 @@ namespace Alachisoft.NGroups.Protocols.pbcast
 				return senders[index];
 			else
 			{
-                return null;
+				return null;
 			}
 		}
 		
@@ -264,7 +247,6 @@ namespace Alachisoft.NGroups.Protocols.pbcast
 				high_seqnos[index] = 0;
 				high_seqnos_seen[index] = - 1;
 			}
-           
 		}
 		
 		
@@ -286,7 +268,7 @@ namespace Alachisoft.NGroups.Protocols.pbcast
 				return low_seqnos[index];
 			else
 			{
-                return 0;
+				return 0;
 			}
 		}
 		
@@ -297,7 +279,7 @@ namespace Alachisoft.NGroups.Protocols.pbcast
 				return high_seqnos[index];
 			else
 			{
-               return 0;
+				return 0;
 			}
 		}
 		
@@ -307,7 +289,7 @@ namespace Alachisoft.NGroups.Protocols.pbcast
 				return high_seqnos_seen[index];
 			else
 			{
-               return 0;
+				return 0;
 			}
 		}
 		
@@ -347,7 +329,6 @@ namespace Alachisoft.NGroups.Protocols.pbcast
 			{
 				low_seqnos[index] = low_seqno;
 			}
-            
 		}
 		
 		
@@ -357,7 +338,6 @@ namespace Alachisoft.NGroups.Protocols.pbcast
 			{
 				high_seqnos[index] = high_seqno;
 			}
-            
 		}
 		
 		public void  setHighSeqnoSeenAt(int index, long high_seqno_seen)
@@ -366,7 +346,6 @@ namespace Alachisoft.NGroups.Protocols.pbcast
 			{
 				high_seqnos_seen[index] = high_seqno_seen;
 			}
-           
 		}
 		
 		
@@ -393,7 +372,6 @@ namespace Alachisoft.NGroups.Protocols.pbcast
 		{
 			Digest ret = new Digest(senders.Length);
 			
-			// changed due to JDK bug (didn't work under JDK 1.4.{1,2} under Linux, JGroups bug #791718
 			if (senders != null)
 				Array.Copy(senders, 0, ret.senders, 0, senders.Length);
 			

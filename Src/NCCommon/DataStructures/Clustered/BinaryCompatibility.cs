@@ -23,6 +23,7 @@
 
 using System;
 using System.Collections.Generic;
+using System.Linq;
 using System.Text;
 using System.Reflection;
 
@@ -402,16 +403,5 @@ namespace Alachisoft.NCache.Common.DataStructures.Clustered
             BinaryCompatibility.s_AppWasBuiltForFramework = targetFrameworkId;
             BinaryCompatibility.s_AppWasBuiltForVersion = num;
         }
-    }
-    public enum TargetFrameworkId
-    {
-        NotYetChecked,
-        Unrecognized,
-        Unspecified,
-        NetFramework,
-        Portable,
-        NetCore,
-        Silverlight,
-        Phone
     }
 }
