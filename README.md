@@ -25,16 +25,16 @@ NCache is used by hundreds of companies all over the world in mission critical a
 
 ## Getting Started
 
-### [Installation Guide](http://www.alachisoft.com/resources/docs/ncache-com/install-guide/)
+### [Installation Guide](https://www.alachisoft.com/resources/docs/ncache/install-guide/)
 Step-by-step guide about how to install NCache for Open Source edition, and to configure your environment accordingly.
 
-### [Admin Guide](http://www.alachisoft.com/resources/docs/ncache-com/admin-guide/)
+### [Admin Guide](https://www.alachisoft.com/resources/docs/ncache/admin-guide/)
 Perform administrative tasks on caches using configuration files for NCache Open Source edition.
 
 ### [Programmers Guide](http://www.alachisoft.com/resources/docs/ncache/prog-guide/)
 Use various features of NCache in .NET to develop high performance and scalable applications.
 
-### [Dockers Guide](http://www.alachisoft.com/resources/docs/ncache-com/install-guide/installation-for-docker.html)
+### [Dockers Guide](https://www.alachisoft.com/resources/docs/ncache/getting-started-guide-docker/)
 Docker image and Dockerfile with NCache environment to allow seamless building of NCache applications and managing cache clusters.
 
 
