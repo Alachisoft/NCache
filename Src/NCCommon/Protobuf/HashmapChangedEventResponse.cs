@@ -11,14 +11,16 @@
 // Note: requires additional types generated from: EventId.proto
 namespace Alachisoft.NCache.Common.Protobuf
 {
-  [global::System.Serializable, global::ProtoBuf.ProtoContract(Name=@"HashmapChangedEventResponse")]
-  public partial class HashmapChangedEventResponse : global::ProtoBuf.IExtensible
+  [global::System.Serializable, global::ProtoBuf.Extended.ProtoContract(Name=@"HashmapChangedEventResponse")]
+  public partial class HashmapChangedEventResponse : global::ProtoBuf.Extended.IExtensible
   {
     public HashmapChangedEventResponse() {}
-    
+    private global::ProtoBuf.Extended.IExtension extensionObject;
+    global::ProtoBuf.Extended.IExtension global::ProtoBuf.Extended.IExtensible.GetExtensionObject(bool createIfMissing)
+    { return global::ProtoBuf.Extended.Extensible.GetExtensionObject(ref extensionObject, createIfMissing); }
 
-    private byte[] _table = null;
-    [global::ProtoBuf.ProtoMember(1, IsRequired = false, Name=@"table", DataFormat = global::ProtoBuf.DataFormat.Default)]
+        private byte[] _table = null;
+    [global::ProtoBuf.Extended.ProtoMember(1, IsRequired = false, Name=@"table", DataFormat = global::ProtoBuf.Extended.DataFormat.Default)]
     [global::System.ComponentModel.DefaultValue(null)]
     public byte[] table
     {
@@ -27,16 +29,52 @@ namespace Alachisoft.NCache.Common.Protobuf
     }
 
     private Alachisoft.NCache.Common.Protobuf.EventId _eventId = null;
-    [global::ProtoBuf.ProtoMember(2, IsRequired = false, Name=@"eventId", DataFormat = global::ProtoBuf.DataFormat.Default)]
+    [global::ProtoBuf.Extended.ProtoMember(2, IsRequired = false, Name=@"eventId", DataFormat = global::ProtoBuf.Extended.DataFormat.Default)]
     [global::System.ComponentModel.DefaultValue(null)]
     public Alachisoft.NCache.Common.Protobuf.EventId eventId
     {
       get { return _eventId; }
       set { _eventId = value; }
     }
-    private global::ProtoBuf.IExtension extensionObject;
-    global::ProtoBuf.IExtension global::ProtoBuf.IExtensible.GetExtensionObject(bool createIfMissing)
-      { return global::ProtoBuf.Extensible.GetExtensionObject(ref extensionObject, createIfMissing); }
-  }
+
+    [global::ProtoBuf.Extended.ProtoMember(3)]
+    public long last_view_id
+    {
+        get => __pbn__last_view_id.GetValueOrDefault();
+        set => __pbn__last_view_id = value;
+    }
+    public bool ShouldSerializelast_view_id() => __pbn__last_view_id != null;
+    public void Resetlast_view_id() => __pbn__last_view_id = null;
+    private long? __pbn__last_view_id;
+
+    [global::ProtoBuf.Extended.ProtoMember(4)]
+    public global::System.Collections.Generic.List<KeyValuePair> map { get; } = new global::System.Collections.Generic.List<KeyValuePair>();
+
+    [global::ProtoBuf.Extended.ProtoMember(5)]
+    public global::System.Collections.Generic.List<string> members { get; } = new global::System.Collections.Generic.List<string>();
+
+    [global::ProtoBuf.Extended.ProtoMember(6)]
+    public bool update_map
+    {
+        get => __pbn__update_map.GetValueOrDefault();
+        set => __pbn__update_map = value;
+    }
+    public bool ShouldSerializeupdate_map() => __pbn__update_map != null;
+    public void Resetupdate_map() => __pbn__update_map = null;
+    private bool? __pbn__update_map;
+
+    [global::ProtoBuf.Extended.ProtoMember(7)]
+    public bool forceful_update
+    {
+        get => __pbn__forceful_update.GetValueOrDefault();
+        set => __pbn__forceful_update = value;
+    }
+    public bool ShouldSerializeforceful_update() => __pbn__forceful_update != null;
+    public void Resetforceful_update() => __pbn__forceful_update = null;
+    private bool? __pbn__forceful_update;
+
+        [global::ProtoBuf.Extended.ProtoMember(8)]
+        public global::System.Collections.Generic.List<KeyValuePair> serverMapping { get; } = new global::System.Collections.Generic.List<KeyValuePair>();
+    }
   
 }

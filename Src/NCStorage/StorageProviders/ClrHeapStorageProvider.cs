@@ -1,4 +1,4 @@
-//  Copyright (c) 2021 Alachisoft
+//  Copyright (c) 2026 Alachisoft
 //  
 //  Licensed under the Apache License, Version 2.0 (the "License");
 //  you may not use this file except in compliance with the License.
@@ -35,9 +35,6 @@ namespace Alachisoft.NCache.Storage
         /// <summary> Storage Map </summary>
         protected HashVector _itemDict;
         protected bool _evictionEnabled;
-
-        ///// <summary> Size of data, in bytes, stored in store</summary>
-      
 
         /// <summary>
         /// Default constructor.
@@ -114,8 +111,6 @@ namespace Alachisoft.NCache.Storage
         /// with the specified key; otherwise, false.</returns>
         public override bool Contains(object key)
         {
-            //if (ServerMonitor.MonitorActivity) ServerMonitor.LogClientActivity("Store.Cont", "");
-
             return _itemDict.ContainsKey(key);
         }
 
@@ -129,8 +124,6 @@ namespace Alachisoft.NCache.Storage
         {
             try
             {
-                //if (ServerMonitor.MonitorActivity) ServerMonitor.LogClientActivity("Store.Get", "");
-
                 lock (_itemDict.SyncRoot)
                 {
                     return _itemDict[key];
@@ -178,8 +171,6 @@ namespace Alachisoft.NCache.Storage
         {
             try
             {
-                //if (ServerMonitor.MonitorActivity) ServerMonitor.LogClientActivity("Store.Add", "");
-
                 lock (_itemDict.SyncRoot)
                 {
                     if (_itemDict.ContainsKey(key))
@@ -210,13 +201,10 @@ namespace Alachisoft.NCache.Storage
             }
             catch (OutOfMemoryException e)
             {
-                //Trace.error("ClrHeapStorageProvider.Add()", e.ToString());
                 return StoreAddResult.NotEnoughSpace;
             }
             catch (Exception e)
             {
-                //Trace.error("ClrHeapStorageProvider.Add()", e.ToString());
-                //return StoreAddResult.Failure;
                 throw e;
             }
             return StoreAddResult.Success;
@@ -233,8 +221,6 @@ namespace Alachisoft.NCache.Storage
         {
             try
             {
-                //if (ServerMonitor.MonitorActivity) ServerMonitor.LogClientActivity("Store.Insert", "");
-
                 IStorageEntry oldItem = (IStorageEntry)_itemDict[key];
 				
                 StoreStatus status = HasSpace(oldItem as ISizable, (ISizable)item,Common.MemoryUtil.GetStringSize(key),allowExtendedSize);

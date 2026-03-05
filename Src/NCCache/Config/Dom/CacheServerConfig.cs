@@ -1,4 +1,4 @@
-//  Copyright (c) 2021 Alachisoft
+//  Copyright (c) 2026 Alachisoft
 //  
 //  Licensed under the Apache License, Version 2.0 (the "License");
 //  you may not use this file except in compliance with the License.
@@ -30,14 +30,12 @@ namespace Alachisoft.NCache.Config.Dom
         bool licenseIsExpired = false;
         string name;
         bool inproc;
-        //int cachePort=0;
         string configID;
         double configVersion;
         string lastModified;
         double depversion;
+        string storeType = StoreTypeUtil.DISTRIBUTED_CACHE;
 
-
-        //int managementPort = 0;
 
         RtContextValue _runtimeContextValue;
         /// <summary>
@@ -55,18 +53,18 @@ namespace Alachisoft.NCache.Config.Dom
         EvictionPolicy evictionPolicy;
         Cluster cluster;
         ReplicationStrategy _replicationStrategy;
-        Security security;
         AutoLoadBalancing autoBalancing;
         ClientNodes clientNodes;
         ClientActivityNotification clientActivityNotification;
-
 
         SQLDependencyConfig _sqlDependencyConfig;
         private ServerMapping _serverMapping; 
 		private DataFormat _dataFormat = Common.Enum.DataFormat.Binary;
         SynchronizationStrategy _synchronizationStrategy;
+        private SerializationFormat _serializationFormatter = Common.Enum.SerializationFormat.Binary;
 
 
+        bool autoStartCacheOnServiceStartup = false;
 
         public CacheServerConfig() 
 
@@ -80,6 +78,7 @@ namespace Alachisoft.NCache.Config.Dom
          
 
         }
+
         public bool IsUnderMaintainanced
         {
             get { return _underMaintainanced; }
@@ -123,7 +122,7 @@ namespace Alachisoft.NCache.Config.Dom
 
             set
             {
-               cacheIsRunning = value; 
+                    cacheIsRunning = value;
 
             }
         }
@@ -149,6 +148,7 @@ namespace Alachisoft.NCache.Config.Dom
             get { return inproc; }
             set { inproc = value; }
         }
+
 
         [ConfigurationAttribute("deployment-version")]
         public double DeploymentVersion
@@ -214,22 +214,13 @@ namespace Alachisoft.NCache.Config.Dom
         }
         
 
-#if SERVER || CLIENT
+#if SERVER 
         [ConfigurationSection("replication-strategy")]
 #endif
         public ReplicationStrategy ReplicationStrategy
         {
             get { return _replicationStrategy; }
             set { _replicationStrategy = value; }
-        }
-
-#if SERVER
-        [ConfigurationSection("data-load-balancing")]
-#endif
-        public AutoLoadBalancing AutoLoadBalancing
-        {
-            get { return autoBalancing; }
-            set { autoBalancing = value; }
         }
 
         [ConfigurationSection("client-nodes")]
@@ -246,7 +237,6 @@ namespace Alachisoft.NCache.Config.Dom
         }
 
 
-   
         [ConfigurationSection("backing-source")]
 
         public BackingSource BackingSource
@@ -254,10 +244,6 @@ namespace Alachisoft.NCache.Config.Dom
             get { return backingSource; }
             set { backingSource = value; }
         }
-
-
-       
-
 
         [ConfigurationSection("notifications")]
 
@@ -304,13 +290,7 @@ namespace Alachisoft.NCache.Config.Dom
         }
 
 
-        [ConfigurationSection("security")]
-
-        public Security Security
-        {
-            get { return security; }
-            set { security = value; }
-        }
+    
 
         [ConfigurationSection("sql-dependency")]
         public SQLDependencyConfig SQLDependencyConfig
@@ -318,7 +298,6 @@ namespace Alachisoft.NCache.Config.Dom
             get { return _sqlDependencyConfig; }
             set { _sqlDependencyConfig = value; }
         }
-        
         public string DataFormat
         {
             get { return _dataFormat.ToString(); }
@@ -335,11 +314,32 @@ namespace Alachisoft.NCache.Config.Dom
             }
         }
 
-        [ConfigurationSection("client-activity-notification")]
-        public ClientActivityNotification ClientActivityNotification
+
+        [ConfigurationAttribute(SerializationUtility.SerializationConfigAttribute)]
+        public string SerializationFormatter
         {
-            get { return clientActivityNotification; }
-            set { clientActivityNotification = value; }
+            get { return _serializationFormatter.ToString(); }
+            set { Enum.TryParse(value, true, out _serializationFormatter); }
+        }
+
+        [ConfigurationSection("caching-modules")]
+       
+
+        [ConfigurationAttribute(ConfigurationAttributeNames.STORE_TYPE)]
+        public string Store
+        {
+            set => storeType = value;
+            get => storeType;
+        }
+
+        [ConfigurationAttribute("auto-start")]
+        public bool AutoStartCacheOnServiceStartup
+        {
+            get
+            {
+                return this.autoStartCacheOnServiceStartup;
+            }
+            set { autoStartCacheOnServiceStartup = value; }
         }
 
 
@@ -352,7 +352,6 @@ namespace Alachisoft.NCache.Config.Dom
             config.cacheType = this.cacheType;
             config.DataFormat = this.DataFormat;
             config.InProc = InProc;
-            //config.cachePort = CachePort;
             config.configID = configID;
             config.depversion = depversion;
             config.configVersion = configVersion;
@@ -363,7 +362,7 @@ namespace Alachisoft.NCache.Config.Dom
             config.PerfCounters = PerfCounters != null ? (PerfCounters)PerfCounters.Clone() : null;
 
 
-#if SERVER || CLIENT
+#if SERVER 
             config.ReplicationStrategy = ReplicationStrategy != null ? (ReplicationStrategy)ReplicationStrategy.Clone() : null;
             config.autoBalancing = this.autoBalancing != null ? (AutoLoadBalancing)this.autoBalancing.Clone() : null;
             
@@ -377,21 +376,20 @@ namespace Alachisoft.NCache.Config.Dom
 
 
             config.backingSource = this.backingSource != null ? (BackingSource)this.backingSource.Clone() : null;
-            config.Security = Security != null ? (Security)Security.Clone() : null;
             config.Notifications = Notifications != null ? (Notifications)Notifications.Clone() : null;
             config.SQLDependencyConfig = SQLDependencyConfig != null ? (SQLDependencyConfig)SQLDependencyConfig.Clone() : null;
             
             config.ClientDeathDetection = ClientDeathDetection != null ? (ClientDeathDetection)ClientDeathDetection.Clone() : null;
             config.SynchronizationStrategy = SynchronizationStrategy != null ? (SynchronizationStrategy)SynchronizationStrategy.Clone() : null;
 
-            config.ClientActivityNotification = ClientActivityNotification != null
-                ? (ClientActivityNotification) ClientActivityNotification.Clone()
-                : null;
             config.IsRegistered = this.IsRegistered;
+
             config.IsRunning = this.IsRunning;
             config.licenseIsExpired = this.licenseIsExpired;
             config.RuntimeContext = this.RuntimeContext;
+            config.SerializationFormatter = this.SerializationFormatter;
 
+			config.Store = this.storeType;
             return config;
         }
 
@@ -419,7 +417,6 @@ namespace Alachisoft.NCache.Config.Dom
             evictionPolicy = reader.ReadObject() as EvictionPolicy;
             cluster = reader.ReadObject() as Cluster;
             _replicationStrategy = reader.ReadObject() as ReplicationStrategy;
-            security = reader.ReadObject() as Security;
             autoBalancing = reader.ReadObject() as AutoLoadBalancing;
             clientNodes = reader.ReadObject() as ClientNodes;
             _sqlDependencyConfig = reader.ReadObject() as SQLDependencyConfig;
@@ -437,9 +434,11 @@ namespace Alachisoft.NCache.Config.Dom
             }
             clientActivityNotification = reader.ReadObject() as ClientActivityNotification;
             depversion =(double) reader.ReadObject();
-
+            autoStartCacheOnServiceStartup = reader.ReadBoolean();
+            _serializationFormatter = (SerializationFormat)reader.ReadByte();
+            storeType = reader.ReadObject() as string;
         }
-        
+
         public void Serialize(Runtime.Serialization.IO.CompactWriter writer)
         {
 
@@ -455,14 +454,12 @@ namespace Alachisoft.NCache.Config.Dom
             writer.WriteObject(log);
             writer.WriteObject(perfCounters);
             writer.WriteObject(backingSource);
-           
             writer.WriteObject(notifications);
             writer.WriteObject(cleanup);
             writer.WriteObject(storage);
             writer.WriteObject(evictionPolicy);
             writer.WriteObject(cluster);
             writer.WriteObject(_replicationStrategy);
-            writer.WriteObject(security);
             writer.WriteObject(autoBalancing);
             writer.WriteObject(clientNodes);
             writer.WriteObject(_sqlDependencyConfig);
@@ -472,7 +469,9 @@ namespace Alachisoft.NCache.Config.Dom
             writer.WriteObject(_dataFormat.ToString());
             writer.WriteObject(clientActivityNotification);
             writer.WriteObject(depversion);
-
+            writer.Write(autoStartCacheOnServiceStartup);
+            writer.Write((byte)_serializationFormatter);
+            writer.WriteObject(storeType);
         }
         #endregion
     }

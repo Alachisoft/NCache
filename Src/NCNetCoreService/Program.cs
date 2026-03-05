@@ -5,13 +5,14 @@ using System.Collections.Generic;
 using Microsoft.Extensions.Hosting;
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Logging.EventLog;
+using Microsoft.Extensions.Hosting.WindowsServices;
+using Microsoft.Extensions.Logging;
 
 namespace Alachisoft.NCache.NetCore.Service
 {
     public class Program 
     {
-       
-        public static void Main(string[] args)
+        static void Main(string[] args)
         {
             try
             {
@@ -22,20 +23,48 @@ namespace Alachisoft.NCache.NetCore.Service
             }
             catch (Exception e)
             {
-
+                throw;
 
             }
         }
 
+
+
+
         private static IHostBuilder CreateHostBuilder(string[] args) =>
-        Host.CreateDefaultBuilder(args).ConfigureServices((hostContext, services) =>
+           Host.CreateDefaultBuilder(args).ConfigureServices((hostContext, services) =>
+           {
+               services.AddHostedService<NCacheService>()
+               .Configure<EventLogSettings>(config =>
+               {
+                   config.LogName = "NCacheSvc";
+                   config.SourceName = "NCache";
+               });
+           }).UseWindowsServiceInContainer();
+    }
+
+    public static class HostBuilderExtension
+    {
+        public static IHostBuilder UseWindowsServiceInContainer(this IHostBuilder hostBuilder)
         {
-            services.AddHostedService<NCacheService>()
-            .Configure<EventLogSettings>(config =>
+            hostBuilder.UseContentRoot(AppContext.BaseDirectory);
+            hostBuilder.ConfigureLogging((hostingContext, logging) =>
             {
-                config.LogName = "NCacheSvc";
-                config.SourceName = "NCache";
+                logging.AddEventLog();
+            })
+            .ConfigureServices((hostContext, services) =>
+            {
+                services.AddSingleton<IHostLifetime, WindowsServiceLifetime>();
+                services.Configure<EventLogSettings>(settings =>
+                {
+                    if (string.IsNullOrEmpty(settings.SourceName))
+                    {
+                        settings.SourceName = hostContext.HostingEnvironment.ApplicationName;
+                    }
+                });
             });
-        }).UseWindowsService();
+
+            return hostBuilder;
+        }
     }
 }

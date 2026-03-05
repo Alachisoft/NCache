@@ -1,4 +1,4 @@
-﻿//  Copyright (c) 2021 Alachisoft
+﻿//  Copyright (c) 2026 Alachisoft
 //  
 //  Licensed under the Apache License, Version 2.0 (the "License");
 //  you may not use this file except in compliance with the License.
@@ -11,6 +11,7 @@
 //  WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
 //  See the License for the specific language governing permissions and
 //  limitations under the License
+using Alachisoft.NCache.Common.ResponseSerialization;
 using Alachisoft.NCache.Common.Util;
 using System;
 using System.Collections.Generic;
@@ -36,7 +37,16 @@ namespace Alachisoft.NCache.SocketServer.Command
             catch (Exception exc)
             {
                 if (!base.immatureId.Equals("-2"))
-                    _serializedResponsePackets.Add(Alachisoft.NCache.Common.Util.ResponseHelper.SerializeExceptionResponseWithType(exc, command.requestID, command.commandID, clientManager.ClientVersion));
+                {
+                    ResponseOptions responseOptions = new ResponseOptions()
+                    {
+                        Exception = exc,
+                        RequestId = command.requestID,
+                        CommandId = command.commandID,
+                    };
+
+                    _serializedResponsePackets.Add(clientManager.ResponseBuilder.BuildExceptionResponse(responseOptions));
+                }
                 return;
             }
             try
@@ -53,26 +63,42 @@ namespace Alachisoft.NCache.SocketServer.Command
                 getProductVersionResponse.productVersion.MinorVersion2 = this.ParseToByteArray(_currentVersion.MinorVersion2);
                 getProductVersionResponse.productVersion.ProductName = _currentVersion.ProductName;
 
-             
 
                 if (clientManager.ClientVersion >= 5000)
                 {
                     ResponseHelper.SetResponse(getProductVersionResponse, command.requestID, command.commandID);
-                    _serializedResponsePackets.Add(ResponseHelper.SerializeResponse(getProductVersionResponse, Common.Protobuf.Response.Type.GET_PRODUCT_VERSION));
+                    ResponseOptions responseOptions = new ResponseOptions()
+                    {
+                        Response = getProductVersionResponse,
+                        ResponseType = Common.Protobuf.Response.Type.GET_PRODUCT_VERSION
+                    };
+                    _serializedResponsePackets.Add(clientManager.ResponseBuilder.BuildResponse(responseOptions));
                 }
                 else
                 {
                     Common.Protobuf.Response response = new Common.Protobuf.Response();
                     response.getProductVersionResponse = getProductVersionResponse;
                     ResponseHelper.SetResponse(response, command.requestID, command.commandID, Common.Protobuf.Response.Type.GET_PRODUCT_VERSION);
-                    _serializedResponsePackets.Add(Alachisoft.NCache.Common.Util.ResponseHelper.SerializeResponse(response));
+                    ResponseOptions responseOptions = new ResponseOptions()
+                    {
+                        Response = response,
+                        ResponseType = Common.Protobuf.Response.Type.GET_PRODUCT_VERSION
+                    };
+                    _serializedResponsePackets.Add(clientManager.ResponseBuilder.BuildResponse(responseOptions));
                 }
 
             }
             catch (Exception exc)
             {
 
-                _serializedResponsePackets.Add(Alachisoft.NCache.Common.Util.ResponseHelper.SerializeExceptionResponseWithType(exc, command.requestID, command.commandID, clientManager.ClientVersion));
+                ResponseOptions responseOptions = new ResponseOptions()
+                {
+                    Exception = exc,
+                    RequestId = command.requestID,
+                    CommandId = command.commandID,
+                };
+
+                _serializedResponsePackets.Add(clientManager.ResponseBuilder.BuildExceptionResponse(responseOptions));
             }
 
         }

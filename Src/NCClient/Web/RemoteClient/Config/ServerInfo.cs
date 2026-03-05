@@ -1,4 +1,4 @@
-//  Copyright (c) 2021 Alachisoft
+//  Copyright (c) 2026 Alachisoft
 //  
 //  Licensed under the Apache License, Version 2.0 (the "License");
 //  you may not use this file except in compliance with the License.
@@ -24,6 +24,7 @@ namespace Alachisoft.NCache.Client
     {
         int _port = 9800;
         string _name;
+        bool _isLoadBalancer = false;
         IPAddress _ipAddress;
         short _portRange = 1;
         short _priority = 0;
@@ -52,6 +53,21 @@ namespace Alachisoft.NCache.Client
         }
 
         internal ServerInfo() { }
+
+        /// <summary>
+        /// Used For the case of load balancer. When the underlying machines are behind a load balancer
+        /// The isLoadBalancer flag signifies whether the server being added is the load balancer or if it's the underlying machine       
+        /// </summary>
+        /// <param name="isLoadBalancer"></param>
+        /// <param name="name"></param>
+        /// <param name="port"></param>
+        public ServerInfo(bool isLoadBalancer, string name, int port = 9800)
+        {
+            Name = name;
+            _port = port;
+            _isLoadBalancer = isLoadBalancer;
+        }
+
 
         /// <summary>
         /// Port for client to connect to the server node.
@@ -112,6 +128,18 @@ namespace Alachisoft.NCache.Client
                     return IP.ToString();
             }
         }
+
+        /// <summary>
+        /// This is used to indicate that the server ip is that of a load balancer
+        /// The load Balancer machine is used to forward connections to underlying machines
+        /// behind the load balancer. The IP of underlying machines (cluster) behind a load balancer may not be known beforehand
+        /// </summary>
+        public bool IsLoadBalancer
+        {
+            get { return _isLoadBalancer; }
+            set { _isLoadBalancer = value; }
+        }
+
 
         /// <summary>
         /// IPAddress of the server node where cache is running.

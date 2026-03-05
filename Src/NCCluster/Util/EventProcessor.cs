@@ -96,7 +96,6 @@ namespace Alachisoft.NGroups.Util
                         }
                         e = _eventsQueue.Dequeue();
 
-                        //_semaLock.Exit();
                     }
                     finally 
                     {                        

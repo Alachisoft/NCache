@@ -10,26 +10,26 @@
 // Generated from: ColumnType.proto
 namespace Alachisoft.NCache.Common.Protobuf
 {
-    [global::ProtoBuf.ProtoContract(Name=@"ColumnType")]
+    [global::ProtoBuf.Extended.ProtoContract(Name=@"ColumnType")]
     public enum ColumnType
     {
             
-      [global::ProtoBuf.ProtoEnum(Name=@"ATTRIBUTE_COLUMN", Value=0)]
+      [global::ProtoBuf.Extended.ProtoEnum(Name=@"ATTRIBUTE_COLUMN", Value=0)]
       ATTRIBUTE_COLUMN = 0,
             
-      [global::ProtoBuf.ProtoEnum(Name=@"AGGREGATERESULT_COLUMN", Value=1)]
+      [global::ProtoBuf.Extended.ProtoEnum(Name=@"AGGREGATERESULT_COLUMN", Value=1)]
       AGGREGATERESULT_COLUMN = 1,
             
-      [global::ProtoBuf.ProtoEnum(Name=@"KEY_COLUMN", Value=2)]
+      [global::ProtoBuf.Extended.ProtoEnum(Name=@"KEY_COLUMN", Value=2)]
       KEY_COLUMN = 2,
             
-      [global::ProtoBuf.ProtoEnum(Name=@"VALUE_COLUMN", Value=3)]
+      [global::ProtoBuf.Extended.ProtoEnum(Name=@"VALUE_COLUMN", Value=3)]
       VALUE_COLUMN = 3,
             
-      [global::ProtoBuf.ProtoEnum(Name=@"METADATA_COLUMN", Value=4)]
+      [global::ProtoBuf.Extended.ProtoEnum(Name=@"METADATA_COLUMN", Value=4)]
       METADATA_COLUMN = 4,
             
-      [global::ProtoBuf.ProtoEnum(Name=@"DYNAMIC_COLUMN", Value=5)]
+      [global::ProtoBuf.Extended.ProtoEnum(Name=@"DYNAMIC_COLUMN", Value=5)]
       DYNAMIC_COLUMN = 5
     }
   

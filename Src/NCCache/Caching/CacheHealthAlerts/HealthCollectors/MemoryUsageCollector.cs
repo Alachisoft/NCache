@@ -1,5 +1,5 @@
 ﻿using Alachisoft.NCache.Caching.Statistics;
-
+using Alachisoft.NCache.Caching.Topologies;
 using Alachisoft.NCache.Common;
 using Alachisoft.NCache.Common.Util;
 using Alachisoft.NCache.Config.Dom;
@@ -15,16 +15,40 @@ namespace Alachisoft.NCache.Caching.CacheHealthAlerts
     {
         PerformanceCounter counter = null;
 
+        private void InitializeMemoryUsageCollector()
+        {
+
+            CouneterName = "Private Bytes";
+            Name = "Memory Usage";
+
+            if (!ServiceConfiguration.PublishCountersToCacheHost)
+                InitializeCounter();
+        }
+
+        internal MemoryUsageCollector(CacheRuntimeContext cacheRuntimeContext) : base(cacheRuntimeContext)
+        {
+            int retries = 3;
+            do
+            {
+                try
+                {
+                    InitializeMemoryUsageCollector();
+                    break;
+                }
+                catch (Exception)
+                {
+                    retries--;
+                }
+            } while (retries > 0);
+
+        }
+
         internal MemoryUsageCollector(ResourceAtribute attribute, CacheRuntimeContext cacheRuntimeContext) : base(attribute, cacheRuntimeContext)
         {
             try
             {
-                CouneterName = "Private Bytes";
-                Name = "Memory Usage";
+                InitializeMemoryUsageCollector();
                 SetThresholds();
-                if (!ServiceConfiguration.PublishCountersToCacheHost)
-                    InitializeCounter();
-
             }
             catch (Exception ex)
             {
@@ -45,16 +69,17 @@ namespace Alachisoft.NCache.Caching.CacheHealthAlerts
             double data = 0;
             try
             {
-                if (!ServiceConfiguration.PublishCountersToCacheHost)
-                {
+#if !NETCORE
+                
                     if (counter != null)
-                        data = (counter.NextValue()); //mbs
-                }
-                else
+                        data = (counter.NextValue());
+                
+#elif NETCORE
                 {
                     if (Context != null && Context.PerfStatsColl != null)
                         data = AppUtil.CurrentProcess.WorkingSet64;
                 }
+#endif
                 if (data > 0)
                 {
                     long maxSize = Context.CacheImpl.InternalCache.MaxSize * 5;
@@ -72,10 +97,11 @@ namespace Alachisoft.NCache.Caching.CacheHealthAlerts
 
         }
 
-        public void InitializeCounter ()
+        public void InitializeCounter()
         {
             try
             {
+
                 string instanceName = GetProcessInstancename();
                 counter = new PerformanceCounter("Process", "Working Set - Private", instanceName, true);
             }
@@ -85,7 +111,7 @@ namespace Alachisoft.NCache.Caching.CacheHealthAlerts
             }
         }
 
-       
+
 
     }
 }

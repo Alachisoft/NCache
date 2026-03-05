@@ -1,4 +1,4 @@
-//  Copyright (c) 2021 Alachisoft
+//  Copyright (c) 2026 Alachisoft
 //  
 //  Licensed under the Apache License, Version 2.0 (the "License");
 //  you may not use this file except in compliance with the License.
@@ -19,6 +19,7 @@ using Alachisoft.NCache.SocketServer.Util;
 using System.Collections.Generic;
 using Alachisoft.NCache.SocketServer.RuntimeLogging;
 using Alachisoft.NCache.Common.Monitoring;
+using Alachisoft.NCache.Common.ResponseSerialization;
 
 namespace Alachisoft.NCache.SocketServer.Command
 {
@@ -29,7 +30,6 @@ namespace Alachisoft.NCache.SocketServer.Command
             public string RequestId;
         }
 
-        //TODO:KeyPackage
         //PROTOBUF
         public override void ExecuteCommand(ClientManager clientManager, Alachisoft.NCache.Common.Protobuf.Command command)
         {
@@ -47,10 +47,16 @@ namespace Alachisoft.NCache.SocketServer.Command
             {
 				if (!base.immatureId.Equals("-2"))
 				{
-					//PROTOBUF:RESPONSE
-                    _serializedResponsePackets.Add(Alachisoft.NCache.Common.Util.ResponseHelper.SerializeExceptionResponseWithType(exc, command.requestID, command.commandID, clientManager.ClientVersion));
-					//_resultPacket = clientManager.ReplyPacket(base.ExceptionPacket(exc, base.immatureId), base.ParsingExceptionMessage(exc));
-				}
+                    //PROTOBUF:RESPONSE
+                    ResponseOptions responseOptions = new ResponseOptions()
+                    {
+                        Exception = exc,
+                        RequestId = command.requestID,
+                        CommandId = command.commandID,
+                    };
+
+                    _serializedResponsePackets.Add(clientManager.ResponseBuilder.BuildExceptionResponse(responseOptions));
+                }
                 return;
             }
 
@@ -60,10 +66,7 @@ namespace Alachisoft.NCache.SocketServer.Command
             try
             {
                 NCache nCache = clientManager.CmdExecuter as NCache;
-                
 				IDictionaryEnumerator dicEnu = (IDictionaryEnumerator)nCache.Cache.GetEnumerator();
-				//IEnumerator enu = (IEnumerator)nCache.Cache.GetEnumerator();
-                //KeyPackageBuilder.PackageKeys(dicEnu, out keyPackage, out count);
                 stopWatch.Stop();
 				//PROTOBUF:RESPONSE
 				Alachisoft.NCache.Common.Protobuf.Response response = new Alachisoft.NCache.Common.Protobuf.Response();
@@ -75,15 +78,27 @@ namespace Alachisoft.NCache.SocketServer.Command
 
 				Alachisoft.NCache.SocketServer.Util.KeyPackageBuilder.PackageKeys(dicEnu, getEnumeratorResponse.keys);
 
-				_serializedResponsePackets.Add(Alachisoft.NCache.Common.Util.ResponseHelper.SerializeResponse(response,Common.Protobuf.Response.Type.GET_ENUMERATOR));
+                ResponseOptions responseOptions = new ResponseOptions()
+                {
+                    Response = response,
+                    CommandId = command.commandID,
+                    RequestId = command.requestID,
+                    ResponseType = response.responseType,
+                };
+                _serializedResponsePackets.Add(clientManager.ResponseBuilder.BuildResponse(responseOptions));
 
-                //_resultPacket = clientManager.ReplyPacket("GETENUMRESULT \"" + count + "\"" + cmdInfo.RequestId + "\"" + keyPackage, new byte[0]);
             }
             catch (Exception exc)
             {
-				//PROTOBUF:RESPONSE
-                _serializedResponsePackets.Add(Alachisoft.NCache.Common.Util.ResponseHelper.SerializeExceptionResponseWithType(exc, command.requestID, command.commandID, clientManager.ClientVersion));
-                //_resultPacket = clientManager.ReplyPacket(base.ExceptionPacket(exc, cmdInfo.RequestId), base.ExceptionMessage(exc));
+                //PROTOBUF:RESPONSE
+                ResponseOptions responseOptions = new ResponseOptions()
+                {
+                    Exception = exc,
+                    RequestId = command.requestID,
+                    CommandId = command.commandID,
+                };
+
+                _serializedResponsePackets.Add(clientManager.ResponseBuilder.BuildExceptionResponse(responseOptions));
             }
             finally
             {
@@ -96,7 +111,6 @@ namespace Alachisoft.NCache.SocketServer.Command
                         APILogItemBuilder log = new APILogItemBuilder(MethodsName.GetEnumerator.ToLower());
                         log.GenerateGetEnumeratorAPILogItem(overload, exception, executionTime, clientManager.ClientID.ToLower(), clientManager.ClientSocketId.ToString());
 
-                        // Hashtable expirationHint = log.GetDependencyExpirationAndQueryInfo(cmdInfo.ExpirationHint, cmdInfo.queryInfo);
                     }
                 }
                 catch
@@ -105,8 +119,6 @@ namespace Alachisoft.NCache.SocketServer.Command
                 }
             }
         }
-
-       
 
         //PROTOBUF
 
@@ -120,7 +132,5 @@ namespace Alachisoft.NCache.SocketServer.Command
 
             return cmdInfo;
         }
-
-       
     }
 }

@@ -1,4 +1,4 @@
-﻿//  Copyright (c) 2021 Alachisoft
+﻿//  Copyright (c) 2018 Alachisoft
 //  
 //  Licensed under the Apache License, Version 2.0 (the "License");
 //  you may not use this file except in compliance with the License.
@@ -22,34 +22,47 @@ namespace Alachisoft.NCache.Web.SessionState
 
         HttpContext _context;
         string _locationCookie = null;
+        bool _useLocationAffinity;
 
-        public ASPEnvironmentContext(HttpContext context)
+        public ASPEnvironmentContext(HttpContext context, bool useLocationAffinity)
         {
             _context = context;
+            _useLocationAffinity = useLocationAffinity;
 
-            if (_context.Request.Cookies[LocationIdentifier] != null)
-                _locationCookie = _context.Request.Cookies[LocationIdentifier].Value;
+            if (_useLocationAffinity)
+            { 
+                if (_context.Request.Cookies[LocationIdentifier] != null)
+                    _locationCookie = _context.Request.Cookies[LocationIdentifier].Value;
 
-            // Bugfix 12852 - Multi-regional sessions do not work as expected even when session locking is disabled in new version i.e. Merger of asp.net and .net core sessions
-            // [Umer] Contains, Get and Indexer when used on HttpCookieCollection will return true irrespective
-            // of if item exists or not, and if the item is not present they create an empty cookie so dont use it.
-            var responseCookieEnumerator = _context.Response.Cookies.Keys.GetEnumerator();
-            while (responseCookieEnumerator.MoveNext())
-            {
-                if (LocationIdentifier.Equals(responseCookieEnumerator.Current))
+                // Bugfix 12852 - Multi-regional sessions do not work as expected even when session locking is disabled in new version i.e. Merger of asp.net and .net core sessions
+                // [Umer] Contains, Get and Indexer when used on HttpCookieCollection will return true irrespective
+                // of if item exists or not, and if the item is not present they create an empty cookie so dont use it.
+                int i = 0;
+
+                while (i < _context.Response.Cookies.Count)
                 {
-                    if (!string.IsNullOrEmpty(_context.Response.Cookies[LocationIdentifier].Value))
+                    string cookie = _context.Response.Cookies.Keys[i];
+                    if (LocationIdentifier.Equals(cookie))
                     {
-                        _locationCookie = _context.Response.Cookies[LocationIdentifier].Value;
-                        break;
+                        if (!string.IsNullOrEmpty(_context.Response.Cookies[LocationIdentifier].Value))
+                        {
+                            _locationCookie = _context.Response.Cookies[LocationIdentifier].Value;
+                            break;
+                        }
+                        else
+                        {
+                            try
+                            {
+                                _context.Response.Cookies.Remove(LocationIdentifier);
+                            }
+                            catch (System.Exception e) { /*in certain case like redirection, response cookies can not be modified. */ }
+                            continue;
+                        }
                     }
-                    else
-                    {
-                        _context.Response.Cookies.Remove(LocationIdentifier);
-                    }
-                }
-            }
+                    i++;
 
+                }
+             }
             //if (_context.Response.Cookies[LocationIdentifier] != null)
             //    _locationCookie = _context.Response.Cookies[LocationIdentifier].Value;
         }
@@ -102,7 +115,7 @@ namespace Alachisoft.NCache.Web.SessionState
 
         public void FinalizeContext()
         {
-            if (_locationCookie != null)
+            if (_locationCookie != null && _useLocationAffinity)
                 _context.Response.Cookies.Set(new HttpCookie(LocationIdentifier, _locationCookie));
         }
     }

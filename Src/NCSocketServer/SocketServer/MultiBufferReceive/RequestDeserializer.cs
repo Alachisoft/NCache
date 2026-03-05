@@ -1,4 +1,4 @@
-﻿//  Copyright (c) 2021 Alachisoft
+﻿//  Copyright (c) 2026 Alachisoft
 //  
 //  Licensed under the Apache License, Version 2.0 (the "License");
 //  you may not use this file except in compliance with the License.
@@ -109,7 +109,6 @@ namespace Alachisoft.NCache.SocketServer.MultiBufferReceive
 
         internal bool DeserializeCommand(out object command, out short cmdType, out bool waitForResponse)
         {
-            // TODO: Take care of UsageStats stats = new UsageStats(); stats.BeginSample();
             command = null;
             cmdType = 0;
             waitForResponse = false;
@@ -220,9 +219,11 @@ namespace Alachisoft.NCache.SocketServer.MultiBufferReceive
                 _commandInfo.BufferOffset = 0;
             }
 
+            //read as much data as possible in current command stream
             if(_commandStream.HasAnyData())
             {
                 _commandStream.Position = 0;
+                //Check if main command stream has full command data; copy all avilable data
                 int streamLength = (int)_commandStream.AvailableData;
                 int dataToCopy = _expecteDataLength <= streamLength ? _expecteDataLength : streamLength;
 
@@ -246,11 +247,11 @@ namespace Alachisoft.NCache.SocketServer.MultiBufferReceive
 
                     if (_clientManager.ClientVersion >= 5000 )
                     {
-                        command = ProtoBuf.Serializer.NonGeneric.Deserialize(_commandTypes[cmdType], stream);
+                        command = ProtoBuf.Extended.Serializer.NonGeneric.Deserialize(_commandTypes[cmdType], stream);
                     }
                     else
                     {
-                        command = ProtoBuf.Serializer.Deserialize<Alachisoft.NCache.Common.Protobuf.Command>(stream);
+                        command = ProtoBuf.Extended.Serializer.Deserialize<Alachisoft.NCache.Common.Protobuf.Command>(stream);
                     }
                 }
 
@@ -349,7 +350,7 @@ namespace Alachisoft.NCache.SocketServer.MultiBufferReceive
 
         public static object Deserialize(short cmdType, Stream stream)
         {
-            return ProtoBuf.Serializer.NonGeneric.Deserialize(_commandTypes[cmdType], stream);
+            return ProtoBuf.Extended.Serializer.NonGeneric.Deserialize(_commandTypes[cmdType], stream);
         }
 
         public void Dispose()

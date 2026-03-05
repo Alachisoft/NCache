@@ -1,0 +1,208 @@
+﻿<?xml version="1.0" encoding="utf-8"?>
+<Project ToolsVersion="4.0" DefaultTargets="Build" xmlns="http://schemas.microsoft.com/developer/msbuild/2003">
+  <PropertyGroup>
+    <Configuration Condition=" '$(Configuration)' == '' ">Debug</Configuration>
+    <Platform Condition=" '$(Platform)' == '' ">AnyCPU</Platform>
+    <ProductVersion>8.0.30703</ProductVersion>
+    <SchemaVersion>2.0</SchemaVersion>
+    <ProjectGuid>{286DE6DB-8F95-4BD4-86A2-86488D2E0EE1}</ProjectGuid>
+    <OutputType>Library</OutputType>
+    <AppDesignerFolder>Properties</AppDesignerFolder>
+    <RootNamespace>Lextm.SharpSnmpLib</RootNamespace>
+    <AssemblyName>SharpSnmpLib</AssemblyName>
+    <DocumentationFile>..\bin\SharpSnmpLib.xml</DocumentationFile>
+    <TargetFrameworkVersion>v3.5</TargetFrameworkVersion>
+    <FileAlignment>512</FileAlignment>
+    <SourceAnalysisOverrideSettingsFile>D:\sharpsnmplib_svn\SharpSnmpLib\Settings.SourceAnalysis</SourceAnalysisOverrideSettingsFile>
+    <SignAssembly>true</SignAssembly>
+    <AssemblyOriginatorKeyFile>sharpsnmplib.snk</AssemblyOriginatorKeyFile>
+    <DelaySign>False</DelaySign>
+    <AssemblyOriginatorKeyMode>File</AssemblyOriginatorKeyMode>
+    <SccProjectName>
+    </SccProjectName>
+    <SccLocalPath>
+    </SccLocalPath>
+    <SccAuxPath>
+    </SccAuxPath>
+    <SccProvider>
+    </SccProvider>
+    <RunSourceAnalysis>False</RunSourceAnalysis>
+    <SolutionDir Condition="$(SolutionDir) == '' Or $(SolutionDir) == '*Undefined*'">..\</SolutionDir>
+    <RestorePackages>true</RestorePackages>
+  </PropertyGroup>
+  <PropertyGroup Condition=" '$(Configuration)|$(Platform)' == 'Debug|AnyCPU' ">
+    <DebugSymbols>true</DebugSymbols>
+    <DebugType>full</DebugType>
+    <Optimize>false</Optimize>
+    <OutputPath>bin\Debug\</OutputPath>
+    <DefineConstants>DEBUG;TRACE</DefineConstants>
+    <ErrorReport>prompt</ErrorReport>
+    <WarningLevel>4</WarningLevel>
+  </PropertyGroup>
+  <PropertyGroup Condition=" '$(Configuration)|$(Platform)' == 'Release|AnyCPU' ">
+    <DebugType>pdbonly</DebugType>
+    <Optimize>true</Optimize>
+    <OutputPath>..\bin\</OutputPath>
+    <DefineConstants>TRACE</DefineConstants>
+    <ErrorReport>prompt</ErrorReport>
+    <WarningLevel>4</WarningLevel>
+  </PropertyGroup>
+  <ItemGroup>
+    <Reference Include="System" />
+    <Reference Include="System.Core">
+      <RequiredTargetFramework>3.5</RequiredTargetFramework>
+    </Reference>
+    <Reference Include="System.Runtime.Serialization" />
+  </ItemGroup>
+  <ItemGroup>
+    <Compile Include="..\lib\SharedAssemblyInfo.cs">
+      <Link>Properties\SharedAssemblyInfo.cs</Link>
+    </Compile>
+    <Compile Include="ITypeAssignment.cs" />
+    <Compile Include="Levels.cs" />
+    <Compile Include="Messaging\AgentFoundEventArgs.cs" />
+    <Compile Include="Messaging\Discoverer.cs" />
+    <Compile Include="Messaging\Discovery.cs" />
+    <Compile Include="Messaging\EndPointExtension.cs" />
+    <Compile Include="Messaging\ErrorException.cs" />
+    <Compile Include="Messaging\ExceptionRaisedEventArgs.cs" />
+    <Compile Include="Messaging\GetBulkRequestMessage.cs" />
+    <Compile Include="Messaging\GetNextRequestMessage.cs" />
+    <Compile Include="Messaging\GetRequestMessage.cs" />
+    <Compile Include="Messaging\IListenerBinding.cs" />
+    <Compile Include="Messaging\InformRequestMessage.cs" />
+    <Compile Include="Messaging\ISnmpMessage.cs" />
+    <Compile Include="Messaging\Listener.cs" />
+    <Compile Include="Messaging\ListenerBinding.cs" />
+    <Compile Include="Messaging\MalformedMessage.cs" />
+    <Compile Include="Messaging\Manager.cs" />
+    <Compile Include="Messaging\MessageFactory.cs" />
+    <Compile Include="Messaging\MessageFactoryException.cs" />
+    <Compile Include="Messaging\MessageParams.cs" />
+    <Compile Include="Messaging\MessageReceivedEventArgs.cs" />
+    <Compile Include="Messaging\Messenger.cs" />
+    <Compile Include="Messaging\NumberGenerator.cs" />
+    <Compile Include="Messaging\PortInUseException.cs" />
+    <Compile Include="Messaging\ReportMessage.cs" />
+    <Compile Include="Messaging\ResponseMessage.cs" />
+    <Compile Include="Messaging\SetRequestMessage.cs" />
+    <Compile Include="Messaging\SnmpMessageExtension.cs" />
+    <Compile Include="Messaging\TimeoutException.cs" />
+    <Compile Include="Messaging\TrapV1Message.cs" />
+    <Compile Include="Messaging\TrapV2Message.cs" />
+    <Compile Include="Messaging\WalkMode.cs" />
+    <Compile Include="Properties\AssemblyInfo.cs" />
+    <Compile Include="ByteTool.cs" />
+    <Compile Include="Counter32.cs" />
+    <Compile Include="Counter64.cs" />
+    <Compile Include="EndOfMibView.cs" />
+    <Compile Include="ErrorCode.cs" />
+    <Compile Include="Gauge32.cs" />
+    <Compile Include="GenericCode.cs" />
+    <Compile Include="GetBulkRequestPdu.cs" />
+    <Compile Include="GetNextRequestPdu.cs" />
+    <Compile Include="GetRequestPdu.cs" />
+    <Compile Include="Header.cs" />
+    <Compile Include="InformRequestPdu.cs" />
+    <Compile Include="ISegment.cs" />
+    <Compile Include="ISnmpData.cs" />
+    <Compile Include="IP.cs" />
+    <Compile Include="ISnmpPdu.cs" />
+    <Compile Include="MalformedPdu.cs" />
+    <Compile Include="DefinitionType.cs" />
+    <Compile Include="IConstruct.cs" />
+    <Compile Include="IDefinition.cs" />
+    <Compile Include="IEntity.cs" />
+    <Compile Include="IModule.cs" />
+    <Compile Include="IObjectRegistry.cs" />
+    <Compile Include="IObjectTree.cs" />
+    <Compile Include="ResponsePdu.cs" />
+    <Compile Include="SearchResult.cs" />
+    <Compile Include="NoSuchInstance.cs" />
+    <Compile Include="NoSuchObject.cs" />
+    <Compile Include="Null.cs" />
+    <Compile Include="ObjectIdentifier.cs" />
+    <Compile Include="ObjectIdentifierConverter.cs" />
+    <Compile Include="OctetString.cs" />
+    <Compile Include="Integer32.cs" />
+    <Compile Include="Opaque.cs" />
+    <Compile Include="ReportPdu.cs" />
+    <Compile Include="Scope.cs" />
+    <Compile Include="SecurityParameters.cs" />
+    <Compile Include="Security\AuthenticationProviderExtension.cs" />
+    <Compile Include="Security\DecryptionException.cs" />
+    <Compile Include="Security\DefaultAuthenticationProvider.cs" />
+    <Compile Include="Security\DefaultPrivacyProvider.cs" />
+    <Compile Include="Security\DESPrivacyProvider.cs" />
+    <Compile Include="Security\IAuthenticationProvider.cs" />
+    <Compile Include="Security\IPrivacyProvider.cs" />
+    <Compile Include="Security\MD5AuthenticationProvider.cs" />
+    <Compile Include="Security\PrivacyProviderExtension.cs" />
+    <Compile Include="Security\SaltGenerator.cs" />
+    <Compile Include="Security\User.cs" />
+    <Compile Include="Security\UserRegistry.cs" />
+    <Compile Include="Security\SHA1AuthenticationProvider.cs" />
+    <Compile Include="Sequence.cs" />
+    <Compile Include="SetRequestPdu.cs" />
+    <Compile Include="SnmpDataExtension.cs" />
+    <Compile Include="SnmpException.cs" />
+    <Compile Include="OperationException.cs" />
+    <Compile Include="DataFactory.cs" />
+    <Compile Include="SnmpType.cs" />
+    <Compile Include="StreamExtension.cs" />
+    <Compile Include="System.Tuples\ConversionsGenerator.cs" Condition="'$(TargetFrameworkVersion)' == 'v3.5'">
+      <DependentUpon>ConversionsGenerator.tt</DependentUpon>
+      <AutoGen>True</AutoGen>
+      <DesignTime>True</DesignTime>
+    </Compile>
+    <Compile Include="System.Tuples\TupleGenerator.cs" Condition="'$(TargetFrameworkVersion)' == 'v3.5'">
+      <DependentUpon>TupleGenerator.tt</DependentUpon>
+      <AutoGen>True</AutoGen>
+      <DesignTime>True</DesignTime>
+    </Compile>
+    <Compile Include="TimeTicks.cs" />
+    <Compile Include="TrapV1Pdu.cs" />
+    <Compile Include="TrapV2Pdu.cs" />
+    <Compile Include="Variable.cs" />
+    <Compile Include="VersionCode.cs" />
+    <None Include="..\readme.txt">
+      <Link>readme.txt</Link>
+      <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
+    </None>
+    <None Include="gendarme.ignore" />
+    <None Include="license.txt" />
+    <None Include="Microsoft.VersionNumber.targets">
+      <SubType>Designer</SubType>
+    </None>
+    <None Include="sharpsnmplib.snk" />
+    <None Include="System.Tuples\ConversionsGenerator.tt" Condition="'$(TargetFrameworkVersion)' == 'v3.5'">
+      <Generator>TextTemplatingFileGenerator</Generator>
+      <LastGenOutput>ConversionsGenerator.cs</LastGenOutput>
+    </None>
+    <None Include="System.Tuples\NormalTuple.ttinclude" Condition="'$(TargetFrameworkVersion)' == 'v3.5'" />
+    <None Include="System.Tuples\Settings.ttinclude" Condition="'$(TargetFrameworkVersion)' == 'v3.5'" />
+    <None Include="System.Tuples\TupleGenerator.tt" Condition="'$(TargetFrameworkVersion)' == 'v3.5'">
+      <Generator>TextTemplatingFileGenerator</Generator>
+      <LastGenOutput>TupleGenerator.cs</LastGenOutput>
+    </None>
+    <None Include="System.Tuples\Util.ttinclude" Condition="'$(TargetFrameworkVersion)' == 'v3.5'" />
+    <None Include="System.Tuples\ZeroTuple.ttinclude" Condition="'$(TargetFrameworkVersion)' == 'v3.5'" />
+  </ItemGroup>
+  <ItemGroup>
+    <Service Include="{508349B6-6B84-4DF5-91F0-309BEEBAD82D}" />
+  </ItemGroup>
+  <Import Project="$(MSBuildToolsPath)\Microsoft.CSharp.targets" />
+  <Import Project="Microsoft.VersionNumber.targets" Condition=" '$(Configuration)' == 'Debug' " />
+  <UsingTask AssemblyFile="..\lib\GendarmeMsBuild.dll" TaskName="GendarmeMsBuild.Gendarme" />
+  <Target Name="AfterBuild">
+    <Gendarme Condition=" '$(Configuration)' == 'Release' AND '$(OS)' == 'Windows_NT' AND Exists('..\gendarme\gendarme.exe')" GendarmeExeFilename="..\gendarme\gendarme.exe" Assemblies="$(TargetPath)" WarningsAsErrors="False" IntegrateWithVisualStudio="True" GendarmeIgnoreFilename="gendarme.ignore" />
+  </Target>
+  <Import Project="$(SolutionDir)\.nuget\nuget.targets" />
+  <!-- To modify your build process, add your task inside one of the targets below and uncomment it.
+       Other similar extension points exist, see Microsoft.Common.targets.
+  <Target Name="BeforeBuild">
+  </Target>
+  <Target Name="AfterBuild">
+  </Target>
+  -->
+</Project>

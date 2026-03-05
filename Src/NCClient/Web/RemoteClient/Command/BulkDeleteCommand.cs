@@ -1,4 +1,4 @@
-//  Copyright (c) 2021 Alachisoft
+//  Copyright (c) 2026 Alachisoft
 //  
 //  Licensed under the Apache License, Version 2.0 (the "License");
 //  you may not use this file except in compliance with the License.
@@ -48,7 +48,7 @@ namespace Alachisoft.NCache.Client
 
         protected override void SerializeCommandInternal(Stream stream)
         {
-            ProtoBuf.Serializer.Serialize(stream, _bulkRemoveCommand);
+            ProtoBuf.Extended.Serializer.Serialize(stream, _bulkRemoveCommand);
         }
 
         protected override short GetCommandHandle()
@@ -62,7 +62,6 @@ namespace Alachisoft.NCache.Client
             _bulkRemoveCommand.clientLastViewId = base.ClientLastViewId;
             _bulkRemoveCommand.intendedRecipient = base.IntendedRecipient;
             _bulkRemoveCommand.MethodOverload = _methodOverload;
-
         }
 
         protected override CommandBase GetMergedCommand(List<CommandBase> commands)

@@ -1,0 +1,327 @@
+@parserBody.mixins() ::= <<
+<@super.mixins()>
+include ANTLR3::ASTBuilder
+>>
+
+gatedAction(block) ::= <<
+<if(backtracking)>
+if <actions.(actionScope).synpredgate>
+  <block>
+end
+<else>
+<block>
+<endif>
+>>
+
+ruleDeclarations() ::= <<
+<super.ruleDeclarations()>
+root_0 = nil<\n>
+>>
+
+ruleLabelDefs() ::= <<
+<super.ruleLabelDefs()>
+<[ruleDescriptor.tokenLabels,ruleDescriptor.wildcardTreeLabels,ruleDescriptor.wildcardTreeListLabels,ruleDescriptor.tokenListLabels]
+    :{int |tree_for_<it.label.text> = nil}; separator="\n">
+<ruleDescriptor.allTokenRefsInAltsWithRewrites
+    :{int |stream_<it> = ANTLR3::AST::RewriteRule<rewriteElementType>Stream.new( @adaptor, "token <it>" )}; separator="\n">
+<ruleDescriptor.allRuleRefsInAltsWithRewrites
+    :{int |stream_<it> = ANTLR3::AST::RewriteRuleSubtreeStream.new( @adaptor, "rule <it>" )}; separator="\n">
+>>
+
+alt(elements,altNum,description,autoAST,outerAlt,treeLevel,rew) ::= <<
+<if(autoAST)><if(outerAlt)><if(!rewriteMode)>
+root_0 = @adaptor.create_flat_list<\n><\n>
+<endif><endif><endif>
+# at line <description>
+<elements:element()><rew>
+>>
+
+tokenRefTrack(token,label,elementIndex,terminalOptions) ::= <<
+<tokenRefBang(...)>
+<gatedAction({stream_<token>.add( <label; format="label"> )})>
+>>
+
+tokenRefTrackAndListLabel(token,label,elementIndex,terminalOptions) ::= <<
+<tokenRefTrack(...)>
+<addToList(elem={<label; format="label">},...)>
+>>
+
+tokenRefRuleRootTrack(token,label,elementIndex,terminalOptions) ::= <<
+<tokenRefBang(...)>
+<gatedAction({stream_<token>.add( <label; format="label"> )})>
+>>
+
+tokenRefRuleRootTrackAndListLabel(token,label,elementIndex,terminalOptions) ::= <<
+<tokenRefRuleRootTrack(...)>
+<addToList(elem=label,...)>
+>>
+
+ruleRefTrack(rule,label,elementIndex,args,scope) ::= <<
+<super.ruleRef(...)>
+<gatedAction({stream_<rule.name>.add( <label; format="label">.tree )})>
+>>
+
+ruleRefTrackAndListLabel(rule,label,elementIndex,args,scope) ::= <<
+<ruleRefTrack(...)>
+<addToList(elem={<label; format="label">.tree},...)>
+>>
+ruleRefRuleRootTrack(rule,label,elementIndex,args,scope) ::= <<
+<ruleRefRuleRoot(...)>
+<gatedAction({stream_<rule.name>.add( <label; format="label">.tree )})>
+>>
+
+ruleRefRuleRootTrackAndListLabel(rule,label,elementIndex,args,scope) ::= <<
+<ruleRefRuleRootTrack(...)>
+<addToList(elem={<label; format="label">.tree},...)>
+>>
+
+
+rewriteCode(alts, description,
+        referencedElementsDeep, // ALL referenced elements to right of ->
+        referencedTokenLabels,
+        referencedTokenListLabels,
+        referencedRuleLabels,
+        referencedRuleListLabels,
+        referencedWildcardLabels,
+        referencedWildcardListLabels,
+        rewriteBlockLevel, enclosingTreeLevel, treeLevel) ::=
+<<
+# AST Rewrite
+# elements: <referencedElementsDeep; separator=", ">
+# token labels: <referencedTokenLabels; separator=", ">
+# rule labels: <referencedRuleLabels; separator=", ">
+# token list labels: <referencedTokenListLabels; separator=", ">
+# rule list labels: <referencedRuleListLabels; separator=", ">
+# wildcard labels: <[referencedWildcardLabels,referencedWildcardListLabels]; separator=", ">
+<gatedAction({
+<prevRuleRootRef(); format="label">.tree = root_0
+<rewriteCodeLabels()>
+root_0 = @adaptor.create_flat_list
+<first(alts):rewriteAltFirst(); anchor>
+
+<rest(alts):{a| els<rewriteAltRest(a)>}; anchor, separator="\n\n">
+
+<! if tree parser and rewrite=true !>
+<if(TREE_PARSER)>
+<if(rewriteMode)>
+<prevRuleRootRef(); format="label">.tree = @adaptor.rule_post_processing( root_0 )
+@input.replace_children(
+  @adaptor.parent( return_value.start ),
+  @adaptor.child_index( return_value.start ),
+  @adaptor.child_index( _last ),
+  return_value.tree
+)<\n>
+<endif>
+<endif>
+
+<! if parser or tree-parser and rewrite!=true, we need to set result !>
+<if(!TREE_PARSER)>
+<prevRuleRootRef(); format="label">.tree = root_0<\n>
+<else>
+<if(!rewriteMode)>
+<prevRuleRootRef(); format="label">.tree = root_0<\n>
+<endif>
+<endif>
+})>
+>>
+
+rewriteCodeLabels() ::= <<
+<referencedTokenLabels:
+{it | stream_<it> = <rewriteElementType; format="snakecase">_stream( "token <it>", <it; format="label"> )};
+separator="\n">
+<referencedTokenListLabels:
+{it | stream_<it> = <rewriteElementType; format="snakecase">_stream( "token <it>", list_of_<it; format="label"> )};
+separator="\n">
+<referencedWildcardLabels:
+{it | stream_<it> = subtree_stream( "wildcard <it>", <it; format="label"> )};
+separator="\n">
+<referencedWildcardListLabels:
+{it | stream_<it> = subtree_stream( "wildcard <it>", list_of_<it; format="label"> )};
+separator="\n">
+<referencedRuleLabels:
+{it | stream_<it> = <it; format="label"> ? subtree_stream( "rule <it>", <it; format="label">.tree ) : subtree_stream( "token <it>" )};
+separator="\n">
+<referencedRuleListLabels:
+{it | stream_<it> = subtree_stream( "token <it>", list_of_<it; format="label"> )};
+separator="\n">
+>>
+
+rewriteOptionalBlock(
+        alt,rewriteBlockLevel,
+        referencedElementsDeep, // all nested refs
+        referencedElements, // elements in immediately block; no nested blocks
+        description) ::=
+<<
+# at line <description>
+if <referencedElementsDeep:{el|stream_<el>.has_next?}; separator=" || ">
+  <alt>
+end
+
+<referencedElementsDeep:{el|stream_<el>.reset();<\n>}>
+>>
+
+rewriteClosureBlock(
+        alt,rewriteBlockLevel,
+        referencedElementsDeep, // all nested refs
+        referencedElements, // elements in immediately block; no nested blocks
+        description) ::=
+<<
+# at line <description>
+while <referencedElements:{el|stream_<el>.has_next?}; separator=" || ">
+  <alt>
+end
+
+<referencedElements:{el|stream_<el>.reset();<\n>}>
+>>
+
+rewritePositiveClosureBlock(
+        alt,rewriteBlockLevel,
+        referencedElementsDeep, // all nested refs
+        referencedElements, // elements in immediately block; no nested blocks
+        description) ::=
+<<
+# at line <description>
+<referencedElements:{el|stream_<el>.has_next?}; separator=" || "> or raise ANTLR3::RewriteEarlyExit
+
+while <referencedElements:{el|stream_<el>.has_next?}; separator=" || ">
+  <alt>
+end
+<referencedElements:{el|stream_<el>.reset<\n>}>
+>>
+
+rewriteAltRest(a) ::= <<
+<if(a.pred)>
+if <a.pred>
+  # <a.description>
+  <a.alt>
+<else>
+e
+  # <a.description>
+  <a.alt>
+end
+<endif>
+>>
+
+rewriteAltFirst(a) ::= <<
+<if(a.pred)>
+if <a.pred>
+  # <a.description>
+  <a.alt>
+<else>
+# <a.description>
+<a.alt>
+<endif>
+>>
+
+rewriteEmptyAlt() ::= "root_0 = nil"
+
+rewriteTree(root,children,description,enclosingTreeLevel,treeLevel) ::= <<
+# at line <description>
+root_<treeLevel> = @adaptor.create_flat_list
+<root:rewriteElement()>
+<children:rewriteElement()>
+@adaptor.add_child( root_<enclosingTreeLevel>, root_<treeLevel> )<\n>
+>>
+
+rewriteElementList(elements) ::= "<elements:rewriteElement()>"
+rewriteElement(e) ::= <<
+<@pregen()>
+<e.el>
+>>
+
+rewriteTokenRef(token,elementIndex,terminalOptions,args) ::= <<
+@adaptor.add_child( root_<treeLevel>, <createRewriteNodeFromElement(...)> )<\n>
+>>
+
+rewriteTokenLabelRef(label,elementIndex) ::= <<
+@adaptor.add_child( root_<treeLevel>, stream_<label>.next_node )<\n>
+>>
+
+rewriteTokenListLabelRef(label,elementIndex) ::= <<
+@adaptor.add_child( root_<treeLevel>, stream_<label>.next_node )<\n>
+>>
+
+rewriteTokenLabelRefRoot(label,elementIndex) ::= <<
+root_<treeLevel> = @adaptor.become_root( stream_<label>.next_node, root_<treeLevel> )<\n>
+>>
+
+rewriteTokenListLabelRefRoot ::= rewriteTokenLabelRefRoot
+
+rewriteTokenRefRoot(token,elementIndex,terminalOptions,args) ::= <<
+root_<treeLevel> = @adaptor.become_root( <createRewriteNodeFromElement(...)>, root_<treeLevel> )<\n>
+>>
+
+rewriteImaginaryTokenRef(args,token,terminalOptions,elementIndex) ::= <<
+@adaptor.add_child( root_<treeLevel>, <createImaginaryNode(tokenType=token, ...)> )<\n>
+>>
+
+rewriteImaginaryTokenRefRoot(args,token,terminalOptions,elementIndex) ::= <<
+root_<treeLevel> = @adaptor.become_root( <createImaginaryNode(tokenType=token, ...)>, root_<treeLevel> )<\n>
+>>
+
+rewriteAction(action) ::= <<
+root_0 = ( <action> )<\n>
+>>
+
+prevRuleRootRef() ::= "return_value"
+
+rewriteRuleRef(rule) ::= <<
+@adaptor.add_child( root_<treeLevel>, stream_<rule>.next_tree )<\n>
+>>
+
+rewriteRuleRefRoot(rule) ::= <<
+root_<treeLevel> = @adaptor.become_root( stream_<rule>.next_node, root_<treeLevel> )<\n>
+>>
+
+rewriteNodeAction(action) ::= <<
+@adaptor.add_child( root_<treeLevel>, ( <action> ) )<\n>
+>>
+
+rewriteNodeActionRoot(action) ::= <<
+root_<treeLevel> = @adaptor.become_root( ( <action> ), root_<treeLevel> )<\n>
+>>
+
+rewriteRuleLabelRef(label) ::= <<
+@adaptor.add_child( root_<treeLevel>, stream_<label>.next_tree )<\n>
+>>
+
+rewriteRuleListLabelRef(label) ::= <<
+@adaptor.add_child( root_<treeLevel>, stream_<label>.next_tree )<\n>
+>>
+
+rewriteRuleLabelRefRoot(label) ::= <<
+root_<treeLevel> = @adaptor.become_root( stream_<label>.next_node, root_<treeLevel> )<\n>
+>>
+
+rewriteRuleListLabelRefRoot(label) ::= <<
+root_<treeLevel> = @adaptor.become_root( stream_<label>.next_node, root_<treeLevel> )<\n>
+>>
+
+rewriteWildcardLabelRef(label) ::= <<
+@adaptor.add_child( root_<treeLevel>, stream_<label>.next_tree )<\n>
+>>
+
+createImaginaryNode(tokenType,terminalOptions,args) ::= <<
+<if(terminalOptions.node)>
+<terminalOptions.node; format="constantPath">.new( create_token( <tokenType> )<if(args)>, <args; separator=", "><endif> )
+<else>
+<if(!args)>@adaptor.create_from_type( <tokenType>, "<tokenType>" )
+<else>@adaptor.create( <tokenType>, <args; separator=", "> )
+<endif>
+<endif>
+>>
+
+createRewriteNodeFromElement(token,terminalOptions,args) ::= <<
+<if(terminalOptions.node)>
+<terminalOptions.node; format="constantPath">.new( stream_<token>.next<if(args)>, <args; separator=", "><endif> )
+<else>
+<if(args)>
+<if(!rest(args))>@adaptor.create_from_token( <token>, <first(args)> )
+<else><if(!rest(rest(args)))>@adaptor.create_from_token( <token>, <first(args)>, <first(rest(args))> )
+<endif>
+<endif>
+<else>
+stream_<token>.next_node
+<endif>
+<endif>
+>>

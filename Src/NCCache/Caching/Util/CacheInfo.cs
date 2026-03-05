@@ -1,4 +1,4 @@
-//  Copyright (c) 2021 Alachisoft
+//  Copyright (c) 2026 Alachisoft
 //  
 //  Licensed under the Apache License, Version 2.0 (the "License");
 //  you may not use this file except in compliance with the License.
@@ -71,11 +71,8 @@ namespace Alachisoft.NCache.Caching.Util
                 bool isClustered = false;
                 if (_class != null)
                 {
-                    if (_class.CompareTo("replicated-server") == 0
-                        || _class.CompareTo("mirror-server") == 0
-                        || _class.CompareTo("partitioned-replicas-server") == 0
-                        || _class.CompareTo("partitioned-server") == 0
-                        || _class.CompareTo("replicated-server") == 0)
+                    if (_class.CompareTo("replicated-server") == 0)
+                        
                         isClustered = true;
                 }
                 return isClustered;

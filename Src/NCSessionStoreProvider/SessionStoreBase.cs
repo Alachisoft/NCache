@@ -1,4 +1,4 @@
-﻿//  Copyright (c) 2021 Alachisoft
+﻿//  Copyright (c) 2026 Alachisoft
 //  
 //  Licensed under the Apache License, Version 2.0 (the "License");
 //  you may not use this file except in compliance with the License.
@@ -26,6 +26,9 @@ using System.Runtime.Serialization.Formatters.Binary;
 using Alachisoft.NCache.Common.Logger;
 using Alachisoft.NCache.Runtime.Exceptions;
 using Alachisoft.NCache.Client;
+using Alachisoft.NCache.Web.SessionStoreProvider;
+using System.Text;
+using Alachisoft.NCache.Serialization.Formatters;
 
 namespace Alachisoft.NCache.Web.SessionState
 {
@@ -54,7 +57,7 @@ namespace Alachisoft.NCache.Web.SessionState
         ///-1 by default i.e do as microsoft does(retry till request timeout). 
         /// otherwise if after retries completed and session is still locked return empty session.
         private int _sessionLockingRetries = -1;
-        private bool _emptySessionWhenLocked = false;///for Ryan Air                                           
+        private bool _emptySessionWhenLocked = false;                                      
         private static EventHandler s_onAppDomainUnload;
 
         private static object s_dataLock = new object();
@@ -65,7 +68,8 @@ namespace Alachisoft.NCache.Web.SessionState
         private static ILogger _ncacheLog;
         private int _operationRetry;
         private int _operationRetryInterval;
-       // private NCacheSessionStateSettings _regionalCacheSessionStateSettings;
+        private bool _useCompactSerialization = false;
+        private bool _useJsonSerialization = false;
 
         public static ILogger NCacheLog
         {
@@ -76,7 +80,7 @@ namespace Alachisoft.NCache.Web.SessionState
         {
             get { return _operationRetry; }
         }
-
+        public bool IsLocationAffinityEnabled { get { return _isLocationAffinityEnabled; } }
         public static string ApplicationId
         {
             get { return s_applicationId; }
@@ -114,14 +118,9 @@ namespace Alachisoft.NCache.Web.SessionState
             if (config == null) throw new ArgumentNullException("config");
             if (string.IsNullOrEmpty(config["cacheName"])) throw new ConfigurationErrorsException("The 'cacheName' attribute cannot be null or empty string");
 
-
             if (string.IsNullOrEmpty(config["description"])) config["description"] = "NCache Session Storage Provider";
             if (name == null || name.Length == 0) name = SOURCE;
 
-            /* RECONSIDER
-            //get the application virtual path
-            _appName = System.Web.Hosting.HostingEnvironment.ApplicationVirtualPath;
-            */
 
             string[] boolValStrings = {"exceptionsEnabled", "writeExceptionsToEventLog",
                                        "enableLogs", "enableDetailLogs", "enableSessionLocking"};
@@ -178,21 +177,16 @@ namespace Alachisoft.NCache.Web.SessionState
             //get cache name from configurations            
             _cacheId = config["cacheName"];
 
-            //if (!string.IsNullOrEmpty(config["exceptionsEnabled"]) && config["exceptionsEnabled"].ToLower() == "true")
-            //    _exceptionsEnabled = true;
-
-            /* RECONSIDER
-            //get session state configuration section
-            Configuration cfg = WebConfigurationManager.OpenWebConfiguration(_appName);
-            SessionStateSection sessionConfig = (SessionStateSection)cfg.GetSection("system.web/sessionState");
-
-             _defaultTimeout = sessionConfig.Timeout.Minutes;
-            */
-
             if (config["defaultSessionTimeout"] != null)
                 this._defaultTimeout = Convert.ToInt32(config["defaultSessionTimeout"]);
 
-           
+            if (config["useJsonSerialization"] != null)
+                this._useJsonSerialization = Convert.ToBoolean(config["useJsonSerialization"]);
+
+            if (_useCompactSerialization && _useJsonSerialization)
+                throw new Exception("Compact and Json serialization can not be used together. Please specify the one you want to use.");
+
+
             string inprocDelay = config["inprocDelay"];
 
             if (!string.IsNullOrEmpty(inprocDelay))
@@ -212,7 +206,6 @@ namespace Alachisoft.NCache.Web.SessionState
                 }
             }
 
-
             if (!String.IsNullOrEmpty(config["operationRetryInterval"]))
             {
                 try
@@ -225,13 +218,11 @@ namespace Alachisoft.NCache.Web.SessionState
                 }
             }
 
-
             InitializeCache();
 
         }
 
-    
-
+      
         private string GetUniqueSessionId(string sessionId)
         {
             return string.IsNullOrEmpty(s_applicationId) ? sessionId : sessionId + "." + s_applicationId;
@@ -277,7 +268,7 @@ namespace Alachisoft.NCache.Web.SessionState
                 }
                 catch (Exception exc)
                 {
-                    _cache = null; // so that next time cache can be initialized. Check the above condition if(_cache == null)                 
+                    _cache = null;              
                     LogError(exc, null);
                 }
             }
@@ -290,7 +281,7 @@ namespace Alachisoft.NCache.Web.SessionState
 
         public virtual void Dispose()
         {
-            //GC.Collect();
+
         }
 
         private void OnAppDomainUnload(object unusedObject, EventArgs unusedEventArgs)
@@ -485,7 +476,7 @@ namespace Alachisoft.NCache.Web.SessionState
             string locationID = sessionid;
             try
             {
-                _cache.Unlock(locationID, GetUniqueSessionId(sessionid));//, lockID);
+                _cache.Unlock(locationID, GetUniqueSessionId(sessionid));
                 return true;
             }
             catch (Exception)
@@ -523,7 +514,7 @@ namespace Alachisoft.NCache.Web.SessionState
 
             LockHandle lockHandle = new LockHandle(null, lockDate);
             object items = null;
-            Hashtable table = null;
+            SessionMetaWithData table = null;
             bool lockTimedOut = false;
             string locationID = GetLocationID(context, id);
 
@@ -572,12 +563,17 @@ namespace Alachisoft.NCache.Web.SessionState
 
                 if (buffer != null)
                 {
-                    using (MemoryStream stream = new MemoryStream(buffer))
+                    if (_useJsonSerialization)
                     {
-                        BinaryFormatter formatter = new BinaryFormatter();
-                        table = formatter.Deserialize(stream) as Hashtable;
-                        stream.Close();
+                        var deserilizedObject = Newtonsoft.Json.JsonConvert.DeserializeObject(Encoding.UTF8.GetString(buffer), JsonSessionSerializationSettings.Instance);
+                        table = deserilizedObject as SessionMetaWithData;
                     }
+                    else
+                    {
+                        table = CompactBinaryFormatter.FromByteBuffer(buffer, _cache.GetCacheId, null) as SessionMetaWithData;
+
+                    }
+
                 }
 
                 if (_lockSessions && !String.IsNullOrEmpty(lockHandle.LockId))
@@ -634,7 +630,7 @@ namespace Alachisoft.NCache.Web.SessionState
                     items = GetContents(context, table, ref action);
                     if (action == SessionInitializationActions.InitializeItem)
                     {
-                        int timeout = (int)table[TIMEOUT_KEY];
+                        int timeout = table.Timeout;
                         items = CreateNewStoreData(context, timeout);
                     }
                 }
@@ -656,7 +652,6 @@ namespace Alachisoft.NCache.Web.SessionState
             {
                 if ((lockTimedOut || table != null) && context.ContainsItem(SESSION_LOCK_COUNT))
                     context.RemoveItem(SESSION_LOCK_COUNT);
-               //    throw new ProviderException("Cannot acquire session lock. Session is already locked.");
             }
             return items;
         }
@@ -682,7 +677,6 @@ namespace Alachisoft.NCache.Web.SessionState
                 if (!string.IsNullOrEmpty(_cache.PrimaryPrefix))
                 {
                     context.SetLocationCookie(_cache.PrimaryPrefix);
-                    //context.Response.Cookies.Set(new HttpCookie(LOC_IDENTIFIER, _cache.PrimaryPrefix));
                     if (_logs) LogInfo("Session Location Changed: New_Location=" + _cache.PrimaryPrefix, null);
                 }
             }
@@ -718,21 +712,22 @@ namespace Alachisoft.NCache.Web.SessionState
         /// <param name="id">Session ID</param>
         /// <param name="table">Value needed to be stored</param>
         /// 
-        private void PutInNCache(IAspEnvironmentContext context, string id, Hashtable table, object lockID, bool enableRetry)
+        private void PutInNCache(IAspEnvironmentContext context, string id, SessionMetaWithData table, object lockID, bool enableRetry)
         {
-            
-
             byte[] buffer = null;
-            using (MemoryStream stream = new MemoryStream())
+            if (_useJsonSerialization)
             {
-                BinaryFormatter formatter = new BinaryFormatter();
-                formatter.Serialize(stream, table);
-                buffer = stream.ToArray();
-                stream.Close();
+                var serializableObject = Newtonsoft.Json.JsonConvert.SerializeObject(table, JsonSessionSerializationSettings.Instance);
+                buffer = Encoding.UTF8.GetBytes(serializableObject);
             }
+            else
+            {
+                buffer = CompactBinaryFormatter.ToByteBuffer(table, null);
+            }
+
             CacheItem sessionItem = new CacheItem(buffer);
             sessionItem.Priority = CacheItemPriority.NotRemovable;
-            sessionItem.Expiration = new Runtime.Caching.Expiration(Runtime.Caching.ExpirationType.Sliding, new TimeSpan(0, (int)table[TIMEOUT_KEY], 0));
+            sessionItem.Expiration = new Runtime.Caching.Expiration(Runtime.Caching.ExpirationType.Sliding, new TimeSpan(0, table.Timeout, 0));
             lock (s_dataLock)
             {
                 if (s_cacheNeedInit) InitializeCache();
@@ -763,20 +758,20 @@ namespace Alachisoft.NCache.Web.SessionState
         /// <param name="flag"></param>
         /// <param name="timeout"></param>
         /// <returns></returns>
-        private Hashtable InsertContents(IAspEnvironmentContext context, object data, SessionInitializationActions flag, int timeout)
+        private SessionMetaWithData InsertContents(IAspEnvironmentContext context, object data, SessionInitializationActions flag, int timeout)
         {
-            Hashtable items = new Hashtable(4);
+            SessionMetaWithData items = new SessionMetaWithData();
 
             if (data != null)
             {
-                byte[] buffer = SerializeSession(data);
-                items.Add(SESSION_DATA, buffer);
-                items.Add(TIMEOUT_KEY, timeout);
+                byte[] buffer = SerializeSession(data, _useCompactSerialization, _useJsonSerialization);
+                items.SessionData = buffer;
+                items.Timeout = timeout;
             }
             else
-                items.Add(TIMEOUT_KEY, (int)timeout);
-           
-            items.Add(ACTIONS_KEY, flag);
+                items.Timeout = timeout;
+
+            items.ActionKey = flag;
 
             return items;
         }
@@ -788,20 +783,18 @@ namespace Alachisoft.NCache.Web.SessionState
         /// <param name="items"></param>
         /// <param name="flag"></param>
         /// <returns></returns>
-        private object GetContents(IAspEnvironmentContext context, Hashtable items, ref SessionInitializationActions flag)
+        private object GetContents(IAspEnvironmentContext context, SessionMetaWithData items, ref SessionInitializationActions flag)
         {
-            flag = (SessionInitializationActions)items[ACTIONS_KEY];
-            byte[] buffer = items[SESSION_DATA] as byte[];
-            int timeout = (int)items[TIMEOUT_KEY];
+            flag = items.ActionKey;
+            byte[] buffer = items.SessionData;
+            int timeout = items.Timeout;
 
-            return DeserializeSession(buffer,timeout);
-    
+            return DeserializeSession(buffer, timeout, _useCompactSerialization, _useJsonSerialization);
         }
 
-        protected abstract object DeserializeSession(byte[] buffer, int timeout);
-    
+        protected abstract object DeserializeSession(byte[] buffer, int timeout, bool isCompact = false, bool isJson = false);
 
-        protected abstract byte[] SerializeSession(object sessionData);
+        protected abstract byte[] SerializeSession(object sessionData, bool isCompact = false, bool isJson = false);
 
         private bool IsSessionCookieless(IAspEnvironmentContext context)
         {
@@ -820,14 +813,6 @@ namespace Alachisoft.NCache.Web.SessionState
             }
             return true;
         }
-
-        /// <summary>
-        /// Called when items in cache expires
-        /// </summary>
-        /// <param name="key">Expired item key</param>
-        /// <param name="value">Expired item value</param>
-        /// <param name="reason">Reason of expiration</param>
-       
 
         public void LogError(Exception exception, string sessionID)
         {

@@ -1,4 +1,4 @@
-//  Copyright (c) 2021 Alachisoft
+//  Copyright (c) 2026 Alachisoft
 //  
 //  Licensed under the Apache License, Version 2.0 (the "License");
 //  you may not use this file except in compliance with the License.
@@ -20,7 +20,6 @@ using Alachisoft.NCache.Common.Enum;
 using Alachisoft.NCache.Runtime.Caching;
 using Alachisoft.NCache.Runtime.Events;
 using Alachisoft.NCache.Common.Caching;
-
 
 namespace Alachisoft.NCache.Client
 {
@@ -173,6 +172,8 @@ namespace Alachisoft.NCache.Client
         internal EventDataFilter ItemUpdatedDataFilter { get; set; }
 
         internal EventDataFilter ItemRemovedDataFilter { get; set; }
+       
+        internal bool IsModuleData { get; set; }
 
         internal string TypeName { get; set; }
 
@@ -292,7 +293,7 @@ namespace Alachisoft.NCache.Client
             newItem.Size = Size;
             newItem._value = _value;
             newItem.CacheInstance = CacheInstance;
-       
+            newItem.IsModuleData = IsModuleData;
 
             return newItem;
         }

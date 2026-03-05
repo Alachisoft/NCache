@@ -1,4 +1,4 @@
-﻿//  Copyright (c) 2021 Alachisoft
+﻿//  Copyright (c) 2026 Alachisoft
 //  
 //  Licensed under the Apache License, Version 2.0 (the "License");
 //  you may not use this file except in compliance with the License.
@@ -29,7 +29,6 @@ namespace Alachisoft.NCache.SocketServer.Util
 
             if (cacheProcessPID == 0)
                 cacheProcessPID = CacheProvider.Provider.GetProcessID(cacheId);
-           // clientManager.IsDisposed = true;
             
             SocketInformation socketInfo = clientManager.ClientSocket.DuplicateAndClose(cacheProcessPID);
             socketInfo.Options |= SocketInformationOptions.UseOnlyOverlappedIO;
@@ -45,7 +44,7 @@ namespace Alachisoft.NCache.SocketServer.Util
 
             using (MemoryStream stream = new MemoryStream())
             {
-                ProtoBuf.Serializer.Serialize<Alachisoft.NCache.Common.Protobuf.Command>(stream, command);
+                ProtoBuf.Extended.Serializer.Serialize<Alachisoft.NCache.Common.Protobuf.Command>(stream, command);
                 commandBytes = stream.ToArray();
             }
             return commandBytes;

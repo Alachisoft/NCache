@@ -1,4 +1,4 @@
-//  Copyright (c) 2021 Alachisoft
+//  Copyright (c) 2026 Alachisoft
 //  
 //  Licensed under the Apache License, Version 2.0 (the "License");
 //  you may not use this file except in compliance with the License.
@@ -29,6 +29,7 @@ using Alachisoft.NCache.Caching.Util;
 using Alachisoft.NCache.Common.DataStructures;
 using Alachisoft.NCache.Common.Pooling;
 using Alachisoft.NCache.Config.Dom;
+using Alachisoft.NCache.Common.Monitoring;
 
 namespace Alachisoft.NCache.Caching
 {
@@ -72,6 +73,8 @@ namespace Alachisoft.NCache.Caching
         private string _cacheName;
 
         private DataFormat inMemoryDataFormat;
+
+
         public DataFormat InMemoryDataFormat
         {
             set
@@ -103,10 +106,10 @@ namespace Alachisoft.NCache.Caching
         public Hashtable _cmptKnownTypesforNet = new Hashtable(new EqualityComparer());
         private bool _isStartedAsMirror = false;
 
+        /// <summary> Manager for read-trhough and write-through operations. </summary>
 
-    
 
-   
+
 
         private DataFormat _inMemoryDataFormat;
 
@@ -217,15 +220,6 @@ namespace Alachisoft.NCache.Caching
             set { _compressionEnabled = value; }
         }
 
-        SQLDependencySettings _sqlDependencySettings;
-
-        public SQLDependencySettings SQLDepSettings
-        {
-
-            get { return _sqlDependencySettings; }
-            set { _sqlDependencySettings = value; }
-        }
-
        
 
 
@@ -250,11 +244,10 @@ namespace Alachisoft.NCache.Caching
             {
                 // incase of partitioned and local cache any node can initialize the hint 
                 // but only coordinator can do synchronization
-                if (CacheRoot.CacheType == "partitioned-server" || CacheRoot.CacheType == "local-cache" || CacheRoot.CacheType == "overflow-cache")
+                if (CacheRoot.CacheType == "local-cache" || CacheRoot.CacheType == "overflow-cache")
                     return true;
                 // incase of replicated and partiotion of replica only coordinator/subcoordinator can initialize and synchronize the hint.
-                else if (((CacheRoot.CacheType == "replicated-server" || CacheRoot.CacheType == "mirror-server") && ExpiryMgr.IsCoordinatorNode) ||
-                         (CacheRoot.CacheType == "partitioned-replicas-server" && ExpiryMgr.IsSubCoordinatorNode))
+                else if ((CacheRoot.CacheType == "replicated-server"  && ExpiryMgr.IsCoordinatorNode))
                 {
                     return true;
                 }
@@ -392,8 +385,6 @@ namespace Alachisoft.NCache.Caching
 
         public MessageManager MessageManager { get; internal set; }
 
-        //public PoolManager PoolManager { get; internal set; }
-
         /// <summary>
         /// Store level (InternalCache) object pool. 
         /// </summary>
@@ -405,5 +396,13 @@ namespace Alachisoft.NCache.Caching
         /// </summary>
         public TransactionalPoolManager TransactionalPoolManager { get; internal set; }
         public PoolManager FakeObjectPool { get; internal set; }
+
+        public MetricsPublisher MetricsPublisher { get; set; }
+        public StoreType StoreType { get; internal set; }
+
+        public string GetStoreType()
+        {
+            return StoreTypeUtil.GetStore(StoreType);
+        }
     }
 }

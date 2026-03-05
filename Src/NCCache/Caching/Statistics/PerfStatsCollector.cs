@@ -1,4 +1,4 @@
-//  Copyright (c) 2021 Alachisoft
+//  Copyright (c) 2026 Alachisoft
 //  
 //  Licensed under the Apache License, Version 2.0 (the "License");
 //  you may not use this file except in compliance with the License.
@@ -21,17 +21,17 @@ using System.Collections.Generic;
 using Alachisoft.NCache.Common.Enum;
 using Alachisoft.NCache.Common.Collections;
 using Alachisoft.NCache.Common.Caching;
+using Alachisoft.NCache.Common.Monitoring;
 
 namespace Alachisoft.NCache.Caching.Statistics
 {
     /// <summary>
     /// Summary description for PerfStatsCollector.
     /// </summary>
-    public class PerfStatsCollector : IDisposable, StatisticCounter
+    public class PerfStatsCollector : PerfStatsCollectorBase, IDisposable, StatisticCounter, ICounterMonitorableEntity
     {
         HPTime initTime;
-        /// <summary> Instance name. </summary>
-        private string _instanceName;
+        
         /// <summary> Port number. </summary>
         private string _port;
         /// <summary>
@@ -118,21 +118,21 @@ namespace Alachisoft.NCache.Caching.Statistics
         private Dictionary<string, PerformanceCounter> _pubsubCounterList;
 
         #endregion
-
-        private ILogger _ncacheLog;
-
-		/// <summary> Category name of counter performance data.</summary>
+        
+ 
+      
+        /// <summary> Category name of counter performance data.</summary>
         /// 
         private const string			PC_CATEGORY = "NCache";
 
+
+    
         /// <summary>
         /// Constructor
         /// </summary>
         /// <param name="instanceName"></param>
-        public PerfStatsCollector(string instanceName, bool inProc)
+        public PerfStatsCollector(string instanceName, bool inProc) : base(instanceName, inProc)
         {
-            _instanceName = GetInstanceName(instanceName, 0, inProc);
-
         }
 
         /// <summary>
@@ -140,70 +140,9 @@ namespace Alachisoft.NCache.Caching.Statistics
         /// </summary>
         /// <param name="instanceName"></param>
         /// <param name="port"></param>
-        public PerfStatsCollector(string instanceName, int port, bool inProc)
+        public PerfStatsCollector(string instanceName, int port, bool inProc) : base(instanceName, port, inProc)
         {
-            _instanceName = GetInstanceName(instanceName, port, inProc);
         }
-
-        /// <summary>
-        /// Creates Instancename 
-        /// For outproc instanceName = CacheID
-        /// For inProc instanceNAme = CacheID +"-" + ProcessID + ":" +port
-        /// </summary>
-        /// <param name="name"></param>
-        /// <param name="port"></param>
-        /// <param name="inProc"></param>
-        /// <returns></returns>
-        public string GetInstanceName(string instanceName, int port, bool inProc)
-        {
-            // This will not be replaced with ServiceConfiguration as this if for DEV only and loads from NCHOST config
-            if (System.Configuration.ConfigurationSettings.AppSettings["InstanceNameText"] != null)
-                instanceName = System.Configuration.ConfigurationSettings.AppSettings["InstanceNameText"] + "_" + instanceName;
-
-            return !inProc ? instanceName : instanceName + " - " + Process.GetCurrentProcess().Id.ToString() + ":" + port.ToString();
-        }
-
-        /// <summary>
-        /// Returns true if the current user has the rights to read/write to performance counters
-        /// under the category of object cache.
-        /// </summary>
-        public string InstanceName
-        {
-            get { return _instanceName; }
-            set { _instanceName = value; }
-        }
-
-
-        /// <summary>
-        /// Returns true if the current user has the rights to read/write to performance counters
-        /// under the category of object cache.
-        /// </summary>
-        public bool UserHasAccessRights
-        {
-            get
-            {
-                try
-                {
-                    PerformanceCounterPermission permissions = new
-                        PerformanceCounterPermission(PerformanceCounterPermissionAccess.Instrument,
-                        ".", PC_CATEGORY);
-                    permissions.Demand();
-
-                    if (!PerformanceCounterCategory.Exists(PC_CATEGORY, "."))
-                    {
-                        return false;
-                    }
-                }
-                catch (Exception e)
-                {
-                    if (NCacheLog.IsInfoEnabled) NCacheLog.Info("PerfStatsCollector.UserHasAccessRights", e.Message);
-                    return false;
-                }
-                return true;
-            }
-        }
-
-
 
         #region	/                 --- IDisposable ---           /
 
@@ -437,7 +376,6 @@ namespace Alachisoft.NCache.Caching.Statistics
                     _pcTopicCount = null;
                 }
 
-               
             }
         }
 
@@ -452,7 +390,10 @@ namespace Alachisoft.NCache.Caching.Statistics
         {
 #if NETCORE
             if (System.Runtime.InteropServices.RuntimeInformation.IsOSPlatform(System.Runtime.InteropServices.OSPlatform.Linux))
+            {
+                _populationSuccessful = false;
                 return;
+            }
 #endif
             try
             {
@@ -527,26 +468,68 @@ namespace Alachisoft.NCache.Caching.Statistics
                     _pubsubCounterList.Add(CounterNames.MessageDeliveryPerSec, _pcMessageDeliverPerSec);
                     _pubsubCounterList.Add(CounterNames.MessageExpiredPerSec, _pcMessageExpiredPerSec);
 
-                    foreach (var item in _pubsubCounterList.Values)
+                    foreach (var item in _pubsubCounterList.Keys)
                     {
-                        item.RawValue = 0;
+                        PerformanceCounter pcCounter = new PerformanceCounter(PC_CATEGORY, item, _instanceName, false);
+                        pcCounter.RawValue = 0;
+                        _ncacheCounters.Add(item, pcCounter);
                     }
                     #endregion
                     _usMsecPerDel = new UsageStats();
 
-                   
+                    _populationSuccessful = true;
+                    StoreCounters(ModuleConfigured);
+
                 }
             }
             catch (Exception e)
             {
+                _populationSuccessful = false;
                 NCache.Common.AppUtil.LogEvent(e.ToString(), EventLogEntryType.Error);
             }
+            if (!inproc)
+            {
+                PopulateCounters();
+                RegisterAsMonitorableEntity();
+            }
+        }
 
-		}
 
+        #endregion
 
-		#endregion
-        
+        private void StoreCounters(bool ModuleConfigured)
+        {
+            _ncacheCounters.Add(_pcCount.CounterName, _pcCount);
+            _ncacheCounters.Add(_pcCachelastAccessCount.CounterName, _pcCachelastAccessCount);
+            _ncacheCounters.Add(_pcHitsPerSec.CounterName, _pcHitsPerSec);
+            _ncacheCounters.Add(_pcMissPerSec.CounterName, _pcMissPerSec);
+            _ncacheCounters.Add(_pcHitsRatioSec.CounterName, _pcHitsRatioSec);
+            _ncacheCounters.Add(_pcHitsRatioSecBase.CounterName, _pcHitsRatioSecBase);
+            _ncacheCounters.Add(_pcAddPerSec.CounterName, _pcAddPerSec);
+            _ncacheCounters.Add(_pcGetPerSec.CounterName, _pcGetPerSec);
+            _ncacheCounters.Add(_pcUpdPerSec.CounterName, _pcUpdPerSec);
+            _ncacheCounters.Add(_pcDelPerSec.CounterName, _pcDelPerSec);
+            _ncacheCounters.Add(_pcEvictPerSec.CounterName, _pcEvictPerSec);
+            _ncacheCounters.Add(_pcExpiryPerSec.CounterName, _pcExpiryPerSec);
+            _ncacheCounters.Add(_pcStateTxfrPerSec.CounterName, _pcStateTxfrPerSec);
+            _ncacheCounters.Add(_pcDataBalPerSec.CounterName, _pcDataBalPerSec);
+            _ncacheCounters.Add(_pcMsecPerGetAvg.CounterName, _pcMsecPerGetAvg);
+            _ncacheCounters.Add(_pcMsecPerGetBase.CounterName, _pcMsecPerGetBase);
+            _ncacheCounters.Add(_pcMsecPerAddAvg.CounterName, _pcMsecPerAddAvg);
+            _ncacheCounters.Add(_pcMsecPerAddBase.CounterName, _pcMsecPerAddBase);
+            _ncacheCounters.Add(_pcMsecPerUpdAvg.CounterName, _pcMsecPerUpdAvg);
+            _ncacheCounters.Add(_pcMsecPerUpdBase.CounterName, _pcMsecPerUpdBase);
+            _ncacheCounters.Add(_pcMsecPerDelAvg.CounterName, _pcMsecPerDelAvg);
+            _ncacheCounters.Add(_pcMsecPerDelBase.CounterName, _pcMsecPerDelBase);
+            _ncacheCounters.Add(_pcMirrorQueueSize.CounterName, _pcMirrorQueueSize);
+            _ncacheCounters.Add(_pcSlidingIndexQueueSize.CounterName, _pcSlidingIndexQueueSize);
+            _ncacheCounters.Add(_pcCacheSize.CounterName, _pcCacheSize);
+            _ncacheCounters.Add(_pcEvictionIndexSize.CounterName, _pcEvictionIndexSize);
+            _ncacheCounters.Add(_pcExpirationIndexSize.CounterName, _pcExpirationIndexSize);
+            _usMsecPerDel = new UsageStats();
+
+        }
+
         /// <summary> 
         /// Increment the performance counter for Cache item count by one. 
         /// </summary>
@@ -794,7 +777,7 @@ namespace Alachisoft.NCache.Caching.Statistics
             if (_usMsecPerGet != null)
             {
                 _usMsecPerGet.EndSample();
-                _pcMsecPerGetAvg.IncrementBy(_usMsecPerGet.Current * 1000000);// ts.Milliseconds);
+                _pcMsecPerGetAvg.IncrementBy(_usMsecPerGet.Current * 1000000);
                 _pcMsecPerGetBase.Increment();
             }
         }
@@ -817,7 +800,7 @@ namespace Alachisoft.NCache.Caching.Statistics
             if (_usMsecPerAdd != null)
             {
                 _usMsecPerAdd.EndSample();
-                _pcMsecPerAddAvg.IncrementBy(_usMsecPerAdd.Current * 1000000); //ts.Milliseconds);
+                _pcMsecPerAddAvg.IncrementBy(_usMsecPerAdd.Current * 1000000);
                 _pcMsecPerAddBase.Increment();
             }
         }
@@ -840,7 +823,7 @@ namespace Alachisoft.NCache.Caching.Statistics
             if (_pcMsecPerUpdAvg != null)
             {
                 _usMsecPerUpd.EndSample();
-                _pcMsecPerUpdAvg.IncrementBy(_usMsecPerUpd.Current * 1000000);//ts.Milliseconds);
+                _pcMsecPerUpdAvg.IncrementBy(_usMsecPerUpd.Current * 1000000);
                 _pcMsecPerUpdBase.Increment();
             }
         }
@@ -863,7 +846,7 @@ namespace Alachisoft.NCache.Caching.Statistics
             if (_pcMsecPerDelAvg != null)
             {
                 _usMsecPerDel.EndSample();
-                _pcMsecPerDelAvg.IncrementBy(_usMsecPerDel.Current * 1000000); //ts.Milliseconds);
+                _pcMsecPerDelAvg.IncrementBy(_usMsecPerDel.Current * 1000000);
                 _pcMsecPerDelBase.Increment();
             }
         }
@@ -926,20 +909,6 @@ namespace Alachisoft.NCache.Caching.Statistics
                 }
             }
         }
-
-        #region StatisticCounter Members
-
-
-        public ILogger NCacheLog
-        {
-            get { return _ncacheLog; }
-            set { _ncacheLog = value; }
-        }
-
-        #endregion
-
-
-
 
         #region PUB_SUB
 
@@ -1064,8 +1033,9 @@ namespace Alachisoft.NCache.Caching.Statistics
 
             return value;
         }
-        
+
         #endregion
+       
 
     }
 }

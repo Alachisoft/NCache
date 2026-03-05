@@ -1,4 +1,4 @@
-//  Copyright (c) 2021 Alachisoft
+//  Copyright (c) 2026 Alachisoft
 //  
 //  Licensed under the Apache License, Version 2.0 (the "License");
 //  you may not use this file except in compliance with the License.
@@ -36,7 +36,7 @@ using EventType = Alachisoft.NCache.Persistence.EventType;
 using Alachisoft.NCache.Common.Pooling;
 using Alachisoft.NCache.Caching.Pooling;
 using Alachisoft.NCache.Common.ErrorHandling;
-
+using Alachisoft.NCache.Runtime.Caching;
 
 namespace Alachisoft.NCache.Caching.Topologies.Local
 {
@@ -44,15 +44,14 @@ namespace Alachisoft.NCache.Caching.Topologies.Local
     {
         /// <summary> The en-wrapped instance of cache. </summary>
         private CacheBase _cache;
-        
 
         public LocalCacheImpl() { }
 
         public LocalCacheImpl(CacheRuntimeContext context)
         {
             _context = context;
-        
         }
+
         /// <summary>
         /// Default constructor.
         /// </summary>
@@ -287,8 +286,6 @@ namespace Alachisoft.NCache.Caching.Topologies.Local
         /// <returns>list of keys.</returns>
         public override CacheEntry GetGroup(object key, string group, string subGroup, ref ulong version, ref object lockId, ref DateTime lockDate, LockExpiration lockExpiration, LockAccessType accessType, OperationContext operationContext)
         {
-            if (!IsCacheOperationAllowed(operationContext))
-                return null;
             CacheEntry entry = Internal.GetGroup(key, group, subGroup, ref version, ref lockId, ref lockDate, lockExpiration, accessType, operationContext);
             if (entry != null && KeepDeflattedValues)
             {
@@ -410,9 +407,6 @@ namespace Alachisoft.NCache.Caching.Topologies.Local
                             operationContext.Add(OperationContextFieldName.GenerateQueryInfo, true);
                         }
 
-                        #region OLD KEY DEPENDENCY CODE
-                        // Internal.AddDepKeyList(table, operationContext); 
-                        #endregion
                         Internal.AddDepKeyList(keyDepInfoTable, operationContext);
 
                         if (generateQueryInfo == null)
@@ -488,8 +482,6 @@ namespace Alachisoft.NCache.Caching.Topologies.Local
                         }
                         try
                         {
-                            #region OLD KEY DEPENDENCY CODE
-                            #endregion
                             keyDepInfoTable = Internal.AddDepKeyList(keyDepInfoTable, operationContext);
                         }
                         catch (Exception e)
@@ -497,13 +489,8 @@ namespace Alachisoft.NCache.Caching.Topologies.Local
                             throw e;
                         }
 
-                        #region OLD KEY DEPENDENCY CODE
-                        // if (table != null) 
-                        #endregion
                         if (keyDepInfoTable != null)
                         {
-                            #region OLD KEY DEPENDENCY CODE
-                            #endregion
                             IDictionaryEnumerator en = keyDepInfoTable.GetEnumerator();
                             while (en.MoveNext())
                             {
@@ -684,9 +671,6 @@ namespace Alachisoft.NCache.Caching.Topologies.Local
                     #region -- PART II -- Cascading Dependency Operation
                     if (retVal.Result == CacheInsResult.Success || retVal.Result == CacheInsResult.SuccessOverwrite)
                     {
-                        #region OLD KEY DEPENDENCY CODE
-                        // Hashtable table = null; 
-                        #endregion
                         Hashtable keyDepInfosTable = null;
 
                         object generateQueryInfo = operationContext.GetValueByField(OperationContextFieldName.GenerateQueryInfo);
@@ -792,7 +776,6 @@ namespace Alachisoft.NCache.Caching.Topologies.Local
                                 keyDepInfosTable = GetFinalKeysListWithDependencyInfo(result.Entry, goodEntries[i]);
                                 Hashtable oldKeysTable = GetKeysTable(goodKeysList[i], (KeyDependencyInfo[])keyDepInfosTable["oldKeys"]);
                                 Internal.RemoveDepKeyList(oldKeysTable, operationContext);
-
                                 oldKeysTable = GetKeyDependencyInfoTable(goodKeysList[i], (KeyDependencyInfo[])keyDepInfosTable["newKeys"]);
                                 Internal.AddDepKeyList(oldKeysTable, operationContext);
                             }
@@ -886,7 +869,7 @@ namespace Alachisoft.NCache.Caching.Topologies.Local
                             {
                                 EventId eventId = null;
                                 OperationID opId = operationContext.OperatoinID;
-                                Caching.Notifications cbEtnry = entry.Notifications;// e.DeflattedValue(_context.SerializationContext);
+                                Caching.Notifications cbEtnry = entry.Notifications;
                                 EventContext eventContext = null;
 
                                 if (cbEtnry != null && cbEtnry.ItemRemoveCallbackListener != null && cbEtnry.ItemRemoveCallbackListener.Count > 0)
@@ -909,7 +892,7 @@ namespace Alachisoft.NCache.Caching.Topologies.Local
                                     eventContext.Add(EventContextFieldName.ItemRemoveCallbackList, cbEtnry.ItemRemoveCallbackListener.Clone());
                                     eventContext.UniqueId = GenerateEventType(EventType.ITEM_REMOVED_CALLBACK)+entry.Version.ToString();
                                     //Will always reaise the whole entry for old clients
-                                    NotifyCustomRemoveCallback(ide.Key, entry, reason, true, operationContext, eventContext);
+                                    NotifyCustomRemoveCallback(ide.Key, cbEtnry.ItemRemoveCallbackListener, reason, true, operationContext, eventContext);
                                 }
                             }
                         }
@@ -1022,8 +1005,6 @@ namespace Alachisoft.NCache.Caching.Topologies.Local
         }
 
 
-      
-
 
         /// <summary>
         /// Broadcasts a user-defined event across the cluster.
@@ -1031,9 +1012,9 @@ namespace Alachisoft.NCache.Caching.Topologies.Local
         /// <param name="notifId"></param>
         /// <param name="data"></param>
         /// <param name="async"></param>
-        public override void SendNotification(object notifId, object data, OperationContext operationContext)
+        public override void SendNotification(object notifId, object data)
         {
-            Internal.SendNotification(notifId, data, operationContext);
+            Internal.SendNotification(notifId, data);
         }
 
         /// <summary>
@@ -1077,7 +1058,6 @@ namespace Alachisoft.NCache.Caching.Topologies.Local
 
         #endregion
 
- 
 
         public override void UnLock(object key, object lockId, bool isPreemptive, OperationContext operationContext)
         {
@@ -1198,7 +1178,7 @@ namespace Alachisoft.NCache.Caching.Topologies.Local
         {
             throw new Exception("The method or operation is not implemented.");
         }
-#if !CLIENT && !DEVELOPMENT
+#if !DEVELOPMENT
         void ICacheEventsListener.OnHashmapChanged(Alachisoft.NCache.Common.DataStructures.NewHashmap newHashmap, bool updateClientMap)
         {
             throw new Exception("The method or operation is not implemented.");
@@ -1208,7 +1188,6 @@ namespace Alachisoft.NCache.Caching.Topologies.Local
         {
             throw new Exception("The method or operation is not implemented.");
         }
-
 
         internal override void Touch(List<string> keys, OperationContext operationContext)
         {
@@ -1238,9 +1217,7 @@ namespace Alachisoft.NCache.Caching.Topologies.Local
             Internal.RemoveMessages(messagesTobeRemoved, reason, context);
         }
 
-
-
-        public override bool StoreMessage(string topic, Message message, OperationContext context)
+        public override bool StoreMessage(string topic, Alachisoft.NCache.Caching.Messaging.Message message, OperationContext context)
         {
             if (Internal == null)
                 throw new InvalidOperationException();
@@ -1267,25 +1244,16 @@ namespace Alachisoft.NCache.Caching.Topologies.Local
 
         #endregion
 
-        public override long GetMessageCount(string topicName, OperationContext operationContext)
+        public override long GetMessageCount(string topicName)
         {
             if (Internal == null)
             {
                 throw new InvalidOperationException();
             }
-            return Internal.GetMessageCount(topicName, operationContext);
+            return Internal.GetMessageCount(topicName);
         }
 
-        public override void ClientConnected(string client, bool isInproc, Runtime.Caching.ClientInfo clientInfo)
-        {
-            if (Internal != null)
-            {
-                Internal.ClientConnected(client, isInproc, clientInfo);
-            }
-
-        }
-
-        public override void ClientDisconnected(string client, bool isInproc, Runtime.Caching.ClientInfo clientInfo)
+        public override void ClientDisconnected(string client, bool isInproc)
         {
             CacheStatistics stats = InternalCache.Statistics;
             if (stats != null && stats.ConnectedClients != null)
@@ -1301,9 +1269,13 @@ namespace Alachisoft.NCache.Caching.Topologies.Local
 
             if (Internal != null)
             {
-                Internal.ClientDisconnected(client, isInproc, clientInfo);
+                Internal.ClientDisconnected(client, isInproc);
             }
-          
+        }
+
+        public override void ClientConnected(string client, bool isInproc, ClientInfo clientInfo)
+        {
+            base.ClientConnected(client, isInproc, clientInfo);
         }
 
         public void OnOperationModeChanged(OperationMode mode)

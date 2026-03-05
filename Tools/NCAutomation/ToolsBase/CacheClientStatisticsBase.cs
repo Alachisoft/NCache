@@ -1,19 +1,8 @@
-﻿//  Copyright (c) 2021 Alachisoft
-//  
-//  Licensed under the Apache License, Version 2.0 (the "License");
-//  you may not use this file except in compliance with the License.
-//  You may obtain a copy of the License at
-//  
-//     http://www.apache.org/licenses/LICENSE-2.0
-//  
-//  Unless required by applicable law or agreed to in writing, software
-//  distributed under the License is distributed on an "AS IS" BASIS,
-//  WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
-//  See the License for the specific language governing permissions and
-//  limitations under the License
-using Alachisoft.NCache.Automation.ToolsOutput;
+﻿using Alachisoft.NCache.Automation.ToolsOutput;
 using Alachisoft.NCache.Automation.ToolsParametersBase;
 using Alachisoft.NCache.Automation.Util;
+using Alachisoft.NCache.Client;
+using Alachisoft.NCache.Common;
 using Alachisoft.NCache.Management;
 using Alachisoft.NCache.Management.ServiceControl;
 using Alachisoft.NCache.Tools.Common;
@@ -50,11 +39,11 @@ namespace Alachisoft.NCache.Automation.ToolsBase
                 OutputProvider.WriteErrorLine("\nError: Cache name not specified.");
                 return false;
             }
-            //Util.ToolsUtil.PrintLogo(OutputProvider, printLogo, TOOLNAME);
             if (string.IsNullOrEmpty(CounterNames))
             {
                 DoNotShowDefaultCounters = false;
             }
+         
             return true;
         }
         protected override void BeginProcessing()
@@ -132,7 +121,19 @@ namespace Alachisoft.NCache.Automation.ToolsBase
                 try
                 {
                     ICacheServer cacheServer = nCache.GetCacheServer(new TimeSpan(0, 0, 0, 30));
-                    //NodeStatus status = GetCacheStatistics(_nCache);
+                    Management.ClientConfiguration.Dom.ClientConfiguration config = null;
+
+                    try
+                    {
+                        config = cacheServer.GetClientConfiguration(CacheName);
+                    }
+                    catch (Exception ignored) { }
+
+                    if (config == null || config.CacheConfigurationsMap == null || !config.CacheConfigurationsMap.ContainsKey(CacheName.ToLower()))
+                    {
+                        OutputProvider.WriteErrorLine("Error: 'client.ncconf' does not contain the configuration for cache '{0}' on client node {1}", CacheName, cacheServer.GetClusterIP());
+                        return;
+                    }
                     ClientList.Add(cacheServer.GetBindIP());
                     cacheServers.Add(cacheServer);
                 }
@@ -387,7 +388,6 @@ namespace Alachisoft.NCache.Automation.ToolsBase
                         }
                     }
                 }
-                //perfmonCounters.AddRange(toRemove);
                 foreach (var remove in toRemove)
                 {
                     customCounters.Remove(remove);
@@ -411,8 +411,7 @@ namespace Alachisoft.NCache.Automation.ToolsBase
             {
                 if (cacheClients[i] != null)
                 {
-                    Config.NewDom.CacheServerConfig config = cacheClients[i].GetNewConfiguration(CacheName);
-                    _perfmonCounters = cacheClients[i].GetPerfmonValues(_perfmonCounters, CacheName);
+                     _perfmonCounters = cacheClients[i].GetPerfmonValues(_perfmonCounters, CacheName);
                     if (i == 0)
                     {
                         foreach (var counter in _perfmonCounters)

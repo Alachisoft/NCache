@@ -1,4 +1,4 @@
-//  Copyright (c) 2021 Alachisoft
+//  Copyright (c) 2026 Alachisoft
 //  
 //  Licensed under the Apache License, Version 2.0 (the "License");
 //  you may not use this file except in compliance with the License.
@@ -20,6 +20,8 @@ using Alachisoft.NCache.Runtime.Exceptions;
 using Alachisoft.NCache.Runtime.Events;
 using System.Collections.Generic;
 using Alachisoft.NCache.Caching.Pooling;
+
+
 using Alachisoft.NCache.Common.ErrorHandling;
 #if SERVER 
 using Alachisoft.NCache.Caching.Topologies.Clustered;
@@ -27,7 +29,6 @@ using Alachisoft.NCache.Caching.Topologies.Clustered;
 
 namespace Alachisoft.NCache.Caching.Util
 {
-    //#if !THINCLIENT
     /// <summary>
     /// Class to help in common cache operations
     /// </summary>
@@ -275,7 +276,6 @@ namespace Alachisoft.NCache.Caching.Util
                                 failedTable.Add(key, new OperationFailedException("Generic operation failure; not enough information is available."));
                                 break;
                             case CacheInsResult.NeedsEviction:
-                                //failedTable.Add(key, new OperationFailedException("The cache is full and not enough items could be evicted."));
                                 failedTable.Add(key, new OperationFailedException(ErrorCodes.Common.NOT_ENOUGH_ITEMS_EVICTED, ErrorMessages.GetErrorMessage(ErrorCodes.Common.NOT_ENOUGH_ITEMS_EVICTED)));
                                 break;
                             case CacheInsResult.IncompatibleGroup:

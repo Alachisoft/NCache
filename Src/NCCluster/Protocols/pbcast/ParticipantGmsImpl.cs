@@ -1,4 +1,4 @@
-// $Id: ParticipantGmsImpl.java,v 1.7 2004/07/28 22:46:59 belaban Exp $
+
 using Alachisoft.NCache.Common.Enum;
 using Alachisoft.NCache.Common.Net;
 using Alachisoft.NCache.Common.Threading;
@@ -115,7 +115,7 @@ namespace Alachisoft.NGroups.Protocols.pbcast
 		}
 
 
-        public override JoinRsp handleJoin(Address mbr, string subGroup_name, bool isStartedAsMirror, string gmsId)
+        public override JoinRsp handleJoin(Address mbr, string subGroup_name, bool isStartedAsMirror, string gmsId, ref bool acquireHashmap)
 		{
 			wrongMethod("handleJoin");
 			return null;
@@ -344,7 +344,6 @@ namespace Alachisoft.NGroups.Protocols.pbcast
                                 continue;
                             }
                             if (gms.Stack.NCacheLog.IsInfoEnabled) gms.Stack.NCacheLog.Info("suspected mbr=" + leavingMbr + "), members are " + gms.members + ", coord=" + gms.local_addr + ": I'm the new coord !");
-                            //=====================================================
                             //update gms' subgroupMbrMap.
                             string subGroup = (string)gms._mbrSubGroupMap[leavingMbr];
                             if (subGroup != null)
@@ -366,10 +365,9 @@ namespace Alachisoft.NGroups.Protocols.pbcast
                                     }
                                 }
                             }
-                            //=====================================================
                             ArrayList list = new ArrayList(1);
                             list.Add(leavingMbr);
-                           
+                            gms.acquireHashmap(list, false, subGroup, false);
                         }
                         gms.castViewChange(null, null, suspects, gms._hashmap);
                     }
@@ -479,7 +477,7 @@ namespace Alachisoft.NGroups.Protocols.pbcast
 
                     ArrayList list = new ArrayList(1);
                     list.Add(leavingMbr);
-        
+                    gms.acquireHashmap(list, false, subGroup, false);
                 }
 
                 suspected_mbrs.Clear();
@@ -638,7 +636,6 @@ namespace Alachisoft.NGroups.Protocols.pbcast
 
             //Cast view to the replica node as well
             gms.installView(new_view);
-            //gms.castViewChange(new_view);
 
             gms.becomeParticipant();
             gms.Stack.IsOperational = true;
@@ -667,7 +664,6 @@ namespace Alachisoft.NGroups.Protocols.pbcast
                     }
 
                     /// Find the maximum vote cast value. This will be used to resolve a
-                    /// tie later on. (shoaib)
                     if (((int)votes[mbr.CoordAddress]) > max_votecast)
                         max_votecast = ((int)votes[mbr.CoordAddress]);
                     if ((mbr.OwnAddress.IpAddress.Equals(gms.local_addr.IpAddress)) && (mbr.OwnAddress.Port < gms.local_addr.Port))
@@ -714,7 +710,6 @@ namespace Alachisoft.NGroups.Protocols.pbcast
                 ping_rsp = (PingRsp)initial_mbrs[i];
                 if (ping_rsp.OwnAddress != null && gms.local_addr != null && ping_rsp.OwnAddress.Equals(gms.local_addr))
                 {
-                    //initial_mbrs.RemoveAt(i);
                     break;
                 }
                 if (!ping_rsp.IsStarted) initial_mbrs.RemoveAt(i);

@@ -1,4 +1,4 @@
-//  Copyright (c) 2021 Alachisoft
+//  Copyright (c) 2026 Alachisoft
 //  
 //  Licensed under the Apache License, Version 2.0 (the "License");
 //  you may not use this file except in compliance with the License.
@@ -18,18 +18,23 @@ using Alachisoft.NCache.Util;
 using Alachisoft.NCache.Common.Stats;
 using Alachisoft.NCache.Common;
 using Alachisoft.NCache.Common.Util;
+using Alachisoft.NCache.Common.Monitoring;
+using System.Collections.Generic;
 
 namespace Alachisoft.NCache.SocketServer.Statistics
 {
     /// <summary>
     /// Summary description for PerfStatsCollector.
     /// </summary>
-    public class PerfStatsCollector : IDisposable, StatisticsCounter
+    public class PerfStatsCollector : IDisposable, StatisticsCounter, ICounterMonitorableEntity
     {
         /// <summary> Instance name. </summary>
         private string _instanceName;
         /// <summary> Port number. </summary>
         private string _port;
+
+        private Dictionary<string, PerformanceCounter> _ncacheCounters = new Dictionary<string, PerformanceCounter>();
+        private bool _populationSuccessful = false;
 
         /// <summary> performance counter for bytes sent per second. </summary>
         private PerformanceCounter _pcClientBytesSentPerSec = null;
@@ -84,12 +89,14 @@ namespace Alachisoft.NCache.SocketServer.Statistics
         private PerformanceCounter _pcConnectedClients = null;
 
 
-
         private const string PC_CATEGORY = "NCache";
         private long _queueSize;
 
+        private List<PerformanceCounter> _availableCounters = new List<PerformanceCounter>();
+        private CounterIDMap _counterIDMap;
+        private bool required = true;
 
-
+        public MetricsPublisher StatsPublisher { get; set; }
         /// <summary>
         /// Constructor
         /// </summary>
@@ -109,6 +116,12 @@ namespace Alachisoft.NCache.SocketServer.Statistics
         {
             get { return _instanceName; }
             set { _instanceName = value; }
+        }
+
+        public Category Category
+        {
+            get;
+            set;
         }
 
 
@@ -134,9 +147,7 @@ namespace Alachisoft.NCache.SocketServer.Statistics
                 }
                 catch (Exception e)
                 {
-
                     AppUtil.LogEvent("NCache", "User has no access to NCache Server counters. " + e.ToString(), EventLogEntryType.Error, EventCategories.Error, EventID.GeneralError);
-                    //if(nTrace.isInfoEnabled) nTrace.info("SocketServer.Statistics.PerfStatsCollector.UserHasAccessRights", e.Message);
                     return false;
                 }
                 return true;
@@ -312,6 +323,7 @@ namespace Alachisoft.NCache.SocketServer.Statistics
         /// </summary>
         public void InitializePerfCounters()
         {
+           
 #if NETCORE
             if (System.Runtime.InteropServices.RuntimeInformation.IsOSPlatform(System.Runtime.InteropServices.OSPlatform.Linux))
                 return;
@@ -353,22 +365,50 @@ namespace Alachisoft.NCache.SocketServer.Statistics
                     _pcMsecPerGetBulkBase = new PerformanceCounter(PC_CATEGORY, "Average us/fetchbulk base", _instanceName, false);
                     _pcMsecPerUpdBulkBase = new PerformanceCounter(PC_CATEGORY, "Average us/insertbulk base", _instanceName, false);
                     _pcMsecPerDelBulkBase = new PerformanceCounter(PC_CATEGORY, "Average us/removebulk base", _instanceName, false);
-                
 
+                    StoreCounters();
+                    PopulateCounters();
+                    _populationSuccessful = true;
                 }
             }
             catch (Exception e)
             {
-
                 AppUtil.LogEvent("NCache", "An error occurred while initializing counters for NCache Server. " + e.ToString(), EventLogEntryType.Error, EventCategories.Error, EventID.GeneralError);
-
-                //nTrace.warn("SocketServer.PerfStatsCollector.PerfStatsCollector()", e.ToString());
             }
 
         }
 
 
         #endregion
+
+
+
+        private void StoreCounters()
+        {
+            _ncacheCounters.Add(_pcRequestsPerSec.CounterName, _pcRequestsPerSec);
+            _ncacheCounters.Add(_pcResponsesPerSec.CounterName, _pcResponsesPerSec);
+            _ncacheCounters.Add(_pcClientBytesSentPerSec.CounterName, _pcClientBytesSentPerSec);
+            _ncacheCounters.Add(_pcClientBytesReceiedPerSec.CounterName, _pcClientBytesReceiedPerSec);
+            _ncacheCounters.Add(_pcMsecPerCacheOperation.CounterName, _pcMsecPerCacheOperation);
+            _ncacheCounters.Add(_pcMsecPerCacheOperationBase.CounterName, _pcMsecPerCacheOperationBase);
+            _ncacheCounters.Add(_generalNotificationQueueSize.CounterName, _generalNotificationQueueSize);
+            _ncacheCounters.Add(_pcResponseQueueCount.CounterName, _pcResponseQueueCount);
+            _ncacheCounters.Add(_pcResponseQueueSize.CounterName, _pcResponseQueueSize);
+            _ncacheCounters.Add(_pcEventQueueCount.CounterName, _pcEventQueueCount);
+            _ncacheCounters.Add(_requestLogPerSecond.CounterName, _requestLogPerSecond);
+            _ncacheCounters.Add(_requestLogSize.CounterName, _requestLogSize);
+            _ncacheCounters.Add(_pcConnectedClients.CounterName, _pcConnectedClients);
+            _ncacheCounters.Add(_pcMsecPerAddBulkAvg.CounterName, _pcMsecPerAddBulkAvg);
+            _ncacheCounters.Add(_pcMsecPerGetBulkAvg.CounterName, _pcMsecPerGetBulkAvg);
+            _ncacheCounters.Add(_pcMsecPerUpdBulkAvg.CounterName, _pcMsecPerUpdBulkAvg);
+            _ncacheCounters.Add(_pcMsecPerDelBulkAvg.CounterName, _pcMsecPerDelBulkAvg);
+            _ncacheCounters.Add(_pcMsecPerAddBulkBase.CounterName, _pcMsecPerAddBulkBase);
+            _ncacheCounters.Add(_pcMsecPerGetBulkBase.CounterName, _pcMsecPerGetBulkBase);
+            _ncacheCounters.Add(_pcMsecPerUpdBulkBase.CounterName, _pcMsecPerUpdBulkBase);
+            _ncacheCounters.Add(_pcMsecPerDelBulkBase.CounterName, _pcMsecPerDelBulkBase);
+
+        }
+
 
         /// <summary> 
         /// Increment the performance counter for Client bytes sent. 
@@ -529,13 +569,12 @@ namespace Alachisoft.NCache.SocketServer.Statistics
             {
                 lock (_pcMsecPerCacheOperation)
                 {
-                    //_usMsecPerCacheOperation.EndSample();
                     _nsMsecPerCacheOperation.Stop();
                     long timeSpent = (long)_nsMsecPerCacheOperation.Duration(1);
                     if (timeSpent < 0)
                         timeSpent = timeSpent * -1;
 
-                    _pcMsecPerCacheOperation.IncrementBy((long)timeSpent);//_usMsecPerCacheOperation.Current);
+                    _pcMsecPerCacheOperation.IncrementBy((long)timeSpent);
                     _pcMsecPerCacheOperationBase.Increment();
                 }
             }
@@ -757,6 +796,95 @@ namespace Alachisoft.NCache.SocketServer.Statistics
             }
         }
 
+        internal void PopulateCounters()
+        {
+            if (Category != null && Category.Publish)
+            {
+                foreach (var counter in Category.Counters)
+                {
+                    PerformanceCounter performanceCounter;
+                    if (counter.Publish)
+                    {
+                        if (_ncacheCounters.TryGetValue(counter.Name, out performanceCounter))
+                        {
+                            if (!_availableCounters.Contains(performanceCounter))
+                                _availableCounters.Add(performanceCounter);
+                        }
+                    }
+                }
+            }
 
+        }
+
+        public void RegisterAsMonitorableEntity()
+        {
+            try
+            {
+                if (Category != null && Category.Publish)
+                {
+                    StatsPublisher.RegisterMonitorableEntity(this);
+                }
+
+            }
+            catch (Exception ex)
+            {
+                AppUtil.LogEvent(ex.Message + ex.StackTrace, EventLogEntryType.Error);
+            }
+
+        }
+
+        CounterMetadataCollection ICounterMonitorableEntity.Metadata => null;
+
+        IntervalCounterDataCollection ICounterMonitorableEntity.Data { get { return Data(); } }
+
+        private IntervalCounterDataCollection Data()
+        {
+            Dictionary<short, double> counterData = new Dictionary<short, double>();
+            if (required)
+            {
+                _counterIDMap = new CounterIDMap();
+                _counterIDMap.AssignAndAddCounters(StatsPublisher.CounterMetadataCollection.Counters);
+                required = false;
+            }
+
+            lock (_availableCounters)
+            {
+                try
+                {
+                    foreach (var data in _availableCounters)
+                    {
+                        if (!counterData.ContainsKey(_counterIDMap.GetCounerID(data.CounterName)))
+                            counterData.Add(_counterIDMap.GetCounerID(data.CounterName), data.NextValue());
+                        else
+                        {
+                            throw new Exception(data.CounterName);
+                        }
+                    }
+                    return new IntervalCounterDataCollection
+                    {
+                        Values = counterData,
+                        Timestamp = DateTime.UtcNow,
+                        PublisherType = Publisher.NCache,
+                        InstanceName = InstanceName
+                    };
+                }
+                catch (Exception ex)
+                {
+                    throw ex;
+                }
+            }
+
+        }
+
+        public Publisher PublisherType { get { return Publisher.NCache; } }
+
+        public bool MergeCounters => true;
+
+        MonitoringEntityType IMonitorableEntity.GetEntityType
+        {
+            get { return MonitoringEntityType.Stats; }
+        }
+
+        public bool IsPrimary { get { return false; } }
     }
 }

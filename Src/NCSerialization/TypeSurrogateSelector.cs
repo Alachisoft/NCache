@@ -1,4 +1,4 @@
-//  Copyright (c) 2021 Alachisoft
+//  Copyright (c) 2026 Alachisoft
 //  
 //  Licensed under the Apache License, Version 2.0 (the "License");
 //  you may not use this file except in compliance with the License.
@@ -305,14 +305,15 @@ namespace Alachisoft.NCache.Serialization
             RegisterTypeSurrogate(new ArraySerializationSurrogate(typeof(Array)));
             RegisterTypeSurrogate(new IListSerializationSurrogate(typeof(ArrayList)));
 
-            RegisterTypeSurrogate(new NullSerializationSurrogate());
+            ///Generics are not supportorted onwards from 4.1
+             RegisterTypeSurrogate(new NullSerializationSurrogate());
 
             RegisterTypeSurrogate(new IDictionarySerializationSurrogate(typeof(Hashtable)));
             RegisterTypeSurrogate(new IDictionarySerializationSurrogate(typeof(SortedList)));
 
 
+            ///Generics are not supportorted onwards from 4.1
             RegisterTypeSurrogate(new NullSerializationSurrogate());
-
 
 			RegisterTypeSurrogate(new SessionStateCollectionSerializationSurrogate(typeof(SessionStateItemCollection), null));
             RegisterTypeSurrogate(new SessionStateStaticObjectCollectionSerializationSurrogate(typeof(System.Web.HttpStaticObjectsCollection), null));
@@ -487,7 +488,6 @@ namespace Alachisoft.NCache.Serialization
         /// <param name="cacheContext"></param>
 		static public void UnregisterTypeSurrogate(ISerializationSurrogate surrogate,string cacheContext)
 		{
-           
 		}
 
         /// <summary>

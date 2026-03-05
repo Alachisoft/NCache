@@ -10,14 +10,14 @@
 // Generated from: ManagementCommand.proto
 namespace Alachisoft.NCache.Common.Protobuf
 {
-  [global::System.Serializable, global::ProtoBuf.ProtoContract(Name=@"ManagementCommand")]
-  public partial class ManagementCommand : global::ProtoBuf.IExtensible
+  [global::System.Serializable, global::ProtoBuf.Extended.ProtoContract(Name=@"ManagementCommand")]
+  public partial class ManagementCommand : global::ProtoBuf.Extended.IExtensible
   {
     public ManagementCommand() {}
     
 
     private long _requestId = default(long);
-    [global::ProtoBuf.ProtoMember(1, IsRequired = false, Name=@"requestId", DataFormat = global::ProtoBuf.DataFormat.TwosComplement)]
+    [global::ProtoBuf.Extended.ProtoMember(1, IsRequired = false, Name=@"requestId", DataFormat = global::ProtoBuf.Extended.DataFormat.TwosComplement)]
     [global::System.ComponentModel.DefaultValue(default(long))]
     public long requestId
     {
@@ -26,7 +26,7 @@ namespace Alachisoft.NCache.Common.Protobuf
     }
 
     private int _commandVersion = (int)0;
-    [global::ProtoBuf.ProtoMember(2, IsRequired = false, Name=@"commandVersion", DataFormat = global::ProtoBuf.DataFormat.TwosComplement)]
+    [global::ProtoBuf.Extended.ProtoMember(2, IsRequired = false, Name=@"commandVersion", DataFormat = global::ProtoBuf.Extended.DataFormat.TwosComplement)]
     [global::System.ComponentModel.DefaultValue((int)0)]
     public int commandVersion
     {
@@ -35,7 +35,7 @@ namespace Alachisoft.NCache.Common.Protobuf
     }
 
     private string _methodName = "";
-    [global::ProtoBuf.ProtoMember(3, IsRequired = false, Name=@"methodName", DataFormat = global::ProtoBuf.DataFormat.Default)]
+    [global::ProtoBuf.Extended.ProtoMember(3, IsRequired = false, Name=@"methodName", DataFormat = global::ProtoBuf.Extended.DataFormat.Default)]
     [global::System.ComponentModel.DefaultValue("")]
     public string methodName
     {
@@ -44,7 +44,7 @@ namespace Alachisoft.NCache.Common.Protobuf
     }
 
     private int _overload = default(int);
-    [global::ProtoBuf.ProtoMember(4, IsRequired = false, Name=@"overload", DataFormat = global::ProtoBuf.DataFormat.TwosComplement)]
+    [global::ProtoBuf.Extended.ProtoMember(4, IsRequired = false, Name=@"overload", DataFormat = global::ProtoBuf.Extended.DataFormat.TwosComplement)]
     [global::System.ComponentModel.DefaultValue(default(int))]
     public int overload
     {
@@ -53,7 +53,7 @@ namespace Alachisoft.NCache.Common.Protobuf
     }
 
     private byte[] _arguments = null;
-    [global::ProtoBuf.ProtoMember(5, IsRequired = false, Name=@"arguments", DataFormat = global::ProtoBuf.DataFormat.Default)]
+    [global::ProtoBuf.Extended.ProtoMember(5, IsRequired = false, Name=@"arguments", DataFormat = global::ProtoBuf.Extended.DataFormat.Default)]
     [global::System.ComponentModel.DefaultValue(null)]
     public byte[] arguments
     {
@@ -62,7 +62,7 @@ namespace Alachisoft.NCache.Common.Protobuf
     }
 
     private string _objectName = "";
-    [global::ProtoBuf.ProtoMember(6, IsRequired = false, Name=@"objectName", DataFormat = global::ProtoBuf.DataFormat.Default)]
+    [global::ProtoBuf.Extended.ProtoMember(6, IsRequired = false, Name=@"objectName", DataFormat = global::ProtoBuf.Extended.DataFormat.Default)]
     [global::System.ComponentModel.DefaultValue("")]
     public string objectName
     {
@@ -71,30 +71,30 @@ namespace Alachisoft.NCache.Common.Protobuf
     }
 
     private Alachisoft.NCache.Common.Protobuf.ManagementCommand.SourceType _source = Alachisoft.NCache.Common.Protobuf.ManagementCommand.SourceType.TOOL;
-    [global::ProtoBuf.ProtoMember(7, IsRequired = false, Name=@"source", DataFormat = global::ProtoBuf.DataFormat.TwosComplement)]
+    [global::ProtoBuf.Extended.ProtoMember(7, IsRequired = false, Name=@"source", DataFormat = global::ProtoBuf.Extended.DataFormat.TwosComplement)]
     [global::System.ComponentModel.DefaultValue(Alachisoft.NCache.Common.Protobuf.ManagementCommand.SourceType.TOOL)]
     public Alachisoft.NCache.Common.Protobuf.ManagementCommand.SourceType source
     {
       get { return _source; }
       set { _source = value; }
     }
-    [global::ProtoBuf.ProtoContract(Name=@"SourceType")]
+    [global::ProtoBuf.Extended.ProtoContract(Name=@"SourceType")]
     public enum SourceType
     {
             
-      [global::ProtoBuf.ProtoEnum(Name=@"TOOL", Value=1)]
+      [global::ProtoBuf.Extended.ProtoEnum(Name=@"TOOL", Value=1)]
       TOOL = 1,
             
-      [global::ProtoBuf.ProtoEnum(Name=@"MANAGER", Value=2)]
+      [global::ProtoBuf.Extended.ProtoEnum(Name=@"MANAGER", Value=2)]
       MANAGER = 2,
             
-      [global::ProtoBuf.ProtoEnum(Name=@"MONITOR", Value=3)]
+      [global::ProtoBuf.Extended.ProtoEnum(Name=@"MONITOR", Value=3)]
       MONITOR = 3
     }
   
-    private global::ProtoBuf.IExtension extensionObject;
-    global::ProtoBuf.IExtension global::ProtoBuf.IExtensible.GetExtensionObject(bool createIfMissing)
-      { return global::ProtoBuf.Extensible.GetExtensionObject(ref extensionObject, createIfMissing); }
+    private global::ProtoBuf.Extended.IExtension extensionObject;
+   global::ProtoBuf.Extended.IExtension global::ProtoBuf.Extended.IExtensible.GetExtensionObject(bool createIfMissing)
+      { return global::ProtoBuf.Extended.Extensible.GetExtensionObject(ref extensionObject, createIfMissing); }
   }
   
 }

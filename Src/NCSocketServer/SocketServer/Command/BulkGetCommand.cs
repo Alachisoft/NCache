@@ -1,4 +1,4 @@
-//  Copyright (c) 2021 Alachisoft
+//  Copyright (c) 2026 Alachisoft
 //  
 //  Licensed under the Apache License, Version 2.0 (the "License");
 //  you may not use this file except in compliance with the License.
@@ -28,7 +28,7 @@ using Alachisoft.NCache.Common.DataSource;
 using Alachisoft.NCache.Runtime.Caching;
 using Alachisoft.NCache.Common.Pooling;
 using Alachisoft.NCache.Util;
-using Alachisoft.NCache.SocketServer.Util;
+using Alachisoft.NCache.Common.ResponseSerialization;
 
 namespace Alachisoft.NCache.SocketServer.Command
 {
@@ -93,7 +93,14 @@ namespace Alachisoft.NCache.SocketServer.Command
                     if (!base.immatureId.Equals("-2"))
                     {
                         //PROTOBUF:RESPONSE
-                        _serializedResponsePackets.Add(Alachisoft.NCache.Common.Util.ResponseHelper.SerializeExceptionResponseWithType(exc, command.requestID, command.commandID, clientManager.ClientVersion));
+                        ResponseOptions responseOptions = new ResponseOptions()
+                        {
+                            Exception = exc,
+                            RequestId = command.requestID,
+                            CommandId = command.commandID,
+                        };
+
+                        _serializedResponsePackets.Add(clientManager.ResponseBuilder.BuildExceptionResponse(responseOptions));
                     }
                     return;
                 }
@@ -107,7 +114,6 @@ namespace Alachisoft.NCache.SocketServer.Command
                 {
                     OperationContext operationContext = new OperationContext(OperationContextFieldName.OperationType, OperationContextOperationType.CacheOperation);
                     operationContext.Add(OperationContextFieldName.ClientLastViewId, cmdInfo.ClientLastViewId);
-                    CommandsUtil.PopulateClientIdInContext(ref operationContext, clientManager.ClientAddress);
                     if (!string.IsNullOrEmpty(cmdInfo.IntendedRecipient))
                         operationContext.Add(OperationContextFieldName.IntendedRecipient, cmdInfo.IntendedRecipient);
 
@@ -130,7 +136,14 @@ namespace Alachisoft.NCache.SocketServer.Command
                     _getBulkResult = OperationResult.Failure;
                     exception = exc.ToString();
                     //PROTOBUF:RESPONSE
-                    _serializedResponsePackets.Add(Alachisoft.NCache.Common.Util.ResponseHelper.SerializeExceptionResponseWithType(exc, command.requestID, command.commandID, clientManager.ClientVersion));
+                    ResponseOptions responseOptions = new ResponseOptions()
+                    {
+                        Exception = exc,
+                        RequestId = command.requestID,
+                        CommandId = command.commandID,
+                    };
+
+                    _serializedResponsePackets.Add(clientManager.ResponseBuilder.BuildExceptionResponse(responseOptions));
                 }
                 finally
                 {

@@ -1,4 +1,4 @@
-﻿//  Copyright (c) 2021 Alachisoft
+﻿//  Copyright (c) 2026 Alachisoft
 //  
 //  Licensed under the Apache License, Version 2.0 (the "License");
 //  you may not use this file except in compliance with the License.
@@ -15,6 +15,8 @@ using System;
 using System.Net.Sockets;
 using System.Net;
 using Alachisoft.NCache.Common.Communication.Exceptions;
+using System.IO;
+using Alachisoft.NCache.Common.Logger;
 
 namespace Alachisoft.NCache.Common.Communication
 {
@@ -24,6 +26,9 @@ namespace Alachisoft.NCache.Common.Communication
         private bool _connected;
         private object _sync_lock = new object();
         private IPAddress _bindIP;
+        public Stream Stream { get; private set; }
+        public Socket GetSocket { get { return _socket; } }
+        internal NCacheLogger _logger = new NCacheLogger();
 
         public bool Connect(string serverIP, int port)
         {
@@ -39,6 +44,8 @@ namespace Alachisoft.NCache.Common.Communication
                 socket.Connect(ip, port);
                 connected = true;
                 _socket = socket;
+                Stream = new NetworkStream(socket);
+                connected = true;
             }
             catch (Exception e)
             {
@@ -53,11 +60,14 @@ namespace Alachisoft.NCache.Common.Communication
         {
             try
             {
-                if (_socket != null && _socket.Connected)
+                if (Stream != null)
                 {
-                    
-                        _socket.Shutdown(SocketShutdown.Both);
-                        _socket.Close();
+                    Stream.Close();
+                }
+                if (_socket != null)
+                {
+                    _socket.Shutdown(SocketShutdown.Both);
+                    _socket.Close();
                 }
             }
             catch (Exception) { }
@@ -71,23 +81,16 @@ namespace Alachisoft.NCache.Common.Communication
             {
                 if (_connected)
                 {
-                    int dataSent = 0;
-
-                    while (count > 0)
+try
                     {
-                        try
-                        {
-                            dataSent = _socket.Send(buffer, offset, count, SocketFlags.None);
-                            offset += dataSent;
-                            count = count - dataSent;
-                        }
-                        catch (SocketException se)
-                        {
-                            _connected = false;
-                            throw new ConnectionException(se.Message,se);
-                        }
+                        Stream.Write(buffer, offset, count);
+                        sent = true;
                     }
-                    sent = true;
+                    catch (Exception e) 
+                    { 
+                        _connected = false;
+                        throw new ConnectionException(e.Message, e);
+                    }
                 }
                 else
                     throw new ConnectionException();
@@ -108,17 +111,22 @@ namespace Alachisoft.NCache.Common.Communication
                     {
                         try
                         {
-                            receivedCount = _socket.Receive(buffer, offset, count, SocketFlags.None);
-                            
+                            receivedCount = Stream.Read(buffer, offset, count);
+
                             if (receivedCount == 0) throw new SocketException((int)SocketError.ConnectionReset);
-                            
+
                             offset += receivedCount;
                             count = count - receivedCount;
                         }
                         catch (SocketException se)
                         {
                             _connected = false;
-                            throw new ConnectionException(se.Message,se);
+                            throw new ConnectionException(se.Message, se);
+                        }
+                        catch (IOException io)
+                        {
+                            _connected = false;
+                            throw new ConnectionException(io.Message, io);
                         }
                     }
                     received = true;
@@ -139,7 +147,6 @@ namespace Alachisoft.NCache.Common.Communication
                 return _connected; 
             }
         }
-
         public void Bind(string address)
         {
             if (address == null)

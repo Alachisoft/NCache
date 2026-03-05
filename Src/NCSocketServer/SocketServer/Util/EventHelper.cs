@@ -1,4 +1,4 @@
-//  Copyright (c) 2021 Alachisoft
+//  Copyright (c) 2026 Alachisoft
 //  
 //  Licensed under the Apache License, Version 2.0 (the "License");
 //  you may not use this file except in compliance with the License.
@@ -24,8 +24,6 @@ using Alachisoft.NCache.Common.Caching;
 using Alachisoft.NCache.Common.Enum;
 using Alachisoft.NCache.Runtime.Events;
 using Alachisoft.NCache.Common.Util;
-
-
 namespace Alachisoft.NCache.SocketServer.Util
 {
     internal static class EventHelper

@@ -1,4 +1,4 @@
-//  Copyright (c) 2021 Alachisoft
+//  Copyright (c) 2026 Alachisoft
 //  
 //  Licensed under the Apache License, Version 2.0 (the "License");
 //  you may not use this file except in compliance with the License.
@@ -29,7 +29,7 @@ using System.Runtime.InteropServices;
 #if NETCORE
 [assembly: AssemblyTitle("Alachisoft.NCache.Client (.NETCore)")]
 #else
-[assembly: AssemblyTitle("Alachisoft.NCache.Client")]
+[assembly: AssemblyTitle("Alachisoft.NCache.Client (.NET)")]
 #endif
 
 
@@ -37,7 +37,7 @@ using System.Runtime.InteropServices;
 [assembly: AssemblyCompany("Alachisoft")]
 [assembly: AssemblyProduct("Alachisoft® NCache OpenSource")]
 
-[assembly: AssemblyCopyright("Copyright © 2005-2021 Alachisoft")]
+[assembly: AssemblyCopyright("Copyright © 2005-2026 Alachisoft")]
 [assembly: AssemblyTrademark("NCache ™ is a registered trademark of Alachisoft.")]
 
 [assembly: AssemblyCulture("")]
@@ -53,7 +53,7 @@ using System.Runtime.InteropServices;
 // You can specify all the values or you can default the Revision and Build Numbers 
 // by using the '*' as shown below:
 
-[assembly: AssemblyVersion("5.0.0")]
+[assembly: AssemblyVersion("5.3.0")]
 
 
 //
@@ -83,9 +83,8 @@ using System.Runtime.InteropServices;
 //
 [assembly: AssemblyDelaySign(false)]
 [assembly: AssemblyKeyName("")]
-[assembly: AssemblyKeyFile("..\\..\\Resources\\ncache.snk")]
 [assembly: AssemblyDescriptionAttribute("Client API")]
-[assembly: AssemblyFileVersionAttribute("5.0.5.0")]
-[assembly: AssemblyInformationalVersion("5.0.0")]
-[assembly: InternalsVisibleTo("Alachisoft.NCache.SocketServer, PublicKey=00240000048000009400000006020000002400005253413100040000010001001d52e880bc916ccf859cdcec2e364e066e86136ffef5b9dae06fd02970d1a2b224658f100c17216c40532dfe8f0c274342b20ebfa506067ad95a92891a0381df679be792585190a38e36e117aea93773923bba28bb185ef03ffc5fbec4351ba7fff68bce21d378f30acff1fc1fabdcbf0afc8b6287060fc6fc66bcd75db006bb")]
-[assembly: InternalsVisibleTo("ncacheps, PublicKey=00240000048000009400000006020000002400005253413100040000010001001d52e880bc916ccf859cdcec2e364e066e86136ffef5b9dae06fd02970d1a2b224658f100c17216c40532dfe8f0c274342b20ebfa506067ad95a92891a0381df679be792585190a38e36e117aea93773923bba28bb185ef03ffc5fbec4351ba7fff68bce21d378f30acff1fc1fabdcbf0afc8b6287060fc6fc66bcd75db006bb")]
+[assembly: AssemblyFileVersionAttribute("5.3.6.0")]
+[assembly: AssemblyInformationalVersion("5.3.0")]
+[assembly: InternalsVisibleTo("Alachisoft.NCache.SocketServer")]
+[assembly: InternalsVisibleTo("ncacheps")]

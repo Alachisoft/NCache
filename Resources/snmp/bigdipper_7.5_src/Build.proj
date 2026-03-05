@@ -1,0 +1,43 @@
+<?xml version="1.0"?>
+<Project ToolsVersion="4.0" xmlns="http://schemas.microsoft.com/developer/msbuild/2003" DefaultTargets="Debug">
+    <PropertyGroup>
+        <!--<SharpDevelopBinPath>"C:\Program Files\SharpDevelop\3.0\bin"</SharpDevelopBinPath>-->
+        <ReleaseFolder>.\bin</ReleaseFolder>
+        <LibraryReleaseFolder>.\SharpSnmpLib\Bin\Release</LibraryReleaseFolder>
+        <NDependFolder>H:\Green\NDepend</NDependFolder>
+        <NDependProject>SharpSnmpLib.ndproj</NDependProject>
+        <SignFile>SharpSnmpLib\sharpsnmplib.snk</SignFile>
+    </PropertyGroup>
+    <ItemGroup>
+        <LibraryOutputs Include=".\SharpSnmpLib\bin\Release\sharpsnmplib.*" />
+        <!-- <CFOutputs Include=".\SharpSnmpLib\bin\Release\sharpsnmplib.cf*"/>-->
+    </ItemGroup>
+    <UsingTask AssemblyFile="$(NDependFolder)\MSBuild\NDepend.Build.MSBuild.dll" TaskName="NDependTask" />
+    <Target Name="NDepend" DependsOnTargets="Release">
+        <!--<NDependTask NDependConsoleExePath="$(NDependFolder)" ProjectFilePath="$(NDependProject)" />-->
+        <Exec Command="$(NDependFolder)\NDepend.Console.exe $(NDependProject)" />
+    </Target>
+	<Target Name="Clean">
+	    <MSBuild Projects="SharpSnmpLib.sln" Targets="Clean" />
+	    <MSBuild Projects="SharpSnmpLib.sln" Properties="Configuration=Release;Platform=Any CPU" Targets="Clean" />
+	</Target>	
+    <Target Name="Debug">
+        <Error
+            Text="Please execute prepare.bat (Windows) or prepare.sh (Linux and else) first."
+            Condition="!Exists('$(SignFile)')" />
+        <MSBuild Projects="SharpSnmpLib.sln" />
+    </Target>
+    <Target Name="Release">
+        <Error
+            Text="Please execute prepare.bat (Windows) or prepare.sh (Linux and else) first."
+            Condition="!Exists('$(SignFile)')" />
+        <MSBuild Projects="SharpSnmpLib.sln" Properties="Configuration=Release;Platform=Any CPU" />
+    </Target>
+	<Target Name="Package" DependsOnTargets="Release">
+	    <MSBuild Projects="Sharpsnmplib.cf35.sln"  Properties="Configuration=Release;Platform=Any CPU" />
+	    <MSBuild Projects="sharpsnmplib.shfbproj" Properties="Configuration=Release;Platform=Any CPU" />
+	</Target>
+    <!--<Target Name="CF">
+        <MSBuild Projects="sharpsnmplib.cf35.sln" Properties="Configuration=Release"/>
+    </Target>-->
+</Project>

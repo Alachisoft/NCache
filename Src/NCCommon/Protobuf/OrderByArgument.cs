@@ -11,14 +11,14 @@
 // Note: requires additional types generated from: Order.proto
 namespace Alachisoft.NCache.Common.Protobuf
 {
-  [global::System.Serializable, global::ProtoBuf.ProtoContract(Name=@"OrderByArgument")]
-  public partial class OrderByArgument : global::ProtoBuf.IExtensible
+  [global::System.Serializable, global::ProtoBuf.Extended.ProtoContract(Name=@"OrderByArgument")]
+  public partial class OrderByArgument : global::ProtoBuf.Extended.IExtensible
   {
     public OrderByArgument() {}
     
 
     private string _attributeName = "";
-    [global::ProtoBuf.ProtoMember(1, IsRequired = false, Name=@"attributeName", DataFormat = global::ProtoBuf.DataFormat.Default)]
+    [global::ProtoBuf.Extended.ProtoMember(1, IsRequired = false, Name=@"attributeName", DataFormat = global::ProtoBuf.Extended.DataFormat.Default)]
     [global::System.ComponentModel.DefaultValue("")]
     public string attributeName
     {
@@ -27,16 +27,16 @@ namespace Alachisoft.NCache.Common.Protobuf
     }
 
     private Alachisoft.NCache.Common.Protobuf.Order _order = Alachisoft.NCache.Common.Protobuf.Order.ASC;
-    [global::ProtoBuf.ProtoMember(2, IsRequired = false, Name=@"order", DataFormat = global::ProtoBuf.DataFormat.TwosComplement)]
+    [global::ProtoBuf.Extended.ProtoMember(2, IsRequired = false, Name=@"order", DataFormat = global::ProtoBuf.Extended.DataFormat.TwosComplement)]
     [global::System.ComponentModel.DefaultValue(Alachisoft.NCache.Common.Protobuf.Order.ASC)]
     public Alachisoft.NCache.Common.Protobuf.Order order
     {
       get { return _order; }
       set { _order = value; }
     }
-    private global::ProtoBuf.IExtension extensionObject;
-    global::ProtoBuf.IExtension global::ProtoBuf.IExtensible.GetExtensionObject(bool createIfMissing)
-      { return global::ProtoBuf.Extensible.GetExtensionObject(ref extensionObject, createIfMissing); }
+    private global::ProtoBuf.Extended.IExtension extensionObject;
+   global::ProtoBuf.Extended.IExtension global::ProtoBuf.Extended.IExtensible.GetExtensionObject(bool createIfMissing)
+      { return global::ProtoBuf.Extended.Extensible.GetExtensionObject(ref extensionObject, createIfMissing); }
   }
   
 }

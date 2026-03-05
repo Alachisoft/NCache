@@ -14,14 +14,14 @@
 // Note: requires additional types generated from: ModuleInfo.proto
 namespace Alachisoft.NCache.Common.Protobuf
 {
-  [global::System.Serializable, global::ProtoBuf.ProtoContract(Name=@"DumpCacheItem")]
-  public partial class DumpCacheItem : global::ProtoBuf.IExtensible
+  [global::System.Serializable, global::ProtoBuf.Extended.ProtoContract(Name=@"DumpCacheItem")]
+  public partial class DumpCacheItem : global::ProtoBuf.Extended.IExtensible
   {
     public DumpCacheItem() {}
     
 
     private long _lockTicks = default(long);
-    [global::ProtoBuf.ProtoMember(1, IsRequired = false, Name=@"lockTicks", DataFormat = global::ProtoBuf.DataFormat.TwosComplement)]
+    [global::ProtoBuf.Extended.ProtoMember(1, IsRequired = false, Name=@"lockTicks", DataFormat = global::ProtoBuf.Extended.DataFormat.TwosComplement)]
     [global::System.ComponentModel.DefaultValue(default(long))]
     public long lockTicks
     {
@@ -30,7 +30,7 @@ namespace Alachisoft.NCache.Common.Protobuf
     }
 
     private int _priority = default(int);
-    [global::ProtoBuf.ProtoMember(2, IsRequired = false, Name=@"priority", DataFormat = global::ProtoBuf.DataFormat.TwosComplement)]
+    [global::ProtoBuf.Extended.ProtoMember(2, IsRequired = false, Name=@"priority", DataFormat = global::ProtoBuf.Extended.DataFormat.TwosComplement)]
     [global::System.ComponentModel.DefaultValue(default(int))]
     public int priority
     {
@@ -39,7 +39,7 @@ namespace Alachisoft.NCache.Common.Protobuf
     }
 
     private bool _hasExpired = default(bool);
-    [global::ProtoBuf.ProtoMember(3, IsRequired = false, Name=@"hasExpired", DataFormat = global::ProtoBuf.DataFormat.Default)]
+    [global::ProtoBuf.Extended.ProtoMember(3, IsRequired = false, Name=@"hasExpired", DataFormat = global::ProtoBuf.Extended.DataFormat.Default)]
     [global::System.ComponentModel.DefaultValue(default(bool))]
     public bool hasExpired
     {
@@ -48,7 +48,7 @@ namespace Alachisoft.NCache.Common.Protobuf
     }
 
     private bool _needsResync = default(bool);
-    [global::ProtoBuf.ProtoMember(4, IsRequired = false, Name=@"needsResync", DataFormat = global::ProtoBuf.DataFormat.Default)]
+    [global::ProtoBuf.Extended.ProtoMember(4, IsRequired = false, Name=@"needsResync", DataFormat = global::ProtoBuf.Extended.DataFormat.Default)]
     [global::System.ComponentModel.DefaultValue(default(bool))]
     public bool needsResync
     {
@@ -57,7 +57,7 @@ namespace Alachisoft.NCache.Common.Protobuf
     }
 
     private long _absExp = default(long);
-    [global::ProtoBuf.ProtoMember(5, IsRequired = false, Name=@"absExp", DataFormat = global::ProtoBuf.DataFormat.TwosComplement)]
+    [global::ProtoBuf.Extended.ProtoMember(5, IsRequired = false, Name=@"absExp", DataFormat = global::ProtoBuf.Extended.DataFormat.TwosComplement)]
     [global::System.ComponentModel.DefaultValue(default(long))]
     public long absExp
     {
@@ -66,7 +66,7 @@ namespace Alachisoft.NCache.Common.Protobuf
     }
 
     private long _sldExp = default(long);
-    [global::ProtoBuf.ProtoMember(6, IsRequired = false, Name=@"sldExp", DataFormat = global::ProtoBuf.DataFormat.TwosComplement)]
+    [global::ProtoBuf.Extended.ProtoMember(6, IsRequired = false, Name=@"sldExp", DataFormat = global::ProtoBuf.Extended.DataFormat.TwosComplement)]
     [global::System.ComponentModel.DefaultValue(default(long))]
     public long sldExp
     {
@@ -75,7 +75,7 @@ namespace Alachisoft.NCache.Common.Protobuf
     }
 
     private int _flag = default(int);
-    [global::ProtoBuf.ProtoMember(7, IsRequired = false, Name=@"flag", DataFormat = global::ProtoBuf.DataFormat.TwosComplement)]
+    [global::ProtoBuf.Extended.ProtoMember(7, IsRequired = false, Name=@"flag", DataFormat = global::ProtoBuf.Extended.DataFormat.TwosComplement)]
     [global::System.ComponentModel.DefaultValue(default(int))]
     public int flag
     {
@@ -84,7 +84,7 @@ namespace Alachisoft.NCache.Common.Protobuf
     }
 
     private ulong _version = default(ulong);
-    [global::ProtoBuf.ProtoMember(8, IsRequired = false, Name=@"version", DataFormat = global::ProtoBuf.DataFormat.TwosComplement)]
+    [global::ProtoBuf.Extended.ProtoMember(8, IsRequired = false, Name=@"version", DataFormat = global::ProtoBuf.Extended.DataFormat.TwosComplement)]
     [global::System.ComponentModel.DefaultValue(default(ulong))]
     public ulong version
     {
@@ -93,7 +93,7 @@ namespace Alachisoft.NCache.Common.Protobuf
     }
 
     private long _creationTime = default(long);
-    [global::ProtoBuf.ProtoMember(9, IsRequired = false, Name=@"creationTime", DataFormat = global::ProtoBuf.DataFormat.TwosComplement)]
+    [global::ProtoBuf.Extended.ProtoMember(9, IsRequired = false, Name=@"creationTime", DataFormat = global::ProtoBuf.Extended.DataFormat.TwosComplement)]
     [global::System.ComponentModel.DefaultValue(default(long))]
     public long creationTime
     {
@@ -102,7 +102,7 @@ namespace Alachisoft.NCache.Common.Protobuf
     }
 
     private string _group = "";
-    [global::ProtoBuf.ProtoMember(10, IsRequired = false, Name=@"group", DataFormat = global::ProtoBuf.DataFormat.Default)]
+    [global::ProtoBuf.Extended.ProtoMember(10, IsRequired = false, Name=@"group", DataFormat = global::ProtoBuf.Extended.DataFormat.Default)]
     [global::System.ComponentModel.DefaultValue("")]
     public string group
     {
@@ -111,7 +111,7 @@ namespace Alachisoft.NCache.Common.Protobuf
     }
 
     private string _subGroup = "";
-    [global::ProtoBuf.ProtoMember(11, IsRequired = false, Name=@"subGroup", DataFormat = global::ProtoBuf.DataFormat.Default)]
+    [global::ProtoBuf.Extended.ProtoMember(11, IsRequired = false, Name=@"subGroup", DataFormat = global::ProtoBuf.Extended.DataFormat.Default)]
     [global::System.ComponentModel.DefaultValue("")]
     public string subGroup
     {
@@ -120,7 +120,7 @@ namespace Alachisoft.NCache.Common.Protobuf
     }
 
     private Alachisoft.NCache.Common.Protobuf.TagInfo _tagInfo = null;
-    [global::ProtoBuf.ProtoMember(12, IsRequired = false, Name=@"tagInfo", DataFormat = global::ProtoBuf.DataFormat.Default)]
+    [global::ProtoBuf.Extended.ProtoMember(12, IsRequired = false, Name=@"tagInfo", DataFormat = global::ProtoBuf.Extended.DataFormat.Default)]
     [global::System.ComponentModel.DefaultValue(null)]
     public Alachisoft.NCache.Common.Protobuf.TagInfo tagInfo
     {
@@ -128,7 +128,7 @@ namespace Alachisoft.NCache.Common.Protobuf
       set { _tagInfo = value; }
     }
     private string _key = "";
-    [global::ProtoBuf.ProtoMember(15, IsRequired = false, Name=@"key", DataFormat = global::ProtoBuf.DataFormat.Default)]
+    [global::ProtoBuf.Extended.ProtoMember(15, IsRequired = false, Name=@"key", DataFormat = global::ProtoBuf.Extended.DataFormat.Default)]
     [global::System.ComponentModel.DefaultValue("")]
     public string key
     {
@@ -137,7 +137,7 @@ namespace Alachisoft.NCache.Common.Protobuf
     }
 
     private long _remainingabs = default(long);
-    [global::ProtoBuf.ProtoMember(16, IsRequired = false, Name=@"remainingabs", DataFormat = global::ProtoBuf.DataFormat.TwosComplement)]
+    [global::ProtoBuf.Extended.ProtoMember(16, IsRequired = false, Name=@"remainingabs", DataFormat = global::ProtoBuf.Extended.DataFormat.TwosComplement)]
     [global::System.ComponentModel.DefaultValue(default(long))]
     public long remainingabs
     {
@@ -146,7 +146,7 @@ namespace Alachisoft.NCache.Common.Protobuf
     }
 
     private string _provider = "";
-    [global::ProtoBuf.ProtoMember(17, IsRequired = false, Name=@"provider", DataFormat = global::ProtoBuf.DataFormat.Default)]
+    [global::ProtoBuf.Extended.ProtoMember(17, IsRequired = false, Name=@"provider", DataFormat = global::ProtoBuf.Extended.DataFormat.Default)]
     [global::System.ComponentModel.DefaultValue("")]
     public string provider
     {
@@ -155,7 +155,7 @@ namespace Alachisoft.NCache.Common.Protobuf
     }
 
     private byte[] _onevalue = null;
-    [global::ProtoBuf.ProtoMember(18, IsRequired = false, Name=@"onevalue", DataFormat = global::ProtoBuf.DataFormat.Default)]
+    [global::ProtoBuf.Extended.ProtoMember(18, IsRequired = false, Name=@"onevalue", DataFormat = global::ProtoBuf.Extended.DataFormat.Default)]
     [global::System.ComponentModel.DefaultValue(null)]
     public byte[] onevalue
     {
@@ -164,25 +164,16 @@ namespace Alachisoft.NCache.Common.Protobuf
     }
 
     private bool _isModuleData = default(bool);
-    [global::ProtoBuf.ProtoMember(19, IsRequired = false, Name=@"isModuleData", DataFormat = global::ProtoBuf.DataFormat.Default)]
+    [global::ProtoBuf.Extended.ProtoMember(19, IsRequired = false, Name=@"isModuleData", DataFormat = global::ProtoBuf.Extended.DataFormat.Default)]
     [global::System.ComponentModel.DefaultValue(default(bool))]
     public bool isModuleData
     {
       get { return _isModuleData; }
       set { _isModuleData = value; }
     }
-
-    private Alachisoft.NCache.Common.Protobuf.ModuleInfo _moduleInfo = null;
-    [global::ProtoBuf.ProtoMember(20, IsRequired = false, Name=@"moduleInfo", DataFormat = global::ProtoBuf.DataFormat.Default)]
-    [global::System.ComponentModel.DefaultValue(null)]
-    public Alachisoft.NCache.Common.Protobuf.ModuleInfo moduleInfo
-    {
-      get { return _moduleInfo; }
-      set { _moduleInfo = value; }
-    }
-    private global::ProtoBuf.IExtension extensionObject;
-    global::ProtoBuf.IExtension global::ProtoBuf.IExtensible.GetExtensionObject(bool createIfMissing)
-      { return global::ProtoBuf.Extensible.GetExtensionObject(ref extensionObject, createIfMissing); }
+    private global::ProtoBuf.Extended.IExtension extensionObject;
+   global::ProtoBuf.Extended.IExtension global::ProtoBuf.Extended.IExtensible.GetExtensionObject(bool createIfMissing)
+      { return global::ProtoBuf.Extended.Extensible.GetExtensionObject(ref extensionObject, createIfMissing); }
   }
   
 }

@@ -1,4 +1,4 @@
-//  Copyright (c) 2021 Alachisoft
+//  Copyright (c) 2026 Alachisoft
 //  
 //  Licensed under the Apache License, Version 2.0 (the "License");
 //  you may not use this file except in compliance with the License.
@@ -84,18 +84,31 @@ namespace Alachisoft.NCache.Client
 
         public static CacheServerConfig GetCacheDom(string cacheId, string userId, string password, bool inproc)
         {
-            string filePath = GetBaseFilePath("config.ncconf");
+
+            Search result = Search.LocalSearch;
+            Search search = Search.LocalSearch;
+
             CacheServerConfig dom = null;
 
-            if (filePath != null)
+            while (true)
             {
-                try
+                string filePath = GetBaseFilePath("config.ncconf", search, out result);
+
+
+                if (filePath != null)
                 {
-                    dom = ThinClientConfigManager.GetConfigDom(cacheId, filePath, userId, password, inproc);
+                    try
+                    {
+                        dom = ThinClientConfigManager.GetConfigDom(cacheId, filePath, userId, password, inproc);
+                    }
+                    catch (ManagementException exception)
+                    {
+                    }
                 }
-                catch (ManagementException exception)
-                {
-                }
+
+                if (dom != null || result == Search.GlobalSearch) break;
+                search = result + 1;
+
             }
 
             return dom;
@@ -183,7 +196,7 @@ namespace Alachisoft.NCache.Client
             path = Environment.CurrentDirectory + Path.DirectorySeparatorChar + fileName;
             if (File.Exists(path))
                 return path;
-            return SearchLocalConfig(fileName, out result);
+            return SearchLocalConfig(fileName, out result) ?? null;
         }
 
         private static string SearchLocalConfig(string fileName, out Search result)
@@ -192,7 +205,6 @@ namespace Alachisoft.NCache.Client
             String path = null;
             bool found = false;
 #if !NETCORE
-            //TODO: ALACHISOFT (HttpContext is missing in .Net Core)
             if (HttpRuntime.AppDomainAppId != null || HttpContext.Current != null)
             {
                 string approot = null;
@@ -257,7 +269,7 @@ namespace Alachisoft.NCache.Client
             }
             else
                 return path;
-            return SearchGlobal(fileName, out result);
+            return SearchGlobal(fileName, out result) ?? path;
         }
 
         private static string SearchGlobal(string fileName, out Search result)

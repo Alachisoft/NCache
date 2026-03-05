@@ -1,0 +1,192 @@
+group Dbg;
+
+/*
+ [The "BSD license"]
+ Copyright (c) 2005-2009 Terence Parr
+ All rights reserved.
+
+ Redistribution and use in source and binary forms, with or without
+ modification, are permitted provided that the following conditions
+ are met:
+ 1. Redistributions of source code must retain the above copyright
+    notice, this list of conditions and the following disclaimer.
+ 2. Redistributions in binary form must reproduce the above copyright
+    notice, this list of conditions and the following disclaimer in the
+    documentation and/or other materials provided with the distribution.
+ 3. The name of the author may not be used to endorse or promote products
+    derived from this software without specific prior written permission.
+
+ THIS SOFTWARE IS PROVIDED BY THE AUTHOR ``AS IS'' AND ANY EXPRESS OR
+ IMPLIED WARRANTIES, INCLUDING, BUT NOT LIMITED TO, THE IMPLIED WARRANTIES
+ OF MERCHANTABILITY AND FITNESS FOR A PARTICULAR PURPOSE ARE DISCLAIMED.
+ IN NO EVENT SHALL THE AUTHOR BE LIABLE FOR ANY DIRECT, INDIRECT,
+ INCIDENTAL, SPECIAL, EXEMPLARY, OR CONSEQUENTIAL DAMAGES (INCLUDING, BUT
+ NOT LIMITED TO, PROCUREMENT OF SUBSTITUTE GOODS OR SERVICES; LOSS OF USE,
+ DATA, OR PROFITS; OR BUSINESS INTERRUPTION) HOWEVER CAUSED AND ON ANY
+ THEORY OF LIABILITY, WHETHER IN CONTRACT, STRICT LIABILITY, OR TORT
+ (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF
+ THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
+*/
+
+@parserBody.mixins() ::= <<
+include ANTLR3::<if(profile)>Profile<else>Debug<endif>::ParserEvents
+>>
+
+
+@parserBody.additionalMembers() ::= <<
+<if(grammar.grammarIsRoot)>
+RULE_NAMES = [
+  :invalid_rule, <grammar.allImportedRules:{rST|:<rST.name>}; wrap="\n  ", separator=", ">
+].freeze
+<endif>
+>>
+
+
+@rule.body() ::= <<
+in_rule(grammar_file_name, "<ruleName>") do
+  @debug_listener.location(<ruleDescriptor.tree.line>, <ruleDescriptor.tree.column>)
+
+  <@super.body()>
+
+  @debug_listener.location(<ruleDescriptor.EORNode.line>, <ruleDescriptor.EORNode.column>)
+end
+>>
+
+
+// Common debug event triggers used by region overrides below
+enterSubRule() ::= <<
+in_subrule(<decisionNumber>) do<\n>
+>>
+
+
+exitSubRule() ::= <<
+end<\n>
+>>
+
+
+enterDecision() ::= <<
+in_decision(<decisionNumber>) do<\n>
+>>
+
+
+exitDecision() ::= <<
+end<\n>
+>>
+
+
+enterAlt(n) ::= <<
+in_alternative(<n>)<\n>
+>>
+
+
+// Region overrides that tell various constructs to add debugging triggers
+@block.body() ::= <<
+in_subrule(<decisionNumber>) do
+  <@super.body()>
+end
+>>
+
+
+// @blockBody.predecision() ::= "<enterSubRule()>"
+// @blockBody.postdecision() ::= "<exitDecision()>"
+// @blockBody.postbranch() ::= "<exitSubRule()>"
+@blockBody.decision() ::= <<
+in_decision(<decisionNumber>) do
+  <@super.decision()>
+end
+>>
+
+
+@ruleBlock.decision() ::= <<
+in_decision(<decisionNumber>) do
+  <@super.decision()>
+end<\n>
+>>
+
+
+@ruleBlockSingleAlt.prealt() ::= "<enterAlt(n={1})>"
+
+
+@blockSingleAlt.prealt() ::= "<enterAlt(n={1})>"
+
+
+@positiveClosureBlock.loopBody() ::= <<
+in_subrule(<decisionNumber>) do
+  <@super.loopBody()>
+end
+>>
+
+
+@positiveClosureBlockLoop.decisionBody() ::= <<
+in_decision(<decisionNumber>) do
+  <@super.decisionBody()>
+end
+>>
+
+
+@positiveClosureBlockLoop.earlyExitException() ::= <<
+@debug_listener.recognition_exception(eee)
+>>
+
+
+@closureBlock.loopBody() ::= <<
+in_subrule(<decisionNumber>) do
+  <@super.loopBody()>
+end
+>>
+
+
+@closureBlockLoop.decisionBody() ::= <<
+in_decision(<decisionNumber>) do
+  <@super.decisionBody()>
+end
+>>
+
+
+@altSwitchCase.prealt() ::= "<enterAlt(altNum)>"  // altNum is arg of altSwitchCase
+
+
+element(e) ::= <<
+@debug_listener.location(<e.line>, <e.pos>) // e is arg of element
+<super.element(e)>
+>>
+
+
+@matchSet.mismatchedSetException() ::= "@debug_listener.recognition_exception(mse)"
+
+
+@dfaState.noViableAltException() ::= <<
+nvae = NoViableAlternative( "<description>", <decisionNumber>, <stateNumber> )
+@debug_listener.recognition_exception( nvae )
+raise( nvae )<\n>
+>>
+
+@dfaStateSwitch.noViableAltException() ::= <<
+nvae = NoViableAlternative( "<description>", <decisionNumber>, <stateNumber> )
+@debug_listener.recognition_exception( nvae )
+raise( nvae )<\n>
+>>
+
+dfaDecision(decisionNumber,description) ::= <<
+begin
+  @state.cyclic_decision = true
+  <super.dfaDecision(...)>
+rescue ANTLR3::Error::NoViableAlternative => nvae
+  @debug_listener.recognition_exception(nvae)
+  raise
+end
+>>
+
+
+@cyclicDFA.errorMethod() ::= <<
+def error(nvae)
+  @recognizer.debug_listener.recognition_exception(nvae)
+  super
+end
+>>
+/** Force predicate validation to trigger an event */
+evalPredicate(pred,description) ::= <<
+predicate?("<description>") { <pred> }
+>>
+
+

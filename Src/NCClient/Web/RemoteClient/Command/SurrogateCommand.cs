@@ -29,7 +29,6 @@ namespace Alachisoft.NCache.Client
             }
         }
 
-
         internal override CommandType CommandType
         {
             get

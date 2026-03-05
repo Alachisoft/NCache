@@ -1,4 +1,4 @@
-//  Copyright (c) 2021 Alachisoft
+//  Copyright (c) 2026 Alachisoft
 //  
 //  Licensed under the Apache License, Version 2.0 (the "License");
 //  you may not use this file except in compliance with the License.
@@ -39,7 +39,6 @@ namespace Alachisoft.NCache.Serialization.Surrogates
             object custom = reader.Context.GetObject(cookie);
             if (custom == null)
             {
-                // custom = formatter.Deserialize(reader.BaseReader.BaseStream);
                 custom = HttpStaticObjectsCollection.Deserialize(reader.BaseReader);
                 reader.Context.RememberObject(custom, false);
             }
@@ -64,7 +63,6 @@ namespace Alachisoft.NCache.Serialization.Surrogates
             cookie = writer.Context.RememberObject(graph, true);
             writer.Write(cookie);
             ((HttpStaticObjectsCollection)graph).Serialize(writer.BaseWriter);
-            //formatter.Serialize(writer.BaseWriter.BaseStream, graph);
         }
 
         public override void Skip(CompactBinaryReader reader)
@@ -73,7 +71,6 @@ namespace Alachisoft.NCache.Serialization.Surrogates
             object custom = reader.Context.GetObject(cookie);
             if (custom == null)
             {
-                // custom = formatter.Deserialize(reader.BaseReader.BaseStream);
                 custom = HttpStaticObjectsCollection.Deserialize(reader.BaseReader);
                 reader.Context.RememberObject(custom, false);
             }

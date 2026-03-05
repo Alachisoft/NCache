@@ -1,4 +1,4 @@
-//  Copyright (c) 2021 Alachisoft
+//  Copyright (c) 2026 Alachisoft
 //  
 //  Licensed under the Apache License, Version 2.0 (the "License");
 //  you may not use this file except in compliance with the License.
@@ -167,7 +167,8 @@ namespace Alachisoft.NCache.Client
             _config = config;
             _parent = parent;
             _parent.SerializationFormat = _nCache.SerializationFormat;
-
+            
+            SetClientInfo();
             if (_nCache != null)
             {
                 _listener = new CacheEventsListener(_parent.EventListener, _nCache);
@@ -179,8 +180,7 @@ namespace Alachisoft.NCache.Client
 
             AddRef();
             _userId = userId;
-            if (password != null)
-                _password = Alachisoft.NCache.Common.EncryptionUtil.Encrypt(password);
+            
 
 
         }
@@ -608,7 +608,7 @@ namespace Alachisoft.NCache.Client
         /// </example>
         public override void RaiseCustomEvent(object notifId, object data)
         {
-            _nCache.SendNotification(notifId, data, null);
+            _nCache.SendNotification(notifId, data);
         }
 
         /// <summary>

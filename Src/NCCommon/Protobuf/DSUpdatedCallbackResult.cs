@@ -1,4 +1,4 @@
-//  Copyright (c) 2021 Alachisoft
+//  Copyright (c) 2026 Alachisoft
 //  
 //  Licensed under the Apache License, Version 2.0 (the "License");
 //  you may not use this file except in compliance with the License.
@@ -13,14 +13,14 @@
 //  limitations under the License
 namespace Alachisoft.NCache.Common.Protobuf
 {
-    [global::System.Serializable, global::ProtoBuf.ProtoContract(Name=@"DSUpdatedCallbackResult")]
-    public partial class DSUpdatedCallbackResult : global::ProtoBuf.IExtensible
+    [global::System.Serializable, global::ProtoBuf.Extended.ProtoContract(Name=@"DSUpdatedCallbackResult")]
+    public partial class DSUpdatedCallbackResult : global::ProtoBuf.Extended.IExtensible
     {
       public DSUpdatedCallbackResult() {}
       
 
     private string _key = "";
-    [global::ProtoBuf.ProtoMember(1, IsRequired = false, Name=@"key", DataFormat = global::ProtoBuf.DataFormat.Default)][global::System.ComponentModel.DefaultValue("")]
+    [global::ProtoBuf.Extended.ProtoMember(1, IsRequired = false, Name=@"key", DataFormat = global::ProtoBuf.Extended.DataFormat.Default)][global::System.ComponentModel.DefaultValue("")]
     public string key
     {
       get { return _key; }
@@ -28,7 +28,7 @@ namespace Alachisoft.NCache.Common.Protobuf
     }
 
     private Alachisoft.NCache.Common.Protobuf.Exception _exception = null;
-    [global::ProtoBuf.ProtoMember(2, IsRequired = false, Name=@"exception", DataFormat = global::ProtoBuf.DataFormat.Default)][global::System.ComponentModel.DefaultValue(null)]
+    [global::ProtoBuf.Extended.ProtoMember(2, IsRequired = false, Name=@"exception", DataFormat = global::ProtoBuf.Extended.DataFormat.Default)][global::System.ComponentModel.DefaultValue(null)]
     public Alachisoft.NCache.Common.Protobuf.Exception exception
     {
       get { return _exception; }
@@ -36,15 +36,15 @@ namespace Alachisoft.NCache.Common.Protobuf
     }
 
     private bool _success = default(bool);
-    [global::ProtoBuf.ProtoMember(3, IsRequired = false, Name=@"success", DataFormat = global::ProtoBuf.DataFormat.Default)][global::System.ComponentModel.DefaultValue(default(bool))]
+    [global::ProtoBuf.Extended.ProtoMember(3, IsRequired = false, Name=@"success", DataFormat = global::ProtoBuf.Extended.DataFormat.Default)][global::System.ComponentModel.DefaultValue(default(bool))]
     public bool success
     {
       get { return _success; }
       set { _success = value; }
     }
-      private global::ProtoBuf.IExtension extensionObject;
-      global::ProtoBuf.IExtension global::ProtoBuf.IExtensible.GetExtensionObject(bool createIfMissing)
-        { return global::ProtoBuf.Extensible.GetExtensionObject(ref extensionObject, createIfMissing); }
+      private global::ProtoBuf.Extended.IExtension extensionObject;
+     global::ProtoBuf.Extended.IExtension global::ProtoBuf.Extended.IExtensible.GetExtensionObject(bool createIfMissing)
+        { return global::ProtoBuf.Extended.Extensible.GetExtensionObject(ref extensionObject, createIfMissing); }
     }
   
 }

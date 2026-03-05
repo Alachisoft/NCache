@@ -1,4 +1,4 @@
-//  Copyright (c) 2021 Alachisoft
+//  Copyright (c) 2026 Alachisoft
 //  
 //  Licensed under the Apache License, Version 2.0 (the "License");
 //  you may not use this file except in compliance with the License.
@@ -13,6 +13,7 @@
 //  limitations under the License
 using System;
 using Alachisoft.NCache.Common;
+using Alachisoft.NCache.Common.ResponseSerialization;
 
 namespace Alachisoft.NCache.SocketServer.Command
 {
@@ -47,12 +48,25 @@ namespace Alachisoft.NCache.SocketServer.Command
                 response.getLoggingInfoResponse = loggingInfoResponse;
                 response.responseType = Alachisoft.NCache.Common.Protobuf.Response.Type.GET_LOGGING_INFO;
 
-                //_resultPacket = clientManager.ReplyPacket("GETLOGGINGINFORESULT \"" + requestId + "\"" + errorEnabled + "\"" + detailedEnabled + "\"", new byte[0]);
-                _serializedResponsePackets.Add(Alachisoft.NCache.Common.Util.ResponseHelper.SerializeResponse(response,Common.Protobuf.Response.Type.GET_LOGGING_INFO));
+                ResponseOptions responseOptions = new ResponseOptions()
+                {
+                    Response = response,
+                    CommandId = command.commandID,
+                    RequestId = command.requestID,
+                    ResponseType = response.responseType,
+                };
+                _serializedResponsePackets.Add(clientManager.ResponseBuilder.BuildResponse(responseOptions));
             }
             catch (Exception exc)
             {
-                _serializedResponsePackets.Add(Alachisoft.NCache.Common.Util.ResponseHelper.SerializeExceptionResponseWithType(exc, command.requestID, command.commandID, clientManager.ClientVersion));
+                ResponseOptions responseOptions = new ResponseOptions()
+                {
+                    Exception = exc,
+                    RequestId = command.requestID,
+                    CommandId = command.commandID,
+                };
+
+                _serializedResponsePackets.Add(clientManager.ResponseBuilder.BuildExceptionResponse(responseOptions));
             }
         }
 

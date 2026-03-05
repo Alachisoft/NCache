@@ -1,4 +1,4 @@
-//  Copyright (c) 2021 Alachisoft
+//  Copyright (c) 2026 Alachisoft
 //  
 //  Licensed under the Apache License, Version 2.0 (the "License");
 //  you may not use this file except in compliance with the License.
@@ -14,18 +14,18 @@
 using System;
 using System.Collections;
 using System.Text;
+
 using Alachisoft.NCache.Caching;
 using Alachisoft.NCache.Common;
 using System.Collections.Generic;
 using Alachisoft.NCache.SocketServer.Command.ResponseBuilders;
 using Alachisoft.NCache.Common.Pooling;
 using Alachisoft.NCache.Util;
+using Alachisoft.NCache.Common.ResponseSerialization;
 using Runtime = Alachisoft.NCache.Runtime;
 using System.Diagnostics;
 using Alachisoft.NCache.SocketServer.RuntimeLogging;
 using Alachisoft.NCache.Common.Monitoring;
-using Alachisoft.NCache.SocketServer.Util;
-
 namespace Alachisoft.NCache.SocketServer.Command
 {
     class BulkRemoveCommand : CommandBase
@@ -70,8 +70,6 @@ namespace Alachisoft.NCache.SocketServer.Command
         {
             int overload;
             string exception = null;
-            //while(true)
-            //{ 
             Stopwatch stopWatch = new Stopwatch();
             stopWatch.Start();
             try
@@ -87,13 +85,18 @@ namespace Alachisoft.NCache.SocketServer.Command
                     if (!base.immatureId.Equals("-2"))
                     {
                         //PROTOBUF:RESPONSE
-                        _serializedResponsePackets.Add(Alachisoft.NCache.Common.Util.ResponseHelper.SerializeExceptionResponseWithType(exc, command.requestID, command.commandID, clientManager.ClientVersion));
-                        //_resultPacket = clientManager.ReplyPacket(base.ExceptionPacket(exc, base.immatureId), base.ParsingExceptionMessage(exc));
+                        ResponseOptions responseOptions = new ResponseOptions()
+                        {
+                            Exception = exc,
+                            RequestId = command.requestID,
+                            CommandId = command.commandID,
+                        };
+
+                        _serializedResponsePackets.Add(clientManager.ResponseBuilder.BuildExceptionResponse(responseOptions));
                     }
                     return;
                 }
 
-                //TODO
                 byte[] data = null;
                 Hashtable removeResult = null;
 
@@ -109,7 +112,6 @@ namespace Alachisoft.NCache.SocketServer.Command
                     OperationContext operationContext = new OperationContext(OperationContextFieldName.OperationType, OperationContextOperationType.CacheOperation);
                     operationContext.Add(OperationContextFieldName.RaiseCQNotification, true);
                     operationContext.Add(OperationContextFieldName.ClientLastViewId, cmdInfo.ClientLastViewId);
-                    CommandsUtil.PopulateClientIdInContext(ref operationContext, clientManager.ClientAddress);
 
                     operationContext.Add(OperationContextFieldName.ClientId, clientManager.ClientID);
                     operationContext.Add(OperationContextFieldName.ClientOperationTimeout, clientManager.RequestTimeout);
@@ -130,8 +132,14 @@ namespace Alachisoft.NCache.SocketServer.Command
                     _removeBulkResult = OperationResult.Failure;
                     exception = exc.ToString();
                     //PROTOBUF:RESPONSE
-                    _serializedResponsePackets.Add(Alachisoft.NCache.Common.Util.ResponseHelper.SerializeExceptionResponseWithType(exc, command.requestID, command.commandID, clientManager.ClientVersion));
-                    //_resultPacket = clientManager.ReplyPacket(base.ExceptionPacket(exc, cmdInfo.RequestId), base.ExceptionMessage(exc));
+                    ResponseOptions responseOptions = new ResponseOptions()
+                    {
+                        Exception = exc,
+                        RequestId = command.requestID,
+                        CommandId = command.commandID,
+                    };
+
+                    _serializedResponsePackets.Add(clientManager.ResponseBuilder.BuildExceptionResponse(responseOptions));
                 }
                 finally
                 {
@@ -142,7 +150,6 @@ namespace Alachisoft.NCache.SocketServer.Command
                         {
 
                             APILogItemBuilder log = new APILogItemBuilder(MethodsName.REMOVEBULK.ToLower());
-                            // Hashtable expirationHint = log.GetDependencyExpirationAndQueryInfo(cmdInfo.ExpirationHint, cmdInfo.queryInfo);
                             log.GenerateBulkDeleteAPILogItem(cmdInfo.Keys.Length, cmdInfo.FlagMap, cmdInfo.ProviderName, cmdInfo.DsItemsRemovedId, overload, exception, executionTime, clientManager.ClientID.ToLower(), clientManager.ClientSocketId.ToString());
 
                         }
@@ -169,7 +176,6 @@ namespace Alachisoft.NCache.SocketServer.Command
             {
                 cmdInfo.FlagMap.MarkFree(NCModulesConstants.SocketServer);
             }
-        //}
         }
 
         public override void IncrementCounter(Alachisoft.NCache.SocketServer.Statistics.StatisticsCounter collector, long value)
@@ -199,37 +205,5 @@ namespace Alachisoft.NCache.SocketServer.Command
             return cmdInfo;
         }
 
-        //private CommandInfo ParseCommand(ref string command)
-        //{
-        //    CommandInfo cmdInfo = new CommandInfo();
-
-        //    int beginQuoteIndex = 0, endQuoteIndex = 0;
-
-        //    base.UpdateDelimIndexes(ref command, '"', ref beginQuoteIndex, ref endQuoteIndex);
-        //    base.UpdateDelimIndexes(ref command, '"', ref beginQuoteIndex, ref endQuoteIndex);
-
-        //    int size = Convert.ToInt32(command.Substring(beginQuoteIndex + 1, endQuoteIndex - beginQuoteIndex - 1));
-            
-        //    cmdInfo.Keys = new object[size];
-
-        //    for (int i = 0; i < size; i++)
-        //    {
-        //        base.UpdateDelimIndexes(ref command, '"', ref beginQuoteIndex, ref endQuoteIndex);
-        //        //if (beginQuoteIndex + 1 == endQuoteIndex) throw new ArgumentNullException("keys[" + i.ToString() + "]");
-        //        cmdInfo.Keys[i] = command.Substring(beginQuoteIndex + 1, endQuoteIndex - beginQuoteIndex - 1);
-        //    }
-
-        //    base.UpdateDelimIndexes(ref command, '"', ref beginQuoteIndex, ref endQuoteIndex);
-        //    cmdInfo.RequestId = command.Substring(beginQuoteIndex + 1, endQuoteIndex - beginQuoteIndex - 1);
-        //    base.immatureId = cmdInfo.RequestId;
-
-        //    base.UpdateDelimIndexes(ref command, '"', ref beginQuoteIndex, ref endQuoteIndex);
-        //    cmdInfo.FlagMap = new BitSet(Convert.ToByte(command.Substring(beginQuoteIndex + 1, endQuoteIndex - beginQuoteIndex - 1)));
-
-        //    base.UpdateDelimIndexes(ref command, '"', ref beginQuoteIndex, ref endQuoteIndex);
-        //    cmdInfo.DsItemsRemovedId = Convert.ToInt16(command.Substring(beginQuoteIndex + 1, endQuoteIndex - beginQuoteIndex - 1));
-
-        //    return cmdInfo;
-        //}
     }
 }

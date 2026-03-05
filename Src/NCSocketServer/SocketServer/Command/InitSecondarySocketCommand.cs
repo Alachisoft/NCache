@@ -1,4 +1,4 @@
-//  Copyright (c) 2021 Alachisoft
+//  Copyright (c) 2026 Alachisoft
 //  
 //  Licensed under the Apache License, Version 2.0 (the "License");
 //  you may not use this file except in compliance with the License.
@@ -13,7 +13,14 @@
 //  limitations under the License
 using System;
 using System.Net;
+
+
 using Alachisoft.NCache.Runtime.Exceptions;
+
+using Alachisoft.NCache.Licensing;
+
+
+
 using Alachisoft.NCache.Common;
 using Alachisoft.NCache.SocketServer.Util;
 using Alachisoft.NCache.Common.Util;
@@ -87,25 +94,6 @@ namespace Alachisoft.NCache.SocketServer.Command
             return new CommandInfo();
         }
 
-        //private CommandInfo ParseCommand(ref string command, byte[] data)
-        //{
-        //    CommandInfo cmdInfo = new CommandInfo();
 
-        //    int beginQuoteIndex = 0, endQuoteIndex = 0;
-
-        //    base.UpdateDelimIndexes(ref command, '"', ref beginQuoteIndex, ref endQuoteIndex);
-        //    base.UpdateDelimIndexes(ref command, '"', ref beginQuoteIndex, ref endQuoteIndex);
-
-        //    cmdInfo.RequestId = command.Substring(beginQuoteIndex + 1, endQuoteIndex - beginQuoteIndex - 1);
-        //    base.immatureId = cmdInfo.RequestId;
-
-        //    base.UpdateDelimIndexes(ref command, '"', ref beginQuoteIndex, ref endQuoteIndex);
-        //    cmdInfo.ClientID = command.Substring(beginQuoteIndex + 1, endQuoteIndex - beginQuoteIndex - 1);
-
-        //    base.UpdateDelimIndexes(ref command, '"', ref beginQuoteIndex, ref endQuoteIndex);
-        //    cmdInfo.IsDotNetClient = command.Substring(beginQuoteIndex + 1, endQuoteIndex - beginQuoteIndex - 1).Equals("Y");
-                       
-        //    return cmdInfo;
-        //}
     }
 }

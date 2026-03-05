@@ -1,0 +1,42 @@
+<?xml version="1.0"?>
+<package xmlns="http://schemas.microsoft.com/packaging/2011/10/nuspec.xsd">
+  <metadata>
+    <version>7.5.0-alpha</version>
+    <authors>Malcolm Crowe,Lex Li,and other contributors.</authors>
+    <owners>Lex Li</owners>
+    <licenseUrl>http://sharpsnmplib.codeplex.com/wikipage?title=600012&amp;referringTitle=KB</licenseUrl>
+    <projectUrl>http://sharpsnmplib.codeplex.com/</projectUrl>
+    <dependencies>
+      <dependency id="log4net" version="2.0.0" />
+      <dependency id="Antlr.Unofficial" version="3.4.1.0" />
+    </dependencies>
+    <frameworkAssemblies>
+      <frameworkAssembly assemblyName="System" targetFramework="" />
+      <frameworkAssembly assemblyName="System.Core" targetFramework="" />
+    </frameworkAssemblies>
+    <id>Lextm.SharpSnmpLib</id>
+    <title>#SNMP Library</title>
+    <requireLicenseAcceptance>true</requireLicenseAcceptance>
+    <description>#SNMP (SharpSNMP) Suite is a set of free SNMP tools based on an open source library for developers who target Microsoft .NET/Xamarin Mono platforms. It's developed in C# and can be used for VB.NET, Delphi Prism, and more.</description>
+    <summary>#SNMP open source SNMP library for .NET and Mono.</summary>
+    <releaseNotes>* Work item 7224 Refactor core classes to consider byte array length while parsing existing packets is closed.
+* Work item 7225 RFC2021 TimeStamp Error is closed.
+* SharpSnmpLib.Engine.dll is added. Re-licensed under MIT/X11.
+* ANTLR based Compiler is added. Re-licensed under BSD 3 Clause.
+
+http://sharpsnmplib.codeplex.com/releases/view/78947</releaseNotes>
+    <copyright>(C) 2008-2012 Malcolm Crowe, Lex Li, and other contributors.</copyright>
+    <language>en-US</language>
+    <tags>snmp mib smi</tags>
+  </metadata>
+  <files>
+    <file src="..\bin\net35\SharpSnmpLib.dll" target="lib\net35\SharpSnmpLib.dll" />
+    <file src="..\bin\net35\SharpSnmpLib.Engine.dll" target="lib\net35\SharpSnmpLib.Engine.dll" />
+    <file src="..\bin\net35\SharpSnmpLib.Mib.dll" target="lib\net35\SharpSnmpLib.Mib.dll" />
+    <file src="..\bin\net35\SharpSnmpLib.Optional.dll" target="lib\net35\SharpSnmpLib.Optional.dll" />
+    <file src="..\bin\net40\SharpSnmpLib.dll" target="lib\net40\SharpSnmpLib.dll" />
+    <file src="..\bin\net40\SharpSnmpLib.Engine.dll" target="lib\net40\SharpSnmpLib.Engine.dll" />
+    <file src="..\bin\net40\SharpSnmpLib.Mib.dll" target="lib\net40\SharpSnmpLib.Mib.dll" />
+    <file src="..\bin\net40\SharpSnmpLib.Optional.dll" target="lib\net40\SharpSnmpLib.Optional.dll" />
+  </files>
+</package>

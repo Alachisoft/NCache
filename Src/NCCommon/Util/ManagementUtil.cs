@@ -1,4 +1,4 @@
-﻿//  Copyright (c) 2021 Alachisoft
+﻿//  Copyright (c) 2026 Alachisoft
 //  
 //  Licensed under the Apache License, Version 2.0 (the "License");
 //  you may not use this file except in compliance with the License.
@@ -21,6 +21,7 @@ namespace Alachisoft.NCache.Common.Util
             #region [ Cache Server]
             public const string StopServer = "StopServer";
             public const string StartCache = "StartCache";
+            public const string GetServerIdentity = "GetServerIdentity";
             public const string GetClusterIP = "GetClusterIP";
             public const string GetLocalCacheIP = "GetLocalCacheIP";
             public const string CopyAssemblies = "CopyAssemblies";
@@ -113,7 +114,6 @@ namespace Alachisoft.NCache.Common.Util
             public const string GetSnmpPorts = "GetSnmpPorts";
             public const string GetServerPlatform = "GetServerPlatform";
             public const string GetNewConfiguration = "GetNewConfiguration";
-            public const string GetCacheServerConfiguration = "GetCacheServerConfiguration";
             public const string GetNewUpdatedCacheConfiguration = "GetNewUpdatedCacheConfiguration";
             public const string GetServerLicenseInfo = "GetServerLicenseInfo";
             public const string SetClientProductVersion = "SetClientProductVersion";
@@ -125,6 +125,8 @@ namespace Alachisoft.NCache.Common.Util
             public const string UpdateServerMappingConfig = "UpdateServerMappingConfig";
 
             public const string GetServerMappingForClient = "GetServerMappingForClient";
+            public const string SetPublicIPConfiguration = "SetPublicIPConfiguration";
+
             public const string GarbageCollect = "GarbageCollect";
 
             public const string HotApplyConfiguration = "HotApplyConfiguration";
@@ -145,6 +147,7 @@ namespace Alachisoft.NCache.Common.Util
             public const string GetConfigurationVersion = "GetConfigurationVersion";
             public const string GetTopicStats = "GetTopicStats";
             public const string GetCacheProcessID = "GetCacheProcessID";
+            public const string GetServiceProcessID = "GetServiceProcessID";
             public const string GetCounterValue = "GetCounterValue";
             public const string GetPerfmonCategoryNames = "GetPerfmonCategoryNames";
             public const string GetPerfmonInstanceNames = "GetPerfmonInstanceNames";
@@ -177,16 +180,41 @@ namespace Alachisoft.NCache.Common.Util
             public const string ReadLicensingLogFile = "ReadLicensingLogFile";
             public const string AddConnectedclient = "AddConnectedclient";
             public const string RemoveConnectedClient = "RemoveConnectedClient";
+            public const string GetCacheLogList = "GetCacheLogList";
+            public const string GetCacheLogs = "GetCacheLogs";
+            public const string TakeMemoryDump = "TakeMemoryDump";
+            public const string GetMemoryDumpList = "GetMemoryDumpList";
+            public const string RemoveMemoryDump = "RemoveMemoryDump";
+            public const string isDumpCompleted = "isDumpCompleted";
             public const string GetOSPlatform = "GetOSPlatform";
+            public const string GetCacheServerConfiguration = "GetCacheServerConfiguration";
+            public const string StartStressTest = "StartStressTest";
+            public const string GetInstallationTypeProvider = "GetInstallationTypeProvider";
+            public const string GetFullFileNamesFromPath = "GetFullFileNamesFromPath";
+            public const string GetDirectoryNamesFromPath = "GetDirectoryNamesFromPath";
+            public const string ReadFileContentToByteArray = "ReadFileContentToByteArray";
+            public const string PerformCloudServiceRelatedTasks = "PerformCloudServiceRelatedTasks";
+            public const string IsServiceAlive = "IsServiceAlive";
+            public const string GetCumulativeCounters = "GetCumulativeCounters";
+            public const string GetCacheConfigInfo = "GetCacheConfigInfo";
 
-            #region FeatureUsage
+            public const string SendMemoryDumpToFtpServer = "SendMemoryDumpToFtpServer";
+            public const string IsSendingDumpCompleted = "IsSendingDumpCompleted";
+            public const string ApplyServiceConfig = "ApplyServiceConfig";
+
+
+            #region [FeatureUsageAndReporting]
+            public const string GetClientProfileReport = "GetClientProfileReport";
             public const string GetFeatureUsageReport = "GetFeatureUsageReport";
             public const string GetHardwareProfile = "GetHardwareProfile";
             public const string GetMachineId = "GetMachineId";
             public const string GetPossibleMachinesInCluster = "GetPossibleMachinesInCluster";
-            public const string GetClientProfileReport = "GetClientProfileReport";
             #endregion
 
+            public const string SendForcedHeartbeat = "SendForcedHeartbeat";
+            public const string RegisterNCacheEvaluation = "RegisterNCacheEvaluation";
+            public const string LogEvaluationInfo = "LogEvaluationInfo";
+            public const string VerifySecurityFromService = "VerifySecurityFromService";
             #endregion
 
             #region [ Bridge Server ]
@@ -210,7 +238,61 @@ namespace Alachisoft.NCache.Common.Util
             public const string RegisterLoader = "RegisterLoader";
             public const string TaskCompletedStatus = "TaskCompletedStatus";
 
-            
+
+            #endregion
+
+            #region [Module]
+            public const string GetModuleConfiguration = "GetModuleConfiguration";
+            public const string RegisterCachingModule = "RegisterCachingModule";
+            public const string GetAllConfiguredModules = "GetAllConfiguredModules";
+            #endregion
+
+            #region[Metrics Monitor]
+            public const string IsConnected = "IsConnected";
+            public const string PublishMetadata = "PublishMetaData";
+            public const string PublishData = "PublishData";
+            public const string GetCacheAPILogs = "GetCacheAPILogs";
+            public const string GetCacheClusterHealth = "GetCacheClusterHealth";
+            public const string GetCacheCounters = "GetCacheCounters";
+            public const string GetEvents = "GetEvents";
+            public const string GetCacheMetadata = "GetCacheMetadata";
+            public const string GetAllCachesMetaData = "GetAllCachesMetaData";
+            public const string GetMetricsCategories = "GetMetricsCategories";
+            public const string GetMetricsCategoryMeta = "GetMetricsCategoryMeta";
+            public const string GetClientCounters = "GetClientCounters";
+            public const string GetBridgeCounters = "GetBridgeCounters";
+            public const string GetBridgeCacheCounters = "GetBridgeCacheCounters";
+            public const string GetBridgeMetadata = "GetBridgeMetadata";
+            public const string GetBridges = "GetBridges";
+            public const string GetClients = "GetClients";
+            public const string GetClientMetadata = "GetClientMetadata";
+            public const string GetBridgedCaches = "GetBridgedCaches";
+            public const string GetBridgeCacheMeta = "GetBridgeCacheMeta";
+            #endregion
+
+            #region Caching Module
+            public const string GetDistributionInfo = "GetDistributionInfo";
+            public const string GetLatestDistributionMap = "GetLatestDistributionMap";
+            public const string PropogateDistributionMap = "PropogateDistributionMap";
+            public const string RollBackMapPropogation = "RollBackMapPropogation";
+            public const string CommitDistributionMap = "CommitDistributionMap";
+            public const string InstallDistributionMap = "InstallDistributionMap";
+            public const string GetModuleBucketsCount = "GetModuleBucketsCount";
+            public const string ValidateDirectory = "ValidateDirectory";
+            public const string SendLuceneIndexByBucket = "SendLuceneIndexByBucket";
+            public const string GetDrivesAvailableSpace = "GetDrivesAvailableSpace";
+            public const string DisposeIndexClients = "DisposeIndexClients";
+            public const string DeleteBucket = " DeleteBucket";
+            public const string GetIndexTransferredPercentage = "GetIndexTransferredPercentage";
+
+            public const string WriteIndexMetaInfo = "WriteIndexMetaInfo";
+            public const string GetDirectorySize = "GetDirectorySize";
+            public const string GetbucketCount = "GetbucketCount";
+            public const string DataPusher = "DataPusher";
+            public const string ImportPersistenceData = "ImportPersistenceData";
+            public const string ExportPersistenceData = "ExportPersistenceData";
+            public const string GetMigrationJobPercentage = "GetMigrationJobPercentage";
+            public const string StopMigrationJob = "StopMigrationJob";
             #endregion
         }
 

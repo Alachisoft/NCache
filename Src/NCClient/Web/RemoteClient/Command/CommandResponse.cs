@@ -1,4 +1,4 @@
-//  Copyright (c) 2021 Alachisoft
+//  Copyright (c) 2026 Alachisoft
 //  
 //  Licensed under the Apache License, Version 2.0 (the "License");
 //  you may not use this file except in compliance with the License.
@@ -49,7 +49,6 @@ namespace Alachisoft.NCache.Client
 
         /// <summary> Requested requestId of the command.</summary>
         private long _requestId = 0;
-
         private string _intendedRecipient = "";
 
         private int _removedKeyCount;
@@ -81,11 +80,30 @@ namespace Alachisoft.NCache.Client
         /// <summary>Tells with which ip connection is broken</summary>
         private Common.Net.Address _resetConnectionIP;
 
+        private NewHashmap _changedModuleHashmap = null;
+        private NewHashmap _updatedMap = null;
+
         public Common.Net.Address ResetConnectionIP
         {
             get { return _resetConnectionIP; }
             internal set { _resetConnectionIP = value; }
         }
+
+        public NewHashmap ChangedModuleMap
+        {
+            get
+            {
+                return _changedModuleHashmap;
+            }
+
+            set
+            {
+                _changedModuleHashmap = value;
+            }
+        }
+
+        public string MachineIp { get; set; }
+
 
         /// <summary></summary>
         private object _asyncOpResult = null;
@@ -126,6 +144,7 @@ namespace Alachisoft.NCache.Client
         private int _clusterPort;
 
         private Dictionary<string, int> _runningServers = new Dictionary<string, int>();
+        private Dictionary<string, int> _runningServersPublicIp = new Dictionary<string, int>();
         private List<BulkEventItemResponse> _eventList;
         private PollingResult pollingResult = null;
         internal PollingResult PollingResult
@@ -160,6 +179,7 @@ namespace Alachisoft.NCache.Client
        
         private System.Net.IPAddress _serverIp;
         private int _serverPort;
+        private Hashtable _serverPublicIp;
         private int _cacheManagementPort;
         private bool _reconnectClients = false;
 
@@ -198,6 +218,7 @@ namespace Alachisoft.NCache.Client
         private long _messageCount = 0;
 
         private NewHashmap _newHashmap = null;
+        private NewHashmap _newModuleHashmap = null;
 
         private string _queryId;
 
@@ -460,6 +481,29 @@ namespace Alachisoft.NCache.Client
             }
         }
 
+        internal Hashtable OptimalServerPublicIp
+        {
+            get
+            {
+                if (_serverPublicIp != null)
+                    return _serverPublicIp;
+                else
+                    return new Hashtable();
+            }
+        }
+
+        internal Dictionary<string, int> RunningServerPublicIp
+        {
+            get
+            {
+                if (_runningServersPublicIp != null)
+                    return _runningServersPublicIp;
+                else
+                    return new Dictionary<string, int>();
+            }
+        }
+
+
         public IList<Runtime.Caching.ClientInfo> ConnectedClients { get { return _connectedClients; } }
 
         //////////////// changing here for cache mangement port
@@ -554,7 +598,10 @@ namespace Alachisoft.NCache.Client
             get { return this._newHashmap; }
         }
 
-        
+        internal NewHashmap ModuleHashMap
+        {
+            get => this._newModuleHashmap;
+        }
 
         public EventTypeInternal EventType { get; set; }
 
@@ -599,7 +646,16 @@ namespace Alachisoft.NCache.Client
                         _requestId = value.requestId;
                         _commandID = value.commandID;
                         break;
-                        
+                    case Response.Type.HASHMAP_CHANGED_EVENT:
+                        HashmapChangedEventResponse getHashmapUpdatedResponse = value.hashmapChanged;
+                        if (getHashmapUpdatedResponse != null)
+                        {
+                            _updatedMap = NewHashmap.GetDeserializedMap(getHashmapUpdatedResponse);
+                            if (getHashmapUpdatedResponse.serverMapping != null)
+                                _updatedMap.ServerMapping = GetPublicIPList(getHashmapUpdatedResponse.serverMapping);
+                        }
+                        break;
+
                     case Response.Type.COMPACT_TYPE_REGISTER_EVENT:
                         _value = value.compactTypeRegisterEvent.compactTypes;
                         break;
@@ -748,6 +804,16 @@ namespace Alachisoft.NCache.Client
                         _requestId = value.requestId;
                         _serverIp = System.Net.IPAddress.Parse(value.getOptimalServer.server);
                         _serverPort = value.getOptimalServer.port;
+                        if (value.getOptimalServer.serverPublicIp != null && value.getOptimalServer.serverPublicIp.Count > 0)
+                        {
+                            _serverPublicIp = new Hashtable();
+                            _serverPublicIp = GetPublicIPList(value.getOptimalServer.serverPublicIp);
+                        }
+                        break;
+
+                    case Response.Type.GET_SERVER_IDENTITY:
+                        _requestId = value.requestId;
+                        MachineIp = value.getServerIdentityResponse.server;
                         break;
 
                     case Response.Type.GET_CACHE_MANAGEMENT_PORT:
@@ -769,6 +835,13 @@ namespace Alachisoft.NCache.Client
                             foreach (Common.Protobuf.KeyValuePair pair in value.getRunningServer.keyValuePair)
                             {
                                 _runningServers.Add(pair.key, Convert.ToInt32(pair.value));
+                            }
+                        }
+                        if (value.getRunningServer.publicIpList != null && value.getRunningServer.publicIpList.Count > 0)
+                        {
+                            foreach (Common.Protobuf.KeyValuePair pair in value.getRunningServer.publicIpList)
+                            {
+                                _runningServersPublicIp.Add(pair.key, Convert.ToInt32(pair.value));
                             }
                         }
                         break;
@@ -837,7 +910,7 @@ namespace Alachisoft.NCache.Client
                         _lockId = String.IsNullOrEmpty(value.get.lockId) ? null : value.get.lockId;
                         _lockDate = new DateTime(value.get.lockTime);
                         _itemVersion = value.get.version;
-                        EntryType = MiscUtil.ProtoItemTypeToEntryType(value.get.itemType); // (EntryType)value.get.itemType;
+                        EntryType = MiscUtil.ProtoItemTypeToEntryType(value.get.itemType);
 
                         if (value.get.data.Count > 0)
                         {
@@ -945,7 +1018,7 @@ namespace Alachisoft.NCache.Client
 
                                 _flagValueEntry = new CompressedValueEntry();
                                 _flagValueEntry.Flag = new BitSet((byte)keyValuePackage.flag[i]);
-                                _flagValueEntry.Type = MiscUtil.ProtoItemTypeToEntryType(keyValuePackage.itemType[i]); //(EntryType)keyValuePackage.itemType[i];
+                                _flagValueEntry.Type = MiscUtil.ProtoItemTypeToEntryType(keyValuePackage.itemType[i]);
                                 _flagValueEntry.Value = ubObject.GetFullObject();
 
                                 _resultDic.Add(key, _flagValueEntry);
@@ -1099,10 +1172,15 @@ namespace Alachisoft.NCache.Client
                         _requestId = value.requestId;
 
                         Hashtable nodes = new Hashtable();
+                        Hashtable mappedserver = new Hashtable();
+
                         foreach (Common.Protobuf.KeyValuePair pair in value.getHashmap.keyValuePair)
                         {
                             nodes.Add(Convert.ToInt32(pair.key), pair.value);
                         }
+
+                        if (value.getHashmap.serverMapping != null && value.getHashmap.serverMapping.Count > 0)
+                            mappedserver = GetPublicIPList(value.getHashmap.serverMapping);
 
                         ArrayList members = new ArrayList();
                         foreach (string member in value.getHashmap.members)
@@ -1115,14 +1193,10 @@ namespace Alachisoft.NCache.Client
                         this._newHashmap = new NewHashmap(
                             value.getHashmap.viewId,
                             nodes,
-                            members);
+                            members, mappedserver);
                         break;
 
-                    case Alachisoft.NCache.Common.Protobuf.Response.Type.HASHMAP_CHANGED_EVENT:
-                        _requestId = value.requestId;
-                        _value = value.hashmapChanged.table;
-                        break;
-
+                    
                     case Response.Type.EXCEPTION:
                         _requestId = value.requestId;
                         _excType = (ExceptionType)value.exception.type;
@@ -1212,7 +1286,6 @@ namespace Alachisoft.NCache.Client
                         ProcessSurrogateResponse(value);
                         break;
 
-                   
                 }
             }
         }
@@ -1223,7 +1296,7 @@ namespace Alachisoft.NCache.Client
             Response response = null;
             using (var stream = new MemoryStream(value.surrogateResponse.command[0]))
             {
-                response = ProtoBuf.Serializer.Deserialize<Response>(stream);
+                response = ProtoBuf.Extended.Serializer.Deserialize<Response>(stream);
             }
             this.Type = response.responseType;
             this.Src = this.ActualTargetNode;
@@ -1257,7 +1330,11 @@ namespace Alachisoft.NCache.Client
                 }
             }
         }
-
+        internal NewHashmap NewMap
+        {
+            get { return _updatedMap; }
+            set { _updatedMap = value; }
+        }
         internal CompressedValueEntry FlagValueEntry
         {
             get
@@ -1407,8 +1484,7 @@ namespace Alachisoft.NCache.Client
                     case ExceptionType.INVALID_READER_EXCEPTION:
                         throw new InvalidReaderException(_errorCode,_exceptionString,_stackTrace);
 
-                    case ExceptionType.LICENSING_EXCEPION:
-                        throw new LicensingException(_errorCode,_exceptionString,_stackTrace);
+                 
                 }
             }
             else if (_brokerReset)
@@ -1614,10 +1690,9 @@ namespace Alachisoft.NCache.Client
             cacheItem.Priority = (CacheItemPriority)response.priority;
             cacheItem.SubGroup =  null;
      
-            this.EntryType = MiscUtil.ProtoItemTypeToEntryType(response.itemType); // (EntryType)value.getItem.itemType;
+            this.EntryType = MiscUtil.ProtoItemTypeToEntryType(response.itemType);
             UserBinaryObject userObj = UserBinaryObject.CreateUserBinaryObject(response.value.ToArray());
-            
-           
+
             cacheItem.SetValue(userObj.GetFullObject());
             return cacheItem;
         }
@@ -1634,6 +1709,18 @@ namespace Alachisoft.NCache.Client
                 }
             }
             return reciepientIdList;
+        }
+
+        private Hashtable GetPublicIPList(List<Common.Protobuf.KeyValuePair> serverMapping)
+        {
+            Hashtable mappingServer = new Hashtable();
+
+            foreach (Common.Protobuf.KeyValuePair pair in serverMapping)
+            {
+                mappingServer.Add((pair.key), pair.value);
+            }
+
+            return mappingServer;
         }
     }
 }

@@ -1,4 +1,4 @@
-//  Copyright (c) 2021 Alachisoft
+//  Copyright (c) 2026 Alachisoft
 //  
 //  Licensed under the Apache License, Version 2.0 (the "License");
 //  you may not use this file except in compliance with the License.
@@ -17,7 +17,9 @@ using System.Text;
 using Alachisoft.NCache.Common.Configuration;
 using Alachisoft.NCache.Common.Enum;
 using Alachisoft.NCache.Common;
+
 using Alachisoft.NCache.Runtime.Serialization;
+
 using Runtime = Alachisoft.NCache.Runtime;
 
 
@@ -35,7 +37,8 @@ namespace Alachisoft.NCache.Config.NewDom
         double configVersion;
         string configID;
         string name;
-        string _alias = string.Empty;
+        string storeType;
+        string _environment = string.Empty;
         public CacheServerConfig()
         {
             cacheSettings = new CacheServerConfigSetting();
@@ -62,11 +65,19 @@ namespace Alachisoft.NCache.Config.NewDom
             set { name = value; }
         }
 
+        [ConfigurationAttribute(ConfigurationAttributeNames.STORE_TYPE)]
+        public string Store
+        {
+            set { storeType = value; }
+            get { return storeType; }
+        }
+
         [ConfigurationAttribute("alias")]
+
         public string Alias
         {
-            get { return _alias; }
-            set { _alias = value; }
+            get { return _environment; }
+            set { _environment = value; }
         }
 
         [ConfigurationAttribute("config-id")]
@@ -130,13 +141,11 @@ namespace Alachisoft.NCache.Config.NewDom
         {
             get
             {
-                if (string.IsNullOrEmpty(_alias))
+                if (string.IsNullOrEmpty(_environment))
                     return name;
-                return name + "[" + _alias + "]";
+                return name + "[" + _environment + "]";
             }
-       
         }
-
 
         #region ICloneable Members
 
@@ -151,8 +160,8 @@ namespace Alachisoft.NCache.Config.NewDom
             config.IsRunning = this.IsRunning;
             config.licenseIsExpired = this.licenseIsExpired;
             config.name = this.name;
-            config._alias = this._alias;
-
+            config._environment = this._environment;
+            config.storeType = this.storeType;
             return config;
         }
 
@@ -162,7 +171,7 @@ namespace Alachisoft.NCache.Config.NewDom
         public void Deserialize(Runtime.Serialization.IO.CompactReader reader)
         {
             name = reader.ReadObject() as string;
-            _alias = reader.ReadObject() as string;
+            _environment = reader.ReadObject() as string;
             this.cacheSettings = reader.ReadObject() as CacheServerConfigSetting;
             this.cacheDeployment = reader.ReadObject() as CacheDeployment;
             this.configID = reader.ReadString();
@@ -170,13 +179,13 @@ namespace Alachisoft.NCache.Config.NewDom
             cacheIsRunning = reader.ReadBoolean();
             cacheIsRegistered = reader.ReadBoolean();
             licenseIsExpired = reader.ReadBoolean();
-            
+            storeType = reader.ReadObject() as string;
         }
 
         public void Serialize(Runtime.Serialization.IO.CompactWriter writer)
         {
             writer.WriteObject(Name);
-            writer.WriteObject(_alias);
+            writer.WriteObject(_environment);
             writer.WriteObject(cacheSettings);
             writer.WriteObject(this.cacheDeployment);
             writer.Write(configID);
@@ -184,6 +193,7 @@ namespace Alachisoft.NCache.Config.NewDom
             writer.Write(cacheIsRunning);
             writer.Write(cacheIsRegistered);
             writer.Write(licenseIsExpired);
+            writer.WriteObject(storeType);
         }
         #endregion
     }

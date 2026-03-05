@@ -1,4 +1,4 @@
-//  Copyright (c) 2021 Alachisoft
+//  Copyright (c) 2026 Alachisoft
 //  
 //  Licensed under the Apache License, Version 2.0 (the "License");
 //  you may not use this file except in compliance with the License.
@@ -229,7 +229,7 @@ namespace Alachisoft.NCache.Storage.Mmf
 				if (diff > SPLIT_THRESHOLD)
 				{                    
                     MemArena newArena = SplitArena(this, Content.RequiredSpace((uint)value.Length));
-                    if (newArena != this) 
+                    if (newArena != this)     // Caters the case when split arena never splits and returns the same input arena
                         newArena.IsFree = true;
 				}
 
@@ -266,11 +266,12 @@ namespace Alachisoft.NCache.Storage.Mmf
 		/// </summary>
 		internal static MemArena SplitArena(MemArena arena, uint size)
 		{
+			//be on the safe side first..
             uint sizeWithHeader = (uint) (size + Header.Size);
             if (arena.OffsetNext != 0) //Quick and dirty...
                 arena.Capacity = (uint)(arena.OffsetNext - (arena.Offset + Header.Size));
             
-            if (sizeWithHeader > arena.Capacity) //size is replaced by sizeWithHeader...
+            if (sizeWithHeader > arena.Capacity) //size is replaced by sizeWithHeader... 
 				return null;      
             
             uint remainingCapacity = (uint)(arena.Capacity - size - Header.Size); //if value is negative .uint gived garbage. Reason for above change.
@@ -295,7 +296,7 @@ namespace Alachisoft.NCache.Storage.Mmf
             // Fix up links!
 
             MemArena tempArena = arena.NextArena();
-            SetNextArena(newArena, GetActualArena(tempArena));
+            SetNextArena(newArena, GetActualArena(tempArena));//update only the actual arena
             SetNextArena(arena, newArena);			
             return newArena;
 		}
@@ -330,7 +331,7 @@ namespace Alachisoft.NCache.Storage.Mmf
 				{
 					arena.Capacity += freedSpace;                    
                     uint nCapacity = arena.Capacity;
-                    arena = SetNextArena(arena, GetActualArena(next)); //update only the actual arena 
+                    arena = SetNextArena(arena, GetActualArena(next)); //update only the actual arena
                     arena.Capacity = nCapacity;
 				}
 			}
@@ -360,7 +361,7 @@ namespace Alachisoft.NCache.Storage.Mmf
 					arena.Capacity += freedSpace;                    
                     uint nCapacity = arena.Capacity;
                     MemArena tempNext = arena.NextArena();
-                    arena = SetNextArena(cur, GetActualArena(next)); //update only the actual arena
+                    arena = SetNextArena(cur, GetActualArena(next)); //update only the actual arena 
                     arena.Capacity = nCapacity;
 				}
 			}
@@ -429,7 +430,7 @@ namespace Alachisoft.NCache.Storage.Mmf
 		private static MemArena SetNextArena(MemArena arena, MemArena arenaNext)
 		{
 
-            if (arenaNext != null) //avoid scenario when two identical arenas are there for addition. 
+            if (arenaNext != null) //avoid scenario when two identical arenas are there for addition.
             {
                 if (arenaNext == arena)
                     return arena;                
@@ -444,7 +445,7 @@ namespace Alachisoft.NCache.Storage.Mmf
 
 		private static MemArena SetPreviousArena(MemArena arena, MemArena arenaPrev)
 		{
-            if (arenaPrev != null) //avoid scanario when two identical arenas are there for addition. 
+            if (arenaPrev != null) //avoid scanario when two identical arenas are there for addition.
             {
                 if (arenaPrev == arena)
                     return arena;            

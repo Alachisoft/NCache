@@ -1,4 +1,4 @@
-﻿//  Copyright (c) 2021 Alachisoft
+﻿//  Copyright (c) 2026 Alachisoft
 //  
 //  Licensed under the Apache License, Version 2.0 (the "License");
 //  you may not use this file except in compliance with the License.
@@ -15,7 +15,9 @@ using System;
 using System.Collections;
 using System.Text;
 using Alachisoft.NCache.Common.Configuration;
+
 using Alachisoft.NCache.Runtime.Serialization;
+
 using Runtime = Alachisoft.NCache.Runtime;
 
 namespace Alachisoft.NCache.Config.Dom
@@ -23,18 +25,19 @@ namespace Alachisoft.NCache.Config.Dom
     [Serializable]
     public class ClientDeathDetection : ICloneable, ICompactSerializable
     {
-        bool enabled = true;
+        bool enabled = false;
         int graceTime = 60;
 
         public ClientDeathDetection() { }
 
+       [ConfigurationAttribute("enable")]
         public bool Enabled
         {
             get { return enabled; }
             set { enabled = value; }
         }
 
-     
+       [ConfigurationAttribute("grace-interval", "sec")]
         public int GraceInterval
         {
             get { return graceTime; }

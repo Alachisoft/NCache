@@ -1,4 +1,4 @@
-//  Copyright (c) 2021 Alachisoft
+//  Copyright (c) 2026 Alachisoft
 //  
 //  Licensed under the Apache License, Version 2.0 (the "License");
 //  you may not use this file except in compliance with the License.
@@ -16,6 +16,7 @@ using System.Collections;
 using System.Collections.Generic;
 using Alachisoft.NCache.Common.DataStructures;
 using Alachisoft.NCache.Common.Monitoring;
+using Alachisoft.NCache.Common.ResponseSerialization;
 using Alachisoft.NCache.SocketServer.RequestLogging;
 
 namespace Alachisoft.NCache.SocketServer.Command
@@ -40,27 +41,31 @@ namespace Alachisoft.NCache.SocketServer.Command
         {
             CommandInfo cmdInfo;
             NCache nCache = clientManager.CmdExecuter as NCache;
-            //TODO
             byte[] data = null;
 
             try
             {
-                //cmdInfo = ParseCommand(command, clientManager);
                 if (ServerMonitor.MonitorActivity) ServerMonitor.LogClientActivity("ContCmd.Exec", "cmd parsed");
             }
             catch (Exception exc)
             {
                 if (!base.immatureId.Equals("-2"))
+                {
                     //PROTOBUF:RESPONSE
-                    //_resultPacket = clientManager.ReplyPacket(base.ExceptionPacket(exc, base.immatureId), base.ParsingExceptionMessage(exc));
-                    _serializedResponsePackets.Add(Common.Util.ResponseHelper.SerializeExceptionResponseWithType(exc, command.requestID, command.commandID, clientManager.ClientVersion));
+                    ResponseOptions responseOptions = new ResponseOptions()
+                    {
+                        Exception = exc,
+                        RequestId = command.requestID,
+                        CommandId = command.commandID,
+                    };
+
+                    _serializedResponsePackets.Add(clientManager.ResponseBuilder.BuildExceptionResponse(responseOptions));
+                }
                 return;
             }
 
             try
             {
-                //data = new byte[1];
-                //data[0] = (byte)(nCache.Cache.Contains(cmdInfo.Key) ? 49 : 48);
                 RequestStatus requestStatus;
 
                 if (command.inquiryRequestCommand.serverIP.Equals(ConnectionManager.ServerIpAddress))
@@ -105,14 +110,17 @@ namespace Alachisoft.NCache.SocketServer.Command
                     Common.Util.ResponseHelper.SetResponse(response, command.requestID, command.commandID, Common.Protobuf.Response.Type.INQUIRY_REQUEST_RESPONSE);
                     _serializedResponsePackets.Add(Alachisoft.NCache.Common.Util.ResponseHelper.SerializeResponse(response));
                 }
-
-
             }
             catch (Exception exc)
             {
-                //_resultPacket = clientManager.ReplyPacket(base.ExceptionPacket(exc, cmdInfo.RequestId), base.ExceptionMessage(exc));
-                _serializedResponsePackets.Add(Common.Util.ResponseHelper.SerializeExceptionResponseWithType(exc,
-                    command.requestID, command.commandID, clientManager.ClientVersion));
+                ResponseOptions responseOptions = new ResponseOptions()
+                {
+                    Exception = exc,
+                    RequestId = command.requestID,
+                    CommandId = command.commandID,
+                };
+
+                _serializedResponsePackets.Add(clientManager.ResponseBuilder.BuildExceptionResponse(responseOptions));
             }
             if (ServerMonitor.MonitorActivity) ServerMonitor.LogClientActivity("ContCmd.Exec", "cmd executed on cache");
 

@@ -35,7 +35,7 @@ namespace Alachisoft.NCache.Common.DataStructures.Clustered
 #if !NETCORE
         [SecurityCritical, SuppressUnmanagedCodeSecurity]
         [DllImport("QCall", CharSet = CharSet.Unicode)]
-        public static extern bool InternalUseRandomizedHashing(); //TODO: ALACHISOFT (References not found. Win32 call)
+        public static extern bool InternalUseRandomizedHashing();
 #endif
 
         internal static string GetResourceName(ExceptionResource resource)

@@ -224,7 +224,6 @@ namespace Alachisoft.NGroups.Blocks
             }
             catch (Exception e)
             {
-                //who cares...
             }
 
         }

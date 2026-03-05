@@ -1,4 +1,4 @@
-//  Copyright (c) 2021 Alachisoft
+//  Copyright (c) 2026 Alachisoft
 //  
 //  Licensed under the Apache License, Version 2.0 (the "License");
 //  you may not use this file except in compliance with the License.
@@ -18,6 +18,8 @@ using Alachisoft.NCache.Serialization.Formatters;
 using Alachisoft.NCache.Serialization.Surrogates;
 using Alachisoft.NCache.Serialization;
 using System.Collections.Generic;
+
+
 using Alachisoft.NCache.Runtime.Serialization.IO;
 using System.Reflection;
 
@@ -124,9 +126,6 @@ namespace Alachisoft.NCache.IO
                 surrogate = TypeSurrogateSelector.GetSurrogateForSubTypeHandle(handle, reader.ReadInt16(), context.CacheContext);
             }
 
-            //If surrogate not found defaultSurrogate is returned
-            //if (surrogate == null) throw new CompactSerializationException("Type handle " + handle + " is not registered with Compact Serialization Framework");
-
             object obj = null;
             try
             {
@@ -169,9 +168,6 @@ namespace Alachisoft.NCache.IO
             {
                 surrogate = TypeSurrogateSelector.GetSurrogateForSubTypeHandle(handle, reader.ReadInt16(), context.CacheContext);
             }
-
-            //If surrogate not found, returns defaultSurrogate
-            //if (surrogate == null) throw new CompactSerializationException("Type handle " + handle + " is not registered with Compact Serialization Framework");
 
             try
             {

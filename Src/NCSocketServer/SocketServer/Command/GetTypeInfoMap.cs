@@ -1,4 +1,4 @@
-//  Copyright (c) 2021 Alachisoft
+//  Copyright (c) 2026 Alachisoft
 //  
 //  Licensed under the Apache License, Version 2.0 (the "License");
 //  you may not use this file except in compliance with the License.
@@ -15,6 +15,7 @@ using System;
 using System.Text;
 using System.Collections;
 using System.Collections.Generic;
+using Alachisoft.NCache.Common.ResponseSerialization;
 
 namespace Alachisoft.NCache.SocketServer.Command
 {
@@ -38,9 +39,17 @@ namespace Alachisoft.NCache.SocketServer.Command
             }
             catch (Exception exc)
             {
-                if (!base.immatureId.Equals("-2")) 
-                    //_resultPacket = clientManager.ReplyPacket(base.ExceptionPacket(exc, base.immatureId), base.ParsingExceptionMessage(exc));
-                    _serializedResponsePackets.Add(Alachisoft.NCache.Common.Util.ResponseHelper.SerializeExceptionResponseWithType(exc, command.requestID, command.commandID, clientManager.ClientVersion));
+                if (!base.immatureId.Equals("-2"))
+                {
+                    ResponseOptions responseOptions = new ResponseOptions()
+                    {
+                        Exception = exc,
+                        RequestId = command.requestID,
+                        CommandId = command.commandID,
+                    };
+
+                    _serializedResponsePackets.Add(clientManager.ResponseBuilder.BuildExceptionResponse(responseOptions));
+                }
                 return;
             }
 
@@ -61,23 +70,25 @@ namespace Alachisoft.NCache.SocketServer.Command
                 response.commandID = command.commandID;
                 response.responseType = Alachisoft.NCache.Common.Protobuf.Response.Type.GET_TYPEINFO_MAP;
 
-                if (clientManager.ClientVersion >= 5000)
+                ResponseOptions responseOptions = new ResponseOptions()
                 {
-                    _serializedResponsePackets.Add(Alachisoft.NCache.Common.Util.ResponseHelper.SerializeResponse(response, Common.Protobuf.Response.Type.GET_TYPEINFO_MAP));
-
-                }
-                else
-                {
-                    _serializedResponsePackets.Add(Alachisoft.NCache.Common.Util.ResponseHelper.SerializeResponse(response));
-                }
+                    Response = response,
+                    ResponseType = Common.Protobuf.Response.Type.GET_TYPEINFO_MAP
+                };
+                _serializedResponsePackets.Add(clientManager.ResponseBuilder.BuildResponse(responseOptions));
             }
             catch (Exception exc)
             {
-                _serializedResponsePackets.Add(Alachisoft.NCache.Common.Util.ResponseHelper.SerializeExceptionResponseWithType(exc, command.requestID, command.commandID, clientManager.ClientVersion));
+                ResponseOptions responseOptions = new ResponseOptions()
+                {
+                    Exception = exc,
+                    RequestId = command.requestID,
+                    CommandId = command.commandID,
+                };
+
+                _serializedResponsePackets.Add(clientManager.ResponseBuilder.BuildExceptionResponse(responseOptions));
             }
         }
-
-     
 
         //PROTOBUF
         private CommandInfo ParseCommand(Alachisoft.NCache.Common.Protobuf.Command command, ClientManager clientManager)
@@ -91,6 +102,5 @@ namespace Alachisoft.NCache.SocketServer.Command
             return cmdInfo;
         }
 
-       
     }
 }

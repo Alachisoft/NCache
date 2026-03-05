@@ -1,4 +1,4 @@
-﻿//  Copyright (c) 2021 Alachisoft
+﻿//  Copyright (c) 2026 Alachisoft
 //  
 //  Licensed under the Apache License, Version 2.0 (the "License");
 //  you may not use this file except in compliance with the License.
@@ -36,7 +36,7 @@ namespace Alachisoft.NCache.Caching.Topologies.Clustered
         /// Above this threshold value, data will be
         /// transfered in chunks. 
         /// </summary>
-        protected long _threshold = 20 * 1024;//200 * 1000;
+        protected long _threshold = 20 * 1024;
         protected int _keyCount = 0;
         protected int _collKeyCount = 0;
         internal ClusterCacheBase _parent;

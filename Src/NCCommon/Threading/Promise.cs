@@ -1,4 +1,4 @@
-//  Copyright (c) 2021 Alachisoft
+//  Copyright (c) 2026 Alachisoft
 //  
 //  Licensed under the Apache License, Version 2.0 (the "License");
 //  you may not use this file except in compliance with the License.
@@ -32,7 +32,7 @@ namespace Alachisoft.NCache.Common.Threading
 		Object _result=null;
 		/// <summary>Used to wait on the result</summary>
 		Object _mutex=new Object();
-    
+		bool _disposed;
 		/// <summary>
 		/// If result was already submitted, returns it immediately, else blocks until
 		/// results becomes available. 
@@ -51,7 +51,8 @@ namespace Alachisoft.NCache.Common.Threading
 					_result=null;
 					return ret;
 				}
-				if(timeout <= 0) 
+				if (_disposed) return null;
+				if (timeout <= 0) 
 				{
 					try 
 					{
@@ -132,6 +133,13 @@ namespace Alachisoft.NCache.Common.Threading
 		{
 			return "result=" + _result;
 		}
-
+		public void Dispose()
+		{
+			lock (_mutex)
+			{
+				_disposed = true;
+				Monitor.PulseAll(_mutex);
+			}
+		}
 	}
 }

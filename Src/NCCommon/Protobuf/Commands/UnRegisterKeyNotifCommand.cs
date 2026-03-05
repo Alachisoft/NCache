@@ -1,4 +1,4 @@
-//  Copyright (c) 2021 Alachisoft
+//  Copyright (c) 2026 Alachisoft
 //  
 //  Licensed under the Apache License, Version 2.0 (the "License");
 //  you may not use this file except in compliance with the License.
@@ -13,14 +13,14 @@
 //  limitations under the License
 namespace Alachisoft.NCache.Common.Protobuf
 {
-    [global::System.Serializable, global::ProtoBuf.ProtoContract(Name=@"UnRegisterKeyNotifCommand")]
-    public partial class UnRegisterKeyNotifCommand : global::ProtoBuf.IExtensible
+    [global::System.Serializable, global::ProtoBuf.Extended.ProtoContract(Name=@"UnRegisterKeyNotifCommand")]
+    public partial class UnRegisterKeyNotifCommand : global::ProtoBuf.Extended.IExtensible
     {
       public UnRegisterKeyNotifCommand() {}
       
 
     private int _updateCallbackId = default(int);
-    [global::ProtoBuf.ProtoMember(1, IsRequired = false, Name=@"updateCallbackId", DataFormat = global::ProtoBuf.DataFormat.ZigZag)][global::System.ComponentModel.DefaultValue(default(int))]
+    [global::ProtoBuf.Extended.ProtoMember(1, IsRequired = false, Name=@"updateCallbackId", DataFormat = global::ProtoBuf.Extended.DataFormat.ZigZag)][global::System.ComponentModel.DefaultValue(default(int))]
     public int updateCallbackId
     {
       get { return _updateCallbackId; }
@@ -28,7 +28,7 @@ namespace Alachisoft.NCache.Common.Protobuf
     }
 
     private int _removeCallbackId = default(int);
-    [global::ProtoBuf.ProtoMember(2, IsRequired = false, Name=@"removeCallbackId", DataFormat = global::ProtoBuf.DataFormat.ZigZag)][global::System.ComponentModel.DefaultValue(default(int))]
+    [global::ProtoBuf.Extended.ProtoMember(2, IsRequired = false, Name=@"removeCallbackId", DataFormat = global::ProtoBuf.Extended.DataFormat.ZigZag)][global::System.ComponentModel.DefaultValue(default(int))]
     public int removeCallbackId
     {
       get { return _removeCallbackId; }
@@ -36,7 +36,7 @@ namespace Alachisoft.NCache.Common.Protobuf
     }
 
     private string _key = "";
-    [global::ProtoBuf.ProtoMember(3, IsRequired = false, Name=@"key", DataFormat = global::ProtoBuf.DataFormat.Default)][global::System.ComponentModel.DefaultValue("")]
+    [global::ProtoBuf.Extended.ProtoMember(3, IsRequired = false, Name=@"key", DataFormat = global::ProtoBuf.Extended.DataFormat.Default)][global::System.ComponentModel.DefaultValue("")]
     public string key
     {
       get { return _key; }
@@ -44,15 +44,15 @@ namespace Alachisoft.NCache.Common.Protobuf
     }
 
     private long _requestId = default(long);
-    [global::ProtoBuf.ProtoMember(4, IsRequired = false, Name=@"requestId", DataFormat = global::ProtoBuf.DataFormat.TwosComplement)][global::System.ComponentModel.DefaultValue(default(long))]
+    [global::ProtoBuf.Extended.ProtoMember(4, IsRequired = false, Name=@"requestId", DataFormat = global::ProtoBuf.Extended.DataFormat.TwosComplement)][global::System.ComponentModel.DefaultValue(default(long))]
     public long requestId
     {
       get { return _requestId; }
       set { _requestId = value; }
     }
-      private global::ProtoBuf.IExtension extensionObject;
-      global::ProtoBuf.IExtension global::ProtoBuf.IExtensible.GetExtensionObject(bool createIfMissing)
-        { return global::ProtoBuf.Extensible.GetExtensionObject(ref extensionObject, createIfMissing); }
+      private global::ProtoBuf.Extended.IExtension extensionObject;
+     global::ProtoBuf.Extended.IExtension global::ProtoBuf.Extended.IExtensible.GetExtensionObject(bool createIfMissing)
+        { return global::ProtoBuf.Extended.Extensible.GetExtensionObject(ref extensionObject, createIfMissing); }
     }
   
 }

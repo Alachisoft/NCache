@@ -48,7 +48,6 @@ namespace Alachisoft.NCache.Common.Monitoring
             writer.Write(Memory);
             writer.WriteObject(OperatingSystem);
             writer.WriteObject(Platform);
-
         }
         #endregion
     }

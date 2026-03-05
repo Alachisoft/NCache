@@ -1,4 +1,4 @@
-//  Copyright (c) 2021 Alachisoft
+//  Copyright (c) 2026 Alachisoft
 //  
 //  Licensed under the Apache License, Version 2.0 (the "License");
 //  you may not use this file except in compliance with the License.
@@ -24,9 +24,9 @@ using Alachisoft.NCache.Common;
 using Alachisoft.NCache.Common.Net;
 using System.Collections.Generic;
 using System.Net;
+
 using Alachisoft.NCache.Runtime.Exceptions;
 using Alachisoft.NCache.Config.Dom;
-
 
 
 namespace Alachisoft.NCache.Config
@@ -64,7 +64,6 @@ namespace Alachisoft.NCache.Config
 		/// <returns>cache name.</returns>
 		static private CacheInfo GetCacheInfo(IDictionary properties)
 		{
-
 			if(!properties.Contains("cache"))
 				throw new ConfigurationException("Missing configuration attribute 'cache'");
 
@@ -95,6 +94,7 @@ namespace Alachisoft.NCache.Config
 
 			inf.ClassName = Convert.ToString(schemeProps["type"]);
 			return inf;
+
 		}
 
 		/// <summary>
@@ -177,8 +177,6 @@ namespace Alachisoft.NCache.Config
                 if (pair.Value is Hashtable)
                 {
                     Hashtable subproperties = (Hashtable)pair.Value;
-
-                  
                     if (subproperties.Contains("type") && subproperties.Contains("name"))
                     {
                         cacheName = subproperties["name"] as string;

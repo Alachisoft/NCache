@@ -1,0 +1,1 @@
+copy Tests\sharpsnmplib.tests.snk SharpSnmpLib\sharpsnmplib.snk

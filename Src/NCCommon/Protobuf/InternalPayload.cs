@@ -12,14 +12,14 @@
 // Note: requires additional types generated from: CollectionEventMessage.proto
 namespace Alachisoft.NCache.Common.Protobuf
 {
-  [global::System.Serializable, global::ProtoBuf.ProtoContract(Name=@"InternalPayload")]
-  public partial class InternalPayload : global::ProtoBuf.IExtensible
+  [global::System.Serializable, global::ProtoBuf.Extended.ProtoContract(Name=@"InternalPayload")]
+  public partial class InternalPayload : global::ProtoBuf.Extended.IExtensible
   {
     public InternalPayload() {}
     
 
     private Alachisoft.NCache.Common.Protobuf.EventMessage _eventMessage = null;
-    [global::ProtoBuf.ProtoMember(1, IsRequired = false, Name=@"eventMessage", DataFormat = global::ProtoBuf.DataFormat.Default)]
+    [global::ProtoBuf.Extended.ProtoMember(1, IsRequired = false, Name=@"eventMessage", DataFormat = global::ProtoBuf.Extended.DataFormat.Default)]
     [global::System.ComponentModel.DefaultValue(null)]
     public Alachisoft.NCache.Common.Protobuf.EventMessage eventMessage
     {
@@ -28,27 +28,27 @@ namespace Alachisoft.NCache.Common.Protobuf
     }
 
     private Alachisoft.NCache.Common.Protobuf.InternalPayload.PayloadType _payloadType = Alachisoft.NCache.Common.Protobuf.InternalPayload.PayloadType.CACHE_ITEM_EVENTS;
-    [global::ProtoBuf.ProtoMember(3, IsRequired = false, Name=@"payloadType", DataFormat = global::ProtoBuf.DataFormat.TwosComplement)]
+    [global::ProtoBuf.Extended.ProtoMember(3, IsRequired = false, Name=@"payloadType", DataFormat = global::ProtoBuf.Extended.DataFormat.TwosComplement)]
     [global::System.ComponentModel.DefaultValue(Alachisoft.NCache.Common.Protobuf.InternalPayload.PayloadType.CACHE_ITEM_EVENTS)]
     public Alachisoft.NCache.Common.Protobuf.InternalPayload.PayloadType payloadType
     {
       get { return _payloadType; }
       set { _payloadType = value; }
     }
-    [global::ProtoBuf.ProtoContract(Name=@"PayloadType")]
+    [global::ProtoBuf.Extended.ProtoContract(Name=@"PayloadType")]
     public enum PayloadType
     {
             
-      [global::ProtoBuf.ProtoEnum(Name=@"CACHE_ITEM_EVENTS", Value=1)]
+      [global::ProtoBuf.Extended.ProtoEnum(Name=@"CACHE_ITEM_EVENTS", Value=1)]
       CACHE_ITEM_EVENTS = 1,
             
-      [global::ProtoBuf.ProtoEnum(Name=@"COLLECTION_EVENTS", Value=2)]
+      [global::ProtoBuf.Extended.ProtoEnum(Name=@"COLLECTION_EVENTS", Value=2)]
       COLLECTION_EVENTS = 2
     }
   
-    private global::ProtoBuf.IExtension extensionObject;
-    global::ProtoBuf.IExtension global::ProtoBuf.IExtensible.GetExtensionObject(bool createIfMissing)
-      { return global::ProtoBuf.Extensible.GetExtensionObject(ref extensionObject, createIfMissing); }
+    private global::ProtoBuf.Extended.IExtension extensionObject;
+   global::ProtoBuf.Extended.IExtension global::ProtoBuf.Extended.IExtensible.GetExtensionObject(bool createIfMissing)
+      { return global::ProtoBuf.Extended.Extensible.GetExtensionObject(ref extensionObject, createIfMissing); }
   }
   
 }

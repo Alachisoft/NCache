@@ -1,4 +1,4 @@
-//  Copyright (c) 2021 Alachisoft
+//  Copyright (c) 2026 Alachisoft
 //  
 //  Licensed under the Apache License, Version 2.0 (the "License");
 //  you may not use this file except in compliance with the License.
@@ -17,6 +17,7 @@ using Alachisoft.NCache.Common.Remoting;
 #endif
 using Alachisoft.NCache.Runtime.Exceptions;
 using Alachisoft.NCache.Management;
+using Alachisoft.NCache.Licensing;
 
 namespace Alachisoft.NCache.ServiceControl
 {
@@ -114,17 +115,19 @@ namespace Alachisoft.NCache.ServiceControl
                 if (System.Runtime.InteropServices.RuntimeInformation.IsOSPlatform(System.Runtime.InteropServices.OSPlatform.Linux))
                     throw new Exception("Failed to start service. Please try the operation manually.");
 #endif
-                using (Common.Util.ServiceControl sc = new Common.Util.ServiceControl(_serverName, service))
-                {
-                    if (!sc.IsRunning)
+
+                    using (Common.Util.ServiceControl sc = new Common.Util.ServiceControl(_serverName, service))
                     {
-                        sc.WaitForStart(timeout);
+                        if (!sc.IsRunning)
+                        {
+                            sc.WaitForStart(timeout);
+                        }
                     }
-                }
+            
             }
             catch (Exception e)
             {
-                throw new ManagementException(e.Message, e);
+                ThrowError(e);
             }
         }
 
@@ -141,17 +144,20 @@ namespace Alachisoft.NCache.ServiceControl
                 if (System.Runtime.InteropServices.RuntimeInformation.IsOSPlatform(System.Runtime.InteropServices.OSPlatform.Linux))
                     throw new Exception("Failed to stop service. Please try the operation manually.");
 #endif
-                using (Common.Util.ServiceControl sc = new Common.Util.ServiceControl(_serverName, service))
-                {
-                    if (sc.IsRunning)
+              
+
+                    using (Common.Util.ServiceControl sc = new Common.Util.ServiceControl(_serverName, service))
                     {
-                        sc.WaitForStop(timeout);
+                        if (sc.IsRunning)
+                        {
+                            sc.WaitForStop(timeout);
+                        }
                     }
-                }
+             
             }
             catch (Exception e)
             {
-                throw new ManagementException(e.Message, e);
+                ThrowError(e);
             }
         }
        
@@ -168,18 +174,20 @@ namespace Alachisoft.NCache.ServiceControl
                 if (System.Runtime.InteropServices.RuntimeInformation.IsOSPlatform(System.Runtime.InteropServices.OSPlatform.Linux))
                     throw new Exception("Failed to restart service. Please try the operation manually.");
 #endif
-                using (Common.Util.ServiceControl sc = new Common.Util.ServiceControl(_serverName, service))
-                {
-                    if (sc.IsRunning)
+                
+                    using (Common.Util.ServiceControl sc = new Common.Util.ServiceControl(_serverName, service))
                     {
-                        sc.WaitForStop(timeout);
-                        sc.WaitForStart(timeout);
+                        if (sc.IsRunning)
+                        {
+                            sc.WaitForStop(timeout);
+                            sc.WaitForStart(timeout);
+                        }
                     }
-                }
+             
             }
             catch (Exception e)
             {
-                throw new ManagementException(e.Message, e);
+                ThrowError(e);
             }
         }
 
@@ -198,9 +206,21 @@ namespace Alachisoft.NCache.ServiceControl
             }
             catch (Exception e)
             {
-                throw new ManagementException(e.Message, e);
+                ThrowError(e);
             }
             return isRunning;
         }
+        private void ThrowError(Exception e)
+        {
+            string errorMessage = String.Empty;
+            if (e.Message.Contains("This operation might require other privileges."))
+            {
+                errorMessage = e.Message + "Make sure NCache is installed and running, and NCache ports are opened through firewall.Please read admin guide for details.";
+            }
+
+            throw new ManagementException(errorMessage, e);
+        }
+
+     
     }
 }

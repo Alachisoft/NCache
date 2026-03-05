@@ -1,0 +1,241 @@
+gatedAction(block) ::= <<
+<if(backtracking)>
+if <actions.(actionScope).synpredgate>
+  <block>
+end
+<else>
+<block>
+<endif>
+>>
+
+ruleDeclarations() ::= <<
+<super.ruleDeclarations()>
+_last = _first_0 = nil<\n>
+>>
+
+noRewrite(rewriteBlockLevel, treeLevel) ::= <<
+<gatedAction({
+<if(rewriteMode)>
+return_value.tree = _first_0
+if @adaptor.parent( return_value.tree ) && @adaptor.flat_list?( @adaptor.parent( return_value.tree ) )
+  return_value.tree = @adaptor.parent( return_value.tree )
+end
+<endif>
+})>
+>>
+
+tree(root, actionsAfterRoot, children, nullableChildList,
+     enclosingTreeLevel, treeLevel) ::= <<
+_save_last_<treeLevel> = _last = @input.look
+_first_<treeLevel> = nil
+<if(!rewriteMode)>
+root_<treeLevel> = @adaptor.create_flat_list<\n>
+<endif>
+<root:element()>
+<if(rewriteMode)>
+<gatedAction({
+<if(root.el.rule)>
+_first_<enclosingTreeLevel> ||= <root.el.label; format="label">.tree<\n>
+<else>
+_first_<enclosingTreeLevel> ||= <root.el.label; format="label"><\n>
+<endif>
+})>
+<endif>
+<actionsAfterRoot:element()>
+<if(nullableChildList)>
+if @input.peek == DOWN
+  match( DOWN, nil )
+  <children:element()>
+  match( UP, nil )
+end<\n>
+<else>
+match( DOWN, nil )
+<children:element()>
+match( UP, nil )<\n>
+<endif>
+<if(!rewriteMode)>
+@adaptor.add_child( root_<enclosingTreeLevel>, root_<treeLevel> )<\n>
+<endif>
+_last = _save_last_<treeLevel>
+
+>>
+
+tokenRefBang(token,label,elementIndex,terminalOptions) ::= <<
+_last = @input.look
+<super.tokenRef(...)>
+>>
+
+tokenRef(token,label,elementIndex,terminalOptions) ::= <<
+_last = @input.look
+<super.tokenRef(...)>
+<if(!rewriteMode)>
+<gatedAction({
+<if(terminalOptions.node)>
+tree_for_<label> = <terminalOptions.node; format="constantPath">.new( <label; format="label"> )
+<else>
+tree_for_<label> = @adaptor.copy_node( <label; format="label"> )
+<endif><\n>
+@adaptor.add_child( root_<treeLevel>, tree_for_<label> )
+})>
+<else> <! rewrite mode !>
+<gatedAction({
+_first_<treeLevel> ||= <label; format="label"><\n>
+})>
+<endif>
+>>
+
+
+
+tokenRefAndListLabel(token,label,elementIndex,terminalOptions) ::= <<
+<tokenRef(...)>
+<addToList(elem={<label; format="label">},...)>
+>>
+
+tokenRefRuleRoot(token,label,elementIndex,terminalOptions) ::= <<
+_last = @input.look
+<super.tokenRef(...)>
+<if(!rewriteMode)>
+<gatedAction({
+<if(terminalOptions.node)>
+tree_for_<label> = <terminalOptions.node; format="constantPath">.new( <label; format="label"> )
+<else>
+tree_for_<label> = @adaptor.copy_node( <label; format="label"> )
+<endif><\n>
+root_<treeLevel> = @adaptor.become_root( tree_for_<label>, root_<treeLevel> )
+})>
+<endif>
+>>
+
+tokenRefRuleRootAndListLabel(token,label,elementIndex,terminalOptions) ::= <<
+<tokenRefRuleRoot(...)>
+<addToList(elem={<label; format="label">},...)>
+>>
+
+wildcard(token,label,elementIndex,terminalOptions) ::= <<
+_last = @input.look
+<super.wildcard(...)>
+<if(!rewriteMode)>
+<gatedAction({
+tree_for_<label> = @adaptor.copy_tree( <label; format="label"> )
+@adaptor.add_child( root_<treeLevel>, tree_for_<label> )
+})>
+<else> <! rewrite mode !>
+<gatedAction({
+_first_<treeLevel> and _first_<treeLevel> = <label; format="label">
+})>
+<endif>
+>>
+
+matchSet(s,label,terminalOptions,elementIndex,postmatchCode) ::= <<
+_last = @input.look
+<super.matchSet(postmatchCode={
+<if(!rewriteMode)>
+<gatedAction({
+<if(terminalOptions.node)>
+tree_for_<label> = <terminalOptions.node; format="constantPath">.new( <label; format="label"> )
+<else>
+tree_for_<label> = @adaptor.copy_node( <label; format="label"> )
+<endif><\n>
+@adaptor.add_child( root_<treeLevel>, tree_for_<label> )
+})>
+<endif>
+}, ...)>
+>>
+
+
+
+matchRuleBlockSet(s,label,terminalOptions,elementIndex,postmatchCode,treeLevel="0") ::= <<
+<matchSet(...)>
+<noRewrite(...)>
+>>
+
+
+
+matchSetBang(s,label,terminalOptions,elementIndex,postmatchCode) ::= <<
+_last = @input.look
+<super.matchSet(...)>
+>>
+
+matchSetRuleRoot(s,label,terminalOptions,elementIndex,debug) ::= <<
+<super.matchSet(postmatchCode={
+<if(!rewriteMode)>
+<gatedAction({
+<if(terminalOptions.node)>
+tree_for_<label> = <terminalOptions.node; format="constantPath">.new( <label; format="label"> )
+<else>
+tree_for_<label> = @adaptor.copy_node( <label; format="label"> )
+<endif><\n>
+root_<treeLevel> = @adaptor.become_root( tree_for_<label>, root_<treeLevel> )
+})>
+<endif>
+}, ...)>
+>>
+
+ruleRef(rule,label,elementIndex,args,scope) ::= <<
+_last = @input.look
+<super.ruleRef(...)>
+<gatedAction({
+<if(!rewriteMode)>
+@adaptor.add_child( root_<treeLevel>, <label; format="label">.tree )
+<else>
+_first_<treeLevel> ||= <label; format="label">.tree<\n>
+<endif>
+})>
+>>
+
+ruleRefAndListLabel(rule,label,elementIndex,args,scope) ::= <<
+<ruleRef(...)>
+<addToList(elem={<label; format="label">.tree},...)>
+>>
+
+ruleRefRuleRoot(rule,label,elementIndex,args,scope) ::= <<
+_last = @input.look
+<super.ruleRef(...)>
+<if(!rewriteMode)>
+<gatedAction({
+root_<treeLevel> = @adaptor.become_root( <label; format="label">.tree, root_<treeLevel> )
+})>
+<endif>
+>>
+
+ruleRefRuleRootAndListLabel(rule,label,elementIndex,args,scope) ::= <<
+<ruleRefRuleRoot(...)>
+<addToList(elem={<label; format="label">.tree},...)>
+>>
+
+ruleRefTrack(rule,label,elementIndex,args,scope) ::= <<
+_last = @input.look
+<super.ruleRefTrack(...)>
+>>
+
+ruleRefTrackAndListLabel(rule,label,elementIndex,args,scope) ::= <<
+_last = @input.look
+<super.ruleRefTrackAndListLabel(...)>
+>>
+
+ruleRefRuleRootTrack(rule,label,elementIndex,args,scope) ::= <<
+_last = @input.look
+<super.ruleRefRootTrack(...)>
+>>
+
+ruleRefRuleRootTrackAndListLabel(rule,label,elementIndex,args,scope) ::= <<
+_last = @input.look
+<super.ruleRefRuleRootTrackAndListLabel(...)>
+>>
+
+createRewriteNodeFromElement(token,terminalOptions,scope) ::= <<
+<if(terminalOptions.node)>
+<terminalOptions.node; format="constantPath">.new( stream_<token>.next_node )
+<else>
+stream_<token>.next_node
+<endif>
+>>
+
+ruleCleanUp() ::= <<
+<super.ruleCleanUp()>
+<if(!rewriteMode)>
+<gatedAction({
+return_value.tree = @adaptor.rule_post_processing( root_0 )
+})>
+<endif>
+>>

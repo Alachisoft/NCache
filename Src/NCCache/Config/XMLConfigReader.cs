@@ -1,4 +1,4 @@
-//  Copyright (c) 2021 Alachisoft
+//  Copyright (c) 2026 Alachisoft
 //  
 //  Licensed under the Apache License, Version 2.0 (the "License");
 //  you may not use this file except in compliance with the License.
@@ -17,6 +17,8 @@ using System.Collections;
 
 using Alachisoft.NCache.Common.Configuration;
 using Alachisoft.NCache.Config.Dom;
+
+
 using Alachisoft.NCache.Runtime.Exceptions;
 
 
@@ -218,6 +220,7 @@ namespace Alachisoft.NCache.Config
 
                 LoadConfig(fileName, ref properties);
                 return (Hashtable)properties[configSection];
+
 			}
 			catch(Exception e)
 			{
@@ -247,8 +250,6 @@ namespace Alachisoft.NCache.Config
             properties = ConfigConverter.ToHashtable(convertToOldDom(newCaches));
         }
 
-        //JAVA TO C# CONVERTER WARNING: Method 'throws' clauses are not available in .NET:
-        //ORIGINAL LINE: private static Alachisoft.NCache.Config.Dom.CacheServerConfig[] convertToOldDom(Alachisoft.NCache.Config.NewDom.CacheServerConfig[] newCacheConfigsList) throws Exception
         private static Alachisoft.NCache.Config.Dom.CacheServerConfig[] convertToOldDom(Alachisoft.NCache.Config.NewDom.CacheServerConfig[] newCacheConfigsList)
         {
             Alachisoft.NCache.Config.Dom.CacheServerConfig[] oldCacheConfigsList = new CacheServerConfig[newCacheConfigsList.Length];
@@ -274,7 +275,6 @@ namespace Alachisoft.NCache.Config
             Hashtable properties = new Hashtable();
             try
             {
-
                 LoadConfig(fileName, ref properties);
                 return (Hashtable)properties[configSection];
             }
@@ -369,7 +369,6 @@ namespace Alachisoft.NCache.Config
             
             try
             {
-
                 LoadConfig(fileName, ref properties);
                 if (properties.Contains(configSection.ToLower()))
                     propsList.Add(properties[configSection.ToLower()]);
@@ -441,9 +440,9 @@ namespace Alachisoft.NCache.Config
 			Hashtable properties = new Hashtable();
 			try
 			{
-
                 LoadConfig(fileName, ref properties);
                 return properties;
+
 			}
 			catch(Exception e)
 			{

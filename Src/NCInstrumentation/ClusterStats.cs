@@ -1,4 +1,4 @@
-//  Copyright (c) 2021 Alachisoft
+//  Copyright (c) 2026 Alachisoft
 //  
 //  Licensed under the Apache License, Version 2.0 (the "License");
 //  you may not use this file except in compliance with the License.
@@ -207,22 +207,29 @@ namespace Alachisoft.NCache.Instrumentation
         {
             set
             {
+                //lock (this._syncPoint)
+                //{
                 for (int i = 0; i < _nodes.Count; i++)
                 {
                     _nodes[i] = _nodes[i];    //as WMI do not support collections so public member is converted into WMI supported value
                 }
+                //}
             }
 
             get
             {
+                //lock (this._syncPoint)
+                //{
                 string[] nodeslist = new string[_nodes.Count];//as WMI do not support collections so public member is converted into WMI supported value
                 for (int i = 0; i < _nodes.Count; i++)
                 {
                     nodeslist[i] = _nodes[i].ToString();
+                    //nodeslist[i] = Address.Resolve(_nodes[i].ToString()).ToString();
                 }
                 _nodes.CopyTo(nodeslist);
 
                 return nodeslist;
+                //}
             }
         }
 
@@ -230,12 +237,15 @@ namespace Alachisoft.NCache.Instrumentation
         {
             get
             {
+                //lock (this._syncPoint)
+                //{
                 string[] nodeslist = new string[_porNodes.Count];//as WMI do not support collections so public member is converted into WMI supported value
                 for (int i = 0; i < _porNodes.Count; i++)
                 {
                     nodeslist[i] = _porNodes[i].ToString();
                 }
                 return nodeslist;
+                //}
             }
         }
 
@@ -246,20 +256,28 @@ namespace Alachisoft.NCache.Instrumentation
         {
             set
             {
+                //lock (this._syncPoint)
+                //{
                 for (int i = 0; i < _runningNodes.Count; i++)
                 {
                     _nodes[i] = _runningNodes[i];    //as WMI do not support collections so public member is converted into WMI supported value
                 }
+                //}
             }
 
             get
             {
+                //lock (this._syncPoint)
+                //{
                 string[] nodeslist = new string[_runningNodes.Count];      //as WMI do not support collections so public member is converted into WMI supported value
                 for (int i = 0; i < _runningNodes.Count; i++)
                 {
                     nodeslist[i] = _runningNodes[i].ToString();
+                    //nodeslist[i] = Address.Resolve(_nodes[i].ToString()).ToString();
                 }
+                //_nodes.CopyTo(nodeslist);
                 return nodeslist;
+                //}
             }
         }
         #endregion
@@ -270,6 +288,8 @@ namespace Alachisoft.NCache.Instrumentation
         /// <param name="node_list">list of currently present nodes</param>
         public void PopulateNodes(string initialhostlist)
         {
+            //lock (this._syncPoint)
+            //{
             try
             {
                 string[] nodes = initialhostlist.Split(',');
@@ -285,10 +305,13 @@ namespace Alachisoft.NCache.Instrumentation
                 }
             }
             catch { }
+            //}
         }
 
         public void PopulateNodes(Hashtable initialhoslList)
         {
+            //lock (this._syncPoint)
+            //{
             if (initialhoslList == null) return;
             try
             {
@@ -305,6 +328,7 @@ namespace Alachisoft.NCache.Instrumentation
                 }
             }
             catch { }
+            //}
         }
         /// <summary>
         /// Called each time a new server node is set to running state
@@ -312,6 +336,8 @@ namespace Alachisoft.NCache.Instrumentation
         /// <param name="NodeName">Name of the Node</param>
         public void MemberJoined(string port, string nodeName, bool raiseEvent, bool isInproc)
         {
+            //lock (this._syncPoint)
+            //{
             try
             {
                 if (isInproc && !this._inprocInstances.Contains(nodeName.Trim() + "." + port))
@@ -332,17 +358,25 @@ namespace Alachisoft.NCache.Instrumentation
                 }
             }
             catch { }
+            //}
+            //Node_Stats temp = new Node_Stats(NodeName, DateTime.Now);
+
+            //System.Management.Instrumentation.Instrumentation.Publish(temp);
+
+            //System.Management.Instrumentation.Instrumentation.Fire(new NodeUp(ClusterName, NodeName));
         }
 
 
         public void MemberJoined(string port, string nodeName, string subGroupName, bool fireEvent, bool isInproc)
         {
-
+            //lock (this._syncPoint)
+            //{
             try
             {
                 if (isInproc)
                 {
                     nodeName = nodeName.Trim() + "." + port;
+                    //string previousInstances = string.Empty;
                     if (this._inprocPorInstances.Contains(subGroupName))
                     {
                         string previousInstances = this._inprocPorInstances[subGroupName] as string;
@@ -360,6 +394,7 @@ namespace Alachisoft.NCache.Instrumentation
                     else
                     {
                         this._inprocPorInstances.Add(subGroupName, nodeName);
+                        //previousInstances = nodeName;
                     }
 
                     for (int i = 0; i < this._porNodes.Count; i++)
@@ -396,6 +431,7 @@ namespace Alachisoft.NCache.Instrumentation
                 }
             }
             catch { }
+            //}
 
         }
         /// <summary>
@@ -429,6 +465,8 @@ namespace Alachisoft.NCache.Instrumentation
 
         public void MemberLeft(string port, string nodeName, string subGroupName, bool fireEvent, bool isInproc)
         {
+            //lock (this._syncPoint)
+            //{
             try
             {
                 if (isInproc)
@@ -482,6 +520,7 @@ namespace Alachisoft.NCache.Instrumentation
                 }
             }
             catch { }
+            //}
         }
         /// <summary>
         /// Add the nodeName to the List of Nodes
@@ -503,12 +542,15 @@ namespace Alachisoft.NCache.Instrumentation
         /// <param name="nodeName"></param>
         public void AddPorNode(string nodeName)
         {
+            //lock (this._syncPoint)
+            //{
             try
             {
                 if (_porNodes.IndexOf(nodeName.Trim()) == -1)
                     _porNodes.Add(nodeName.Trim());
             }
             catch { }
+            //}
         }
 
         /// <summary>
@@ -522,6 +564,14 @@ namespace Alachisoft.NCache.Instrumentation
             catch { }
         }
 
+        //private void itemLimitReached()
+        //{
+
+        //    CountLimit cnt = new CountLimit(_itemLimit);
+        //    cnt.TotalCount = _totalCount;
+
+        //    cnt.Fire();
+        //}
 
     }
 

@@ -1,4 +1,4 @@
-//  Copyright (c) 2021 Alachisoft
+//  Copyright (c) 2026 Alachisoft
 //  
 //  Licensed under the Apache License, Version 2.0 (the "License");
 //  you may not use this file except in compliance with the License.
@@ -214,7 +214,6 @@ namespace Alachisoft.NCache.Storage
         {
             try
             {
-
                 string cacheserver = "NCache";
                 long currentSizeInPerc = (TotalDataSize / _maxSize) * 100;
                 if (currentSizeInPerc > 100) currentSizeInPerc = 100;
@@ -224,7 +223,6 @@ namespace Alachisoft.NCache.Storage
                 {
                     _alertPropagator.RaiseAlert(EventID.CacheSizeWarning, cacheserver, "Cache '" + _cacheContext + "' has exceeded " + _evictionReportSize + "% of allocated cache size");
                 }
-                //-
                 NCacheLog.CriticalInfo("CacheStore", "cache has exceeded " + _evictionReportSize + "% of allocated cache size");
             }
             catch (Exception e)
@@ -276,7 +274,6 @@ namespace Alachisoft.NCache.Storage
         {
             _syncObj = null;
             this.Cleared();
-          
         }
 
         #endregion
@@ -488,7 +485,6 @@ namespace Alachisoft.NCache.Storage
             long nextSize = TotalDataSize + newItem.InMemorySize - (oldItem == null ? -keySize : oldItem.InMemorySize);
 			
             StoreStatus status = StoreStatus.HasSpace;
-
 
             if (nextSize > maxSize)
             {

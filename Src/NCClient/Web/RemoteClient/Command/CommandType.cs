@@ -1,4 +1,4 @@
-//  Copyright (c) 2021 Alachisoft
+//  Copyright (c) 2026 Alachisoft
 //  
 //  Licensed under the Apache License, Version 2.0 (the "License");
 //  you may not use this file except in compliance with the License.
@@ -98,6 +98,10 @@ namespace Alachisoft.NCache.Client
         GET_BULK_CACHEITEM = 102,
         CONTAINS_BULK=103,
         MODULE=104,
-        SURROGATE=105
+        SURROGATE=105,
+        GETMODULESTATE = 106,
+        SETMODULESTATE = 107,
+        GETMODULEHASHMAP = 108,
+        GET_SERVER_IDENTITY = 109
     }
 }

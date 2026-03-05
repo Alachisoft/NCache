@@ -1,4 +1,4 @@
-//  Copyright (c) 2021 Alachisoft
+//  Copyright (c) 2026 Alachisoft
 //  
 //  Licensed under the Apache License, Version 2.0 (the "License");
 //  you may not use this file except in compliance with the License.
@@ -13,7 +13,7 @@
 //  limitations under the License
 using System;
 using System.IO;
-using log4net.Appender;
+using log4net.Extended.Appender;
 
 namespace Alachisoft.NCache.Common.Util
 {
@@ -47,41 +47,41 @@ namespace Alachisoft.NCache.Common.Util
             {
                 lock (NCacheLog.syncLock)
                 {
-                    log4net.Core.Level lvl;
+                    log4net.Extended.Core.Level lvl;
                     switch (level.ToString().ToLower())
                     {
                         case "all":
-                            lvl = log4net.Core.Level.All;
+                            lvl = log4net.Extended.Core.Level.All;
                             break;
                         case "error":
-                            lvl = log4net.Core.Level.Error;
+                            lvl = log4net.Extended.Core.Level.Error;
                             break;
                         case "fatal":
-                            lvl = log4net.Core.Level.Fatal;
+                            lvl = log4net.Extended.Core.Level.Fatal;
                             break;
                         case "info":
-                            lvl = log4net.Core.Level.Info;
+                            lvl = log4net.Extended.Core.Level.Info;
                             break;
                         case "debug":
-                            lvl = log4net.Core.Level.Debug;
+                            lvl = log4net.Extended.Core.Level.Debug;
                             break;
                         case "warn":
-                            lvl = log4net.Core.Level.Warn;
+                            lvl = log4net.Extended.Core.Level.Warn;
                             break;
                         case "off":
-                            lvl = log4net.Core.Level.Off;
+                            lvl = log4net.Extended.Core.Level.Off;
                             break;
                         default:
-                            lvl = log4net.Core.Level.All;
+                            lvl = log4net.Extended.Core.Level.All;
                             break;
 
                     }
 
 
                     //If the logger doesnot exist it will create one else fetches one
-                    log4net.ILog log = log4net.LogManager.GetLogger(Log4net.LogRepository.Name, loggerName);
+                    log4net.Extended.ILog log = log4net.Extended.LogManager.GetLogger(Log4net.LogRepository.Name, loggerName);
                     //adds the logger as a seperate hierchy, not dependant on any other logger
-                    log4net.Repository.Hierarchy.Logger l = (log4net.Repository.Hierarchy.Logger)log.Logger;
+                    log4net.Extended.Repository.Hierarchy.Logger l = (log4net.Extended.Repository.Hierarchy.Logger)log.Logger;
 
                     //Applies the logger threshold level
                     l.Level = l.Hierarchy.LevelMap[level.ToString()];
@@ -115,10 +115,9 @@ namespace Alachisoft.NCache.Common.Util
             lock (NCacheLog.syncLock)
             {
 #if !NETCORE
-                foreach (log4net.Appender.IAppender appender in log4net.LogManager.GetRepository().GetAppenders())
+                foreach (log4net.Extended.Appender.IAppender appender in log4net.Extended.LogManager.GetRepository().GetAppenders())
 #elif NETCORE
-                    //TODO: ALACHISOFT (Adding Repository directly here for now)
-                    foreach (log4net.Appender.IAppender appender in log4net.LogManager.GetRepository(Log4net.LogRepository.Name).GetAppenders())
+                    foreach (log4net.Extended.Appender.IAppender appender in log4net.Extended.LogManager.GetRepository(Log4net.LogRepository.Name).GetAppenders())
 #endif
                 {
                     BufferingAppenderSkeleton buffered = appender as BufferingAppenderSkeleton;
@@ -142,7 +141,7 @@ namespace Alachisoft.NCache.Common.Util
             string loggerName = LoggingInformation.GetLoggerName(cacheName);
             if (loggerName != null && loggerName.Length > 0)
             {
-                log4net.ILog log = log4net.LogManager.GetLogger(Log4net.LogRepository.Name, loggerName);
+                log4net.Extended.ILog log = log4net.Extended.LogManager.GetLogger(Log4net.LogRepository.Name, loggerName);
                 if (message.Contains(Environment.NewLine))
                     message = message + "\r\n";
                 log.Error(message);
@@ -163,7 +162,7 @@ namespace Alachisoft.NCache.Common.Util
             string loggerName = LoggingInformation.GetLoggerName(cacheName);
             if (loggerName != null && loggerName.Length > 0)
             {
-                log4net.ILog log = log4net.LogManager.GetLogger(Log4net.LogRepository.Name, loggerName);
+                log4net.Extended.ILog log = log4net.Extended.LogManager.GetLogger(Log4net.LogRepository.Name, loggerName);
                 if (message.Contains(Environment.NewLine))
                     message = message + "\r\n";
                 log.Fatal(message);
@@ -184,7 +183,7 @@ namespace Alachisoft.NCache.Common.Util
             string loggerName = LoggingInformation.GetLoggerName(cacheName);
             if (loggerName != null && loggerName.Length > 0)
             {
-                log4net.ILog log = log4net.LogManager.GetLogger(Log4net.LogRepository.Name, loggerName);
+                log4net.Extended.ILog log = log4net.Extended.LogManager.GetLogger(Log4net.LogRepository.Name, loggerName);
                 if (message.Contains(Environment.NewLine))
                     message = message + "\r\n";
                 log.Logger.Log(null, Log4net.criticalInfo, message, null);
@@ -205,7 +204,7 @@ namespace Alachisoft.NCache.Common.Util
             string loggerName = LoggingInformation.GetLoggerName(cacheName);
             if (loggerName != null && loggerName.Length > 0)
             {
-                log4net.ILog log = log4net.LogManager.GetLogger(Log4net.LogRepository.Name, loggerName);
+                log4net.Extended.ILog log = log4net.Extended.LogManager.GetLogger(Log4net.LogRepository.Name, loggerName);
                 if (message.Contains(Environment.NewLine))
                     message = message + "\r\n";
                 log.Info(message);
@@ -226,7 +225,7 @@ namespace Alachisoft.NCache.Common.Util
             string loggerName = LoggingInformation.GetLoggerName(cacheName);
             if (loggerName != null && loggerName.Length > 0)
             {
-                log4net.ILog log = log4net.LogManager.GetLogger(Log4net.LogRepository.Name, loggerName);
+                log4net.Extended.ILog log = log4net.Extended.LogManager.GetLogger(Log4net.LogRepository.Name, loggerName);
                 if (message.Contains(Environment.NewLine))
                     message = message + "\r\n";
                 log.Debug(message);
@@ -247,7 +246,7 @@ namespace Alachisoft.NCache.Common.Util
             string loggerName = LoggingInformation.GetLoggerName(cacheName);
             if (loggerName != null && loggerName.Length > 0)
             {
-                log4net.ILog log = log4net.LogManager.GetLogger(Log4net.LogRepository.Name, loggerName);
+                log4net.Extended.ILog log = log4net.Extended.LogManager.GetLogger(Log4net.LogRepository.Name, loggerName);
                 if (message.Contains(Environment.NewLine))
                     message = message + "\r\n";
                 log.Warn(message);
@@ -272,7 +271,7 @@ namespace Alachisoft.NCache.Common.Util
             string loggerName = LoggingInformation.GetLoggerName(cacheName);
             if (loggerName != null && loggerName.Length > 0)
             {
-                log4net.ILog log = log4net.LogManager.GetLogger(Log4net.LogRepository.Name, loggerName);
+                log4net.Extended.ILog log = log4net.Extended.LogManager.GetLogger(Log4net.LogRepository.Name, loggerName);
                 return log.IsInfoEnabled;
             }
             else
@@ -306,7 +305,7 @@ namespace Alachisoft.NCache.Common.Util
             string loggerName = LoggingInformation.GetLoggerName(cacheName);
             if (loggerName != null && loggerName.Length > 0)
             {
-                log4net.ILog log = log4net.LogManager.GetLogger(Log4net.LogRepository.Name, loggerName);
+                log4net.Extended.ILog log = log4net.Extended.LogManager.GetLogger(Log4net.LogRepository.Name, loggerName);
                 return log.IsInfoEnabled;
             }
             else
@@ -331,7 +330,7 @@ namespace Alachisoft.NCache.Common.Util
             string loggerName = LoggingInformation.GetLoggerName(cacheName);
             if (loggerName != null && loggerName.Length > 0)
             {
-                log4net.ILog log = log4net.LogManager.GetLogger(Log4net.LogRepository.Name, loggerName);
+                log4net.Extended.ILog log = log4net.Extended.LogManager.GetLogger(Log4net.LogRepository.Name, loggerName);
                 return log.IsInfoEnabled;
             }
             else
@@ -365,41 +364,41 @@ namespace Alachisoft.NCache.Common.Util
             {
                 lock (NCacheLog.syncLock)
                 {
-                    log4net.Core.Level lvl;
+                    log4net.Extended.Core.Level lvl;
                     switch (level.ToString().ToLower())
                     {
                         case "all":
-                            lvl = log4net.Core.Level.All;
+                            lvl = log4net.Extended.Core.Level.All;
                             break;
                         case "error":
-                            lvl = log4net.Core.Level.Error;
+                            lvl = log4net.Extended.Core.Level.Error;
                             break;
                         case "fatal":
-                            lvl = log4net.Core.Level.Fatal;
+                            lvl = log4net.Extended.Core.Level.Fatal;
                             break;
                         case "info":
-                            lvl = log4net.Core.Level.Info;
+                            lvl = log4net.Extended.Core.Level.Info;
                             break;
                         case "debug":
-                            lvl = log4net.Core.Level.Debug;
+                            lvl = log4net.Extended.Core.Level.Debug;
                             break;
                         case "warn":
-                            lvl = log4net.Core.Level.Warn;
+                            lvl = log4net.Extended.Core.Level.Warn;
                             break;
                         case "off":
-                            lvl = log4net.Core.Level.Off;
+                            lvl = log4net.Extended.Core.Level.Off;
                             break;
                         default:
-                            lvl = log4net.Core.Level.All;
+                            lvl = log4net.Extended.Core.Level.All;
                             break;
 
                     }
 
 
                     //If the logger doesnot exist it will create one else fetches one
-                    log4net.ILog log = log4net.LogManager.GetLogger(Log4net.LogRepository.Name, loggerName);
+                    log4net.Extended.ILog log = log4net.Extended.LogManager.GetLogger(Log4net.LogRepository.Name, loggerName);
                     //adds the logger as a seperate hierchy, not dependant on any other logger
-                    log4net.Repository.Hierarchy.Logger l = (log4net.Repository.Hierarchy.Logger)log.Logger;
+                    log4net.Extended.Repository.Hierarchy.Logger l = (log4net.Extended.Repository.Hierarchy.Logger)log.Logger;
 
                     //Applies the logger threshold level
                     l.Level = l.Hierarchy.LevelMap[level.ToString()];
@@ -442,7 +441,7 @@ namespace Alachisoft.NCache.Common.Util
                 string loggerName = LoggingInformation.GetLoggerName(temp);
                 if (loggerName != null && loggerName.Length > 0)
                 {
-                    log4net.ILog log = log4net.LogManager.GetLogger(Log4net.LogRepository.Name, loggerName);
+                    log4net.Extended.ILog log = log4net.Extended.LogManager.GetLogger(Log4net.LogRepository.Name, loggerName);
                     return log.IsInfoEnabled;
                 }
                 else
@@ -482,7 +481,7 @@ namespace Alachisoft.NCache.Common.Util
                 string loggerName = LoggingInformation.GetLoggerName(temp);
                 if (loggerName != null && loggerName.Length > 0)
                 {
-                    log4net.ILog log = log4net.LogManager.GetLogger(Log4net.LogRepository.Name, loggerName);
+                    log4net.Extended.ILog log = log4net.Extended.LogManager.GetLogger(Log4net.LogRepository.Name, loggerName);
                     return log.IsDebugEnabled;
                 }
                 else
@@ -742,8 +741,8 @@ namespace Alachisoft.NCache.Common.Util
 
             if (loggerName != null)
             {
-                log4net.ILog log = log4net.LogManager.GetLogger(Log4net.LogRepository.Name, loggerName);
-                log4net.Repository.Hierarchy.Logger l = (log4net.Repository.Hierarchy.Logger)log.Logger;
+                log4net.Extended.ILog log = log4net.Extended.LogManager.GetLogger(Log4net.LogRepository.Name, loggerName);
+                log4net.Extended.Repository.Hierarchy.Logger l = (log4net.Extended.Repository.Hierarchy.Logger)log.Logger;
                
                 BufferingAppenderSkeleton buffered = (BufferingAppenderSkeleton)l.GetAppender("BufferingForwardingAppender" + loggerName);
                 if (buffered is BufferingForwardingAppender)
@@ -898,15 +897,13 @@ namespace Alachisoft.NCache.Common.Util
 
         public static void Flush()
         {
-            //bug id- 1431 Problem was occuring because the Appender enumeration was modifying during iterations
 #if !NETCORE
-            IAppender[] logAppenders = log4net.LogManager.GetRepository().GetAppenders();
+            IAppender[] logAppenders = log4net.Extended.LogManager.GetRepository().GetAppenders();
 #elif NETCORE
-            //TODO: ALACHISOFT (Direct edit to code for now. It should be removed later on)
-            IAppender[] logAppenders = log4net.LogManager.GetRepository(Log4net.LogRepository.Name).GetAppenders();
+            IAppender[] logAppenders = log4net.Extended.LogManager.GetRepository(Log4net.LogRepository.Name).GetAppenders();
 #endif
 
-            foreach (log4net.Appender.IAppender appender in logAppenders)
+            foreach (log4net.Extended.Appender.IAppender appender in logAppenders)
             {
                 if (appender != null)
                 {

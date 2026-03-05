@@ -1,4 +1,4 @@
-﻿//  Copyright (c) 2021 Alachisoft
+﻿//  Copyright (c) 2018 Alachisoft
 //  
 //  Licensed under the Apache License, Version 2.0 (the "License");
 //  you may not use this file except in compliance with the License.
@@ -45,20 +45,20 @@ namespace Alachisoft.NCache.Web.SessionState
 
         }
 
-        protected override object DeserializeSession(byte[] buffer,int timeout)
+        protected override object DeserializeSession(byte[] buffer, int timeout, bool isCompact, bool isJson)
         {
             if (buffer != null)
             {
-                return SessionSerializationUtil.Deserialize(buffer);
+                return SessionSerializationUtil.Deserialize(buffer, SessionCacheName, isCompact, isJson);
             }
             else
                 return new SessionStateStoreData(new SessionStateItemCollection(), null, timeout);
         }
 
-        protected override byte[] SerializeSession(object sessionData)
+        protected override byte[] SerializeSession(object sessionData, bool isCompact, bool isJson)
         {
             if (sessionData != null)
-                return SessionSerializationUtil.Serialize(sessionData as SessionStateStoreData);
+                return SessionSerializationUtil.Serialize(sessionData as SessionStateStoreData, SessionCacheName, isCompact, isJson);
 
             return null;
         }

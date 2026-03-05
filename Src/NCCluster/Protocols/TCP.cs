@@ -1,4 +1,4 @@
-// $Id: TOTAL.java,v 1.6 2004/07/05 14:17:16 belaban Exp $
+
 
 using Alachisoft.NCache.Common.Enum;
 using Alachisoft.NCache.Common.Net;
@@ -401,7 +401,7 @@ namespace Alachisoft.NGroups.Protocols
                 }
                 if (_sequencelessMsgUpHandler != null && _sequencelessMsgUpHandler.IsAlive)
                 {
-                    _sequencelessMsgUpHandler.Interrupt(); // still alive ? let's just kill it without mercy...
+                    _sequencelessMsgUpHandler.Interrupt();
                     try
                     {
                         _sequencelessMsgUpHandler.Join(THREAD_JOIN_TIMEOUT);
@@ -430,7 +430,7 @@ namespace Alachisoft.NGroups.Protocols
                 }
                 if (_sequencedMsgUpHandler != null && _sequencedMsgUpHandler.IsAlive)
                 {
-                    _sequencedMsgUpHandler.Interrupt(); // still alive ? let's just kill it without mercy...
+                    _sequencedMsgUpHandler.Interrupt();
                     try
                     {
                         _sequencedMsgUpHandler.Join(THREAD_JOIN_TIMEOUT);
@@ -459,7 +459,7 @@ namespace Alachisoft.NGroups.Protocols
                 }
                 if (_tokenSeekingUpHandler != null && _tokenSeekingUpHandler.IsAlive)
                 {
-                    _tokenSeekingUpHandler.Interrupt(); // still alive ? let's just kill it without mercy...
+                    _tokenSeekingUpHandler.Interrupt();
                     try
                     {
                         _tokenSeekingUpHandler.Join(THREAD_JOIN_TIMEOUT);
@@ -489,7 +489,7 @@ namespace Alachisoft.NGroups.Protocols
                 }
                 if (_unicastDownHandler != null && _unicastDownHandler.IsAlive)
                 {
-                    _unicastDownHandler.Interrupt(); // still alive ? let's just kill it without mercy...
+                    _unicastDownHandler.Interrupt();
                     try
                     {
                         _unicastDownHandler.Join(THREAD_JOIN_TIMEOUT);
@@ -518,7 +518,7 @@ namespace Alachisoft.NGroups.Protocols
                 }
                 if (_multicastDownHandler != null && _multicastDownHandler.IsAlive)
                 {
-                    _multicastDownHandler.Interrupt(); // still alive ? let's just kill it without mercy...
+                    _multicastDownHandler.Interrupt();
                     try
                     {
                         _multicastDownHandler.Join(THREAD_JOIN_TIMEOUT);
@@ -547,7 +547,7 @@ namespace Alachisoft.NGroups.Protocols
                 }
                 if (_tokenSeekingMsgDownHandler != null && _tokenSeekingMsgDownHandler.IsAlive)
                 {
-                    _tokenSeekingMsgDownHandler.Interrupt(); // still alive ? let's just kill it without mercy...
+                    _tokenSeekingMsgDownHandler.Interrupt();
                     try
                     {
                         _tokenSeekingMsgDownHandler.Join(THREAD_JOIN_TIMEOUT);
@@ -885,9 +885,18 @@ namespace Alachisoft.NGroups.Protocols
                 if (port_range <= 0) port_range = 1;
                 props.Remove("port_range");
             }
-            Version.Initialize();
-      
-           
+            if (props.Contains("nc_version"))
+            {
+                versionType = Convert.ToString(props["nc_version"]);
+                Version.Initialize(versionType);
+                props.Remove("nc_version");
+            }
+            if (props.Contains("env_name"))
+            {
+                environmentName = Convert.ToString(props["env_name"]);
+                props.Remove("env_name");
+            }
+
             if (props.Contains("heart_beat_interval"))
             {
                 props.Remove("heart_beat_interval");
@@ -1288,8 +1297,6 @@ namespace Alachisoft.NGroups.Protocols
                     bool twoPhaseConnect = (bool)addrs[2];
                     synchronizeConnections = !twoPhaseConnect;
                     if (Stack.NCacheLog.IsInfoEnabled) Stack.NCacheLog.Info("TCP.HandleDownEvent()", " group_address is : " + group_addr);
-                    // removed March 18 2003 (bela), not needed (handled by GMS)
-                    // Can't remove it; otherwise TCPGOSSIP breaks (bela May 8 2003) !
                     Address addr = new Address(ct.srv_port);
                     passUp(new Event(Event.CONNECT_OK, (object)addr));
                     break;

@@ -1,4 +1,4 @@
-//  Copyright (c) 2018 Alachisoft
+//  Copyright (c) 2026 Alachisoft
 //  
 //  Licensed under the Apache License, Version 2.0 (the "License");
 //  you may not use this file except in compliance with the License.
@@ -15,7 +15,6 @@ using System;
 using System.Collections.Generic;
 using System.Text;
 using System.Runtime.Serialization;
-
 
 namespace Alachisoft.NCache.Runtime.Exceptions
 {
@@ -40,7 +39,7 @@ namespace Alachisoft.NCache.Runtime.Exceptions
         /// Default constructor with error code and message
         /// </summary>
         public StreamAlreadyLockedException(int errorCode,string reason= "Stream is already locked.") : base(errorCode, reason) { }
-        //public StreamAlreadyLockedException(int errorCode, string reason = "Stream is already locked.",string stackTrace) : base(errorCode, reason,stackTrace) { }
+
         #region ISerializable Members
 
         /// <summary> 

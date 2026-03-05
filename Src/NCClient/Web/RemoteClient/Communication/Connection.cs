@@ -1,4 +1,4 @@
-//  Copyright (c) 2021 Alachisoft
+//  Copyright (c) 2026 Alachisoft
 //  
 //  Licensed under the Apache License, Version 2.0 (the "License");
 //  you may not use this file except in compliance with the License.
@@ -14,7 +14,6 @@
 
 
 using Alachisoft.NCache.Common;
-
 using Alachisoft.NCache.Common.DataStructures.Clustered;
 using Alachisoft.NCache.Common.Enum;
 using Alachisoft.NCache.Common.Net;
@@ -90,18 +89,6 @@ namespace Alachisoft.NCache.Client
         private bool _optimized = false;
         private int _hostPort;
         private bool _isIdle = false;
-
-
-        #region SSL/TLS related attribute and properties
-
-        private string _targetHost;
-        private bool _provideCert;
-
-        private SslProtocols _protocols;
-        private EncryptionPolicy _policy;
-
-        internal bool IsSecured { get; private set; }
-        #endregion
 
         #endregion
 
@@ -246,11 +233,10 @@ namespace Alachisoft.NCache.Client
             string ip = string.Empty;
             if (PrimaryClientSocket != null)
             {
-                if (this.IsConnected)
-                {
+                
                     IPEndPoint add = (IPEndPoint)PrimaryClientSocket.LocalEndPoint;
                     ip = add.Address.ToString();
-                }
+                
             }
             return ip;
         }
@@ -309,7 +295,7 @@ namespace Alachisoft.NCache.Client
             catch (Exception) { }
         }
 
-        internal bool Connect(IPAddress ipAddress, int port)
+        internal bool Connect(IPAddress ipAddress, int port, bool isConnectingUsingLoadbalancer = false, bool enableNagling = false)
         {
 
 #if DEVELOPMENT
@@ -338,7 +324,8 @@ namespace Alachisoft.NCache.Client
             _ipAddress = ipAddress.ToString();
             _address = ipAddress;
             _port = port;
-            _serverAddress = new Address(ipAddress, port);
+            if (_serverAddress == null || !isConnectingUsingLoadbalancer)
+                _serverAddress = new Address(ipAddress, port);
             lock (_connectionMutex)
             {
                 _primaryClient = PrepareToConnect(_primaryClient);
@@ -349,6 +336,8 @@ namespace Alachisoft.NCache.Client
                     try
                     {
                         _primaryClient.Connect(endPoint);
+                        _primaryClient.NoDelay = !enableNagling;  //enable nagling means NoDelay=false
+
                         _bufferedStream = new NetworkStream(_primaryClient, false);
                         return true;
                     }
@@ -369,10 +358,10 @@ namespace Alachisoft.NCache.Client
             return false;
         }
 
-        internal bool Connect(string hostName, int port)
+        internal bool Connect(string hostName, int port, bool isConnectingUsingLoadbalancer, bool enableNagling)
         {
 
-            return Connect(((IPAddress[])Dns.GetHostByName(hostName).AddressList)[0], port);
+            return Connect(((IPAddress[])Dns.GetHostByName(hostName).AddressList)[0], port, isConnectingUsingLoadbalancer, enableNagling);
         }
 
         public void Init()
@@ -385,6 +374,8 @@ namespace Alachisoft.NCache.Client
         private Socket PrepareToConnect(Socket client)
         {
             client = new Socket(AddressFamily.InterNetwork, SocketType.Stream, ProtocolType.Tcp);
+            //client.SetSocketOption(SocketOptionLevel.Socket, SocketOptionName.SendBuffer, 1024 * 1024);
+            //client.SetSocketOption(SocketOptionLevel.Socket, SocketOptionName.ReceiveBuffer, 131072);
             client.SetSocketOption(SocketOptionLevel.Tcp, SocketOptionName.NoDelay, 1);
 
             if (_bindIP != null)
@@ -393,7 +384,7 @@ namespace Alachisoft.NCache.Client
                 {
                     client.Bind(_bindIP);
                 }
-                catch (Exception)
+                catch (Exception e)
                 {
                     throw new Exception("Invalid bind-ip-address specified in client configuration");
                 }
@@ -416,7 +407,6 @@ namespace Alachisoft.NCache.Client
             {
                 if (_logger.IsErrorLogsEnabled) _logger.NCacheLog.Error("Connection.Connect", " can not connect to " + address + ":" + port + ". error: " + e.ToString());
             }
-
         }
 
         /// <summary>
@@ -433,15 +423,16 @@ namespace Alachisoft.NCache.Client
         /// <param name="ipAddress"></param>
         /// <param name="cachePort"></param>
         /// <returns></returns>
-        public bool SwitchTo(Broker container, OnCommandRecieved commandRecieved, OnServerLost serverLost, Logs logs, StatisticsCounter perfStatsCollector, ResponseIntegrator rspIntegraotr, string bindIP, string cacheName, IPAddress ipAddress, int cachePort)
+        public bool SwitchTo(Broker container, OnCommandRecieved commandRecieved, OnServerLost serverLost, Logs logs, StatisticsCounter perfStatsCollector, ResponseIntegrator rspIntegraotr, string bindIP, string cacheName, IPAddress ipAddress, int cachePort, bool isConnectingUsingLoadbalancer, bool enableNagling)
         {
             int oldPort = Port;
             Initialize(container, commandRecieved, serverLost, logs, perfStatsCollector, rspIntegraotr, bindIP, cacheName);
-            if (this.Connect(Address, cachePort))
+            if (this.Connect(Address, cachePort, isConnectingUsingLoadbalancer, enableNagling))
             {
                 _hostPort = cachePort;
                 this.Port = oldPort;
-                this._serverAddress = new Address(ipAddress, oldPort);
+                if (!isConnectingUsingLoadbalancer)
+                    this._serverAddress = new Address(ipAddress, oldPort);
                 return true;
             }
 
@@ -459,7 +450,7 @@ namespace Alachisoft.NCache.Client
         internal void Disconnect(bool changeStatus)
         {
             _forcedDisconnect = true;
-            if (changeStatus) this._connectionStatusLatch.SetStatusBit(ConnectionStatus.Disconnected, ConnectionStatus.Connected);
+            if (changeStatus) UpdateConnnectionStatus(ConnectionStatus.Disconnected, ConnectionStatus.Connected);
 
             if (_primaryReceiveThread != null && _primaryReceiveThread.ThreadState != ThreadState.Aborted && _primaryReceiveThread.ThreadState != ThreadState.AbortRequested)
             {
@@ -519,13 +510,10 @@ namespace Alachisoft.NCache.Client
                 _secondaryClient = null;
             }
 
-            IsSecured = false;
         }
 
         public CommandResponse RecieveCommandResponse(bool _usingSecondary = false)
         {
-            
-
             if (_usingSecondary)
                 return RecieveCommandResponse(_secondaryClient);
 
@@ -544,7 +532,7 @@ namespace Alachisoft.NCache.Client
                 Alachisoft.NCache.Common.Protobuf.Response response = null;
                 using (MemoryStream stream = new MemoryStream(value))
                 {
-                    response = ProtoBuf.Serializer.Deserialize<Alachisoft.NCache.Common.Protobuf.Response>(stream);
+                    response = ProtoBuf.Extended.Serializer.Deserialize<Alachisoft.NCache.Common.Protobuf.Response>(stream);
                     stream.Close();
                 }
 
@@ -567,7 +555,6 @@ namespace Alachisoft.NCache.Client
             return cmdRespose;
         }
 
-       
         internal void AssureSendDirect(byte[] buffer, Socket client, bool checkConnected)
         {
             int dataSent = 0, dataLeft = buffer.Length;
@@ -593,7 +580,7 @@ namespace Alachisoft.NCache.Client
                         else
                         {
                             if (_logger.IsErrorLogsEnabled) _logger.NCacheLog.Error("Connection.AssureSend().SocketException ", se.ToString());
-                            _connectionStatusLatch.SetStatusBit(ConnectionStatus.Disconnected, ConnectionStatus.Connected);
+                            UpdateConnnectionStatus(ConnectionStatus.Disconnected, ConnectionStatus.Connected);
                             throw new ConnectionException(this._serverAddress.IpAddress, this._serverAddress.Port);
                         }
                     }
@@ -601,7 +588,7 @@ namespace Alachisoft.NCache.Client
                     {
                         if (_logger.IsErrorLogsEnabled) _logger.NCacheLog.Error("Connection.AssureSend", "socket is already closed");
                         if (_connectionStatusLatch.IsAnyBitsSet(ConnectionStatus.Connected))
-                            _connectionStatusLatch.SetStatusBit(ConnectionStatus.Disconnected, ConnectionStatus.Connected);
+                            UpdateConnnectionStatus(ConnectionStatus.Disconnected, ConnectionStatus.Connected);
                         throw new ConnectionException(this._serverAddress.IpAddress, this._serverAddress.Port);
                     }
                 }
@@ -625,12 +612,11 @@ namespace Alachisoft.NCache.Client
             {
                 if (se.SocketErrorCode == SocketError.NoBufferSpaceAvailable)
                 {
-                    //Thread.Sleep(30);
                 }
                 else
                 {
                     if (_logger.IsErrorLogsEnabled) _logger.NCacheLog.Error("Connection.AssureSend().SocketException ", se.ToString());
-                    _connectionStatusLatch.SetStatusBit(ConnectionStatus.Disconnected, ConnectionStatus.Connected);
+                    UpdateConnnectionStatus(ConnectionStatus.Disconnected, ConnectionStatus.Connected);
                     throw new ConnectionException(this._serverAddress.IpAddress, this._serverAddress.Port);
                 }
             }
@@ -638,7 +624,7 @@ namespace Alachisoft.NCache.Client
             {
                 if (_logger.IsErrorLogsEnabled) _logger.NCacheLog.Error("Connection.AssureSend", "socket is already closed");
                 if (_connectionStatusLatch.IsAnyBitsSet(ConnectionStatus.Connected))
-                    _connectionStatusLatch.SetStatusBit(ConnectionStatus.Disconnected, ConnectionStatus.Connected);
+                    UpdateConnnectionStatus(ConnectionStatus.Disconnected, ConnectionStatus.Connected);
                 throw new ConnectionException(this._serverAddress.IpAddress, this._serverAddress.Port);
             }
         }
@@ -680,7 +666,7 @@ namespace Alachisoft.NCache.Client
                         else
                         {
                             if (_logger.IsErrorLogsEnabled) _logger.NCacheLog.Error("Connection.AssureSend", se.ToString());
-                            _connectionStatusLatch.SetStatusBit(ConnectionStatus.Disconnected, ConnectionStatus.Connected);
+                            UpdateConnnectionStatus(ConnectionStatus.Disconnected, ConnectionStatus.Connected);
                             throw new ConnectionException(this._serverAddress.IpAddress, this._serverAddress.Port);
                         }
                     }
@@ -786,13 +772,6 @@ namespace Alachisoft.NCache.Client
             IsIdle = false;
         }
 
-        #region SSL/TLS secured connection related methods
-
-    
-
-
-        #endregion
-
         internal void SendCommand(byte[] commandBytes, bool checkConnected)
         {
             if (_perfStatsColl.IsEnabled)
@@ -805,21 +784,27 @@ namespace Alachisoft.NCache.Client
             Buffer.BlockCopy(lengthBytes, 0, dataWithSize, 0, lengthBytes.Length);
             Buffer.BlockCopy(commandBytes, 0, dataWithSize, MessageHeader, commandBytes.Length);
 
-            if (SupportDualSocket)
-            {
-                Socket selectedSocket = _primaryClient;
-                lock (_socketSelectionMutex)
-                {
-                    if (!_usePrimary) selectedSocket = _secondaryClient;
-                    _usePrimary = !_usePrimary;
-                }
-                AssureSend(dataWithSize, selectedSocket, checkConnected);
-            }
+            if (DoNaggling)
+                _msgQueue.add(commandBytes);
             else
             {
-                AssureSend(dataWithSize, _primaryClient, checkConnected);
+                
+                if (SupportDualSocket)
+                {
+                    Socket selectedSocket = _primaryClient;
+                    lock (_socketSelectionMutex)
+                    {
+                        if (!_usePrimary) selectedSocket = _secondaryClient;
+                        _usePrimary = !_usePrimary;
+                    }
+                    AssureSend(dataWithSize, selectedSocket, checkConnected);
+                }
+                else
+                {
+                    AssureSend(dataWithSize, _primaryClient, checkConnected);
+                }
+                
             }
-          
         }
 
         private void OnServerLost()
@@ -831,7 +816,7 @@ namespace Alachisoft.NCache.Client
             else
                 if (_logger.IsErrorLogsEnabled) _logger.NCacheLog.Error("Connection.ReceivedThread", "An established connection with the server " + _serverAddress + " is lost.");
 
-            if (!_forcedDisconnect) _connectionStatusLatch.SetStatusBit(ConnectionStatus.Disconnected, ConnectionStatus.Connected);
+            if (!_forcedDisconnect) UpdateConnnectionStatus(ConnectionStatus.Disconnected, ConnectionStatus.Connected);
             _serverLost(_serverAddress, _forcedDisconnect);
         }
 
@@ -839,14 +824,14 @@ namespace Alachisoft.NCache.Client
         {
             _primaryReceiveThread = new Thread(new ParameterizedThreadStart(RecieveThread));
             _primaryReceiveThread.Priority = ThreadPriority.AboveNormal;
-            _primaryReceiveThread.IsBackground = true;  
+            _primaryReceiveThread.IsBackground = true;  //Now application can exit without calling dispose()
             _primaryReceiveThread.Start((object)_primaryClient);
 
             if (SupportDualSocket)
             {
                 _secondaryReceiveThread = new Thread(new ParameterizedThreadStart(RecieveThread));
                 _secondaryReceiveThread.Priority = ThreadPriority.AboveNormal;
-                _secondaryReceiveThread.IsBackground = true;  
+                _secondaryReceiveThread.IsBackground = true;  //Now application can exit without calling dispose()
                 _secondaryReceiveThread.Start((object)_secondaryClient);
             }
         }
@@ -860,10 +845,7 @@ namespace Alachisoft.NCache.Client
                 try
                 {
                     count = 0;
-                    byte[] cmdBytes = null;
-                    if (clientSocket != null)
-                        cmdBytes = AssureRecieve(clientSocket, false);
-
+                    byte[] cmdBytes = AssureRecieve(clientSocket, false);
                     using (Stream tempStream = new ClusteredMemoryStream(cmdBytes))
                     {
                         tempStream.Position = 0;
@@ -882,7 +864,6 @@ namespace Alachisoft.NCache.Client
                 }
                 catch (IOException ie)
                 {
-                    //System.IOException is going to thrown in the case SslStream when the connection gets forcibly closed.
                     //Thus we are going to handle it as a SocketException....
                     OnConnectionBroken(ie, ExType.Socket);
                     break;
@@ -925,9 +906,10 @@ namespace Alachisoft.NCache.Client
                                 if (_logger.IsErrorLogsEnabled) _logger.NCacheLog.Error("Connection.ReceivedThread", "Connection with server lost gracefully");
                             }
                             else
-                                if (_logger.IsErrorLogsEnabled) _logger.NCacheLog.Error("Connection.ReceivedThread", "An established connection with the server " + _serverAddress + " is lost. Error:" + e.ToString());
-
-                            if (!_forcedDisconnect) _connectionStatusLatch.SetStatusBit(ConnectionStatus.Disconnected, ConnectionStatus.Connected);
+                            {
+                                    if (_logger != null && _logger.IsErrorLogsEnabled) _logger.NCacheLog.Error("Connection.ReceivedThread", "An established connection with the server " + _serverAddress + " is lost. Error:" + e.ToString());
+                            }
+                            if (!_forcedDisconnect) UpdateConnnectionStatus(ConnectionStatus.Disconnected, ConnectionStatus.Connected);
                             _primaryReceiveThread = null;
                             _serverLost(_serverAddress, _forcedDisconnect);
                             break;
@@ -942,7 +924,7 @@ namespace Alachisoft.NCache.Client
                                     _logger.NCacheLog.Flush();
                                 }
                             }
-                            if (!_forcedDisconnect) _connectionStatusLatch.SetStatusBit(ConnectionStatus.Disconnected, ConnectionStatus.Connected);
+                            if (!_forcedDisconnect) UpdateConnnectionStatus(ConnectionStatus.Disconnected, ConnectionStatus.Connected);
                             _serverLost(_serverAddress, _forcedDisconnect);
                             break;
                         case ExType.General:
@@ -951,11 +933,10 @@ namespace Alachisoft.NCache.Client
                                 _logger.NCacheLog.Error("Connection.ReceivedThread", e.ToString());
                                 _logger.NCacheLog.Flush();
                             }
-                            if (!_forcedDisconnect) _connectionStatusLatch.SetStatusBit(ConnectionStatus.Disconnected, ConnectionStatus.Connected);
+                            if (!_forcedDisconnect) UpdateConnnectionStatus(ConnectionStatus.Disconnected, ConnectionStatus.Connected);
                             _serverLost(_serverAddress, _forcedDisconnect);
                             break;
                     }
-                IsSecured = false;
             }
             catch (Exception ex)
             {
@@ -1039,5 +1020,9 @@ namespace Alachisoft.NCache.Client
 
         #endregion
 
+internal void UpdateConnnectionStatus(byte statusToSet, byte statusToUnset)
+        {
+            _connectionStatusLatch.SetStatusBit(statusToSet, statusToUnset);
+        }
     }
 }

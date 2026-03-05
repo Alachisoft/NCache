@@ -1,4 +1,4 @@
-﻿//  Copyright (c) 2021 Alachisoft
+﻿//  Copyright (c) 2026 Alachisoft
 //  
 //  Licensed under the Apache License, Version 2.0 (the "License");
 //  you may not use this file except in compliance with the License.
@@ -70,11 +70,7 @@ namespace Alachisoft.NCache.Tools.Common
             byte[] _paswd = null;
             if (cacheServer != null)
             {
-                if (userId != string.Empty && password != string.Empty)
-                {
-                    _userId = EncryptionUtil.Encrypt(userId);
-                    _paswd = EncryptionUtil.Encrypt(password);
-                }
+              
 
                 if (serverConfig.CacheSettings.CacheType == "clustered-cache")
                 {
@@ -134,7 +130,7 @@ namespace Alachisoft.NCache.Tools.Common
 
             if (cacheServer != null)
             {
-                runningCaches = cacheServer.GetRunningCaches();
+                runningCaches = cacheServer.GetRunningCaches(userId, password);
             }
             if (runningCaches == null || runningCaches.Count == 0)
                 isRunning = false;
@@ -268,11 +264,7 @@ namespace Alachisoft.NCache.Tools.Common
                             fileName = Path.GetFileName(f.FullName);
                             byte[] _userId = null;
                             byte[] _paswd = null;
-                            if (userId != string.Empty && password != string.Empty)
-                            {
-                                _userId = EncryptionUtil.Encrypt(userId);
-                                _paswd = EncryptionUtil.Encrypt(password);
-                            }
+                           
                             if (serverConfig.CacheSettings.CacheType == "clustered-cache")
                             {
                                 foreach (Address node in serverConfig.CacheDeployment.Servers.GetAllConfiguredNodes())

@@ -1,4 +1,4 @@
-//  Copyright (c) 2021 Alachisoft
+//  Copyright (c) 2026 Alachisoft
 //  
 //  Licensed under the Apache License, Version 2.0 (the "License");
 //  you may not use this file except in compliance with the License.
@@ -38,8 +38,6 @@ namespace Alachisoft.NCache.SocketServer.Command
                         nCache.Dispose();
                     stopWatch.Stop();
 
-                 
-
                     Alachisoft.NCache.Common.Protobuf.DisposeResponse disposeResponse= new Alachisoft.NCache.Common.Protobuf.DisposeResponse();
                     if (clientManager.ClientVersion >= 5000)
                     {
@@ -72,7 +70,6 @@ namespace Alachisoft.NCache.SocketServer.Command
                         APILogItemBuilder log = new APILogItemBuilder(MethodsName.Dispose.ToLower());
                         log.GenerateDisposeAPILogItem(1, exception, executionTime, clientManager.ClientID.ToLower(), clientManager.ClientSocketId.ToString());
 
-                        // Hashtable expirationHint = log.GetDependencyExpirationAndQueryInfo(cmdInfo.ExpirationHint, cmdInfo.queryInfo);
                     }
                 }
                 catch
@@ -84,13 +81,5 @@ namespace Alachisoft.NCache.SocketServer.Command
 
         }
 
-        //public override void ExecuteCommand(ClientManager clientManager, string command, byte[] data)
-        //{
-        //    if (clientManager != null)
-        //    {
-        //        clientManager._leftGracefully = true;
-        //        clientManager.CmdExecuter.Dispose();
-        //    }
-        //}
     }
 }

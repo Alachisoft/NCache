@@ -1,4 +1,4 @@
-//  Copyright (c) 2021 Alachisoft
+//  Copyright (c) 2026 Alachisoft
 //  
 //  Licensed under the Apache License, Version 2.0 (the "License");
 //  you may not use this file except in compliance with the License.
@@ -18,7 +18,6 @@ using Alachisoft.NCache.Serialization.Formatters;
 using Alachisoft.NCache.Runtime.Events;
 using System.Collections.Generic;
 using System.Collections;
-
 
 namespace Alachisoft.NCache.SocketServer.CallbackTasks
 {
@@ -47,7 +46,11 @@ namespace Alachisoft.NCache.SocketServer.CallbackTasks
                 response.pollNotifyEventResponse.callbackId = _callbackId;
                 response.pollNotifyEventResponse.eventType = (int)_eventType;
                 response.responseType = Common.Protobuf.Response.Type.POLL_NOTIFY_CALLBACK;
-                IList serializedResponse = Common.Util.ResponseHelper.SerializeResponse(response,Common.Protobuf.Response.Type.POLL_NOTIFY_CALLBACK);
+                IList serializedResponse = clientManager.ResponseBuilder.BuildResponse(new Common.ResponseSerialization.ResponseOptions()
+                {
+                    Response = response,
+                    ResponseType = response.responseType
+                });
                 ConnectionManager.AssureSend(clientManager, serializedResponse, false);
             }
         }

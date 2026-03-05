@@ -1,4 +1,4 @@
-//  Copyright (c) 2021 Alachisoft
+//  Copyright (c) 2026 Alachisoft
 //  
 //  Licensed under the Apache License, Version 2.0 (the "License");
 //  you may not use this file except in compliance with the License.
@@ -39,6 +39,7 @@ using Alachisoft.NCache.Caching.Util;
 using Alachisoft.NCache.Serialization;
 using System.Collections.Generic;
 using Alachisoft.NCache.Runtime.Exceptions;
+using Alachisoft.NCache.Licensing;
 using Alachisoft.NCache.Common.ErrorHandling;
 #if SERVER
 using Alachisoft.NCache.Caching.Topologies.Clustered;
@@ -64,7 +65,7 @@ using Alachisoft.NCache.Caching.Messaging;
 using System.Runtime;
 using Alachisoft.NCache.Common.Topologies.Clustered;
 using Alachisoft.NCache.Common.Locking;
-
+using Alachisoft.NCache.Common.Configuration;
 using Alachisoft.NCache.Common.DataSource;
 using Alachisoft.NCache.Common.Resources;
 using System.Threading.Tasks;
@@ -75,7 +76,7 @@ using Alachisoft.NCache.Common.Pooling;
 
 using Alachisoft.NCache.Common.Pooling.Stats;
 using Alachisoft.NCache.Caching.CacheHealthAlerts;
-using Alachisoft.NCache.Common.FeatureUsageData;
+using Alachisoft.NCache.Common.Monitoring.MetricsServer;
 using Alachisoft.NCache.Common.FeatureUsageData.Dom;
 
 namespace Alachisoft.NCache.Caching
@@ -84,7 +85,7 @@ namespace Alachisoft.NCache.Caching
     /// The main class that is the interface of the system with the outside world. This class
     /// is remotable (MarshalByRefObject). 
     /// </summary>
-    public class Cache : MarshalByRefObject, IEnumerable, ICacheEventsListener, IClusterEventsListener, IDisposable
+    public class Cache : MarshalByRefObject, IEnumerable, ICacheEventsListener, IClusterEventsListener, IPublisherContextMetaPublisher, IDisposable
     {
         /// <summary> The name of the cache instance. </summary>
         private CacheInfo _cacheInfo = new CacheInfo();
@@ -122,7 +123,7 @@ namespace Alachisoft.NCache.Caching
         private event CustomUpdateCallback _customUpdateNotif;
 
 
-      
+
         /// <summary> delegate for async operations. </summary>
 
         private event AsyncOperationCompletedCallback _asyncOperationCompleted;
@@ -136,10 +137,7 @@ namespace Alachisoft.NCache.Caching
         private event NodeLeftCallback _memberLeft;
 
 
-#if !DEVELOPMENT
-
         private event HashmapChangedCallback _hashmapChanged;
-#endif
         private event OperationModeChangedCallback _operationModeChange;
         private event BlockClientActivity _blockClientActivity;
         private event UnBlockClientActivity _unblockClientActivity;
@@ -154,7 +152,7 @@ namespace Alachisoft.NCache.Caching
         private event ConfigurationModified _configurationModified;
         private event CompactTypeModifiedCallback _compactTypeModified;
         private event PollRequestCallback _pollRequestNotif;
-        
+
         private ArrayList _connectedClients = new ArrayList();
 
         /// <summary> Indicates wtherher a cache is InProc or not. </summary>
@@ -193,7 +191,8 @@ namespace Alachisoft.NCache.Caching
         private DateTime _startShutDown;
         private Latch _shutDownStatusLatch = new Latch(ShutDownStatus.NONE);
         private bool isClustered;
-      
+
+
         public AsyncProcessor _asyncProcessor;
         // created seperately for async clear, add, insert and remove operations from client for graceful shutdown.
 
@@ -202,13 +201,33 @@ namespace Alachisoft.NCache.Caching
         private StringPoolTrimmingTask _stringPoolTrimmingTask;
         private HealthMonitor healthMonitor = null;
 
+        const byte UNINITIALIZEDMODULE = 1;
+        const byte INITIALIZEDMODULE = 2;
+        public Latch _moduleStatestatusLatch = new Latch(UNINITIALIZEDMODULE);
+
+        private Process _currentProcess = null;
+        private DateTime _processRefreshTime = DateTime.Now;
+
+
         public bool _isClustered
         {
             get { return isClustered; }
             set { isClustered = value; }
         }
 
+        public string MonitoringId
+        {
+            get { return _context.CacheImpl.MonitoringSessionId; }
+        }
+        public long Size
+        {
+            get => Context.CacheInternal.Size;
+        }
 
+        public void SetModuleStatusInitialized()
+        {
+            _moduleStatestatusLatch.SetStatusBit(INITIALIZEDMODULE, UNINITIALIZEDMODULE);
+        }
 
         internal IDataFormatService CachingSubSystemDataService
         {
@@ -262,7 +281,6 @@ namespace Alachisoft.NCache.Caching
             get => Context.TransactionalPoolManager;
         }
 
-        private SQLDependencySettings _sqlDependencySettings;
 
         /// <summary> Thread to reset Instantaneous Stats after every one second.</summary>
         private Thread _instantStatsUpdateTimer;
@@ -277,8 +295,7 @@ namespace Alachisoft.NCache.Caching
 
         public bool _enableEventsPolling = false;
         private EventManager _eventManager = new EventManager();
-
-        //private CacheClientConnectivityChangedCallback _clientConnectivityChanged;
+        internal bool LuceneConfigured { get; private set; }
 
         /// <summary>
         /// Default constructor.
@@ -382,7 +399,7 @@ namespace Alachisoft.NCache.Caching
                         }
                     }
 
-                  
+
 
 #if !NETCORE
                     try
@@ -396,12 +413,12 @@ namespace Alachisoft.NCache.Caching
                     if (_context.CacheImpl != null)
                         _context.CacheImpl.StopServices();
 
-                   
-                   
+
+
 
                     if (_cacheStopped != null && CacheType != null && CacheType.Equals("mirror-server")) _cacheStopped(_cacheInfo.Name, null);
 
-                   
+
 
                     if (_asyncProcessor != null)
                     {
@@ -476,12 +493,12 @@ namespace Alachisoft.NCache.Caching
 
             }
         }
-        
+
         public bool IsClusterUnderMaintenance()
         {
             return _context.IsClusterUnderMaintenance();
         }
-        
+
         public bool IsClusterAvailableForMaintenance()
         {
             return _context.IsClusterAvailableForMaintenance();
@@ -533,7 +550,7 @@ namespace Alachisoft.NCache.Caching
             set { _cacheInfo.ConfigString = value; }
         }
 
-       
+
         /// <summary>
         /// Returns true if the cache is running, false otherwise.
         /// </summary>
@@ -542,7 +559,6 @@ namespace Alachisoft.NCache.Caching
             get { return _context.CacheImpl != null; }
         }
 
-#if !( CLIENT)
         public bool IsCoordinator
         {
             get
@@ -555,7 +571,6 @@ namespace Alachisoft.NCache.Caching
                     return false;
             }
         }
-#endif
 
         /// <summary>
         /// Get the running cache type name.
@@ -604,7 +619,8 @@ namespace Alachisoft.NCache.Caching
         public string TargetCacheUniqueID
         {
             get
-            {   return string.Empty;
+            {
+                return string.Empty;
             }
         }
 #endif
@@ -623,7 +639,7 @@ namespace Alachisoft.NCache.Caching
         }
 
 
-     
+
 
         public List<CacheNodeStatistics> GetCacheNodeStatistics()
         {
@@ -644,7 +660,7 @@ namespace Alachisoft.NCache.Caching
             return statistics;
 
         }
-
+        public int ConnectedClientCount { get { return _connectedClients.Count; } }
         public long CompressThresholdSize { get { return _compressionThresholdSize * 1024; } }
         public bool CompressionEnabled { get { return _compressionEnabled; } }
 
@@ -674,7 +690,7 @@ namespace Alachisoft.NCache.Caching
 
 
 
-      
+
 
         /// <summary>
         /// Gets or sets the cache item at the specified key.
@@ -691,7 +707,7 @@ namespace Alachisoft.NCache.Caching
                     DateTime lockDate = DateTime.UtcNow;
                     ulong version = 0;
 
-                  
+
                     operationContext = OperationContext.CreateAndMarkInUse(
                         Context.TransactionalPoolManager, NCModulesConstants.CacheCore, OperationContextFieldName.OperationType, OperationContextOperationType.CacheOperation
                     );
@@ -714,12 +730,10 @@ namespace Alachisoft.NCache.Caching
         /// <summary> delegate for item addition notifications. </summary>
         public event ItemAddedCallback ItemAdded
         {
-            add { 
+            add
+            {
                 _itemAdded += value;
-                if (_itemAdded?.GetInvocationList().Length > 0)
-                {
-                    FeatureUsageCollector.Instance.GetFeature(FeatureEnum.general_events, FeatureEnum.data_sharing).UpdateUsageTime();
-                }
+
             }
             remove { _itemAdded -= value; }
         }
@@ -727,11 +741,9 @@ namespace Alachisoft.NCache.Caching
         /// <summary> delegate for item updation notifications. </summary>
         public event ItemUpdatedCallback ItemUpdated
         {
-            add { _itemUpdated += value;
-                if (_itemUpdated?.GetInvocationList().Length > 0)
-                {
-                    FeatureUsageCollector.Instance.GetFeature(FeatureEnum.general_events, FeatureEnum.data_sharing).UpdateUsageTime();
-                }
+            add
+            {
+                _itemUpdated += value;
             }
             remove { _itemUpdated -= value; }
         }
@@ -739,12 +751,9 @@ namespace Alachisoft.NCache.Caching
         /// <summary> delegate for item removal notifications. </summary>
         public event ItemRemovedCallback ItemRemoved
         {
-            add { _itemRemoved += value;
-
-                if (_itemRemoved?.GetInvocationList().Length > 0)
-                {
-                    FeatureUsageCollector.Instance.GetFeature(FeatureEnum.general_events, FeatureEnum.data_sharing).UpdateUsageTime();
-                }
+            add
+            {
+                _itemRemoved += value;
             }
             remove { _itemRemoved -= value; }
         }
@@ -752,12 +761,9 @@ namespace Alachisoft.NCache.Caching
         /// <summary> delegate for cache clear notifications. </summary>
         public event CacheClearedCallback CacheCleared
         {
-            add { _cacheCleared += value;
-
-                if(_cacheCleared?.GetInvocationList().Length > 0)
-                {
-                    FeatureUsageCollector.Instance.GetFeature(FeatureEnum.cache_clear_event_feature, FeatureEnum.cache_event).UpdateUsageTime();
-                }
+            add
+            {
+                _cacheCleared += value;
             }
             remove { _cacheCleared -= value; }
         }
@@ -790,27 +796,18 @@ namespace Alachisoft.NCache.Caching
 
         public event NodeJoinedCallback MemberJoined
         {
-            add { _memberJoined += value;
-
-                if (_memberJoined?.GetInvocationList().Length > 0)
-                {
-                    FeatureUsageCollector.Instance.GetFeature(FeatureEnum.cluster_change_events).UpdateUsageTime();
-                    FeatureUsageCollector.Instance.GetFeature(FeatureEnum.node_join_event, FeatureEnum.cluster_change_events).UpdateUsageTime();
-
-                }
+            add
+            {
+                _memberJoined += value;
             }
             remove { _memberJoined -= value; }
         }
 
         public event NodeLeftCallback MemberLeft
         {
-            add { _memberLeft += value;
-
-                if (_memberLeft?.GetInvocationList().Length > 0)
-                {
-                    FeatureUsageCollector.Instance.GetFeature(FeatureEnum.cluster_change_events).UpdateUsageTime();
-                    FeatureUsageCollector.Instance.GetFeature(FeatureEnum.node_leave_event, FeatureEnum.cluster_change_events).UpdateUsageTime();
-                }
+            add
+            {
+                _memberLeft += value;
             }
             remove { _memberLeft -= value; }
         }
@@ -857,7 +854,7 @@ namespace Alachisoft.NCache.Caching
             get { return _socketServerDataService; }
             private set { _socketServerDataService = value; }
         }
-        
+
 
         /// <summary> delegate for Sending pull requests.  </summary>
         internal event PollRequestCallback PollRequestCallbackNotif
@@ -920,7 +917,7 @@ namespace Alachisoft.NCache.Caching
         /// <param name="client"></param>
         /// <param name="cacheId"></param>
         /// <param name="clientInfo"></param>
-        public void OnClientDisconnected(string client, string cacheId, Runtime.Caching.ClientInfo clientInfo, long count)
+        public void OnClientDisconnected(string client, string cacheId, long count)
         {
             if (_context.CacheImpl != null)
             {
@@ -929,7 +926,7 @@ namespace Alachisoft.NCache.Caching
                     _connectedClients.Remove(client);
                 }
 
-                _context.CacheImpl.ClientDisconnected(client, _inProc, clientInfo);
+                _context.CacheImpl.ClientDisconnected(client, _inProc);
 
                 if (ServiceConfiguration.LogClientEvents)
                 {
@@ -996,7 +993,7 @@ namespace Alachisoft.NCache.Caching
         }
 
 #if SERVER
-        public void GetLeastLoadedServer(ref string ipAddress, ref int serverPort)
+        public void GetLeastLoadedServer(ref string ipAddress, ref int serverPort, ref Hashtable serverPublicIp)
         {
             string connectedIpAddress = ipAddress;
             int connectedPort = serverPort;
@@ -1040,7 +1037,14 @@ namespace Alachisoft.NCache.Caching
                 ipAddress = connectedIpAddress;
                 serverPort = connectedPort;
             }
-        }
+
+            Hashtable nodesPublicIp = ((ClusterCacheBase)this._context.CacheImpl).Cluster.ServerMapping;
+            if (nodesPublicIp != null && nodesPublicIp.Count > 0)
+            {
+                serverPublicIp = nodesPublicIp;
+            }
+        
+    }
 
 #endif
 
@@ -1076,8 +1080,41 @@ namespace Alachisoft.NCache.Caching
             }
             return runningServers;
         }
-        
 
+        public Dictionary<string, int> GetRunningServersPublicIps(string ipAddress, int serverPort)
+        {
+            Dictionary<string, int> runningServers = new Dictionary<string, int>();
+            if (this.CacheType.Equals("replicated-server") || this.CacheType.Equals("mirror-server"))
+            {
+                string connectedIpAddress = ipAddress;
+                int connectedPort = serverPort;
+
+                ArrayList nodes = ((ClusterCacheBase)this._context.CacheImpl)._stats.Nodes;
+                Hashtable nodesPublicIp = ((ClusterCacheBase)this._context.CacheImpl).Cluster.ServerMapping;
+
+                if (nodesPublicIp != null && nodesPublicIp.Count > 0)
+                {
+                    foreach (NodeInfo i in nodes)
+                    {
+                        if (!_context.CacheImpl.IsShutdownServer(i.Address))
+                        {
+                            if (i.RendererAddress != null)
+                            {
+                                Address key = new Address(i.RendererAddress.IpAddress, i.RendererAddress.Port);
+
+                                if (nodesPublicIp.ContainsKey(key))
+                                {
+                                    ipAddress = nodesPublicIp[key].ToString();
+                                    serverPort = i.RendererAddress.Port;
+                                    runningServers.Add(ipAddress, serverPort);
+                                }
+                            }
+                        }
+                    }
+                }
+            }
+            return runningServers;
+        }
         public void MakeCacheActiveNCManager(bool makeActive)
         {
             if (makeActive)
@@ -1108,6 +1145,19 @@ namespace Alachisoft.NCache.Caching
 
                         break;
                     }
+                }
+            }
+        }
+
+        public void GetServersPublicIPs(ref Hashtable serverPublicIp)
+        {
+            if (!this._context.IsClusteredImpl) return;
+            if (this._context.CacheImpl != null && ((ClusterCacheBase)this._context.CacheImpl).Cluster.ServerMapping != null)
+            {
+                Hashtable nodesPublicIp = ((ClusterCacheBase)this._context.CacheImpl).Cluster.ServerMapping;
+                if (nodesPublicIp != null && nodesPublicIp.Count > 0)
+                {
+                    serverPublicIp = nodesPublicIp;
                 }
             }
         }
@@ -1166,7 +1216,6 @@ namespace Alachisoft.NCache.Caching
 #if !NETCORE
                     subscriber.BeginInvoke(uniqueId, server, interval, port, null, subscriber);
 #elif NETCORE
-                    //TODO: ALACHISOFT (BeginInvoke is not supported in .Net Core thus using TaskFactory)
                     TaskFactory factory = new TaskFactory();
                     System.Threading.Tasks.Task task = factory.StartNew(() => subscriber(uniqueId, server, interval, port));
 #endif
@@ -1201,7 +1250,6 @@ namespace Alachisoft.NCache.Caching
 #if !NETCORE
                     subscriber.BeginInvoke(uniqueId, server, port, null, subscriber);
 #elif NETCORE
-                    //TODO: ALACHISOFT (BeginInvoke is not supported in .Net Core thus using TaskFactory)
                     TaskFactory factory = new TaskFactory();
                     System.Threading.Tasks.Task task = factory.StartNew(() => subscriber(uniqueId, server, port));
 #endif
@@ -1258,19 +1306,19 @@ namespace Alachisoft.NCache.Caching
                     _asyncProcessor.WindUpTask();
                 }
 
-               
+
                 _context.CacheImpl.WindUpReplicatorTask();
 
                 _context.NCacheLog.CriticalInfo("Cache.ShutDownGraceful", "Windup Tasks Ended.");
 
-                
+
                 if (_asyncProcessor != null)
                 {
                     if (BlockInterval > 0)
                         _asyncProcessor.WaitForShutDown(BlockInterval);
                 }
 
-               
+
                 if (BlockInterval > 0)
                     _context.CacheImpl.WaitForReplicatorTask(BlockInterval);
 
@@ -1368,7 +1416,7 @@ namespace Alachisoft.NCache.Caching
         }
 
         internal void Initialize(IDictionary properties, bool inProc,
-            bool isStartingAsMirror, bool twoPhaseInitialization)
+            bool isStartingAsMirror, bool twoPhaseInitialization, IMetricsTransporterFactory metricsTransporterFactory = null)
         {
             if (_context._cmptKnownTypesforJava == null) _context._cmptKnownTypesforJava = new Hashtable(new EqualityComparer());
             if (_context._cmptKnownTypesforNet == null) _context._cmptKnownTypesforNet = new Hashtable(new EqualityComparer());
@@ -1383,7 +1431,20 @@ namespace Alachisoft.NCache.Caching
 
             try
             {
-                
+                MetricsPublisher metricsPublisher = null;
+                if (!inProc)
+                {
+                    if (_context.Render != null)
+                    {
+                        metricsPublisher = new MetricsPublisher(_context.Render.MetricsTransporterFactory, this);
+                        _context.Render.StatsPublisher = metricsPublisher;
+                    }
+                    else
+                    {
+                        metricsPublisher = new MetricsPublisher(metricsTransporterFactory, this);
+                    }
+                    _context.MetricsPublisher = metricsPublisher;
+                }
                 lock (this)
                 {
                     if (!properties.Contains("cache"))
@@ -1417,7 +1478,7 @@ namespace Alachisoft.NCache.Caching
                             }
                         }
                     }
-                    
+
                     InitializeObjectPools(createFakePools);
                     InitializeOldPoolManager(createFakePools);
 
@@ -1425,11 +1486,24 @@ namespace Alachisoft.NCache.Caching
 
                     IDictionary cacheConfig = (IDictionary)properties["cache"];
 
+                    StoreType storeType = StoreType.DistributedCache;
+
+                    if (!cacheConfig.Contains(ConfigurationAttributeNames.STORE_TYPE))
+                        throw new ConfigurationException($"Missing configuration attribute '{ConfigurationAttributeNames.STORE_TYPE}'");
+
+                    var store = cacheConfig[ConfigurationAttributeNames.STORE_TYPE].ToString();
+
+                    if (string.IsNullOrWhiteSpace(store))
+                        throw new ConfigurationException($"Missing configuration attribute '{ConfigurationAttributeNames.STORE_TYPE}'");
+
+                    storeType = StoreTypeUtil.GetStore(store);
+                    _context.StoreType = storeType;
+
                     #region ---------------------------------------- [Fastening Data Format of Cache] ----------------------------------------
 
 
 
-                    #region New Code - 2018.05.28_1044
+                    #region New Code - 2026.05.28_1044
                     if (cacheConfig.Contains("data-format"))
                     {
                         if (_cacheInfo.Configuration != null && _cacheInfo.Configuration.CacheType.CompareTo("client-cache") == 0)
@@ -1474,23 +1548,22 @@ namespace Alachisoft.NCache.Caching
                         SerializationFormat format;
                         if (Enum.TryParse(cacheConfig[SerializationUtility.SerializationConfigAttribute].ToString(), true, out format))
                             _context.SerializationFormat = format;
+
                         switch (format)
                         {
                             case SerializationFormat.Binary:
-                                FeatureUsageCollector.Instance.GetFeature(FeatureEnum.binary_serialization).UpdateUsageTime();
                                 break;
                             case SerializationFormat.Json:
-                                FeatureUsageCollector.Instance.GetFeature(FeatureEnum.json_serialization).UpdateUsageTime();
                                 break;
                             default:
                                 break;
                         }
-
-
                     }
 
                     if (properties["server-end-point"] != null)
                         cacheConfig.Add("server-end-point", (IDictionary)properties["server-end-point"]);
+
+
 
 
                     if (cacheConfig.Contains("name"))
@@ -1511,7 +1584,7 @@ namespace Alachisoft.NCache.Caching
                         _context.NCacheLog.Initialize(null, _cacheInfo.CurrentPartitionId, _cacheInfo.Name);
                     }
 
-                    LogThreadInfo();
+                    LogThreadInfo(storeType);
 
                     SerializationUtil.NCacheLog = _context.NCacheLog;
 
@@ -1521,9 +1594,6 @@ namespace Alachisoft.NCache.Caching
                         {
                             _context.CompressionEnabled = this._compressionEnabled;
                             _context.CompressionThreshold = this._compressionThresholdSize;
-
-                            if (_context.CompressionEnabled)
-                                FeatureUsageCollector.Instance.GetFeature(FeatureEnum.compression).UpdateUsageTime();
                         }
                     }
                     _context.SerializationContext = _cacheInfo.Name;
@@ -1590,7 +1660,7 @@ namespace Alachisoft.NCache.Caching
                             if (ServiceConfiguration.PublishCountersToCacheHost)
                                 _context.PerfStatsColl = new CustomStatsCollector(Name, inProc);
                             else
-                                _context.PerfStatsColl = new PerfStatsCollector(Name, inProc); 
+                                _context.PerfStatsColl = new PerfStatsCollector(Name, inProc);
 #endif
 
                             _context.PerfStatsColl.NCacheLog = _context.NCacheLog;
@@ -1602,9 +1672,7 @@ namespace Alachisoft.NCache.Caching
 
 
 
-                    MiscUtil.RegisterCompactTypes(_context.TransactionalPoolManager);
                     SetCacheTopology();
-
                     CreateInternalCache(cacheConfig, isStartingAsMirror, twoPhaseInitialization);
 
                     //setting cache Impl instance
@@ -1636,6 +1704,7 @@ namespace Alachisoft.NCache.Caching
                     if (cacheConfig.Contains("client-activity-notification"))
                     {
                         IDictionary clientNotification = cacheConfig["client-activity-notification"] as IDictionary;
+
                         if (clientNotification.Contains("enabled"))
                         {
                             int retention = Convert.ToInt32(clientNotification["retention-period"]);
@@ -1646,11 +1715,10 @@ namespace Alachisoft.NCache.Caching
                                 Period = retention
                             };
                             _context.ConnectedClients.AddClientDeathNotificationSpecification(specification);
-                            FeatureUsageCollector.Instance.GetFeature(FeatureEnum.client_connectivity_notification).UpdateUsageTime();
                         }
                     }
 
-               
+
 
                     if (inProc && _context.CacheImpl != null)
                     {
@@ -1667,11 +1735,18 @@ namespace Alachisoft.NCache.Caching
 #endif
                     {
 
-                        
+
                     }
                 }
                 _context.CacheImpl.Parent = this;
+                if (!inProc)
+                {
 
+                    metricsPublisher.NCacheLog = _context.NCacheLog;
+                    SystemMetricsMonitor systemMetricsMonitor = new SystemMetricsMonitor(metricsPublisher, _context);
+                    metricsPublisher.Initialize();
+
+                }
                 // StringPool triming task is added to TimeScheduler
                 if (_stringPoolTrimmingTask == null)
                 {
@@ -1690,6 +1765,7 @@ namespace Alachisoft.NCache.Caching
                 Dispose();
                 throw;
             }
+          
             catch (Exception e)
             {
                 Dispose();
@@ -1697,7 +1773,7 @@ namespace Alachisoft.NCache.Caching
             }
         }
 
-        void StartMonitoring ()
+        void StartMonitoring()
         {
             try
             {
@@ -1719,12 +1795,25 @@ namespace Alachisoft.NCache.Caching
             }
         }
 
-        private void SetCacheTopology()
+       private void SetCacheTopology()
         {
-            if (_cacheInfo.ClassName.Equals("mirror-server"))
-                _context.CacheTopology = CacheTopology.Mirror;
-            else if (_cacheInfo.ClassName.Equals("local-cache"))
-                _context.CacheTopology = CacheTopology.Local;
+            if (_cacheInfo.Configuration != null)
+            {
+                string topology = _cacheInfo.Configuration.CacheType;
+                if (_cacheInfo.Configuration.Cluster != null)
+                {
+                    topology = _cacheInfo.Configuration.Cluster.CacheType;
+                }
+
+                if (topology.Equals("replicated-server"))
+                    _context.CacheTopology = CacheTopology.Replicated;
+                else if (topology.Equals("mirror-server"))
+                    _context.CacheTopology = CacheTopology.Mirror;
+                else if (topology.Equals("partitioned-server"))
+                    _context.CacheTopology = CacheTopology.Partitioned;
+                else if (topology.Equals("local-cache"))
+                    _context.CacheTopology = CacheTopology.Local;
+            }
 
         }
 
@@ -1738,7 +1827,7 @@ namespace Alachisoft.NCache.Caching
             //Transactional pool is intended to be used for transactions ie. running oprations. This pool is of fixed size.
             //Objects alloated on this pool must be returned to the pool at the end of transaction
             _context.TransactionalPoolManager = new TransactionalPoolManager(createFakePool);
-            InitializeTransactionalObjectPools(_context.TransactionalPoolManager,ServiceConfiguration.TransactionalPoolCapacity);
+            InitializeTransactionalObjectPools(_context.TransactionalPoolManager, ServiceConfiguration.TransactionalPoolCapacity);
 
             //Fake pool is intended to be used when current operation is coming from cluster for e.g. in handleGet()
             _context.FakeObjectPool = new PoolManager(true);
@@ -1747,7 +1836,7 @@ namespace Alachisoft.NCache.Caching
 
         private void InitializeStoreObjectPools(PoolManager poolManager)
         {
-            poolManager.CreatePool<byte>(Common.Pooling.ArrayPoolType.Byte,true);
+            poolManager.CreatePool<byte>(Common.Pooling.ArrayPoolType.Byte, true);
 
             poolManager.CreatePool(
                      Common.Pooling.ObjectPoolType.BitSet, new Common.Pooling.PoolingOptions<BitSet>(
@@ -1759,7 +1848,7 @@ namespace Alachisoft.NCache.Caching
                      new CacheEntryInstantiator()
                 )
             );
-          
+
             poolManager.CreatePool(
                 Common.Pooling.ObjectPoolType.IdleExpiration, new Common.Pooling.PoolingOptions<IdleExpiration>(
                     new IdleExpirationInstantiator()
@@ -1780,19 +1869,19 @@ namespace Alachisoft.NCache.Caching
                     new NodeExpirationInstantiator()
                 )
             );
-           
+
             poolManager.CreatePool(
                 Common.Pooling.ObjectPoolType.LargeUserBinaryObject, new Common.Pooling.PoolingOptions<LargeUserBinaryObject>(
                     new LargeUserBinaryObjectInstantiator()
                 )
             );
-          
+
             poolManager.CreatePool(
                 Common.Pooling.ObjectPoolType.SmallUserBinaryObject, new Common.Pooling.PoolingOptions<SmallUserBinaryObject>(
                     new SmallUserBinaryObjectInstatiator()
                 )
             );
-           
+
             poolManager.CreatePool(
                 Common.Pooling.ObjectPoolType.TTLExpiration, new Common.Pooling.PoolingOptions<TTLExpiration>(
                     new TTLExpirationInstantiator()
@@ -1818,13 +1907,13 @@ namespace Alachisoft.NCache.Caching
                     new NotificationsInstantiator()
                 )
             );
-           
+
             poolManager.CreatePool(
                 Common.Pooling.ObjectPoolType.GroupInfo, new Common.Pooling.PoolingOptions<GroupInfo>(
                     new GroupInfoInstantiator()
                 )
             );
-          
+
             poolManager.CreatePool(
                 Common.Pooling.ObjectPoolType.AggregateExpirationHint, new Common.Pooling.PoolingOptions<AggregateExpirationHint>(
                     new AggregateExpirationHintInstantiator()
@@ -1843,7 +1932,7 @@ namespace Alachisoft.NCache.Caching
 
             poolManager.CreateSimplePool(
                      Common.Pooling.ObjectPoolType.BitSet, new Common.Pooling.PoolingOptions<BitSet>(
-                          new BitSetInstantiator(),poolCapacity
+                          new BitSetInstantiator(), poolCapacity
                      )
                  );
             poolManager.CreateSimplePool(
@@ -1871,19 +1960,19 @@ namespace Alachisoft.NCache.Caching
                     new NodeExpirationInstantiator(), poolCapacity
                 )
             );
-   
+
             poolManager.CreateSimplePool(
                 Common.Pooling.ObjectPoolType.LargeUserBinaryObject, new Common.Pooling.PoolingOptions<LargeUserBinaryObject>(
                     new LargeUserBinaryObjectInstantiator(), poolCapacity
                 )
             );
-     
+
             poolManager.CreateSimplePool(
                 Common.Pooling.ObjectPoolType.SmallUserBinaryObject, new Common.Pooling.PoolingOptions<SmallUserBinaryObject>(
                     new SmallUserBinaryObjectInstatiator(), poolCapacity
                 )
             );
-            
+
             poolManager.CreateSimplePool(
                 Common.Pooling.ObjectPoolType.TTLExpiration, new Common.Pooling.PoolingOptions<TTLExpiration>(
                     new TTLExpirationInstantiator(), poolCapacity
@@ -1909,13 +1998,13 @@ namespace Alachisoft.NCache.Caching
                     new NotificationsInstantiator(), poolCapacity
                 )
             );
-          
+
             poolManager.CreateSimplePool(
                 Common.Pooling.ObjectPoolType.GroupInfo, new Common.Pooling.PoolingOptions<GroupInfo>(
                     new GroupInfoInstantiator(), poolCapacity
                 )
             );
-           
+
             poolManager.CreateSimplePool(
                 Common.Pooling.ObjectPoolType.AggregateExpirationHint, new Common.Pooling.PoolingOptions<AggregateExpirationHint>(
                     new AggregateExpirationHintInstantiator(), poolCapacity
@@ -1938,16 +2027,15 @@ namespace Alachisoft.NCache.Caching
 
         private void InitializeOldPoolManager(bool hardCreateFakePools)
         {
-           
+
         }
 
-    
+        public int GetRequestsPerSecond()
+        {
+            return (int)_context.Render.GetCounterValue(CustomCounterNames.RequestsPerSec);
+        }
 
-     
-        
-        
-        
-        private void LogThreadInfo()
+        private void LogThreadInfo(StoreType storeType)
         {
             int maxworkerThreads = 0;
             int maxcompletionPortThreads = 0;
@@ -1955,9 +2043,23 @@ namespace Alachisoft.NCache.Caching
             int mincompletionPortThreads = 0;
             System.Threading.ThreadPool.GetMaxThreads(out maxworkerThreads, out maxcompletionPortThreads);
             System.Threading.ThreadPool.GetMinThreads(out minworkerThreads, out mincompletionPortThreads);
-            _context.NCacheLog.CriticalInfo("CacheInfo ", "Process Id : " + Process.GetCurrentProcess().Id + "; Max Worker Threads : " + maxworkerThreads + " ; Max Completion Port Threads : " + maxcompletionPortThreads
+            string version = null;
+            try
+            {
+                if (AppUtil.IsNuGetOnlyInstallation)
+                    version = Common.Monitoring.Version.GetVersionForNuGet();
+                else
+                    version = Common.Monitoring.Version.GetVersion();
+            }
+            catch (Exception)
+            {
+
+                version = "Null";
+            }
+            _context.NCacheLog.CriticalInfo("CacheInfo ", "NCache Version : " + version + " ; Process Id : " + Process.GetCurrentProcess().Id + "; Max Worker Threads : " + maxworkerThreads + " ; Max Completion Port Threads : " + maxcompletionPortThreads
                 + " ; Min Worker Threads : " + minworkerThreads + " ; Min Completion Port Threads : " + mincompletionPortThreads + " ; IsServerGC: " + GCSettings.IsServerGC);
 
+            _context.NCacheLog.CriticalInfo("StoreTypeInfo ", "Cache Store Type: " + storeType);
         }
 
         private void FilterOutDotNetTypes(Hashtable cmptKnownTypes, Hashtable cmptKnownTypesdotNet, Hashtable cmptKnownTypesJava, bool compact)
@@ -2121,7 +2223,7 @@ namespace Alachisoft.NCache.Caching
                     _context.TimeSched = new TimeScheduler();
                     _context.AsyncProc = new AsyncProcessor(_context.NCacheLog);
                     _asyncProcessor = new AsyncProcessor(_context.NCacheLog);
-             
+
 
                     if (!inProc)
                     {
@@ -2155,7 +2257,7 @@ namespace Alachisoft.NCache.Caching
                             if (ServiceConfiguration.PublishCountersToCacheHost)
                                 _context.PerfStatsColl = new CustomStatsCollector(Name, inProc);
                             else
-                                _context.PerfStatsColl = new PerfStatsCollector(Name, inProc); 
+                                _context.PerfStatsColl = new PerfStatsCollector(Name, inProc);
 #endif
                         _context.PerfStatsColl.NCacheLog = _context.NCacheLog;
 
@@ -2226,6 +2328,7 @@ namespace Alachisoft.NCache.Caching
             }
             catch (NullReferenceException)
             {
+                // Ignore logging in this case because of Bug 14957 (http://pdc:81/bugzilla/show_bug.cgi?id=14957)
             }
             catch (Exception exc)
             {
@@ -2269,7 +2372,7 @@ namespace Alachisoft.NCache.Caching
             }
         }
 
-        private void  CreateInternalCache(IDictionary properties, bool isStartingAsMirror,
+        private void CreateInternalCache(IDictionary properties, bool isStartingAsMirror,
             bool twoPhaseInitialization)
         {
             if (properties == null)
@@ -2302,14 +2405,24 @@ namespace Alachisoft.NCache.Caching
                 if (properties.Contains("perf-counters"))
                     bEnableCounter = Convert.ToBoolean(properties["perf-counters"]);
 
+                bool isClusterable = true;
                 if (bEnableCounter)
                 {
+                    _context.PerfStatsColl.StatsPublisher = _context.MetricsPublisher;
+                    try
+                    {
+                        MonitoringConfigManager monitoringConfigManager = new MonitoringConfigManager();
+                        _context.PerfStatsColl.Category = monitoringConfigManager.GetCategory(CategoriesConstants.NCache);
+                    }
+                    catch (Exception ex)
+                    {
+                    }
+
                     _context.PerfStatsColl.InitializePerfCounters((isStartingAsMirror
                         ? !isStartingAsMirror
-                        : this._inProc));
+                        : this._inProc), ModuleConfigured: LuceneConfigured);
                 }
-
-                 
+                {
                     _context.ExpiryMgr = new ExpirationManager(schemeProps, _context);
 
                     // For the removal of Cascaded Dependencies on Clean Interval.
@@ -2320,23 +2433,39 @@ namespace Alachisoft.NCache.Caching
                     _asyncProcessor.Start();
 
 
+                    // We should use an InternalCacheFactory for the code below
+                
+
+                    if (_cacheInfo.ClassName.CompareTo("replicated-server") == 0)
+                    {
+                        _isPersistEnabled = ServiceConfiguration.EventsPersistence;
+                        if (_isPersistEnabled)
+                        {
+                            _persistenceInterval = ServiceConfiguration.EventsPersistenceInterval;
+
+                            _context.PersistenceMgr = new PersistenceManager(_persistenceInterval);
+                        }
+                        if (isClusterable)
+                        {
+                            _context.CacheImpl = new ReplicatedServerCache(cacheClasses, schemeProps, this, _context, this);
+                            _context.CacheImpl.Initialize(cacheClasses, schemeProps, twoPhaseInitialization);
+                            _context.CacheTopology = CacheTopology.Replicated;
+                        }
+                    }
+                   
+                   
+
+                    else
 
 
-#if !CLIENT && !DEVELOPMENT
-                if (_cacheInfo.ClassName.CompareTo("mirror-server") == 0)
-                {
-                    _context.CacheImpl = new MirrorCache(cacheClasses, schemeProps, this, _context, this);
-                    _context.CacheImpl.Initialize(cacheClasses, schemeProps, twoPhaseInitialization);
-                    _context.CacheTopology = CacheTopology.Mirror;
-                }
-
-                else
-#endif
                     if (_cacheInfo.ClassName.CompareTo("local-cache") == 0)
                     {
                         LocalCacheImpl cache = new LocalCacheImpl(_context);
                         _context.CacheTopology = CacheTopology.Local;
-                         cache.Internal = CacheBase.Synchronized(new LocalCache(cacheClasses, cache, schemeProps, this, _context));
+
+
+
+                        cache.Internal = CacheBase.Synchronized(new LocalCache(cacheClasses, cache, schemeProps, this, _context));
 
                         _context.CacheImpl = cache;
 
@@ -2371,9 +2500,9 @@ namespace Alachisoft.NCache.Caching
                     else
                     {
                         _context.ExpiryMgr.Dispose();
-                        
+          
                     }
-               
+                }
             }
             catch (ConfigurationException e)
             {
@@ -2383,7 +2512,8 @@ namespace Alachisoft.NCache.Caching
                 throw;
             }
 
-        
+          
+
             catch (Exception e)
             {
                 _context.NCacheLog.Error("Cache.CreateInternalCache()", e.ToString());
@@ -2393,7 +2523,7 @@ namespace Alachisoft.NCache.Caching
             }
         }
 
-        
+
 
         private void CreateInternalCache2(IDictionary properties, string userId, string password)
         {
@@ -2420,16 +2550,20 @@ namespace Alachisoft.NCache.Caching
                     }
                 }
 
-                //there is no licensing in the express edtion but we still wants
-                //to provide replicated cluster.
+                bool isClusterable = true;
 
-#if !NETCORE
-    bool isClusterable = true;
-#elif NETCORE
-                bool isClusterable = false;
-#endif
                 if (bEnableCounter)
                 {
+                    _context.PerfStatsColl.StatsPublisher = _context.MetricsPublisher;
+                    try
+                    {
+                        MonitoringConfigManager monitoringConfigManager = new MonitoringConfigManager();
+                        _context.PerfStatsColl.Category = monitoringConfigManager.GetCategory(CategoriesConstants.NCache);
+                    }
+                    catch (Exception ex)
+                    {
+                        if (NCacheLog != null) NCacheLog.Error("Monitoring Module", ex.ToString());
+                    }
                     _context.PerfStatsColl.InitializePerfCounters(this._inProc);
                 }
 
@@ -2455,7 +2589,18 @@ namespace Alachisoft.NCache.Caching
 
 
                 // We should use an InternalCacheFactory for the code below
-                if (_cacheInfo.ClassName.CompareTo("local") == 0)
+#if SERVER
+                if (_cacheInfo.ClassName.CompareTo("replicated") == 0)
+                {
+                    if (isClusterable)
+                    {
+                        _context.CacheImpl = new ReplicatedServerCache(properties, clusterProps, this, _context, this);
+                        _context.CacheImpl.Initialize(properties, clusterProps, false);
+                    }
+                }
+                else
+#endif
+                    if (_cacheInfo.ClassName.CompareTo("local") == 0)
                 {
                     LocalCacheImpl cache = new LocalCacheImpl(_context);
                     cache.Internal = CacheBase.Synchronized(new LocalCache(properties, cache, properties, this, _context));
@@ -2491,11 +2636,21 @@ namespace Alachisoft.NCache.Caching
                 {
                     _context.ExpiryMgr.Dispose();
 
+   
+
                 }
             }
             catch (ConfigurationException e)
             {
                 _context.NCacheLog.Error("Cache.CreateInternalCache()", e.ToString());
+                _context.CacheImpl = null;
+                Dispose();
+                throw;
+            }
+
+            catch (LicensingException le)
+            {
+                _context.NCacheLog.Error("Cache.CreateInternalCache()", le.ToString());
                 _context.CacheImpl = null;
                 Dispose();
                 throw;
@@ -2546,7 +2701,41 @@ namespace Alachisoft.NCache.Caching
 
 #endregion
 
-    
+        public void PublishMetadata(IMetricsTransporter transporter)
+        {
+            string storeString = StoreTypeUtil.GetSessionIdentifierString(_cacheInfo.Configuration.Store);
+
+            CacheIdentifier identifier = new CacheIdentifier
+            {
+                CacheId = _cacheInfo.Configuration.Name,
+                ConfigId = _cacheInfo.Configuration.ConfigID
+            };
+
+            CacheMetaData cacheMetaData = new CacheMetaData
+            {
+                Identifier = identifier,
+                Topology = _cacheInfo.Configuration.Cluster == null ? "Local-cache" : _cacheInfo.Configuration.Cluster.Topology,
+                ClientServerIP = ServiceConfiguration.BindToIP.ToString(),
+                ClusterIP = ServiceConfiguration.BindToIP.ToString(),
+                SessionID = _context.CacheImpl.MonitoringSessionId,
+                InstallationType = GetInstallationType()
+            };
+
+
+            if (_context.Render != null)
+            {
+                cacheMetaData.ClientServerPort = _context.Render.Port.ToString();
+            }
+            else
+            {   //case of Replica
+                cacheMetaData.FromReplica = true;
+                cacheMetaData.ClientServerPort = "";
+            }
+            _context.MetricsPublisher.SessionId = cacheMetaData.SessionID;
+            
+            transporter.PublishMetadata(cacheMetaData.SessionID + ":" + "NCache", _context.MetricsPublisher.NCacheVersion, cacheMetaData);
+        }
+
 
         internal static void Resize(ref object[] array, int newLength)
         {
@@ -2650,7 +2839,7 @@ namespace Alachisoft.NCache.Caching
         public void Clear(BitSet flag, Notifications notification, OperationContext operationContext)
         {
             // Cache has possibly expired so do default.
-            if (!IsRunning) return; 
+            if (!IsRunning) return;
 
             object block = null;
             bool isNoBlock = false;
@@ -2670,7 +2859,7 @@ namespace Alachisoft.NCache.Caching
 
 
             DataSourceUpdateOptions updateOpts = this.UpdateOption(flag);
-          
+
 
 
             try
@@ -2692,7 +2881,7 @@ namespace Alachisoft.NCache.Caching
         public void ClearAsync(BitSet flagMap, Notifications notification, OperationContext operationContext)
         {
             // Cache has possibly expired so do default.
-            if (!IsRunning) return; 
+            if (!IsRunning) return;
             _asyncProcessor.Enqueue(new AsyncClear(this, notification, flagMap, operationContext));
         }
 
@@ -2792,33 +2981,33 @@ namespace Alachisoft.NCache.Caching
                 }
 
                 object generatedLockId = lockId;
-               
 
-              
 
-               
-                
-                    // if key and group are provided by user
-                    if (group != null)
-                        entry = _context.CacheImpl.GetGroup(key, group, subGroup, ref itemVersion, ref lockId, ref lockDate,
-                            null, LockAccessType.IGNORE_LOCK, operationContext);
 
-                    // if key and locking information is provided by user
-                    else
-                        entry = _context.CacheImpl.Get(key, ref itemVersion, ref lockId, ref lockDate, lockExpiration,
-                        accessType, operationContext);
 
-                    if (entry == null && accessType == LockAccessType.ACQUIRE)
+
+
+                // if key and group are provided by user
+                if (group != null)
+                    entry = _context.CacheImpl.GetGroup(key, group, subGroup, ref itemVersion, ref lockId, ref lockDate,
+                        null, LockAccessType.IGNORE_LOCK, operationContext);
+
+                // if key and locking information is provided by user
+                else
+                    entry = _context.CacheImpl.Get(key, ref itemVersion, ref lockId, ref lockDate, lockExpiration,
+                    accessType, operationContext);
+
+                if (entry == null && accessType == LockAccessType.ACQUIRE)
+                {
+                    if (lockId == null || generatedLockId.Equals(lockId))
                     {
-                        if (lockId == null || generatedLockId.Equals(lockId))
-                        {
-                            lockId = null;
-                            lockDate = new DateTime();
-                        }
+                        lockId = null;
+                        lockDate = new DateTime();
                     }
+                }
 
-                    
-               
+
+
 
                 _context.PerfStatsColl.MsecPerGetEndSample();
                 _context.PerfStatsColl.IncrementHitsRatioPerSecBaseStats();
@@ -2844,7 +3033,6 @@ namespace Alachisoft.NCache.Caching
             {
                 _context.NCacheLog.Error("Cache.Get()", inner.ToString());
                 throw new OperationFailedException("Get operation failed. Error : " + inner.Message, inner);
-                //throw new OperationFailedException(ErrorCodes.BasicCacheOperations.GET_OPERATION_FAILED,ErrorMessages.GetErrorMessage(ErrorCodes.BasicCacheOperations.GET_OPERATION_FAILED,inner.Message), inner);
             }
         }
 
@@ -2863,7 +3051,7 @@ namespace Alachisoft.NCache.Caching
                 );
                 operationContext.UseObjectPool = false;
                 bitSet = BitSet.CreateAndMarkInUse(Context.TransactionalPoolManager, NCModulesConstants.CacheCore);
-                return GetGroup(key, bitSet, null, null,  operationContext);
+                return GetGroup(key, bitSet, null, null, operationContext);
             }
             finally
             {
@@ -2964,7 +3152,7 @@ namespace Alachisoft.NCache.Caching
             object lockId = null;
             DateTime lockDate = DateTime.UtcNow;
             ulong version = 0;
-            return GetGroup(key, flagMap, group, subGroup, ref version, ref lockId, ref lockDate, TimeSpan.Zero, LockAccessType.IGNORE_LOCK,  operationContext);
+            return GetGroup(key, flagMap, group, subGroup, ref version, ref lockId, ref lockDate, TimeSpan.Zero, LockAccessType.IGNORE_LOCK, operationContext);
         }
 
         private object GetLockId(object key)
@@ -2988,7 +3176,6 @@ namespace Alachisoft.NCache.Caching
         internal CompressedValueEntry GetGroup(object key, BitSet flagMap, string group, string subGroup,
             ref ulong version, ref object lockId, ref DateTime lockDate, TimeSpan lockTimeout, LockAccessType accessType, OperationContext operationContext)
         {
-            //if (ServerMonitor.MonitorActivity) ServerMonitor.LogClientActivity("Cache.GetGrp", "");
             // Cache has possibly expired so do default.
             if (!IsRunning) return null;
 
@@ -2998,7 +3185,7 @@ namespace Alachisoft.NCache.Caching
                     _shutDownStatusLatch.WaitForAny(ShutDownStatus.SHUTDOWN_COMPLETED | ShutDownStatus.NONE, BlockInterval * 1000);
             }
 
-            CompressedValueEntry result = CompressedValueEntry.CreateCompressedCacheEntry(operationContext.UseObjectPool? Context.TransactionalPoolManager:Context.FakeObjectPool);
+            CompressedValueEntry result = CompressedValueEntry.CreateCompressedCacheEntry(operationContext.UseObjectPool ? Context.TransactionalPoolManager : Context.FakeObjectPool);
 
             CacheEntry e = null;
             try
@@ -3009,7 +3196,7 @@ namespace Alachisoft.NCache.Caching
                 _context.PerfStatsColl.IncrementGetPerSecStats();
                 _context.PerfStatsColl.IncrementHitsRatioPerSecBaseStats();
 
-               
+
 
                 LockExpiration lockExpiration = null;
                 if (accessType == LockAccessType.ACQUIRE)
@@ -3025,24 +3212,24 @@ namespace Alachisoft.NCache.Caching
 
                 object generatedLockId = lockId;
 
-               
+
 
                 if (group == null && subGroup == null)
-                        e = _context.CacheImpl.Get(key, ref version, ref lockId, ref lockDate, lockExpiration, accessType, operationContext);
-                    else
-                    {
-                        e = _context.CacheImpl.GetGroup(key, group, subGroup, ref version, ref lockId, ref lockDate, lockExpiration, accessType, operationContext);
-                    }
+                    e = _context.CacheImpl.Get(key, ref version, ref lockId, ref lockDate, lockExpiration, accessType, operationContext);
+                else
+                {
+                    e = _context.CacheImpl.GetGroup(key, group, subGroup, ref version, ref lockId, ref lockDate, lockExpiration, accessType, operationContext);
+                }
 
-                    if (e == null && accessType == LockAccessType.ACQUIRE)
+                if (e == null && accessType == LockAccessType.ACQUIRE)
+                {
+                    if (lockId == null || generatedLockId.Equals(lockId))
                     {
-                        if (lockId == null || generatedLockId.Equals(lockId))
-                        {
-                            lockId = null;
-                            lockDate = new DateTime();
-                        }
+                        lockId = null;
+                        lockDate = new DateTime();
                     }
-               
+                }
+
 
                 if (e != null)
                 {
@@ -3054,11 +3241,10 @@ namespace Alachisoft.NCache.Caching
                     result.Entry = e;
                 }
 
-                
+
 
                 _context.PerfStatsColl.MsecPerGetEndSample();
 
-                //getTime.EndSample();
                 /// update the counter for hits/sec or misses/sec
 
                 if (result.Value != null)
@@ -3082,7 +3268,6 @@ namespace Alachisoft.NCache.Caching
             {
                 _context.NCacheLog.Error("Cache.Get()", "Get operation failed. Error : " + inner.ToString());
                 throw new OperationFailedException("Get operation failed. Error : " + inner.Message, inner);
-                //throw new OperationFailedException(ErrorCodes.BasicCacheOperations.GET_OPERATION_FAILED, ErrorMessages.GetErrorMessage(ErrorCodes.BasicCacheOperations.GET_OPERATION_FAILED, inner.Message), inner);
             }
             finally
             {
@@ -3110,7 +3295,7 @@ namespace Alachisoft.NCache.Caching
         /// Retrieve the array of objects from the cache.
         /// An array of keys is passed as parameter.
         /// </summary>
-        internal IDictionary GetBulk(object[] keys, BitSet flagMap, OperationContext operationContext)
+        public IDictionary GetBulk(object[] keys, BitSet flagMap, OperationContext operationContext)
         {
             try
             {
@@ -3120,7 +3305,7 @@ namespace Alachisoft.NCache.Caching
                 if (keys == null) throw new ArgumentNullException("keys");
 
                 // Cache has possibly expired so do default.
-                if (!IsRunning) return null; 
+                if (!IsRunning) return null;
 
                 if (_shutDownStatusLatch.IsAnyBitsSet(ShutDownStatus.SHUTDOWN_INPROGRESS))
                 {
@@ -3132,14 +3317,13 @@ namespace Alachisoft.NCache.Caching
                 HashVector table = null;
                 try
                 {
-          
                     HPTimeStats getTime = new HPTimeStats();
                     getTime.BeginSample();
                     _context.PerfStatsColl.IncrementByGetPerSecStats(keys.Length);
                     _context.PerfStatsColl.MsecPerGetBeginSample();
 
-                      table = (HashVector)_context.CacheImpl.Get(keys, operationContext);
-                  
+                    table = (HashVector)_context.CacheImpl.Get(keys, operationContext);
+
 
 
                     if (table != null)
@@ -3154,8 +3338,8 @@ namespace Alachisoft.NCache.Caching
                             _context.PerfStatsColl.IncrementByMissPerSecStats(misses);
 
                         /// increment the counter for hits/sec
-                       
-                       
+
+
 
                         ///We maintian indexes of keys that needs resync or are not fethced in this array
                         ///This saves us from instantiating 3 separate arrays and then resizing it; 3 arrays to
@@ -3163,35 +3347,35 @@ namespace Alachisoft.NCache.Caching
                         int[] resyncIndexes = null;
                         int counter = 0;
 
-                        
+
                         if (operationContext.CancellationToken != null && operationContext.CancellationToken.IsCancellationRequested)
                             throw new OperationCanceledException(ExceptionsResource.OperationFailed);
-                        
-                            CacheEntry entry = null;
-                            for (int i = 0; i < keys.Length; i++)
+
+                        CacheEntry entry = null;
+                        for (int i = 0; i < keys.Length; i++)
+                        {
+                            if (table[keys[i]] != null)
                             {
-                                if (table[keys[i]] != null)
+                                try
                                 {
-                                    try
-                                    {
 
-                                        entry = table[keys[i]] as CacheEntry;
+                                    entry = table[keys[i]] as CacheEntry;
 
-                                        if (entry != null)
-                                        {
-                                            table[keys[i]] = CompressedValueEntry.CreateCompressedCacheEntry(Context.TransactionalPoolManager, entry);
-                                        }
-                                    }
-                                    finally
+                                    if (entry != null)
                                     {
-                                        entry?.MarkFree(NCModulesConstants.Global);
+                                        table[keys[i]] = CompressedValueEntry.CreateCompressedCacheEntry(Context.TransactionalPoolManager, entry);
                                     }
                                 }
-                               
+                                finally
+                                {
+                                    entry?.MarkFree(NCModulesConstants.Global);
+                                }
                             }
-                        
 
-                      
+                        }
+
+
+
 
                         getTime.EndSample();
                     }
@@ -3217,7 +3401,6 @@ namespace Alachisoft.NCache.Caching
                 {
                     _context.NCacheLog.Error("Cache.Get()", inner.ToString());
                     throw new OperationFailedException("Get operation failed. Error : " + inner.Message, inner);
-                    //throw new OperationFailedException(ErrorCodes.BasicCacheOperations.GET_OPERATION_FAILED,ErrorMessages.GetErrorMessage(ErrorCodes.BasicCacheOperations.GET_OPERATION_FAILED,inner.Message), inner);
                 }
                 return table;
             }
@@ -3303,7 +3486,7 @@ namespace Alachisoft.NCache.Caching
                 e.QueryInfo = cce.QueryInfo;
                 e.Flag.Data = cce.Flag.Data;
                 e.Notifications = cce.CallbackEntry;
-                
+
                 e.LockId = cce.LockId;
                 e.LockAccessType = cce.LockAccessType;
                 e.Version = (UInt32)cce.Version;
@@ -3344,7 +3527,7 @@ namespace Alachisoft.NCache.Caching
                 throw;
             }
         }
-        
+
         /// <summary>
         /// Add a CompactCacheEntry, it may be serialized
         /// </summary>
@@ -3362,7 +3545,7 @@ namespace Alachisoft.NCache.Caching
                 cce = (CompactCacheEntry)entry;
 
                 e = MakeCacheEntry(cce);
-                
+
                 string group = null, subgroup = null, typeName = null;
                 if (e.GroupInfo != null && e.GroupInfo.Group != null)
                 {
@@ -3440,7 +3623,7 @@ namespace Alachisoft.NCache.Caching
         /// </summary>
 
         public void Add(object key, object value,
-            ExpirationHint expiryHint,  EvictionHint evictionHint,
+            ExpirationHint expiryHint, EvictionHint evictionHint,
             string group, string subGroup, OperationContext operationContext
             )
         {
@@ -3452,7 +3635,7 @@ namespace Alachisoft.NCache.Caching
         /// </summary>
 
         public void Add(object key, object value,
-            ExpirationHint expiryHint,  EvictionHint evictionHint,
+            ExpirationHint expiryHint, EvictionHint evictionHint,
             string group, string subGroup, Hashtable queryInfo, OperationContext operationContext, string type
             )
         {
@@ -3483,12 +3666,12 @@ namespace Alachisoft.NCache.Caching
             if (value == null) throw new ArgumentNullException("value");
 
             // Cache has possibly expired so do default.
-            if (!IsRunning) return; 
-            if (!IsRunning) return; 
+            if (!IsRunning) return;
+            if (!IsRunning) return;
             CacheEntry clone = null;
             DataSourceUpdateOptions updateOpts = this.UpdateOption(flag);
 
-           
+
             //No Need to insert GroupInfo if its group property is null/empty it will only reduce cache-entry overhead
 
             GroupInfo grpInfo = null;
@@ -3511,7 +3694,7 @@ namespace Alachisoft.NCache.Caching
                     e.DataSize = Convert.ToInt64(dataSize);
                 e.ResyncProviderName = resyncProviderName;
                 e.ProviderName = providerName;
-                
+
                 e.QueryInfo = queryInfo;
                 e.Notifications = notification;
 
@@ -3522,9 +3705,9 @@ namespace Alachisoft.NCache.Caching
 
                 clone = e;
 
-               
 
-              
+
+
                 operationContext?.MarkInUse(NCModulesConstants.CacheCore);
 
 
@@ -3532,15 +3715,17 @@ namespace Alachisoft.NCache.Caching
 
                 _context.PerfStatsColl.MsecPerAddEndSample();
 
-             
+
                 {
-                  
+                    // If cache is not a local cache and only Write-Behind was requested for this call, the Write-Behind operation 
+                    // was performed at Topology level and since Write-Thru is not performed for this call, the clone created is of 
+                    // no use. Therefore, returning it to pool.
                     if (!ReferenceEquals(e, clone))
                         MiscUtil.ReturnEntryToPool(clone, Context.TransactionalPoolManager);
                 }
             }
             catch (CacheException ex)
-            { 
+            {
                 throw new OperationFailedException(ex.ErrorCode, ex.Message);
             }
             catch (Exception inner)
@@ -3560,7 +3745,7 @@ namespace Alachisoft.NCache.Caching
 
                 if (e != null)
                     e.MarkFree(NCModulesConstants.CacheCore);
-                 
+
                 if (clone != null)
                     clone.MarkFree(NCModulesConstants.CacheCore);
 
@@ -3576,7 +3761,7 @@ namespace Alachisoft.NCache.Caching
         /// <param name="data"></param>
         /// <param name="async"></param>
 
-        public void SendNotification(object notifId, object data, OperationContext operationContext)
+        public void SendNotification(object notifId, object data)
         {
             // cache may have expired or not initialized.
             if (!IsRunning) return;
@@ -3588,7 +3773,7 @@ namespace Alachisoft.NCache.Caching
 
             try
             {
-                _context.CacheImpl.SendNotification(notifId, data, operationContext);
+                _context.CacheImpl.SendNotification(notifId, data);
             }
             catch (Exception)
             {
@@ -3645,7 +3830,7 @@ namespace Alachisoft.NCache.Caching
         }
 
         public void AddAsync(object key, object value,
-            ExpirationHint expiryHint,  EvictionHint evictionHint,
+            ExpirationHint expiryHint, EvictionHint evictionHint,
             string group, string subGroup, OperationContext operationContext, string typeName)
         {
             BitSet bitset = null;
@@ -3706,7 +3891,7 @@ namespace Alachisoft.NCache.Caching
         /// <summary>
         /// Internal Add operation. Does write-through as well.
         /// </summary>
-        internal void Add(object key, CacheEntry e, OperationContext operationContext)
+        public void Add(object key, CacheEntry e, OperationContext operationContext)
         {
             object value = e.Value;
             try
@@ -3731,7 +3916,6 @@ namespace Alachisoft.NCache.Caching
                     }
                 }
 
-
                 result = _context.CacheImpl.Add(key, e, true, operationContext);
 
                 switch (result)
@@ -3741,9 +3925,9 @@ namespace Alachisoft.NCache.Caching
 
                     case CacheAddResult.NeedsEviction:
                         throw new OperationFailedException(ErrorCodes.Common.NOT_ENOUGH_ITEMS_EVICTED, ErrorMessages.GetErrorMessage(ErrorCodes.Common.NOT_ENOUGH_ITEMS_EVICTED));
-                       
+
                     case CacheAddResult.KeyExists:
-                        throw new OperationFailedException(ErrorCodes.BasicCacheOperations.KEY_ALREADY_EXISTS,ErrorMessages.GetErrorMessage(ErrorCodes.BasicCacheOperations.KEY_ALREADY_EXISTS), false);
+                        throw new OperationFailedException(ErrorCodes.BasicCacheOperations.KEY_ALREADY_EXISTS, ErrorMessages.GetErrorMessage(ErrorCodes.BasicCacheOperations.KEY_ALREADY_EXISTS), false);
 
                     case CacheAddResult.Success:
                         _context.PerfStatsColl.IncrementAddPerSecStats();
@@ -3786,7 +3970,7 @@ namespace Alachisoft.NCache.Caching
 
             string[] keys = new string[entries.Length];
             object[] values = new object[entries.Length];
-            Notifications[] callbackEnteries = new Notifications[entries.Length]; 
+            Notifications[] callbackEnteries = new Notifications[entries.Length];
             ExpirationHint[] exp = new ExpirationHint[entries.Length];
             EvictionHint[] evc = new EvictionHint[entries.Length];
             BitSet[] flags = new BitSet[entries.Length];
@@ -3835,11 +4019,11 @@ namespace Alachisoft.NCache.Caching
 
             IDictionary items = Add(keys, values, callbackEnteries, exp, evc, groupInfo, queryInfo, flags, null,
                 out itemVersions, operationContext);
-    
+
             return items;
         }
 
-     
+
 
         /// <summary>
         /// Overload of Add operation for bulk additions. Uses EvictionHint and ExpirationHint arrays.
@@ -3884,11 +4068,11 @@ namespace Alachisoft.NCache.Caching
 
                     enteries[i].Value = values[i];
                     enteries[i].ExpirationHint = expirations[i];
-                    enteries[i].EvictionHint =  evictions[i];
+                    enteries[i].EvictionHint = evictions[i];
 
                     enteries[i].Version = (ulong)(DateTime.UtcNow - Common.Util.Time.ReferenceTime).TotalMilliseconds;
                     itemVersions[keys[i]] = enteries[i].Version;
-                    
+
 
                     //+ No Need to insert GroupInfo if its group property is null/empty it will only reduce cache-entry overhead
                     if (groupInfos[i] != null && !String.IsNullOrEmpty(groupInfos[i].Group))
@@ -3920,7 +4104,7 @@ namespace Alachisoft.NCache.Caching
                     IDictionary result;
                     HPTimeStats addTime = new HPTimeStats();
 
-         
+
                     clone?.MarkInUse(NCModulesConstants.CacheCore);
 
                     addTime.BeginSample();
@@ -3943,7 +4127,7 @@ namespace Alachisoft.NCache.Caching
             {
                 if (enteries != null)
                     enteries.MarkFree(NCModulesConstants.CacheCore);
-                
+
             }
 
         }
@@ -3955,10 +4139,9 @@ namespace Alachisoft.NCache.Caching
         public IDictionary Add(string[] keys, CacheEntry[] enteries, BitSet flag, string providerName, out IDictionary itemVersions,
             OperationContext operationContext)
         {
-
             itemVersions = new Hashtable();
 
-           
+
             if (enteries != null)
                 enteries.MarkInUse(NCModulesConstants.CacheCore);
 
@@ -3972,7 +4155,7 @@ namespace Alachisoft.NCache.Caching
             {
                 enteries[keyCount].Version = (ulong)(DateTime.UtcNow - Common.Util.Time.ReferenceTime).TotalMilliseconds;
                 itemVersions[keys[keyCount]] = enteries[keyCount].Version;
-                
+
             }
             CacheEntry[] clone = null;
             try
@@ -3985,18 +4168,15 @@ namespace Alachisoft.NCache.Caching
                 }
 
                 IDictionary result;
-
-              
                 result = Add(keys, enteries, operationContext);
-
 
                 if (operationContext.CancellationToken != null && operationContext.CancellationToken.IsCancellationRequested)
                     throw new OperationCanceledException(ExceptionsResource.OperationFailed);
 
-               
-                    // Write-Thru isn't to be performed so there is no use for clones to exist
-                    MiscUtil.ReturnEntriesToPool(clone, Context.TransactionalPoolManager);
-               
+
+                // Write-Thru isn't to be performed so there is no use for clones to exist
+                MiscUtil.ReturnEntriesToPool(clone, Context.TransactionalPoolManager);
+
 
                 return result;
             }
@@ -4017,10 +4197,10 @@ namespace Alachisoft.NCache.Caching
         /// <summary>
         /// For operations,which needs to be retried.
         /// </summary>
-       
 
 
-      
+
+
 
 
         /// <summary>
@@ -4028,10 +4208,10 @@ namespace Alachisoft.NCache.Caching
         /// </summary>
         private Hashtable Add(object[] keys, CacheEntry[] entries, OperationContext operationContext)
         {
-            FeatureUsageCollector.Instance.GetFeature(FeatureEnum.bulk_operations).UpdateUsageTime();
-
+            //object value = e.Value;
             try
             {
+
                 if (entries != null)
                     entries.MarkInUse(NCModulesConstants.CacheCore);
 
@@ -4055,7 +4235,7 @@ namespace Alachisoft.NCache.Caching
                                 case CacheAddResult.Failure:
                                     break;
                                 case CacheAddResult.KeyExists:
-                                    result[ide.Key] = new OperationFailedException(ErrorCodes.BasicCacheOperations.KEY_ALREADY_EXISTS,ErrorMessages.GetErrorMessage(ErrorCodes.BasicCacheOperations.KEY_ALREADY_EXISTS));
+                                    result[ide.Key] = new OperationFailedException(ErrorCodes.BasicCacheOperations.KEY_ALREADY_EXISTS, ErrorMessages.GetErrorMessage(ErrorCodes.BasicCacheOperations.KEY_ALREADY_EXISTS));
                                     break;
                                 case CacheAddResult.NeedsEviction:
                                     result[ide.Key] =
@@ -4220,7 +4400,7 @@ namespace Alachisoft.NCache.Caching
 
         [CLSCompliant(false)]
         public ulong Insert(object key, object value,
-            ExpirationHint expiryHint,  EvictionHint evictionHint,
+            ExpirationHint expiryHint, EvictionHint evictionHint,
             string group, string subGroup, OperationContext operationContext, string typeName
             )
         {
@@ -4230,7 +4410,7 @@ namespace Alachisoft.NCache.Caching
 
         [CLSCompliant(false)]
         public ulong Insert(object key, object value,
-            ExpirationHint expiryHint,  EvictionHint evictionHint,
+            ExpirationHint expiryHint, EvictionHint evictionHint,
             string group, string subGroup, Hashtable queryInfo, OperationContext operationContext, string typeName
             )
         {
@@ -4272,7 +4452,7 @@ namespace Alachisoft.NCache.Caching
                 return 0;
             DataSourceUpdateOptions updateOpts = this.UpdateOption(flag);
 
-          
+
             //+ No Need to insert GroupInfo if its group property is null/empty it will only reduce cache-entry overhead
             ulong version = 0;
             GroupInfo grpInfo = null;
@@ -4282,7 +4462,7 @@ namespace Alachisoft.NCache.Caching
             CacheEntry clone = null;
 
             try
-            { 
+            {
                 e = CacheEntry.CreateCacheEntry(Context.TransactionalPoolManager, value, expiryHint, evictionHint);
 
                 if (operationContext != null && operationContext.GetValueByField(OperationContextFieldName.ItemVersion) != null)
@@ -4290,13 +4470,13 @@ namespace Alachisoft.NCache.Caching
                 else
                     e.Version = (ulong)(DateTime.UtcNow - Common.Util.Time.ReferenceTime).TotalMilliseconds;
                 e.GroupInfo = grpInfo;
-                
+
                 e.QueryInfo = queryInfo;
 
                 e.Notifications = notification;
 
                 e.Flag.Data |= flag.Data;
-                
+
                 e.MarkInUse(NCModulesConstants.CacheCore);
                 /// update the counters for various statistics
 
@@ -4351,7 +4531,7 @@ namespace Alachisoft.NCache.Caching
         /// </summary>
         [CLSCompliant(false)]
         public ulong Insert(object key, object value,
-            ExpirationHint expiryHint,  EvictionHint evictionHint,
+            ExpirationHint expiryHint, EvictionHint evictionHint,
             string group, string subGroup, Hashtable queryInfo, BitSet flag, ulong version,
             OperationContext operationContext, HPTime bridgeOperationTime, Notifications notification, string type = null)
         {
@@ -4373,7 +4553,7 @@ namespace Alachisoft.NCache.Caching
             //+  No Need to insert GroupInfo if its group property is null/empty it will only reduce cache-entry overhead
             GroupInfo grpInfo = null;
             if (!String.IsNullOrEmpty(group))
-                grpInfo = new GroupInfo(group, subGroup,type);
+                grpInfo = new GroupInfo(group, subGroup, type);
 
             ulong itemVersion = 0;
             CacheEntry e = null;
@@ -4382,19 +4562,19 @@ namespace Alachisoft.NCache.Caching
 
             try
             {
-                e = CacheEntry.CreateCacheEntry(Context.FakeObjectPool,value, expiryHint, evictionHint);
+                e = CacheEntry.CreateCacheEntry(Context.FakeObjectPool, value, expiryHint, evictionHint);
                 if (operationContext != null && operationContext.GetValueByField(OperationContextFieldName.ItemVersion) != null)
                     e.Version = (ulong)operationContext.GetValueByField(OperationContextFieldName.ItemVersion);
                 else
                     e.Version = (ulong)(DateTime.UtcNow - Common.Util.Time.ReferenceTime).TotalMilliseconds;
                 e.GroupInfo = grpInfo;
-                
+
 
                 e.Notifications = notification;
                 e.QueryInfo = queryInfo;
 
                 e.Flag.Data |= flag.Data;
-             
+
                 e.MarkInUse(NCModulesConstants.CacheCore);
                 /// update the counters for various statistics
 
@@ -4416,8 +4596,8 @@ namespace Alachisoft.NCache.Caching
 
                     _context.PerfStatsColl.MsecPerUpdEndSample();
 
-                    
-                   
+
+
 
                 }
                 catch (Exception inner)
@@ -4439,13 +4619,12 @@ namespace Alachisoft.NCache.Caching
             return itemVersion;
         }
 
-
         /// <summary>
         /// Overload of Insert operation. Uses additional EvictionHint and ExpirationHint parameters.
         /// </summary>
         [CLSCompliant(false)]
         public ulong Insert(object key, object value,
-            ExpirationHint expiryHint,  EvictionHint evictionHint,
+            ExpirationHint expiryHint, EvictionHint evictionHint,
             string group, string subGroup, Hashtable queryInfo, BitSet flag, object lockId, ulong version,
             LockAccessType accessType, string providerName, string resyncProviderName, OperationContext operationContext, Notifications notification, string typeName)
         {
@@ -4455,7 +4634,7 @@ namespace Alachisoft.NCache.Caching
                 return 0;
             DataSourceUpdateOptions updateOpts = this.UpdateOption(flag);
 
-          
+
             CacheEntry clone = null;
             /// update the counters for various statistics
             ulong itemVersion;
@@ -4471,6 +4650,7 @@ namespace Alachisoft.NCache.Caching
                     e.Version = (ulong)operationContext.GetValueByField(OperationContextFieldName.ItemVersion);
                 else
                     e.Version = (ulong)(DateTime.UtcNow - Common.Util.Time.ReferenceTime).TotalMilliseconds;
+                //+ No Need to insert GroupInfo if its group property is null/empty it will only reduce cache-entry overhead
                 GroupInfo grpInfo = null;
 
                 if (!String.IsNullOrEmpty(group))
@@ -4487,7 +4667,7 @@ namespace Alachisoft.NCache.Caching
                 if (dataSize != null)
                     e.DataSize = Convert.ToInt64(dataSize);
                 e.MarkInUse(NCModulesConstants.CacheCore);
-                
+
                 try
                 {
 
@@ -4500,21 +4680,21 @@ namespace Alachisoft.NCache.Caching
                     }
                     else
                         clone = e;
-                
-                    
+
+
                     _context.PerfStatsColl.MsecPerUpdBeginSample();
 
                     itemVersion = Insert(key, e, lockId, version, accessType, operationContext);
 
                     _context.PerfStatsColl.MsecPerUpdEndSample();
 
-                    
-                        // If cache is not a local cache and only Write-Behind was requested for this call, the Write-Behind operation 
-                        // was performed at Topology level and since Write-Thru is not performed for this call, the clone created is of 
-                        // no use. Therefore, returning it to pool.
-                        if (!ReferenceEquals(e, clone))
-                            MiscUtil.ReturnEntryToPool(clone, Context.TransactionalPoolManager);
-                   
+
+                    // If cache is not a local cache and only Write-Behind was requested for this call, the Write-Behind operation 
+                    // was performed at Topology level and since Write-Thru is not performed for this call, the clone created is of 
+                    // no use. Therefore, returning it to pool.
+                    if (!ReferenceEquals(e, clone))
+                        MiscUtil.ReturnEntryToPool(clone, Context.TransactionalPoolManager);
+
                 }
                 finally
                 {
@@ -4545,7 +4725,7 @@ namespace Alachisoft.NCache.Caching
 
                 if (!IsRunning)
                     return 0;
-                
+
                 cacheEntry.Version = 0;
 
                 object dataSize = operationContext.GetValueByField(OperationContextFieldName.ValueDataSize);
@@ -4639,7 +4819,7 @@ namespace Alachisoft.NCache.Caching
         }
 
         public void InsertAsync(object key, object value,
-            ExpirationHint expiryHint,  EvictionHint evictionHint,
+            ExpirationHint expiryHint, EvictionHint evictionHint,
             string group, string subGroup, OperationContext operationContext, string typeName)
         {
             BitSet bitset = null;
@@ -4723,16 +4903,16 @@ namespace Alachisoft.NCache.Caching
 
                     case CacheInsResult.IncompatibleGroup:
                         throw new OperationFailedException(
-                            ErrorCodes.BasicCacheOperations.INSERTED_ITEM_DATAGROUP_MISMATCH,ErrorMessages.GetErrorMessage(ErrorCodes.BasicCacheOperations.INSERTED_ITEM_DATAGROUP_MISMATCH));
+                            ErrorCodes.BasicCacheOperations.INSERTED_ITEM_DATAGROUP_MISMATCH, ErrorMessages.GetErrorMessage(ErrorCodes.BasicCacheOperations.INSERTED_ITEM_DATAGROUP_MISMATCH));
 
                     case CacheInsResult.ItemLocked:
-                        throw new LockingException(ErrorCodes.BasicCacheOperations.ITEM_LOCKED,ErrorMessages.GetErrorMessage(ErrorCodes.BasicCacheOperations.ITEM_LOCKED));
+                        throw new LockingException(ErrorCodes.BasicCacheOperations.ITEM_LOCKED, ErrorMessages.GetErrorMessage(ErrorCodes.BasicCacheOperations.ITEM_LOCKED));
 
                     case CacheInsResult.VersionMismatch:
                         throw new LockingException(ErrorCodes.BasicCacheOperations.ITEM_WITH_VERSION_DOESNT_EXIST, ErrorMessages.GetErrorMessage(ErrorCodes.BasicCacheOperations.ITEM_WITH_VERSION_DOESNT_EXIST));
                 }
 
-               
+
             }
             catch (OperationFailedException inner)
             {
@@ -4776,7 +4956,7 @@ namespace Alachisoft.NCache.Caching
             string[] keys = new string[entries.Length];
             object[] values = new object[entries.Length];
 
-            Notifications[] callbackEnteries = new Notifications[entries.Length]; 
+            Notifications[] callbackEnteries = new Notifications[entries.Length];
             ExpirationHint[] exp = new ExpirationHint[entries.Length];
             EvictionHint[] evc = new EvictionHint[entries.Length];
             BitSet[] flags = new BitSet[entries.Length];
@@ -4813,17 +4993,16 @@ namespace Alachisoft.NCache.Caching
                 }
                 finally
                 {
-                    if (ce!=null)
+                    if (ce != null)
                         ce.MarkFree(NCModulesConstants.CacheCore);
                 }
             }
 
             IDictionary items = Insert(keys, values, callbackEnteries, exp, evc, groupInfos, queryInfo, flags, null,
                 null, out itemVersions, operationContext);
-     
+
             return items;
         }
-
 
         /// <summary>
         /// Overload of Insert operation for bulk inserts. Uses an additional ExpirationHint parameter to be used 
@@ -4885,7 +5064,7 @@ namespace Alachisoft.NCache.Caching
                     ce[i].Value = value;
 
                     ce[i].ExpirationHint = expiryHint;
-                    ce[i].EvictionHint =  evictionHint;
+                    ce[i].EvictionHint = evictionHint;
 
                     GroupInfo grpInfo = null;
 
@@ -4910,8 +5089,8 @@ namespace Alachisoft.NCache.Caching
             }
             finally
             {
-                if (ce!=null)  ce.MarkFree(NCModulesConstants.CacheCore);
-                
+                if (ce != null) ce.MarkFree(NCModulesConstants.CacheCore);
+
             }
         }
 
@@ -4932,7 +5111,7 @@ namespace Alachisoft.NCache.Caching
             itemVersions = new Hashtable();
 
             DataSourceUpdateOptions updateOpts = this.UpdateOption(flags[0]);
-            
+
             CacheEntry[] ce = null;
 
             try
@@ -4967,7 +5146,8 @@ namespace Alachisoft.NCache.Caching
                     ce[i].ExpirationHint = expirations[i];
 
                     ce[i].EvictionHint = evictions[i];
-                    
+
+                    //+ No Need to insert GroupInfo if its group property is null/empty it will only reduce cache-entry overhead
                     if (groupInfos[i] != null && !String.IsNullOrEmpty(groupInfos[i].Group))
                         ce[i].GroupInfo = groupInfos[i];
                     ce[i].QueryInfo = queryInfos[i];
@@ -4989,12 +5169,12 @@ namespace Alachisoft.NCache.Caching
 
                 /// update the counters for various statistics
                 CacheEntry[] clone = null;
-                
+
                 try
                 {
                     if (updateOpts == DataSourceUpdateOptions.WriteBehind || updateOpts == DataSourceUpdateOptions.WriteThru)
                     {
-                        clone = CacheEntry.CreateCacheEntries(Context.FakeObjectPool,ce.Length);
+                        clone = CacheEntry.CreateCacheEntries(Context.FakeObjectPool, ce.Length);
                         for (int i = 0; i < ce.Length; i++)
                         {
                             if (ce[i].HasQueryInfo)
@@ -5004,7 +5184,7 @@ namespace Alachisoft.NCache.Caching
                         }
                     }
                     clone?.MarkInUse(NCModulesConstants.BackingSource);
-                    
+
                     HPTimeStats insertTime = new HPTimeStats();
                     insertTime.BeginSample();
 
@@ -5013,6 +5193,7 @@ namespace Alachisoft.NCache.Caching
                     insertTime.EndSample();
 
                     string[] filteredKeys = null;
+                    //object[] filteredValues = null;
                     if (operationContext.CancellationToken != null && operationContext.CancellationToken.IsCancellationRequested)
                         throw new OperationCanceledException(ExceptionsResource.OperationFailed);
 
@@ -5028,8 +5209,8 @@ namespace Alachisoft.NCache.Caching
                                 j++;
                             }
                         }
-                       
-                      
+
+
                     }
                     return result;
                 }
@@ -5048,7 +5229,7 @@ namespace Alachisoft.NCache.Caching
             {
                 if (ce != null) ce.MarkFree(NCModulesConstants.CacheCore);
             }
-            
+
         }
 
         /// <summary>
@@ -5058,7 +5239,6 @@ namespace Alachisoft.NCache.Caching
         {
             try
             {
-                FeatureUsageCollector.Instance.GetFeature(FeatureEnum.bulk_operations).UpdateUsageTime();
                 if (entries != null)
                     entries.MarkInUse(NCModulesConstants.CacheCore);
                 Hashtable result;
@@ -5113,7 +5293,7 @@ namespace Alachisoft.NCache.Caching
                                             "Data group of the inserted item does not match the existing item's data group");
                                     break;
                                 case CacheInsResult.DependencyKeyNotExist:
-                                    result[ide.Key] = new OperationFailedException(ErrorCodes.Common.DEPENDENCY_KEY_NOT_FOUND,ErrorMessages.GetErrorMessage(ErrorCodes.Common.DEPENDENCY_KEY_NOT_FOUND));
+                                    result[ide.Key] = new OperationFailedException(ErrorCodes.Common.DEPENDENCY_KEY_NOT_FOUND, ErrorMessages.GetErrorMessage(ErrorCodes.Common.DEPENDENCY_KEY_NOT_FOUND));
                                     break;
                             }
 
@@ -5160,7 +5340,7 @@ namespace Alachisoft.NCache.Caching
         public IDictionary Insert(string[] keys, CacheEntry[] entries, BitSet flag, string providername,
             string resyncProviderName, out IDictionary itemVersions, OperationContext operationContext)
         {
-            
+
             /// update the counters for various statistics
             /// 
             CacheEntry[] clone = null;
@@ -5170,7 +5350,7 @@ namespace Alachisoft.NCache.Caching
                 if (entries != null && entries.Length > 0)
                     entries.MarkInUse(NCModulesConstants.CacheCore);
 
-              
+
 
                 for (int keyCount = 0; keyCount < keys.Length; keyCount++)
                 {
@@ -5183,11 +5363,11 @@ namespace Alachisoft.NCache.Caching
                 if (operationContext.CancellationToken != null && operationContext.CancellationToken.IsCancellationRequested)
                     throw new OperationCanceledException(ExceptionsResource.OperationFailed);
 
-                
-                    // Write-Thru or Write-Behind isn't to be performed if all Insert operations failed so there is no use for 
-                    // clones to exist (IF they exist)
-                    MiscUtil.ReturnEntriesToPool(clone, Context.TransactionalPoolManager);
-                
+
+                // Write-Thru or Write-Behind isn't to be performed if all Insert operations failed so there is no use for 
+                // clones to exist (IF they exist)
+                MiscUtil.ReturnEntriesToPool(clone, Context.TransactionalPoolManager);
+
                 return result;
             }
             catch (Exception inner)
@@ -5242,7 +5422,7 @@ namespace Alachisoft.NCache.Caching
             if (group == null) throw new ArgumentNullException("group");
 
             // Cache has possibly expired so do default.
-            if (!IsRunning) return; 
+            if (!IsRunning) return;
 
             try
             {
@@ -5252,16 +5432,6 @@ namespace Alachisoft.NCache.Caching
                 Hashtable removed = CascadedRemove(group, subGroup, true, operationContext);
 
                 removeTime.EndSample();
-
-                if (removed == null) 
-                {
-
-                }
-                else
-                {
-
-                }
-
             }
             catch (OperationCanceledException inner)
             {
@@ -5294,17 +5464,16 @@ namespace Alachisoft.NCache.Caching
                 throw new ArgumentException("key is not serializable");
 
             // Cache has possibly expired so do default.
-            if (!IsRunning) return null; 
+            if (!IsRunning) return null;
 
             CacheEntry e = null;
             CacheEntry clone = null;
             DataSourceUpdateOptions updateOpts = this.UpdateOption(flag);
 
-           
+
 
             try
             {
-
                 _context.PerfStatsColl.MsecPerDelBeginSample();
 
                 object packedKey = key;
@@ -5312,7 +5481,7 @@ namespace Alachisoft.NCache.Caching
                 {
                     packedKey = new object[] { key, updateOpts, notification, providerName };
                 }
-                
+
                 operationContext?.MarkInUse(NCModulesConstants.CacheCore);
 
                 e = CascadedRemove(key, packedKey, ItemRemoveReason.Removed, true, lockId, version,
@@ -5321,7 +5490,7 @@ namespace Alachisoft.NCache.Caching
                 _context.PerfStatsColl.MsecPerDelEndSample();
                 _context.PerfStatsColl.IncrementDelPerSecStats();
 
-                
+
 
                 if (e != null)
                 {
@@ -5362,25 +5531,23 @@ namespace Alachisoft.NCache.Caching
             // Cache has possibly expired so do default.
             if (!IsRunning) return;
 
-            
+
             CacheEntry e = null;
             CacheEntry clone = null;
 
             try
             {
-
                 _context.PerfStatsColl.MsecPerDelBeginSample();
 
                 object packedKey = key;
-               
-                
+
+
 
                 e = CascadedRemove(key, packedKey, ItemRemoveReason.Removed, true, lockId, version,
                     accessType, operationContext);
 
                 _context.PerfStatsColl.MsecPerDelEndSample();
                 _context.PerfStatsColl.IncrementDelPerSecStats();
-
 
             }
             catch (OperationFailedException ex)
@@ -5411,7 +5578,7 @@ namespace Alachisoft.NCache.Caching
                 throw new ArgumentException("key is not serializable");
 
             // Cache has possibly expired so do default.
-            if (!IsRunning) return; 
+            if (!IsRunning) return;
 
             _asyncProcessor.Enqueue(new AsyncRemove(this, key, operationContext));
         }
@@ -5432,8 +5599,6 @@ namespace Alachisoft.NCache.Caching
         public IDictionary Remove(object[] keys, BitSet flagMap, Notifications notification, string providerName,
             OperationContext operationContext)
         {
-            FeatureUsageCollector.Instance.GetFeature(FeatureEnum.bulk_operations).UpdateUsageTime();
-
             // Cache has possibly expired so do default.
             if (!IsRunning) return null;
 
@@ -5445,11 +5610,11 @@ namespace Alachisoft.NCache.Caching
             }
 
 
-           
+
 
             try
             {
-                
+
                 IDictionary removed = CascadedRemove(keys, ItemRemoveReason.Removed, true, operationContext);
 
                 if (removed != null && removed.Count > 0)
@@ -5461,7 +5626,7 @@ namespace Alachisoft.NCache.Caching
                 if (operationContext.CancellationToken != null && operationContext.CancellationToken.IsCancellationRequested)
                     throw new OperationCanceledException(ExceptionsResource.OperationFailed);
                 CacheEntry[] filteredEntries = null;
-               
+
                 if (removed != null)
                 {
                     object[] keysCollection = new object[removed.Count];
@@ -5502,8 +5667,6 @@ namespace Alachisoft.NCache.Caching
             OperationContext operationContext)
         {
             if (keys == null) throw new ArgumentNullException("keys");
-            FeatureUsageCollector.Instance.GetFeature(FeatureEnum.bulk_operations).UpdateUsageTime();
-
             // Cache has possibly expired so do default.
             if (!IsRunning) return;
 
@@ -5514,14 +5677,14 @@ namespace Alachisoft.NCache.Caching
                         BlockInterval * 1000);
             }
 
-            
+
             try
             {
                 HPTimeStats removeTime = new HPTimeStats();
                 removeTime.BeginSample();
 
-             
-                
+
+
                 IDictionary removed = CascadedRemove(keys, ItemRemoveReason.Removed, true, operationContext);
 
                 if (removed != null && removed.Count > 0)
@@ -5534,7 +5697,7 @@ namespace Alachisoft.NCache.Caching
                     throw new OperationCanceledException(ExceptionsResource.OperationFailed);
                 CacheEntry[] filteredEntries = null;
 
-               
+
 
             }
             catch (OperationCanceledException ex)
@@ -5656,8 +5819,6 @@ namespace Alachisoft.NCache.Caching
 
                     try
                     {
-                        //(identified after an issue reported by GMO): No need to fire eventys Asynchronously it was required when we used remoting handle on Cache but
-                        //it is not required anymore so firing events synchronously.] 
                         subscriber(key, eventContext);
                     }
                     catch (System.Net.Sockets.SocketException e)
@@ -5716,8 +5877,6 @@ namespace Alachisoft.NCache.Caching
                     ItemUpdatedCallback subscriber = (ItemUpdatedCallback)dltList[i];
                     try
                     {
-                        //[(identified after an issue reported by GMO): No need to fire eventys Asynchronously it was required when we used remoting handle on Cache but
-                        //it is not required anymore so firing events synchronously.] 
                         subscriber(key, eventContext);
                     }
                     catch (System.Net.Sockets.SocketException e)
@@ -5773,7 +5932,7 @@ namespace Alachisoft.NCache.Caching
             object data = null;
             if (value != null)
             {
-                data = ((CacheEntry)value).Value; 
+                data = ((CacheEntry)value).Value;
             }
             key = SerializationUtil.CompactSerialize(key, _context.SerializationContext);
 
@@ -5785,8 +5944,6 @@ namespace Alachisoft.NCache.Caching
                     ItemRemovedCallback subscriber = (ItemRemovedCallback)dltList[i];
                     try
                     {
-                        //[ (identified after an issue reported by GMO): No need to fire eventys Asynchronously it was required when we used remoting handle on Cache but
-                        //it is not required anymore so firing events synchronously.]
                         BitSet flag = null;
                         if (eventContext != null && eventContext.Item != null && eventContext.Item.Flags != null)
                         {
@@ -5835,7 +5992,7 @@ namespace Alachisoft.NCache.Caching
             }
         }
 
-   
+
 
         /// <summary>
         /// Fired when multiple items are removed from the cache.
@@ -5875,8 +6032,6 @@ namespace Alachisoft.NCache.Caching
                     CacheClearedCallback subscriber = (CacheClearedCallback)dltList[i];
                     try
                     {
-                        //[(identified after an issue reported by GMO): No need to fire eventys Asynchronously it was required when we used remoting handle on Cache but
-                        //it is not required anymore so firing events synchronously.] 
 
                         subscriber(eventContext);
                     }
@@ -5935,7 +6090,6 @@ namespace Alachisoft.NCache.Caching
 #if !NETCORE
                         subscriber.BeginInvoke(notifId, data, eventContext, new System.AsyncCallback(CustomEventAsyncCallbackHandler), subscriber);
 #elif NETCORE
-                        //TODO: ALACHISOFT (BeginInvoke is not supported in .Net Core thus using TaskFactory)
                         TaskFactory factory = new TaskFactory();
                         System.Threading.Tasks.Task task = factory.StartNew(() => subscriber(notifId, data, eventContext));
 #endif
@@ -6017,7 +6171,6 @@ namespace Alachisoft.NCache.Caching
                                     subscriber.BeginInvoke(key, new object[] { null, cbInfo }, reason, null, eventContext,
                                         new System.AsyncCallback(CustomRemoveAsyncCallbackHandler), subscriber);
 #elif NETCORE
-                                    //TODO: ALACHISOFT (BeginInvoke is not supported in .Net Core thus using TaskFactory)
                                     TaskFactory factory = new TaskFactory();
                                     System.Threading.Tasks.Task task = factory.StartNew(() => subscriber(key,new object[] { null, cbInfo },reason, null, eventContext));
 #endif
@@ -6098,7 +6251,6 @@ namespace Alachisoft.NCache.Caching
                                     subscriber.BeginInvoke(key, cbInfo, eventContext,
                                         new System.AsyncCallback(CustomUpdateAsyncCallbackHandler), subscriber);
 #elif NETCORE
-                                    //TODO: ALACHISOFT (BeginInvoke is not supported in .Net Core thus using TaskFactory)
                                     TaskFactory factory = new TaskFactory();
                                     System.Threading.Tasks.Task task = factory.StartNew(() => subscriber(key, cbInfo, eventContext));
 #endif
@@ -6119,7 +6271,6 @@ namespace Alachisoft.NCache.Caching
             }
         }
 
-#if !CLIENT && !DEVELOPMENT
 
         /// <summary>
         /// Fire when hasmap changes when 
@@ -6141,7 +6292,6 @@ namespace Alachisoft.NCache.Caching
 #if !NETCORE
                     subscriber.BeginInvoke(newHashmap, null, new AsyncCallback(HashmapChangedAsyncCallbackHandler), subscriber);
 #elif NETCORE
-                           //TODO: ALACHISOFT (BeginInvoke is not supported in .Net Core thus using TaskFactory)
                         TaskFactory factory = new TaskFactory();
                         System.Threading.Tasks.Task task = factory.StartNew(() => subscriber(newHashmap, null));
 #endif
@@ -6179,7 +6329,6 @@ namespace Alachisoft.NCache.Caching
                 _context.NCacheLog.Error("Cache.HashmapChangedAsyncCallbackHandler", ex.ToString());
             }
         }
-#endif
 
         /// <summary>
         /// 
@@ -6203,7 +6352,6 @@ namespace Alachisoft.NCache.Caching
                     subscriber.BeginInvoke(result, notification, operationCode,
                         new AsyncCallback(DSUpdateEventAsyncCallbackHandler), subscriber);
 #elif NETCORE
-                    //TODO: ALACHISOFT (BeginInvoke is not supported in .Net Core thus using TaskFactory)
                     TaskFactory factory = new TaskFactory();
                     System.Threading.Tasks.Task task = factory.StartNew(() => subscriber(result, notification, operationCode));
 #endif
@@ -6291,7 +6439,6 @@ namespace Alachisoft.NCache.Caching
                         subscriber.BeginInvoke(opCode, result, null,
                             new System.AsyncCallback(AsyncOpAsyncCallbackHandler), subscriber);
 #elif NETCORE
-                        //TODO: ALACHISOFT (BeginInvoke is not supported in .Net Core thus using TaskFactory)
                         TaskFactory factory = new TaskFactory();
                         System.Threading.Tasks.Task task = factory.StartNew(() => subscriber(opCode,result, null));
 #endif
@@ -6487,7 +6634,7 @@ namespace Alachisoft.NCache.Caching
 
 #endregion
 
-        
+
 
 #region /               --- CacheImpl Calls for Cascading Dependnecies ---          /
 
@@ -6647,29 +6794,62 @@ namespace Alachisoft.NCache.Caching
 
 #region IClusterEventsListener Members
 
-#if !CLIENT
         public int GetNumberOfClientsToDisconect()
-        {           
+        {
+            ReplicatedServerCache impl = this._context.CacheImpl as ReplicatedServerCache;
+            if (impl == null) return 0;
+
+            if (_inProc) return 0;
+
+            ArrayList nodes = ((ClusterCacheBase)this._context.CacheImpl)._stats.Nodes;
+
+            int clientsToDisconnect = 0;
+            int totalClients = 0;
+            int currNodeClientCount = 0;
+            int maxClientsPerNode;
+            try
+            {
+                foreach (NodeInfo i in nodes)
+                {
+                    if (((ClusterCacheBase)this._context.CacheImpl).Cluster.LocalAddress.CompareTo(i.Address) == 0)
+                    {
+                        currNodeClientCount = i.ConnectedClients.Count;
+                    }
+                    totalClients = totalClients + i.ConnectedClients.Count;
+                }
+            }
+            catch (Exception)
+            {
+            }
+
+            maxClientsPerNode = (int)Math.Ceiling(((decimal)totalClients / nodes.Count));
+
+            if (currNodeClientCount > maxClientsPerNode)
+            {
+                clientsToDisconnect = currNodeClientCount - maxClientsPerNode;
+                return clientsToDisconnect;
+            }
+
             return 0;
+
         }
-#endif
 
         public void OnMemberJoined(Alachisoft.NCache.Common.Net.Address clusterAddress,
             Alachisoft.NCache.Common.Net.Address serverAddress)
         {
-#if !CLIENT
+
             int clientsToDisconnect = 0;
-            try
+            if (InstallationTypeProvider.Provider.IsServerInstallation)
             {
-#if !CLIENT
-                clientsToDisconnect = this.GetNumberOfClientsToDisconect();
-#endif
+                try
+                {
+                    clientsToDisconnect = this.GetNumberOfClientsToDisconect();
+                }
+                catch (Exception)
+                {
+                    clientsToDisconnect = 0;
+                }
             }
-            catch (Exception)
-            {
-                clientsToDisconnect = 0;
-            }
-#endif
 
             if (_memberJoined != null)
             {
@@ -6679,15 +6859,7 @@ namespace Alachisoft.NCache.Caching
                     NodeJoinedCallback subscriber = (NodeJoinedCallback)dltList[i];
                     try
                     {
-#if (CLIENT || DEVELOPMENT)
-#if !NETCORE
-                        subscriber.BeginInvoke(clusterAddress, serverAddress,false, null, new System.AsyncCallback(MemberJoinedAsyncCallbackHandler), subscriber);
-#elif NETCORE
-                        //TODO: ALACHISOFT (BeginInvoke is not supported in .Net Core thus using TaskFactory)
-                        TaskFactory factory = new TaskFactory();
-                        System.Threading.Tasks.Task task = factory.StartNew(() => subscriber(clusterAddress, serverAddress, false, null));
-#endif
-#else
+
                         if (i > (clientsToDisconnect - 1))
                         {
 #if !NETCORE
@@ -6708,7 +6880,6 @@ namespace Alachisoft.NCache.Caching
                             System.Threading.Tasks.Task task = factory.StartNew(() => subscriber(clusterAddress, serverAddress, true, null));
 #endif
                         }
-#endif
                     }
                     catch (System.Net.Sockets.SocketException e)
                     {
@@ -6766,7 +6937,6 @@ namespace Alachisoft.NCache.Caching
                         subscriber.BeginInvoke(clusterAddress, serverAddress, null,
                             new System.AsyncCallback(MemberLeftAsyncCallbackHandler), subscriber);
 #elif NETCORE
-                        //TODO: ALACHISOFT (BeginInvoke is not supported in .Net Core thus using TaskFactory)
                         TaskFactory factory = new TaskFactory();
                         System.Threading.Tasks.Task task = factory.StartNew(() => subscriber(clusterAddress, serverAddress, null));
 #endif
@@ -6823,11 +6993,11 @@ namespace Alachisoft.NCache.Caching
         /// <param name="key"></param>
         /// <param name="updateCallback"></param>
         /// <param name="removeCallback"></param>
-        
+      
         public void RegisterKeyNotificationCallback(string key, CallbackInfo updateCallback, CallbackInfo removeCallback,
             OperationContext operationContext)
         {
-            if (!IsRunning) return; 
+            if (!IsRunning) return;
             if (key == null) throw new ArgumentNullException("key");
             if (updateCallback == null && removeCallback == null) throw new ArgumentNullException();
 
@@ -6885,7 +7055,6 @@ namespace Alachisoft.NCache.Caching
         /// <param name="key"></param>
         /// <param name="updateCallback"></param>
         /// <param name="removeCallback"></param>
-       
         public void UnregisterKeyNotificationCallback(string key, CallbackInfo updateCallback,
             CallbackInfo removeCallback, OperationContext operationContext)
         {
@@ -6944,7 +7113,7 @@ namespace Alachisoft.NCache.Caching
 
 #endregion
 
-  
+
 
         /// <summary>
         /// Apply runtime configuration settings.
@@ -6961,10 +7130,10 @@ namespace Alachisoft.NCache.Caching
         public bool IsHotApplyFeasible(long size)
         {
             return _context.CacheImpl != null && !_context.CacheImpl.CanChangeCacheSize(size);
-                
+
         }
 
-       
+
 
         /// <summary>
         /// The method will send updated compact types config to all connected clients
@@ -7166,22 +7335,21 @@ namespace Alachisoft.NCache.Caching
         public void OnTaskCallback(string taskID, Object value, OperationContext operationContext,
             EventContext eventContext)
         {
-            
+
         }
 
 
-        public bool IsServerNodeIp(Address clientAddress) 
+        public bool IsServerNodeIp(Address clientAddress)
         {
 
             return _context.CacheImpl.IsServerNodeIp(clientAddress);
         }
 
-       
+
         public Common.DataStructures.RequestStatus GetClientRequestStatus(string clientId, long requestId,
             long commandId, string intendedServer)
         {
             if (!this._context.IsClusteredImpl || _inProc) return null;
-#if !CLIENT
             ArrayList nodes = ((ClusterCacheBase)this._context.CacheImpl)._stats.Nodes;
             foreach (NodeInfo node in nodes)
             {
@@ -7190,7 +7358,6 @@ namespace Alachisoft.NCache.Caching
                     return _context.CacheImpl.GetClientRequestStatus(clientId, requestId, commandId, node.Address);
                 }
             }
-#endif
             return null;
         }
 
@@ -7294,7 +7461,7 @@ namespace Alachisoft.NCache.Caching
             if (Context != null && Context.CacheImpl != null) Context.CacheImpl.SetClusterInactive(reason);
 
         }
-
+       
 #region ---------------------------- Messaging --------------------------------- 
 
         public bool TopicOpertion(TopicOperation operation, OperationContext operationContext)
@@ -7343,7 +7510,7 @@ namespace Alachisoft.NCache.Caching
             try
             {
                 Messaging.Message message = new Messaging.Message(messageId);
-                bitset = BitSet.CreateAndMarkInUse(Context.FakeObjectPool,NCModulesConstants.CacheCore);
+                bitset = BitSet.CreateAndMarkInUse(Context.FakeObjectPool, NCModulesConstants.CacheCore);
                 message.PayLoad = payLoad;
                 message.FlagMap = bitset;
                 message.FlagMap.Data |= flagMap.Data;
@@ -7393,7 +7560,7 @@ namespace Alachisoft.NCache.Caching
                     _shutDownStatusLatch.WaitForAny(ShutDownStatus.SHUTDOWN_COMPLETED | ShutDownStatus.NONE,
                         BlockInterval * 1000);
             }
-            
+
             try
             {
                 return _context.CacheImpl.GetAssignedMessage(subscriptionInfo, operationContext);
@@ -7411,7 +7578,7 @@ namespace Alachisoft.NCache.Caching
             catch (Exception inner)
             {
                 _context.NCacheLog.Error("Cache.GetMessage()", "Get Message operation failed. Error : " + inner.ToString());
-                throw new OperationFailedException(ErrorCodes.PubSub.GET_MESSAGE_OPERATION_FAILED,ErrorMessages.GetErrorMessage(ErrorCodes.PubSub.GET_MESSAGE_OPERATION_FAILED,inner.Message),inner);
+                throw new OperationFailedException(ErrorCodes.PubSub.GET_MESSAGE_OPERATION_FAILED, ErrorMessages.GetErrorMessage(ErrorCodes.PubSub.GET_MESSAGE_OPERATION_FAILED, inner.Message), inner);
             }
         }
 
@@ -7420,23 +7587,36 @@ namespace Alachisoft.NCache.Caching
             return _context.CacheImpl.GetTopicsStats(defaultTopicStats);
         }
 
-        public double GetCounterValue(string counterName , bool replica, string category)
+        public double GetCounterValue(string counterName, bool replica, string category)
         {
             double value = 0.0;
 
-            if(category == "Process")
+            if (category == "Process")
             {
+                if (_currentProcess == null)
+                {
+                    _currentProcess = Process.GetCurrentProcess();
+                    _processRefreshTime = DateTime.Now;
+                }
+                //Let's refresh proess information after every 2 minutes as it is costly operation
+                if (DateTime.Now >= _processRefreshTime.AddMinutes(2))
+                {
+                    _currentProcess.Refresh();
+                    _processRefreshTime = DateTime.Now;
+                }
+
                 if (counterName.Equals(CustomCounterNames.MemoryUsage, StringComparison.InvariantCultureIgnoreCase))
                 {
-                    value = Process.GetCurrentProcess().WorkingSet64;
-                    return value;
+                    value = _currentProcess.PrivateMemorySize64;
                 }
+                return value;
             }
-            
+
+
             if (replica)
             {
                 if (_context.PerfStatsColl != null)
-                    if (counterName.Equals(CustomCounterNames.Count, StringComparison.InvariantCultureIgnoreCase) || counterName.Equals(CustomCounterNames.CacheSize, StringComparison.InvariantCultureIgnoreCase) || counterName.Equals(CounterNames.EvictionIndexSize, StringComparison.InvariantCultureIgnoreCase) || counterName.Equals(CounterNames.ExpirationIndexSize, StringComparison.InvariantCultureIgnoreCase))
+                    if (counterName.Equals(CustomCounterNames.Count, StringComparison.InvariantCultureIgnoreCase) || counterName.Equals(CustomCounterNames.CacheSize, StringComparison.InvariantCultureIgnoreCase) || counterName.Equals(CounterNames.EvictionIndexSize, StringComparison.InvariantCultureIgnoreCase) || counterName.Equals(CounterNames.ExpirationIndexSize, StringComparison.InvariantCultureIgnoreCase) || counterName.Equals(CounterNames.TopicCount, StringComparison.InvariantCultureIgnoreCase))
                         value = _context.CacheImpl.GetReplicaCounters(counterName);
             }
             else
@@ -7523,7 +7703,7 @@ namespace Alachisoft.NCache.Caching
                         if (_context.Render != null)
                             value = _context.Render.GetCounterValue(counterName);
                         break;
-                    default:                       
+                    default:
                         if (_context.PerfStatsColl != null)
                             value = _context.PerfStatsColl.GetCounterValue(counterName);
                         break;
@@ -7566,7 +7746,7 @@ namespace Alachisoft.NCache.Caching
             }
         }
 
-        public long GetMessageCount(string topicName, OperationContext operationContext)
+        public long GetMessageCount(string topicName)
         {
             if (topicName == null)
             {
@@ -7577,7 +7757,7 @@ namespace Alachisoft.NCache.Caching
                 // Cache has possibly expired so return default
                 return 0;
             }
-            return _context.CacheImpl.GetMessageCount(topicName, operationContext);
+            return _context.CacheImpl.GetMessageCount(topicName);
         }
 
 #endregion
@@ -7588,7 +7768,7 @@ namespace Alachisoft.NCache.Caching
                 _context.NCacheLog.CriticalInfo("Cache.CacnelExecution()", "Command : " + commandType + " Request ID : " + requestID + " has been cancelled for client : " + clientID);
         }
 
-    
+
 
 #region - [ PoolStats ] -
 
@@ -7603,16 +7783,25 @@ namespace Alachisoft.NCache.Caching
 
         #endregion
 
-        #region ---------------------------- FeatureDataCollection -------------------------------
-        public Dictionary<string, Common.FeatureUsageData.Feature> GetCacheFeaturesUsageReport()
-        {
-            return FeatureUsageCollector.Instance.GetFeatureReport();
-        }
 
         public ClientProfileDom GetClientProfileReport()
         {
             return _context.Render.GetClientProfile();
         }
-        #endregion
+        public string GetInstallationType()
+        {
+            string installationType = "Invalid";
+            string version = "NCache_" + _context.MetricsPublisher.NCacheVersion + "_";
+
+            if (InstallationTypeProvider.Provider.IsServerInstallation)
+            {
+                installationType = version + "Opensource Cache Server";
+           
+            }
+           
+            return installationType;
+        }
+
+
     }
 }

@@ -1,4 +1,4 @@
-//  Copyright (c) 2021 Alachisoft
+//  Copyright (c) 2026 Alachisoft
 //  
 //  Licensed under the Apache License, Version 2.0 (the "License");
 //  you may not use this file except in compliance with the License.
@@ -57,7 +57,7 @@ namespace Alachisoft.NCache.Storage.Mmf
 		private uint _vid;
 		private uint _size;
 		private int _usage;
-        private MmfStorageProvider _parentStorageProvider; // we need to get hold of hash-table _itemDict in order to 
+        private MmfStorageProvider _parentStorageProvider; //we need to get hold of hash-table _itemDict in order to 
                                                            // keep the mem-arena and MmfObjectPtr in synch.
         private MemArena _lastFreeArena; //why loop all the arena for every add.. Lets get to end of arena before actual re-use of previously de-allocated ones.
 		
@@ -202,29 +202,20 @@ namespace Alachisoft.NCache.Storage.Mmf
                 if (arena == null)
                     return arena;            
             }
-            /*if (size > MaxFreeSpace) //Now call to CalculateArenaMemoryUsage is avoided so lets call it ..if required.
-			{
-				arena = DeFragment();
-			}
-			else
-			{
-				arena = FindFirstFreeArena(size);
-			}
-			if (arena == null) return arena;*/
 
 			// allocate space in parent arena.
 			MemArena newArena = MemArena.SplitArena(arena, size);
 			if (newArena == null) return arena;
 
             arena.IsFree = false;
-            if (arena != newArena) // deal with the case when splitarena returns the same arena back. Saves situation where allocated arena is accidently set to be free.
+            if (arena != newArena) //deal with the case when splitarena returns the same arena back. Saves situation where allocated arena is accidently set to be free.
             {
                 newArena.IsFree = true;
                 _lastFreeArena = newArena;
             }
 
             FreeSpace = MyFreeSpace - (uint)MemArena.Header.Size;
-            //CalculateArenaMemoryUsage(); removing it ....
+
 			Usage++;
 
 			return arena;
@@ -241,7 +232,6 @@ namespace Alachisoft.NCache.Storage.Mmf
             arena.IsFree = true;
 
             FreeSpace = MyFreeSpace - (uint)MemArena.Header.Size;
-            //CalculateArenaMemoryUsage(); removing it..
 
 			Usage++;
 
@@ -268,7 +258,7 @@ namespace Alachisoft.NCache.Storage.Mmf
                     arena = arena.NextArena();
                     if (arena != null)
                     {                        
-                        if (arena.OffsetNext == firstArena.Offset)                       
+                        if (arena.OffsetNext == firstArena.Offset) //Quick and Dirty.... First Arena cant be next of Any                  
                             arena.OffsetNext = 0;
                     }
                 }
@@ -280,7 +270,6 @@ namespace Alachisoft.NCache.Storage.Mmf
             this.FreeSpace = totalFree;
 			this.MaxFreeSpace = maxFree;
             this.MyFreeSpace = this.FreeSpace + (uint)MemArena.Header.Size;
-                  
 		}
 
 		/// <summary>
@@ -331,7 +320,7 @@ namespace Alachisoft.NCache.Storage.Mmf
             memRequirements += (uint)MemArena.Header.Size;
 			MemArena arena = FirstArena();       
             
-            if (arena.OffsetNext != 0) 
+            if (arena.OffsetNext != 0)
                 arena.Capacity = (uint)(arena.OffsetNext - (arena.Offset + MemArena.Header.Size));
 
             if (_lastFreeArena != null) //save time .This improves performance by many times.. I am saving the last free arena, to be used for next instert. This eliminates list traversal for every add operation.

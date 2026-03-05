@@ -1,4 +1,4 @@
-//  Copyright (c) 2018 Alachisoft
+//  Copyright (c) 2026 Alachisoft
 //  
 //  Licensed under the Apache License, Version 2.0 (the "License");
 //  you may not use this file except in compliance with the License.
@@ -13,7 +13,6 @@
 //  limitations under the License
 using System;
 
-
 namespace Alachisoft.NCache.Runtime.Events
 {
     /// <summary>
@@ -24,9 +23,6 @@ namespace Alachisoft.NCache.Runtime.Events
     /// </remarks>
     /// <example>
     /// To specify multiple events at the time of event registration you can use the following code:
-    /// <code>
-    /// cache.MessagingService.RegisterCacheNotification(key, onCacheDataModifiedCallback, EventType.ItemAdded | EventType.ItemRemoved, EventDataFilter.DataWithMetadata);
-    /// </code>
     /// </example>
     [Serializable]
     [Flags]

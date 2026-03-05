@@ -1,4 +1,4 @@
-//  Copyright (c) 2021 Alachisoft
+//  Copyright (c) 2026 Alachisoft
 //  
 //  Licensed under the Apache License, Version 2.0 (the "License");
 //  you may not use this file except in compliance with the License.
@@ -25,22 +25,18 @@ using System.Runtime.InteropServices;
 [assembly: CLSCompliant(true)]
 #endif
 [assembly: ComVisible(false)]
-
 #if NETCORE
-#if CLIENT
-[assembly: AssemblyTitle("Alachisoft.NCache.SocketServer (.NETCore Client)")]
-#else
 [assembly: AssemblyTitle("Alachisoft.NCache.SocketServer (.NETCore)")]
-#endif
 #else
-[assembly: AssemblyTitle("Alachisoft.NCache.SocketServer")]
+[assembly: AssemblyTitle("Alachisoft.NCache.SocketServer (.NET)")]
 #endif
 [assembly: AssemblyConfiguration("")]
 [assembly: AssemblyCompany("Alachisoft")]
 
+
 [assembly: AssemblyProduct("Alachisoft® NCache OpenSource")]
 [assembly: AssemblyTrademark("NCache ™ is a registered trademark of Alachisoft.")]
-[assembly: AssemblyCopyright("Copyright © 2005-2021 Alachisoft")]
+[assembly: AssemblyCopyright("Copyright © 2005-2026 Alachisoft")]
 [assembly: AssemblyCulture("")]		
 
 //
@@ -54,7 +50,7 @@ using System.Runtime.InteropServices;
 // You can specify all the values or you can default the Revision and Build Numbers 
 // by using the '*' as shown below:
 
-[assembly: AssemblyVersion("5.0.0")]
+[assembly: AssemblyVersion("5.3.0")]
 
 //
 // In order to sign your assembly you must specify a key to use. Refer to the 
@@ -83,12 +79,6 @@ using System.Runtime.InteropServices;
 //
 [assembly: AssemblyDelaySign(false)]
 [assembly: AssemblyKeyName("")]
-#if DEBUG
-[assembly: AssemblyKeyFile("..\\..\\Resources\\ncache.snk")]
-#else
-[assembly: AssemblyKeyFile("..\\..\\Resources\\ncache.snk")]
-#endif
-[assembly: AssemblyFileVersionAttribute("5.0.5.0")]
+[assembly: AssemblyFileVersionAttribute("5.3.6.0")]
 [assembly: AssemblyDescriptionAttribute("NCache Server")]
-
-[assembly: AssemblyInformationalVersion("5.0.0")]
+[assembly: AssemblyInformationalVersion("5.3.0")]

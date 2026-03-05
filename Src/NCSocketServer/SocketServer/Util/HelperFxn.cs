@@ -1,4 +1,4 @@
-//  Copyright (c) 2021 Alachisoft
+//  Copyright (c) 2026 Alachisoft
 //  
 //  Licensed under the Apache License, Version 2.0 (the "License");
 //  you may not use this file except in compliance with the License.
@@ -189,7 +189,7 @@ namespace Alachisoft.NCache.SocketServer.Util
 
             return _byteBuffer;
         }
-#if !CLIENT || NETCORE
+#if NETCORE
         /// <summary>
         /// Creates a <c>Int32</c> from a byte buffer representation
         /// </summary>
@@ -210,13 +210,13 @@ namespace Alachisoft.NCache.SocketServer.Util
                 buffer[2] << 16 |
                 buffer[3] << 24);
         }
-#if !CLIENT || NETCORE
+
         public static short ConvertToShort(ReadOnlySpan<byte> readOnlySpan)
         {
             return (short)((readOnlySpan[0] & 0xFF) |
                 readOnlySpan[1] << 8);
         }
-#endif
+
         public static short ConvertToShort(byte[] buffer)
         {
             return (short)((buffer[0] & 0xFF) |

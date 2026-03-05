@@ -1,4 +1,4 @@
-﻿//  Copyright (c) 2021 Alachisoft
+﻿//  Copyright (c) 2026 Alachisoft
 //  
 //  Licensed under the Apache License, Version 2.0 (the "License");
 //  you may not use this file except in compliance with the License.
@@ -22,7 +22,7 @@ using System.Text;
 using Alachisoft.NCache.Common.Monitoring;
 using Alachisoft.NCache.SocketServer.RuntimeLogging;
 using Alachisoft.NCache.Runtime.Caching;
-using Alachisoft.NCache.SocketServer.Util;
+using Alachisoft.NCache.Common.ResponseSerialization;
 
 namespace Alachisoft.NCache.SocketServer.Command
 {
@@ -50,7 +50,6 @@ namespace Alachisoft.NCache.SocketServer.Command
                 {
                     operationContext.Add(OperationContextFieldName.ClientLastViewId, command.clientLastViewId.ToString(CultureInfo.InvariantCulture));
                 }
-                CommandsUtil.PopulateClientIdInContext(ref operationContext, clientManager.ClientAddress);
                 if (nCache != null)
                 {
                     _command = command.subscribeTopicCommand;
@@ -59,13 +58,18 @@ namespace Alachisoft.NCache.SocketServer.Command
                     SubscriptionOperation subOperation = new SubscriptionOperation(_command.topicName, TopicOperationType.Subscribe, subscriptionInfo);
                     subscribed = nCache.Cache.TopicOpertion(subOperation, operationContext);
                     stopWatch.Stop();
-                    //Common.Protobuf.Response response = new Common.Protobuf.Response();
                     Common.Protobuf.SubscribeTopicResponse subscribeTopicResponse = new Common.Protobuf.SubscribeTopicResponse();
                     subscribeTopicResponse.success = subscribed;
+
                     if (clientManager.ClientVersion >= 5000)
                     {
                         Common.Util.ResponseHelper.SetResponse(subscribeTopicResponse, command.requestID, command.commandID);
-                        _serializedResponsePackets.Add(Common.Util.ResponseHelper.SerializeResponse(subscribeTopicResponse, Common.Protobuf.Response.Type.SUBSCRIBE_TOPIC));
+                        ResponseOptions responseOptions = new ResponseOptions()
+                        {
+                            Response = subscribeTopicResponse,
+                            ResponseType = Common.Protobuf.Response.Type.SUBSCRIBE_TOPIC
+                        };
+                        _serializedResponsePackets.Add(clientManager.ResponseBuilder.BuildResponse(responseOptions));
                     }
                     else
                     {
@@ -80,7 +84,14 @@ namespace Alachisoft.NCache.SocketServer.Command
             catch (Exception exc)
             {
                 exceptionMessage = exc.ToString();
-                _serializedResponsePackets.Add(ResponseHelper.SerializeExceptionResponseWithType(exc, command.requestID, command.commandID, clientManager.ClientVersion));
+                ResponseOptions responseOptions = new ResponseOptions()
+                {
+                    Exception = exc,
+                    RequestId = command.requestID,
+                    CommandId = command.commandID,
+                };
+
+                _serializedResponsePackets.Add(clientManager.ResponseBuilder.BuildExceptionResponse(responseOptions));
             }
             finally
             {
@@ -112,7 +123,6 @@ namespace Alachisoft.NCache.SocketServer.Command
             details.Append(" ; ");
             details.Append("SubscriptionId : " + _command.subscriptionName);
             details.Append(" ; ");
-            //details.AppendLine("Dependency: " + cmdInfo. != null ? "true" : "false");
             return details.ToString();
         }
     }

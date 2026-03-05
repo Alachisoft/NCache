@@ -12,6 +12,7 @@ message InitCommand {
 	optional string licenceCode = 6;
 	optional string licenceInfo = 7;
 	optional bool isDotnetClient = 8;
+	optional bool isBridgeClient = 9;
 	optional bytes binaryUserid = 10;
 	optional bytes binaryPwd = 11;
 	optional string clientEditionId = 12;

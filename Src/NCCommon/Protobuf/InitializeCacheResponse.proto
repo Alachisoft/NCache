@@ -12,6 +12,7 @@ message InitializeCacheResponse {
 	repeated ShutDownServerInfo shutDownServerInfo = 6; 
     optional bool requestLoggingEnabled = 7;
 	optional bool secureConnectionEnabled = 8 [default = false];
-	
-
+	optional string monitoringSessionId=9;
+	optional string cacheConfigId=10;
+	optional string cacheStoreType = 11;
 }

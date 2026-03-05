@@ -1,4 +1,4 @@
-﻿//  Copyright (c) 2021 Alachisoft
+﻿//  Copyright (c) 2026 Alachisoft
 //  
 //  Licensed under the Apache License, Version 2.0 (the "License");
 //  you may not use this file except in compliance with the License.
@@ -139,7 +139,6 @@ namespace Alachisoft.NCache.Client
 #if !NETCORE
                             cb.BeginInvoke(this, args, null, null);
 #elif NETCORE
-                            //TODO: ALACHISOFT (BeginInvoke is not supported in .Net Core thus using TaskFactory)
                             TaskFactory factory = new TaskFactory();
                             Task task = factory.StartNew(() => cb(this, args));
 #endif

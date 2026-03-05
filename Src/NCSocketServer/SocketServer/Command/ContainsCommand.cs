@@ -1,4 +1,4 @@
-//  Copyright (c) 2021 Alachisoft
+//  Copyright (c) 2026 Alachisoft
 //  
 //  Licensed under the Apache License, Version 2.0 (the "License");
 //  you may not use this file except in compliance with the License.
@@ -20,8 +20,7 @@ using System.Diagnostics;
 using System.Collections;
 using Alachisoft.NCache.Serialization.Formatters;
 using Alachisoft.NCache.Common.Util;
-using Alachisoft.NCache.Common.FeatureUsageData;
-using Alachisoft.NCache.SocketServer.Util;
+using Alachisoft.NCache.Common.ResponseSerialization;
 
 namespace Alachisoft.NCache.SocketServer.Command
 {
@@ -57,7 +56,6 @@ namespace Alachisoft.NCache.SocketServer.Command
 
                     case Common.Protobuf.Command.Type.CONTAINS_BULK:
                         Alachisoft.NCache.Common.Protobuf.ContainsBulkCommand containsBulkCommand = command.containsBulkCommand;
-                        FeatureUsageCollector.Instance.GetFeature(FeatureEnum.bulk_operations).UpdateUsageTime();
                         Keys = containsBulkCommand.keys;
                         RequestId = containsBulkCommand.requestId.ToString();
                         break;
@@ -65,9 +63,8 @@ namespace Alachisoft.NCache.SocketServer.Command
                     default:
                         throw new Exception("Invalid Command Received in ContainsCommand");
                 }
-                var operationContext = new OperationContext(OperationContextFieldName.OperationType, OperationContextOperationType.CacheOperation);
-                CommandsUtil.PopulateClientIdInContext(ref operationContext, clientManager.ClientAddress);
-                Hashtable exists = nCache.Cache.Contains(Keys, operationContext);
+
+                Hashtable exists = nCache.Cache.Contains(Keys, new OperationContext(OperationContextFieldName.OperationType, OperationContextOperationType.CacheOperation));
 
                 stopWatch.Stop();
 
@@ -78,7 +75,12 @@ namespace Alachisoft.NCache.SocketServer.Command
                     containsBulkResponse.exists = CompactBinaryFormatter.ToByteBuffer(exists, null);
 
                     ResponseHelper.SetResponse(containsBulkResponse, command.requestID, command.commandID);
-                    _serializedResponsePackets.Add(ResponseHelper.SerializeResponse(containsBulkResponse, Common.Protobuf.Response.Type.CONTAINS_BULK));
+                    ResponseOptions responseOptions = new ResponseOptions()
+                    {
+                        Response = containsBulkResponse,
+                        ResponseType = Common.Protobuf.Response.Type.CONTAINS_BULK
+                    };
+                    _serializedResponsePackets.Add(clientManager.ResponseBuilder.BuildResponse(responseOptions));
 
                 }
                 else
@@ -91,7 +93,12 @@ namespace Alachisoft.NCache.SocketServer.Command
                     response.contain = containResponse;
                     ResponseHelper.SetResponse(response, command.requestID, command.commandID, Common.Protobuf.Response.Type.CONTAINS);
 
-                    _serializedResponsePackets.Add(Alachisoft.NCache.Common.Util.ResponseHelper.SerializeResponse(response));
+                    ResponseOptions responseOptions = new ResponseOptions()
+                    {
+                        Response = response,
+                        ResponseType = Common.Protobuf.Response.Type.CONTAINS
+                    };
+                    _serializedResponsePackets.Add(clientManager.ResponseBuilder.BuildResponse(responseOptions));
                 }
 
             }
@@ -99,7 +106,14 @@ namespace Alachisoft.NCache.SocketServer.Command
             catch (Exception exc)
             {
                 exception = exc.ToString();
-                _serializedResponsePackets.Add(Alachisoft.NCache.Common.Util.ResponseHelper.SerializeExceptionResponseWithType(exc, command.requestID, command.commandID, clientManager.ClientVersion));
+                ResponseOptions responseOptions = new ResponseOptions()
+                {
+                    Exception = exc,
+                    RequestId = command.requestID,
+                    CommandId = command.commandID,
+                };
+
+                _serializedResponsePackets.Add(clientManager.ResponseBuilder.BuildExceptionResponse(responseOptions));
             }
 
             finally

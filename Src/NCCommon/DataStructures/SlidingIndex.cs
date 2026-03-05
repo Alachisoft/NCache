@@ -1,4 +1,4 @@
-﻿//  Copyright (c) 2021 Alachisoft
+﻿//  Copyright (c) 2026 Alachisoft
 //  
 //  Licensed under the Apache License, Version 2.0 (the "License");
 //  you may not use this file except in compliance with the License.
@@ -107,6 +107,14 @@ namespace Alachisoft.NCache.Common.DataStructures
             }
             return false;
         }
+        public IEnumerator<T> GetCurrentData(bool getReplicatData = true)
+        {
+            lock (this)
+            {
+                IEnumerator<T> enumerator = new SlidingIndex<T>.Enumerator(this, getReplicatData);
+                return enumerator;
+            }
+        }
 
         public IEnumerator<T> GetCurrentData()
         {
@@ -116,7 +124,17 @@ namespace Alachisoft.NCache.Common.DataStructures
                 return enumerator;
             }
         }
+        public IEnumerator<T> GetCurrentData(ref long startTime, bool getReplicatData = true)
+        {
+            lock (this)
+            {
+                IEnumerator<T> enumerator = new SlidingIndex<T>.Enumerator(this, ref startTime, getReplicatData);
+                return enumerator;
+            }
 
+        }
+
+       
         public IEnumerator<T> GetCurrentData(ref long startTime)
         {
             lock (this)
@@ -158,7 +176,31 @@ namespace Alachisoft.NCache.Common.DataStructures
             private List<InstantaneousIndex<T>>.Enumerator _enumerator;
             private IEnumerator<T> _subIndexEnumerator;
             private T _current;
+            private bool _replicate = true;
 
+            public Enumerator(SlidingIndex<T> slidingIndex, bool replicate = true)
+            {
+                _replicate = replicate;
+                if (replicate)
+                {
+                    foreach (InstantaneousIndex<T> indexEntry in slidingIndex._mainIndex)
+                    {
+                        //for older enteries which are not supposed to change
+                        if (indexEntry.ClockTime != Clock.CurrentTimeInSeconds)
+                            _index.Add(indexEntry);
+                        else
+                        {
+                            //index being modified currently
+                            _index.Add(indexEntry.Clone() as InstantaneousIndex<T>);
+                        }
+                    }
+                }
+                else
+                {
+                    _index = slidingIndex._mainIndex;
+                }
+                _enumerator = _index.GetEnumerator();
+            }
             public Enumerator(SlidingIndex<T> slidingIndex)
             {
                 foreach (InstantaneousIndex<T> indexEntry in slidingIndex._mainIndex)
@@ -198,7 +240,38 @@ namespace Alachisoft.NCache.Common.DataStructures
 
                 _enumerator = _index.GetEnumerator();
             }
-
+            public Enumerator(SlidingIndex<T> slidingIndex, ref long startTime, bool replicate = true)
+            {
+                long initialTime = startTime;
+                _replicate = replicate;
+                if (replicate)
+                {
+                    foreach (InstantaneousIndex<T> indexEntry in slidingIndex._mainIndex)
+                    {
+                        if (indexEntry.ClockTime > initialTime)
+                        {
+                            //for older enteries which are not supposed to change
+                            if (indexEntry.ClockTime != Clock.CurrentTimeInSeconds)
+                                _index.Add(indexEntry);
+                            else
+                            {
+                                //index being modified currently
+                                _index.Add(indexEntry.Clone() as InstantaneousIndex<T>);
+                            }
+                        }
+                        startTime = indexEntry.ClockTime;
+                    }
+                }
+                else
+                {
+                    _index = slidingIndex._mainIndex;
+                    foreach (InstantaneousIndex<T> indexEntry in slidingIndex._mainIndex)
+                    {
+                        startTime = indexEntry.ClockTime;
+                    }
+                }
+                _enumerator = _index.GetEnumerator();
+            }
             public T Current
             {
                 get { return _current; }

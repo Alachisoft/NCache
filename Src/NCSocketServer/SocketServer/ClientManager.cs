@@ -1,4 +1,4 @@
-//  Copyright (c) 2021 Alachisoft
+//  Copyright (c) 2026 Alachisoft
 //  
 //  Licensed under the Apache License, Version 2.0 (the "License");
 //  you may not use this file except in compliance with the License.
@@ -35,6 +35,10 @@ using System.Text;
 using Alachisoft.NCache.SocketServer.MultiBufferSend;
 using Alachisoft.NCache.Common.Pooling;
 using Alachisoft.NCache.Management.ServiceControl;
+using Alachisoft.NCache.Licensing;
+using Alachisoft.NCache.Common.ResponseSerialization;
+using System.Threading.Tasks;
+using System.IO;
 
 namespace Alachisoft.NCache.SocketServer
 {
@@ -62,14 +66,13 @@ namespace Alachisoft.NCache.SocketServer
 
         internal byte[] discardingBuffer = new byte[20];
 
-        internal byte[] sendBuffer = null;//new byte[1024 * 1024];
+        internal byte[] sendBuffer = null; 
 
         internal const int SendBufferSize = 512 * 1024;
 
         /// <summary> Underlying client socket object</summary>
         private Socket _clientSocket = null;
 
-       
         /// <summary> Unique clientId holder</summary>
         private string _clientSocketId = null;
 
@@ -77,8 +80,6 @@ namespace Alachisoft.NCache.SocketServer
         private string _clientID = "NULL";
 
         private event ClientDisposedCallback _clientDisposed;
-#if (!CLIENT)
-#endif
         private ICommandExecuter _cmdExecuter;
 
         private bool _cacheStopped;
@@ -121,8 +122,6 @@ namespace Alachisoft.NCache.SocketServer
         private string _beginSendTimeString; //only for dump analysis
         private DateTime _endSendTime;
 
-        //private System.Collections.Queue _asyncSendQueue = new System.Collections.Queue();   
-        //private Alachisoft.NCache.Common.DataStructures.Queue _asyncSendQueue = new Alachisoft.NCache.Common.DataStructures.Queue();
         private int _eventPriorityRatio = 30;
         private static int _eventBulkCount = 50;
         private bool supportAcknowledgement = false;
@@ -130,14 +129,13 @@ namespace Alachisoft.NCache.SocketServer
 
         private Dictionary<string, EnumerationPointer> _enumerationPointers = new Dictionary<string, EnumerationPointer>();
 
-        //private System.Collections.Queue _eventsQueue = new System.Collections.Queue();
         private EventsQueue _eventsQueue;
         private DateTime _lastEventCollectionTime;
         private string _slaveId;
         private bool _raiseClientDisconnectedEvent = true;
         private ConnectionManager _connectionManager;
         private long _requestTimeout = 90 * 1000;
-
+       
         private byte[] _sendDataBuffer;
 
 #region Aync response to client stuff
@@ -176,10 +174,7 @@ namespace Alachisoft.NCache.SocketServer
             get { return _createEventSubscription; }
             set { _createEventSubscription = value; }
         }
-        //TODO: ALACHISOFT
 
-#if (!CLIENT)
-#endif
         public string SlaveId
         {
             get { return _slaveId; }
@@ -191,6 +186,7 @@ namespace Alachisoft.NCache.SocketServer
             get { return _connectionManager; }
             set { _connectionManager = value; }
         }
+
 
         public long RequestTimeout
         {
@@ -219,9 +215,7 @@ namespace Alachisoft.NCache.SocketServer
         internal RequestDeserializer RequestDeserializer { get; set; }
 
         internal ReceiveBufferedContext ReceiveContext { get; set; }
-    
         private IPAddress _clientAddress = null;
-        
 
         public PoolManager PoolManager
         {
@@ -232,6 +226,15 @@ namespace Alachisoft.NCache.SocketServer
         {
             get;set;
         }
+        private Stream _stream;
+        internal Stream ClientStream { get { return _stream; } }
+        private bool _isInitialized = false;
+        public bool IsInitialized
+        {
+            get { return _isInitialized; }
+            set { _isInitialized = value; }
+        }
+        public Alachisoft.NCache.SocketServer.Pipelining.ClientSocketPipe clientSocketPipe { set; get; }
 
         static ClientManager()
         {
@@ -250,13 +253,16 @@ namespace Alachisoft.NCache.SocketServer
             _connectionManager = conectionManager;
             InitializeBuffer(size, pinnedBufferSize);
             _eventPriorityRatio = ServiceConfiguration.EventPriorityRatio;
-            _asyncSendQueue = new Alachisoft.NCache.Common.DataStructures.WeightageBasedPriorityQueue(_eventPriorityRatio);
-            _clientSocket = clientSocket;
-            _clientSocketId = new Address(((IPEndPoint)clientSocket.RemoteEndPoint).Address, ((IPEndPoint)clientSocket.RemoteEndPoint).Port).ToString();
-             _clientAddress = ((IPEndPoint)clientSocket.RemoteEndPoint).Address;
-           
-        }
 
+            _asyncSendQueue = new Alachisoft.NCache.Common.DataStructures.WeightageBasedPriorityQueue(_eventPriorityRatio);
+
+
+            _clientSocket = clientSocket;
+
+            _clientSocketId = new Address(((IPEndPoint)clientSocket.RemoteEndPoint).Address, ((IPEndPoint)clientSocket.RemoteEndPoint).Port).ToString();
+                _clientAddress = ((IPEndPoint)clientSocket.RemoteEndPoint).Address;
+            
+        }
 
         internal IPAddress ClientAddress
         {
@@ -265,11 +271,8 @@ namespace Alachisoft.NCache.SocketServer
         }
 
 
-        //TODO: ALACHISOFT
         internal void StopLoggingonDisposeMonitor()
-        {
-#if (!CLIENT)
-#endif                        
+        {                       
         }
 
         internal bool IsLocalClient
@@ -297,7 +300,6 @@ namespace Alachisoft.NCache.SocketServer
                 return false;
             }
         }
-        //#endif
 
 #region Pending response queue modifications.
 
@@ -401,11 +403,6 @@ namespace Alachisoft.NCache.SocketServer
             lock (_queueLock)
             {
                 _asyncSendQueue.add(buffer, priority);
-                //if (SocketServer.IsServerCounterEnabled)
-                //{
-                //    ConnectionManager.PerfStatsColl.IncrementResponsesQueueCountStats();
-                //    ConnectionManager.PerfStatsColl.IncrementResponsesQueueSizeStats(buffer.Count);
-                //}
             }
         }
 
@@ -470,8 +467,9 @@ namespace Alachisoft.NCache.SocketServer
         private int _resAgrSize;
         private int _resCount;
 
-        public int ResCount { get { return _resCount; } }
+        public int ResCount { get { return _resCount; } set { _resCount = value; } }
         public const int ReqHeaderSize = 10;
+        public Queue<ResponseBuffers> ResponseBuffersQueue { get { return _responseBuffersQueue; } }
 
         public bool ChunkSending { get; set; }
 
@@ -638,7 +636,6 @@ namespace Alachisoft.NCache.SocketServer
                     return;
 
                 _eventsQueue.Enqueue(eventObj);
-                //if (SocketServer.IsServerCounterEnabled) _connectionManager.PerfStatsColl.IncrementEventQueueCountStats();
             }
         }
 
@@ -771,11 +768,6 @@ namespace Alachisoft.NCache.SocketServer
             set { _uniqueCacheID = value; }
         }
 
-        //public string BridgeID
-        //{
-        //    get { return _bridgeID; }
-        //    set { _bridgeID = value; }
-        //}
 
         /// <summary>
         /// Gets the value indicating whether client has disocnnected from server or not.
@@ -794,7 +786,7 @@ namespace Alachisoft.NCache.SocketServer
             get { return _cacheStopped; }
         }
 
-       
+
         /// <summary>
         /// Get underlying client socket connection object
         /// </summary>        
@@ -891,7 +883,7 @@ namespace Alachisoft.NCache.SocketServer
         /// </summary>
         internal void Dispose()
         {
-           
+         
             Dispose(true);
         }
         /// <summary>
@@ -936,9 +928,16 @@ namespace Alachisoft.NCache.SocketServer
                     }
                     _enumerationPointers = null;
                 }
+                try
+                {
+                    if (clientSocketPipe != null)
+                    {
+                        clientSocketPipe.Dispose();
+                    }
+                    ClientStream?.Dispose();
+                }
+                catch { }
 
-
-               
 
                 if (_clientSocket != null)
                 {
@@ -949,8 +948,8 @@ namespace Alachisoft.NCache.SocketServer
                         {
                             _clientSocket.Dispose();
                         }
-                        catch (SocketException e) {}
-                        catch (ObjectDisposedException e) {}
+                        catch (SocketException e) { }
+                        catch (ObjectDisposedException e) {  }
                     }
 #endif
 
@@ -971,17 +970,19 @@ namespace Alachisoft.NCache.SocketServer
                 _sendDataBuffer = null;
                 discardingBuffer = null;
                 _responseBuffersQueue.Clear();
+
+
                 ConnectionManager.EventsAndCallbackQueue.UnRegisterSlaveQueue(_slaveId);
-                ClientLedger.Instance.UnregisterClientForCache(ClientAddress, ClientID);
+
+        
+
                 if (_cmdExecuter != null)
                 {
                     if (!_cacheStopped && _raiseClientDisconnectedEvent)
                     {
                         try
                         {
-                            var clientInfo = new Runtime.Caching.ClientInfo();
-                            clientInfo.IPAddress = ClientAddress;
-                            _cmdExecuter.OnClientDisconnected(ClientID, UniqueCacheID, clientInfo, ConnectionManager.PerfStatsColl.ConncetedClients);
+                            _cmdExecuter.OnClientDisconnected(ClientID, UniqueCacheID, ConnectionManager.PerfStatsColl.ConncetedClients);
                         }
                         catch (Exception e)
                         {
@@ -1071,8 +1072,18 @@ namespace Alachisoft.NCache.SocketServer
 
         public PoolManager CacheFakePool { get; internal set; }
         public ClientProfile ClientProfile { get; internal set; }
+        public IResponseBuilder ResponseBuilder { get; internal set; }
+
+        internal void InitializeClientStream()
+        {
+            if (_stream == null)
+                _stream = new NetworkStream(_clientSocket, true);
+            if (clientSocketPipe == null)
+                clientSocketPipe = new Pipelining.ClientSocketPipe(_stream);
+        }
 
     }
 
-
+#if SERVER
+#endif
 }

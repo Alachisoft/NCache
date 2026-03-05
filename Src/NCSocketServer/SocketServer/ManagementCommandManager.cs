@@ -1,4 +1,4 @@
-//  Copyright (c) 2021 Alachisoft
+//  Copyright (c) 2026 Alachisoft
 //  
 //  Licensed under the Apache License, Version 2.0 (the "License");
 //  you may not use this file except in compliance with the License.
@@ -19,6 +19,9 @@ using System.IO;
 using Alachisoft.NCache.SocketServer.RequestLogging;
 using System.Collections;
 using System;
+using Alachisoft.NCache.Common.Util;
+using Alachisoft.NCache.Common.DataStructures.Clustered;
+using Alachisoft.NCache.Util;
 
 namespace Alachisoft.NCache.SocketServer
 {
@@ -29,28 +32,26 @@ namespace Alachisoft.NCache.SocketServer
         public object Deserialize(Stream buffer)
         {
             Common.Protobuf.ManagementCommand command = null;
-            command = ProtoBuf.Serializer.Deserialize<Common.Protobuf.ManagementCommand>(buffer);
+            command = ProtoBuf.Extended.Serializer.Deserialize<Common.Protobuf.ManagementCommand>(buffer);
             buffer.Close();
             return command;
         }
 
         public void ProcessCommand(ClientManager clientManager, object command, short cmdType, long acknowledgementId, UsageStats stats, bool waitforResponse)
         {
+            
             Common.Protobuf.ManagementCommand cmd = command as Common.Protobuf.ManagementCommand;
 
             if (ServerMonitor.MonitorActivity) ServerMonitor.LogClientActivity("CmdMgr.PrsCmd", "enter");
             if (ServerMonitor.MonitorActivity) ServerMonitor.LogClientActivity("CmdMgr.PrsCmd", "" + cmd);
-            if (SocketServer.Logger.IsDetailedLogsEnabled) SocketServer.Logger.NCacheLog.Info("ConnectionManager.ReceiveCallback", clientManager.ToString() + " COMMAND to be executed : " + "Management Command" + " RequestId :" + cmd.requestId);
 
             NCManagementCommandBase incommingCmd = null;
             incommingCmd = new ManagementCommand();
 
-            incommingCmd.ExecuteCommand(clientManager, cmd);/**/
-
-            if (SocketServer.Logger.IsDetailedLogsEnabled) SocketServer.Logger.NCacheLog.Info("ConnectionManager.ReceiveCallback", clientManager.ToString() + " after executing COMMAND : " + "Management Command" + " RequestId :" + cmd.requestId);
+            incommingCmd.ExecuteCommand(clientManager, cmd);
 
 
-#if SERVER 
+#if SERVER
             if (clientManager != null &&
                 incommingCmd.OperationResult == OperationResult.Success)
             {
@@ -69,8 +70,27 @@ namespace Alachisoft.NCache.SocketServer
                 }
             }
             if (ServerMonitor.MonitorActivity) ServerMonitor.LogClientActivity("CmdMgr.PrsCmd", "exit");
-        }
+            
 
+
+        }
+        private static void ExecuteTLSCommandSync(ClientManager clientManager, Common.Protobuf.ManagementCommand cmd)
+        {
+            clientManager.SecureConnectionEnabled = true;
+
+            Alachisoft.NCache.Common.Protobuf.ManagementResponse response = new Alachisoft.NCache.Common.Protobuf.ManagementResponse();
+
+            response.methodName = cmd.methodName;
+            response.version = cmd.commandVersion;
+            response.requestId = cmd.requestId;
+
+            ClusteredArrayList list = ResponseHelper.SerializeResponse(response);
+
+            if (clientManager != null && list != null)
+            {
+                ConnectionManager.AssureSend(clientManager, list.ToArray(), false);
+            }
+        }
         public Common.DataStructures.RequestStatus GetRequestStatus(string clientId, long requestId, long commandId)
         {
             return null;
@@ -83,7 +103,7 @@ namespace Alachisoft.NCache.SocketServer
 
         public void Dispose()
         {
-           
+
         }
 
         public Bookie RequestLogger

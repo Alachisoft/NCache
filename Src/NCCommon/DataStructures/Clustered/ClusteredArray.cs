@@ -100,8 +100,6 @@ namespace Alachisoft.NCache.Common.DataStructures.Clustered
                 //The exception should be removed if we don't care that the main referencial array is being taken to LOH.
                 //Otherwise it should be caught by user, who will then declare a new clustered array structure.
 
-                //Your call.
-                //Update: Let it grow, care later.
 
                 _chunks = new T[superLength][];
                 for (int i = 0; i < superLength; i++)

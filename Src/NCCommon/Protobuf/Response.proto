@@ -12,6 +12,7 @@ import "GetResponse.proto";
 import "GetCompactTypeResponse.proto";
 import "GetEnumeratorResponse.proto";
 import "GetHashmapResponse.proto";
+import "GetModuleHashmapResponse.proto";
 import "GetOptimalServerResponse.proto";
 import "GetTagResponse.proto";
 import "GetTypeMapResponse.proto";
@@ -34,6 +35,7 @@ import "GetLoggingInfoResponse.proto";
 import "Exception.proto";
 import "CacheClearedEventResponse.proto";
 import "HashmapChangedEventResponse.proto";
+import "ModuleHashmapChangedEventResponse.proto";
 import "CacheStoppedEventResponse.proto";
 import "ConfigModifiedEventResponse.proto";
 import "CustomEventResponse.proto";
@@ -94,6 +96,8 @@ import "BulkGetCacheItemResponse.proto";
 import "ContainBulkResponse.proto";
 import "SurrogateResponse.proto";
 import "ModuleResponse.proto";
+import "GetModuleStateResponse.proto";
+import "SetModuleStateResponse.proto";
 
 option java_outer_classname="ResponseProtocol";
 package Alachisoft.NCache.Common.Protobuf;
@@ -202,6 +206,11 @@ enum Type
 		CONTAINS_BULK=141;
 		MODULE=142;
 		SURROGATE=143;
+		GETMODULESTATE=144;
+		SETMODULESTATE=145;
+		GET_MODULE_HASHMAP=146;
+		MODULE_HASHMAP_CHANGED_EVENT=147;
+		GET_SERVER_IDENTITY=148;
 	}
 	
 	optional int64 requestId = 1;
@@ -310,5 +319,10 @@ enum Type
 	optional ContainBulkResponse containBulkResponse = 147;
 	optional ModuleResponse moduleResponse = 148;
 	optional SurrogateResponse surrogateResponse = 149;
+	optional GetModuleStateResponse getModuleStateResponse = 150;	
+	optional SetModuleStateResponse setModuleStateResponse = 151;
+	optional GetModuleHashmapResponse getModuleHashmap = 155;
+	optional ModuleHashmapChangedEventResponse moduleHashmapChanged = 156;
+	optional ModuleHashmapChangedEventResponse getServerIdentity = 157;
 }
 

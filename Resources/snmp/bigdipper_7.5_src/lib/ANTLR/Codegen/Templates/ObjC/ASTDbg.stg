@@ -1,0 +1,93 @@
+/*
+ [The "BSD license"]
+ Copyright (c) 2006 Kay Roepke 2010 Alan Condit
+ All rights reserved.
+
+ Redistribution and use in source and binary forms, with or without
+ modification, are permitted provided that the following conditions
+ are met:
+ 1. Redistributions of source code must retain the above copyright
+    notice, this list of conditions and the following disclaimer.
+ 2. Redistributions in binary form must reproduce the above copyright
+    notice, this list of conditions and the following disclaimer in the
+    documentation and/or other materials provided with the distribution.
+ 3. The name of the author may not be used to endorse or promote products
+    derived from this software without specific prior written permission.
+
+ THIS SOFTWARE IS PROVIDED BY THE AUTHOR ``AS IS'' AND ANY EXPRESS OR
+ IMPLIED WARRANTIES, INCLUDING, BUT NOT LIMITED TO, THE IMPLIED WARRANTIES
+ OF MERCHANTABILITY AND FITNESS FOR A PARTICULAR PURPOSE ARE DISCLAIMED.
+ IN NO EVENT SHALL THE AUTHOR BE LIABLE FOR ANY DIRECT, INDIRECT,
+ INCIDENTAL, SPECIAL, EXEMPLARY, OR CONSEQUENTIAL DAMAGES (INCLUDING, BUT
+ NOT LIMITED TO, PROCUREMENT OF SUBSTITUTE GOODS OR SERVICES; LOSS OF USE,
+ DATA, OR PROFITS; OR BUSINESS INTERRUPTION) HOWEVER CAUSED AND ON ANY
+ THEORY OF LIABILITY, WHETHER IN CONTRACT, STRICT LIABILITY, OR TORT
+ (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF
+ THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
+*/
+
+/** Template overrides to add debugging to AST stuff.  Dynamic inheritance
+ *  hierarchy is set up as ASTDbg : AST : Dbg : Java by code generator.
+ */
+parserMembers() ::= <<
+ANTLRDebugTreeAdaptor *adaptor = [ANTLRDebugTreeAdaptor newTreeAdaptor:(id)dbg Adaptor:[ANTLRCommonTreeAdaptor newTreeAdaptor]];
+
+// fix this
+- (void) setTreeAdaptor:(id<ANTLRTreeAdaptor>)anAdaptor
+{
+    adaptor = [ANTLRDebugTreeAdaptor newTreeAdaptor:dbg Adaptor:anAdaptor];
+<if(grammar.grammarIsRoot)>
+    adaptor = [ANTLRDebugTreeAdaptor newTreeAdaptor:adaptor withDBG:dbg];
+<else>
+    adaptor = (ANTLRDebugTreeAdaptor *)adaptor; // delegator sends dbg adaptor
+<endif><\n>
+    <grammar.directDelegates:{g|[<g:delegateName()> setTreeAdaptor:adaptor];}>
+}
+
+- (id<ANTLRTreeAdaptor>)getTreeAdaptor
+{
+    return adaptor;
+}<\n>
+>>
+
+parserCtorBody() ::= <<
+<super.parserCtorBody()>
+>>
+
+createListenerAndHandshake() ::= <<
+ANTLRDebugEventSocketProxy proxy =
+    [ANTLRDebugEventSocketProxy newANTLRDebugEventSocketProxy:self, port, <if(TREE_PARSER)>[input getTreeAdaptor]<else>adaptor<endif>];
+[self setDebugListener:proxy];
+[self set<inputStreamType>:[ANTLRANTLRDebug<inputStreamType> newANTLRDebug<inputStreamType>:input with:proxy]];
+try {
+    [proxy handshake];
+}
+@catch (IOException *ioe) {
+    [self reportError:ioe];
+}
+>>
+
+@ctorForRootGrammar.finally() ::= <<
+ANTLRCommonTreeAdaptor *adap = [ANTLRCommonTreeAdaptor newTreeAdaptor];
+[self setTreeAdaptor:adap];
+[proxy setTreeAdaptor:adap];
+>>
+
+@ctorForProfilingRootGrammar.finally() ::=<<
+ANTLRCommonTreeAdaptor *adap = [ANTLRCommonTreeAdaptor newTreeAdaptor];
+[self setTreeAdaptor:adap];
+[proxy setTreeAdaptor:adap];
+>>
+
+@ctorForPredefinedListener.superClassRef() ::= @"super(input, dbg);"
+
+@ctorForPredefinedListener.finally() ::=<<
+<if(grammar.grammarIsRoot)> <! don't create new adaptor for delegates !>
+ANTLRCommonTreeAdaptor *adap = [ANTLRCommonTreeAdaptor newTreeAdaptor];
+[self setTreeAdaptor:adap];<\n>
+<endif>
+>>
+
+@treeParserHeaderFile.superClassName ::= "ANTLRDebugTreeParser"
+
+@rewriteElement.pregen() ::= "[debugListener locationLine:<e.line> column:<e.pos>];"

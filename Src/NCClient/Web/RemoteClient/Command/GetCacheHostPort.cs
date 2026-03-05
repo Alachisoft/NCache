@@ -1,4 +1,4 @@
-﻿//  Copyright (c) 2021 Alachisoft
+﻿//  Copyright (c) 2026 Alachisoft
 //  
 //  Licensed under the Apache License, Version 2.0 (the "License");
 //  you may not use this file except in compliance with the License.
@@ -67,7 +67,7 @@ namespace Alachisoft.NCache.Client
                 stream.Write(acknowledgementBuffer, 0, acknowledgementBuffer.Length);
                 byte[] size = new byte[Connection.CmdSizeHolderBytesCount];
                 stream.Write(size, 0, size.Length);
-                ProtoBuf.Serializer.Serialize<Alachisoft.NCache.Common.Protobuf.Command>(stream, this._command);
+                ProtoBuf.Extended.Serializer.Serialize<Alachisoft.NCache.Common.Protobuf.Command>(stream, this._command);
                 int messageLen = (int)stream.Length - (size.Length + discardingBuffer.Length + acknowledgementBuffer.Length);
 
                 size = HelperFxn.ToBytes(messageLen.ToString());

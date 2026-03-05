@@ -1,4 +1,4 @@
-//  Copyright (c) 2021 Alachisoft
+//  Copyright (c) 2026 Alachisoft
 //  
 //  Licensed under the Apache License, Version 2.0 (the "License");
 //  you may not use this file except in compliance with the License.
@@ -14,8 +14,10 @@
 using System;
 using System.Collections;
 using Alachisoft.NCache.Common.Communication.Exceptions;
+using Alachisoft.NCache.Common.Protobuf;
 namespace Alachisoft.NCache.Common.Communication
 {
+    public delegate void ChannelDisconnectedOnSendoperation(string serverIp);
     public class RequestManager :IChannelEventListener, IDisposable
     {
         IChannel _channel;
@@ -25,7 +27,8 @@ namespace Alachisoft.NCache.Common.Communication
         bool _resendRequestOnChannelDisconnect = true;
         private int _requestTimeout = 90 *1000; //default is ninety second
         private IChannelDisconnected _channelDisconnectedListener;
-
+        private ChannelDisconnectedOnSendoperation _channelDisconnected;
+        public IChannel Channel { get { return _channel; } }
 
         public RequestManager(IChannel chnnel, IChannelDisconnected channelDisconnectedListener)
         {
@@ -42,7 +45,12 @@ namespace Alachisoft.NCache.Common.Communication
             get { return _requestTimeout; }
             set { _requestTimeout = value; }
         }
+        public ChannelDisconnectedOnSendoperation ChannelDisconnectedEvent { set { _channelDisconnected = value; } }
 
+        public bool IsConnected
+        {
+            get { return _channel != null ? _channel.IsConnected : false; }
+        }
         public object SendRequest(IRequest request)
         {
             object response = null;
@@ -115,10 +123,10 @@ namespace Alachisoft.NCache.Common.Communication
         {
             IResponse protoResponse = response;
             RequestResponsePair reqResponsePair = _requests[protoResponse.RequestId] as RequestResponsePair;
-  
-            lock (reqResponsePair)
+
+            if (reqResponsePair != null)
             {
-                if (reqResponsePair != null)
+                lock (reqResponsePair)
                 {
                     reqResponsePair.Response = protoResponse;
                     System.Threading.Monitor.Pulse(reqResponsePair);
@@ -196,7 +204,7 @@ namespace Alachisoft.NCache.Common.Communication
                 }
             }
         }
-        
+
         #endregion
 
         private void Dispose(bool gracefull)
@@ -214,7 +222,7 @@ namespace Alachisoft.NCache.Common.Communication
                     }
                 }
             }
-            catch (Exception e)
+            catch (System.Exception e)
             {
             }
             if(gracefull)
@@ -225,7 +233,22 @@ namespace Alachisoft.NCache.Common.Communication
         {
             Dispose(true);
         }
-     
+
+        public void ChannelDisconnected(string serverIp)
+        {
+            if (_channelDisconnected != null) _channelDisconnected(serverIp);
+        }
+
+        private ManagementResponse SendRequestSync(ManagementCommand command)
+        {
+            ManagementResponse response = null;
+
+            command.RequestId = GenerateRequestId();
+            response = _channel.SendMessageSync(command) as ManagementResponse;
+
+            return response;
+        }
+
         ~RequestManager()
         {
             Dispose(false);

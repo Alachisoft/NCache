@@ -11,14 +11,14 @@
 // Note: requires additional types generated from: ProductVersion.proto
 namespace Alachisoft.NCache.Common.Protobuf
 {
-    [global::System.Serializable, global::ProtoBuf.ProtoContract(Name = @"GetOptimalServerCommand")]
-    public partial class GetOptimalServerCommand : global::ProtoBuf.IExtensible
+    [global::System.Serializable, global::ProtoBuf.Extended.ProtoContract(Name = @"GetOptimalServerCommand")]
+    public partial class GetOptimalServerCommand : global::ProtoBuf.Extended.IExtensible
     {
         public GetOptimalServerCommand() { }
 
 
         private long _requestId = default(long);
-        [global::ProtoBuf.ProtoMember(1, IsRequired = false, Name = @"requestId", DataFormat = global::ProtoBuf.DataFormat.TwosComplement)]
+        [global::ProtoBuf.Extended.ProtoMember(1, IsRequired = false, Name = @"requestId", DataFormat = global::ProtoBuf.Extended.DataFormat.TwosComplement)]
         [global::System.ComponentModel.DefaultValue(default(long))]
         public long requestId
         {
@@ -27,7 +27,7 @@ namespace Alachisoft.NCache.Common.Protobuf
         }
 
         private string _cacheId = "";
-        [global::ProtoBuf.ProtoMember(2, IsRequired = false, Name = @"cacheId", DataFormat = global::ProtoBuf.DataFormat.Default)]
+        [global::ProtoBuf.Extended.ProtoMember(2, IsRequired = false, Name = @"cacheId", DataFormat = global::ProtoBuf.Extended.DataFormat.Default)]
         [global::System.ComponentModel.DefaultValue("")]
         public string cacheId
         {
@@ -36,7 +36,7 @@ namespace Alachisoft.NCache.Common.Protobuf
         }
 
         private string _userId = @"dummyUID";
-        [global::ProtoBuf.ProtoMember(3, IsRequired = false, Name = @"userId", DataFormat = global::ProtoBuf.DataFormat.Default)]
+        [global::ProtoBuf.Extended.ProtoMember(3, IsRequired = false, Name = @"userId", DataFormat = global::ProtoBuf.Extended.DataFormat.Default)]
         [global::System.ComponentModel.DefaultValue(@"dummyUID")]
         public string userId
         {
@@ -45,7 +45,7 @@ namespace Alachisoft.NCache.Common.Protobuf
         }
 
         private string _pwd = @"dummyPwd";
-        [global::ProtoBuf.ProtoMember(4, IsRequired = false, Name = @"pwd", DataFormat = global::ProtoBuf.DataFormat.Default)]
+        [global::ProtoBuf.Extended.ProtoMember(4, IsRequired = false, Name = @"pwd", DataFormat = global::ProtoBuf.Extended.DataFormat.Default)]
         [global::System.ComponentModel.DefaultValue(@"dummyPwd")]
         public string pwd
         {
@@ -54,7 +54,7 @@ namespace Alachisoft.NCache.Common.Protobuf
         }
 
         private bool _isDotnetClient = (bool)true;
-        [global::ProtoBuf.ProtoMember(5, IsRequired = false, Name = @"isDotnetClient", DataFormat = global::ProtoBuf.DataFormat.Default)]
+        [global::ProtoBuf.Extended.ProtoMember(5, IsRequired = false, Name = @"isDotnetClient", DataFormat = global::ProtoBuf.Extended.DataFormat.Default)]
         [global::System.ComponentModel.DefaultValue((bool)true)]
         public bool isDotnetClient
         {
@@ -63,7 +63,7 @@ namespace Alachisoft.NCache.Common.Protobuf
         }
 
         private byte[] _binaryUserId = null;
-        [global::ProtoBuf.ProtoMember(6, IsRequired = false, Name = @"binaryUserId", DataFormat = global::ProtoBuf.DataFormat.Default)]
+        [global::ProtoBuf.Extended.ProtoMember(6, IsRequired = false, Name = @"binaryUserId", DataFormat = global::ProtoBuf.Extended.DataFormat.Default)]
         [global::System.ComponentModel.DefaultValue(null)]
         public byte[] binaryUserId
         {
@@ -72,7 +72,7 @@ namespace Alachisoft.NCache.Common.Protobuf
         }
 
         private byte[] _binaryPassword = null;
-        [global::ProtoBuf.ProtoMember(7, IsRequired = false, Name = @"binaryPassword", DataFormat = global::ProtoBuf.DataFormat.Default)]
+        [global::ProtoBuf.Extended.ProtoMember(7, IsRequired = false, Name = @"binaryPassword", DataFormat = global::ProtoBuf.Extended.DataFormat.Default)]
         [global::System.ComponentModel.DefaultValue(null)]
         public byte[] binaryPassword
         {
@@ -81,16 +81,16 @@ namespace Alachisoft.NCache.Common.Protobuf
         }
 
         private Alachisoft.NCache.Common.Protobuf.ProductVersion _productVersion = null;
-        [global::ProtoBuf.ProtoMember(8, IsRequired = false, Name = @"productVersion", DataFormat = global::ProtoBuf.DataFormat.Default)]
+        [global::ProtoBuf.Extended.ProtoMember(8, IsRequired = false, Name = @"productVersion", DataFormat = global::ProtoBuf.Extended.DataFormat.Default)]
         [global::System.ComponentModel.DefaultValue(null)]
         public Alachisoft.NCache.Common.Protobuf.ProductVersion productVersion
         {
             get { return _productVersion; }
             set { _productVersion = value; }
         }
-        private global::ProtoBuf.IExtension extensionObject;
-        global::ProtoBuf.IExtension global::ProtoBuf.IExtensible.GetExtensionObject(bool createIfMissing)
-        { return global::ProtoBuf.Extensible.GetExtensionObject(ref extensionObject, createIfMissing); }
+        private global::ProtoBuf.Extended.IExtension extensionObject;
+       global::ProtoBuf.Extended.IExtension global::ProtoBuf.Extended.IExtensible.GetExtensionObject(bool createIfMissing)
+        { return global::ProtoBuf.Extended.Extensible.GetExtensionObject(ref extensionObject, createIfMissing); }
     }
 
 }

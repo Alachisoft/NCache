@@ -10,14 +10,14 @@
 // Generated from: NodeChangeInfo.proto
 namespace Alachisoft.NCache.Common.Protobuf
 {
-  [global::System.Serializable, global::ProtoBuf.ProtoContract(Name=@"NodeChangeInfo")]
-  public partial class NodeChangeInfo : global::ProtoBuf.IExtensible
+  [global::System.Serializable, global::ProtoBuf.Extended.ProtoContract(Name=@"NodeChangeInfo")]
+  public partial class NodeChangeInfo : global::ProtoBuf.Extended.IExtensible
   {
     public NodeChangeInfo() {}
     
 
     private string _node = "";
-    [global::ProtoBuf.ProtoMember(1, IsRequired = false, Name=@"node", DataFormat = global::ProtoBuf.DataFormat.Default)]
+    [global::ProtoBuf.Extended.ProtoMember(1, IsRequired = false, Name=@"node", DataFormat = global::ProtoBuf.Extended.DataFormat.Default)]
     [global::System.ComponentModel.DefaultValue("")]
     public string node
     {
@@ -25,36 +25,36 @@ namespace Alachisoft.NCache.Common.Protobuf
       set { _node = value; }
     }
     private readonly global::System.Collections.Generic.List<string> _keys = new global::System.Collections.Generic.List<string>();
-    [global::ProtoBuf.ProtoMember(2, Name=@"keys", DataFormat = global::ProtoBuf.DataFormat.Default)]
+    [global::ProtoBuf.Extended.ProtoMember(2, Name=@"keys", DataFormat = global::ProtoBuf.Extended.DataFormat.Default)]
     public global::System.Collections.Generic.List<string> keys
     {
       get { return _keys; }
     }
   
     private readonly global::System.Collections.Generic.List<int> _changeType = new global::System.Collections.Generic.List<int>();
-    [global::ProtoBuf.ProtoMember(3, Name=@"changeType", DataFormat = global::ProtoBuf.DataFormat.TwosComplement)]
+    [global::ProtoBuf.Extended.ProtoMember(3, Name=@"changeType", DataFormat = global::ProtoBuf.Extended.DataFormat.TwosComplement)]
     public global::System.Collections.Generic.List<int> changeType
     {
       get { return _changeType; }
     }
   
     private readonly global::System.Collections.Generic.List<int> _changeIds = new global::System.Collections.Generic.List<int>();
-    [global::ProtoBuf.ProtoMember(4, Name=@"changeIds", DataFormat = global::ProtoBuf.DataFormat.TwosComplement)]
+    [global::ProtoBuf.Extended.ProtoMember(4, Name=@"changeIds", DataFormat = global::ProtoBuf.Extended.DataFormat.TwosComplement)]
     public global::System.Collections.Generic.List<int> changeIds
     {
       get { return _changeIds; }
     }
   
     private readonly global::System.Collections.Generic.List<byte[]> _value = new global::System.Collections.Generic.List<byte[]>();
-    [global::ProtoBuf.ProtoMember(5, Name=@"value", DataFormat = global::ProtoBuf.DataFormat.Default)]
+    [global::ProtoBuf.Extended.ProtoMember(5, Name=@"value", DataFormat = global::ProtoBuf.Extended.DataFormat.Default)]
     public global::System.Collections.Generic.List<byte[]> value
     {
       get { return _value; }
     }
   
-    private global::ProtoBuf.IExtension extensionObject;
-    global::ProtoBuf.IExtension global::ProtoBuf.IExtensible.GetExtensionObject(bool createIfMissing)
-      { return global::ProtoBuf.Extensible.GetExtensionObject(ref extensionObject, createIfMissing); }
+    private global::ProtoBuf.Extended.IExtension extensionObject;
+   global::ProtoBuf.Extended.IExtension global::ProtoBuf.Extended.IExtensible.GetExtensionObject(bool createIfMissing)
+      { return global::ProtoBuf.Extended.Extensible.GetExtensionObject(ref extensionObject, createIfMissing); }
   }
   
 }

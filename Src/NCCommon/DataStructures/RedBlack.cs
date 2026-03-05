@@ -699,7 +699,7 @@ namespace Alachisoft.NCache.Common.DataStructures
             if (y != z)
             {
                 z.Key = y.Key;
-                z.Data = y.Data; 
+                z.Data = y.Data;
                 z.RBNodeReference = y.RBNodeReference;
                 z.RBNodeReference.RBReference = z;
             }

@@ -6,4 +6,10 @@ message HashmapChangedEventResponse
 {
 	optional bytes table = 1;
 	optional EventId eventId = 2;
+	optional int64 last_view_id = 3;
+    repeated KeyValuePair map = 4;
+	repeated string members = 5;
+	optional bool update_map = 6;
+	optional bool forceful_update = 7;
+	repeated KeyValuePair serverMapping = 8;
 }

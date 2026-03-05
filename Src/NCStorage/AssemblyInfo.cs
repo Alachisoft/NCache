@@ -1,4 +1,4 @@
-//  Copyright (c) 2021 Alachisoft
+//  Copyright (c) 2026 Alachisoft
 //  
 //  Licensed under the Apache License, Version 2.0 (the "License");
 //  you may not use this file except in compliance with the License.
@@ -22,24 +22,19 @@ using System.Runtime.InteropServices;
 // set of attributes. Change these attribute values to modify the information
 // associated with an assembly.
 //
-#if !DEBUG
-[assembly: CLSCompliant(true)]
-#endif
-[assembly: ComVisible(false)]
 
+[assembly: ComVisible(false)]
 #if NETCORE
 [assembly: AssemblyTitle("Alachisoft.NCache.Storage (.NETCore)")]
 #else
-[assembly: AssemblyTitle("Alachisoft.NCache.Storage")]
+[assembly: AssemblyTitle("Alachisoft.NCache.Storage (.NET)")]
 #endif
-
 [assembly: AssemblyProduct("Alachisoft® NCache OpenSource")]
 [assembly: AssemblyTrademark("NCache ™ is a registered trademark of Alachisoft.")]
-
 [assembly: AssemblyConfiguration("")]
 [assembly: AssemblyCompany("Alachisoft")]
 
-[assembly: AssemblyCopyright("Copyright © 2005-2021 Alachisoft")]
+[assembly: AssemblyCopyright("Copyright © 2005-2026 Alachisoft")]
 [assembly: AssemblyCulture("")]
 
 //
@@ -53,7 +48,7 @@ using System.Runtime.InteropServices;
 // You can specify all the values or you can default the Revision and Build Numbers 
 // by using the '*' as shown below:
 
-[assembly: AssemblyVersion("5.0.0")]
+[assembly: AssemblyVersion("5.3.0")]
 
 //
 // Since we need to support two runtimes which are not fully backward compatible we have
@@ -78,13 +73,6 @@ using System.Runtime.InteropServices;
 // Private
 //		Defines the private or developer build numbers. Not to be used for production.
 //
-//#if VS2005
-//[assembly: AssemblyVersion("1.5.200.0")]
-//[assembly: AssemblyDescription(".NET 2.0 supported")]
-//#else
-//[assembly: AssemblyVersion("1.5.100.0")]
-//[assembly: AssemblyDescription(".NET 1.0 and 1.1 supported")]
-//#endif
 
 //
 // In order to sign your assembly you must specify a key to use. Refer to the 
@@ -113,11 +101,6 @@ using System.Runtime.InteropServices;
 //
 [assembly: AssemblyDelaySign(false)]
 [assembly: AssemblyKeyName("")]
-#if DEBUG
-[assembly: AssemblyKeyFile("..\\..\\Resources\\ncache.snk")]
-#else
-[assembly: AssemblyKeyFile("..\\..\\Resources\\ncache.snk")]
-#endif
-[assembly: AssemblyFileVersionAttribute("5.0.5.0")]
+[assembly: AssemblyFileVersionAttribute("5.3.6.0")]
 [assembly: AssemblyDescriptionAttribute("Storage Classes")]
-[assembly: AssemblyInformationalVersion("5.0.0")]
+[assembly: AssemblyInformationalVersion("5.3.0")]

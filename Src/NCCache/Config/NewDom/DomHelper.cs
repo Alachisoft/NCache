@@ -1,4 +1,4 @@
-//  Copyright (c) 2021 Alachisoft
+//  Copyright (c) 2026 Alachisoft
 //  
 //  Licensed under the Apache License, Version 2.0 (the "License");
 //  you may not use this file except in compliance with the License.
@@ -17,10 +17,9 @@ using Alachisoft.NCache.Common.Net;
 using Alachisoft.NCache.Common;
 using Alachisoft.NCache.Common.Util;
 using Alachisoft.NCache.Config.Dom;
-#if !CLIENT
 using Alachisoft.NGroups;
 using Alachisoft.NCache.Common.Util;
-#endif
+
 /*
  * To change this template, choose Tools | Templates
  * and open the template in the editor.
@@ -29,6 +28,7 @@ namespace Alachisoft.NCache.Config.NewDom
 {
 	/// 
 	/// <summary>
+	/// @author numan_hanif
 	/// </summary>
 	public class DomHelper
 	{
@@ -43,14 +43,16 @@ namespace Alachisoft.NCache.Config.NewDom
 	                oldDom = new Alachisoft.NCache.Config.Dom.CacheServerConfig();
 	                if (newDom.CacheSettings != null)
 	                {
-	                    oldDom.Name = newDom.Name;
-	                    oldDom.InProc = newDom.CacheSettings.InProc;
+						oldDom.Name = newDom.Name;
+						oldDom.Store = newDom.Store;
+						oldDom.InProc = newDom.CacheSettings.InProc;
 	                    oldDom.ConfigVersion = newDom.ConfigVersion;
                         oldDom.ConfigID = newDom.ConfigID;
-	                    oldDom.LastModified = newDom.CacheSettings.LastModified;
 	                    oldDom.DataFormat = newDom.CacheSettings.DataFormat;
+						oldDom.SerializationFormatter = newDom.CacheSettings.SerializationFormatter;
 
-	                    if (newDom.CacheSettings.Log != null)
+
+						if (newDom.CacheSettings.Log != null)
 	                    {
 	                        oldDom.Log = newDom.CacheSettings.Log;
 	                    }
@@ -77,22 +79,6 @@ namespace Alachisoft.NCache.Config.NewDom
 	                        oldDom.ClientDeathDetection = new Alachisoft.NCache.Config.Dom.ClientDeathDetection();
 	                    }
 
-
-	                    if (newDom.CacheSettings.BackingSource != null)
-	                    {
-	                        oldDom.BackingSource = newDom.CacheSettings.BackingSource;
-	                    }
-
-	                
-
-	                    if (newDom.CacheSettings.Notifications != null)
-	                    {
-	                        oldDom.Notifications = newDom.CacheSettings.Notifications;
-	                    }
-	                    else
-	                    {
-	                        oldDom.Notifications = new Alachisoft.NCache.Config.Dom.Notifications();
-	                    }
 	                    if (newDom.CacheSettings.Cleanup != null)
 	                    {
 	                        oldDom.Cleanup = newDom.CacheSettings.Cleanup;
@@ -190,15 +176,6 @@ namespace Alachisoft.NCache.Config.NewDom
 	                            oldDom.Cluster.Channel.PortRange = newDom.CacheSettings.CacheTopology.ClusterSettings.Channel.PortRange;
 	                            oldDom.Cluster.Channel.ConnectionRetries = newDom.CacheSettings.CacheTopology.ClusterSettings.Channel.ConnectionRetries;
 	                            oldDom.Cluster.Channel.ConnectionRetryInterval = newDom.CacheSettings.CacheTopology.ClusterSettings.Channel.ConnectionRetryInterval;
-	                            
-                                if (newDom.CacheSettings.CacheTopology.ClusterSettings.ReplicationStrategy != null)
-	                            {
-	                                oldDom.ReplicationStrategy = newDom.CacheSettings.CacheTopology.ClusterSettings.ReplicationStrategy;
-	                            }
-	                            else
-	                            {
-	                                oldDom.ReplicationStrategy = new Alachisoft.NCache.Config.Dom.ReplicationStrategy();
-	                            }
 
 	                            oldDom.Cluster.Channel.InitialHosts = createInitialHosts(newDom.CacheDeployment.Servers.NodesList, newDom.CacheSettings.CacheTopology.ClusterSettings.Channel.TcpPort);
 	                            oldDom.Cluster.Channel.NumInitHosts = newDom.CacheDeployment.Servers.NodesList.Count;
@@ -216,28 +193,17 @@ namespace Alachisoft.NCache.Config.NewDom
 	                        }
 	                    }
 
-	                    if (newDom.CacheSettings.Security != null)
-	                    {
-	                        oldDom.Security = newDom.CacheSettings.Security;
-	                    }
-	                    if (newDom.CacheSettings.AutoLoadBalancing != null)
-	                    {
-	                        oldDom.AutoLoadBalancing = newDom.CacheSettings.AutoLoadBalancing;
-	                    }
-                        
-	                    if (newDom.CacheSettings.ClientActivityNotification != null)
-	                    {
-	                        oldDom.ClientActivityNotification = newDom.CacheSettings.ClientActivityNotification;
-	                    }
+
 	                    oldDom.IsRunning = newDom.IsRunning;
 	                    oldDom.IsRegistered = newDom.IsRegistered;
 	                    oldDom.IsExpired = newDom.IsExpired;
                         oldDom.DataFormat = newDom.CacheSettings.DataFormat;
+						oldDom.SerializationFormatter = newDom.CacheSettings.SerializationFormatter;
+						
+					}
 
-                    }
 
-	               
-	            }
+				}
 	        }
 	        catch (Exception ex)
 	        {
@@ -261,15 +227,16 @@ namespace Alachisoft.NCache.Config.NewDom
                         newDom.CacheSettings = new CacheServerConfigSetting();
                     }
                     newDom.Name = oldDom.Name;
-                    newDom.CacheSettings.InProc = oldDom.InProc;
+					newDom.Store = oldDom.Store;
+					newDom.CacheSettings.InProc = oldDom.InProc;
                     newDom.ConfigID = oldDom.ConfigID;
                     newDom.ConfigVersion = oldDom.ConfigVersion;
 
-                    newDom.CacheSettings.LastModified = oldDom.LastModified;
-
                     newDom.CacheSettings.DataFormat = oldDom.DataFormat;
+					newDom.CacheSettings.SerializationFormatter = oldDom.SerializationFormatter;
 
-                    if (oldDom.Log != null)
+
+					if (oldDom.Log != null)
                     {
                         newDom.CacheSettings.Log = oldDom.Log;
                     }
@@ -287,21 +254,6 @@ namespace Alachisoft.NCache.Config.NewDom
                         newDom.CacheSettings.PerfCounters = new Alachisoft.NCache.Config.Dom.PerfCounters();
                     }
 
-                    if (oldDom.BackingSource != null)
-                    {
-                        newDom.CacheSettings.BackingSource = oldDom.BackingSource;
-                    }
-
-                   
-
-                    if (oldDom.Notifications != null)
-                    {
-                        newDom.CacheSettings.Notifications = oldDom.Notifications;
-                    }
-                    else
-                    {
-                        newDom.CacheSettings.Notifications = new Alachisoft.NCache.Config.Dom.Notifications();
-                    }
                     
                     if (oldDom.Cleanup != null)
                     {
@@ -335,12 +287,9 @@ namespace Alachisoft.NCache.Config.NewDom
                         newDom.CacheSettings.CacheTopology = new CacheTopology();
                     }
 
-                    if (oldDom.ClientActivityNotification != null)
-                    {
-                        newDom.CacheSettings.ClientActivityNotification = oldDom.ClientActivityNotification;
-                    }
+					
 
-                    newDom.CacheSettings.CacheType = oldDom.CacheType;
+					newDom.CacheSettings.CacheType = oldDom.CacheType;
                     if (oldDom.Cluster != null)
                     {
                         string topology = oldDom.Cluster.Topology;
@@ -376,7 +325,8 @@ namespace Alachisoft.NCache.Config.NewDom
                         }
 
                         newDom.CacheSettings.CacheTopology.Topology = topology;
-                        
+						
+
                         if (oldDom.CacheType.Equals("clustered-cache"))
                         {
                             if (newDom.CacheDeployment == null)
@@ -402,14 +352,6 @@ namespace Alachisoft.NCache.Config.NewDom
                                 newDom.CacheSettings.CacheTopology.ClusterSettings.Channel.PortRange = oldDom.Cluster.Channel.PortRange;
                                 newDom.CacheSettings.CacheTopology.ClusterSettings.Channel.ConnectionRetries = oldDom.Cluster.Channel.ConnectionRetries;
                                 newDom.CacheSettings.CacheTopology.ClusterSettings.Channel.ConnectionRetryInterval = oldDom.Cluster.Channel.ConnectionRetryInterval;
-                            }
-                            if (oldDom.ReplicationStrategy != null)
-                            {
-                                newDom.CacheSettings.CacheTopology.ClusterSettings.ReplicationStrategy = oldDom.ReplicationStrategy;
-                            }
-                            else
-                            {
-                                newDom.CacheSettings.CacheTopology.ClusterSettings.ReplicationStrategy = new Alachisoft.NCache.Config.Dom.ReplicationStrategy();
                             }
 
                             if (newDom.CacheDeployment.Servers == null)
@@ -442,15 +384,7 @@ namespace Alachisoft.NCache.Config.NewDom
                             newDom.CacheSettings.CacheTopology.ClusterSettings = null;
                         }
                     }
-                    if (oldDom.Security != null)
-                    {
-                        newDom.CacheSettings.Security = oldDom.Security;
-                    }
 
-                    if (oldDom.AutoLoadBalancing != null)
-                    {
-                        newDom.CacheSettings.AutoLoadBalancing = oldDom.AutoLoadBalancing;
-                    }
                     
                     newDom.IsRunning = oldDom.IsRunning;
                     newDom.IsRegistered = oldDom.IsRegistered;
@@ -480,7 +414,6 @@ namespace Alachisoft.NCache.Config.NewDom
 				try
 				{
 					t = tok.NextToken();
-	//C# TO JAVA CONVERTER TODO TASK: There is no preprocessor in Java:
 					string host = t.Substring(0, (t.IndexOf((char) '[')) - (0));
 					host = host.Trim();
 					port = Convert.ToInt32(t.Substring(t.IndexOf((char) '[') + 1, (t.IndexOf((char) ']')) - (t.IndexOf((char) '[') + 1)));
@@ -501,7 +434,6 @@ namespace Alachisoft.NCache.Config.NewDom
 					}
 
 					retval.Add(node);
-	//C# TO JAVA CONVERTER TODO TASK: There is no preprocessor in Java:
 					j++;
 
 				}

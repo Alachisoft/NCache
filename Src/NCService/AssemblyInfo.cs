@@ -1,4 +1,4 @@
-//  Copyright (c) 2021 Alachisoft
+//  Copyright (c) 2018 Alachisoft
 //  
 //  Licensed under the Apache License, Version 2.0 (the "License");
 //  you may not use this file except in compliance with the License.
@@ -23,15 +23,43 @@ using System.Security.Permissions;
 // set of attributes. Change these attribute values to modify the information
 // associated with an assembly.
 //
-
-[assembly: AssemblyTitle("Alachisoft NCache Service")]
+#if JAVA
+[assembly: AssemblyTitle("Alachisoft.TayzGrid.Service")]
+#if NETCORE
+#if CLIENT
+[assembly: AssemblyTitle("Alachisoft NCache Service (.NETCore Client)")]
+#else
+[assembly: AssemblyTitle("Alachisoft NCache Service (.NETCore)")]
+#endif
+#else
+#if CLIENT
+[assembly: AssemblyTitle("Alachisoft NCache Service (.NET Client)")]
+#else
+[assembly: AssemblyTitle("Alachisoft NCache Service (.NET)")]
+#endif
+#endif
+#endif
 [assembly: AssemblyConfiguration("")]
 [assembly: AssemblyCompany("Alachisoft")]
+
+#if PROFESSIONAL
+[assembly: AssemblyProduct("Alachisoft® NCache Professional")]
+#elif EXPRESS
+[assembly: AssemblyProduct("Alachisoft® NCache Express")]
+#else
+#if JAVA
+[assembly: AssemblyProduct("Alachisoft® TayzGrid Enterprise")]
+#else
 [assembly: AssemblyProduct("Alachisoft® NCache OpenSource")]
+#endif
+#endif
 
-
-[assembly: AssemblyCopyright("Copyright © 2005-2021 Alachisoft")]
+[assembly: AssemblyCopyright("Copyright © 2005-2026 Alachisoft")]
+#if JAVA
+[assembly: AssemblyTrademark("TayzGrid ™ is a registered trademark of Alachisoft.")]
+#else
 [assembly: AssemblyTrademark("NCache ™ is a registered trademark of Alachisoft.")]
+#endif
 [assembly: AssemblyCulture("")]
 
 [assembly: ComVisible(false)]
@@ -49,7 +77,7 @@ using System.Security.Permissions;
 // You can specify all the values or you can default the Revision and Build Numbers 
 // by using the '*' as shown below:
 
-[assembly: AssemblyVersion("5.0.0")]
+[assembly: AssemblyVersion("5.2.0")]
 
 //
 // In order to sign your assembly you must specify a key to use. Refer to the 
@@ -77,6 +105,10 @@ using System.Security.Permissions;
 //       documentation for more information on this.
 //
 [assembly: AssemblyDelaySign(false)]
-[assembly: AssemblyFileVersionAttribute("5.0.5.0")]
+[assembly: AssemblyFileVersionAttribute("5.3.6.0")]
+#if JAVA
+[assembly: AssemblyDescriptionAttribute("TayzGrid Service")]
+#else
 [assembly: AssemblyDescriptionAttribute("NCache Service")]
-[assembly: AssemblyInformationalVersion("5.0.0")]
+#endif
+[assembly: AssemblyInformationalVersion("5.3.0")]

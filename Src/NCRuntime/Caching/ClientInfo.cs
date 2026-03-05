@@ -1,4 +1,4 @@
-﻿//  Copyright (c) 2021 Alachisoft
+﻿//  Copyright (c) 2026 Alachisoft
 //  
 //  Licensed under the Apache License, Version 2.0 (the "License");
 //  you may not use this file except in compliance with the License.
@@ -46,7 +46,12 @@ namespace Alachisoft.NCache.Runtime.Caching
         /// <summary>
         /// Available cores of Cache Client
         /// </summary>
-        public int Cores { get; set; }
+        public int PhysicalCores { get; set; }
+
+        /// <summary>
+        /// Available logical cores of Cache Client
+        /// </summary>
+        public int LogicalCores { get; set; }
 
         /// <summary>
         /// Process ID of the cache client.
@@ -70,7 +75,6 @@ namespace Alachisoft.NCache.Runtime.Caching
         public bool IsDotNetCore { get; internal set; }
         public string OperationSystem { get; internal set; }
         public int Memory { get; internal set; }
-
 
         /// <summary>
         /// GetLegacyClientId returns the client id in string.
@@ -114,8 +118,6 @@ namespace Alachisoft.NCache.Runtime.Caching
                    "Address: " + IPAddress + Environment.NewLine +
                    "Client Version: " + ClientVersion;
         }
-
-      
         /// <summary>
         /// Deserializes the Compact reader object passed to it
         /// </summary>

@@ -1,0 +1,88 @@
+Brcm-BSAPTrap-MIB DEFINITIONS ::= BEGIN
+
+     -- Broadcom(R) Advanced Server Trap MIB
+     --
+
+     IMPORTS
+         enterprises, OBJECT-TYPE, Counter
+             FROM RFC1155-SMI
+         TRAP-TYPE
+             FROM RFC-1215
+         DisplayString
+             FROM RFC1213-MIB;
+
+
+  broadcom   OBJECT IDENTIFIER ::= { enterprises 4413 }
+  enet     OBJECT IDENTIFIER ::= { broadcom 1 }
+  basp     OBJECT IDENTIFIER ::= { enet 2 }
+  baspConfig  OBJECT IDENTIFIER ::= { basp 1 }
+  baspStat   OBJECT IDENTIFIER ::= { basp 2 }
+  baspTrap   OBJECT IDENTIFIER ::= { basp 3 }
+
+--
+-- Object Definitions
+--
+  trapAdapterName OBJECT-TYPE
+    SYNTAX  DisplayString
+    ACCESS  not-accessible
+    STATUS  mandatory
+    DESCRIPTION
+      "The adapter name."
+    ::= { baspTrap 1 }
+
+  trapTeamName OBJECT-TYPE
+    SYNTAX  DisplayString
+    ACCESS  not-accessible
+    STATUS  mandatory
+    DESCRIPTION
+      "The team name."
+    ::= { baspTrap 2 }
+
+  trapCauseDirection OBJECT-TYPE
+    SYNTAX INTEGER
+       {
+				  adapterActive(1),
+				  adapterInactive(2),
+          linkup(3),
+          linkdown(4),
+				  adapterEnabled(5),
+				  adapterDisabled(6),
+				  addedToTeam(7),
+				  removedFrTeam(8)
+       }
+    ACCESS  not-accessible
+    STATUS  mandatory
+    DESCRIPTION
+      "Event caused by failover condition."
+    ::= { baspTrap 3 }
+
+  trapAdapterActivityCause OBJECT-TYPE
+    SYNTAX INTEGER
+       {
+				  none(1),
+				  linkChange(2),
+				  adapterEnabledOrDisabled(3),
+          adapterAddedOrRemoved(4)
+       }
+    ACCESS  not-accessible
+    STATUS  mandatory
+    DESCRIPTION
+      "Addition explanation for the Event trapCauseDirection.
+       This field only applies to the the adapterActive or
+       adapterInactive values in the trapCauseDirection Event."
+    ::= { baspTrap 4 }
+
+--
+-- Trap Definitions
+--
+  failoverEvent TRAP-TYPE
+    ENTERPRISE   baspTrap
+    VARIABLES   {	baspTrap.trapAdapterName,
+    				 	baspTrap.trapTeamName,
+    					baspTrap.trapCauseDirection,
+    					baspTrap.trapAdapterActivityCause }
+    DESCRIPTION
+      "This trap is generated to indicate that adapter Fail-Over
+      event has occured"
+    ::= 1
+END

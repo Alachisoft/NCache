@@ -1,17 +1,4 @@
-﻿//  Copyright (c) 2021 Alachisoft
-//  
-//  Licensed under the Apache License, Version 2.0 (the "License");
-//  you may not use this file except in compliance with the License.
-//  You may obtain a copy of the License at
-//  
-//     http://www.apache.org/licenses/LICENSE-2.0
-//  
-//  Unless required by applicable law or agreed to in writing, software
-//  distributed under the License is distributed on an "AS IS" BASIS,
-//  WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
-//  See the License for the specific language governing permissions and
-//  limitations under the License
-using Alachisoft.NCache.Automation.ToolsOutput;
+﻿using Alachisoft.NCache.Automation.ToolsOutput;
 using Alachisoft.NCache.Automation.ToolsParametersBase;
 using Alachisoft.NCache.Automation.Util;
 using Alachisoft.NCache.Tools.Common;
@@ -39,7 +26,9 @@ namespace Alachisoft.NCache.Automation.ToolsBase
                 OutputProvider.WriteErrorLine("\nError: Cache name not specified.");
                 return false;
             }
+            
             ToolsUtil.PrintLogo(OutputProvider, printLogo, TOOLNAME);
+
             return true;
         }
 
@@ -50,6 +39,7 @@ namespace Alachisoft.NCache.Automation.ToolsBase
                 if (!ValidateParameters()) return;
                 CacheConnectionOptions cacheParams = new CacheConnectionOptions();
 
+                cacheParams = ToolsUtil.AddServersInCacheConnectionOptions(Server, cacheParams);
                 ICache cache = CacheManager.GetCache(Name.ToLower(), cacheParams);
                 //cache.ExceptionsEnabled = true;
 
@@ -87,9 +77,6 @@ namespace Alachisoft.NCache.Automation.ToolsBase
             catch (Exception e)
             {
                 OutputProvider.WriteErrorLine("Error: " + e.Message);
-                OutputProvider.WriteErrorLine(e.ToString());
-
-
             }
             OutputProvider.WriteLine(Environment.NewLine);
         }

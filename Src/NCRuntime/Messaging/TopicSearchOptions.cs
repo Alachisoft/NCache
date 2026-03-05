@@ -14,9 +14,5 @@ namespace Alachisoft.NCache.Runtime.Caching.Messaging
         /// Search by name.
         /// </summary>
         ByName,
-        ///// <summary>
-        ///// Search by pattern.
-        ///// </summary>
-        //ByPattern
     }
 }

@@ -1,4 +1,4 @@
-//  Copyright (c) 2021 Alachisoft
+//  Copyright (c) 2026 Alachisoft
 //  
 //  Licensed under the Apache License, Version 2.0 (the "License");
 //  you may not use this file except in compliance with the License.
@@ -45,6 +45,7 @@ using Alachisoft.NCache.Client.Services;
 using Alachisoft.NCache.Caching.Events;
 using Alachisoft.NCache.Caching.Pooling;
 using Alachisoft.NCache.Common.ErrorHandling;
+using Alachisoft.NCache.Runtime.JSON;
 #if SERVER
 using Alachisoft.NCache.Caching.Topologies.Clustered.Operations;
 #endif
@@ -1415,7 +1416,10 @@ namespace Alachisoft.NCache.Client
 
             try
             {
-                CacheImpl.Unlock(key, lockId);
+                if (lockHandle == null)
+                    CacheImpl.Unlock(key);
+                else
+                    CacheImpl.Unlock(key, lockId);
             }
             catch (Exception)
             {
@@ -1500,6 +1504,7 @@ namespace Alachisoft.NCache.Client
             string[] keyList = keys.ToArray();
 
             if (keyList.Length == 0) throw new ArgumentException("There is no key present in keys array");
+
             RemoveDuplicateKeys(ref keyList);
             string providerName = null;
             BitSet flagMap = new BitSet();
@@ -1685,7 +1690,7 @@ namespace Alachisoft.NCache.Client
                 stats.BeginSample();
 
 
-                object lockId = (lockHandle == null) ? null : lockHandle.LockId; //Asif Imam  
+                object lockId = (lockHandle == null) ? null : lockHandle.LockId;
 
 
                 BitSet flagMap = new BitSet();
@@ -1786,11 +1791,18 @@ namespace Alachisoft.NCache.Client
             return chunks;
         }
 
-        #endregion
+		#endregion
 
-        #region Finalizer 
+		#region JsonEnumerator
+		public virtual IEnumerator GetJsonEnumerator()
+        {
+            return new WebCacheEnumerator<JsonValueBase>(_serializationContext, this);
+        }
+		#endregion
 
-        ~Cache()
+		#region Finalizer 
+
+		~Cache()
         {
             Dispose(false);
         }
@@ -2032,7 +2044,6 @@ namespace Alachisoft.NCache.Client
 #if !NETCORE
                                     cb.BeginInvoke(key, val, CacheHelper.GetWebItemRemovedReason(reason), null, null);
 #elif NETCORE
-                                    //TODO: ALACHISOFT (BeginInvoke is not supported in .Net Core thus using TaskFactory)
                                     TaskFactory factory = new TaskFactory();
                                     Task task = factory.StartNew(() => cb(key, val, CacheHelper.GetWebItemRemovedReason(reason)));
 #endif
@@ -2172,7 +2183,6 @@ namespace Alachisoft.NCache.Client
 #if !NETCORE
                                     subscriber.BeginInvoke(notifId, data, null, null);
 #elif NETCORE
-                                    //TODO: ALACHISOFT (BeginInvoke is not supported in .Net Core thus using TaskFactory)
                                     TaskFactory factory = new TaskFactory();
                                     Task task = factory.StartNew(() => subscriber(notifId, data));
 #endif
@@ -2463,17 +2473,7 @@ namespace Alachisoft.NCache.Client
             return new PollingResult();
         }
 
-        internal bool CheckUserAuthorization(string cacheId, string password, string userId)
-        {
-            try
-            {
-                return CacheImpl.CheckCSecurityAuthorization(cacheId.ToLower(), Alachisoft.NCache.Common.EncryptionUtil.Encrypt(password), userId);
-            }
-            catch
-            {
-                return false;
-            }
-        }
+  
         
 
         internal virtual object GetSerializedObject(string key, ref ulong v, ref BitSet flag, ref DateTime absoluteExpiration, ref TimeSpan slidingExpiration, ref Hashtable queryInfo)

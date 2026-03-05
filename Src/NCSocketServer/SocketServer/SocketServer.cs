@@ -1,4 +1,4 @@
-//  Copyright (c) 2021 Alachisoft
+//  Copyright (c) 2026 Alachisoft
 //  
 //  Licensed under the Apache License, Version 2.0 (the "License");
 //  you may not use this file except in compliance with the License.
@@ -15,11 +15,14 @@ using System;
 using System.Net;
 using Alachisoft.NCache.Caching;
 using Alachisoft.NCache.Common;
+using Alachisoft.NCache.Licensing;
 using Alachisoft.NCache.SocketServer.Statistics;
 using System.Collections.Generic;
 using System.Collections;
 using Alachisoft.NCache.Common.Net;
 using Alachisoft.NCache.Common.Monitoring;
+#if SERVER 
+#endif
 using Alachisoft.NCache.Common.Util;
 using Alachisoft.NCache.Common.Logger;
 using Alachisoft.NCache.Management;
@@ -29,6 +32,10 @@ using Alachisoft.NCache.Client;
 using System.Runtime;
 using Alachisoft.NCache.Common.Pooling.Stats;
 using Alachisoft.NCache.Common.FeatureUsageData.Dom;
+using Alachisoft.NCache.Common.Monitoring.MetricsServer;
+using System.Diagnostics;
+using Alachisoft.NCache.Common.DataStructures;
+using Alachisoft.NCache.Management.ServiceControl;
 
 namespace Alachisoft.NCache.SocketServer
 {
@@ -44,6 +51,7 @@ namespace Alachisoft.NCache.SocketServer
         int _recieveBuffer;
         decimal _clusterHealthDetectionInterval = 3;
         int _managementServerPort;
+        MetricsPublisher _metricsPublisher;
         string _managementServerIP;
         public const int DEFAULT_SOCK_SERVER_PORT = 9800;
         public const int DEFAULT_MANAGEMENT_PORT = 8250;
@@ -59,6 +67,18 @@ namespace Alachisoft.NCache.SocketServer
         static Logs _logger = new Logs();
 
         static bool _enableCacheServerCounters = true;
+        public override MetricsPublisher StatsPublisher
+        {
+            get { return _metricsPublisher; }
+            set
+            {
+                _metricsPublisher = value;
+                if (_perfStatsColl != null)
+                    _perfStatsColl.StatsPublisher = value;
+                _perfStatsColl.RegisterAsMonitorableEntity();
+            }
+        }
+        public override IMetricsTransporterFactory MetricsTransporterFactory { get; set; }
 #if !MONO
         StatisticsCounter _perfStatsColl = null;
 
@@ -99,7 +119,7 @@ namespace Alachisoft.NCache.SocketServer
             _serverPort = port;
             _sendBuffer = sendBufferSize;
             _recieveBuffer = recieveBufferSize;
-
+            MetricsTransporterFactory = new MetricsTransporterFactory();
             if (ServiceConfiguration.ClusterHealthDetectionInterval != 3)
                 _clusterHealthDetectionInterval = ServiceConfiguration.ClusterHealthDetectionInterval;
         }
@@ -156,6 +176,18 @@ namespace Alachisoft.NCache.SocketServer
             set { _managementServerIP = value; }
         }
 
+        public override string ServerMapping
+        {
+            get
+            {
+                string publicIP = null;
+
+                if (ServiceConfiguration.PublicIP != null)
+                    publicIP = ServiceConfiguration.PublicIP;
+
+                return publicIP;
+            }
+        }
 
         /// <summary>
         /// Starts the socket server.It registers some types with compact Framework, 
@@ -166,12 +198,12 @@ namespace Alachisoft.NCache.SocketServer
         /// 
         public void Start(IPAddress bindIP, LoggerNames loggerName, string perfStatColInstanceName, CommandManagerType cmdMgrType, ConnectionManagerType conMgrType)
         {
+
             if (loggerName == null)
                 _loggerName = LoggerNames.SocketServerLogs;
             else
                 _loggerName = loggerName;
             InitializeLogging();
-
 
             if (ServiceConfiguration.PublishCountersToCacheHost)
                 _perfStatsColl = new CustomStatsCollector(cacheName, _serverPort);
@@ -187,12 +219,24 @@ namespace Alachisoft.NCache.SocketServer
             {
                 _hostClientConnectionManager = _conManager;
             }
-
+            _perfStatsColl.StatsPublisher = StatsPublisher;
             //We initialize PerfstatsCollector only for SocketServer's instance for client.
-
-            //Management socket server has just DUMMY stats collector.
+          
             if (conMgrType == ConnectionManagerType.HostClient)
+            {
+                try
+                {
+                    MonitoringConfigManager monitoringConfigManager = new MonitoringConfigManager();
+                    _perfStatsColl.Category = monitoringConfigManager.GetCategory(CategoriesConstants.NCache);
+                }
+                catch (Exception ex)
+                {
+
+                }
+
                 _perfStatsColl.InitializePerfCounters();
+            }
+           
 
         }
 
@@ -293,7 +337,6 @@ namespace Alachisoft.NCache.SocketServer
 
             if (_perfStatsColl != null)
             {
-                //_perfStatsColl.Dispose();
                 _perfStatsColl = null;
             }
 

@@ -1,4 +1,4 @@
-﻿//  Copyright (c) 2021 Alachisoft
+﻿//  Copyright (c) 2026 Alachisoft
 //  
 //  Licensed under the Apache License, Version 2.0 (the "License");
 //  you may not use this file except in compliance with the License.
@@ -19,6 +19,8 @@ using System.IO;
 
 namespace Alachisoft.NCache.Common.Communication
 {
+    delegate void OnChannelDisconnected(string serverIp);
+
     public class TcpChannel: IChannel
     {
         const int DATA_SIZE_BUFFER_LENGTH = 10; 
@@ -33,6 +35,7 @@ namespace Alachisoft.NCache.Common.Communication
         Thread _receiverThread;
         ITraceProvider _traceProvider;
         private string _name;
+        public Action OnChannelReconnected { get; set; }
 
         public TcpChannel(string serverIP, int port,string bindingIP,ITraceProvider traceProvider)
         {
@@ -76,9 +79,6 @@ namespace Alachisoft.NCache.Common.Communication
 
                         _connection.Connect(_serverIP, _port);
 
-                        _receiverThread = new Thread(new ThreadStart(Run));
-                        _receiverThread.IsBackground = true;
-                        _receiverThread.Start();
                         return true;
                     }
                 }
@@ -92,6 +92,13 @@ namespace Alachisoft.NCache.Common.Communication
                 }
             }
             return false;
+        }
+
+        public void StartReceivingThread()
+        {
+            _receiverThread = new Thread(new ThreadStart(Run));
+            _receiverThread.IsBackground = true;
+            _receiverThread.Start();
         }
 
         public void Disconnect()
@@ -147,6 +154,8 @@ namespace Alachisoft.NCache.Common.Communication
                     }
                     catch (ConnectionException)
                     {
+                        if (_eventListener != null) _eventListener.ChannelDisconnected(_serverIP);
+
                         if (EnsureConnected())
                         {
                             _connection.Send(finalBuffer, 0, finalBuffer.Length);
@@ -172,6 +181,8 @@ namespace Alachisoft.NCache.Common.Communication
                 {
                     Disconnect();
                     Connect();
+                    if (OnChannelReconnected != null)
+                        OnChannelReconnected();
                 }
             }
 
@@ -220,24 +231,10 @@ namespace Alachisoft.NCache.Common.Communication
                         //receive data size for the response
                         if (_connection != null)
                         {
-                            _connection.Receive(_sizeBuffer, DATA_SIZE_BUFFER_LENGTH);
+                            var response = ReceiveResponse();
 
-                            int rspLength = Convert.ToInt32(UTF8Encoding.UTF8.GetString(_sizeBuffer, 0, _sizeBuffer.Length));
-
-                            if (rspLength > 0)
-                            {
-                                byte[] dataBuffer = new byte[rspLength];
-                                _connection.Receive(dataBuffer, rspLength);
-
-                                //deserialize the message
-                                IResponse response = null;
-                                if (_formatter != null)
-                                    response = _formatter.Deserialize(dataBuffer) as IResponse;
-
-                                if (_eventListener != null)
-                                    _eventListener.ReceiveResponse(response);
-                            }
-
+                            if (_eventListener != null)
+                                _eventListener.ReceiveResponse(response);
                         }
                         else
                         {
@@ -256,7 +253,7 @@ namespace Alachisoft.NCache.Common.Communication
                         if (_eventListener != null) _eventListener.ChannelDisconnected(_serverIP, ce.Message);
                         break;
                     }
-                    catch (Exception e)
+                    catch (System.Exception e)
                     {
                         if (_traceProvider != null)
                         {
@@ -281,7 +278,39 @@ namespace Alachisoft.NCache.Common.Communication
 
             }
         }
+        public object SendMessageSync(object message)
+        {
+            SendMessage(message);
+            return ReceiveResponse();
+        }
 
+        private IResponse ReceiveResponse()
+        {
+            IResponse response = null;
+
+            //receive data size for the response
+            if (_connection == null)
+                return response;
+
+            _connection.Receive(_sizeBuffer, DATA_SIZE_BUFFER_LENGTH);
+
+            int rspLength = Convert.ToInt32(UTF8Encoding.UTF8.GetString(_sizeBuffer, 0, _sizeBuffer.Length));
+
+            if (rspLength > 0)
+            {
+                byte[] dataBuffer = new byte[rspLength];
+                _connection.Receive(dataBuffer, rspLength);
+
+                //deserialize the message
+
+                if (_formatter != null)
+                    response = _formatter.Deserialize(dataBuffer) as IResponse;
+
+            }
+
+            return response;
+
+        }
 
         public string Server
         {
@@ -290,6 +319,14 @@ namespace Alachisoft.NCache.Common.Communication
                 if (_serverIP != null) return _serverIP;
 
                 return "";
+            }
+        }
+
+        public bool IsConnected
+        {
+            get
+            {
+                return _connection != null ? _connection.IsConnected : false;
             }
         }
     }

@@ -1,4 +1,4 @@
-﻿//  Copyright (c) 2021 Alachisoft
+﻿//  Copyright (c) 2026 Alachisoft
 //  
 //  Licensed under the Apache License, Version 2.0 (the "License");
 //  you may not use this file except in compliance with the License.
@@ -68,7 +68,6 @@ namespace Alachisoft.NCache.Client
         {
             if (string.IsNullOrEmpty(topicPair.TopicName))
                 throw new ArgumentException("TopicName is null or empty string");
-
 
             if(!internalOperation && IsDefaultTopicName(topicPair.TopicName))
                 throw new OperationFailedException(ErrorCodes.PubSub.DEFAULT_TOPICS,ErrorMessages.GetErrorMessage(ErrorCodes.PubSub.DEFAULT_TOPICS));
@@ -299,6 +298,7 @@ namespace Alachisoft.NCache.Client
 
             if (IsDefaultTopicName(topicName))
                 return;
+                //  throw new OperationFailedException("Operation cannot be performed on default topics.");
             
             TopicIdentity topicPair = new TopicIdentity(topicName, TopicSearchOptions.ByName);
             Topic topic;

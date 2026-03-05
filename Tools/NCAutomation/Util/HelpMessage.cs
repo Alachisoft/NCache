@@ -1,17 +1,4 @@
-﻿//  Copyright (c) 2021 Alachisoft
-//  
-//  Licensed under the Apache License, Version 2.0 (the "License");
-//  you may not use this file except in compliance with the License.
-//  You may obtain a copy of the License at
-//  
-//     http://www.apache.org/licenses/LICENSE-2.0
-//  
-//  Unless required by applicable law or agreed to in writing, software
-//  distributed under the License is distributed on an "AS IS" BASIS,
-//  WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
-//  See the License for the specific language governing permissions and
-//  limitations under the License
-using System;
+﻿using System;
 using System.Collections.Generic;
 using System.Linq;
 using System.Text;
@@ -26,6 +13,7 @@ namespace Alachisoft.NCache.Automation.Util
         public const string RUNNINGSERVER = "Specifies a server name where the NCache service is running. The default is the local machine.";
         public const string MAXSAMPLES = "Number of samples to be collected.";
         public const string SERVERS = "Specifies one or more server name(s) where the NCache service is running and a cache with the specified cache-name is running. The default is the local machine. Note: , separated server names are to be specified in case of multiple servers.";
+        public const string KEYTYPE = " Allows you to specify whether the given key is either an 'Extension' key or a 'License' key.";
         public const string DONOTSHOWDEFAULTCOUNTERS = "Specifies whether default counters are to be shown. They are shown by default. Note: This parameter is only valid if Counter Names are provided. ";
         public const string COUNTERNAMES = "Specifies one or more counter(s) not included in default counters that should be displayed. Note: , separated counter names are to be specified in case of multiple counters.";
         public const string CLIENTNODES = "Specifies the IP Addresses of the clients.  The default is the local machine. Note: , separated IP Addresses are to be specified in case of multiple IP Addresses. ";
@@ -126,6 +114,8 @@ namespace Alachisoft.NCache.Automation.Util
         public const string STRESS_SLIDING_EXPIRATION = "Specify in seconds sliding expiration (default: 60; minimum: 15)";
         public const string STRESS_THREAD_COUNT = "How many client threads (default: 1; max: 3)";
         public const string STRESS_REPORT_INTERVAL = "Report after this many total iterations (default: 5000)";
+        public const string REREGISTERMACHINE = "Specifies whether to re-register the machine. Valid values are \"Yes\" or \"No\".";
+        public const string REGISTERAS = @"Specifies the type of edition to be installed. It can be server, client or developer.";
 
 
         public const string CLASSNAME = "Specifies the fully qualified class.";
@@ -150,6 +140,7 @@ namespace Alachisoft.NCache.Automation.Util
         public const string ADD_TEST_DATA_ITEM_COUNT = " Number of items to be added to the cache. By default 10 items are added to the cache. ";
         public const string ADD_TEST_DATA_ITEM_SIZE = "Size in bytes of each item to be added to the cache. By default items of 1k (1024 bytes) are added to the cache.";
         public const string ADD_TEST_DATA_ITEM_ABSOLUTEEXPIRATION = " Specify in seconds, absolute expiration (default: 300; minimum: 15)";
+        public const string NON_DISTRIBUTED_LUCENE_INDEX_PATH = "Specifies lucene index path.";
 
         public const string FORCECLEAR = "Force the clearing of the cache. If not specified, the user is asked before clearing the cache";
         public const string CLEARWEBCONTENT = "Clear JavaScript and CSS only";
@@ -186,13 +177,50 @@ namespace Alachisoft.NCache.Automation.Util
         public const string PHONENUMBER = "Specifies the user's company phone number.";
         public const string AUTHCODE = "Specify the authcode recieved from Alachisoft in order to manually activate this product.";        
         public const string ZIPCODE = "Specifies the user's area zip code.";
-
-		
+        public const string FILENAME_LIST = "Specifies the list of the file names passed to the server to get files e.g fileName1,fileName2,...";
+        public const string DESTINATION = "Specifies the destination directory where the files should be copied.";
+        public const string FORCEREMOVEDUMP = "Force the removal of dumps.";
+        public const string FORCEREMOVECACHE = "Specifies forceful removal of a registered cache.";
+        public const string REMOVE_PERSISTED_DATA_PROMPT = "Do you want to remove the persisted data('y' or 'n')?";
+        public const string REMOVEIFUNAVAILABLE = "Specifies forceful removal of unavailable node from existing cluster.";
         #region forcache creation
         public const string REPLICATED_TOPOLOGY_NAME = "replicated";
         public const string PARTITIONED_TOPOLOGY_NAME = "partitioned";
         public const string LOCAL_TOPOLOGY_NAME = "local";
         #endregion
+
+        #region For memory-dumps
+        public const string PROCESSID = "Specifies the ProcessId for which the dump is needs to be created on the server specified.";
+        public const string FILENAME = "Specifies the name of memory dump file that should be deleted.";
+        public const string WAITFORCOMPLETION = "Do not exit until the memory dump is captured";
+        public const string MEMORY_DUMP_PATH = "Specifies the path of the memory dump to be sent to the FTP server.";
+        public const string FTP_SERVER_URL = "Specifies the URL of the FTP server to which the memory dump will be sent.";
+        public const string FTP_SERVER_CREDENTIALS = "Specifies the FTP server credentials used for authorization.";
+        public const string WAIT_SENDING_MEMOY_DUMP_COMPLETION = "Specifies if should not exit until the sending of memory dump is completed.";
+        #endregion
+
+        public const string RECURRING = "Specifies if the license is recurring. Only valid when LicenseDuration is Monthly.";
+        public const string LICENSE_DURATION = "Specifies the license duration. Allowed values: Standard, Monthly, Hourly.";
+
+        public const string INDEXPATH = @"By default, index directories are generated at NCHOME\bin\modules\data\lucene. If you want these indexes to be generated at a different location, please specify a valid path.";
+        public const string STORETYPE = "Specifies the store type of the cache.";
+        public const string MAPGENERATIONFAILURE = "Rolling back operation as map generation failed due to following reason";
+
+        public const string NOTALLNODESAVAILABLE = "One or more servers in the cache cluster are not accessible to complete this operation.";
+        public const string SETTING = "Specifies the name of the setting of cache configuration to update";
+        public const string SETTINGVALUE = "Specifies the value of the setting of cache configuration to update";
+        public const string SERVICEKEY = "Specifies the key of the setting of service configuration to add or update";
+        public const string SERVICEVALUE = "Specifies the value of the setting of service configuration to add or update";
+
+        #region -----  TLS ----------
+        public const string NODETLS = "Specifies one or more IP addresses of cache servers, cache clients where TLS settings will be applied. Provide a comma-separated list of IP addresses to configure TLS settings on the desired nodes. Please ensure that client nodes with NCache installed are included; for NCache clients without installation, use manual configuration.";
+        public const string SERVERCERTIFICATENAME = "The CertificateName parameter specifies the name of the TLS certificate to be used for encryption. Provide the unique name associated with the desired TLS certificate for secure communication.";
+        public const string SERVERCERTIFICATETHUMBPRINT = "Specifies the unique thumbprint of the TLS certificate to ensure its authenticity and integrity. Provide the fingerprint value associated with the desired TLS certificate for secure communication.";
+        public const string CLIENTSERVERTLS = "Enables TLS encryption for communication between client and server nodes.";
+        public const string PROTOCOLVERSION = "Specifies the protocol version for secure communication.";
+
+        #endregion
+
     }
 
 }

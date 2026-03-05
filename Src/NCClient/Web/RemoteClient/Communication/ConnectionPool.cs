@@ -1,4 +1,4 @@
-//  Copyright (c) 2021 Alachisoft
+//  Copyright (c) 2026 Alachisoft
 //  
 //  Licensed under the Apache License, Version 2.0 (the "License");
 //  you may not use this file except in compliance with the License.
@@ -33,7 +33,6 @@ namespace Alachisoft.NCache.Client
  
         private int _bucketSize = 0;
         private long _lastViewId = -1;
-
         public ConnectionPool() : this(null) { }
 
         public ConnectionPool(Hashtable hashMap)
@@ -192,7 +191,6 @@ namespace Alachisoft.NCache.Client
             lock (this._connections.SyncRoot)
             {
                 _hashMapMember = hashMap.Members;
-           
             }
         }
         

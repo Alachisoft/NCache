@@ -1,4 +1,4 @@
-//  Copyright (c) 2018 Alachisoft
+//  Copyright (c) 2026 Alachisoft
 //  
 //  Licensed under the Apache License, Version 2.0 (the "License");
 //  you may not use this file except in compliance with the License.
@@ -26,9 +26,6 @@ namespace Alachisoft.NCache.Runtime.Events
     /// </remarks>
     /// <example>
     /// To get complete data with meta data whenever a notification is raised you can use the following code:
-    /// <code>
-    /// cache.MessagingService.RegisterCacheNotification(key, onCacheDataModifiedCallback, EventType.ItemAdded | EventType.ItemRemoved, EventDataFilter.DataWithMetadata);
-    /// </code>
     /// </example>
     public enum EventDataFilter
     {

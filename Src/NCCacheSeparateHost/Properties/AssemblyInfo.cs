@@ -2,15 +2,20 @@
 using System.Runtime.CompilerServices;
 using System.Runtime.InteropServices;
 
+
 // General Information about an assembly is controlled through the following 
 // set of attributes. Change these attribute values to modify the information
 // associated with an assembly.
-[assembly: AssemblyTitle("Alachisoft NCache Cache Host Process")]
+#if NETCORE
+[assembly: AssemblyTitle("Alachisoft NCache Cache Host Process (.NETCore)")]
+#else
+[assembly: AssemblyTitle("Alachisoft NCache Cache Host Process (.NET)")]
+#endif
 [assembly: AssemblyDescription("Alachisoft NCache Cache Host Process")]
 [assembly: AssemblyConfiguration("")]
 [assembly: AssemblyCompany("Alachisoft")]
 [assembly: AssemblyProduct("Alachisoft® NCache OpenSource")]
-[assembly: AssemblyCopyright("Copyright ©  2021")]
+[assembly: AssemblyCopyright("Copyright ©  2026")]
 [assembly: AssemblyTrademark("")]
 [assembly: AssemblyCulture("")]
 
@@ -32,7 +37,7 @@ using System.Runtime.InteropServices;
 // You can specify all the values or you can default the Build and Revision Numbers 
 // by using the '*' as shown below:
 // [assembly: AssemblyVersion("1.0.*")]
-[assembly: AssemblyVersion("5.0.0.0")]
-[assembly: AssemblyFileVersion("5.0.5.0")]
-//[assembly: AssemblyFileVersionAttribute("4.9.1.0")]
+[assembly: AssemblyVersion("5.3.0.0")]
+[assembly: AssemblyFileVersion("5.3.6.0")]
+[assembly: AssemblyInformationalVersion("5.3.0")]
 

@@ -13,7 +13,6 @@ namespace Alachisoft.NGroups
 	public abstract class Channel : Transport 
 	{
 		public const int BLOCK = 0;
-		//public const int VIEW = 1;
 		public const int SUSPECT = 2;
 		public const int LOCAL = 3;
 		public const int GET_STATE_EVENTS = 4;

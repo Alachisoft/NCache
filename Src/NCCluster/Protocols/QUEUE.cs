@@ -1,4 +1,4 @@
-// $Id: QUEUE.java,v 1.6 2004/07/23 02:28:01 belaban Exp $
+
 
 using System.Threading;
 using Alachisoft.NGroups.Protocols.pbcast;

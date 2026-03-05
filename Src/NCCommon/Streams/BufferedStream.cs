@@ -25,7 +25,7 @@ using System.IO;
 using System.Collections.ObjectModel;
 using System.Security;
 using System.Threading.Tasks;
-#endif  // !FEATURE_PAL && FEATURE_ASYNC_IO
+#endif
 
 namespace Alachisoft.NCache.Commmon
 {
@@ -87,7 +87,7 @@ namespace Alachisoft.NCache.Commmon
  
     private Task<Int32> _lastSyncCompletedReadTask;       // The last successful Task returned from ReadAsync
                                                           // (perf optimization for successive reads of the same size)
-#endif  // !FEATURE_PAL && FEATURE_ASYNC_IO
+#endif
 
 
         // Removing a private default constructor is a breaking change for the DataContractSerializer.
@@ -168,7 +168,7 @@ namespace Alachisoft.NCache.Commmon
         if (_beginEndAwaitable == null)
             _beginEndAwaitable = new BeginEndAwaitableAdapter();
     }
-#endif  // !FEATURE_PAL && FEATURE_ASYNC_IO
+#endif
 
 
         /// <summary><code>MaxShadowBufferSize</code> is chosed such that shadow buffers are not allocated on the Large Object Heap.
@@ -304,7 +304,7 @@ namespace Alachisoft.NCache.Commmon
                 _buffer = null;
 #if !FEATURE_PAL && FEATURE_ASYNC_IO
             _lastSyncCompletedReadTask = null;
-#endif  // !FEATURE_PAL && FEATURE_ASYNC_IO
+#endif
 
                 // Call base.Dispose(bool) to cleanup async IO resources
                 base.Dispose(disposing);
@@ -424,7 +424,7 @@ namespace Alachisoft.NCache.Commmon
             sem.Release();
         }
     }
-#endif  // !FEATURE_PAL && FEATURE_ASYNC_IO
+#endif
 
 
         // Reading is done in blocks, but someone could read 1 byte from the buffer then write. 
@@ -498,7 +498,7 @@ namespace Alachisoft.NCache.Commmon
         _writePos = 0;
         await _stream.FlushAsync(cancellationToken).ConfigureAwait(false);
     }
-#endif  // !FEATURE_PAL && FEATURE_ASYNC_IO
+#endif
 
 
         private Int32 ReadFromBuffer(Byte[] array, Int32 offset, Int32 count)
@@ -843,7 +843,7 @@ namespace Alachisoft.NCache.Commmon
             sem.Release();
         }
     }
-#endif  // !FEATURE_PAL && FEATURE_ASYNC_IO
+#endif
 
 
         public override Int32 ReadByte()
@@ -1021,7 +1021,8 @@ namespace Alachisoft.NCache.Commmon
 
             }
             else
-            { 
+            {  // if (!useBuffer)
+
                 // Write out the buffer if necessary.
                 if (_writePos > 0)
                 {
@@ -1310,7 +1311,7 @@ namespace Alachisoft.NCache.Commmon
             sem.Release();
         }
     }   
-#endif  // !FEATURE_PAL && FEATURE_ASYNC_IO
+#endif
 
 
         public override void WriteByte(Byte value)

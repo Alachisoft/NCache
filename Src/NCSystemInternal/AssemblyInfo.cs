@@ -11,7 +11,7 @@ using System.Runtime.InteropServices;
 [assembly: AssemblyConfiguration("")]
 [assembly: AssemblyCompany("Alachisoft")]
 [assembly: AssemblyProduct("Alachisoft® NCache OpenSource")]
-[assembly: AssemblyCopyright("Copyright © 2020 Alachisoft")]
+[assembly: AssemblyCopyright("Copyright © 2026 Alachisoft")]
 [assembly: AssemblyTrademark("NCache ™ is a registered trademark of Alachisoft.")]
 [assembly: AssemblyCulture("")]
 
@@ -29,5 +29,5 @@ using System.Runtime.InteropServices;
 //      Build Number
 //      Revision
 //
-[assembly: AssemblyFileVersionAttribute("5.0.4.0")]
-[assembly: AssemblyInformationalVersion("5.0.0")]
+[assembly: AssemblyFileVersionAttribute("5.3.6.0")]
+[assembly: AssemblyInformationalVersion("5.3.0")]

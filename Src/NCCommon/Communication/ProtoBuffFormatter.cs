@@ -1,4 +1,4 @@
-﻿//  Copyright (c) 2021 Alachisoft
+﻿//  Copyright (c) 2026 Alachisoft
 //  
 //  Licensed under the Apache License, Version 2.0 (the "License");
 //  you may not use this file except in compliance with the License.
@@ -23,7 +23,7 @@ namespace Alachisoft.NCache.Common.Communication
             ManagementCommand command = graph as ManagementCommand;
             using (MemoryStream stream = new MemoryStream())
             {
-                ProtoBuf.Serializer.Serialize<Protobuf.ManagementCommand>(stream, (Protobuf.ManagementCommand)graph);
+                ProtoBuf.Extended.Serializer.Serialize<Protobuf.ManagementCommand>(stream, (Protobuf.ManagementCommand)graph);
                 return stream.ToArray();
             }
         }
@@ -32,7 +32,7 @@ namespace Alachisoft.NCache.Common.Communication
         {
             using (MemoryStream stream = new MemoryStream(buffer))
             {
-                return  ProtoBuf.Serializer.Deserialize<Protobuf.ManagementResponse>(stream);
+                return  ProtoBuf.Extended.Serializer.Deserialize<Protobuf.ManagementResponse>(stream);
             }
         }
 

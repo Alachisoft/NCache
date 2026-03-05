@@ -1,4 +1,4 @@
-// $Id: ClientGmsImpl.java,v 1.12 2004/09/08 09:17:17 belaban Exp $
+
 using System;
 using System.Collections;
 
@@ -169,8 +169,13 @@ namespace Alachisoft.NGroups.Protocols.pbcast
                             becomeSingletonMember(mbr);
                             return;
                         }
-
-                        if (rsp.JoinResult == JoinResult.MembershipChangeAlreadyInProgress)
+						if (rsp.JoinResult == JoinResult.MaxMbrLimitReached)
+						{
+							gms.Stack.NCacheLog.Error("ClientGmsImpl.Join", "Open Source edition of NCache cannot have a cache cluster of more than 3 nodes.");
+							becomeSingletonMember(mbr);
+							return;
+						}
+						if (rsp.JoinResult == JoinResult.MembershipChangeAlreadyInProgress)
                         {
                             gms.Stack.NCacheLog.CriticalInfo("Coord.CheckOwnClusterHealth", "Reply: JoinResult.MembershipChangeAlreadyInProgress");
                             Util.Util.sleep(gms.join_timeout);
@@ -248,7 +253,7 @@ namespace Alachisoft.NGroups.Protocols.pbcast
 		}
 
 
-        public override JoinRsp handleJoin(Address mbr, string subGroup_name, bool isStartedAsMirror, string gmsId)
+        public override JoinRsp handleJoin(Address mbr, string subGroup_name, bool isStartedAsMirror, string gmsId, ref bool acquireHashmap)
 		{
 			wrongMethod("handleJoin");
 			return null;
@@ -402,7 +407,6 @@ namespace Alachisoft.NGroups.Protocols.pbcast
 					ping_rsp = (PingRsp) initial_mbrs[i];
 					if (ping_rsp.OwnAddress != null && gms.local_addr != null && ping_rsp.OwnAddress.Equals(gms.local_addr))
 					{
-						//initial_mbrs.RemoveAt(i);
 						break;
 					}
                     if (!ping_rsp.IsStarted) initial_mbrs.RemoveAt(i);

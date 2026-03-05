@@ -1,5 +1,4 @@
 
-// $Id: GroupRequest.java,v 1.8 2004/09/05 04:54:22 ovidiuf Exp $
 using System;
 using System.Collections;
 
@@ -502,7 +501,7 @@ namespace Alachisoft.NGroups.Blocks
             // 1. Try to obtain correct Connection (or create one if not yet existent)
             try
             {
-                conn = GetConnection(dest, reEstablishCon);//getConnection(dest, reEstablishCon,useDualConnection);
+                conn = GetConnection(dest, reEstablishCon);
                 if (conn == null)
                 {
                     if (useDedicatedSender)
@@ -701,6 +700,7 @@ namespace Alachisoft.NGroups.Blocks
             {
                 if (se.ErrorCode == 10049) //"Requested address is not valid in its context
                 {
+                    //A call to bind to a local ip is failed, therefore we dont bind.
                     sock = new Socket(AddressFamily.InterNetwork, SocketType.Stream, ProtocolType.Tcp);
 
                     sock.SetSocketOption(SocketOptionLevel.Tcp, SocketOptionName.NoDelay, 1);
@@ -2625,7 +2625,6 @@ namespace Alachisoft.NGroups.Blocks
                     {
 
 
-                        //sock.Send(Util.Util.WriteInt32(buffie.Length)); // write the length of the data buffer first
                         DateTime dt = DateTime.Now;
                         bytesSent = AssureSend(msg, userPayload, bytesToSent);
                         DateTime now = DateTime.Now;
@@ -2646,7 +2645,6 @@ namespace Alachisoft.NGroups.Blocks
                         isConnected = false;
                     }
                     NCacheLog.Error(Enclosing_Instance.local_addr + " to " + dst_addr + ",   exception is " + ex);
-                    //if(!markedClose) Enclosing_Instance.remove(dst_addr, IsPrimary);
                     throw ex;
                 }
                 catch (System.Exception ex)
@@ -2657,7 +2655,6 @@ namespace Alachisoft.NGroups.Blocks
                         isConnected = false;
                     }
                     NCacheLog.Error(Enclosing_Instance.local_addr + "to " + dst_addr + ",   exception is " + ex);
-                    //if (!markedClose) Enclosing_Instance.remove(dst_addr, IsPrimary);
                     throw ex;
                 }
                 return bytesSent;
@@ -2706,7 +2703,6 @@ namespace Alachisoft.NGroups.Blocks
                             }
                         }
 
-                        //AssureSend(buffer);
                         if (userPayLoad != null && userPayLoad.Length > 0)
                         {
                             for (int i = 0; i < userPayLoad.Length; i++)
@@ -2788,7 +2784,7 @@ namespace Alachisoft.NGroups.Blocks
             {
 
                 ConnectInfo info = null;
-                byte[] buf;//, input_cookie = new byte[Enclosing_Instance.cookie.Length];
+                byte[] buf;
                 int len = 0;
                 bool connectingFirstTime = false;
                 ProductVersion receivedVersion;
@@ -2846,7 +2842,6 @@ namespace Alachisoft.NGroups.Blocks
                     try
                     {
                         if (NCacheLog.IsInfoEnabled) NCacheLog.Info("Connection.sendLocaladress", "b4 serializing...");
-                        //Debugger.Launch();
                         object[] objArray = new object[] { local_addr, connectingFirstTime, currentVersion,env_name};
                         buf = CompactBinaryFormatter.ToByteBuffer(objArray, null);
                         if (NCacheLog.IsInfoEnabled) NCacheLog.Info("Connection.sendLocaladress", "after serializing...");
@@ -2873,7 +2868,7 @@ namespace Alachisoft.NGroups.Blocks
             internal virtual ConnectInfo ReadConnectInfo(System.Net.Sockets.Socket client_sock)
             {
                 ConnectInfo info = null;
-                byte[] version, buf;//, input_cookie = new byte[Enclosing_Instance.cookie.Length];
+                byte[] version, buf;
                 int len = 0;
 
                 if (sock != null)
@@ -2965,7 +2960,6 @@ namespace Alachisoft.NGroups.Blocks
                         if (sock == null)
                         {
                             NCacheLog.Error("input stream is null !");
-                            //Console.WriteLine("Socket is Null");
                             break;
                         }
                         byte[] lenBuff = new byte[4];
@@ -3065,7 +3059,6 @@ namespace Alachisoft.NGroups.Blocks
                                                 nextChunkSize = LARGE_OBJECT_SIZE;
 
                                             byte[] binaryChunk = new byte[nextChunkSize];
-                                            //Buffer.BlockCopy(buf, startIndex, binaryChunk, 0, nextChunkSize);
                                             stmIn.Read(binaryChunk, 0, nextChunkSize);
                                             nextChunk += nextChunkSize;
                                             startIndex += nextChunkSize;

@@ -1,0 +1,270 @@
+﻿<?xml version="1.0" encoding="utf-8"?>
+<Project ToolsVersion="4.0" DefaultTargets="Build" xmlns="http://schemas.microsoft.com/developer/msbuild/2003">
+  <PropertyGroup>
+    <ProjectGuid>{F35C7321-929B-4238-959A-A60A890F10BA}</ProjectGuid>
+    <Configuration Condition=" '$(Configuration)' == '' ">Debug</Configuration>
+    <Platform Condition=" '$(Platform)' == '' ">AnyCPU</Platform>
+    <OutputType>Library</OutputType>
+    <RootNamespace>Lextm.SharpSnmpLib</RootNamespace>
+    <AssemblyName>SharpSnmpLib.Mib</AssemblyName>
+    <TargetFrameworkVersion>v3.5</TargetFrameworkVersion>
+    <SignAssembly>true</SignAssembly>
+    <AssemblyOriginatorKeyFile>sharpsnmplib.snk</AssemblyOriginatorKeyFile>
+    <DocumentationFile>bin\Release\SharpSnmpLib.Mib.xml</DocumentationFile>
+    <AllowUnsafeBlocks>False</AllowUnsafeBlocks>
+    <NoStdLib>False</NoStdLib>
+    <WarningLevel>4</WarningLevel>
+    <TreatWarningsAsErrors>false</TreatWarningsAsErrors>
+    <DelaySign>False</DelaySign>
+    <AssemblyOriginatorKeyMode>File</AssemblyOriginatorKeyMode>
+    <SourceAnalysisOverrideSettingsFile>D:\lextm\documents\SharpDevelop Projects\SharpSnmpLib\SharpSnmpLib\Settings.SourceAnalysis</SourceAnalysisOverrideSettingsFile>
+    <RunSourceAnalysis>False</RunSourceAnalysis>
+    <FileUpgradeFlags>
+    </FileUpgradeFlags>
+    <OldToolsVersion>4.0</OldToolsVersion>
+    <UpgradeBackupLocation />
+    <TargetFrameworkProfile />
+    <PublishUrl>publish\</PublishUrl>
+    <Install>true</Install>
+    <InstallFrom>Disk</InstallFrom>
+    <UpdateEnabled>false</UpdateEnabled>
+    <UpdateMode>Foreground</UpdateMode>
+    <UpdateInterval>7</UpdateInterval>
+    <UpdateIntervalUnits>Days</UpdateIntervalUnits>
+    <UpdatePeriodically>false</UpdatePeriodically>
+    <UpdateRequired>false</UpdateRequired>
+    <MapFileExtensions>true</MapFileExtensions>
+    <ApplicationRevision>0</ApplicationRevision>
+    <ApplicationVersion>1.0.0.%2a</ApplicationVersion>
+    <IsWebBootstrapper>false</IsWebBootstrapper>
+    <UseApplicationTrust>false</UseApplicationTrust>
+    <BootstrapperEnabled>true</BootstrapperEnabled>
+    <SolutionDir Condition="$(SolutionDir) == '' Or $(SolutionDir) == '*Undefined*'">..\</SolutionDir>
+    <RestorePackages>true</RestorePackages>
+  </PropertyGroup>
+  <PropertyGroup Condition=" '$(Configuration)' == 'Debug' ">
+    <OutputPath>bin\Debug\</OutputPath>
+    <DebugSymbols>true</DebugSymbols>
+    <DebugType>Full</DebugType>
+    <Optimize>False</Optimize>
+    <CheckForOverflowUnderflow>True</CheckForOverflowUnderflow>
+    <DefineConstants>DEBUG;TRACE</DefineConstants>
+  </PropertyGroup>
+  <PropertyGroup Condition=" '$(Configuration)' == 'Release' ">
+    <OutputPath>bin\Release\</OutputPath>
+    <DebugSymbols>false</DebugSymbols>
+    <DebugType>PdbOnly</DebugType>
+    <Optimize>True</Optimize>
+    <CheckForOverflowUnderflow>True</CheckForOverflowUnderflow>
+    <DefineConstants>TRACE</DefineConstants>
+  </PropertyGroup>
+  <PropertyGroup Condition=" '$(Platform)' == 'AnyCPU' ">
+    <RegisterForComInterop>False</RegisterForComInterop>
+    <GenerateSerializationAssemblies>Auto</GenerateSerializationAssemblies>
+    <BaseAddress>4194304</BaseAddress>
+    <PlatformTarget>AnyCPU</PlatformTarget>
+    <FileAlignment>4096</FileAlignment>
+  </PropertyGroup>
+  <PropertyGroup Condition=" '$(Configuration)|$(Platform)' == 'Release|AnyCPU' ">
+    <DocumentationFile>bin\Release\SharpSnmpLib.Mib.xml</DocumentationFile>
+  </PropertyGroup>
+  <PropertyGroup Condition="'$(Configuration)|$(Platform)' == 'Debug|AnyCPU'">
+    <DocumentationFile />
+  </PropertyGroup>
+  <Import Project="$(MSBuildBinPath)\Microsoft.CSharp.Targets" />
+  <PropertyGroup>
+    <AntlrBuildTaskPath>$(MSBuildProjectDirectory)\..\lib\ANTLR</AntlrBuildTaskPath>
+    <AntlrToolPath>$(MSBuildProjectDirectory)\..\lib\antlr\antlr3.exe</AntlrToolPath>
+  </PropertyGroup>
+  <Import Project="..\lib\ANTLR\Antlr3.targets" />
+  <ItemGroup>
+    <Reference Include="Antlr3.Runtime, Version=3.4.1.9004, Culture=neutral, PublicKeyToken=eb42632606e9261f, processorArchitecture=MSIL">
+      <SpecificVersion>False</SpecificVersion>
+      <HintPath>..\packages\Antlr.Unofficial.3.4.1.0\lib\Antlr3.Runtime.dll</HintPath>
+    </Reference>
+    <Reference Include="log4net">
+      <HintPath>..\packages\log4net.2.0.0\lib\net35-full\log4net.dll</HintPath>
+      <Private>True</Private>
+    </Reference>
+    <Reference Include="System" />
+    <Reference Include="System.configuration" />
+  </ItemGroup>
+  <ItemGroup>
+    <Compile Include="..\lib\SharedAssemblyInfo.cs">
+      <Link>Properties\SharedAssemblyInfo.cs</Link>
+    </Compile>
+    <Compile Include="Mib\Access.cs" />
+    <Compile Include="Mib\AccessType.cs" />
+    <Compile Include="Mib\AgentCapabilitiesMacro.cs" />
+    <Compile Include="Mib\AgentCapabilitiesModule.cs" />
+    <Compile Include="Mib\AllExceptConstraintElement.cs" />
+    <Compile Include="Mib\AnyType.cs" />
+    <Compile Include="Mib\Assembler.cs" />
+    <Compile Include="Mib\BinaryLiteralValue.cs" />
+    <Compile Include="Mib\BitStringType.cs" />
+    <Compile Include="Mib\BitsType.cs" />
+    <Compile Include="Mib\BooleanType.cs" />
+    <Compile Include="Mib\Categories.cs" />
+    <Compile Include="Mib\CharacterSet.cs" />
+    <Compile Include="Mib\CharacterStringType.cs" />
+    <Compile Include="Mib\CharDefinition.cs" />
+    <Compile Include="Mib\CharDefinitionListValue.cs" />
+    <Compile Include="Mib\ChoiceType.cs" />
+    <Compile Include="Mib\ChoiceValue.cs" />
+    <Compile Include="Mib\ClassNumber.cs" />
+    <Compile Include="Mib\CompilerWarning.cs" />
+    <Compile Include="Mib\Compliance.cs" />
+    <Compile Include="Mib\ComponentsOfElementType.cs" />
+    <Compile Include="Mib\Constraint.cs" />
+    <Compile Include="Mib\ConstraintElement.cs" />
+    <Compile Include="Mib\DefaultObjectRegistry.cs" />
+    <Compile Include="Mib\DefinedType.cs" />
+    <Compile Include="Mib\DefinedValue.cs" />
+    <Compile Include="Mib\Definition.cs" />
+    <Compile Include="Mib\ElementSetConstraintElement.cs" />
+    <Compile Include="Mib\ElementSetRange.cs" />
+    <Compile Include="Mib\ElementType.cs" />
+    <Compile Include="Mib\EmbeddedType.cs" />
+    <Compile Include="Mib\EntityStatus.cs" />
+    <Compile Include="Mib\EnumType.cs" />
+    <Compile Include="Mib\ErrorMacro.cs" />
+    <Compile Include="Mib\ExceptionSpec.cs" />
+    <Compile Include="Mib\Exports.cs" />
+    <Compile Include="Mib\ExternalType.cs" />
+    <Compile Include="Mib\FalseLiteralValue.cs" />
+    <Compile Include="Mib\FromConstraintElement.cs" />
+    <Compile Include="Mib\FullQualifiedValue.cs" />
+    <Compile Include="Mib\GroupCompliance.cs" />
+    <Compile Include="Mib\HexLiteralValue.cs" />
+    <Compile Include="Mib\IdComponent.cs" />
+    <Compile Include="Mib\IdComponentList.cs" />
+    <Compile Include="Mib\IdListValue.cs" />
+    <Compile Include="Mib\Import.cs" />
+    <Compile Include="Mib\Imports.cs" />
+    <Compile Include="Mib\IncludeTypeConstraintElement.cs" />
+    <Compile Include="Mib\IntegerType.cs" />
+    <Compile Include="Mib\ISmiType.cs" />
+    <Compile Include="Mib\ISmiValue.cs" />
+    <Compile Include="Mib\LiteralValue.cs" />
+    <Compile Include="Mib\Macro.cs" />
+    <Compile Include="Mib\MibDocument.cs" />
+    <Compile Include="Mib\CompilerError.cs" />
+    <Compile Include="Mib\MibModule.cs" />
+    <Compile Include="Mib\MinusInfinityLiteralValue.cs" />
+    <Compile Include="Mib\ModuleCompliance.cs" />
+    <Compile Include="Mib\ModuleComplianceMacro.cs" />
+    <Compile Include="Mib\ModuleIdentityMacro.cs" />
+    <Compile Include="Mib\ModuleLoader.cs" />
+    <Compile Include="Mib\NamedBit.cs" />
+    <Compile Include="Mib\NamedConstraintElement.cs" />
+    <Compile Include="Mib\NamedNumber.cs" />
+    <Compile Include="Mib\NamedValue.cs" />
+    <Compile Include="Mib\NormalConstraintElement.cs" />
+    <Compile Include="Mib\NotificationGroupMacro.cs" />
+    <Compile Include="Mib\NotificationTypeMacro.cs" />
+    <Compile Include="Mib\NullLiteralValue.cs" />
+    <Compile Include="Mib\NullType.cs" />
+    <Compile Include="Mib\NumberLiteralValue.cs" />
+    <Compile Include="Mib\ObjectCompliance.cs" />
+    <Compile Include="Mib\ObjectGroupMacro.cs" />
+    <Compile Include="Mib\ObjectIdentifierType.cs" />
+    <Compile Include="Mib\ObjectIdentityMacro.cs" />
+    <Compile Include="Mib\ObjectRegistryBase.cs" />
+    <Compile Include="Mib\ObjectTree.cs" />
+    <Compile Include="Mib\ObjectTypeMacro.cs" />
+    <Compile Include="Mib\OctetStringType.cs" />
+    <Compile Include="Mib\OperationMacro.cs" />
+    <Compile Include="Mib\Parser.cs" />
+    <Compile Include="Mib\PatternConstraintElement.cs" />
+    <Compile Include="Mib\PibAccess.cs" />
+    <Compile Include="Mib\PlusInfinityLiteralValue.cs" />
+    <Compile Include="Mib\QuadValue.cs" />
+    <Compile Include="Mib\RealType.cs" />
+    <Compile Include="Mib\RelativeIdType.cs" />
+    <Compile Include="Mib\ReloadableObjectRegistry.cs" />
+    <Compile Include="Mib\Revision.cs" />
+    <Compile Include="Mib\SelectionType.cs" />
+    <Compile Include="Mib\SemanticException.cs" />
+    <Compile Include="Mib\SequenceOfType.cs" />
+    <Compile Include="Mib\SequenceOfValue.cs" />
+    <Compile Include="Mib\SequenceType.cs" />
+    <Compile Include="Mib\SequenceValue.cs" />
+    <Compile Include="Mib\SetOfType.cs" />
+    <Compile Include="Mib\SetType.cs" />
+    <Compile Include="Mib\SizeConstraintElement.cs" />
+    <Compile Include="Mib\SmiParser.cs" />
+    <Compile Include="Mib\TokenExtension.cs" />
+    <Compile Include="Mib\Syntax.cs" />
+    <Compile Include="Mib\Tag.cs" />
+    <Compile Include="Mib\TagDefault.cs" />
+    <Compile Include="Mib\TaggedElementType.cs" />
+    <Compile Include="Mib\TaggedType.cs" />
+    <Compile Include="Mib\TextualConventionMacro.cs" />
+    <Compile Include="Mib\TrapTypeMacro.cs" />
+    <Compile Include="Mib\TrueLiteralValue.cs" />
+    <Compile Include="Mib\TupleValue.cs" />
+    <Compile Include="Mib\TypeOrValue.cs" />
+    <Compile Include="Mib\UnknownType.cs" />
+    <Compile Include="Mib\ValidationHelper.cs" />
+    <Compile Include="Mib\ValueAssignment.cs" />
+    <Compile Include="Mib\ValueConstraintElement.cs" />
+    <Compile Include="Mib\ValueRange.cs" />
+    <Compile Include="Mib\ValueRangeConstraintElement.cs" />
+    <Compile Include="Mib\Variantion.cs" />
+    <Compile Include="Mib\WithComponentConstraintElement.cs" />
+    <Compile Include="Mib\WithComponentsConstraintElement.cs" />
+    <Compile Include="Properties\ASTAssemblyInfo.cs" />
+    <Compile Include="Properties\Resources.Designer.cs">
+      <AutoGen>True</AutoGen>
+      <DesignTime>True</DesignTime>
+      <DependentUpon>Resources.resx</DependentUpon>
+    </Compile>
+    <Compile Include="Mib\SimpleObjectRegistry.cs" />
+  </ItemGroup>
+  <ItemGroup>
+    <Antlr3 Include="Mib\Smi.g" />
+    <None Include="Mib\Smi_no_action.g" />
+    <None Include="packages.config" />
+    <None Include="Resources\SNMPv2-CONF.module" />
+    <None Include="Resources\SNMPv2-MIB.module" />
+    <None Include="Resources\SNMPv2-SMI.module" />
+    <None Include="Resources\SNMPv2-TC.module" />
+    <None Include="Resources\SNMPv2-TM.module" />
+    <None Include="sharpsnmplib.snk" />
+  </ItemGroup>
+  <ItemGroup>
+    <BootstrapperPackage Include=".NETFramework,Version=v4.0">
+      <Visible>False</Visible>
+      <ProductName>Microsoft .NET Framework 4 %28x86 and x64%29</ProductName>
+      <Install>true</Install>
+    </BootstrapperPackage>
+    <BootstrapperPackage Include="Microsoft.Net.Client.3.5">
+      <Visible>False</Visible>
+      <ProductName>.NET Framework 3.5 SP1 Client Profile</ProductName>
+      <Install>false</Install>
+    </BootstrapperPackage>
+    <BootstrapperPackage Include="Microsoft.Net.Framework.3.5.SP1">
+      <Visible>False</Visible>
+      <ProductName>.NET Framework 3.5 SP1</ProductName>
+      <Install>false</Install>
+    </BootstrapperPackage>
+    <BootstrapperPackage Include="Microsoft.Windows.Installer.3.1">
+      <Visible>False</Visible>
+      <ProductName>Windows Installer 3.1</ProductName>
+      <Install>true</Install>
+    </BootstrapperPackage>
+  </ItemGroup>
+  <ItemGroup>
+    <ProjectReference Include="SharpSnmpLib.csproj">
+      <Project>{286DE6DB-8F95-4BD4-86A2-86488D2E0EE1}</Project>
+      <Name>SharpSnmpLib</Name>
+    </ProjectReference>
+  </ItemGroup>
+  <ItemGroup>
+    <EmbeddedResource Include="Properties\Resources.resx">
+      <Generator>ResXFileCodeGenerator</Generator>
+      <LastGenOutput>Resources.Designer.cs</LastGenOutput>
+    </EmbeddedResource>
+  </ItemGroup>
+  <Import Project="$(SolutionDir)\.nuget\nuget.targets" />
+</Project>

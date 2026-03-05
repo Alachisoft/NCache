@@ -1,4 +1,4 @@
-﻿//  Copyright (c) 2021 Alachisoft
+﻿//  Copyright (c) 2026 Alachisoft
 //  
 //  Licensed under the Apache License, Version 2.0 (the "License");
 //  you may not use this file except in compliance with the License.
@@ -19,6 +19,9 @@ namespace Alachisoft.NCache.Common.Communication
 {
     public interface IChannel
     {
+        bool IsConnected { get; }
+        Action OnChannelReconnected { get; set; }
+
         bool Connect();
 
         void Disconnect();
@@ -34,5 +37,9 @@ namespace Alachisoft.NCache.Common.Communication
         string Name { get; set; }
 
         string Server { get; }
+
+        void StartReceivingThread();
+
+        object SendMessageSync(object message);
     }
 }

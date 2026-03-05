@@ -31,7 +31,7 @@ public class Global
 	{
 		CompactFormatterServices.RegisterCompactType(typeof(List),81);
         CompactFormatterServices.RegisterCompactType(typeof(ProductVersion), 302);
-#if SERVER
+#if SERVER 
 		CompactFormatterServices.RegisterCompactType(typeof(ViewId),82);
 		CompactFormatterServices.RegisterCompactType(typeof(View),83);
 		CompactFormatterServices.RegisterCompactType(typeof(PingRsp),85);

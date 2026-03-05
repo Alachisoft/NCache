@@ -1,4 +1,4 @@
-//  Copyright (c) 2021 Alachisoft
+//  Copyright (c) 2026 Alachisoft
 //  
 //  Licensed under the Apache License, Version 2.0 (the "License");
 //  you may not use this file except in compliance with the License.
@@ -16,8 +16,11 @@ using System.Collections.Generic;
 using System.Text;
 using Alachisoft.NCache.Common.Configuration;
 using Alachisoft.NCache.Common.Enum;
+
 using Alachisoft.NCache.Runtime.Serialization;
+
 using Alachisoft.NCache.Common;
+
 using Runtime = Alachisoft.NCache.Runtime;
 
 namespace Alachisoft.NCache.Config.Dom
@@ -47,7 +50,7 @@ namespace Alachisoft.NCache.Config.Dom
             get { return clientRuntimeContext; }
             set { clientRuntimeContext = value; }
         }
-    
+
         public string RuntimeContextString
         {
             get
@@ -79,7 +82,6 @@ namespace Alachisoft.NCache.Config.Dom
                 }
             }        
         }
-
         public override int GetHashCode()
         {
             if (name == null) return String.Empty.GetHashCode(); 

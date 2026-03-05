@@ -1,4 +1,4 @@
-//  Copyright (c) 2021 Alachisoft
+//  Copyright (c) 2026 Alachisoft
 //  
 //  Licensed under the Apache License, Version 2.0 (the "License");
 //  you may not use this file except in compliance with the License.
@@ -75,7 +75,6 @@ namespace Alachisoft.NCache.Client
 
                 _insertCommand.flag = item.FlagMap.Data;
                 _insertCommand.priority = (int)item.Priority;
-                //_insertCommand.dependency = item.Dependency == null ? null : Common.Util.DependencyHelper.GetProtoBufDependency(item.Dependency);
 
                 // Client ID: Must not have value except ClientCache.
                 _insertCommand.clientID = clientId;
@@ -146,7 +145,7 @@ namespace Alachisoft.NCache.Client
 
         protected override void SerializeCommandInternal(Stream stream)
         {
-            ProtoBuf.Serializer.Serialize(stream, _bulkInsertCommand);
+            ProtoBuf.Extended.Serializer.Serialize(stream, _bulkInsertCommand);
         }
 
         protected override short GetCommandHandle()

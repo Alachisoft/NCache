@@ -1,4 +1,4 @@
-﻿//  Copyright (c) 2021 Alachisoft
+﻿//  Copyright (c) 2026 Alachisoft
 //  
 //  Licensed under the Apache License, Version 2.0 (the "License");
 //  you may not use this file except in compliance with the License.
@@ -11,7 +11,10 @@
 //  WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
 //  See the License for the specific language governing permissions and
 //  limitations under the License
+using Alachisoft.NCache.Caching.Statistics;
+using Alachisoft.NCache.Common;
 using Alachisoft.NCache.Common.Caching.Statistics.CustomCounters;
+using Alachisoft.NCache.Common.Monitoring;
 using Alachisoft.NCache.Common.Net;
 using Alachisoft.NCache.Common.Stats;
 using Alachisoft.NCache.Common.Util;
@@ -25,16 +28,23 @@ using System;
 using System.Collections.Generic;
 using System.Diagnostics;
 using System.Net;
+using System.Runtime.InteropServices;
+using System.Text;
 using System.Threading;
 
 namespace Alachisoft.NCache.Management.Statistics
 {
-    public class CustomStatsCollector : IDisposable, StatisticsCounter
+    public class CustomStatsCollector : IDisposable, StatisticsCounter,ICounterMonitorableEntity
     {
         /// <summary> Instance name. </summary>
         private string _instanceName;
         /// <summary> Port number. </summary>
         private string _port;
+
+        private Dictionary<string, PerformanceCounterBase> _ncacheClientCounters = new Dictionary<string, PerformanceCounterBase>();
+        private bool _populationSuccessful = false;
+
+        private List<PerformanceCounterBase> _availableCounters = new List<PerformanceCounterBase>();
 
         private string _cacheID;
 
@@ -127,6 +137,11 @@ namespace Alachisoft.NCache.Management.Statistics
         private PerformanceCounterBase _pcMsecPerDeserializationAvgBase = null;
         private PerformanceCounterBase _pcMsecPerMessagePublishBase = null;
 
+        /// <summary> Category name of counter performance data.</summary>
+        /// 
+        private PerformanceCounterBase _pcConnectedClients = null;
+        private CounterIDMap _counterIDMap;
+
         private Thread _publishingThread;
         private bool _publish;
         private DateTime _lastPublish = DateTime.Now;
@@ -137,6 +152,7 @@ namespace Alachisoft.NCache.Management.Statistics
         ICacheServer _cacheServer = null;
 
         private bool _isEnabled = false;
+        bool required = true;
 
         /// <summary>
         /// Constructor
@@ -181,7 +197,13 @@ namespace Alachisoft.NCache.Management.Statistics
             get { return true; }
         }
 
+        public MetricsPublisher StatsPublisher { get; set; }
 
+        public Category Category
+        {
+            get;
+            set;
+        }
 
         #region	/                 --- IDisposable ---           /
 
@@ -191,62 +213,65 @@ namespace Alachisoft.NCache.Management.Statistics
         /// </summary>
         public void Dispose()
         {
-            _pcClientRequestsPerSec.Reset();
-            _pcClientResponsesPerSec.Reset();
-            _pcTotalClientRequestsPerSec.Reset();
-            _pcTotalClientResponsesPerSec.Reset();
-            _pcAddPerSec.Reset();
-            _pcGetPerSec.Reset();
-            _pcUpdPerSec.Reset();
-            _pcDelPerSec.Reset();
+            
+            _pcClientRequestsPerSec?.Reset();
+            _pcClientResponsesPerSec?.Reset();
+            _pcTotalClientRequestsPerSec?.Reset();
+            _pcTotalClientResponsesPerSec?.Reset();
+            _pcAddPerSec?.Reset();
+            _pcGetPerSec?.Reset();
+            _pcUpdPerSec?.Reset();
+            _pcDelPerSec?.Reset();
 
-            _pcEventTriggeredPerSec.Reset();
-            _pcEventProcesedPerSec.Reset();
+            _pcEventTriggeredPerSec?.Reset();
+            _pcEventProcesedPerSec?.Reset();
 
-            _pcReadOperationsPerSec.Reset();
-            _pcWriteOperationsPerSec.Reset();
+            _pcReadOperationsPerSec?.Reset();
+            _pcWriteOperationsPerSec?.Reset();
 
 
             //Bulk Counters
-            _pcMsecPerAddBulkAvg.Reset();
-            _pcMsecPerGetBulkAvg.Reset();
-            _pcMsecPerUpdBulkAvg.Reset();
-            _pcMsecPerDelBulkAvg.Reset();
-            _pcMsecPerGetAvg.Reset();
+            _pcMsecPerAddBulkAvg?.Reset();
+            _pcMsecPerGetBulkAvg?.Reset();
+            _pcMsecPerUpdBulkAvg?.Reset();
+            _pcMsecPerDelBulkAvg?.Reset();
+            _pcMsecPerGetAvg?.Reset();
             _usMsecPerGet = new UsageStats();
-            _pcMsecPerAddAvg.Reset();
-            _usMsecPerAdd.Reset();
-            _pcMsecPerUpdAvg.Reset();
-            _usMsecPerUpd.Reset();
-            _pcMsecPerDelAvg.Reset();
-            _usMsecPerDel.Reset();
-            _pcReqrQueueSize.Reset();
-            _pcAvgItemSize.Reset();
+            _pcMsecPerAddAvg?.Reset();
+            _usMsecPerAdd?.Reset();
+            _pcMsecPerUpdAvg?.Reset();
+            _usMsecPerUpd?.Reset();
+            _pcMsecPerDelAvg?.Reset();
+            _usMsecPerDel?.Reset();
+            _pcReqrQueueSize?.Reset();
+            _pcAvgItemSize?.Reset();
 
-            _pcMsecPerEventAvg.Reset();
-            _usMsecPerEvent.Reset();
+            _pcMsecPerEventAvg?.Reset();
+            _usMsecPerEvent?.Reset();
 
-            _usMsecPerDel.Reset();
+            _usMsecPerDel?.Reset();
 
-            _pcMsecPerSerializationAvg.Reset();
-            _pcMsecPerDeserializationAvg.Reset();
+            _pcMsecPerSerializationAvg?.Reset();
+            _pcMsecPerDeserializationAvg?.Reset();
 
-            _pcMsecPerMessagePublishAvg.Reset();
-            _pcMessagePublishPerSec.Reset();
-            _pcMessageDeliverPerSec.Reset();
+            _pcMsecPerMessagePublishAvg?.Reset();
+            _pcMessagePublishPerSec?.Reset();
+            _pcMessageDeliverPerSec?.Reset();
 
-            _pcMsecPerAddBase.Reset();
-            _pcMsecPerDelBase.Reset();
-            _pcMsecPerGetBase.Reset();
-            _pcMsecPerUpdBase.Reset();
-            _pcMsecPerAddBulkBase.Reset();
-            _pcMsecPerGetBulkBase.Reset();
-            _pcMsecPerUpdBulkBase.Reset();
-            _pcMsecPerDelBulkBase.Reset();
-            _pcAvgItemSizeBase.Reset();
-            _pcMsecPerEventBase.Reset();
-            _pcMsecPerSerializationAvgBase.Reset();
-            _pcMsecPerDeserializationAvgBase.Reset();
+            _pcMsecPerAddBase?.Reset();
+            _pcMsecPerDelBase?.Reset();
+            _pcMsecPerGetBase?.Reset();
+            _pcMsecPerUpdBase?.Reset();
+            _pcMsecPerAddBulkBase?.Reset();
+            _pcMsecPerGetBulkBase?.Reset();
+            _pcMsecPerUpdBulkBase?.Reset();
+            _pcMsecPerDelBulkBase?.Reset();
+            _pcAvgItemSizeBase?.Reset();
+            _pcMsecPerEventBase?.Reset();
+           
+            _pcMsecPerSerializationAvgBase?.Reset();
+            _pcMsecPerDeserializationAvgBase?.Reset();
+           
 
             if (_pubsubCounterList != null)
             {
@@ -276,74 +301,91 @@ namespace Alachisoft.NCache.Management.Statistics
         /// </summary>
         public void InitializePerfCounters(bool inproc)
         {
-            _pcClientRequestsPerSec = new RateOfCounter(CustomCounterNames.ClientRequestsPerSec, _instanceName);
-            _pcClientResponsesPerSec = new RateOfCounter(CustomCounterNames.ClientResponsesPerSec, _instanceName);
-            _pcTotalClientRequestsPerSec = new RateOfCounter(CustomCounterNames.TotalClientRequestsPerSec, CustomCounterNames.TotalClientStats);
-            _pcTotalClientResponsesPerSec = new RateOfCounter(CustomCounterNames.TotalClientResponsesPerSec, CustomCounterNames.TotalClientStats);
-            _pcAddPerSec = new RateOfCounter(CustomCounterNames.AddPerSec, _instanceName);
-            _pcGetPerSec = new RateOfCounter(CustomCounterNames.FetchPerSec, _instanceName);
-            _pcUpdPerSec = new RateOfCounter(CustomCounterNames.UpdatePerSec, _instanceName);
-            _pcDelPerSec = new RateOfCounter(CustomCounterNames.DeletePerSec, _instanceName);
-
-            _pcEventTriggeredPerSec = new RateOfCounter(CustomCounterNames.EventsTriggeredPerSec, _instanceName);
-            _pcEventProcesedPerSec = new RateOfCounter(CustomCounterNames.EventProcesedPerSec, _instanceName);
-
-            _pcReadOperationsPerSec = new RateOfCounter(CustomCounterNames.ReadOperationsPerSec, _instanceName);
-            _pcWriteOperationsPerSec = new RateOfCounter(CustomCounterNames.WriteOperationsPerSec, _instanceName);
-
-
-            //Bulk Counters
-            _pcMsecPerAddBulkAvg = new AverageCounter(CustomCounterNames.MsecPerAddBulkAvg, _instanceName);
-            _pcMsecPerGetBulkAvg = new AverageCounter(CustomCounterNames.MsecPerGetBulkAvg, _instanceName);
-            _pcMsecPerUpdBulkAvg = new AverageCounter(CustomCounterNames.MsecPerUpdBulkAvg, _instanceName);
-            _pcMsecPerDelBulkAvg = new AverageCounter(CustomCounterNames.MsecPerDelBulkAvg, _instanceName);
-            _pcMsecPerGetAvg = new AverageCounter(CustomCounterNames.MsecPerGetAvg, _instanceName);
-            _usMsecPerGet = new UsageStats();
-            _pcMsecPerAddAvg = new AverageCounter(CustomCounterNames.MsecPerAddAvg, _instanceName);
-            _usMsecPerAdd = new UsageStats();
-            _pcMsecPerUpdAvg = new AverageCounter(CustomCounterNames.MsecPerUpdAvg, _instanceName);
-            _usMsecPerUpd = new UsageStats();
-            _pcMsecPerDelAvg = new AverageCounter(CustomCounterNames.MsecPerDelAvg, _instanceName);
-            _usMsecPerDel = new UsageStats();
-
-            _pcReqrQueueSize = new NumberOfItemCounter(CustomCounterNames.ReqrQueueSize, _instanceName);
-            _pcAvgItemSize = new AverageCounter(CustomCounterNames.AvgItemSize, _instanceName);
-
-            _pcMsecPerEventAvg = new AverageCounter(CustomCounterNames.MsecPerEventAvg, _instanceName);
-            _usMsecPerEvent = new UsageStats();
-
-            _usMsecPerDel = new UsageStats();
-
-            _pcMsecPerSerializationAvg = new AverageCounter(CustomCounterNames.MsecPerSerializationAvg, _instanceName);
-            _pcMsecPerDeserializationAvg = new AverageCounter(CustomCounterNames.MsecPerDeserializationAvg, _instanceName);
-
-            _pubsubCounterList = new Dictionary<string, PerformanceCounterBase>();
-
-            _pcMsecPerMessagePublishAvg = new AverageCounter(CustomCounterNames.AvgPublishMessage, _instanceName);
-            _pcMessagePublishPerSec = new RateOfCounter(CustomCounterNames.MessagePublishPerSec, _instanceName);
-            _pcMessageDeliverPerSec = new RateOfCounter(CustomCounterNames.MessageDeliveryPerSec, _instanceName);
-            _pubsubCounterList.Add(CounterNames.MessagePublishPerSec, _pcMessagePublishPerSec);
-            _pubsubCounterList.Add(CounterNames.AvgPublishMessage, _pcMsecPerMessagePublishAvg);
-            _pubsubCounterList.Add(CounterNames.MessageDeliveryPerSec, _pcMessageDeliverPerSec);
-
-            _pcMsecPerAddBulkBase = new RateOfCounter(CustomCounterNames.MsecPerAddBulkBase, _instanceName);
-            _pcMsecPerGetBulkBase = new RateOfCounter(CustomCounterNames.MsecPerGetBulkBase, _instanceName);
-            _pcMsecPerUpdBulkBase = new RateOfCounter(CustomCounterNames.MsecPerUpdBulkBase, _instanceName);
-            _pcMsecPerDelBulkBase = new RateOfCounter(CustomCounterNames.MsecPerDelBulkBase, _instanceName);
-            _pcMsecPerGetBase = new RateOfCounter(CustomCounterNames.MsecPerGetBase, _instanceName);
-            _pcMsecPerAddBase = new RateOfCounter(CustomCounterNames.MsecPerAddBase, _instanceName);
-            _pcMsecPerUpdBase = new RateOfCounter(CustomCounterNames.MsecPerUpdBase, _instanceName);
-            _pcMsecPerDelBase = new RateOfCounter(CustomCounterNames.MsecPerDelBase, _instanceName);
-            _pcAvgItemSizeBase = new AverageCounter(CustomCounterNames.AvgItemSizeBase, _instanceName);
-            _pcMsecPerEventBase = new RateOfCounter(CustomCounterNames.MsecPerEventBase, _instanceName);
-            _pcMsecPerSerializationAvgBase = new RateOfCounter(CustomCounterNames.MsecPerSerializationAvgBase, _instanceName);
-            _pcMsecPerDeserializationAvgBase = new RateOfCounter(CustomCounterNames.MsecPerDeserializationAvgBase, _instanceName);
-            _pcMsecPerMessagePublishBase = new RateOfCounter(CounterNames.AvgPublishMessageBase, _instanceName);
-            _pubsubCounterList.Add(CounterNames.AvgPublishMessageBase, _pcMsecPerMessagePublishAvg);
-
-            foreach (var item in _pubsubCounterList.Values)
+            try
             {
-                item.Value = 0;
+                _pcClientRequestsPerSec = new RateOfCounter(CustomCounterNames.ClientRequestsPerSec, _instanceName);
+                _pcClientResponsesPerSec = new RateOfCounter(CustomCounterNames.ClientResponsesPerSec, _instanceName);
+                _pcTotalClientRequestsPerSec = new RateOfCounter(CustomCounterNames.TotalClientRequestsPerSec, CustomCounterNames.TotalClientStats);
+                _pcTotalClientResponsesPerSec = new RateOfCounter(CustomCounterNames.TotalClientResponsesPerSec, CustomCounterNames.TotalClientStats);
+                _pcAddPerSec = new RateOfCounter(CustomCounterNames.AddPerSec, _instanceName);
+                _pcGetPerSec = new RateOfCounter(CustomCounterNames.FetchPerSec, _instanceName);
+                _pcUpdPerSec = new RateOfCounter(CustomCounterNames.UpdatePerSec, _instanceName);
+                _pcDelPerSec = new RateOfCounter(CustomCounterNames.DeletePerSec, _instanceName);
+
+                _pcEventTriggeredPerSec = new RateOfCounter(CustomCounterNames.EventsTriggeredPerSec, _instanceName);
+                _pcEventProcesedPerSec = new RateOfCounter(CustomCounterNames.EventProcesedPerSec, _instanceName);
+
+                _pcReadOperationsPerSec = new RateOfCounter(CustomCounterNames.ReadOperationsPerSec, _instanceName);
+                _pcWriteOperationsPerSec = new RateOfCounter(CustomCounterNames.WriteOperationsPerSec, _instanceName);
+
+
+                //Bulk Counters
+                _pcMsecPerAddBulkAvg = new AverageCounter(CustomCounterNames.MsecPerAddBulkAvg, _instanceName);
+                _pcMsecPerGetBulkAvg = new AverageCounter(CustomCounterNames.MsecPerGetBulkAvg, _instanceName);
+                _pcMsecPerUpdBulkAvg = new AverageCounter(CustomCounterNames.MsecPerUpdBulkAvg, _instanceName);
+                _pcMsecPerDelBulkAvg = new AverageCounter(CustomCounterNames.MsecPerDelBulkAvg, _instanceName);
+                _pcMsecPerGetAvg = new AverageCounter(CustomCounterNames.MsecPerGetAvg, _instanceName);
+                _usMsecPerGet = new UsageStats();
+                _pcMsecPerAddAvg = new AverageCounter(CustomCounterNames.MsecPerAddAvg, _instanceName);
+                _usMsecPerAdd = new UsageStats();
+                _pcMsecPerUpdAvg = new AverageCounter(CustomCounterNames.MsecPerUpdAvg, _instanceName);
+                _usMsecPerUpd = new UsageStats();
+                _pcMsecPerDelAvg = new AverageCounter(CustomCounterNames.MsecPerDelAvg, _instanceName);
+                _usMsecPerDel = new UsageStats();
+
+                _pcReqrQueueSize = new NumberOfItemCounter(CustomCounterNames.ReqrQueueSize, _instanceName);
+                _pcAvgItemSize = new AverageCounter(CustomCounterNames.AvgItemSize, _instanceName);
+
+                _pcMsecPerEventAvg = new AverageCounter(CustomCounterNames.MsecPerEventAvg, _instanceName);
+                _usMsecPerEvent = new UsageStats();
+
+                _usMsecPerDel = new UsageStats();
+
+                _pcMsecPerSerializationAvg = new AverageCounter(CustomCounterNames.MsecPerSerializationAvg, _instanceName);
+                _pcMsecPerDeserializationAvg = new AverageCounter(CustomCounterNames.MsecPerDeserializationAvg, _instanceName);
+
+                _pubsubCounterList = new Dictionary<string, PerformanceCounterBase>();
+
+                _pcMsecPerMessagePublishAvg = new AverageCounter(CustomCounterNames.AvgPublishMessage, _instanceName);
+                _pcMessagePublishPerSec = new RateOfCounter(CustomCounterNames.MessagePublishPerSec, _instanceName);
+                _pcMessageDeliverPerSec = new RateOfCounter(CustomCounterNames.MessageDeliveryPerSec, _instanceName);
+                _pubsubCounterList.Add(CounterNames.MessagePublishPerSec, _pcMessagePublishPerSec);
+                _pubsubCounterList.Add(CounterNames.AvgPublishMessage, _pcMsecPerMessagePublishAvg);
+                _pubsubCounterList.Add(CounterNames.MessageDeliveryPerSec, _pcMessageDeliverPerSec);
+
+                _pcMsecPerAddBulkBase = new RateOfCounter(CustomCounterNames.MsecPerAddBulkBase, _instanceName);
+                _pcMsecPerGetBulkBase = new RateOfCounter(CustomCounterNames.MsecPerGetBulkBase, _instanceName);
+                _pcMsecPerUpdBulkBase = new RateOfCounter(CustomCounterNames.MsecPerUpdBulkBase, _instanceName);
+                _pcMsecPerDelBulkBase = new RateOfCounter(CustomCounterNames.MsecPerDelBulkBase, _instanceName);
+                _pcMsecPerGetBase = new RateOfCounter(CustomCounterNames.MsecPerGetBase, _instanceName);
+                _pcMsecPerAddBase = new RateOfCounter(CustomCounterNames.MsecPerAddBase, _instanceName);
+                _pcMsecPerUpdBase = new RateOfCounter(CustomCounterNames.MsecPerUpdBase, _instanceName);
+                _pcMsecPerDelBase = new RateOfCounter(CustomCounterNames.MsecPerDelBase, _instanceName);
+                _pcAvgItemSizeBase = new AverageCounter(CustomCounterNames.AvgItemSizeBase, _instanceName);
+                _pcMsecPerEventBase = new RateOfCounter(CustomCounterNames.MsecPerEventBase, _instanceName);
+                _pcMsecPerSerializationAvgBase = new RateOfCounter(CustomCounterNames.MsecPerSerializationAvgBase, _instanceName);
+                _pcMsecPerDeserializationAvgBase = new RateOfCounter(CustomCounterNames.MsecPerDeserializationAvgBase, _instanceName);
+                _pcMsecPerMessagePublishBase = new RateOfCounter(CounterNames.AvgPublishMessageBase, _instanceName);
+                _pubsubCounterList.Add(CounterNames.AvgPublishMessageBase, _pcMsecPerMessagePublishAvg);
+
+                StoreCounter();
+                foreach (var item in _pubsubCounterList.Keys)
+                {
+                    PerformanceCounterBase performanceCounterBase = _ncacheClientCounters[item];
+                    if (performanceCounterBase != null)
+                        performanceCounterBase.Value = 0;
+                }
+                _populationSuccessful = true;
+            }catch(Exception e)
+            {
+                _populationSuccessful = false;
+                AppUtil.LogEvent("NCache", "An error occurred while initializing counters for NCache Management. " + e.ToString(), EventLogEntryType.Error, EventCategories.Error, EventID.GeneralError);
+            }
+
+            if(!AppUtil.IsNuGetOnlyInstallation && !inproc)
+            {
+                PopulateCounters();
+                RegisterAsMonitorableEntity();
             }
         }
 
@@ -357,6 +399,50 @@ namespace Alachisoft.NCache.Management.Statistics
         {
             get { return _isEnabled; }
             set { _isEnabled = value; }
+        }
+
+        private void StoreCounter()
+        {
+            _ncacheClientCounters.Add(_pcTotalClientRequestsPerSec.Name, _pcTotalClientRequestsPerSec);
+            _ncacheClientCounters.Add(_pcTotalClientResponsesPerSec.Name, _pcTotalClientResponsesPerSec);
+            _ncacheClientCounters.Add(_pcAddPerSec.Name, _pcAddPerSec);
+            _ncacheClientCounters.Add(_pcGetPerSec.Name, _pcGetPerSec);
+            _ncacheClientCounters.Add(_pcUpdPerSec.Name, _pcUpdPerSec);
+            _ncacheClientCounters.Add(_pcDelPerSec.Name, _pcDelPerSec);
+            _ncacheClientCounters.Add(_pcEventTriggeredPerSec.Name, _pcEventTriggeredPerSec);
+            _ncacheClientCounters.Add(_pcEventProcesedPerSec.Name, _pcEventProcesedPerSec);
+            _ncacheClientCounters.Add(_pcReadOperationsPerSec.Name, _pcReadOperationsPerSec);
+            _ncacheClientCounters.Add(_pcWriteOperationsPerSec.Name, _pcWriteOperationsPerSec);
+            _ncacheClientCounters.Add(_pcMsecPerAddBulkAvg.Name, _pcMsecPerAddBulkAvg);
+            _ncacheClientCounters.Add(_pcMsecPerGetBulkAvg.Name, _pcMsecPerGetBulkAvg);
+            _ncacheClientCounters.Add(_pcMsecPerUpdBulkAvg.Name, _pcMsecPerUpdBulkAvg);
+            _ncacheClientCounters.Add(_pcMsecPerDelBulkAvg.Name, _pcMsecPerDelBulkAvg);
+            _ncacheClientCounters.Add(_pcMsecPerGetAvg.Name, _pcMsecPerGetAvg);
+            _ncacheClientCounters.Add(_pcMsecPerAddAvg.Name, _pcMsecPerAddAvg);
+            _ncacheClientCounters.Add(_pcMsecPerUpdAvg.Name, _pcMsecPerUpdAvg);
+            _ncacheClientCounters.Add(_pcMsecPerDelAvg.Name, _pcMsecPerDelAvg);
+            _ncacheClientCounters.Add(_pcReqrQueueSize.Name, _pcReqrQueueSize);
+            _ncacheClientCounters.Add(_pcAvgItemSize.Name, _pcAvgItemSize);
+            _ncacheClientCounters.Add(_pcMsecPerEventAvg.Name, _pcMsecPerEventAvg);
+            _ncacheClientCounters.Add(_pcMsecPerSerializationAvg.Name, _pcMsecPerSerializationAvg);
+            _ncacheClientCounters.Add(_pcMsecPerDeserializationAvg.Name, _pcMsecPerDeserializationAvg);
+            _ncacheClientCounters.Add(_pcMsecPerMessagePublishAvg.Name, _pcMsecPerMessagePublishAvg);
+            _ncacheClientCounters.Add(_pcMessagePublishPerSec.Name, _pcMessagePublishPerSec);
+            _ncacheClientCounters.Add(_pcMsecPerAddBulkBase.Name, _pcMsecPerAddBulkBase);
+            _ncacheClientCounters.Add(_pcMsecPerGetBulkBase.Name, _pcMsecPerGetBulkBase);
+            _ncacheClientCounters.Add(_pcMsecPerUpdBulkBase.Name, _pcMsecPerUpdBulkBase);
+            _ncacheClientCounters.Add(_pcMsecPerDelBulkBase.Name, _pcMsecPerDelBulkBase);
+            _ncacheClientCounters.Add(_pcMsecPerGetBase.Name, _pcMsecPerGetBase);
+            _ncacheClientCounters.Add(_pcMsecPerAddBase.Name, _pcMsecPerAddBase);
+            _ncacheClientCounters.Add(_pcMsecPerUpdBase.Name, _pcMsecPerUpdBase);
+            _ncacheClientCounters.Add(_pcMsecPerDelBase.Name, _pcMsecPerDelBase);
+            _ncacheClientCounters.Add(_pcAvgItemSizeBase.Name, _pcAvgItemSizeBase);
+            _ncacheClientCounters.Add(_pcMsecPerEventBase.Name, _pcMsecPerEventBase);
+            _ncacheClientCounters.Add(_pcMsecPerSerializationAvgBase.Name, _pcMsecPerSerializationAvgBase);
+            _ncacheClientCounters.Add(_pcMsecPerDeserializationAvgBase.Name, _pcMsecPerDeserializationAvgBase);
+            _ncacheClientCounters.Add(_pcMsecPerMessagePublishBase.Name, _pcMsecPerMessagePublishBase);
+            _ncacheClientCounters.Add(_pcMessageDeliverPerSec.Name, _pcMessageDeliverPerSec);
+
         }
 
         /// <summary> 
@@ -675,7 +761,7 @@ namespace Alachisoft.NCache.Management.Statistics
             {
                 lock (_pcMsecPerGetAvg)
                 {
-                    _pcMsecPerGetAvg.IncrementBy(value * 1000000 / Stopwatch.Frequency); //ts.Milliseconds);
+                    _pcMsecPerGetAvg.IncrementBy(value * 1000000 / Stopwatch.Frequency);
                     _pcMsecPerGetBase.Increment();
                 }
             }
@@ -687,7 +773,7 @@ namespace Alachisoft.NCache.Management.Statistics
             {
                 lock (_pcMsecPerGetAvg)
                 {
-                    _pcMsecPerGetAvg.IncrementBy(value * 1000000 / Stopwatch.Frequency); //ts.Milliseconds);
+                    _pcMsecPerGetAvg.IncrementBy(value * 1000000 / Stopwatch.Frequency);
                     _pcMsecPerGetBase.IncrementBy(baseValue);
                 }
             }
@@ -704,7 +790,7 @@ namespace Alachisoft.NCache.Management.Statistics
                 lock (_pcMsecPerGetAvg)
                 {
                     _usMsecPerGet.EndSample();
-                    _pcMsecPerGetAvg.IncrementBy(_usMsecPerGet.Current * 1000000 / Stopwatch.Frequency);// ts.Milliseconds);
+                    _pcMsecPerGetAvg.IncrementBy(_usMsecPerGet.Current * 1000000 / Stopwatch.Frequency);
                     _pcMsecPerGetBase.Increment();
                 }
             }
@@ -724,7 +810,7 @@ namespace Alachisoft.NCache.Management.Statistics
             {
                 lock (_pcMsecPerAddAvg)
                 {
-                    _pcMsecPerAddAvg.IncrementBy(value * 1000000 / Stopwatch.Frequency); //ts.Milliseconds);
+                    _pcMsecPerAddAvg.IncrementBy(value * 1000000 / Stopwatch.Frequency);
                     _pcMsecPerAddBase.Increment();
                 }
             }
@@ -736,7 +822,7 @@ namespace Alachisoft.NCache.Management.Statistics
             {
                 lock (_pcMsecPerAddAvg)
                 {
-                    _pcMsecPerAddAvg.IncrementBy(value * 1000000 / Stopwatch.Frequency); //ts.Milliseconds);
+                    _pcMsecPerAddAvg.IncrementBy(value * 1000000 / Stopwatch.Frequency);
                     _pcMsecPerAddBase.IncrementBy(baseValue);
                 }
             }
@@ -753,7 +839,7 @@ namespace Alachisoft.NCache.Management.Statistics
                 lock (_pcMsecPerAddAvg)
                 {
                     _usMsecPerAdd.EndSample();
-                    _pcMsecPerAddAvg.IncrementBy(_usMsecPerAdd.Current * 1000000 / Stopwatch.Frequency); //ts.Milliseconds);
+                    _pcMsecPerAddAvg.IncrementBy(_usMsecPerAdd.Current * 1000000 / Stopwatch.Frequency);
                     _pcMsecPerAddBase.Increment();
                 }
             }
@@ -774,7 +860,7 @@ namespace Alachisoft.NCache.Management.Statistics
             {
                 lock (_pcMsecPerUpdAvg)
                 {
-                    _pcMsecPerUpdAvg.IncrementBy(value * 1000000 / Stopwatch.Frequency); //ts.Milliseconds);
+                    _pcMsecPerUpdAvg.IncrementBy(value * 1000000 / Stopwatch.Frequency);
                     _pcMsecPerUpdBase.Increment();
                 }
             }
@@ -786,7 +872,7 @@ namespace Alachisoft.NCache.Management.Statistics
             {
                 lock (_pcMsecPerUpdAvg)
                 {
-                    _pcMsecPerUpdAvg.IncrementBy(value * 1000000 / Stopwatch.Frequency); //ts.Milliseconds);
+                    _pcMsecPerUpdAvg.IncrementBy(value * 1000000 / Stopwatch.Frequency);
                     _pcMsecPerUpdBase.IncrementBy(baseValue);
                 }
             }
@@ -802,7 +888,7 @@ namespace Alachisoft.NCache.Management.Statistics
                 lock (_pcMsecPerUpdAvg)
                 {
                     _usMsecPerUpd.EndSample();
-                    _pcMsecPerUpdAvg.IncrementBy(_usMsecPerUpd.Current * 1000000 / Stopwatch.Frequency);//ts.Milliseconds);
+                    _pcMsecPerUpdAvg.IncrementBy(_usMsecPerUpd.Current * 1000000 / Stopwatch.Frequency);
                     _pcMsecPerUpdBase.Increment();
                 }
             }
@@ -822,7 +908,7 @@ namespace Alachisoft.NCache.Management.Statistics
             {
                 lock (_pcMsecPerDelAvg)
                 {
-                    _pcMsecPerDelAvg.IncrementBy(value * 1000000 / Stopwatch.Frequency); //ts.Milliseconds);
+                    _pcMsecPerDelAvg.IncrementBy(value * 1000000 / Stopwatch.Frequency);
                     _pcMsecPerDelBase.Increment();
                 }
             }
@@ -834,7 +920,7 @@ namespace Alachisoft.NCache.Management.Statistics
             {
                 lock (_pcMsecPerDelAvg)
                 {
-                    _pcMsecPerDelAvg.IncrementBy(value * 1000000 / Stopwatch.Frequency); //ts.Milliseconds);
+                    _pcMsecPerDelAvg.IncrementBy(value * 1000000 / Stopwatch.Frequency);
                     _pcMsecPerDelBase.IncrementBy(baseValue);
                 }
             }
@@ -850,7 +936,7 @@ namespace Alachisoft.NCache.Management.Statistics
                 lock (_pcMsecPerDelAvg)
                 {
                     _usMsecPerDel.EndSample();
-                    _pcMsecPerDelAvg.IncrementBy(_usMsecPerDel.Current * 1000000 / Stopwatch.Frequency); //ts.Milliseconds);
+                    _pcMsecPerDelAvg.IncrementBy(_usMsecPerDel.Current * 1000000 / Stopwatch.Frequency);
                     _pcMsecPerDelBase.Increment();
                 }
             }
@@ -992,13 +1078,72 @@ namespace Alachisoft.NCache.Management.Statistics
             }
         }
 
+        public CounterMetadataCollection Metadata { get { return GetMetadata(); } }
+
+        public IntervalCounterDataCollection Data()
+        {
+            Dictionary<short, double> counterData = new Dictionary<short, double>();
+            lock (_availableCounters)
+            {
+
+                try
+                {
+
+                    foreach (var data in _availableCounters)
+                    {
+                        if (data.Name == "Request Queue Size" || data.Name == "Average µs/Published Messages")
+                        {
+
+                        }
+
+                        if (_counterIDMap.GetCounerID(data.Name) != -10)
+                        {
+                            counterData.Add(_counterIDMap.GetCounerID(data.Name), data.Value);
+
+                            byte[] info = new UTF8Encoding(true).GetBytes(data.Name);
+                            // Add some information to the file.
+
+
+
+                        }
+
+                    }
+
+                    return new IntervalCounterDataCollection
+                    {
+                        Values = counterData,
+                        Timestamp = DateTime.UtcNow,
+                        PublisherType = Publisher.NCacheClient,
+                        InstanceName = ServiceConfiguration.BindToIP.ToString()
+                    };
+
+                }
+                catch (Exception ex)
+                {
+                    throw ex;
+                }
+            }
+        }
+        public Publisher PublisherType { get { return Publisher.NCacheClient; } }
+
+        public bool MergeCounters => false;
+
+        public MonitoringEntityType GetEntityType
+        {
+            get { return MonitoringEntityType.Stats; }
+        }
+
+        public bool IsPrimary { get { return true; } }
+
+        IntervalCounterDataCollection ICounterMonitorableEntity.Data { get { return Data(); } }
+
         public void StartPublishingCounters(string bindIp)
         {
             if (!_publish)
             {
                 if (string.IsNullOrEmpty(bindIp))
                     bindIp = ServiceConfiguration.BindToIP.ToString();
-                NCache.ServerName = bindIp; 
+                NCache.ServerName = bindIp;
                 if (String.IsNullOrEmpty(NCache.ServerName))
                     return;
                 NCache.Port = NCache.UseTcp ? CacheConfigManager.NCacheTcpPort : CacheConfigManager.HttpPort;
@@ -1009,7 +1154,14 @@ namespace Alachisoft.NCache.Management.Statistics
             _publishingThread.Name = "CountersPublishingThread";
             _publishingThread.Start();
         }
-
+        public void RegisterOnMetricsPublisher()
+        {
+            if (!AppUtil.IsNuGetOnlyInstallation)
+            {
+                PopulateCounters();
+                RegisterAsMonitorableEntity();
+            }
+        }
         internal void PublishCounters()
         {
             try
@@ -1058,6 +1210,42 @@ namespace Alachisoft.NCache.Management.Statistics
             catch (Exception)
             {
             }
+        }
+        void RegisterAsMonitorableEntity()
+        {
+            if (Category != null && Category.Publish)
+            {
+                if (_populationSuccessful)
+                    StatsPublisher.RegisterMonitorableEntity(this);
+            }
+        }
+        public CounterMetadataCollection GetMetadata()
+        {
+            CounterMetadataCollection counterMetadataCollection = null;
+#if NETCORE
+            if (RuntimeInformation.IsOSPlatform(OSPlatform.Linux))
+            {
+                counterMetadataCollection = StatsMetricsUtil.Metadata(ClientCounters.GetCustomCounterCreationData(), Publisher.NCacheClient, Category);
+            }
+            else
+            {
+                counterMetadataCollection = StatsMetricsUtil.Metadata(ClientCounters.GetCounterCreationData(), Publisher.NCacheClient, Category);
+            }
+#else
+            counterMetadataCollection = StatsMetricsUtil.Metadata(ClientCounters.GetCounterCreationData(),Publisher.NCacheClient,Category);
+# endif
+            GenerateIDMap(counterMetadataCollection);
+            counterMetadataCollection.Category = Publisher.NCacheClient;
+            counterMetadataCollection.InstanceName = ServiceConfiguration.BindToIP.ToString();
+            counterMetadataCollection.Version = Common.Monitoring.Version.GetVersion();
+            return counterMetadataCollection;
+        }
+
+        private void GenerateIDMap(CounterMetadataCollection counterMetadataCollection)
+        {
+            _counterIDMap = new CounterIDMap();
+            _counterIDMap.AssignAndAddCounters(counterMetadataCollection.Counters);
+
         }
 
         internal void PublishCountersToNCacheService()
@@ -1456,7 +1644,29 @@ namespace Alachisoft.NCache.Management.Statistics
             return value;
         }
 
+     
 
+        private void PopulateCounters()
+        {
+
+            if (Category != null && Category.Publish)
+            {
+                foreach (var counter in Category.Counters)
+                {
+                    PerformanceCounterBase performanceCounter;
+                    if (counter.Publish)
+                    {
+                        if (_ncacheClientCounters.TryGetValue(counter.Name, out performanceCounter))
+                        {
+                            if (!_availableCounters.Contains(performanceCounter))
+                            {
+                                _availableCounters.Add(performanceCounter);
+                            }
+                        }
+                    }
+                }
+            }
+        }
         public void StopPublishing()
         {
             try

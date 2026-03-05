@@ -19,7 +19,6 @@ namespace Alachisoft.NCache.Runtime.ErrorHandling
         public static string GetErrorMessage(int errorCode, params string[] parameters)
         {
             string errormessage = "exception";
-            //return errormessage;
             return ResolveError(errorCode, parameters);
         }
 

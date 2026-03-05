@@ -1,4 +1,4 @@
-﻿//  Copyright (c) 2021 Alachisoft
+﻿//  Copyright (c) 2026 Alachisoft
 //  
 //  Licensed under the Apache License, Version 2.0 (the "License");
 //  you may not use this file except in compliance with the License.
@@ -11,6 +11,7 @@
 //  WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
 //  See the License for the specific language governing permissions and
 //  limitations under the License
+using Alachisoft.NCache.Common.Monitoring;
 using System;
 using System.Collections.Generic;
 
@@ -57,7 +58,9 @@ namespace Alachisoft.NCache.Management.Statistics
             get;
             set;
         }
+        MetricsPublisher StatsPublisher { get; set; }
 
+        Category Category { get; set; }
         #region	/                 --- IDisposable ---           /
 
         /// <summary>
@@ -257,6 +260,10 @@ namespace Alachisoft.NCache.Management.Statistics
 
         void IncrementMessageDeliverPerSec(long value);
 
+
         void StartPublishingCounters(string bindIp);
+
+        void RegisterOnMetricsPublisher();
     }
 }
+

@@ -1,4 +1,4 @@
-//  Copyright (c) 2021 Alachisoft
+//  Copyright (c) 2026 Alachisoft
 //  
 //  Licensed under the Apache License, Version 2.0 (the "License");
 //  you may not use this file except in compliance with the License.
@@ -16,8 +16,11 @@ using System.Collections.Generic;
 using System.Text;
 using Alachisoft.NCache.Common.Configuration;
 using System.Collections;
+
 using Alachisoft.NCache.Runtime.Serialization;
+
 using System.Net;
+
 using Runtime = Alachisoft.NCache.Runtime;
 
 namespace Alachisoft.NCache.Config
@@ -57,7 +60,6 @@ namespace Alachisoft.NCache.Config
         {
             get 
             {
-
                 if (actualMappingList != null)
                     return actualMappingList.ToArray();
 
@@ -74,12 +76,6 @@ namespace Alachisoft.NCache.Config
                 }                
             }
         }
-
-      
-        //public override int GetHashCode()
-        //{
-        //    return _serverName.ToLower().GetHashCode();
-        //}
 
         #region ICloneable Members
 

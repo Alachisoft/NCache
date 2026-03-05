@@ -10,14 +10,14 @@
 // Generated from: ProductVersion.proto
 namespace Alachisoft.NCache.Common.Protobuf
 {
-  [global::System.Serializable, global::ProtoBuf.ProtoContract(Name=@"ProductVersion")]
-  public partial class ProductVersion : global::ProtoBuf.IExtensible
+  [global::System.Serializable, global::ProtoBuf.Extended.ProtoContract(Name=@"ProductVersion")]
+  public partial class ProductVersion : global::ProtoBuf.Extended.IExtensible
   {
     public ProductVersion() {}
     
 
     private string _ProductName = "";
-    [global::ProtoBuf.ProtoMember(1, IsRequired = false, Name=@"ProductName", DataFormat = global::ProtoBuf.DataFormat.Default)]
+    [global::ProtoBuf.Extended.ProtoMember(1, IsRequired = false, Name=@"ProductName", DataFormat = global::ProtoBuf.Extended.DataFormat.Default)]
     [global::System.ComponentModel.DefaultValue("")]
     public string ProductName
     {
@@ -26,7 +26,7 @@ namespace Alachisoft.NCache.Common.Protobuf
     }
 
     private byte[] _MajorVersion1 = null;
-    [global::ProtoBuf.ProtoMember(2, IsRequired = false, Name=@"MajorVersion1", DataFormat = global::ProtoBuf.DataFormat.Default)]
+    [global::ProtoBuf.Extended.ProtoMember(2, IsRequired = false, Name=@"MajorVersion1", DataFormat = global::ProtoBuf.Extended.DataFormat.Default)]
     [global::System.ComponentModel.DefaultValue(null)]
     public byte[] MajorVersion1
     {
@@ -35,7 +35,7 @@ namespace Alachisoft.NCache.Common.Protobuf
     }
 
     private byte[] _MinorVersion1 = null;
-    [global::ProtoBuf.ProtoMember(3, IsRequired = false, Name=@"MinorVersion1", DataFormat = global::ProtoBuf.DataFormat.Default)]
+    [global::ProtoBuf.Extended.ProtoMember(3, IsRequired = false, Name=@"MinorVersion1", DataFormat = global::ProtoBuf.Extended.DataFormat.Default)]
     [global::System.ComponentModel.DefaultValue(null)]
     public byte[] MinorVersion1
     {
@@ -44,7 +44,7 @@ namespace Alachisoft.NCache.Common.Protobuf
     }
 
     private byte[] _MajorVersion2 = null;
-    [global::ProtoBuf.ProtoMember(4, IsRequired = false, Name=@"MajorVersion2", DataFormat = global::ProtoBuf.DataFormat.Default)]
+    [global::ProtoBuf.Extended.ProtoMember(4, IsRequired = false, Name=@"MajorVersion2", DataFormat = global::ProtoBuf.Extended.DataFormat.Default)]
     [global::System.ComponentModel.DefaultValue(null)]
     public byte[] MajorVersion2
     {
@@ -53,7 +53,7 @@ namespace Alachisoft.NCache.Common.Protobuf
     }
 
     private byte[] _MinorVersion2 = null;
-    [global::ProtoBuf.ProtoMember(5, IsRequired = false, Name=@"MinorVersion2", DataFormat = global::ProtoBuf.DataFormat.Default)]
+    [global::ProtoBuf.Extended.ProtoMember(5, IsRequired = false, Name=@"MinorVersion2", DataFormat = global::ProtoBuf.Extended.DataFormat.Default)]
     [global::System.ComponentModel.DefaultValue(null)]
     public byte[] MinorVersion2
     {
@@ -62,7 +62,7 @@ namespace Alachisoft.NCache.Common.Protobuf
     }
 
     private int _EditionID = default(int);
-    [global::ProtoBuf.ProtoMember(6, IsRequired = false, Name=@"EditionID", DataFormat = global::ProtoBuf.DataFormat.TwosComplement)]
+    [global::ProtoBuf.Extended.ProtoMember(6, IsRequired = false, Name=@"EditionID", DataFormat = global::ProtoBuf.Extended.DataFormat.TwosComplement)]
     [global::System.ComponentModel.DefaultValue(default(int))]
     public int EditionID
     {
@@ -71,16 +71,16 @@ namespace Alachisoft.NCache.Common.Protobuf
     }
 
     private byte[] _AddiotionalData = null;
-    [global::ProtoBuf.ProtoMember(7, IsRequired = false, Name=@"AddiotionalData", DataFormat = global::ProtoBuf.DataFormat.Default)]
+    [global::ProtoBuf.Extended.ProtoMember(7, IsRequired = false, Name=@"AddiotionalData", DataFormat = global::ProtoBuf.Extended.DataFormat.Default)]
     [global::System.ComponentModel.DefaultValue(null)]
     public byte[] AddiotionalData
     {
       get { return _AddiotionalData; }
       set { _AddiotionalData = value; }
     }
-    private global::ProtoBuf.IExtension extensionObject;
-    global::ProtoBuf.IExtension global::ProtoBuf.IExtensible.GetExtensionObject(bool createIfMissing)
-      { return global::ProtoBuf.Extensible.GetExtensionObject(ref extensionObject, createIfMissing); }
+    private global::ProtoBuf.Extended.IExtension extensionObject;
+   global::ProtoBuf.Extended.IExtension global::ProtoBuf.Extended.IExtensible.GetExtensionObject(bool createIfMissing)
+      { return global::ProtoBuf.Extended.Extensible.GetExtensionObject(ref extensionObject, createIfMissing); }
   }
   
 }

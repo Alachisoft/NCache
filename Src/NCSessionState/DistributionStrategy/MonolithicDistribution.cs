@@ -1,4 +1,4 @@
-//  Copyright (c) 2021 Alachisoft
+//  Copyright (c) 2026 Alachisoft
 //  
 //  Licensed under the Apache License, Version 2.0 (the "License");
 //  you may not use this file except in compliance with the License.
@@ -18,11 +18,16 @@ using System.Collections;
 using System.Web;
 using System.Web.SessionState;
 using System.Runtime.Serialization.Formatters.Binary;
+
 using Alachisoft.NCache.Caching.AutoExpiration;
 using Alachisoft.NCache.Serialization.Formatters;
+
+
 using Alachisoft.NCache.Runtime;
 using Alachisoft.NCache.Runtime.Exceptions;
 using Alachisoft.NCache.Web.SessionStateManagement;
+
+
 using Alachisoft.NCache.Common.Util;
 using Alachisoft.NCache.Common.Logger;
 using Alachisoft.NCache.Client;
@@ -40,12 +45,9 @@ namespace Alachisoft.NCache.Web.SessionState.DistributionStrategy
 
         internal MonolithicDistribution()
         {
-
-            //_sessionItem = new CacheItem(_table);
-            //_sessionItem.Priority = CacheItemPriority.NotRemovable;
         }
 
-        #region	/                 --- IDistributionStrategy Members ---           /
+        #region	/            --- IDistributionStrategy Members ---            /
 
 /// <summary>
 /// Fills the system ASP.NET session from NCache.
@@ -104,7 +106,7 @@ namespace Alachisoft.NCache.Web.SessionState.DistributionStrategy
                 if (session.IsReadOnly && cache.Contains(sessionId, key.ToString()) && !isAbandoned)
                     return;
 
-                if (/*session.Count == 0 ||*/ isAbandoned)//[Ata]: Session is not removed from store if it is cleared
+                if (isAbandoned)// Session is not removed from store if it is cleared
                 {
                     cache.Remove(sessionId, key.ToString(), false);
                     if (module.DetailedLogsEnabled) NSessionStateModule.NCacheLog.Debug(sessionId + " :session removed from cache");
@@ -113,7 +115,7 @@ namespace Alachisoft.NCache.Web.SessionState.DistributionStrategy
 
                 //use-case: A session my get emptied while doing different updates... although whien added first time is is not empty
                 //So we must update that session rather doing no operation thinking it is empty session and need not to be added.
-                if (session.Count == 0 && _isNewSession) //We need not to keep any new empty session in the cache. [Asif Imam] April 09, 08
+                if (session.Count == 0 && _isNewSession) //We need not to keep any new empty session in the cache. 
                     return;
 
                 IDictionary ht = new Hashtable();

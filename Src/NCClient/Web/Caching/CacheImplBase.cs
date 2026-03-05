@@ -1,4 +1,4 @@
-//  Copyright (c) 2021 Alachisoft
+//  Copyright (c) 2026 Alachisoft
 //  
 //  Licensed under the Apache License, Version 2.0 (the "License");
 //  you may not use this file except in compliance with the License.
@@ -29,12 +29,17 @@ using Alachisoft.NCache.Common.DataSource;
 using Alachisoft.NCache.Client.Caching;
 using Alachisoft.NCache.Caching.Events;
 using Alachisoft.NCache.Common.Pooling;
-
+using Alachisoft.NCache.Common.Monitoring;
+using Alachisoft.NCache.Common.Logger;
+using Alachisoft.NCache.Licensing;
+using Alachisoft.NCache.Common.Licensing;
+using System.Net;
+using System.Runtime.InteropServices;
 
 namespace Alachisoft.NCache.Client
 {
 
-    internal class CacheImplBase
+    internal class CacheImplBase : IPublisherContextMetaPublisher
     {
         private ClientInfo _clientInfo;
         private string _clientID;
@@ -47,16 +52,13 @@ namespace Alachisoft.NCache.Client
             _clientInfo.ProcessID = AppUtil.CurrentProcess.Id;
             _clientInfo.ClientID = System.Guid.NewGuid().ToString();
             _clientInfo.MachineName = Environment.MachineName;
-
-            //Client version has following format :
-            //[2 digits for major version][1 digit for service paack][1 digit for private patch]
-            //e.g. 4122 means 4.1 major , 2 for service pack 2 and last 4 for private patch 4
-            _clientInfo.ClientVersion = 5000; //changed for 5.0
-
+            _clientInfo.ClientVersion = Common.Monitoring.Version.GetFormattedVersion(true);
             _clientID = ClientInfo.GetLegacyClientID(_clientInfo);
         }
 
-        internal ClientInfo LocalClientInfo { get { return _clientInfo; } }
+        internal virtual ClientInfo LocalClientInfo { get { return _clientInfo; } }
+
+
 
         protected internal virtual bool SerializationEnabled { get { return true; } }
 
@@ -66,7 +68,7 @@ namespace Alachisoft.NCache.Client
         {
             get { return null; }
         }
-        
+
         /// <summary>
         /// Occurs in response to a <see cref="Cache.RaiseCustomEvent"/> method call.
         /// </summary>
@@ -85,15 +87,15 @@ namespace Alachisoft.NCache.Client
         public string ClientID { get { return _clientID; } }
 
         public virtual string Name { get { return null; } }
-        
+
         internal virtual PoolManager PoolManager { get; }
 
         public virtual void Dispose(bool disposing) { }
-    
+
         public virtual void RegisterGeneralNotification(EventTypeInternal eventType, EventDataFilter datafilter, short sequenceNumber) { }
         public virtual void UnRegisterGeneralNotification(EventTypeInternal unregister, short sequenceNumber) { }
-
-
+        protected internal virtual string CacheConfigId { get { return null; } }
+        protected internal virtual string MonitoringSessionId { get { return null; } }
         public virtual void RegisterAddEvent() { }
         public virtual void RegisterRemoveEvent() { }
         public virtual void RegisterUpdateEvent() { }
@@ -108,7 +110,7 @@ namespace Alachisoft.NCache.Client
         public virtual void UnregisterNodeLeftEvent() { }
         public virtual void UnregisterHashmapChangedEvent() { }
 
-       
+
         public virtual void RegisterCacheStoppedEvent() { }
         public virtual void UnregisterCacheStoppedEvent() { }
         public virtual void RegisterClearEvent() { }
@@ -116,14 +118,14 @@ namespace Alachisoft.NCache.Client
 
         internal virtual void MakeTargetCacheActivePassive(bool makeActive) { }
 
-      
+
         public virtual void Add(string key, object value, DateTime absoluteExpiration,
             TimeSpan slidingExpiration, CacheItemPriority priority, short onRemoveCallback, short onUpdateCallback, short onDsItemAddedCallback, bool isResyncExpiredItems,
             Hashtable queryInfo, BitSet flagMap, string providerName, string resyncProviderName, EventDataFilter updateCallbackFilter,
             EventDataFilter removeCallabackFilter, long size, bool encryptionEnabled, string clientId, string typeName)
         {
         }
-        
+
         public virtual IDictionary<string, Exception> Add(string[] keys, CacheItem[] items,
             short onDataSourceItemsAdded, string providerName, long[] sizes, bool encryptionEnabled,
             string clientId, short updateCallbackId, short removeCallbackId,
@@ -147,7 +149,7 @@ namespace Alachisoft.NCache.Client
         {
 
         }
-        
+
         public virtual bool Contains(string key)
         {
             return false;
@@ -182,7 +184,7 @@ namespace Alachisoft.NCache.Client
         }
 
 
-        public virtual void Insert(string key, object value,  DateTime absoluteExpiration,
+        public virtual void Insert(string key, object value, DateTime absoluteExpiration,
             TimeSpan slidingExpiration, CacheItemPriority priority, short onRemoveCallback, short onUpdateCallback, short onDsItemUpdatedCallback, bool isResyncExpiredItems,
              Hashtable queryInfo, BitSet flagMap, object lockId, LockAccessType accessType, string providerName,
             string resyncProviderName, EventDataFilter updateCallbackFilter, EventDataFilter removeCallabackFilter, long size, bool encryptionEnabled, string clientId, string typeName, CallbackType callbackType = CallbackType.PushBasedNotification)
@@ -223,12 +225,12 @@ namespace Alachisoft.NCache.Client
         //Delete that can be use to Delete nay item in cache by providing only key
         public virtual void Delete(string key)
         {
-          
-            LockHandle lockHandle=null;
-           
-            LockAccessType accessType= LockAccessType.IGNORE_LOCK;
-            object lockId = (lockHandle == null) ? null : lockHandle.LockId; 
-            BitSet flagMap = new BitSet();            
+
+            LockHandle lockHandle = null;
+
+            LockAccessType accessType = LockAccessType.IGNORE_LOCK;
+            object lockId = (lockHandle == null) ? null : lockHandle.LockId;
+            BitSet flagMap = new BitSet();
             short dsItemRemovedCallbackId = -1;
 
             this.Delete(key, flagMap, dsItemRemovedCallbackId, lockId, accessType);
@@ -240,10 +242,10 @@ namespace Alachisoft.NCache.Client
 
         }
 
-       
-       
 
-        public virtual object SafeSerialize(object serializableObject, string serializationContext, ref BitSet flag, CacheImplBase cacheImpl, ref long size, UserObjectType userObjectType,bool isCustomAttributeBaseSerialzed=false)
+
+
+        public virtual object SafeSerialize(object serializableObject, string serializationContext, ref BitSet flag, CacheImplBase cacheImpl, ref long size, UserObjectType userObjectType, bool isCustomAttributeBaseSerialzed = false)
         {
             return null;
         }
@@ -329,12 +331,12 @@ namespace Alachisoft.NCache.Client
 
         public virtual void RegisterPollingNotification(short pollingCallbackId) { }
 
-        
+
         public virtual bool SetAttributes(string key, CacheItemAttributes attribute)
         {
             return false;
         }
-      
+
         public virtual void Dispose(string serverAddress)
         { }
 
@@ -352,7 +354,13 @@ namespace Alachisoft.NCache.Client
             return null;
         }
 
-     
+        public virtual byte[] GetModuleState(string moduleName, string version)
+        {
+            return null;
+        }
+
+        public virtual void SetModuleState(string moduleName, string version, byte[] module) { }
+
         #region	/                 --- Touch ---           /
         internal virtual void Touch(List<string> key) { }
         #endregion
@@ -375,7 +383,7 @@ namespace Alachisoft.NCache.Client
             return false;
         }
 
-        internal virtual bool UnSubscribe(string topicName, string recepientId, SubscriptionPolicyType subscriptionPolicy, SubscriptionType pubSubType,bool dispose=false)
+        internal virtual bool UnSubscribe(string topicName, string recepientId, SubscriptionPolicyType subscriptionPolicy, SubscriptionType pubSubType, bool dispose = false)
         {
             return false;
         }
@@ -401,11 +409,40 @@ namespace Alachisoft.NCache.Client
         }
         #endregion
 
-    
 
+        public void PublishMetadata(IMetricsTransporter transporter)
+        {
 
-      
+        }
 
+        // set client info 
+        internal virtual void SetClientInfo()
+        {
+            try
+            {
+               
+                _clientInfo.Memory = (int)MachineInfo.Memory;
+                _clientInfo.OperationSystem = GetOSPlatform().ToString();
+                _clientInfo.Status = ConnectivityStatus.Connected;
+#if NETCORE
+
+                _clientInfo.IsDotNetCore = true;
+#endif
+            }
+            catch
+            {
+            }
+
+        }
+        private OSInfo GetOSPlatform()
+        {
+            OSInfo currentOS = OSInfo.Windows;
+#if NETCORE
+            if (RuntimeInformation.IsOSPlatform(OSPlatform.Linux))
+                currentOS = OSInfo.Linux;
+#endif
+            return currentOS;
+        }
     }
 }
 

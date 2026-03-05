@@ -1,17 +1,4 @@
-﻿//  Copyright (c) 2021 Alachisoft
-//  
-//  Licensed under the Apache License, Version 2.0 (the "License");
-//  you may not use this file except in compliance with the License.
-//  You may obtain a copy of the License at
-//  
-//     http://www.apache.org/licenses/LICENSE-2.0
-//  
-//  Unless required by applicable law or agreed to in writing, software
-//  distributed under the License is distributed on an "AS IS" BASIS,
-//  WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
-//  See the License for the specific language governing permissions and
-//  limitations under the License
-using Alachisoft.NCache.Automation.ToolsOutput;
+﻿using Alachisoft.NCache.Automation.ToolsOutput;
 using Alachisoft.NCache.Automation.ToolsParametersBase;
 using Alachisoft.NCache.Automation.Util;
 using Alachisoft.NCache.Tools.Common;
@@ -93,8 +80,6 @@ namespace Alachisoft.NCache.Automation.ToolsBase
                                
                 if (!ValidateParameters()) return;
 
-                OutputProvider.WriteLine("cacheId = {0}, total-loop-count = {1}, test-case-iterations = {2}, testCaseIterationDelay = {3}, gets-per-iteration = {4}, updates-per-iteration = {5}, data-size = {6}, expiration = {7}, thread-count = {8}, reporting-interval = {9}.", CacheName, ItemsCount, TestCaseIterations, TestCaseIterationDelay, GetsPerIteration, UpdatesPerIteration,DataSize,SlidingExpiration, ThreadCount,ReportingInterval);
-                OutputProvider.WriteLine("-------------------------------------------------------------------\n");
                 Process.GetCurrentProcess().PriorityClass = ProcessPriorityClass.Normal;
                 
             }
@@ -159,7 +144,7 @@ namespace Alachisoft.NCache.Automation.ToolsBase
             }
         }
 
-        protected  void StartStress()
+        protected  void StartStress ()
         {
             try
             {

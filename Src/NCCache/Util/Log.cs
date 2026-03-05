@@ -1,4 +1,4 @@
-//  Copyright (c) 2021 Alachisoft
+//  Copyright (c) 2026 Alachisoft
 //  
 //  Licensed under the Apache License, Version 2.0 (the "License");
 //  you may not use this file except in compliance with the License.
@@ -28,7 +28,7 @@ namespace Alachisoft.NCache.Caching.Util
     /// </summary>
 
 
-    internal class Log 
+    internal class Log
     {
         /// <summary>Configuration file folder name</summary>
 
@@ -64,9 +64,6 @@ namespace Alachisoft.NCache.Caching.Util
             {
                 path = s_configDir;
             }
-            //string filename = context.CacheRoot.Name.ToLower() + "." + 
-            //    Environment.MachineName.ToLower() + "." + 
-            //    DateTime.Now.ToString("dd-MM-yy HH-mm-ss") + @".log.txt";
             try
             {
                 if (!System.IO.Directory.Exists(path))
@@ -125,7 +122,6 @@ namespace Alachisoft.NCache.Caching.Util
             {
 
                 AppUtil.LogEvent("NCache", "Failed to open log. " + e, System.Diagnostics.EventLogEntryType.Error, EventCategories.Error, EventID.GeneralError);
-
             }
 
             if (properties.Contains("usehptime"))
@@ -149,6 +145,5 @@ namespace Alachisoft.NCache.Caching.Util
 
             return nTrace;
         }
-
     }
 }

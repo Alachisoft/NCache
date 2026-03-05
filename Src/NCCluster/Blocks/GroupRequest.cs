@@ -1,4 +1,4 @@
-// $Id: GroupRequest.java,v 1.8 2004/09/05 04:54:22 ovidiuf Exp $
+
 using System;
 using System.Collections;
 using Alachisoft.NGroups;
@@ -802,7 +802,6 @@ namespace Alachisoft.NGroups.Blocks
                         catch (System.Exception e)
                         {
                             NCacheLog.Error("GroupRequest.doExecute():3", "exception=" + e);
-                            //e.printStacknTrace();
                         }
                     }
                 }
@@ -959,7 +958,6 @@ namespace Alachisoft.NGroups.Blocks
 
                            if ((!reacquired || _seqReset) && ServiceConfiguration.AllowRequestEnquiry)
                            {
-                               //_seqReset = false;
                               
                                if (Responses)
                                {

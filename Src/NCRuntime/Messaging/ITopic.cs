@@ -1,4 +1,4 @@
-﻿//  Copyright (c) 2021 Alachisoft
+﻿//  Copyright (c) 2026 Alachisoft
 //  
 //  Licensed under the Apache License, Version 2.0 (the "License");
 //  you may not use this file except in compliance with the License.
@@ -53,36 +53,6 @@ namespace Alachisoft.NCache.Runtime.Caching
         /// <param name="messageReceivedCallback"> Message is delivered through this callback </param> 
         /// <returns>Returns the created topic subscription</returns>
         /// <example>The following example demonstrates how to create a subscription on topic. 
-        /// 
-        /// First initialize cache.
-        /// <code>
-        /// Cache cache = NCache.InitializeCache("myCache");
-        /// </code>
-        /// 
-        /// Then get messaging service from cache.
-        /// <code>
-        /// IMessagingService messagingService=cache.MessagingService;
-        /// </code>
-        /// 
-        /// Then get topic from messagingService
-        /// 
-        /// <code>
-        /// ITopic topic=messagingService.GetTopic("mytopic");  
-        /// if(topic==null)  //If topic not exists create it.
-        /// {
-        ///   topic=messagingService.CreateTopic("mytopic");
-        /// }
-        /// </code>     
-        /// 
-        /// Then create subscription
-        /// <code>
-        /// void MessageReceivedCallback(object sender, MessageEventArgs args)
-        /// {
-        ///   
-        /// }
-        /// 
-        /// topic.CreateSubscription(MessageReceivedCallback);
-        /// </code>
         /// </example>
         ITopicSubscription CreateSubscription(MessageReceivedCallback messageReceivedCallback);
 

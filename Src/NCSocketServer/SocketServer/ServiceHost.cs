@@ -1,4 +1,4 @@
-﻿//  Copyright (c) 2021 Alachisoft
+﻿//  Copyright (c) 2026 Alachisoft
 //  
 //  Licensed under the Apache License, Version 2.0 (the "License");
 //  you may not use this file except in compliance with the License.
@@ -13,14 +13,27 @@
 //  limitations under the License
 using System;
 using System.Net;
+using System.Timers;
 using System.Threading;
 using System.Diagnostics;
+
 using Alachisoft.NCache.Common;
 using Alachisoft.NCache.Management;
+using Alachisoft.NCache.Config.Dom;
 using Alachisoft.NCache.Common.Util;
+using System.Runtime.InteropServices;
+using Alachisoft.NCache.Licensing;
+using static Alachisoft.NCache.Management.CacheServer;
+using System.Text;
+using System.Collections.Generic;
+using System.Linq;
+using Alachisoft.NCache.Common.Monitoring;
+using Alachisoft.NCache.Common.Logger;
+using Alachisoft.NCache.Licensing.RegistryUtil;
+using System.Globalization;
 #if NETCORE
-using Alachisoft.NCache.Licensing.NetCore.LinuxUtil;
-//using Alachisoft.NCache.Licensing.NetCore.RegistryUtil;
+using Alachisoft.NCache.Licensing.LinuxUtil;
+using Alachisoft.NCache.Licensing.RegistryUtil;
 #endif
 namespace Alachisoft.NCache.SocketServer
 {
@@ -35,14 +48,36 @@ namespace Alachisoft.NCache.SocketServer
         private int _autoStartDelay = 0;
         private int _cacheStartDelay = 0;
         static string _cacheserver = "NCache";
+        private object _cloudHeartbeatLock = new object();
         private ServerHost _nchost = new ServerHost();
         private SocketServer _socketServer;
         private System.Timers.Timer _evalWarningTask;
         private System.Timers.Timer _cacheServerEvalTask;
         private System.Timers.Timer _reactWarningTask;
         private System.Threading.Timer _expiryWarningTask;
+        private System.Threading.Timer _cloudHeartbeatTimer;
+        private System.Timers.Timer _notifyPostInfoTask;
+        private System.Timers.Timer _ncacheConnectedClientsPersistor;
         private SocketServer _managementSocketServer;
-    
+        private int _numberOfRetryUsageinfo = 10;
+        private double _connectedClientsPersistorInterval = TimeSpan.FromMinutes(ServiceConfiguration.ConnectedClientsPersistorInterval).TotalMilliseconds;
+        private NCacheLogger _serviceLogger;
+
+        private bool IsEnableUsageInfoLogs
+        {
+            get
+            {
+                return ServiceConfiguration.EnableUsageInfoLogs;
+            }
+        }
+
+        private bool IsSnmpMonitoringEnabled
+        {
+            get
+            {
+                return ServiceConfiguration.EnableSnmpMonitoring;
+            }
+        }
 
         public ServiceHost()
         {
@@ -55,11 +90,9 @@ namespace Alachisoft.NCache.SocketServer
         /// </summary>
         public void InitializeComponent()
         {
-            
+
             try
             {
-
-
                 if (ServiceConfiguration.AutoStartDelay != 0)
                     _autoStartDelay = ServiceConfiguration.AutoStartDelay;
 
@@ -75,10 +108,8 @@ namespace Alachisoft.NCache.SocketServer
             }
         }
 
-       
+     
 
-       
-      
         /// <summary>
         /// Set things in motion so your service can do its work.
         /// </summary>
@@ -90,6 +121,20 @@ namespace Alachisoft.NCache.SocketServer
                 int sendBuffer = SocketServer.DEFAULT_SOCK_BUFFER_SIZE;
                 int receiveBuffer = SocketServer.DEFAULT_SOCK_BUFFER_SIZE;
                 int managementServerPort = SocketServer.DEFAULT_MANAGEMENT_PORT;
+
+                // Initialize service logger
+                try
+                {
+                    if (_serviceLogger == null)
+                    {
+                        _serviceLogger = new NCacheLogger();
+                        _serviceLogger.Initialize(LoggerNames.ServiceLogs);
+
+                        // After initialization, set the ServiceLogger instance in NCacheServiceLogger
+                        NCacheServiceLogger.Logger = _serviceLogger;
+                    }
+                }
+                catch (Exception) { }
 
                 AppDomain.CurrentDomain.AssemblyResolve += new ResolveEventHandler(Common.Util.AssemblyResolveEventHandler.DeployAssemblyHandler);
                 try
@@ -116,8 +161,10 @@ namespace Alachisoft.NCache.SocketServer
 
                 _managementSocketServer = new SocketServer(managementServerPort, sendBuffer, receiveBuffer);
 
-                _managementSocketServer.Start(clusterIp, Common.Logger.LoggerNames.CacheManagementSocketServer, "NManagement Service", CommandManagerType.NCacheManagement, ConnectionManagerType.Management);
+                _managementSocketServer.Start(clusterIp, Common.Logger.LoggerNames.SocketServerLogs, "NManagement Service", CommandManagerType.NCacheManagement, ConnectionManagerType.Management);
                 _socketServer.Start(clientServerIp, Common.Logger.LoggerNames.SocketServerLogs, "NCache Service", CommandManagerType.NCacheService, ConnectionManagerType.ServiceClient);
+
+               
 
                 CacheServer.SocketServerPort = managementServerPort;
                 _nchost.CacheServer.SynchronizeClientConfig();
@@ -125,20 +172,67 @@ namespace Alachisoft.NCache.SocketServer
                 _nchost.CacheServer.Renderer = _socketServer;
                 _nchost.CacheServer.Renderer.ManagementIPAddress = clusterIp.ToString();
                 _nchost.CacheServer.Renderer.ManagementPort = managementServerPort;
-                _nchost.CacheServer.FeatureDataManager.StartGatheringData();
-                _nchost.CacheServer.FeatureDataManager.StartPostingData();
                 CacheProvider.Provider = _nchost.CacheServer;
-                
-                
+
+
+                // Load configuration is separate thread to boost performance
                 AssignMananagementPorts();
-                
+
+                NCacheServiceLogger.LogInfo("NCache service has been started successfully.");
+
               
+
+                ThreadPool.QueueUserWorkItem(new WaitCallback(GetRunningCaches));
+
+                if (ServiceConfiguration.EnableAutoStartWebManagement)
+                {
+                    ThreadPool.QueueUserWorkItem(new WaitCallback(StartWebManager));
+                }
+
+                AppUtil.LogEvent(_cacheserver, _cacheserver + " service has started successfully", EventLogEntryType.Information, EventCategories.Information, EventID.ServiceStart);
+                if (IsSnmpMonitoringEnabled)
+                {
+                }
             }
             catch (Exception ex)
             {
                 AppUtil.LogEvent(_cacheserver, ex.ToString(), EventLogEntryType.Error, EventCategories.Error, EventID.GeneralError);
-                throw;
+                throw ex;
 
+            }
+        }
+
+        private void GetRunningCaches(object state)
+        {
+            try
+            {
+                if (_autoStartDelay > 0)
+                    Thread.Sleep(_autoStartDelay * 1000);
+                CacheServerConfig[] configCaches = CacheConfigManager.GetConfiguredCaches();
+
+                if (configCaches != null && configCaches.Length > 0)
+                {
+                    foreach (CacheServerConfig cacheServerConfig in configCaches)
+                    {
+                        if (cacheServerConfig.AutoStartCacheOnServiceStartup && !cacheServerConfig.IsRunning && cacheServerConfig.InProc == false)
+                        {
+                            try
+                            {
+                                _nchost.CacheServer.StartCache(cacheServerConfig.Name.Trim());
+
+                                if (_cacheStartDelay > 0)
+                                    Thread.Sleep(_cacheStartDelay * 1000);
+                            }
+                            catch (Exception ex)
+                            {
+
+                            }// all exceptions are logged in event logs. and are ignored here.                           
+                        }
+                    }
+                }
+            }
+            catch (Exception ex)
+            {
             }
         }
 
@@ -172,9 +266,16 @@ namespace Alachisoft.NCache.SocketServer
                 {
 
                 }
+
+                NCacheServiceLogger.LogInfo("NCache service has been stopped successfully.");
+
+                try
+                {
+                    NCacheServiceLogger.Dispose();
+                }
+                catch (Exception) { }
             }
         }
-
         private void StopHosting()
         {
             try
@@ -189,8 +290,6 @@ namespace Alachisoft.NCache.SocketServer
                 {
                     _nchost.StopHosting();
                     _nchost.Dispose();
-                    _nchost.CacheServer.FeatureDataManager.StoptGatheringData();
-                    _nchost.CacheServer.FeatureDataManager.StopPostingData();
                 }
 
                 if (_socketServer != null)
@@ -213,7 +312,7 @@ namespace Alachisoft.NCache.SocketServer
                 {
                     _cacheServerEvalTask.Close();
                 }
-             
+                AppUtil.LogEvent(_cacheserver, _cacheserver + " service has stopped successfully.", EventLogEntryType.Information, EventCategories.Information, EventID.ServiceStop);
             }
             catch (ThreadAbortException te)
             {
@@ -249,16 +348,16 @@ namespace Alachisoft.NCache.SocketServer
                 switch (status)
                 {
                     case ExecutionStatus.Started:
-                        AppUtil.LogEvent("NCacheWebManager has been started successfully at: http://" + ServiceConfiguration.BindToIP + ":8251", EventLogEntryType.Information);
+                        AppUtil.LogEvent("NCache Management Center has been started successfully at: http://" + ServiceConfiguration.BindToIP + ":8251", EventLogEntryType.Information);
                         break;
                     case ExecutionStatus.Error:
-                        AppUtil.LogEvent("An error occurred while auto starting NCacheWebManager.", EventLogEntryType.Error);
+                        AppUtil.LogEvent("An error occurred while auto starting NCache Management Center.", EventLogEntryType.Error);
                         break;
                 }
             }
             catch (Exception ex)
             {
-                AppUtil.LogEvent(_cacheserver, "An error occurred while auto starting NCacheWebManager.\n" + ex.ToString(), EventLogEntryType.Error, EventCategories.Error, EventID.ServiceStart);
+                AppUtil.LogEvent(_cacheserver, "An error occurred while auto starting NCache Management Center.\n" + ex.ToString(), EventLogEntryType.Error, EventCategories.Error, EventID.ServiceStart);
             }
         }
 
@@ -276,6 +375,13 @@ namespace Alachisoft.NCache.SocketServer
 
             }
         }
+
+       
+
+      
+
+
+
     }
 }
 

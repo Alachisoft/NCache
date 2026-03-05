@@ -11,7 +11,6 @@ namespace System.Web.SessionState
     //
     // Summary:
     //     A collection of objects stored in session state. This class cannot be inherited.
-    //[DefaultMember("Item")]
     public sealed class SessionStateItemCollection : NameObjectCollectionBase, ISessionStateItemCollection, ICollection, IEnumerable
     {
         //
@@ -19,7 +18,6 @@ namespace System.Web.SessionState
         //     Creates a new, empty System.Web.SessionState.SessionStateItemCollection object.
         public SessionStateItemCollection()
         {
-            //TODO: ALACHISOFT
         }
 
         //
@@ -148,7 +146,6 @@ namespace System.Web.SessionState
         //     or encoded string.
         public void Serialize(BinaryWriter writer)
         {
-            //TODO: ALACHISOFT
             throw new NotImplementedException();
         }
     }

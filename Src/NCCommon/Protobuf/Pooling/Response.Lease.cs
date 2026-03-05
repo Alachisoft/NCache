@@ -1,4 +1,4 @@
-﻿//  Copyright (c) 2021 Alachisoft
+﻿//  Copyright (c) 2026 Alachisoft
 //  
 //  Licensed under the Apache License, Version 2.0 (the "License");
 //  you may not use this file except in compliance with the License.
@@ -87,6 +87,10 @@ namespace Alachisoft.NCache.Common.Protobuf
 
                 case Type.GET_OPTIMAL_SERVER:
                     getOptimalServer = null;
+                    break;
+
+                case Type.GET_SERVER_IDENTITY:
+                    getServerIdentityResponse = null;
                     break;
 
                 case Type.GET_TYPEINFO_MAP:
@@ -188,7 +192,6 @@ namespace Alachisoft.NCache.Common.Protobuf
                 case Type.HASHMAP_CHANGED_EVENT:
                     hashmapChanged = null;
                     break;
-
                 case Type.ITEM_ADDED_EVENT:
                     itemAdded = null;
                     break;
@@ -399,7 +402,7 @@ namespace Alachisoft.NCache.Common.Protobuf
             commandID = default(int);
             requestId = default(long);
             intendedRecipient = string.Empty;
-            extensionObject = default(ProtoBuf.IExtension);
+            extensionObject = default(ProtoBuf.Extended.IExtension);
         }
 
         public override sealed void ReturnLeasableToPool()
@@ -454,6 +457,9 @@ namespace Alachisoft.NCache.Common.Protobuf
                     break;
 
                 case Type.GET_OPTIMAL_SERVER:
+                    break;
+
+                case Type.GET_SERVER_IDENTITY:
                     break;
 
                 case Type.GET_TYPEINFO_MAP:

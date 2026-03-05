@@ -1,4 +1,4 @@
-//  Copyright (c) 2021 Alachisoft
+//  Copyright (c) 2026 Alachisoft
 //  
 //  Licensed under the Apache License, Version 2.0 (the "License");
 //  you may not use this file except in compliance with the License.
@@ -128,7 +128,7 @@ namespace Alachisoft.NCache.Client
 
         protected override void SerializeCommandInternal(Stream stream)
         {
-            ProtoBuf.Serializer.Serialize(stream, _insertCommand);
+            ProtoBuf.Extended.Serializer.Serialize(stream, _insertCommand);
         }
 
         protected override short GetCommandHandle()
@@ -144,12 +144,10 @@ namespace Alachisoft.NCache.Client
                     throw new ArgumentException("You cannot set both sliding and absolute expirations on the same cache item");
             }
 
-
             _insertCommand.commandID = this._commandID;
             _insertCommand.requestId = base.RequestId;
             _insertCommand.version = "4200";
             _insertCommand.MethodOverload = _methodOverload;
-
 
         }		
 	}

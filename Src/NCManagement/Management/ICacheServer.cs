@@ -1,4 +1,4 @@
-﻿//  Copyright (c) 2021 Alachisoft
+﻿//  Copyright (c) 2026 Alachisoft
 //  
 //  Licensed under the Apache License, Version 2.0 (the "License");
 //  you may not use this file except in compliance with the License.
@@ -19,6 +19,7 @@ using Alachisoft.NCache.Caching;
 using Alachisoft.NCache.Config.Dom;
 using Alachisoft.NCache.Common.Enum;
 using Alachisoft.NCache.Common.Monitoring;
+using Alachisoft.NCache.Licensing;
 using Alachisoft.NCache.Management.Management;
 using Alachisoft.NCache.Caching.Util;
 using Alachisoft.NCache.Common.Util;
@@ -29,10 +30,12 @@ using Alachisoft.NCache.Common.Communication;
 using Alachisoft.NCache.Common.Pooling.Stats;
 using System.Diagnostics;
 using Alachisoft.NCache.Common.FeatureUsageData.Dom;
+using Alachisoft.NCache.Common.DataStructures;
+using Alachisoft.NCache.Cache.Caching.Statistics;
 
 namespace Alachisoft.NCache.Management
 {
-    public interface ICacheServer : IDisposable, IWebStatistics
+    public interface ICacheServer : IDisposable, IMetricsMonitor, IWebStatistics, IPingable
     {
         string GetClusterIP();
 
@@ -78,7 +81,7 @@ namespace Alachisoft.NCache.Management
         /// Get a list of running caches (local + clustered)
         /// </summary>
         /// <returns>list of running caches</returns>        
-        ArrayList GetRunningCaches();
+        ArrayList GetRunningCaches(string userId, string password);
 
         IDictionary GetCacheProps();
         /// <summary>
@@ -113,7 +116,7 @@ namespace Alachisoft.NCache.Management
         /// <param name="props"></param>
         /// <param name="overwrite"></param>
         /// <exception cref="ArgumentNullException">cacheId is a null reference (Nothing in Visual Basic).</exception>
-        bool RegisterCache(string cacheId, CacheServerConfig config, string partId, bool overwrite, bool hotApply);
+        bool RegisterCache(string cacheId, CacheServerConfig config, string partId, bool overwrite,bool hotApply, ServerLicenseInfo licenseInfo = null, string registerAs = "");
 
         /// <summary>
         /// Adds Server Node
@@ -124,7 +127,7 @@ namespace Alachisoft.NCache.Management
         /// <param name="overwrite"></param>
         /// <param name="hotApply"></param>
         /// <returns></returns>
-        bool RegisterCache(string cacheId,Alachisoft.NCache.Config.NewDom.CacheServerConfig config, string partId, bool overwrite, bool hotApply);
+        bool RegisterCache(string cacheId, Alachisoft.NCache.Config.NewDom.CacheServerConfig config, string partId, bool overwrite, bool hotApply, ServerLicenseInfo licenseInfo = null, string registerAs = "");
 
         NodeInfoMap GetNodeInfo();
 
@@ -151,9 +154,7 @@ namespace Alachisoft.NCache.Management
 
         ClientNodeStatusWrapper GetClientNodeStatus(string cacheId);
 
-        ServerLicenseInfo GetServerLicenseInfo();
-
-
+        ServerLicenseInfo GetServerLicenseInfo(bool ignoreMac = false);
 
         /// <summary>
         /// Disbale logging
@@ -179,12 +180,12 @@ namespace Alachisoft.NCache.Management
         /// </summary>
         /// <param name="cacheId"></param>
         /// <exception cref="ArgumentNullException">cacheId is a null reference (Nothing in Visual Basic).</exception>
-        void UnregisterCache(string cacheId, string partId, bool removeServerOnly);        
+        void UnregisterCache(string cacheId, string partId, bool removeServerOnly, bool removePersistedData = false);        
 
         void StartCache(string cacheId);       
 
-        void StartCache(string cacheId, string partitionId);     
-
+        void StartCache(string cacheId, string partitionId);
+        void StartCache(string cacheId, string partitionId, bool twoPhaseInitialization, ServerLicenseInfo licenseInfo = null, string registerAs = "");
         void StartCachePhase2(string cacheId);
 
         void StartCache(string cacheId, ItemAddedCallback itemAdded,
@@ -212,8 +213,7 @@ namespace Alachisoft.NCache.Management
             CacheClearedCallback cacheCleared,
             CustomRemoveCallback customRemove,
             CustomUpdateCallback customUpdate,
-            bool twoPhaseInitialization);
-       
+            bool twoPhaseInitialization, ServerLicenseInfo licenseInfo = null, string registerAs = "");
 
         void StopCache(string cacheId);
        
@@ -265,9 +265,13 @@ namespace Alachisoft.NCache.Management
 
         Alachisoft.NCache.Caching.Statistics.CacheStatistics GetCacheStatistics2(string cacheId);
 
+
+        string GetLicenseKey();
+
         Hashtable GetSnmpPorts();
 
         void StopServer();
+        bool IsSendingDumpCompleted();
 
         string GetServerPlatform();
 
@@ -293,13 +297,15 @@ namespace Alachisoft.NCache.Management
 
         MappingConfiguration.Dom.MappingConfiguration GetServerMappingForClient();
 
+        void SetPublicIPConfiguration(string publicIp);
+
         void GarbageCollect(bool block, bool isCompactLOH);
 
         void ApplyHotConfiguration(string cacheId, HotConfig hotConfig);
 
         int GetProcessID(string cacheId);
 
-        Cache GetCache(string cacheId);
+        Alachisoft.NCache.Caching.Cache GetCache(string cacheId);
 
         void StopCacheInstance(string cache, CacheInfo cacheInfo, CacheServer.CacheStopReason reason);
 
@@ -320,9 +326,8 @@ namespace Alachisoft.NCache.Management
         string GetPerfmonLoggingPath();
         
         ConfigurationVersion GetConfigurationVersion(string cacheId);
-
         int GetCacheProcessID(string cacheID);
-
+        int GetServiceProcessID(string serviceName);
         Dictionary<string, TopicStats> GetTopicStats(string cacheId,bool defaultTopicStats = false);
 
         // double GetCounterValue(string cacheId, string counterName);
@@ -335,19 +340,87 @@ namespace Alachisoft.NCache.Management
 
         bool AreCacheHostCountersEnabled();
 
-       
+
         Dictionary<string, Config.NewDom.CacheServerConfig> GetConfigurationOfAllCaches(CacheTopology topology);
 
         string GetConfigurationId(string cacheName);
         void ChannelDisconnected(IChannelDisconnected channelDisconnection);
 
-        bool IsUnderStateTransfer(string cacheId);
+        void StartNCacheWebManagementProcess(byte[] userId, byte[] password);
+
+        bool StopNCacheWebManagementProcess(byte[] userId, byte[] password);
+
         PoolStats GetPoolStats(PoolStatsRequest request);
 
+        ServerLicenseInfo GetCachedServerLicenseInfo();
+        bool IsUnderStateTransfer(string cacheId);
        
-        Dictionary<string, Common.FeatureUsageData.Feature> GetFeatureUsageReport(string cacheId);
+        MemoryDumpMetainfo TakeMemoryDump(int processId, String CacheName, bool waitForCompletion = false);
+        bool isDumpCompleted(int dumpId);
+        FileMetaInfo[] GetMemoryDumpList();
+        bool RemoveMemoryDump(String fileName);
+        FileMetaInfo[] GetCacheLogList(string cacheId);
+        IDictionary GetCacheLogs(IList<string> fileNames);
+        Config.NewDom.CacheServerConfig[] GetCacheServerConfiguration();
         string GetMachineId();
         string GetPossibleMachinesInCluster();
         ClientProfileDom GetClientProfileReport(string cacheId);
+        OSInfo GetOSPlatform();
+        void StartStressTest(string cacheName, int executionTime);
+        /// <summary>
+        /// Return module specific number of buckets for managing distribution
+        /// </summary>
+        int GetModuleBucketsCount();
+
+        /// <summary>
+        /// Verifies whether a given directory is valid or not
+        /// </summary>
+        /// <param name="Path">path of the directory</param> 
+        bool ValidateDirectory(string path, bool isLocalExisting);
+        DistributionInfo GetDistributionInfo(string cacheId, string existedMapPath);
+
+        void RollBackMapPropogation(string mapId);
+        void InstallDistributionMap(DistributionInfo distributionInfo);
+
+
+        bool DeleteBucket(string path);
+
+        object PerformCloudServiceRelatedTasks(CloudServiceParams cloudServiceParams);
+        CumulativeCounters GetCumulativeCountersForAllRegisteredCaches();
+
+        InstallationTypeProvider GetInstallationTypeProvider();
+
+        /// <summary>
+        /// Retrieve file names from specified path
+        /// </summary>
+        /// <param name="path">path from where file names need to be retrieved</param>
+        /// 
+        string[] GetFullFileNamesFromPath(string path);
+
+        /// <summary>
+        /// Retrieve folder names from specified path
+        /// </summary>
+        /// <param name="path">path from where folder names need to be retrieved</param>
+        /// 
+        string[] GetDirectoryNamesFromPath(string path);
+
+        /// <summary>
+        /// reads file content to byte array
+        /// </summary>
+        /// <param name="path">full file path</param>
+        /// 
+        byte[] ReadFileContentToByteArray(string path);
+
+        CacheConfigInfo GetCacheConfigInfo(string cacheId);
+
+
+        /// <summary>
+        /// To add or update key-value pairs in the service.exe.config file of NCache.
+        /// </summary>
+        /// <param name="key">Key name of the paramter that needs to be added or updated</param>
+        /// <param name="value">Value of the specified key paramter</param>
+        bool ApplyServiceConfig(string key, string value);
+
+
     }
 }

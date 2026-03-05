@@ -32,7 +32,7 @@ namespace Alachisoft.NCache.SocketServer
             var key = GetKey(socket);
             Pipe pipe = new Pipe(new PipeOptions(null, null, null, PauseWriterThreshold, ResumeWriterThreshold));
 
-            RequestReader requestReader = new RequestReader(clientManager, _cmdManager);
+            RequestReader requestReader = new RequestReader(clientManager, _cmdManager, this);
 
             lock (_clients)
             {

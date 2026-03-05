@@ -1,4 +1,4 @@
-//  Copyright (c) 2021 Alachisoft
+//  Copyright (c) 2026 Alachisoft
 //  
 //  Licensed under the Apache License, Version 2.0 (the "License");
 //  you may not use this file except in compliance with the License.
@@ -25,9 +25,10 @@ using Alachisoft.NCache.Common.Caching;
 using Alachisoft.NCache.Util;
 using Alachisoft.NCache.Runtime.Events;
 using Alachisoft.NCache.Runtime.Exceptions;
+
+
 using Alachisoft.NCache.Common.Util;
 using Alachisoft.NCache.Common.DataStructures.Clustered;
-
 
 namespace Alachisoft.NCache.SocketServer.Util
 {
@@ -266,8 +267,6 @@ namespace Alachisoft.NCache.SocketServer.Util
             return keyPackageResponse;
         }
 
-
-	
 
         /// <summary>
         /// Makes a key and data package form the keys and values of hashtable, for bulk operations

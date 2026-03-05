@@ -10,14 +10,14 @@
 // Generated from: Exception.proto
 namespace Alachisoft.NCache.Common.Protobuf
 {
-  [global::System.Serializable, global::ProtoBuf.ProtoContract(Name=@"Exception")]
-  public partial class Exception : global::ProtoBuf.IExtensible
+  [global::System.Serializable, global::ProtoBuf.Extended.ProtoContract(Name=@"Exception")]
+  public partial class Exception : global::ProtoBuf.Extended.IExtensible
   {
     public Exception() {}
     
 
     private Alachisoft.NCache.Common.Protobuf.Exception.Type _type = Alachisoft.NCache.Common.Protobuf.Exception.Type.OPERATIONFAILED;
-    [global::ProtoBuf.ProtoMember(1, IsRequired = false, Name=@"type", DataFormat = global::ProtoBuf.DataFormat.TwosComplement)]
+    [global::ProtoBuf.Extended.ProtoMember(1, IsRequired = false, Name=@"type", DataFormat = global::ProtoBuf.Extended.DataFormat.TwosComplement)]
     [global::System.ComponentModel.DefaultValue(Alachisoft.NCache.Common.Protobuf.Exception.Type.OPERATIONFAILED)]
     public Alachisoft.NCache.Common.Protobuf.Exception.Type type
     {
@@ -26,7 +26,7 @@ namespace Alachisoft.NCache.Common.Protobuf
     }
 
     private string _message = "";
-    [global::ProtoBuf.ProtoMember(2, IsRequired = false, Name=@"message", DataFormat = global::ProtoBuf.DataFormat.Default)]
+    [global::ProtoBuf.Extended.ProtoMember(2, IsRequired = false, Name=@"message", DataFormat = global::ProtoBuf.Extended.DataFormat.Default)]
     [global::System.ComponentModel.DefaultValue("")]
     public string message
     {
@@ -35,7 +35,7 @@ namespace Alachisoft.NCache.Common.Protobuf
     }
 
     private string _exception = "";
-    [global::ProtoBuf.ProtoMember(3, IsRequired = false, Name=@"exception", DataFormat = global::ProtoBuf.DataFormat.Default)]
+    [global::ProtoBuf.Extended.ProtoMember(3, IsRequired = false, Name=@"exception", DataFormat = global::ProtoBuf.Extended.DataFormat.Default)]
     [global::System.ComponentModel.DefaultValue("")]
     public string exception
     {
@@ -44,7 +44,7 @@ namespace Alachisoft.NCache.Common.Protobuf
     }
 
     private int _errorCode = default(int);
-    [global::ProtoBuf.ProtoMember(4, IsRequired = false, Name=@"errorCode", DataFormat = global::ProtoBuf.DataFormat.TwosComplement)]
+    [global::ProtoBuf.Extended.ProtoMember(4, IsRequired = false, Name=@"errorCode", DataFormat = global::ProtoBuf.Extended.DataFormat.TwosComplement)]
     [global::System.ComponentModel.DefaultValue(default(int))]
     public int errorCode
     {
@@ -53,81 +53,81 @@ namespace Alachisoft.NCache.Common.Protobuf
     }
 
     private string _stackTrace = "";
-    [global::ProtoBuf.ProtoMember(5, IsRequired = false, Name=@"stackTrace", DataFormat = global::ProtoBuf.DataFormat.Default)]
+    [global::ProtoBuf.Extended.ProtoMember(5, IsRequired = false, Name=@"stackTrace", DataFormat = global::ProtoBuf.Extended.DataFormat.Default)]
     [global::System.ComponentModel.DefaultValue("")]
     public string stackTrace
     {
       get { return _stackTrace; }
       set { _stackTrace = value; }
     }
-    [global::ProtoBuf.ProtoContract(Name=@"Type")]
+    [global::ProtoBuf.Extended.ProtoContract(Name=@"Type")]
     public enum Type
     {
             
-      [global::ProtoBuf.ProtoEnum(Name=@"OPERATIONFAILED", Value=0)]
+      [global::ProtoBuf.Extended.ProtoEnum(Name=@"OPERATIONFAILED", Value=0)]
       OPERATIONFAILED = 0,
             
-      [global::ProtoBuf.ProtoEnum(Name=@"AGGREGATE", Value=1)]
+      [global::ProtoBuf.Extended.ProtoEnum(Name=@"AGGREGATE", Value=1)]
       AGGREGATE = 1,
             
-      [global::ProtoBuf.ProtoEnum(Name=@"CONFIGURATION", Value=2)]
+      [global::ProtoBuf.Extended.ProtoEnum(Name=@"CONFIGURATION", Value=2)]
       CONFIGURATION = 2,
             
-      [global::ProtoBuf.ProtoEnum(Name=@"GENERALFAILURE", Value=3)]
+      [global::ProtoBuf.Extended.ProtoEnum(Name=@"GENERALFAILURE", Value=3)]
       GENERALFAILURE = 3,
             
-      [global::ProtoBuf.ProtoEnum(Name=@"SECURITY", Value=4)]
+      [global::ProtoBuf.Extended.ProtoEnum(Name=@"SECURITY", Value=4)]
       SECURITY = 4,
             
-      [global::ProtoBuf.ProtoEnum(Name=@"NOTSUPPORTED", Value=5)]
+      [global::ProtoBuf.Extended.ProtoEnum(Name=@"NOTSUPPORTED", Value=5)]
       NOTSUPPORTED = 5,
             
-      [global::ProtoBuf.ProtoEnum(Name=@"MAX_CLIENTS_REACHED", Value=6)]
+      [global::ProtoBuf.Extended.ProtoEnum(Name=@"MAX_CLIENTS_REACHED", Value=6)]
       MAX_CLIENTS_REACHED = 6,
             
-      [global::ProtoBuf.ProtoEnum(Name=@"STREAM_ALREADY_LOCKED", Value=7)]
+      [global::ProtoBuf.Extended.ProtoEnum(Name=@"STREAM_ALREADY_LOCKED", Value=7)]
       STREAM_ALREADY_LOCKED = 7,
             
-      [global::ProtoBuf.ProtoEnum(Name=@"STREAM_CLOSED", Value=8)]
+      [global::ProtoBuf.Extended.ProtoEnum(Name=@"STREAM_CLOSED", Value=8)]
       STREAM_CLOSED = 8,
             
-      [global::ProtoBuf.ProtoEnum(Name=@"STREAM_EXC", Value=9)]
+      [global::ProtoBuf.Extended.ProtoEnum(Name=@"STREAM_EXC", Value=9)]
       STREAM_EXC = 9,
             
-      [global::ProtoBuf.ProtoEnum(Name=@"STREAM_INVALID_LOCK", Value=10)]
+      [global::ProtoBuf.Extended.ProtoEnum(Name=@"STREAM_INVALID_LOCK", Value=10)]
       STREAM_INVALID_LOCK = 10,
             
-      [global::ProtoBuf.ProtoEnum(Name=@"STREAM_NOT_FOUND", Value=11)]
+      [global::ProtoBuf.Extended.ProtoEnum(Name=@"STREAM_NOT_FOUND", Value=11)]
       STREAM_NOT_FOUND = 11,
             
-      [global::ProtoBuf.ProtoEnum(Name=@"TYPE_INDEX_NOT_FOUND", Value=12)]
+      [global::ProtoBuf.Extended.ProtoEnum(Name=@"TYPE_INDEX_NOT_FOUND", Value=12)]
       TYPE_INDEX_NOT_FOUND = 12,
             
-      [global::ProtoBuf.ProtoEnum(Name=@"ATTRIBUTE_INDEX_NOT_FOUND", Value=13)]
+      [global::ProtoBuf.Extended.ProtoEnum(Name=@"ATTRIBUTE_INDEX_NOT_FOUND", Value=13)]
       ATTRIBUTE_INDEX_NOT_FOUND = 13,
             
-      [global::ProtoBuf.ProtoEnum(Name=@"STATE_TRANSFER_EXCEPTION", Value=14)]
+      [global::ProtoBuf.Extended.ProtoEnum(Name=@"STATE_TRANSFER_EXCEPTION", Value=14)]
       STATE_TRANSFER_EXCEPTION = 14,
             
-      [global::ProtoBuf.ProtoEnum(Name=@"INVALID_READER_EXCEPTION", Value=15)]
+      [global::ProtoBuf.Extended.ProtoEnum(Name=@"INVALID_READER_EXCEPTION", Value=15)]
       INVALID_READER_EXCEPTION = 15,
             
-      [global::ProtoBuf.ProtoEnum(Name=@"LICENSING_EXCEPTION", Value=16)]
+      [global::ProtoBuf.Extended.ProtoEnum(Name=@"LICENSING_EXCEPTION", Value=16)]
       LICENSING_EXCEPTION = 16,
             
-      [global::ProtoBuf.ProtoEnum(Name=@"DEPLOYMENT_EXCEPTION", Value=17)]
+      [global::ProtoBuf.Extended.ProtoEnum(Name=@"DEPLOYMENT_EXCEPTION", Value=17)]
       DEPLOYMENT_EXCEPTION = 17,
             
-      [global::ProtoBuf.ProtoEnum(Name=@"CONFIGURATON_EXCEPTION", Value=18)]
+      [global::ProtoBuf.Extended.ProtoEnum(Name=@"CONFIGURATON_EXCEPTION", Value=18)]
       CONFIGURATON_EXCEPTION = 18,
             
-      [global::ProtoBuf.ProtoEnum(Name=@"MAINTENANCE_EXCEPTION", Value=19)]
+      [global::ProtoBuf.Extended.ProtoEnum(Name=@"MAINTENANCE_EXCEPTION", Value=19)]
       MAINTENANCE_EXCEPTION = 19
     }
   
-    private global::ProtoBuf.IExtension extensionObject;
-    global::ProtoBuf.IExtension global::ProtoBuf.IExtensible.GetExtensionObject(bool createIfMissing)
-      { return global::ProtoBuf.Extensible.GetExtensionObject(ref extensionObject, createIfMissing); }
+    private global::ProtoBuf.Extended.IExtension extensionObject;
+   global::ProtoBuf.Extended.IExtension global::ProtoBuf.Extended.IExtensible.GetExtensionObject(bool createIfMissing)
+      { return global::ProtoBuf.Extended.Extensible.GetExtensionObject(ref extensionObject, createIfMissing); }
   }
   
 }

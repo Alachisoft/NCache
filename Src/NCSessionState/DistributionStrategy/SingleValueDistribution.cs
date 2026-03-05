@@ -1,4 +1,4 @@
-//  Copyright (c) 2021 Alachisoft
+//  Copyright (c) 2026 Alachisoft
 //  
 //  Licensed under the Apache License, Version 2.0 (the "License");
 //  you may not use this file except in compliance with the License.
@@ -16,9 +16,14 @@ using System;
 using System.Collections;
 using System.Web;
 using System.Web.SessionState;
+
 using Alachisoft.NCache.Caching.AutoExpiration;
+
 using Alachisoft.NCache.Runtime.Exceptions;
+
 using Alachisoft.NCache.Runtime.Serialization.IO;
+
+
 using Alachisoft.NCache.Runtime;
 using Alachisoft.NCache.Web.SessionStateManagement;
 
@@ -64,7 +69,6 @@ namespace Alachisoft.NCache.Web.SessionState.DistributionStrategy
                 if(strict)
 				session.Clear();
                 module.RaiseExceptions(exc, "SingleValueDistribution.FillSessionFromCache");
-                //if (exceptionsEnabled) throw;
 			}
 		}
 
@@ -84,7 +88,7 @@ namespace Alachisoft.NCache.Web.SessionState.DistributionStrategy
             try
             {
                
-                if (session.Count == 0) //We need not to keep any empty session in the cache. [Asif Imam] April 09, 08 (This is incomplete. As it is never used. See Monolithic strategy for detail use-case)
+                if (session.Count == 0) //We need not to keep any empty session in the cache.
                     return;
                     
                     cache.Remove(sessionId, key.ToString(), false);
@@ -110,7 +114,6 @@ namespace Alachisoft.NCache.Web.SessionState.DistributionStrategy
             catch (Exception exc)
             {
                 module.RaiseExceptions(exc, "SingleValueDistribution.FillCacheFromSession");
-                //if (exceptionsEnabled) throw;
             }
         }
 

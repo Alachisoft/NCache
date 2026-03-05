@@ -1,4 +1,4 @@
-//  Copyright (c) 2021 Alachisoft
+//  Copyright (c) 2026 Alachisoft
 //  
 //  Licensed under the Apache License, Version 2.0 (the "License");
 //  you may not use this file except in compliance with the License.
@@ -24,6 +24,7 @@ using Alachisoft.NCache.Web.SessionStateManagement.LocationAffinity;
 using Alachisoft.NCache.Common.FeatureUsageData;
 
 namespace Alachisoft.NCache.Web.SessionStateManagement
+
 {
     /// <summary>
     /// RegionalCache is a manager to support location affinity.
@@ -32,9 +33,7 @@ namespace Alachisoft.NCache.Web.SessionStateManagement
     {
         /// <summary> The one and only cache </summary>
 
-
         private ICache _cache = null;
-
 
         /// <summary>
         /// Returns cache id.
@@ -64,9 +63,7 @@ namespace Alachisoft.NCache.Web.SessionStateManagement
         public void InitializeCache(string cache)
         {
             CacheConnectionOptions cacheConnectionOptions = new CacheConnectionOptions();
-            cacheConnectionOptions.AppName = FeatureUsageCollector.FeatureTag + FeatureEnum.aspnet_session;
             _cache = CacheManager.GetCache(cache, cacheConnectionOptions);
-
         }
 
         public void Dispose()
@@ -188,33 +185,7 @@ namespace Alachisoft.NCache.Web.SessionStateManagement
       
         public void Insert(string sessionId, string key, object value, bool enableRetry)
         {
-            //int retry = _operationRetry;
-            //do{
-            //    try
-            //    {
-                    _cache.Insert(key, TagUtil.CreateTaggedCacheItem(value));
-            //        break;
-            //    }
-            //    catch (Exception ex)
-            //    {
-            //        string message = ex.Message;
-
-            //        if (message != null && !(message.ToLower().Contains("connection with server") ||
-            //            message.ToLower().Contains("no server is available")) || !enableRetry)
-            //        {
-            //            throw;
-            //        }
-
-            //        if (retry <= 0)
-            //            throw ex;
-
-            //        retry--;
-
-            //        if (_operationRetryDelayInterval > 0)
-            //            Thread.Sleep(_operationRetryDelayInterval);
-            //    }
-            //}
-            //while (retry >= 0);
+             _cache.Insert(key, TagUtil.CreateTaggedCacheItem(value));
         }
 
 		[CLSCompliant(false)]
@@ -252,9 +223,6 @@ namespace Alachisoft.NCache.Web.SessionStateManagement
 		[CLSCompliant(false)]
         public void Insert(string sessionId, string key, CacheItem item, string group)
         {
-            //_cache.Insert(key, item, group, subGroup);
-            //item.Group = group;
-            //item.Tags = new Runtime.Caching.Tag[] { new Runtime.Caching.Tag(TagUtil.SESSION_TAG) };
             _cache.Insert(key, item);
         }
 
@@ -311,9 +279,7 @@ namespace Alachisoft.NCache.Web.SessionStateManagement
             {
                 try
                 {
-
                     value = _cache.Get<object>(key, acquireLock,NoLockExpiration, ref lockHandle); 
-
                     break;
                 }
                 catch (Exception ex)
@@ -386,7 +352,6 @@ namespace Alachisoft.NCache.Web.SessionStateManagement
             {
                 try
                 {
-                    //item.Tags = new Runtime.Caching.Tag[] { new Runtime.Caching.Tag(TagUtil.SESSION_TAG)};
                     _cache.Insert(key, item, lockHandle, releaseLock);
                     break;
                 }

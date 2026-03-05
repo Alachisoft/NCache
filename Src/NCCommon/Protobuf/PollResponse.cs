@@ -11,27 +11,27 @@
 // Note: requires additional types generated from: MessageEventListResponse.proto
 namespace Alachisoft.NCache.Common.Protobuf
 {
-  [global::System.Serializable, global::ProtoBuf.ProtoContract(Name=@"PollResponse")]
-  public partial class PollResponse : global::ProtoBuf.IExtensible
+  [global::System.Serializable, global::ProtoBuf.Extended.ProtoContract(Name=@"PollResponse")]
+  public partial class PollResponse : global::ProtoBuf.Extended.IExtensible
   {
     public PollResponse() {}
     
     private readonly global::System.Collections.Generic.List<string> _removedKeys = new global::System.Collections.Generic.List<string>();
-    [global::ProtoBuf.ProtoMember(1, Name=@"removedKeys", DataFormat = global::ProtoBuf.DataFormat.Default)]
+    [global::ProtoBuf.Extended.ProtoMember(1, Name=@"removedKeys", DataFormat = global::ProtoBuf.Extended.DataFormat.Default)]
     public global::System.Collections.Generic.List<string> removedKeys
     {
       get { return _removedKeys; }
     }
   
     private readonly global::System.Collections.Generic.List<string> _updatedKeys = new global::System.Collections.Generic.List<string>();
-    [global::ProtoBuf.ProtoMember(2, Name=@"updatedKeys", DataFormat = global::ProtoBuf.DataFormat.Default)]
+    [global::ProtoBuf.Extended.ProtoMember(2, Name=@"updatedKeys", DataFormat = global::ProtoBuf.Extended.DataFormat.Default)]
     public global::System.Collections.Generic.List<string> updatedKeys
     {
       get { return _updatedKeys; }
     }
   
     private readonly global::System.Collections.Generic.List<Alachisoft.NCache.Common.Protobuf.MessageEventListResponse> _messageEventListResponse = new global::System.Collections.Generic.List<Alachisoft.NCache.Common.Protobuf.MessageEventListResponse>();
-    [global::ProtoBuf.ProtoMember(3, Name=@"messageEventListResponse", DataFormat = global::ProtoBuf.DataFormat.Default)]
+    [global::ProtoBuf.Extended.ProtoMember(3, Name=@"messageEventListResponse", DataFormat = global::ProtoBuf.Extended.DataFormat.Default)]
     public global::System.Collections.Generic.List<Alachisoft.NCache.Common.Protobuf.MessageEventListResponse> messageEventListResponse
     {
       get { return _messageEventListResponse; }
@@ -39,7 +39,7 @@ namespace Alachisoft.NCache.Common.Protobuf
   
 
     private int _commandID = default(int);
-    [global::ProtoBuf.ProtoMember(4, IsRequired = false, Name=@"commandID", DataFormat = global::ProtoBuf.DataFormat.TwosComplement)]
+    [global::ProtoBuf.Extended.ProtoMember(4, IsRequired = false, Name=@"commandID", DataFormat = global::ProtoBuf.Extended.DataFormat.TwosComplement)]
     [global::System.ComponentModel.DefaultValue(default(int))]
     public int commandID
     {
@@ -48,16 +48,16 @@ namespace Alachisoft.NCache.Common.Protobuf
     }
 
     private long _requestId = default(long);
-    [global::ProtoBuf.ProtoMember(5, IsRequired = false, Name=@"requestId", DataFormat = global::ProtoBuf.DataFormat.TwosComplement)]
+    [global::ProtoBuf.Extended.ProtoMember(5, IsRequired = false, Name=@"requestId", DataFormat = global::ProtoBuf.Extended.DataFormat.TwosComplement)]
     [global::System.ComponentModel.DefaultValue(default(long))]
     public long requestId
     {
       get { return _requestId; }
       set { _requestId = value; }
     }
-    private global::ProtoBuf.IExtension extensionObject;
-    global::ProtoBuf.IExtension global::ProtoBuf.IExtensible.GetExtensionObject(bool createIfMissing)
-      { return global::ProtoBuf.Extensible.GetExtensionObject(ref extensionObject, createIfMissing); }
+    private global::ProtoBuf.Extended.IExtension extensionObject;
+   global::ProtoBuf.Extended.IExtension global::ProtoBuf.Extended.IExtensible.GetExtensionObject(bool createIfMissing)
+      { return global::ProtoBuf.Extended.Extensible.GetExtensionObject(ref extensionObject, createIfMissing); }
   }
   
 }

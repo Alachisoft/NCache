@@ -1,0 +1,598 @@
+-- MIB file created 26-May-2004 17:56:39, by
+--  SMICng version 2.2.11-beta(PRO)(MS-DOS32), July 4, 2001. Enterprise key cisco.com
+
+ARROWPOINT-IPV4-OSPF-MIB DEFINITIONS ::= BEGIN
+
+-- From file: "mibs\v2\apIpv4Ospf.mib"
+-- Compile options "7 F H O W 0B 0G"
+
+IMPORTS
+  RowStatus
+      FROM SNMPv2-TC-v1
+  SnmpAdminString
+      FROM SNMP-FRAMEWORK-MIB
+  apIpv4Ospf
+      FROM APENT-MIB
+  IpAddress
+      FROM RFC1155-SMI
+  OBJECT-TYPE
+      FROM RFC-1212;
+
+apIpv4OspfMib OBJECT IDENTIFIER ::= { apIpv4Ospf 1 }
+-- MODULE-IDENTITY
+-- LastUpdated
+--  200101041141Z
+-- OrgName
+--  Cisco Systems, Inc.
+-- ContactInfo
+--  Postal:       Cisco Systems, Inc.
+--             1414 Massachusetts Avenue
+--             Boxborough, Massachusetts 01719
+--  Tel:         +1 978-936-0000
+--  E-Mail:        tac@cisco.com
+-- Descr
+--  This MIB module describes the ArrowPoint enterprise
+--   MIB support for the OSPF Protocol
+-- RevDate
+--  200101041141Z
+-- RevDescr
+--  Convert ArrowPoint Mib to Cisco Mib
+
+apIpv4OspfConformance OBJECT IDENTIFIER ::= { apIpv4OspfMib 3 }
+apIpv4OspfCompliances OBJECT IDENTIFIER ::= { apIpv4OspfConformance 1 }
+apIpv4OspfGroups OBJECT IDENTIFIER ::= { apIpv4OspfConformance 2 }
+
+InterfaceIndex ::= INTEGER
+-- TEXTUAL-CONVENTION
+-- Status
+--  mandatory
+-- Descr
+--  The range of ifIndex.
+
+apIpv4OspfRedistributeLocal OBJECT-TYPE
+  SYNTAX INTEGER {
+    enable(1),
+    disable(2)
+    }
+  ACCESS read-write
+  STATUS mandatory
+  DESCRIPTION
+    "If enabled, local (direct) routes will be advertised by OSPF."
+  DEFVAL { disable }
+  ::= { apIpv4Ospf 2 }
+
+apIpv4OspfLocalType OBJECT-TYPE
+  SYNTAX INTEGER {
+    aseType1(1),
+    aseType2(2)
+    }
+  ACCESS read-write
+  STATUS mandatory
+  DESCRIPTION
+    "If local routes are advertised by OSPF, this is the ASE type
+     to use when advertising the routes."
+  DEFVAL { aseType2 }
+  ::= { apIpv4Ospf 3 }
+
+apIpv4OspfLocalMetric OBJECT-TYPE
+  SYNTAX INTEGER(1..16777215)
+  ACCESS read-write
+  STATUS mandatory
+  DESCRIPTION
+    "If local routes are advertised by OSPF, this is the metric
+     to use when advertising the routes."
+  DEFVAL { 1 }
+  ::= { apIpv4Ospf 4 }
+
+apIpv4OspfLocalTag OBJECT-TYPE
+  SYNTAX INTEGER
+  ACCESS read-write
+  STATUS mandatory
+  DESCRIPTION
+    "If local routes are advertised by OSPF, this is the tag value
+     to use when advertising the routes."
+  DEFVAL { 0 }
+  ::= { apIpv4Ospf 5 }
+
+apIpv4OspfRedistributeStatic OBJECT-TYPE
+  SYNTAX INTEGER {
+    enable(1),
+    disable(2)
+    }
+  ACCESS read-write
+  STATUS mandatory
+  DESCRIPTION
+    "If enabled, static routes will be advertised by OSPF."
+  DEFVAL { disable }
+  ::= { apIpv4Ospf 6 }
+
+apIpv4OspfStaticType OBJECT-TYPE
+  SYNTAX INTEGER {
+    aseType1(1),
+    aseType2(2)
+    }
+  ACCESS read-write
+  STATUS mandatory
+  DESCRIPTION
+    "If static routes are advertised by OSPF, this is the ASE type
+     to use when advertising the routes."
+  DEFVAL { aseType2 }
+  ::= { apIpv4Ospf 7 }
+
+apIpv4OspfStaticMetric OBJECT-TYPE
+  SYNTAX INTEGER(1..16777215)
+  ACCESS read-write
+  STATUS mandatory
+  DESCRIPTION
+    "If static routes are advertised by OSPF, this is the metric
+     to use when advertising the routes."
+  DEFVAL { 1 }
+  ::= { apIpv4Ospf 8 }
+
+apIpv4OspfStaticTag OBJECT-TYPE
+  SYNTAX INTEGER
+  ACCESS read-write
+  STATUS mandatory
+  DESCRIPTION
+    "If static routes are advertised by OSPF, this is the tag value
+     to use when advertising the routes."
+  DEFVAL { 0 }
+  ::= { apIpv4Ospf 9 }
+
+apIpv4OspfRedistributeRip OBJECT-TYPE
+  SYNTAX INTEGER {
+    enable(1),
+    disable(2)
+    }
+  ACCESS read-write
+  STATUS mandatory
+  DESCRIPTION
+    "If enabled, RIP routes will be advertised by OSPF."
+  DEFVAL { disable }
+  ::= { apIpv4Ospf 10 }
+
+apIpv4OspfRipType OBJECT-TYPE
+  SYNTAX INTEGER {
+    aseType1(1),
+    aseType2(2)
+    }
+  ACCESS read-write
+  STATUS mandatory
+  DESCRIPTION
+    "If RIP routes are advertised by OSPF, this is the ASE type
+     to use when advertising the routes."
+  DEFVAL { aseType2 }
+  ::= { apIpv4Ospf 11 }
+
+apIpv4OspfRipMetric OBJECT-TYPE
+  SYNTAX INTEGER(0..16777215)
+  ACCESS read-write
+  STATUS mandatory
+  DESCRIPTION
+    "If RIP routes are advertised by OSPF, this is the metric
+     to use when advertising the routes. If zero is specified,
+     the RIP metric will be used."
+  DEFVAL { 0 }
+  ::= { apIpv4Ospf 12 }
+
+apIpv4OspfRipTag OBJECT-TYPE
+  SYNTAX INTEGER
+  ACCESS read-write
+  STATUS mandatory
+  DESCRIPTION
+    "If RIP routes are advertised by OSPF, this is the tag value
+     to use when advertising the routes."
+  DEFVAL { 0 }
+  ::= { apIpv4Ospf 13 }
+
+apIpv4OspfOriginateDefault OBJECT-TYPE
+  SYNTAX INTEGER {
+    enable(1),
+    disable(2)
+    }
+  ACCESS read-write
+  STATUS mandatory
+  DESCRIPTION
+    "If enabled, an ASE will be generated for the default route."
+  DEFVAL { disable }
+  ::= { apIpv4Ospf 14 }
+
+apIpv4OspfDefaultType OBJECT-TYPE
+  SYNTAX INTEGER {
+    aseType1(1),
+    aseType2(2)
+    }
+  ACCESS read-write
+  STATUS mandatory
+  DESCRIPTION
+    "If a default ASE is originated by OSPF, this is the ASE type
+     to use when advertising the route."
+  DEFVAL { aseType2 }
+  ::= { apIpv4Ospf 15 }
+
+apIpv4OspfDefaultMetric OBJECT-TYPE
+  SYNTAX INTEGER(1..16777215)
+  ACCESS read-write
+  STATUS mandatory
+  DESCRIPTION
+    "If a default ASE is originated by OSPF, this is the metric
+     to use when advertising the route."
+  DEFVAL { 1 }
+  ::= { apIpv4Ospf 16 }
+
+apIpv4OspfDefaultTag OBJECT-TYPE
+  SYNTAX INTEGER
+  ACCESS read-write
+  STATUS mandatory
+  DESCRIPTION
+    "If a default ASE is originated by OSPF, this is the tag value
+     to use when advertising the route."
+  DEFVAL { 0 }
+  ::= { apIpv4Ospf 17 }
+
+apIpv4OspfRedistributeFirewall OBJECT-TYPE
+  SYNTAX INTEGER {
+    enable(1),
+    disable(2)
+    }
+  ACCESS read-write
+  STATUS mandatory
+  DESCRIPTION
+    "If enabled, firewall routes will be advertised by OSPF."
+  DEFVAL { disable }
+  ::= { apIpv4Ospf 18 }
+
+apIpv4OspfFirewallType OBJECT-TYPE
+  SYNTAX INTEGER {
+    aseType1(1),
+    aseType2(2)
+    }
+  ACCESS read-write
+  STATUS mandatory
+  DESCRIPTION
+    "If firewall routes are advertised by OSPF, this is the ASE type
+     to use when advertising the routes."
+  DEFVAL { aseType2 }
+  ::= { apIpv4Ospf 19 }
+
+apIpv4OspfFirewallMetric OBJECT-TYPE
+  SYNTAX INTEGER(1..16777215)
+  ACCESS read-write
+  STATUS mandatory
+  DESCRIPTION
+    "If firewall routes are advertised by OSPF, this is the metric
+     to use when advertising the routes."
+  DEFVAL { 1 }
+  ::= { apIpv4Ospf 20 }
+
+apIpv4OspfFirewallTag OBJECT-TYPE
+  SYNTAX INTEGER
+  ACCESS read-write
+  STATUS mandatory
+  DESCRIPTION
+    "If firewall routes are advertised by OSPF, this is the tag value
+     to use when advertising the routes."
+  DEFVAL { 0 }
+  ::= { apIpv4Ospf 21 }
+
+apIpv4OspfAdvRouteTable OBJECT-TYPE
+  SYNTAX SEQUENCE OF ApIpv4OspfAdvRouteEntry
+  ACCESS not-accessible
+  STATUS mandatory
+  DESCRIPTION
+    "A list of routes that are advertised via all OSPF interfaces."
+  ::= { apIpv4Ospf 22 }
+
+apIpv4OspfAdvRouteEntry OBJECT-TYPE
+  SYNTAX ApIpv4OspfAdvRouteEntry
+  ACCESS not-accessible
+  STATUS mandatory
+  DESCRIPTION
+    "A single route to advertise via all OSPF interfaces."
+  INDEX { apIpv4OspfAdvRoutePrefix, apIpv4OspfAdvRoutePrefixLen }
+  ::= { apIpv4OspfAdvRouteTable 1 }
+
+ApIpv4OspfAdvRouteEntry ::= SEQUENCE {
+  apIpv4OspfAdvRoutePrefix IpAddress,
+  apIpv4OspfAdvRoutePrefixLen INTEGER,
+  apIpv4OspfAdvRouteType INTEGER,
+  apIpv4OspfAdvRouteMetric INTEGER,
+  apIpv4OspfAdvRouteTag INTEGER,
+  apIpv4OspfAdvRouteStatus RowStatus
+  }
+
+apIpv4OspfAdvRoutePrefix OBJECT-TYPE
+  SYNTAX IpAddress
+  ACCESS read-only
+  STATUS mandatory
+  DESCRIPTION
+    "The route prefix to be advertised."
+  ::= { apIpv4OspfAdvRouteEntry 1 }
+
+apIpv4OspfAdvRoutePrefixLen OBJECT-TYPE
+  SYNTAX INTEGER(1..32)
+  ACCESS read-only
+  STATUS mandatory
+  DESCRIPTION
+    "The network prefix length associated with this route."
+  ::= { apIpv4OspfAdvRouteEntry 2 }
+
+apIpv4OspfAdvRouteType OBJECT-TYPE
+  SYNTAX INTEGER {
+    aseType1(1),
+    aseType2(2)
+    }
+  ACCESS read-write
+  STATUS mandatory
+  DESCRIPTION
+    "this is the ASE type to use when advertising
+     this route."
+  DEFVAL { aseType2 }
+  ::= { apIpv4OspfAdvRouteEntry 3 }
+
+apIpv4OspfAdvRouteMetric OBJECT-TYPE
+  SYNTAX INTEGER(1..16777215)
+  ACCESS read-write
+  STATUS mandatory
+  DESCRIPTION
+    "The metric to use when advertising this route."
+  DEFVAL { 1 }
+  ::= { apIpv4OspfAdvRouteEntry 4 }
+
+apIpv4OspfAdvRouteTag OBJECT-TYPE
+  SYNTAX INTEGER
+  ACCESS read-write
+  STATUS mandatory
+  DESCRIPTION
+    "this is the tag value to use when advertising
+     this route."
+  DEFVAL { 0 }
+  ::= { apIpv4OspfAdvRouteEntry 5 }
+
+apIpv4OspfAdvRouteStatus OBJECT-TYPE
+  SYNTAX RowStatus
+--  Rsyntax INTEGER {
+--    active(1),
+--    notInService(2),
+--    notReady(3),
+--    createAndGo(4),
+--    createAndWait(5),
+--    destroy(6)
+--    }
+  ACCESS read-write
+  STATUS mandatory
+  DESCRIPTION
+    "This variable displays the status of the en-
+    try. Setting it to 'invalid' has the effect of
+    rendering it inoperative. The internal effect
+    (row removal) is implementation dependent."
+  ::= { apIpv4OspfAdvRouteEntry 6 }
+
+apIpv4OspfIfAdvRouteTable OBJECT-TYPE
+  SYNTAX SEQUENCE OF ApIpv4OspfIfAdvRouteEntry
+  ACCESS not-accessible
+  STATUS mandatory
+  DESCRIPTION
+    "A list of routes that are advertised via a specific OSPF interface."
+  ::= { apIpv4Ospf 23 }
+
+apIpv4OspfIfAdvRouteEntry OBJECT-TYPE
+  SYNTAX ApIpv4OspfIfAdvRouteEntry
+  ACCESS not-accessible
+  STATUS mandatory
+  DESCRIPTION
+    "A single route to advertise via a specific OSPF interface."
+  INDEX { apIpv4OspfIfAdvRouteAddress, apIpv4OspfIfAdvRoutePrefix, apIpv4OspfIfAdvRoutePrefixLen }
+  ::= { apIpv4OspfIfAdvRouteTable 1 }
+
+ApIpv4OspfIfAdvRouteEntry ::= SEQUENCE {
+  apIpv4OspfIfAdvRouteAddress IpAddress,
+  apIpv4OspfIfAdvRoutePrefix IpAddress,
+  apIpv4OspfIfAdvRoutePrefixLen INTEGER,
+  apIpv4OspfIfAdvRouteType INTEGER,
+  apIpv4OspfIfAdvRouteMetric INTEGER,
+  apIpv4OspfIfAdvRouteTag INTEGER,
+  apIpv4OspfIfAdvRouteStatus RowStatus
+  }
+
+apIpv4OspfIfAdvRouteAddress OBJECT-TYPE
+  SYNTAX IpAddress
+  ACCESS read-only
+  STATUS mandatory
+  DESCRIPTION
+    "The address of the OSPF interface. If this is a valid unicast
+     IP address, the interface is numbered. Otherwise, it indicates
+     the ifIndex of an unnumbered interface."
+  ::= { apIpv4OspfIfAdvRouteEntry 1 }
+
+apIpv4OspfIfAdvRoutePrefix OBJECT-TYPE
+  SYNTAX IpAddress
+  ACCESS read-only
+  STATUS mandatory
+  DESCRIPTION
+    "The route prefix to be advertised."
+  ::= { apIpv4OspfIfAdvRouteEntry 2 }
+
+apIpv4OspfIfAdvRoutePrefixLen OBJECT-TYPE
+  SYNTAX INTEGER(1..32)
+  ACCESS read-only
+  STATUS mandatory
+  DESCRIPTION
+    "The network prefix length associated with this route."
+  ::= { apIpv4OspfIfAdvRouteEntry 3 }
+
+apIpv4OspfIfAdvRouteType OBJECT-TYPE
+  SYNTAX INTEGER {
+    aseType1(1),
+    aseType2(2)
+    }
+  ACCESS read-write
+  STATUS mandatory
+  DESCRIPTION
+    "this is the ASE type to use when advertising
+     this route."
+  DEFVAL { aseType2 }
+  ::= { apIpv4OspfIfAdvRouteEntry 4 }
+
+apIpv4OspfIfAdvRouteMetric OBJECT-TYPE
+  SYNTAX INTEGER(1..16777215)
+  ACCESS read-write
+  STATUS mandatory
+  DESCRIPTION
+    "The metric to use when advertising this route."
+  DEFVAL { 1 }
+  ::= { apIpv4OspfIfAdvRouteEntry 5 }
+
+apIpv4OspfIfAdvRouteTag OBJECT-TYPE
+  SYNTAX INTEGER
+  ACCESS read-write
+  STATUS mandatory
+  DESCRIPTION
+    "this is the tag value to use when advertising
+     this route."
+  DEFVAL { 0 }
+  ::= { apIpv4OspfIfAdvRouteEntry 6 }
+
+apIpv4OspfIfAdvRouteStatus OBJECT-TYPE
+  SYNTAX RowStatus
+--  Rsyntax INTEGER {
+--    active(1),
+--    notInService(2),
+--    notReady(3),
+--    createAndGo(4),
+--    createAndWait(5),
+--    destroy(6)
+--    }
+  ACCESS read-write
+  STATUS mandatory
+  DESCRIPTION
+    "This variable displays the status of the en-
+    try. Setting it to 'invalid' has the effect of
+    rendering it inoperative. The internal effect
+    (row removal) is implementation dependent."
+  ::= { apIpv4OspfIfAdvRouteEntry 7 }
+
+apIpv4OspfEqualCostRoutes OBJECT-TYPE
+  SYNTAX INTEGER(1..15)
+  ACCESS read-write
+  STATUS mandatory
+  DESCRIPTION
+    "The maximum number of equal-cost routes OSPF can use."
+  DEFVAL { 15 }
+  ::= { apIpv4Ospf 24 }
+
+apIpv4OspfNbrTable OBJECT-TYPE
+  SYNTAX SEQUENCE OF ApIpv4OspfNbrEntry
+  ACCESS not-accessible
+  STATUS mandatory
+  DESCRIPTION
+    "A table of non-virtual neighbor information."
+  REFERENCE
+    "OSPF Version 2, Section 10 The Neighbor Data
+     Structure"
+  ::= { apIpv4Ospf 25 }
+
+apIpv4OspfNbrEntry OBJECT-TYPE
+  SYNTAX ApIpv4OspfNbrEntry
+  ACCESS not-accessible
+  STATUS mandatory
+  DESCRIPTION
+    "The information regarding a single neighbor."
+  REFERENCE
+    "OSPF Version 2, Section 10 The Neighbor Data
+    Structure"
+  INDEX { apIpv4OspfNbrIpAddr, apIpv4OspfNbrIfIndex }
+  ::= { apIpv4OspfNbrTable 1 }
+
+ApIpv4OspfNbrEntry ::= SEQUENCE {
+  apIpv4OspfNbrIpAddr IpAddress,
+  apIpv4OspfNbrIfIndex InterfaceIndex,
+  apIpv4OspfNbrState INTEGER,
+  apIpv4OspfNbrCircName SnmpAdminString
+  }
+
+apIpv4OspfNbrIpAddr OBJECT-TYPE
+  SYNTAX IpAddress
+  ACCESS read-only
+  STATUS mandatory
+  DESCRIPTION
+    "The IP address this neighbor is using in its
+    IP Source Address. "
+  ::= { apIpv4OspfNbrEntry 1 }
+
+apIpv4OspfNbrIfIndex OBJECT-TYPE
+  SYNTAX InterfaceIndex(0..2147483647)
+--  Rsyntax INTEGER(0..2147483647)
+  ACCESS read-only
+  STATUS mandatory
+  DESCRIPTION
+    "On an interface having an IP Address, zero.
+    On addressless interfaces, the corresponding
+    value of ifIndex in the Internet Standard MIB.
+    On row creation, this can be derived from the
+    instance."
+  ::= { apIpv4OspfNbrEntry 2 }
+
+apIpv4OspfNbrState OBJECT-TYPE
+  SYNTAX INTEGER {
+    --?? enum value of zero may cause problems
+    unknown(0),
+    designatedRouter(1),
+    backupDesignatedRouter(2),
+    otherDesignatedRouter(3)
+    }
+  ACCESS read-only
+  STATUS mandatory
+  DESCRIPTION
+    "The OSPF Neighbor router's State Designation."
+  DEFVAL { unknown }
+  ::= { apIpv4OspfNbrEntry 3 }
+
+apIpv4OspfNbrCircName OBJECT-TYPE
+  SYNTAX SnmpAdminString(SIZE(0..16))
+--  Rsyntax OCTET STRING(SIZE(0..16))
+  ACCESS read-only
+  STATUS mandatory
+  DESCRIPTION
+    "The OSPF Circuit name from which we see our Neighbor router."
+  ::= { apIpv4OspfNbrEntry 4 }
+
+apIpv4OspfGroup OBJECT IDENTIFIER ::= { apIpv4OspfGroups 1 }
+-- OBJECT-GROUP
+-- Status
+--  mandatory
+-- Descr
+--  A collection of objects providing OSPF protocol information
+-- objects
+--  apIpv4OspfRedistributeLocal, apIpv4OspfLocalType,
+--  apIpv4OspfLocalMetric, apIpv4OspfLocalTag,
+--  apIpv4OspfRedistributeStatic, apIpv4OspfStaticType,
+--  apIpv4OspfStaticMetric, apIpv4OspfStaticTag,
+--  apIpv4OspfRedistributeRip, apIpv4OspfRipType,
+--  apIpv4OspfRipMetric, apIpv4OspfRipTag,
+--  apIpv4OspfOriginateDefault, apIpv4OspfDefaultType,
+--  apIpv4OspfDefaultMetric, apIpv4OspfDefaultTag,
+--  apIpv4OspfRedistributeFirewall, apIpv4OspfFirewallType,
+--  apIpv4OspfFirewallMetric, apIpv4OspfFirewallTag,
+--  apIpv4OspfAdvRoutePrefix, apIpv4OspfAdvRoutePrefixLen,
+--  apIpv4OspfAdvRouteType, apIpv4OspfAdvRouteMetric,
+--  apIpv4OspfAdvRouteTag, apIpv4OspfAdvRouteStatus,
+--  apIpv4OspfIfAdvRouteAddress, apIpv4OspfIfAdvRoutePrefix,
+--  apIpv4OspfIfAdvRoutePrefixLen, apIpv4OspfIfAdvRouteType,
+--  apIpv4OspfIfAdvRouteMetric, apIpv4OspfIfAdvRouteTag,
+--  apIpv4OspfIfAdvRouteStatus, apIpv4OspfEqualCostRoutes
+
+apIpv4OspfCompliance OBJECT IDENTIFIER ::= { apIpv4OspfCompliances 1 }
+-- MODULE-COMPLIANCE
+-- Status
+--  mandatory
+-- Descr
+--  The compliance statement for entities which implement the
+--   apIpv4Ospf MIB
+-- Module
+--  &gt;&gt;current&lt;&lt;
+--  MandGroup
+--  apIpv4OspfGroup
+
+
+END

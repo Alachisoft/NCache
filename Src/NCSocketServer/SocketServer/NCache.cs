@@ -1,4 +1,4 @@
-//  Copyright (c) 2021 Alachisoft
+//  Copyright (c) 2026 Alachisoft
 //  
 //  Licensed under the Apache License, Version 2.0 (the "License");
 //  you may not use this file except in compliance with the License.
@@ -77,9 +77,7 @@ namespace Alachisoft.NCache.SocketServer
         private NodeLeftCallback _nodeLeft = null;
         private CacheStoppedCallback _cacheStopped = null;
         private CacheBecomeActiveCallback _cacheBecomeActive = null;
-#if !DEVELOPMENT
         private HashmapChangedCallback _hashmapChanged = null;
-#endif
         private OperationModeChangedCallback _operationModeChanged = null;
         private BlockClientActivity _blockClientActivity = null;
         private UnBlockClientActivity _unblockClientActivity = null;
@@ -139,10 +137,11 @@ namespace Alachisoft.NCache.SocketServer
             if (!_cache.IsRunning) throw new Exception("Cache is not running");
 
             EventHelper.EventDataFormat = _cache.SocketServerDataService;
-#if !CLIENT
-            if (_cache.CacheType.Equals("mirror-server") && !_cache.IsCoordinator)
-                throw new OperationNotSupportedException("Cannot connect to Passive Node in Mirror Cluster.");
-#endif
+
+            {
+                if (_cache.CacheType.Equals("mirror-server") && !_cache.IsCoordinator)
+                    throw new OperationNotSupportedException("Cannot connect to Passive Node in Mirror Cluster.");
+            }
 
             _onItemUpdatedCallback = new CustomUpdateCallback(CustomUpdate);
             _cache.CustomUpdateCallbackNotif += _onItemUpdatedCallback;
@@ -430,13 +429,11 @@ namespace Alachisoft.NCache.SocketServer
                 _configModified = null;
             }
            
-#if !DEVELOPMENT
             if (this._hashmapChanged != null)
             {
                 this._cache.HashmapChanged -= this._hashmapChanged;
                 _hashmapChanged = null;
             }
-#endif
 
             if (_operationModeChanged != null)
             {
@@ -488,7 +485,6 @@ namespace Alachisoft.NCache.SocketServer
                         eventitem.eventType = Common.Protobuf.BulkEventItemResponse.EventType.ASYNC_OP_COMPLETED_EVENT;
                         eventitem.asyncOperationCompletedCallback = asyncOperationCompleted;
 
-                        //_client.EnqueueEvent(eventitem);
                         //To avoid NullReference problem if both evnt and NCache.Dispose are called simultaenously
                         ClientManager client = _client;
                         if(client != null) client.ConnectionManager.EnqueueEvent(eventitem, _client.SlaveId);                       
@@ -498,7 +494,7 @@ namespace Alachisoft.NCache.SocketServer
                     {
                         lock (ConnectionManager.CallbackQueue)
                         {
-                            ConnectionManager.CallbackQueue.Enqueue(new AsyncOpCompletedCallback(/*notification.CallerID,*/ opCode, result, /*notification.ClientSocket,*/ _cacheId));
+                            ConnectionManager.CallbackQueue.Enqueue(new AsyncOpCompletedCallback(opCode, result, _cacheId));
                             Monitor.Pulse(ConnectionManager.CallbackQueue);
                         }
                     }
@@ -550,7 +546,7 @@ namespace Alachisoft.NCache.SocketServer
 
                         //To avoid NullReference problem if both evnt and NCache.Dispose are called simultaenously
                         ClientManager client = _client;
-                        if (client != null) client.ConnectionManager.EnqueueEvent(eventitem, _client.SlaveId);                       
+                        if (client != null) client.ConnectionManager.EnqueueEvent(eventitem, _client.SlaveId);
                     }
                     else
                     {
@@ -590,7 +586,6 @@ namespace Alachisoft.NCache.SocketServer
                             eventItem.eventType = Common.Protobuf.BulkEventItemResponse.EventType.ITEM_REMOVED_CALLBACK;
                             eventItem.itemRemoveCallback = EventHelper.GetItemRemovedCallbackResponse(eventContext, (short)cbInfo.Callback, (string)key, (UserBinaryObject)val, Flag, reason,cbInfo.DataFilter);
 
-                           // _client.EnqueueEvent(eventItem);
                             //To avoid NullReference problem if both evnt and NCache.Dispose are called simultaenously
                             ClientManager client = _client;
                             if (client != null) client.ConnectionManager.EnqueueEvent(eventItem, _client.SlaveId);
@@ -610,7 +605,7 @@ namespace Alachisoft.NCache.SocketServer
 
         private void PollRequest(string clientId, short callbackId, EventTypeInternal eventType)
         {
-            if (_client != null)
+            if (_client != null && _client.IsInitialized && _client.ClientID.Equals(clientId))
             {
                 //client older then 4.1 sp2 private patch 4 does not support bulk Events
                 if (_client.ClientVersion >= 4124)
@@ -701,7 +696,6 @@ namespace Alachisoft.NCache.SocketServer
                     eventitem.eventType = Common.Protobuf.BulkEventItemResponse.EventType.ITEM_ADDED_EVENT;
                     eventitem.itemAddedEvent = EventHelper.GetItemAddedEventResponse(eventContext, (string)key, this.ItemAddedFilter);
 
-                    //_client.EnqueueEvent(eventitem);
                     //To avoid NullReference problem if both evnt and NCache.Dispose are called simultaenously
                     ClientManager client = _client;
                     if (client != null) client.ConnectionManager.EnqueueEvent(eventitem, _client.SlaveId);
@@ -775,7 +769,6 @@ namespace Alachisoft.NCache.SocketServer
                     eventItem.eventType = Common.Protobuf.BulkEventItemResponse.EventType.ITEM_REMOVED_EVENT;
                     eventItem.itemRemovedEvent = EventHelper.GetItemRemovedEventResponse(eventContext, (string)key, this.ItemRemovedFilter, Flag, reason, (UserBinaryObject)value);
 
-                   // _client.EnqueueEvent(eventItem);
                     //To avoid NullReference problem if both evnt and NCache.Dispose are called simultaenously
                     ClientManager client = _client;
                     if (client != null) client.ConnectionManager.EnqueueEvent(eventItem, _client.SlaveId);
@@ -807,7 +800,6 @@ namespace Alachisoft.NCache.SocketServer
                     eventItem.eventType = Common.Protobuf.BulkEventItemResponse.EventType.CACHE_CLEARED_EVENT;
                     eventItem.cacheClearedEvent = EventHelper.GetCacheClearedResponse(eventContext);
 
-                    //_client.EnqueueEvent(eventItem);
                     //To avoid NullReference problem if both evnt and NCache.Dispose are called simultaenously
                     ClientManager client = _client;
                     if (client != null) client.ConnectionManager.EnqueueEvent(eventItem, _client.SlaveId);
@@ -837,7 +829,6 @@ namespace Alachisoft.NCache.SocketServer
                     eventItem.eventType = Common.Protobuf.BulkEventItemResponse.EventType.CACHE_STOPPED_EVENT;
                     eventItem.cacheStoppedEvent = EventHelper.GetCacheStoppedEventResponse(_cacheId);
 
-                    //_client.EnqueueEvent(eventItem);
                     //To avoid NullReference problem if both evnt and NCache.Dispose are called simultaenously
                     ClientManager client = _client;
                     if (client != null) client.ConnectionManager.EnqueueEvent(eventItem, _client.SlaveId);
@@ -869,7 +860,6 @@ namespace Alachisoft.NCache.SocketServer
                     eventItem.eventType = Common.Protobuf.BulkEventItemResponse.EventType.RAISE_CUSTOM_EVENT;
                     eventItem.CustomEvent = EventHelper.GetCustomEventResponse((byte[])notifId, (byte[])value);
 
-                    //_client.EnqueueEvent(eventItem);
                     //To avoid NullReference problem if both evnt and NCache.Dispose are called simultaenously
                     ClientManager client = _client;
                     if (client != null) client.ConnectionManager.EnqueueEvent(eventItem, _client.SlaveId);
@@ -936,7 +926,6 @@ namespace Alachisoft.NCache.SocketServer
         }
 
 
-#if !DEVELOPMENT
         private void HashmapChanged(NewHashmap newmap, EventContext eventContext)
         {
 
@@ -950,7 +939,6 @@ namespace Alachisoft.NCache.SocketServer
             }
 
         }
-#endif
         private void BlockClientActivity(string uniqueId, string serverIp, long timeoutInterval, int port)
         {
 
@@ -1018,14 +1006,13 @@ namespace Alachisoft.NCache.SocketServer
         /// </summary>
         /// <param name="clientID"></param>
         /// <param name="cacheId"></param>
-        public void OnClientDisconnected(string clientID, string cacheId, Runtime.Caching.ClientInfo clientInfo, long count)
+        public void OnClientDisconnected(string clientID, string cacheId, long count)
         {
 
-            if (_cache != null) _cache.OnClientDisconnected(clientID, cacheId, clientInfo, count);
+            if (_cache != null) _cache.OnClientDisconnected(clientID, cacheId, count);
 
         }
 
-        //fix for BroadAge 4.1 Sp2 patch 4
         //forcefully disconnected when Socket is busy for more then configured interval
         public void OnClientForceFullyDisconnected(string clientId)
         {
@@ -1118,7 +1105,6 @@ namespace Alachisoft.NCache.SocketServer
 
               
 
-#if !DEVELOPMENT
                 case NotificationsType.RegHashmapChangedNotif:
                     if (this._hashmapChanged == null)
                     {
@@ -1126,7 +1112,6 @@ namespace Alachisoft.NCache.SocketServer
                         this._cache.HashmapChanged += this._hashmapChanged;
                     }
                     break;
-#endif
                 case NotificationsType.UnregAddNotif:
                     if (_itemAdded != null)
                     {
@@ -1205,7 +1190,6 @@ namespace Alachisoft.NCache.SocketServer
                     break;
 
              
-#if !DEVELOPMENT
                 case NotificationsType.UnregHashmapChangedNotif:
                     if (this._hashmapChanged != null)
                     {
@@ -1213,7 +1197,6 @@ namespace Alachisoft.NCache.SocketServer
                         this._hashmapChanged = null;
                     }
                     break;
-#endif
 
 
             }

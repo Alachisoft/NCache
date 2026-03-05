@@ -17,10 +17,20 @@ namespace Alachisoft.NCache.Caching.CacheHealthAlerts
         PerformanceCounter totalBytes = null;
         bool initialized = false;
 
-        internal NetworkUsageCollector(ResourceAtribute attribute, CacheRuntimeContext cacheRuntimeContext) : base(attribute, cacheRuntimeContext)
+        private void InitializeNetworkUsageCollector()
         {
             CouneterName = "Current Bandwidth";
             Name = "Network Usage";
+        }
+
+        internal NetworkUsageCollector(CacheRuntimeContext cacheRuntimeContext) : base(cacheRuntimeContext)
+        {
+            InitializeNetworkUsageCollector();
+        }
+
+        internal NetworkUsageCollector(ResourceAtribute attribute, CacheRuntimeContext cacheRuntimeContext) : base(attribute, cacheRuntimeContext)
+        {
+            InitializeNetworkUsageCollector();
             SetThresholds();
         }
 
@@ -37,9 +47,8 @@ namespace Alachisoft.NCache.Caching.CacheHealthAlerts
             double data = 0.0;
             try
             {
-                if (!ServiceConfiguration.PublishCountersToCacheHost)
-                {
-                    if (initialized)
+#if !NETCORE
+                if (initialized)
                     {
                         if (currentBandwidth != null)
                         {
@@ -55,12 +64,13 @@ namespace Alachisoft.NCache.Caching.CacheHealthAlerts
                     }
                     else
                         InitializeCounter();
-                }
-                else
+                
+#elif NETCORE
                 {
                     if (Context != null && Context.PerfStatsColl != null)
                         return (Context.PerfStatsColl.GetCounterValue(CouneterName)) / (1024);
                 }
+#endif
             }
             catch (Exception e)
             {
@@ -73,7 +83,7 @@ namespace Alachisoft.NCache.Caching.CacheHealthAlerts
         {
             List<CacheNodeStatistics> statistics = null;
 
-            if (Context != null && Context.CacheImpl!=null)
+            if (Context != null && Context.CacheImpl != null)
             {
                 statistics = Context.CacheImpl.GetCacheNodeStatistics();
                 if (statistics != null && statistics.Count > 0)
@@ -87,8 +97,8 @@ namespace Alachisoft.NCache.Caching.CacheHealthAlerts
                 return null;
 
             }
-            return null; 
-        
+            return null;
+
         }
         public string GetNICForIP(string ip)
         {
@@ -122,30 +132,11 @@ namespace Alachisoft.NCache.Caching.CacheHealthAlerts
             initialized = true;
             if (!string.IsNullOrEmpty(nic))
             {
-                nic = nic.Replace('/', '_');        
-                nic = nic.Replace('#', '_');        
+                nic = nic.Replace('/', '_');
+                nic = nic.Replace('#', '_');
             }
 
             return nic;
         }
-
-        void InitializeCounter ()
-        {
-            try
-            {
-                if (!initialized)
-                {
-                    string instanceName = GetInstanceName();
-                  
-                    currentBandwidth = new PerformanceCounter("Network Adapter", CouneterName, instanceName, true);
-                    totalBytes = new PerformanceCounter("Network Adapter", "Bytes Total/Sec", instanceName, true);
-                }
-            }
-            catch (Exception ex)
-            {
-                AppUtil.LogEvent("Couldn't Initialize Network Usage Counter : " + ex.ToString(), EventLogEntryType.Error);
-            }
-        }
-
     }
 }

@@ -1,4 +1,4 @@
-//  Copyright (c) 2021 Alachisoft
+//  Copyright (c) 2026 Alachisoft
 //  
 //  Licensed under the Apache License, Version 2.0 (the "License");
 //  you may not use this file except in compliance with the License.
@@ -26,15 +26,16 @@ using System.Runtime.InteropServices;
 [assembly: ComVisible(false)]
 [assembly: AssemblyConfiguration("")]
 [assembly: AssemblyCompany("Alachisoft")]
+
 #if NETCORE
 [assembly: AssemblyTitle("Alachisoft.NCache.Common (.NETCore)")]
 #else
-[assembly: AssemblyTitle("Alachisoft.NCache.Common")]
+[assembly: AssemblyTitle("Alachisoft.NCache.Common (.NET)")]
 #endif
 
 [assembly: AssemblyProduct("Alachisoft® NCache OpenSource")]
 [assembly: AssemblyTrademark("NCache ™ is a registered trademark of Alachisoft.")]
-[assembly: AssemblyCopyright("Copyright © 2005-2021 Alachisoft")]
+[assembly: AssemblyCopyright("Copyright © 2005-2026 Alachisoft")]
 [assembly: AssemblyCulture("")]		
 
 //
@@ -43,12 +44,12 @@ using System.Runtime.InteropServices;
 //      Major Version
 //      Minor Version 
 //      Build Number
-//      Revision
+//      Revision+
 //
 // You can specify all the values or you can default the Revision and Build Numbers 
 // by using the '*' as shown below:
 
-[assembly: AssemblyVersion("5.0.0")]
+[assembly: AssemblyVersion("5.3.0")]
 //
 // In order to sign your assembly you must specify a key to use. Refer to the 
 // Microsoft .NET Framework documentation for more information on assembly signing.
@@ -76,22 +77,28 @@ using System.Runtime.InteropServices;
 //
 [assembly: AssemblyDelaySign(false)]
 [assembly: AssemblyKeyName("")]
-#if DEBUG
-[assembly: AssemblyKeyFile("..\\..\\Resources\\ncache.snk")]
-#else
-[assembly: AssemblyKeyFile("..\\..\\Resources\\ncache.snk")]
-#endif
-[assembly: AssemblyFileVersionAttribute("5.0.5.0")]
+[assembly: AssemblyFileVersionAttribute("5.3.6.0")]
 [assembly: AssemblyDescriptionAttribute("Common Classes")]
-[assembly: AssemblyInformationalVersion("5.0.0")]
-[assembly: InternalsVisibleTo("Alachisoft.NCache.Cache,PublicKey=00240000048000009400000006020000002400005253413100040000010001001d52e880bc916ccf859cdcec2e364e066e86136ffef5b9dae06fd02970d1a2b224658f100c17216c40532dfe8f0c274342b20ebfa506067ad95a92891a0381df679be792585190a38e36e117aea93773923bba28bb185ef03ffc5fbec4351ba7fff68bce21d378f30acff1fc1fabdcbf0afc8b6287060fc6fc66bcd75db006bb")]
-[assembly: InternalsVisibleTo("Alachisoft.NCache.Cluster,PublicKey=00240000048000009400000006020000002400005253413100040000010001001d52e880bc916ccf859cdcec2e364e066e86136ffef5b9dae06fd02970d1a2b224658f100c17216c40532dfe8f0c274342b20ebfa506067ad95a92891a0381df679be792585190a38e36e117aea93773923bba28bb185ef03ffc5fbec4351ba7fff68bce21d378f30acff1fc1fabdcbf0afc8b6287060fc6fc66bcd75db006bb")]
-[assembly: InternalsVisibleTo("Alachisoft.NCache.Management,PublicKey=00240000048000009400000006020000002400005253413100040000010001001d52e880bc916ccf859cdcec2e364e066e86136ffef5b9dae06fd02970d1a2b224658f100c17216c40532dfe8f0c274342b20ebfa506067ad95a92891a0381df679be792585190a38e36e117aea93773923bba28bb185ef03ffc5fbec4351ba7fff68bce21d378f30acff1fc1fabdcbf0afc8b6287060fc6fc66bcd75db006bb")]
-[assembly: InternalsVisibleTo("Alachisoft.NCache.Serialization,PublicKey=00240000048000009400000006020000002400005253413100040000010001001d52e880bc916ccf859cdcec2e364e066e86136ffef5b9dae06fd02970d1a2b224658f100c17216c40532dfe8f0c274342b20ebfa506067ad95a92891a0381df679be792585190a38e36e117aea93773923bba28bb185ef03ffc5fbec4351ba7fff68bce21d378f30acff1fc1fabdcbf0afc8b6287060fc6fc66bcd75db006bb")]
-[assembly: InternalsVisibleTo("Alachisoft.NCache.SessionState,PublicKey=00240000048000009400000006020000002400005253413100040000010001001d52e880bc916ccf859cdcec2e364e066e86136ffef5b9dae06fd02970d1a2b224658f100c17216c40532dfe8f0c274342b20ebfa506067ad95a92891a0381df679be792585190a38e36e117aea93773923bba28bb185ef03ffc5fbec4351ba7fff68bce21d378f30acff1fc1fabdcbf0afc8b6287060fc6fc66bcd75db006bb")]
-[assembly: InternalsVisibleTo("Alachisoft.NCache.SessionStateManagement,PublicKey=00240000048000009400000006020000002400005253413100040000010001001d52e880bc916ccf859cdcec2e364e066e86136ffef5b9dae06fd02970d1a2b224658f100c17216c40532dfe8f0c274342b20ebfa506067ad95a92891a0381df679be792585190a38e36e117aea93773923bba28bb185ef03ffc5fbec4351ba7fff68bce21d378f30acff1fc1fabdcbf0afc8b6287060fc6fc66bcd75db006bb")]
-[assembly: InternalsVisibleTo("Alachisoft.NCache.SessionStoreProvider,PublicKey=00240000048000009400000006020000002400005253413100040000010001001d52e880bc916ccf859cdcec2e364e066e86136ffef5b9dae06fd02970d1a2b224658f100c17216c40532dfe8f0c274342b20ebfa506067ad95a92891a0381df679be792585190a38e36e117aea93773923bba28bb185ef03ffc5fbec4351ba7fff68bce21d378f30acff1fc1fabdcbf0afc8b6287060fc6fc66bcd75db006bb")]
-[assembly: InternalsVisibleTo("Alachisoft.NCache.SocketServer,PublicKey=00240000048000009400000006020000002400005253413100040000010001001d52e880bc916ccf859cdcec2e364e066e86136ffef5b9dae06fd02970d1a2b224658f100c17216c40532dfe8f0c274342b20ebfa506067ad95a92891a0381df679be792585190a38e36e117aea93773923bba28bb185ef03ffc5fbec4351ba7fff68bce21d378f30acff1fc1fabdcbf0afc8b6287060fc6fc66bcd75db006bb")]
-[assembly: InternalsVisibleTo("Alachisoft.NCache.Storage,PublicKey=00240000048000009400000006020000002400005253413100040000010001001d52e880bc916ccf859cdcec2e364e066e86136ffef5b9dae06fd02970d1a2b224658f100c17216c40532dfe8f0c274342b20ebfa506067ad95a92891a0381df679be792585190a38e36e117aea93773923bba28bb185ef03ffc5fbec4351ba7fff68bce21d378f30acff1fc1fabdcbf0afc8b6287060fc6fc66bcd75db006bb")]
-[assembly: InternalsVisibleTo("Alachisoft.NCache.Client,PublicKey=00240000048000009400000006020000002400005253413100040000010001001d52e880bc916ccf859cdcec2e364e066e86136ffef5b9dae06fd02970d1a2b224658f100c17216c40532dfe8f0c274342b20ebfa506067ad95a92891a0381df679be792585190a38e36e117aea93773923bba28bb185ef03ffc5fbec4351ba7fff68bce21d378f30acff1fc1fabdcbf0afc8b6287060fc6fc66bcd75db006bb")]
-[assembly: InternalsVisibleTo("Alachisoft.NCache.Caching.AutoExpiration,PublicKey=00240000048000009400000006020000002400005253413100040000010001001d52e880bc916ccf859cdcec2e364e066e86136ffef5b9dae06fd02970d1a2b224658f100c17216c40532dfe8f0c274342b20ebfa506067ad95a92891a0381df679be792585190a38e36e117aea93773923bba28bb185ef03ffc5fbec4351ba7fff68bce21d378f30acff1fc1fabdcbf0afc8b6287060fc6fc66bcd75db006bb")]
+[assembly: AssemblyInformationalVersion("5.3.0")]
+[assembly: InternalsVisibleTo("Alachisoft.NCache.Bridge")]
+[assembly: InternalsVisibleTo("Alachisoft.NCache.Cache")]
+[assembly: InternalsVisibleTo("Alachisoft.NCache.Cluster")]
+[assembly: InternalsVisibleTo("Alachisoft.NCache.Management")]
+[assembly: InternalsVisibleTo("Alachisoft.NCache.OutputCache")]
+[assembly: InternalsVisibleTo("Alachisoft.NCache.Security")]
+[assembly: InternalsVisibleTo("Alachisoft.NCache.Serialization")]
+[assembly: InternalsVisibleTo("Alachisoft.NCache.SessionState")]
+[assembly: InternalsVisibleTo("Alachisoft.NCache.SessionStateManagement")]
+[assembly: InternalsVisibleTo("Alachisoft.NCache.SessionStoreProvider")]
+[assembly: InternalsVisibleTo("Alachisoft.NCache.SocketServer")]
+[assembly: InternalsVisibleTo("Alachisoft.NCache.Storage")]
+[assembly: InternalsVisibleTo("Alachisoft.NCache.Web")]
+[assembly: InternalsVisibleTo("Alachisoft.NCache.Client")]
+[assembly: InternalsVisibleTo("Alachisoft.NCache.Caching.AutoExpiration")]
+[assembly: InternalsVisibleTo("Alachisoft.NCache.Caching.Bridge")]
+
+[assembly: InternalsVisibleTo("Alachisoft.NCache.NetJNIBridge")]
+[assembly: InternalsVisibleTo("Alachisoft.NCache.JNIBridge.JavaWrappers.Bridge")]
+[assembly: InternalsVisibleTo("Alachisoft.NCache.JNIBridge.JavaWrappers")]
+[assembly: InternalsVisibleTo("Alachisoft.NCache.JNIBridge.Util")]
+[assembly: InternalsVisibleTo("Alachisoft.NCache.JNIBridge.JavaWrappers.Dependencies")]

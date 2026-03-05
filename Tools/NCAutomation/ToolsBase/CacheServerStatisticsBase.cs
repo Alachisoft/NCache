@@ -1,19 +1,8 @@
-﻿//  Copyright (c) 2021 Alachisoft
-//  
-//  Licensed under the Apache License, Version 2.0 (the "License");
-//  you may not use this file except in compliance with the License.
-//  You may obtain a copy of the License at
-//  
-//     http://www.apache.org/licenses/LICENSE-2.0
-//  
-//  Unless required by applicable law or agreed to in writing, software
-//  distributed under the License is distributed on an "AS IS" BASIS,
-//  WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
-//  See the License for the specific language governing permissions and
-//  limitations under the License
-using Alachisoft.NCache.Automation.ToolsOutput;
+﻿using Alachisoft.NCache.Automation.ToolsOutput;
 using Alachisoft.NCache.Automation.ToolsParametersBase;
 using Alachisoft.NCache.Automation.Util;
+using Alachisoft.NCache.Common.Enum;
+using Alachisoft.NCache.Common.Monitoring;
 using Alachisoft.NCache.Management;
 using Alachisoft.NCache.Management.ServiceControl;
 using Alachisoft.NCache.Tools.Common;
@@ -108,72 +97,82 @@ namespace Alachisoft.NCache.Automation.ToolsBase
                     }
                 }
             }
-            if (isRegistered)
+            try
             {
-                _mainCounters = GetAllCounters(false);
-                if(isPOR)
+                Config.Dom.CacheServerConfig cacheConfig = cacheServers.FirstOrDefault().GetCacheConfiguration(CacheName);
+                StoreType storeType = StoreTypeUtil.GetStore(cacheConfig.Store);
+                if (isRegistered)
                 {
-                    _replicaCounters = GetAllCounters(true);
-                }
-                if (!(Format.Equals("csv", StringComparison.OrdinalIgnoreCase) || Format.Equals("tabular", StringComparison.OrdinalIgnoreCase)))
-                {
-                    throw new ArgumentException("Invalid Format type");
-                }
-                if (Continuous && MaxSamples > 0)
-                {
-                    throw new Exception("The Continuous parameter and the MaxSamples parameter cannot be used in the same command.");
-                }
-                if (Continuous && Format.Equals("csv", StringComparison.OrdinalIgnoreCase))
-                {
+                    _mainCounters = GetAllCounters(storeType, false);
+                    if (isPOR)
+                    {
+                        _replicaCounters = GetAllCounters(storeType,true);
+                    }
+                    if (!(Format.Equals("csv", StringComparison.OrdinalIgnoreCase) || Format.Equals("tabular", StringComparison.OrdinalIgnoreCase)))
+                    {
+                        throw new ArgumentException("Invalid Format type");
+                    }
+                    if (Continuous && MaxSamples > 0)
+                    {
+                        throw new Exception("The Continuous parameter and the MaxSamples parameter cannot be used in the same command.");
+                    }
+                    if (Continuous && Format.Equals("csv", StringComparison.OrdinalIgnoreCase))
+                    {
 
-                    FetchAndDisplayContinousulyCSV(cacheServers, isPOR);
-                }
-                else if (Continuous && Format.Equals("tabular", StringComparison.OrdinalIgnoreCase))
-                {
-                    ToolsUtil.PrintLogo(OutputProvider, printLogo, TOOLNAME);
-                    FetchAndDisplayContinousuly(cacheServers, isPOR);
-                }
-                else if (MaxSamples > 0)
-                {
-                    if (Format.Equals("tabular", StringComparison.OrdinalIgnoreCase))
+                        FetchAndDisplayContinousulyCSV(cacheServers, isPOR);
+                    }
+                    else if (Continuous && Format.Equals("tabular", StringComparison.OrdinalIgnoreCase))
                     {
                         ToolsUtil.PrintLogo(OutputProvider, printLogo, TOOLNAME);
-                        FetchAndDisplayMax(cacheServers, isPOR);
-
+                        FetchAndDisplayContinousuly(cacheServers, isPOR);
                     }
-                    else if (Format.Equals("csv", StringComparison.OrdinalIgnoreCase))
+                    else if (MaxSamples > 0)
                     {
-                        FetchAndDisplayMaxCSV(cacheServers, isPOR);
-                    }
-                }
-                if (!Continuous && MaxSamples == 0)
-                {
-                    try
-                    {
-                        SortedDictionary<string, string[]> CountList = FetchCounters(cacheServers, isPOR);
-                        if (Format.Equals("csv", StringComparison.OrdinalIgnoreCase))
-                        {
-                            DisplayinCSVFormat(CountList, isPOR);
-                        }
-                        else if (Format.Equals("tabular", StringComparison.OrdinalIgnoreCase))
+                        if (Format.Equals("tabular", StringComparison.OrdinalIgnoreCase))
                         {
                             ToolsUtil.PrintLogo(OutputProvider, printLogo, TOOLNAME);
-                            DisplayTimeStamp();
-                            DisplayCounters(CountList, isPOR);
+                            FetchAndDisplayMax(cacheServers, isPOR);
+
+                        }
+                        else if (Format.Equals("csv", StringComparison.OrdinalIgnoreCase))
+                        {
+                            FetchAndDisplayMaxCSV(cacheServers, isPOR);
                         }
                     }
-                    catch (ArgumentOutOfRangeException ex)
+                    if (!Continuous && MaxSamples == 0)
                     {
-                        OutputProvider.WriteErrorLine(ex);
-                    }
-                    catch (Exception ex)
-                    {
-                        OutputProvider.WriteErrorLine(ex);
+                        try
+                        {
+                            SortedDictionary<string, string[]> CountList = FetchCounters(cacheServers, isPOR);
+                            if (Format.Equals("csv", StringComparison.OrdinalIgnoreCase))
+                            {
+                                DisplayinCSVFormat(CountList, isPOR);
+                            }
+                            else if (Format.Equals("tabular", StringComparison.OrdinalIgnoreCase))
+                            {
+                                ToolsUtil.PrintLogo(OutputProvider, printLogo, TOOLNAME);
+                                DisplayTimeStamp();
+                                DisplayCounters(CountList, isPOR);
+                            }
+                        }
+                        catch (ArgumentOutOfRangeException ex)
+                        {
+                            OutputProvider.WriteErrorLine(ex);
+                        }
+                        catch (Exception ex)
+                        {
+                            OutputProvider.WriteErrorLine(ex);
+                        }
                     }
                 }
+                OutputProvider.WriteLine("\n");
             }
-            OutputProvider.WriteLine("\n");
-        }
+            catch (Exception)
+            {
+                if(isRegistered)
+                    OutputProvider.WriteErrorLine("Could not fetch cache configuration.");
+            }
+}
 
         private void DisplayTimeStamp()
         {
@@ -318,23 +317,45 @@ namespace Alachisoft.NCache.Automation.ToolsBase
             return nodeInfo;
         }
 
-        private List<Common.Monitoring.PerfmonCounterDetails> GetDefaultCounters(bool replica = false)
+        private List<Common.Monitoring.PerfmonCounterDetails> GetDefaultCounters(StoreType storeType,bool replica = false)
         {
-            List<string> defaultCounterList = new List<string>();
+            List<Tuple<string, string>> defaultCounterList = new List<Tuple<string, string>>();
             Common.Monitoring.PerfmonCounterDetails item = new Common.Monitoring.PerfmonCounterDetails();
             List<Common.Monitoring.PerfmonCounterDetails> perfmonCounters = new List<Common.Monitoring.PerfmonCounterDetails>();
-
-            defaultCounterList.Add("Additions/sec");
-            defaultCounterList.Add("Cache Size");
-            defaultCounterList.Add("Count");
-            defaultCounterList.Add("Deletes/sec");
-            defaultCounterList.Add("Evictions/sec");
-            defaultCounterList.Add("Expirations/sec");
-            defaultCounterList.Add("Fetches/sec");
-            defaultCounterList.Add("Requests/sec");
-            defaultCounterList.Add("Updates/sec");
-            defaultCounterList.Add("Cluster ops/sec");
-            defaultCounterList.Add("State Transfer/sec");
+            switch (GetCategoryName(storeType))
+            {
+                case CategoriesConstants.NCache:
+                    if (storeType.Equals(StoreType.PubSubMessaging))
+                    {
+                        defaultCounterList.Add(Tuple.Create(CategoriesConstants.NCache, "Message Store Size"));
+                        defaultCounterList.Add(Tuple.Create(CategoriesConstants.NCache, "Messages Count"));
+                        defaultCounterList.Add(Tuple.Create(CategoriesConstants.NCache, "Messages Delivered/sec"));
+                        defaultCounterList.Add(Tuple.Create(CategoriesConstants.NCache, "Messages Expired/sec"));
+                        defaultCounterList.Add(Tuple.Create(CategoriesConstants.NCache, "Messages Published/sec"));
+                        defaultCounterList.Add(Tuple.Create(CategoriesConstants.NCache, "Topics Count"));
+                        defaultCounterList.Add(Tuple.Create(CategoriesConstants.NCache, "Requests/sec"));
+                        defaultCounterList.Add(Tuple.Create(CategoriesConstants.NCache, "# Clients"));
+                        defaultCounterList.Add(Tuple.Create(CategoriesConstants.NCache, "cache-size-usage"));
+                        defaultCounterList.Add(Tuple.Create(CategoriesConstants.NCache, "Count"));
+                        defaultCounterList.Add(Tuple.Create(CategoriesConstants.NCache, "Cache Size (MB)"));
+                    }
+                    else
+                    {
+                        defaultCounterList.Add(Tuple.Create(CategoriesConstants.NCache, "Additions/sec"));
+                        defaultCounterList.Add(Tuple.Create(CategoriesConstants.NCache, "Cache Size"));
+                        defaultCounterList.Add(Tuple.Create(CategoriesConstants.NCache, "Count"));
+                        defaultCounterList.Add(Tuple.Create(CategoriesConstants.NCache, "Deletes/sec"));
+                        defaultCounterList.Add(Tuple.Create(CategoriesConstants.NCache, "Evictions/sec"));
+                        defaultCounterList.Add(Tuple.Create(CategoriesConstants.NCache, "Fetches/sec"));
+                        defaultCounterList.Add(Tuple.Create(CategoriesConstants.NCache, "Requests/sec"));
+                        defaultCounterList.Add(Tuple.Create(CategoriesConstants.NCache, "Expirations/sec"));
+                        defaultCounterList.Add(Tuple.Create(CategoriesConstants.NCache, "Updates/sec"));
+                        defaultCounterList.Add(Tuple.Create(CategoriesConstants.NCache, "Cluster ops/sec"));
+                        defaultCounterList.Add(Tuple.Create(CategoriesConstants.NCache, "State Transfer/sec"));
+                    }
+                    break;
+            }
+        
 
             item.Category = "NCache";
             if (replica == false)
@@ -348,15 +369,16 @@ namespace Alachisoft.NCache.Automation.ToolsBase
             //append replica
             item.Value = 0;
 
-            foreach (string counter in defaultCounterList)
+            foreach (Tuple<string, string> tuple in defaultCounterList)
             {
-                item.Counter = counter;
+                item.Category = tuple.Item1;
+                item.Counter = tuple.Item2;
                 perfmonCounters.Add(item);
             }
             return perfmonCounters;
         }
 
-        private List<Common.Monitoring.PerfmonCounterDetails> GetCustomCounters(bool replica, ArrayList parameters)
+        private List<Common.Monitoring.PerfmonCounterDetails> GetCustomCounters(StoreType storeType, bool replica, ArrayList parameters)
         {
             List<string> customCounterList = new List<string>();
             Common.Monitoring.PerfmonCounterDetails item = new Common.Monitoring.PerfmonCounterDetails();
@@ -368,7 +390,12 @@ namespace Alachisoft.NCache.Automation.ToolsBase
                     customCounterList.Add(param.ToString());
                 }
             }
-            item.Category = "NCache";
+            switch (GetCategoryName(storeType))
+            {
+                case CategoriesConstants.NCache:
+                    item.Category = CategoriesConstants.NCache;
+                    break;
+            }
             if (replica == false)
             {
                 item.Instance = CacheName;
@@ -389,18 +416,17 @@ namespace Alachisoft.NCache.Automation.ToolsBase
             //populate list on params and return it
         }
 
-        private List<Common.Monitoring.PerfmonCounterDetails> GetAllCounters(bool isReplica)
+        private List<Common.Monitoring.PerfmonCounterDetails> GetAllCounters(StoreType storeType,bool isReplica)
         {
             List<Common.Monitoring.PerfmonCounterDetails> perfmonCounters = new List<Common.Monitoring.PerfmonCounterDetails>();
             if (!DoNotShowDefaultCounters)
             {
-                perfmonCounters = GetDefaultCounters(isReplica);
+                perfmonCounters = GetDefaultCounters(storeType,isReplica);
             }
 
             if (CounterNames != null && !CounterNames.Equals(""))
             {
-                //perfmonCounters.AddRange(GetCustomCounters(isReplica, GetCounterNames(CounterNames)));
-                var customCounters = GetCustomCounters(isReplica, GetCounterNames(CounterNames));
+                var customCounters = GetCustomCounters(storeType, isReplica, GetCounterNames(CounterNames));
                 List<Common.Monitoring.PerfmonCounterDetails> toRemove = new List<Common.Monitoring.PerfmonCounterDetails>();
                 foreach (var counter in customCounters)
                 {
@@ -412,7 +438,6 @@ namespace Alachisoft.NCache.Automation.ToolsBase
                         }
                     }
                 }
-                //perfmonCounters.AddRange(toRemove);
                 foreach (var remove in toRemove)
                 {
                     customCounters.Remove(remove);
@@ -752,9 +777,14 @@ namespace Alachisoft.NCache.Automation.ToolsBase
             string[] st = counternames.Split(new char[] { ',' });
             for (int i = 0; i < st.Length; i++)
             {
-                serverList.Add(st[i]);
+                serverList.Add(st[i].Trim());
             }
             return serverList;
+        }
+
+        private string GetCategoryName(StoreType storeType)
+        {
+           return CategoriesConstants.NCache;
         }
         protected override void BeginProcessing()
         {

@@ -1,0 +1,517 @@
+﻿<?xml version="1.0" encoding="utf-8"?>
+<root>
+  <!-- 
+    Microsoft ResX Schema 
+    
+    Version 2.0
+    
+    The primary goals of this format is to allow a simple XML format 
+    that is mostly human readable. The generation and parsing of the 
+    various data types are done through the TypeConverter classes 
+    associated with the data types.
+    
+    Example:
+    
+    ... ado.net/XML headers & schema ...
+    <resheader name="resmimetype">text/microsoft-resx</resheader>
+    <resheader name="version">2.0</resheader>
+    <resheader name="reader">System.Resources.ResXResourceReader, System.Windows.Forms, ...</resheader>
+    <resheader name="writer">System.Resources.ResXResourceWriter, System.Windows.Forms, ...</resheader>
+    <data name="Name1"><value>this is my long string</value><comment>this is a comment</comment></data>
+    <data name="Color1" type="System.Drawing.Color, System.Drawing">Blue</data>
+    <data name="Bitmap1" mimetype="application/x-microsoft.net.object.binary.base64">
+        <value>[base64 mime encoded serialized .NET Framework object]</value>
+    </data>
+    <data name="Icon1" type="System.Drawing.Icon, System.Drawing" mimetype="application/x-microsoft.net.object.bytearray.base64">
+        <value>[base64 mime encoded string representing a byte array form of the .NET Framework object]</value>
+        <comment>This is a comment</comment>
+    </data>
+                
+    There are any number of "resheader" rows that contain simple 
+    name/value pairs.
+    
+    Each data row contains a name, and value. The row also contains a 
+    type or mimetype. Type corresponds to a .NET class that support 
+    text/value conversion through the TypeConverter architecture. 
+    Classes that don't support this are serialized and stored with the 
+    mimetype set.
+    
+    The mimetype is used for serialized objects, and tells the 
+    ResXResourceReader how to depersist the object. This is currently not 
+    extensible. For a given mimetype the value must be set accordingly:
+    
+    Note - application/x-microsoft.net.object.binary.base64 is the format 
+    that the ResXResourceWriter will generate, however the reader can 
+    read any of the formats listed below.
+    
+    mimetype: application/x-microsoft.net.object.binary.base64
+    value   : The object must be serialized with 
+            : System.Runtime.Serialization.Formatters.Binary.BinaryFormatter
+            : and then encoded with base64 encoding.
+    
+    mimetype: application/x-microsoft.net.object.soap.base64
+    value   : The object must be serialized with 
+            : System.Runtime.Serialization.Formatters.Soap.SoapFormatter
+            : and then encoded with base64 encoding.
+
+    mimetype: application/x-microsoft.net.object.bytearray.base64
+    value   : The object must be serialized into a byte array 
+            : using a System.ComponentModel.TypeConverter
+            : and then encoded with base64 encoding.
+    -->
+  <xsd:schema id="root" xmlns="" xmlns:xsd="http://www.w3.org/2001/XMLSchema" xmlns:msdata="urn:schemas-microsoft-com:xml-msdata">
+    <xsd:import namespace="http://www.w3.org/XML/1998/namespace" />
+    <xsd:element name="root" msdata:IsDataSet="true">
+      <xsd:complexType>
+        <xsd:choice maxOccurs="unbounded">
+          <xsd:element name="metadata">
+            <xsd:complexType>
+              <xsd:sequence>
+                <xsd:element name="value" type="xsd:string" minOccurs="0" />
+              </xsd:sequence>
+              <xsd:attribute name="name" use="required" type="xsd:string" />
+              <xsd:attribute name="type" type="xsd:string" />
+              <xsd:attribute name="mimetype" type="xsd:string" />
+              <xsd:attribute ref="xml:space" />
+            </xsd:complexType>
+          </xsd:element>
+          <xsd:element name="assembly">
+            <xsd:complexType>
+              <xsd:attribute name="alias" type="xsd:string" />
+              <xsd:attribute name="name" type="xsd:string" />
+            </xsd:complexType>
+          </xsd:element>
+          <xsd:element name="data">
+            <xsd:complexType>
+              <xsd:sequence>
+                <xsd:element name="value" type="xsd:string" minOccurs="0" msdata:Ordinal="1" />
+                <xsd:element name="comment" type="xsd:string" minOccurs="0" msdata:Ordinal="2" />
+              </xsd:sequence>
+              <xsd:attribute name="name" type="xsd:string" use="required" msdata:Ordinal="1" />
+              <xsd:attribute name="type" type="xsd:string" msdata:Ordinal="3" />
+              <xsd:attribute name="mimetype" type="xsd:string" msdata:Ordinal="4" />
+              <xsd:attribute ref="xml:space" />
+            </xsd:complexType>
+          </xsd:element>
+          <xsd:element name="resheader">
+            <xsd:complexType>
+              <xsd:sequence>
+                <xsd:element name="value" type="xsd:string" minOccurs="0" msdata:Ordinal="1" />
+              </xsd:sequence>
+              <xsd:attribute name="name" type="xsd:string" use="required" />
+            </xsd:complexType>
+          </xsd:element>
+        </xsd:choice>
+      </xsd:complexType>
+    </xsd:element>
+  </xsd:schema>
+  <resheader name="resmimetype">
+    <value>text/microsoft-resx</value>
+  </resheader>
+  <resheader name="version">
+    <value>2.0</value>
+  </resheader>
+  <resheader name="reader">
+    <value>System.Resources.ResXResourceReader, System.Windows.Forms, Version=2.0.0.0, Culture=neutral, PublicKeyToken=b77a5c561934e089</value>
+  </resheader>
+  <resheader name="writer">
+    <value>System.Resources.ResXResourceWriter, System.Windows.Forms, Version=2.0.0.0, Culture=neutral, PublicKeyToken=b77a5c561934e089</value>
+  </resheader>
+  <assembly alias="System.Windows.Forms" name="System.Windows.Forms, Version=2.0.0.0, Culture=neutral, PublicKeyToken=b77a5c561934e089" />
+  <data name="ACTONA_ACTASTOR_MIB" type="System.Resources.ResXFileRef, System.Windows.Forms">
+    <value>..\Resources\ACTONA-ACTASTOR-MIB.mib;System.Byte[], mscorlib, Version=2.0.0.0, Culture=neutral, PublicKeyToken=b77a5c561934e089</value>
+  </data>
+  <data name="ADSL_LINE_MIB" type="System.Resources.ResXFileRef, System.Windows.Forms">
+    <value>..\Resources\ADSL-LINE-MIB.mib;System.Byte[], mscorlib, Version=2.0.0.0, Culture=neutral, PublicKeyToken=b77a5c561934e089</value>
+  </data>
+  <data name="ADSL_TC_MIB" type="System.Resources.ResXFileRef, System.Windows.Forms">
+    <value>..\Resources\ADSL-TC-MIB.mib;System.Byte[], mscorlib, Version=2.0.0.0, Culture=neutral, PublicKeyToken=b77a5c561934e089</value>
+  </data>
+  <data name="AGENTX_MIB" type="System.Resources.ResXFileRef, System.Windows.Forms">
+    <value>..\Resources\AGENTX-MIB.txt;System.Byte[], mscorlib, Version=2.0.0.0, Culture=neutral, PublicKeyToken=b77a5c561934e089</value>
+  </data>
+  <data name="AIRPORT_BASESTATION_3_MIB" type="System.Resources.ResXFileRef, System.Windows.Forms">
+    <value>..\Resources\AIRPORT-BASESTATION-3-MIB.mib;System.Byte[], mscorlib, Version=2.0.0.0, Culture=neutral, PublicKeyToken=b77a5c561934e089</value>
+  </data>
+  <data name="ALLIEDTELESYN_MIB" type="System.Resources.ResXFileRef, System.Windows.Forms">
+    <value>..\Resources\ALLIEDTELESYN-MIB.mib;System.Byte[], mscorlib, Version=2.0.0.0, Culture=neutral, PublicKeyToken=b77a5c561934e089</value>
+  </data>
+  <data name="ALTIGA_CAP" type="System.Resources.ResXFileRef, System.Windows.Forms">
+    <value>..\Resources\ALTIGA-CAP.mib;System.Byte[], mscorlib, Version=2.0.0.0, Culture=neutral, PublicKeyToken=b77a5c561934e089</value>
+  </data>
+  <data name="ALVARION_DOT11_WLAN_MIB" type="System.Resources.ResXFileRef, System.Windows.Forms">
+    <value>..\Resources\ALVARION-DOT11-WLAN-MIB.mib;System.Byte[], mscorlib, Version=2.0.0.0, Culture=neutral, PublicKeyToken=b77a5c561934e089</value>
+  </data>
+  <data name="APPC_MIB" type="System.Resources.ResXFileRef, System.Windows.Forms">
+    <value>..\Resources\APPC-MIB.mib;System.Byte[], mscorlib, Version=2.0.0.0, Culture=neutral, PublicKeyToken=b77a5c561934e089</value>
+  </data>
+  <data name="ARRAYMANAGER_MIB" type="System.Resources.ResXFileRef, System.Windows.Forms">
+    <value>..\Resources\ARRAYMANAGER-MIB.mib;System.Byte[], mscorlib, Version=2.0.0.0, Culture=neutral, PublicKeyToken=b77a5c561934e089</value>
+  </data>
+  <data name="ARROWPOINT_IPV4_OSPF_MIB" type="System.Resources.ResXFileRef, System.Windows.Forms">
+    <value>..\Resources\ARROWPOINT-IPV4-OSPF-MIB.mib;System.Byte[], mscorlib, Version=2.0.0.0, Culture=neutral, PublicKeyToken=b77a5c561934e089</value>
+  </data>
+  <data name="ATM_TC_MIB" type="System.Resources.ResXFileRef, System.Windows.Forms">
+    <value>..\Resources\ATM-TC-MIB.mib;System.Byte[], mscorlib, Version=2.0.0.0, Culture=neutral, PublicKeyToken=b77a5c561934e089</value>
+  </data>
+  <data name="BASEBRDD_MIB_MIB" type="System.Resources.ResXFileRef, System.Windows.Forms">
+    <value>..\Resources\BASEBRDD_MIB-MIB.mib;System.Byte[], mscorlib, Version=2.0.0.0, Culture=neutral, PublicKeyToken=b77a5c561934e089</value>
+  </data>
+  <data name="BRIDGE_MIB" type="System.Resources.ResXFileRef, System.Windows.Forms">
+    <value>..\Resources\BRIDGE-MIB;System.Byte[], mscorlib, Version=2.0.0.0, Culture=neutral, PublicKeyToken=b77a5c561934e089</value>
+  </data>
+  <data name="CISCO_AAA_SERVER_MIB" type="System.Resources.ResXFileRef, System.Windows.Forms">
+    <value>..\Resources\CISCO-AAA-SERVER-MIB.mib;System.Byte[], mscorlib, Version=2.0.0.0, Culture=neutral, PublicKeyToken=b77a5c561934e089</value>
+  </data>
+  <data name="CISCO_BULK_FILE_MIB" type="System.Resources.ResXFileRef, System.Windows.Forms">
+    <value>..\Resources\CISCO-BULK-FILE-MIB.mib;System.Byte[], mscorlib, Version=2.0.0.0, Culture=neutral, PublicKeyToken=b77a5c561934e089</value>
+  </data>
+  <data name="CISCO_CSG_MIB" type="System.Resources.ResXFileRef, System.Windows.Forms">
+    <value>..\Resources\CISCO-CSG-MIB.mib;System.Byte[], mscorlib, Version=2.0.0.0, Culture=neutral, PublicKeyToken=b77a5c561934e089</value>
+  </data>
+  <data name="DISMAN_EVENT_MIB" type="System.Resources.ResXFileRef, System.Windows.Forms">
+    <value>..\Resources\DISMAN-EVENT-MIB.txt;System.Byte[], mscorlib, Version=2.0.0.0, Culture=neutral, PublicKeyToken=b77a5c561934e089</value>
+  </data>
+  <data name="DISMAN_EXPRESSION_MIB" type="System.Resources.ResXFileRef, System.Windows.Forms">
+    <value>..\Resources\DISMAN-EXPRESSION-MIB.txt;System.Byte[], mscorlib, Version=2.0.0.0, Culture=neutral, PublicKeyToken=b77a5c561934e089</value>
+  </data>
+  <data name="DISMAN_NSLOOKUP_MIB" type="System.Resources.ResXFileRef, System.Windows.Forms">
+    <value>..\Resources\DISMAN-NSLOOKUP-MIB.txt;System.Byte[], mscorlib, Version=2.0.0.0, Culture=neutral, PublicKeyToken=b77a5c561934e089</value>
+  </data>
+  <data name="DISMAN_PING_MIB" type="System.Resources.ResXFileRef, System.Windows.Forms">
+    <value>..\Resources\DISMAN-PING-MIB.txt;System.Byte[], mscorlib, Version=2.0.0.0, Culture=neutral, PublicKeyToken=b77a5c561934e089</value>
+  </data>
+  <data name="DISMAN_SCHEDULE_MIB" type="System.Resources.ResXFileRef, System.Windows.Forms">
+    <value>..\Resources\DISMAN-SCHEDULE-MIB.txt;System.Byte[], mscorlib, Version=2.0.0.0, Culture=neutral, PublicKeyToken=b77a5c561934e089</value>
+  </data>
+  <data name="DISMAN_SCRIPT_MIB" type="System.Resources.ResXFileRef, System.Windows.Forms">
+    <value>..\Resources\DISMAN-SCRIPT-MIB.txt;System.Byte[], mscorlib, Version=2.0.0.0, Culture=neutral, PublicKeyToken=b77a5c561934e089</value>
+  </data>
+  <data name="DISMAN_TRACEROUTE_MIB" type="System.Resources.ResXFileRef, System.Windows.Forms">
+    <value>..\Resources\DISMAN-TRACEROUTE-MIB.txt;System.Byte[], mscorlib, Version=2.0.0.0, Culture=neutral, PublicKeyToken=b77a5c561934e089</value>
+  </data>
+  <data name="DMTF_DMI_MIB" type="System.Resources.ResXFileRef, System.Windows.Forms">
+    <value>..\Resources\DMTF-DMI-MIB.mib;System.Byte[], mscorlib, Version=2.0.0.0, Culture=neutral, PublicKeyToken=b77a5c561934e089</value>
+  </data>
+  <data name="empty" type="System.Resources.ResXFileRef, System.Windows.Forms">
+    <value>..\Resources\empty.txt;System.Byte[], mscorlib, Version=2.0.0.0, Culture=neutral, PublicKeyToken=b77a5c561934e089</value>
+  </data>
+  <data name="EtherLike_MIB" type="System.Resources.ResXFileRef, System.Windows.Forms">
+    <value>..\Resources\EtherLike-MIB.txt;System.Byte[], mscorlib, Version=2.0.0.0, Culture=neutral, PublicKeyToken=b77a5c561934e089</value>
+  </data>
+  <data name="get" type="System.Resources.ResXFileRef, System.Windows.Forms">
+    <value>..\Resources\get.dat;System.Byte[], mscorlib, Version=2.0.0.0, Culture=neutral, PublicKeyToken=b77a5c561934e089</value>
+  </data>
+  <data name="getresponse" type="System.Resources.ResXFileRef, System.Windows.Forms">
+    <value>..\Resources\getresponse.dat;System.Byte[], mscorlib, Version=2.0.0.0, Culture=neutral, PublicKeyToken=b77a5c561934e089</value>
+  </data>
+  <data name="HCNUM_TC" type="System.Resources.ResXFileRef, System.Windows.Forms">
+    <value>..\Resources\HCNUM-TC.txt;System.Byte[], mscorlib, Version=2.0.0.0, Culture=neutral, PublicKeyToken=b77a5c561934e089</value>
+  </data>
+  <data name="HOST_RESOURCES_MIB" type="System.Resources.ResXFileRef, System.Windows.Forms">
+    <value>..\Resources\HOST-RESOURCES-MIB.txt;System.Byte[], mscorlib, Version=2.0.0.0, Culture=neutral, PublicKeyToken=b77a5c561934e089</value>
+  </data>
+  <data name="HOST_RESOURCES_TYPES" type="System.Resources.ResXFileRef, System.Windows.Forms">
+    <value>..\Resources\HOST-RESOURCES-TYPES.txt;System.Byte[], mscorlib, Version=2.0.0.0, Culture=neutral, PublicKeyToken=b77a5c561934e089</value>
+  </data>
+  <data name="IANAifType_MIB" type="System.Resources.ResXFileRef, System.Windows.Forms">
+    <value>..\Resources\IANAifType-MIB.txt;System.Byte[], mscorlib, Version=2.0.0.0, Culture=neutral, PublicKeyToken=b77a5c561934e089</value>
+  </data>
+  <data name="ianalist" type="System.Resources.ResXFileRef, System.Windows.Forms">
+    <value>..\Resources\ianalist;System.Byte[], mscorlib, Version=2.0.0.0, Culture=neutral, PublicKeyToken=b77a5c561934e089</value>
+  </data>
+  <data name="IANA_ADDRESS_FAMILY_NUMBERS_MIB" type="System.Resources.ResXFileRef, System.Windows.Forms">
+    <value>..\Resources\IANA-ADDRESS-FAMILY-NUMBERS-MIB.txt;System.Byte[], mscorlib, Version=2.0.0.0, Culture=neutral, PublicKeyToken=b77a5c561934e089</value>
+  </data>
+  <data name="IANA_LANGUAGE_MIB" type="System.Resources.ResXFileRef, System.Windows.Forms">
+    <value>..\Resources\IANA-LANGUAGE-MIB.txt;System.Byte[], mscorlib, Version=2.0.0.0, Culture=neutral, PublicKeyToken=b77a5c561934e089</value>
+  </data>
+  <data name="IANA_RTPROTO_MIB" type="System.Resources.ResXFileRef, System.Windows.Forms">
+    <value>..\Resources\IANA-RTPROTO-MIB.txt;System.Byte[], mscorlib, Version=2.0.0.0, Culture=neutral, PublicKeyToken=b77a5c561934e089</value>
+  </data>
+  <data name="IEEE8021_PAE_MIB" type="System.Resources.ResXFileRef, System.Windows.Forms">
+    <value>..\Resources\IEEE8021-PAE-MIB.mib;System.Byte[], mscorlib, Version=2.0.0.0, Culture=neutral, PublicKeyToken=b77a5c561934e089</value>
+  </data>
+  <data name="IEEE802DOT11_MIB" type="System.Resources.ResXFileRef, System.Windows.Forms">
+    <value>..\Resources\IEEE802DOT11-MIB.mib;System.Byte[], mscorlib, Version=2.0.0.0, Culture=neutral, PublicKeyToken=b77a5c561934e089</value>
+  </data>
+  <data name="IF_INVERTED_STACK_MIB" type="System.Resources.ResXFileRef, System.Windows.Forms">
+    <value>..\Resources\IF-INVERTED-STACK-MIB.txt;System.Byte[], mscorlib, Version=2.0.0.0, Culture=neutral, PublicKeyToken=b77a5c561934e089</value>
+  </data>
+  <data name="IF_MIB" type="System.Resources.ResXFileRef, System.Windows.Forms">
+    <value>..\Resources\IF-MIB.txt;System.Byte[], mscorlib, Version=2.0.0.0, Culture=neutral, PublicKeyToken=b77a5c561934e089</value>
+  </data>
+  <data name="INET_ADDRESS_MIB" type="System.Resources.ResXFileRef, System.Windows.Forms">
+    <value>..\Resources\INET-ADDRESS-MIB.txt;System.Byte[], mscorlib, Version=2.0.0.0, Culture=neutral, PublicKeyToken=b77a5c561934e089</value>
+  </data>
+  <data name="IPV6_FLOW_LABEL_MIB" type="System.Resources.ResXFileRef, System.Windows.Forms">
+    <value>..\Resources\IPV6-FLOW-LABEL-MIB.txt;System.Byte[], mscorlib, Version=2.0.0.0, Culture=neutral, PublicKeyToken=b77a5c561934e089</value>
+  </data>
+  <data name="IPV6_ICMP_MIB" type="System.Resources.ResXFileRef, System.Windows.Forms">
+    <value>..\Resources\IPV6-ICMP-MIB.txt;System.Byte[], mscorlib, Version=2.0.0.0, Culture=neutral, PublicKeyToken=b77a5c561934e089</value>
+  </data>
+  <data name="IPV6_MIB" type="System.Resources.ResXFileRef, System.Windows.Forms">
+    <value>..\Resources\IPV6-MIB.txt;System.Byte[], mscorlib, Version=2.0.0.0, Culture=neutral, PublicKeyToken=b77a5c561934e089</value>
+  </data>
+  <data name="IPV6_TC" type="System.Resources.ResXFileRef, System.Windows.Forms">
+    <value>..\Resources\IPV6-TC.txt;System.Byte[], mscorlib, Version=2.0.0.0, Culture=neutral, PublicKeyToken=b77a5c561934e089</value>
+  </data>
+  <data name="IPV6_TCP_MIB" type="System.Resources.ResXFileRef, System.Windows.Forms">
+    <value>..\Resources\IPV6-TCP-MIB.txt;System.Byte[], mscorlib, Version=2.0.0.0, Culture=neutral, PublicKeyToken=b77a5c561934e089</value>
+  </data>
+  <data name="IPV6_UDP_MIB" type="System.Resources.ResXFileRef, System.Windows.Forms">
+    <value>..\Resources\IPV6-UDP-MIB.txt;System.Byte[], mscorlib, Version=2.0.0.0, Culture=neutral, PublicKeyToken=b77a5c561934e089</value>
+  </data>
+  <data name="IP_FORWARD_MIB" type="System.Resources.ResXFileRef, System.Windows.Forms">
+    <value>..\Resources\IP-FORWARD-MIB.txt;System.Byte[], mscorlib, Version=2.0.0.0, Culture=neutral, PublicKeyToken=b77a5c561934e089</value>
+  </data>
+  <data name="IP_MIB" type="System.Resources.ResXFileRef, System.Windows.Forms">
+    <value>..\Resources\IP-MIB.txt;System.Byte[], mscorlib, Version=2.0.0.0, Culture=neutral, PublicKeyToken=b77a5c561934e089</value>
+  </data>
+  <data name="JVM_MANAGEMENT_MIB" type="System.Resources.ResXFileRef, System.Windows.Forms">
+    <value>..\Resources\JVM-MANAGEMENT-MIB.mib;System.Byte[], mscorlib, Version=2.0.0.0, Culture=neutral, PublicKeyToken=b77a5c561934e089</value>
+  </data>
+  <data name="LM_SENSORS_MIB" type="System.Resources.ResXFileRef, System.Windows.Forms">
+    <value>..\Resources\LM-SENSORS-MIB.txt;System.Byte[], mscorlib, Version=2.0.0.0, Culture=neutral, PublicKeyToken=b77a5c561934e089</value>
+  </data>
+  <data name="Makefile" type="System.Resources.ResXFileRef, System.Windows.Forms">
+    <value>..\Resources\Makefile.in;System.Byte[], mscorlib, Version=2.0.0.0, Culture=neutral, PublicKeyToken=b77a5c561934e089</value>
+  </data>
+  <data name="Makefile1" type="System.Resources.ResXFileRef, System.Windows.Forms">
+    <value>..\Resources\Makefile.mib;System.Byte[], mscorlib, Version=2.0.0.0, Culture=neutral, PublicKeyToken=b77a5c561934e089</value>
+  </data>
+  <data name="makehtml" type="System.Resources.ResXFileRef, System.Windows.Forms">
+    <value>..\Resources\makehtml.pl;System.Byte[], mscorlib, Version=2.0.0.0, Culture=neutral, PublicKeyToken=b77a5c561934e089</value>
+  </data>
+  <data name="mibfetch" type="System.Resources.ResXFileRef, System.Windows.Forms">
+    <value>..\Resources\mibfetch;System.Byte[], mscorlib, Version=2.0.0.0, Culture=neutral, PublicKeyToken=b77a5c561934e089</value>
+  </data>
+  <data name="MTA_MIB" type="System.Resources.ResXFileRef, System.Windows.Forms">
+    <value>..\Resources\MTA-MIB.txt;System.Byte[], mscorlib, Version=2.0.0.0, Culture=neutral, PublicKeyToken=b77a5c561934e089</value>
+  </data>
+  <data name="NETWORK_SERVICES_MIB" type="System.Resources.ResXFileRef, System.Windows.Forms">
+    <value>..\Resources\NETWORK-SERVICES-MIB.txt;System.Byte[], mscorlib, Version=2.0.0.0, Culture=neutral, PublicKeyToken=b77a5c561934e089</value>
+  </data>
+  <data name="NET_SNMP_AGENT_MIB" type="System.Resources.ResXFileRef, System.Windows.Forms">
+    <value>..\Resources\NET-SNMP-AGENT-MIB.txt;System.Byte[], mscorlib, Version=2.0.0.0, Culture=neutral, PublicKeyToken=b77a5c561934e089</value>
+  </data>
+  <data name="NET_SNMP_EXAMPLES_MIB" type="System.Resources.ResXFileRef, System.Windows.Forms">
+    <value>..\Resources\NET-SNMP-EXAMPLES-MIB.txt;System.Byte[], mscorlib, Version=2.0.0.0, Culture=neutral, PublicKeyToken=b77a5c561934e089</value>
+  </data>
+  <data name="NET_SNMP_EXTEND_MIB" type="System.Resources.ResXFileRef, System.Windows.Forms">
+    <value>..\Resources\NET-SNMP-EXTEND-MIB.txt;System.Byte[], mscorlib, Version=2.0.0.0, Culture=neutral, PublicKeyToken=b77a5c561934e089</value>
+  </data>
+  <data name="NET_SNMP_MIB" type="System.Resources.ResXFileRef, System.Windows.Forms">
+    <value>..\Resources\NET-SNMP-MIB.txt;System.Byte[], mscorlib, Version=2.0.0.0, Culture=neutral, PublicKeyToken=b77a5c561934e089</value>
+  </data>
+  <data name="NET_SNMP_MONITOR_MIB" type="System.Resources.ResXFileRef, System.Windows.Forms">
+    <value>..\Resources\NET-SNMP-MONITOR-MIB.txt;System.Byte[], mscorlib, Version=2.0.0.0, Culture=neutral, PublicKeyToken=b77a5c561934e089</value>
+  </data>
+  <data name="NET_SNMP_SYSTEM_MIB" type="System.Resources.ResXFileRef, System.Windows.Forms">
+    <value>..\Resources\NET-SNMP-SYSTEM-MIB.txt;System.Byte[], mscorlib, Version=2.0.0.0, Culture=neutral, PublicKeyToken=b77a5c561934e089</value>
+  </data>
+  <data name="NET_SNMP_TC" type="System.Resources.ResXFileRef, System.Windows.Forms">
+    <value>..\Resources\NET-SNMP-TC.txt;System.Byte[], mscorlib, Version=2.0.0.0, Culture=neutral, PublicKeyToken=b77a5c561934e089</value>
+  </data>
+  <data name="NET_SNMP_VACM_MIB" type="System.Resources.ResXFileRef, System.Windows.Forms">
+    <value>..\Resources\NET-SNMP-VACM-MIB.txt;System.Byte[], mscorlib, Version=2.0.0.0, Culture=neutral, PublicKeyToken=b77a5c561934e089</value>
+  </data>
+  <data name="nodemap" type="System.Resources.ResXFileRef, System.Windows.Forms">
+    <value>..\Resources\nodemap;System.Byte[], mscorlib, Version=2.0.0.0, Culture=neutral, PublicKeyToken=b77a5c561934e089</value>
+  </data>
+  <data name="NOTIFICATION_LOG_MIB" type="System.Resources.ResXFileRef, System.Windows.Forms">
+    <value>..\Resources\NOTIFICATION-LOG-MIB.txt;System.Byte[], mscorlib, Version=2.0.0.0, Culture=neutral, PublicKeyToken=b77a5c561934e089</value>
+  </data>
+  <data name="novarbind" type="System.Resources.ResXFileRef, System.Windows.Forms">
+    <value>..\Resources\novarbind.dat;System.Byte[], mscorlib, Version=2.0.0.0, Culture=neutral, PublicKeyToken=b77a5c561934e089</value>
+  </data>
+  <data name="onevarbind" type="System.Resources.ResXFileRef, System.Windows.Forms">
+    <value>..\Resources\onevarbind.dat;System.Byte[], mscorlib, Version=2.0.0.0, Culture=neutral, PublicKeyToken=b77a5c561934e089</value>
+  </data>
+  <data name="README" type="System.Resources.ResXFileRef, System.Windows.Forms">
+    <value>..\Resources\README.mibs;System.Byte[], mscorlib, Version=2.0.0.0, Culture=neutral, PublicKeyToken=b77a5c561934e089</value>
+  </data>
+  <data name="RFC1155_SMI" type="System.Resources.ResXFileRef, System.Windows.Forms">
+    <value>..\Resources\RFC1155-SMI.txt;System.Byte[], mscorlib, Version=2.0.0.0, Culture=neutral, PublicKeyToken=b77a5c561934e089</value>
+  </data>
+  <data name="RFC1157_SNMP" type="System.Resources.ResXFileRef, System.Windows.Forms">
+    <value>..\Resources\RFC1157-SNMP.mib;System.Byte[], mscorlib, Version=2.0.0.0, Culture=neutral, PublicKeyToken=b77a5c561934e089</value>
+  </data>
+  <data name="RFC1213_MIB" type="System.Resources.ResXFileRef, System.Windows.Forms">
+    <value>..\Resources\RFC1213-MIB;System.Byte[], mscorlib, Version=2.0.0.0, Culture=neutral, PublicKeyToken=b77a5c561934e089</value>
+  </data>
+  <data name="RFC1213_MIB1" type="System.Resources.ResXFileRef, System.Windows.Forms">
+    <value>..\Resources\RFC1213-MIB.txt;System.Byte[], mscorlib, Version=2.0.0.0, Culture=neutral, PublicKeyToken=b77a5c561934e089</value>
+  </data>
+  <data name="RFC1271_MIB" type="System.Resources.ResXFileRef, System.Windows.Forms">
+    <value>..\Resources\RFC1271-MIB;System.Byte[], mscorlib, Version=2.0.0.0, Culture=neutral, PublicKeyToken=b77a5c561934e089</value>
+  </data>
+  <data name="rfclist" type="System.Resources.ResXFileRef, System.Windows.Forms">
+    <value>..\Resources\rfclist;System.Byte[], mscorlib, Version=2.0.0.0, Culture=neutral, PublicKeyToken=b77a5c561934e089</value>
+  </data>
+  <data name="rfcmibs" type="System.Resources.ResXFileRef, System.Windows.Forms">
+    <value>..\Resources\rfcmibs.diff;System.Byte[], mscorlib, Version=2.0.0.0, Culture=neutral, PublicKeyToken=b77a5c561934e089</value>
+  </data>
+  <data name="RFC_1212" type="System.Resources.ResXFileRef, System.Windows.Forms">
+    <value>..\Resources\RFC-1212;System.Byte[], mscorlib, Version=2.0.0.0, Culture=neutral, PublicKeyToken=b77a5c561934e089</value>
+  </data>
+  <data name="RFC_1215" type="System.Resources.ResXFileRef, System.Windows.Forms">
+    <value>..\Resources\RFC-1215.txt;System.Byte[], mscorlib, Version=2.0.0.0, Culture=neutral, PublicKeyToken=b77a5c561934e089</value>
+  </data>
+  <data name="RMON_MIB" type="System.Resources.ResXFileRef, System.Windows.Forms">
+    <value>..\Resources\RMON-MIB.txt;System.Byte[], mscorlib, Version=2.0.0.0, Culture=neutral, PublicKeyToken=b77a5c561934e089</value>
+  </data>
+  <data name="smistrip" type="System.Resources.ResXFileRef, System.Windows.Forms">
+    <value>..\Resources\smistrip;System.Byte[], mscorlib, Version=2.0.0.0, Culture=neutral, PublicKeyToken=b77a5c561934e089</value>
+  </data>
+  <data name="SMUX_MIB" type="System.Resources.ResXFileRef, System.Windows.Forms">
+    <value>..\Resources\SMUX-MIB.txt;System.Byte[], mscorlib, Version=2.0.0.0, Culture=neutral, PublicKeyToken=b77a5c561934e089</value>
+  </data>
+  <data name="SNMPv2_CONF" type="System.Resources.ResXFileRef, System.Windows.Forms">
+    <value>..\Resources\SNMPv2-CONF.txt;System.Byte[], mscorlib, Version=2.0.0.0, Culture=neutral, PublicKeyToken=b77a5c561934e089</value>
+  </data>
+  <data name="SNMPv2_MIB" type="System.Resources.ResXFileRef, System.Windows.Forms">
+    <value>..\Resources\SNMPv2-MIB.txt;System.Byte[], mscorlib, Version=2.0.0.0, Culture=neutral, PublicKeyToken=b77a5c561934e089</value>
+  </data>
+  <data name="SNMPV2_PDU" type="System.Resources.ResXFileRef, System.Windows.Forms">
+    <value>..\Resources\SNMPV2-PDU.mib;System.Byte[], mscorlib, Version=2.0.0.0, Culture=neutral, PublicKeyToken=b77a5c561934e089</value>
+  </data>
+  <data name="SNMPv2_SMI" type="System.Resources.ResXFileRef, System.Windows.Forms">
+    <value>..\Resources\SNMPv2-SMI.txt;System.Byte[], mscorlib, Version=2.0.0.0, Culture=neutral, PublicKeyToken=b77a5c561934e089</value>
+  </data>
+  <data name="SNMPv2_TC" type="System.Resources.ResXFileRef, System.Windows.Forms">
+    <value>..\Resources\SNMPv2-TC.txt;System.Byte[], mscorlib, Version=2.0.0.0, Culture=neutral, PublicKeyToken=b77a5c561934e089</value>
+  </data>
+  <data name="SNMPv2_TM" type="System.Resources.ResXFileRef, System.Windows.Forms">
+    <value>..\Resources\SNMPv2-TM.txt;System.Byte[], mscorlib, Version=2.0.0.0, Culture=neutral, PublicKeyToken=b77a5c561934e089</value>
+  </data>
+  <data name="SNMP_COMMUNITY_MIB" type="System.Resources.ResXFileRef, System.Windows.Forms">
+    <value>..\Resources\SNMP-COMMUNITY-MIB.txt;System.Byte[], mscorlib, Version=2.0.0.0, Culture=neutral, PublicKeyToken=b77a5c561934e089</value>
+  </data>
+  <data name="SNMP_FRAMEWORK_MIB" type="System.Resources.ResXFileRef, System.Windows.Forms">
+    <value>..\Resources\SNMP-FRAMEWORK-MIB.txt;System.Byte[], mscorlib, Version=2.0.0.0, Culture=neutral, PublicKeyToken=b77a5c561934e089</value>
+  </data>
+  <data name="SNMP_MPD_MIB" type="System.Resources.ResXFileRef, System.Windows.Forms">
+    <value>..\Resources\SNMP-MPD-MIB.txt;System.Byte[], mscorlib, Version=2.0.0.0, Culture=neutral, PublicKeyToken=b77a5c561934e089</value>
+  </data>
+  <data name="SNMP_NOTIFICATION_MIB" type="System.Resources.ResXFileRef, System.Windows.Forms">
+    <value>..\Resources\SNMP-NOTIFICATION-MIB.txt;System.Byte[], mscorlib, Version=2.0.0.0, Culture=neutral, PublicKeyToken=b77a5c561934e089</value>
+  </data>
+  <data name="SNMP_PROXY_MIB" type="System.Resources.ResXFileRef, System.Windows.Forms">
+    <value>..\Resources\SNMP-PROXY-MIB.txt;System.Byte[], mscorlib, Version=2.0.0.0, Culture=neutral, PublicKeyToken=b77a5c561934e089</value>
+  </data>
+  <data name="SNMP_TARGET_MIB" type="System.Resources.ResXFileRef, System.Windows.Forms">
+    <value>..\Resources\SNMP-TARGET-MIB.txt;System.Byte[], mscorlib, Version=2.0.0.0, Culture=neutral, PublicKeyToken=b77a5c561934e089</value>
+  </data>
+  <data name="SNMP_USER_BASED_SM_MIB" type="System.Resources.ResXFileRef, System.Windows.Forms">
+    <value>..\Resources\SNMP-USER-BASED-SM-MIB.txt;System.Byte[], mscorlib, Version=2.0.0.0, Culture=neutral, PublicKeyToken=b77a5c561934e089</value>
+  </data>
+  <data name="SNMP_USM_AES_MIB" type="System.Resources.ResXFileRef, System.Windows.Forms">
+    <value>..\Resources\SNMP-USM-AES-MIB.txt;System.Byte[], mscorlib, Version=2.0.0.0, Culture=neutral, PublicKeyToken=b77a5c561934e089</value>
+  </data>
+  <data name="SNMP_USM_DH_OBJECTS_MIB" type="System.Resources.ResXFileRef, System.Windows.Forms">
+    <value>..\Resources\SNMP-USM-DH-OBJECTS-MIB.txt;System.Byte[], mscorlib, Version=2.0.0.0, Culture=neutral, PublicKeyToken=b77a5c561934e089</value>
+  </data>
+  <data name="SNMP_VIEW_BASED_ACM_MIB" type="System.Resources.ResXFileRef, System.Windows.Forms">
+    <value>..\Resources\SNMP-VIEW-BASED-ACM-MIB.txt;System.Byte[], mscorlib, Version=2.0.0.0, Culture=neutral, PublicKeyToken=b77a5c561934e089</value>
+  </data>
+  <data name="SYMMIB_MIB_MIB" type="System.Resources.ResXFileRef, System.Windows.Forms">
+    <value>..\Resources\SYMMIB_MIB-MIB.mib;System.Byte[], mscorlib, Version=2.0.0.0, Culture=neutral, PublicKeyToken=b77a5c561934e089</value>
+  </data>
+  <data name="TCP_MIB" type="System.Resources.ResXFileRef, System.Windows.Forms">
+    <value>..\Resources\TCP-MIB.txt;System.Byte[], mscorlib, Version=2.0.0.0, Culture=neutral, PublicKeyToken=b77a5c561934e089</value>
+  </data>
+  <data name="TRANSPORT_ADDRESS_MIB" type="System.Resources.ResXFileRef, System.Windows.Forms">
+    <value>..\Resources\TRANSPORT-ADDRESS-MIB.txt;System.Byte[], mscorlib, Version=2.0.0.0, Culture=neutral, PublicKeyToken=b77a5c561934e089</value>
+  </data>
+  <data name="TUNNEL_MIB" type="System.Resources.ResXFileRef, System.Windows.Forms">
+    <value>..\Resources\TUNNEL-MIB.txt;System.Byte[], mscorlib, Version=2.0.0.0, Culture=neutral, PublicKeyToken=b77a5c561934e089</value>
+  </data>
+  <data name="twovarbinds" type="System.Resources.ResXFileRef, System.Windows.Forms">
+    <value>..\Resources\twovarbinds.dat;System.Byte[], mscorlib, Version=2.0.0.0, Culture=neutral, PublicKeyToken=b77a5c561934e089</value>
+  </data>
+  <data name="UCD_DEMO_MIB" type="System.Resources.ResXFileRef, System.Windows.Forms">
+    <value>..\Resources\UCD-DEMO-MIB.inc;System.Byte[], mscorlib, Version=2.0.0.0, Culture=neutral, PublicKeyToken=b77a5c561934e089</value>
+  </data>
+  <data name="UCD_DEMO_MIB1" type="System.Resources.ResXFileRef, System.Windows.Forms">
+    <value>..\Resources\UCD-DEMO-MIB.txt;System.Byte[], mscorlib, Version=2.0.0.0, Culture=neutral, PublicKeyToken=b77a5c561934e089</value>
+  </data>
+  <data name="UCD_DISKIO_MIB" type="System.Resources.ResXFileRef, System.Windows.Forms">
+    <value>..\Resources\UCD-DISKIO-MIB.inc;System.Byte[], mscorlib, Version=2.0.0.0, Culture=neutral, PublicKeyToken=b77a5c561934e089</value>
+  </data>
+  <data name="UCD_DISKIO_MIB1" type="System.Resources.ResXFileRef, System.Windows.Forms">
+    <value>..\Resources\UCD-DISKIO-MIB.txt;System.Byte[], mscorlib, Version=2.0.0.0, Culture=neutral, PublicKeyToken=b77a5c561934e089</value>
+  </data>
+  <data name="UCD_DLMOD_MIB" type="System.Resources.ResXFileRef, System.Windows.Forms">
+    <value>..\Resources\UCD-DLMOD-MIB.inc;System.Byte[], mscorlib, Version=2.0.0.0, Culture=neutral, PublicKeyToken=b77a5c561934e089</value>
+  </data>
+  <data name="UCD_DLMOD_MIB1" type="System.Resources.ResXFileRef, System.Windows.Forms">
+    <value>..\Resources\UCD-DLMOD-MIB.txt;System.Byte[], mscorlib, Version=2.0.0.0, Culture=neutral, PublicKeyToken=b77a5c561934e089</value>
+  </data>
+  <data name="UCD_IPFILTER_MIB" type="System.Resources.ResXFileRef, System.Windows.Forms">
+    <value>..\Resources\UCD-IPFILTER-MIB.inc;System.Byte[], mscorlib, Version=2.0.0.0, Culture=neutral, PublicKeyToken=b77a5c561934e089</value>
+  </data>
+  <data name="UCD_IPFILTER_MIB1" type="System.Resources.ResXFileRef, System.Windows.Forms">
+    <value>..\Resources\UCD-IPFILTER-MIB.txt;System.Byte[], mscorlib, Version=2.0.0.0, Culture=neutral, PublicKeyToken=b77a5c561934e089</value>
+  </data>
+  <data name="UCD_IPFWACC_MIB" type="System.Resources.ResXFileRef, System.Windows.Forms">
+    <value>..\Resources\UCD-IPFWACC-MIB.inc;System.Byte[], mscorlib, Version=2.0.0.0, Culture=neutral, PublicKeyToken=b77a5c561934e089</value>
+  </data>
+  <data name="UCD_IPFWACC_MIB1" type="System.Resources.ResXFileRef, System.Windows.Forms">
+    <value>..\Resources\UCD-IPFWACC-MIB.txt;System.Byte[], mscorlib, Version=2.0.0.0, Culture=neutral, PublicKeyToken=b77a5c561934e089</value>
+  </data>
+  <data name="UCD_SNMP_MIB" type="System.Resources.ResXFileRef, System.Windows.Forms">
+    <value>..\Resources\UCD-SNMP-MIB.inc;System.Byte[], mscorlib, Version=2.0.0.0, Culture=neutral, PublicKeyToken=b77a5c561934e089</value>
+  </data>
+  <data name="UCD_SNMP_MIB1" type="System.Resources.ResXFileRef, System.Windows.Forms">
+    <value>..\Resources\UCD-SNMP-MIB.txt;System.Byte[], mscorlib, Version=2.0.0.0, Culture=neutral, PublicKeyToken=b77a5c561934e089</value>
+  </data>
+  <data name="UCD_SNMP_MIB_OLD" type="System.Resources.ResXFileRef, System.Windows.Forms">
+    <value>..\Resources\UCD-SNMP-MIB-OLD.txt;System.Byte[], mscorlib, Version=2.0.0.0, Culture=neutral, PublicKeyToken=b77a5c561934e089</value>
+  </data>
+  <data name="UDP_MIB" type="System.Resources.ResXFileRef, System.Windows.Forms">
+    <value>..\Resources\UDP-MIB.txt;System.Byte[], mscorlib, Version=2.0.0.0, Culture=neutral, PublicKeyToken=b77a5c561934e089</value>
+  </data>
+  <data name="fivevarbinds" type="System.Resources.ResXFileRef, System.Windows.Forms">
+    <value>..\Resources\fivevarbinds.dat;System.Byte[], mscorlib, Version=2.0.0.0, Culture=neutral, PublicKeyToken=b77a5c561934e089</value>
+  </data>
+  <data name="httpmib" type="System.Resources.ResXFileRef, System.Windows.Forms">
+    <value>..\Resources\httpmib.txt;System.Byte[], mscorlib, Version=2.0.0.0, Culture=neutral, PublicKeyToken=b77a5c561934e089</value>
+  </data>
+  <data name="trapv3" type="System.Resources.ResXFileRef, System.Windows.Forms">
+    <value>..\Resources\trapv3;System.Byte[], mscorlib, Version=2.0.0.0, Culture=neutral, PublicKeyToken=b77a5c561934e089</value>
+  </data>
+  <data name="trapv3auth" type="System.Resources.ResXFileRef, System.Windows.Forms">
+    <value>..\Resources\trapv3auth;System.Byte[], mscorlib, Version=2.0.0.0, Culture=neutral, PublicKeyToken=b77a5c561934e089</value>
+  </data>
+  <data name="trapv3authpriv" type="System.Resources.ResXFileRef, System.Windows.Forms">
+    <value>..\Resources\trapv3authpriv;System.Byte[], mscorlib, Version=2.0.0.0, Culture=neutral, PublicKeyToken=b77a5c561934e089</value>
+  </data>
+  <data name="v3authNoPriv_BER_Issue" type="System.Resources.ResXFileRef, System.Windows.Forms">
+    <value>..\Resources\v3authNoPriv_BER_Issue;System.Byte[], mscorlib, Version=2.0.0.0, Culture=neutral, PublicKeyToken=b77a5c561934e089</value>
+  </data>
+  <data name="RMON2_MIB" type="System.Resources.ResXFileRef, System.Windows.Forms">
+    <value>..\Resources\RMON2-MIB.mib;System.Byte[], mscorlib, Version=2.0.0.0, Culture=neutral, PublicKeyToken=b77a5c561934e089</value>
+  </data>
+  <data name="APPN_MIB" type="System.Resources.ResXFileRef, System.Windows.Forms">
+    <value>..\Resources\APPN-MIB.mib;System.Byte[], mscorlib, Version=2.0.0.0, Culture=neutral, PublicKeyToken=b77a5c561934e089</value>
+  </data>
+  <data name="ADMIN_AUTH_STATS_MIB" type="System.Resources.ResXFileRef, System.Windows.Forms">
+    <value>..\Resources\ADMIN-AUTH-STATS-MIB.mib;System.Byte[], mscorlib, Version=2.0.0.0, Culture=neutral, PublicKeyToken=b77a5c561934e089</value>
+  </data>
+  <data name="MM200_MIB" type="System.Resources.ResXFileRef, System.Windows.Forms">
+    <value>..\Resources\MM200-MIB.mib;System.Byte[], mscorlib, Version=2.0.0.0, Culture=neutral, PublicKeyToken=b77a5c561934e089</value>
+  </data>
+  <data name="BRCM_BSAPTRAP_MIB" type="System.Resources.ResXFileRef, System.Windows.Forms">
+    <value>..\Resources\BRCM-BSAPTRAP-MIB.mib;System.Byte[], mscorlib, Version=2.0.0.0, Culture=neutral, PublicKeyToken=b77a5c561934e089</value>
+  </data>
+  <data name="CASTELLEMIB" type="System.Resources.ResXFileRef, System.Windows.Forms">
+    <value>..\Resources\CASTELLEMIB.mib;System.Byte[], mscorlib, Version=2.0.0.0, Culture=neutral, PublicKeyToken=b77a5c561934e089</value>
+  </data>
+  <data name="CHECKPOINT_MIB" type="System.Resources.ResXFileRef, System.Windows.Forms">
+    <value>..\Resources\CHECKPOINT-MIB.mib;System.Byte[], mscorlib, Version=2.0.0.0, Culture=neutral, PublicKeyToken=b77a5c561934e089</value>
+  </data>
+  <data name="CISCO_CONFIG_COPY_CAPABILITY" type="System.Resources.ResXFileRef, System.Windows.Forms">
+    <value>..\Resources\CISCO-CONFIG-COPY-CAPABILITY.mib;System.Byte[], mscorlib, Version=2.0.0.0, Culture=neutral, PublicKeyToken=b77a5c561934e089</value>
+  </data>
+</root>

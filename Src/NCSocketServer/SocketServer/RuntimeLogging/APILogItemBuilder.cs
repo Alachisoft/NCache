@@ -1,4 +1,4 @@
-﻿//  Copyright (c) 2021 Alachisoft
+﻿//  Copyright (c) 2026 Alachisoft
 //  
 //  Licensed under the Apache License, Version 2.0 (the "License");
 //  you may not use this file except in compliance with the License.
@@ -247,7 +247,6 @@ namespace Alachisoft.NCache.SocketServer.RuntimeLogging
                         if (group != null && !logItemParameters.ContainsKey("group")) logItemParameters.Add("group", group);
                         if (subGroup != null && !logItemParameters.ContainsKey("subgroup")) logItemParameters.Add("subgroup", subGroup);
                         if (dependency != null && !logItemParameters.ContainsKey("dependency")) logItemParameters.Add("dependency", dependency);
-                        //  if (vers != null) logItemParameters.Add("version", version);
                         if (resyncProviderName != null) logItemParameters.Add("resyncProviderName", resyncProviderName);
                         if (version != null) logItemParameters.Add("version", version);
 
@@ -607,7 +606,6 @@ namespace Alachisoft.NCache.SocketServer.RuntimeLogging
                     {
                         logItemParameters.Add("onasynccacheclearcallback", "Avaliable");
                     }
-
                     else if (parameterName.Equals("dataSourceClearedCallback", StringComparison.InvariantCultureIgnoreCase))
                     {
                         if (id!=-1 )
@@ -1728,20 +1726,8 @@ namespace Alachisoft.NCache.SocketServer.RuntimeLogging
             logItem.InstanceID = ServiceConfiguration.BindToIP.ToString();
             logItem.MethodOverload = overload;
             logItem.MethodName = _methodName;
-            //foreach (Parameters param in parameter) {
-               
-            //    if (param.ParameterName != null)
-            //    {
-            //        parameterName = param.ParameterName.ToLower();
-            //        if (parameterName.Equals("query",StringComparison.InvariantCultureIgnoreCase)))
-            //        {
-            //            logItemParameters.Query=query;
-            //        }
-                   
-            //    }
-            //}
-              logItem.RuntimeParameters = logItemParameters;
-             AddAPILogToManager(logItem);
+            logItem.RuntimeParameters = logItemParameters;
+            AddAPILogToManager(logItem);
         }
       
         public void GenerateRegisterCQAPILogItem(string query,IDictionary values, int overload, string exceptionMesage, TimeSpan executionTime, string clientId, string clientIP)
@@ -2398,7 +2384,6 @@ namespace Alachisoft.NCache.SocketServer.RuntimeLogging
                 if (param.ParameterName != null)
                 {
                     parameterName = param.ParameterName.ToLower();
-
                     if (parameterName.Equals("cachedatanotificationcallback", StringComparison.InvariantCultureIgnoreCase))
                     {
                         if (cachedatanotificationcallback != -1)
@@ -2409,7 +2394,6 @@ namespace Alachisoft.NCache.SocketServer.RuntimeLogging
                             logItemParameters.Add("cachedatanotificationcallback", "NA");
 
                     }
-
                     else if (parameterName.Equals("eventtype", StringComparison.InvariantCultureIgnoreCase))
                     {
                         logItemParameters.Add("eventtype", eventtype);
@@ -2460,7 +2444,6 @@ namespace Alachisoft.NCache.SocketServer.RuntimeLogging
             logItem.RuntimeParameters = logItemParameters;
             AddAPILogToManager(logItem);
         }
-      
 
 
         public void GenerateCommandManagerLog(string methodName, string clientId, string clientIP, TimeSpan executionTime, string exceptionMesage)

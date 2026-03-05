@@ -1,0 +1,123 @@
+@parserBody.mixins() ::= <<
+<@super.mixins()>
+<if(rewriteMode)>
+include ANTLR3::Template::RewriteBuilder
+<else>
+include ANTLR3::Template::Builder
+<endif>
+>>
+
+gatedAction( block ) ::= <<
+<if(backtracking)>
+if <actions.(actionScope).synpredgate>
+  <block>
+end
+<else>
+<block>
+<endif>
+>>
+
+/** x+=rule when output=template */
+ruleRefAndListLabel(rule,label,elementIndex,args,scope) ::= <<
+<ruleRef(...)>
+<listLabel(elem={<label; format="label">.template}, ...)>
+>>
+
+rewriteTemplate(alts) ::= <<
+<gatedAction({
+<first(alts):rewriteTemplateAltFirst(); anchor>
+<rest(alts):{a| els<rewriteTemplateAltRest(a)>}; anchor, separator="\n\n">
+<if(rewriteMode)><replaceTextInLine()><endif>
+})>
+>>
+
+rewriteTemplateAltFirst(a) ::= <<
+<if(a.pred)>
+if <a.pred>
+  # <a.description>
+  return_value.template = <a.alt>
+<else>
+# <a.description>
+return_value.template = <a.alt>
+<endif>
+>>
+
+rewriteTemplateAltRest(a) ::= <<
+<if(a.pred)>
+if <a.pred>
+  # <a.description>
+  return_value.template = <a.alt>
+<else>
+e <! little hack to get if .. elsif .. else block right !>
+  # <a.description>
+  return_value.template = <a.alt>
+end
+<endif>
+>>
+
+replaceTextInLine() ::= <<
+<if(TREE_PARSER)>
+@input.token_stream.replace(
+  @input.adaptor.token_start_index( return_value.start ),
+  @input.adaptor.token_stop_index( return_value.start ),
+  return_value.template
+)
+<else>
+@input.replace(
+  return_value.start.index,
+  @input.look( -1 ).index,
+  return_value.template
+)
+<endif>
+>>
+
+rewriteEmptyTemplate(alts) ::= <<
+nil
+>>
+
+/** Invoke a template with a set of attribute name/value pairs.
+ *  Set the value of the rule's template *after* having set
+ *  the attributes because the rule's template might be used as
+ *  an attribute to build a bigger template; you get a self-embedded
+ *  template.
+ */
+rewriteExternalTemplate(name,args) ::= <<
+fetch_template( "<name>" <if(args)>,
+  <argumentMap(args)>
+<endif>)
+>>
+
+/** expr is a string expression that says what template to load */
+rewriteIndirectTemplate(expr,args) ::= <<
+fetch_template( <expr><if(args)>, <argumentMap(args)><endif> )
+>>
+
+/** Invoke an inline template with a set of attribute name/value pairs */
+rewriteInlineTemplate(args, template) ::= <<
+create_template( "<template>"<if(args)>, <argumentMap(args)><endif> )
+>>
+
+/** plain -> {foo} action */
+rewriteAction(action) ::= <<
+<action>
+>>
+
+/** An action has %st.attrName=expr; or %{st}.attrName=expr; */
+actionSetAttribute(st,attrName,expr) ::= <<
+( <st> )[ :<attrName> ] = <expr>
+>>
+
+/** Translate %{stringExpr} */
+actionStringConstructor(stringExpr) ::= <<
+create_template( <stringExpr> )
+>>
+
+/*
+rulePropertyRef_text(scope, attr) ::= <<
+@input.to_s(return_value.start, @input.look(-1))
+>>
+*/
+
+argumentMap(args) ::= <<
+<args:{a|:<a.name> => <a.value>}; separator=",\n">
+>>

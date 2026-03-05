@@ -1,4 +1,4 @@
-//  Copyright (c) 2018 Alachisoft
+//  Copyright (c) 2026 Alachisoft
 //  
 //  Licensed under the Apache License, Version 2.0 (the "License");
 //  you may not use this file except in compliance with the License.
@@ -12,15 +12,15 @@
 //  See the License for the specific language governing permissions and
 //  limitations under the License
 using System;
-using Alachisoft.NCache.Runtime.Serialization.IO;
 
+
+using Alachisoft.NCache.Runtime.Serialization.IO;
 
 /// <summary>
 /// The namespace provides public interface <see cref="ICompactSerializable"/>.
 /// Any type that you want the compact serialization framework to serialize/deserialize and 
 /// not the .NET framework, must implement this interface.
 /// </summary>
-
 namespace Alachisoft.NCache.Runtime.Serialization
 {
 	/// <summary> 

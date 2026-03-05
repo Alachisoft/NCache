@@ -1,4 +1,4 @@
-//  Copyright (c) 2021 Alachisoft
+//  Copyright (c) 2026 Alachisoft
 //  
 //  Licensed under the Apache License, Version 2.0 (the "License");
 //  you may not use this file except in compliance with the License.
@@ -19,6 +19,8 @@ using System.Threading;
 using Alachisoft.NCache.Caching.Topologies;
 using Alachisoft.NCache.Caching.Topologies.Local;
 using Alachisoft.NCache.Runtime.Exceptions;
+
+
 using Alachisoft.NCache.Util;
 using Alachisoft.NCache.Common;
 using Alachisoft.NCache.Common.Threading;
@@ -30,7 +32,6 @@ using Alachisoft.NCache.Common.Util;
 using Alachisoft.NCache.Common.Logger;
 using Alachisoft.NCache.Common.DataStructures.Clustered;
 using Alachisoft.NCache.Common.Caching;
-using Alachisoft.NCache.Common.FeatureUsageData;
 
 namespace Alachisoft.NCache.Caching.AutoExpiration
 {
@@ -168,8 +169,8 @@ namespace Alachisoft.NCache.Caching.AutoExpiration
         private int _removeThreshhold = 10;
 
         private bool _inProgress;
-        
-        
+
+
         /// <summary>Is this node the coordinator node. useful to synchronize database dependent items. </summary>
         private bool _isCoordinator = true;
 
@@ -246,7 +247,6 @@ namespace Alachisoft.NCache.Caching.AutoExpiration
 
                 if (IsCacheLastAccessCountEnabled && isCachelastAccessLogEnabled)
                 {
-
                     string path = System.IO.Path.Combine(AppUtil.LogDir, "log-files");
                     NCacheLog.Info(_context.SerializationContext + (_context.IsStartedAsMirror ? "-replica" : "") + "." + "cache-last-acc-log " + path);
                 }
@@ -283,7 +283,7 @@ namespace Alachisoft.NCache.Caching.AutoExpiration
             _ncacheLog = context.NCacheLog;
 
             Initialize(properties);
-           
+
             //new way to do this...
             _sleepInterval = ServiceConfiguration.ExpirationBulkRemoveDelay;
             _removeThreshhold = ServiceConfiguration.ExpirationBulkRemoveSize;
@@ -303,7 +303,7 @@ namespace Alachisoft.NCache.Caching.AutoExpiration
                 _taskExpiry.Cancel();
                 _taskExpiry = null;
             }
-            
+
 
             lock (_status_mutex)
             {
@@ -345,8 +345,8 @@ namespace Alachisoft.NCache.Caching.AutoExpiration
         }
 
 
-     
-        
+
+
         #region	/                 --- Initialization ---           /
 
         /// <summary>
@@ -360,7 +360,7 @@ namespace Alachisoft.NCache.Caching.AutoExpiration
 
             if (properties.Contains("clean-interval"))
                 _cleanInterval = Convert.ToInt32(properties["clean-interval"]) * 1000;
-          
+
             _cacheLastAccessCountEnabled = IsCacheLastAccessCountEnabled;
             _cacheLastAccessCountLoggingEnabled = IsCacheLastAccessLoggingEnabled;
             _cacheLastAccessInterval = CacheLastAccessCountInterval;
@@ -404,7 +404,7 @@ namespace Alachisoft.NCache.Caching.AutoExpiration
             {
                 if (newHint != null)
                 {
-                    if (oldHint != null) ((IDisposable)oldHint).Dispose(); 
+                    if (oldHint != null) ((IDisposable)oldHint).Dispose(); //SAL: dispose only if newHint is not null
                     newHint.Reset(_context);
                 }
             }
@@ -425,7 +425,7 @@ namespace Alachisoft.NCache.Caching.AutoExpiration
         {
             lock (this)
             {
-            
+
                 _cacheCleared = true;
             }
             lock (_status_mutex)
@@ -477,7 +477,7 @@ namespace Alachisoft.NCache.Caching.AutoExpiration
 
             bool allowExpire = AllowClusteredExpiry;
 
-         
+
 
             //in case of replication and por, only the coordinator/sub-coordinator is responsible to expire the items.
             if (!allowExpire) return false;
@@ -491,7 +491,7 @@ namespace Alachisoft.NCache.Caching.AutoExpiration
                 StartLogging();
                 DateTime startTime = DateTime.Now;
                 int currentTime = AppUtil.DiffSeconds(startTime);
-                
+
                 int cleanSize = (int)Math.Ceiling(cache.Count * _cleanRatio);
 
                 //set the flag that we are going to expire the items.
@@ -519,7 +519,7 @@ namespace Alachisoft.NCache.Caching.AutoExpiration
 
                 lock (_mainIndex.SyncRoot)
                 {
-                    IDictionaryEnumerator em = _mainIndex.GetEnumerator();
+                    IDictionaryEnumerator em = _mainIndex.GetEnumerator(); //added by muds
 
                     if (em != null)
                     {
@@ -529,7 +529,7 @@ namespace Alachisoft.NCache.Caching.AutoExpiration
 
                             if (hint != null)
                             {
-                                
+
                                 if (hint.IsFromPool && !hint.PoolManager.IsUsingFakePools && !hint.IsOutOfPool) continue;
 
                                 if (_cacheLastAccessCountEnabled && hint is IdleExpiration)
@@ -554,14 +554,14 @@ namespace Alachisoft.NCache.Caching.AutoExpiration
                             if (hint.DetermineExpiration(_context))
                             {
 
-                               
 
-                                    if (hint.GetExpiringHint() is FixedExpiration || hint.GetExpiringHint() is IdleExpiration)
-                                        selectedKeys.Add(em.Key);
-                                    else
-                                        dependencyChangedSelectedKeys.Add(em.Key);
 
-                               
+                                if (hint.GetExpiringHint() is FixedExpiration || hint.GetExpiringHint() is IdleExpiration)
+                                    selectedKeys.Add(em.Key);
+                                else
+                                    dependencyChangedSelectedKeys.Add(em.Key);
+
+
                                 if (cleanSize > 0 && selectedKeys.Count == cleanSize) break;
                             }
 
@@ -918,21 +918,20 @@ namespace Alachisoft.NCache.Caching.AutoExpiration
                 case ExpirationHintType.Parent:
                     break;
                 case ExpirationHintType.FixedExpiration:
-                    FeatureUsageCollector.Instance.GetFeature(FeatureEnum.absolute_expiration, FeatureEnum.expiration).UpdateUsageTime();
                     break;
                 case ExpirationHintType.TTLExpiration:
-                    FeatureUsageCollector.Instance.GetFeature(FeatureEnum.sliding_expiration, FeatureEnum.expiration).UpdateUsageTime();
                     break;
                 case ExpirationHintType.TTLIdleExpiration:
-                    FeatureUsageCollector.Instance.GetFeature(FeatureEnum.sliding_expiration, FeatureEnum.expiration).UpdateUsageTime();
                     break;
                 case ExpirationHintType.FixedIdleExpiration:
-                    FeatureUsageCollector.Instance.GetFeature(FeatureEnum.absolute_expiration, FeatureEnum.expiration).UpdateUsageTime();
+                    break;
+                case ExpirationHintType.NodeExpiration:
                     break;
                 case ExpirationHintType.IdleExpiration:
                     break;
                 case ExpirationHintType.AggregateExpirationHint:
-                    break;               
+                    break;
+
                 default:
                     break;
             }

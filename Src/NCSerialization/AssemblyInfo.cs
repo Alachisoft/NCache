@@ -1,4 +1,4 @@
-//  Copyright (c) 2021 Alachisoft
+//  Copyright (c) 2026 Alachisoft
 //  
 //  Licensed under the Apache License, Version 2.0 (the "License");
 //  you may not use this file except in compliance with the License.
@@ -28,7 +28,7 @@ using System.Runtime.InteropServices;
 #if NETCORE
 [assembly: AssemblyTitle("Alachisoft.NCache.Serialization (.NETCore)")]
 #else
-[assembly: AssemblyTitle("Alachisoft.NCache.Serialization")]
+[assembly: AssemblyTitle("Alachisoft.NCache.Serialization (.NET)")]
 #endif
 
 [assembly: AssemblyProduct("Alachisoft® NCache OpenSource")]
@@ -36,7 +36,7 @@ using System.Runtime.InteropServices;
 [assembly: AssemblyConfiguration("")]
 [assembly: AssemblyCompany("Alachisoft")]
 
-[assembly: AssemblyCopyright("Copyright © 2005-2021 Alachisoft")]
+[assembly: AssemblyCopyright("Copyright © 2005-2026 Alachisoft")]
 [assembly: AssemblyCulture("")]
 
 //
@@ -50,7 +50,7 @@ using System.Runtime.InteropServices;
 // You can specify all the values or you can default the Revision and Build Numbers 
 // by using the '*' as shown below:
 
-[assembly: AssemblyVersion("5.0.0")]
+[assembly: AssemblyVersion("5.3.0")]
 
 //
 // Since we need to support two runtimes which are not fully backward compatible we have
@@ -110,11 +110,23 @@ using System.Runtime.InteropServices;
 //
 [assembly: AssemblyDelaySign(false)]
 [assembly: AssemblyKeyName("")]
-#if DEBUG
-[assembly: AssemblyKeyFile("..\\..\\Resources\\ncache.snk")]
-#else
-[assembly: AssemblyKeyFile("..\\..\\Resources\\ncache.snk")]
-#endif
-[assembly: AssemblyFileVersionAttribute("5.0.5.0")]
+[assembly: AssemblyFileVersionAttribute("5.3.6.0")]
 [assembly: AssemblyDescriptionAttribute("Compact Serialization File")]
-[assembly: AssemblyInformationalVersion("5.0.0")]
+[assembly: AssemblyInformationalVersion("5.3.0")]
+[assembly: InternalsVisibleTo("Alachisoft.NCache.Bridge")]
+[assembly: InternalsVisibleTo("Alachisoft.NCache.Cache")]
+[assembly: InternalsVisibleTo("Alachisoft.NCache.Cluster")]
+[assembly: InternalsVisibleTo("Alachisoft.NCache.Common")]
+[assembly: InternalsVisibleTo("Alachisoft.NCache.Common.Util")]
+[assembly: InternalsVisibleTo("Alachisoft.NCache.Management")]
+[assembly: InternalsVisibleTo("Alachisoft.NCache.OutputCache")]
+[assembly: InternalsVisibleTo("Alachisoft.NCache.Security")]
+[assembly: InternalsVisibleTo("Alachisoft.NCache.SessionState")]
+[assembly: InternalsVisibleTo("Alachisoft.NCache.SessionStateManagement")]
+[assembly: InternalsVisibleTo("Alachisoft.NCache.SessionStoreProvider")]
+[assembly: InternalsVisibleTo("Alachisoft.NCache.SocketServer")]
+[assembly: InternalsVisibleTo("Alachisoft.NCache.Storage")]
+[assembly: InternalsVisibleTo("Alachisoft.NCache.Web")]
+[assembly: InternalsVisibleTo("Alachisoft.NCache.Client")]
+[assembly: InternalsVisibleTo("Alachisoft.NCache.Caching.AutoExpiration")]
+[assembly: InternalsVisibleTo("Alachisoft.NCache.Caching.Bridge")]

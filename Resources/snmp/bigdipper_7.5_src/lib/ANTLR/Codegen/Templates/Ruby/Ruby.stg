@@ -1,0 +1,1477 @@
+/******************************************************************************
+ *********************  M A J O R   C O M P O N E N T S  **********************
+ ******************************************************************************/
+
+// System.Boolean.ToString() returns "True" and "False", but the proper C# literals are "true" and "false"
+// The Java version of Boolean returns "true" and "false", so they map to themselves here.
+booleanLiteral ::= [
+	"True":"true",
+	"False":"false",
+	"true":"true",
+	"false":"false",
+	default:"false"
+]
+
+/** The overall file structure of a recognizer; stores methods
+  * for rules and cyclic DFAs plus support code.
+  */
+outputFile(LEXER, PARSER, TREE_PARSER, actionScope, actions, docComment, recognizer, name,
+  tokens, tokenNames, rules, cyclicDFAs, bitsets, buildTemplate, buildAST, rewriteMode,
+  profile, backtracking, synpreds, memoize, numRules, fileName, ANTLRVersion, generatedTimestamp,
+  trace, scopes, superClass, literals) ::=
+<<
+#!/usr/bin/env ruby
+#
+# <fileName>
+# --
+# Generated using ANTLR version: <ANTLRVersion>
+# Ruby runtime library version: <runtimeLibraryVersion()>
+# Input grammar file: <fileName>
+# Generated at: <generatedTimestamp>
+#
+
+# ~~~\> start load path setup
+this_directory = File.expand_path( File.dirname( __FILE__ ) )
+$LOAD_PATH.unshift( this_directory ) unless $LOAD_PATH.include?( this_directory )
+
+antlr_load_failed = proc do
+  load_path = $LOAD_PATH.map { |dir| '  - ' \<\< dir }.join( $/ )
+  raise LoadError, \<\<-END.strip!
+
+Failed to load the ANTLR3 runtime library (version <runtimeLibraryVersion()>):
+
+Ensure the library has been installed on your system and is available
+on the load path. If rubygems is available on your system, this can
+be done with the command:
+
+  gem install antlr3
+
+Current load path:
+#{ load_path }
+
+  END
+end
+
+defined?( ANTLR3 ) or begin
+
+  # 1: try to load the ruby antlr3 runtime library from the system path
+  require 'antlr3'
+
+rescue LoadError
+
+  # 2: try to load rubygems if it isn't already loaded
+  defined?( Gem ) or begin
+    require 'rubygems'
+  rescue LoadError
+    antlr_load_failed.call
+  end
+
+  # 3: try to activate the antlr3 gem
+  begin
+    Gem.activate( 'antlr3', '~> <runtimeLibraryVersion()>' )
+  rescue Gem::LoadError
+    antlr_load_failed.call
+  end
+
+  require 'antlr3'
+
+end
+# \<~~~ end load path setup
+
+<placeAction(scope="all", name="header")>
+<placeAction(scope=actionScope,name="header")>
+
+<if(recognizer.grammar.grammarIsRoot)>
+<rootGrammarOutputFile()>
+<else>
+<delegateGrammarOutputFile()>
+<endif>
+
+<placeAction(scope=actionScope,name="footer")>
+<placeAction(scope="all", name="footer")>
+
+<if(actions.(actionScope).main)>
+if __FILE__ == $0 and ARGV.first != '--'
+  <placeAction(scope=actionScope,name="main")>
+end
+<endif>
+>>
+
+tokenDataModule() ::= <<
+# TokenData defines all of the token type integer values
+# as constants, which will be included in all
+# ANTLR-generated recognizers.
+const_defined?( :TokenData ) or TokenData = ANTLR3::TokenScheme.new
+
+module TokenData
+<if(tokens)>
+
+  # define the token constants
+  define_tokens( <tokens:{it | :<it.name> => <it.type>}; anchor, wrap="\n", separator=", "> )
+
+<endif>
+<if(tokenNames)>
+
+  # register the proper human-readable name or literal value
+  # for each token type
+  #
+  # this is necessary because anonymous tokens, which are
+  # created from literal values in the grammar, do not
+  # have descriptive names
+  register_names( <tokenNames:{it | <it>}; separator=", ", anchor, wrap="\n"> )
+
+<endif>
+
+  <placeAction(scope="token",name="scheme")>
+  <placeAction(scope="token",name="members")>
+end<\n>
+>>
+
+rootGrammarOutputFile() ::= <<
+module <recognizer.grammar.name>
+  <placeAction(scope="module",name="head")>
+  <tokenDataModule()>
+  <recognizer>
+  <placeAction(scope="module",name="foot")>
+end
+>>
+
+delegateGrammarOutputFile() ::= <<
+require '<recognizer.grammar.delegator.recognizerName>'
+
+<delegateGrammarModuleHead(gram=recognizer.grammar.delegator)>
+  <recognizer>
+<delegateGrammarModuleTail(gram=recognizer.grammar.delegator)>
+>>
+
+delegateGrammarModuleHead(gram) ::= <<
+<if(gram.grammarIsRoot)>
+module <gram.name>
+<else>
+<delegateGrammarModuleHead(gram=gram.delegator)><\n>
+class <gram.name>
+<endif>
+>>
+
+delegateGrammarModuleTail(gram) ::= <<
+<if(gram.grammarIsRoot)>
+end # module <gram.name>
+<else>
+end # class <gram.name>
+<delegateGrammarModuleTail(gram=gram.delegator)><\n>
+<endif>
+>>
+/* * * * * * * * * * R E C O G N I Z E R   C L A S S E S * * * * * * * * * */
+
+parser(
+  grammar, name, scopes, tokens, tokenNames, rules, numRules, bitsets,
+  ASTLabelType="Object", superClass="ANTLR3::Parser", labelType="ANTLR3::Token",
+  members={<actions.parser.members>}
+) ::= <<
+<if(grammar.grammarIsRoot)><autoloadDelegates()><endif>
+
+class <if(grammar.grammarIsRoot)>Parser<else><grammar.name><endif> \< <superClass>
+  <parserBody(inputStreamType="ANTLR3::TokenStream", rewriteElementType="Token", actionScope="parser", ...)>
+end # class <if(grammar.grammarIsRoot)>Parser<else><grammar.name><endif> \< <superClass>
+<if(!actions.(actionScope).main)>
+
+at_exit { <if(grammar.grammarIsRoot)>Parser<else><grammar.name><endif>.main( ARGV ) } if __FILE__ == $0
+<endif>
+>>
+
+/** How to generate a tree parser; same as parser except the
+  * input stream is a different type.
+  */
+treeParser(grammar, name, scopes, tokens, tokenNames, globalAction, rules, numRules, bitsets, filterMode, labelType={<ASTLabelType>}, ASTLabelType="Object", superClass="ANTLR3::TreeParser", members={<actions.treeparser.members>}) ::= <<
+<if(grammar.grammarIsRoot)><autoloadDelegates()><endif>
+
+class <if(grammar.grammarIsRoot)>TreeParser<else><grammar.name><endif> \< <superClass>
+  <parserBody(inputStreamType="TreeNodeStream", rewriteElementType="Node", actionScope="treeparser", ...)>
+end # class <if(grammar.grammarIsRoot)>TreeParser<else><grammar.name><endif> \< <superClass>
+<if(!actions.(actionScope).main)>
+
+at_exit { <if(grammar.grammarIsRoot)>TreeParser<else><grammar.name><endif>.main( ARGV ) } if __FILE__ == $0
+<endif>
+>>
+
+parserBody(grammar, name, scopes, tokens, tokenNames, rules, numRules, bitsets, inputStreamType, superClass, filterMode, labelType, members, rewriteElementType, actionScope, ASTLabelType="Object") ::= <<
+@grammar_home = <grammar.name>
+<if(!grammar.grammarIsRoot)><autoloadDelegates()><\n><endif>
+<@mixins()>
+
+RULE_METHODS = [ <rules:{r|:<r.ruleName>}; separator=", ", wrap="\n", anchor> ].freeze
+
+<scopes:{it | <if(it.isDynamicGlobalScope)><globalAttributeScopeClass()><\n><endif>}>
+<rules:{it | <ruleAttributeScopeClass(.ruleDescriptor.ruleScope)>}>
+<if(grammar.delegators)>
+masters( <grammar.delegators:{d|:<d.name>}; separator=", "> )<\n>
+<endif>
+<if(grammar.directDelegates)>
+imports( <grammar.directDelegates:{d|:<d.name>}; separator=", "> )<\n>
+<endif>
+
+include TokenData
+
+begin
+  generated_using( "<fileName>", "<ANTLRVersion>", "<runtimeLibraryVersion()>" )
+rescue NoMethodError => error
+  # ignore
+end
+
+<if(!grammar.grammarIsRoot)>
+require '<grammar.composite.rootGrammar.recognizerName>'
+include <grammar.composite.rootGrammar.name>::TokenData<\n><\n>
+<endif>
+<parserConstructor()>
+<@additionalMembers()>
+<members>
+# - - - - - - - - - - - - Rules - - - - - - - - - - - - -
+<rules:{it | <it><\n>}>
+
+<if(grammar.delegatedRules)>
+# - - - - - - - - - - Delegated Rules - - - - - - - - - - -
+<grammar.delegatedRules:{ruleDescriptor|<delegateRule(ruleDescriptor)><\n>}>
+<endif>
+<if(cyclicDFAs)>
+# - - - - - - - - - - DFA definitions - - - - - - - - - - -
+<cyclicDFAs:{it | <cyclicDFA(it)>}>
+
+private
+
+def initialize_dfas
+  super rescue nil
+  <cyclicDFAs:{it | <cyclicDFAInit(it)>}>
+end
+
+<endif>
+<bitsets:{it | TOKENS_FOLLOWING_<it.name>_IN_<it.inName>_<it.tokenIndex> = Set[ <it.tokenTypes:{it | <it>}; separator=", "> ]<\n>}>
+>>
+
+parserConstructor() ::= <<
+def initialize( <grammar.delegators:{g|<g:delegateName()>, }>input, options = {} )
+  super( input, options )
+<if(memoize)><if(grammar.grammarIsRoot)>
+  @state.rule_memory = {}
+<endif><endif>
+  <scopes:{it | <if(it.isDynamicGlobalScope)><globalAttributeScopeStack()><\n><endif>}><rules:{it | <ruleAttributeScopeStack(.ruleDescriptor.ruleScope)>}>
+  <placeAction(scope=actionScope,name="init")>
+  <grammar.delegators:{g|@<g:delegateName()> = <g:delegateName()><\n>}><grammar.directDelegates:{g|@<g:delegateName()> = <newDelegate(g)><\n>}><last(grammar.delegators):{g|@parent = @<g:delegateName()><\n>}><@init()>
+end
+>>
+
+
+/* * * * * * * * * * * * * R U L E   M E T H O D S * * * * * * * * * * * * */
+
+/** A simpler version of a rule template that is specific to the
+  * imaginary rules created for syntactic predicates.  As they
+  * never have return values nor parameters etc..., just give
+  * simplest possible method.  Don't do any of the normal
+  * memoization stuff in here either; it's a waste. As
+  * predicates cannot be inlined into the invoking rule, they
+  * need to be in a rule by themselves.
+  */
+synpredRule(ruleName, ruleDescriptor, block, description, nakedBlock) ::= <<
+#
+# syntactic predicate <ruleName>
+#
+# (in <fileName>)
+# <description>
+#
+# This is an imaginary rule inserted by ANTLR to
+# implement a syntactic predicate decision
+#
+def <ruleName><if(ruleDescriptor.parameterScope)>( <ruleDescriptor.parameterScope:parameterScope()> )<endif>
+  <traceIn()><ruleLabelDefs()>
+  <block>
+ensure
+  <traceOut()>
+end
+>>
+
+
+/** How to generate code for a rule.  This includes any return
+  * type data aggregates required for multiple return values.
+  */
+rule(ruleName, ruleDescriptor, block, emptyRule, description, exceptions, finally, memoize) ::= <<
+<returnScope(scope=ruleDescriptor.returnScope)>
+
+#
+# parser rule <ruleName>
+#
+# (in <fileName>)
+# <description>
+#
+def <ruleName><if(ruleDescriptor.parameterScope)>( <ruleDescriptor.parameterScope:parameterScope()> )<endif>
+  <traceIn()><ruleScopeSetUp()><ruleDeclarations()><ruleLabelDefs()><action(name="init", code=ruleDescriptor.actions.init)>
+  <@body><ruleBody()><@end>
+
+  return <ruleReturnValue()>
+end
+<if(ruleDescriptor.modifier)>
+
+<ruleDescriptor.modifier> :<ruleName> rescue nil<\n>
+<endif>
+>>
+
+delegateRule(ruleDescriptor) ::= <<
+# delegated rule <ruleDescriptor.name>
+def <ruleDescriptor.name><if(ruleDescriptor.parameterScope)>( <ruleDescriptor.parameterScope:parameterScope()> )<endif>
+  <methodCall(del=ruleDescriptor.grammar, n=ruleDescriptor.name, args={<ruleDescriptor.parameterScope.attributes:{it | <it.name>}>})>
+end
+>>
+// HELPERS
+
+recognizerClassName() ::= <<
+<if(TREE_PARSER)>TreeParser<elseif(PARSER)>Parser<else>Lexer<endif>
+>>
+
+initializeDirectDelegate() ::= <<
+@<g:delegateName()> = <g.name>::<recognizerClassName()>.new(
+  <trunc(g.delegators):{p|<p:delegateName()>, }>self, input, options.merge( :state => @state )
+)
+>>
+
+initializeDelegator() ::= <<
+@<g:delegateName()> = <g:delegateName()>
+>>
+
+altSwitchCase(altNum,alt) ::= <<
+when <altNum>
+  <@prealt()>
+  <alt>
+>>
+
+blockBody() ::= <<
+<@decision><decision><@end>
+case alt_<decisionNumber>
+<alts:{a | <altSwitchCase(i,a)>}; separator="\n">
+end
+>>
+
+catch(decl, action) ::= <<
+# - - - - - - @catch <e.decl> - - - - - -
+rescue <e.decl>
+  <e.action><\n>
+>>
+
+closureBlockLoop() ::= <<
+while true # decision <decisionNumber>
+  alt_<decisionNumber> = <maxAlt>
+  <@decisionBody><decision><@end>
+  case alt_<decisionNumber>
+  <alts:{a | <altSwitchCase(i,a)>}; separator="\n">
+  else
+    break # out of loop for decision <decisionNumber>
+  end
+end # loop for decision <decisionNumber>
+>>
+
+delegateName(d) ::= <<
+<if(d.label)><d.label; format="label"><else><d.name; format="snakecase"><endif>
+>>
+
+element(e) ::= <<
+<e.el><\n>
+>>
+
+execForcedAction(action) ::= "<action>"
+
+globalAttributeScopeClass(scope) ::= <<
+<if(scope.attributes)>@@<scope.name> = Scope( <scope.attributes:{it | <it.decl; format="rubyString">}; separator=", "> )<\n><endif>
+>>
+
+globalAttributeScopeStack(scope) ::= <<
+<if(scope.attributes)>@<scope.name>_stack = []<\n><endif>
+>>
+
+noRewrite(rewriteBlockLevel, treeLevel) ::= ""
+
+parameterScope(scope) ::= <<
+<scope.attributes:{it | <it.decl>}; separator=", ">
+>>
+
+positiveClosureBlockLoop() ::= <<
+match_count_<decisionNumber> = 0
+while true
+  alt_<decisionNumber> = <maxAlt>
+  <@decisionBody><decision><@end>
+  case alt_<decisionNumber>
+  <alts:{a | <altSwitchCase(i,a)>}; separator="\n">
+  else
+    match_count_<decisionNumber> > 0 and break
+    <ruleBacktrackFailure()>
+    eee = EarlyExit(<decisionNumber>)
+    <@earlyExitException()><\n>
+    raise eee
+  end
+  match_count_<decisionNumber> += 1
+end<\n>
+>>
+
+returnScope(scope) ::= <<
+<if(ruleDescriptor.hasMultipleReturnValues)>
+<ruleDescriptor:returnStructName(r=it)> = define_return_scope <scope.attributes:{it | :<it.decl>}; separator=", ">
+<endif>
+>>
+
+returnStructName(r) ::= "<r.name; format=\"camelcase\">ReturnValue"
+
+ruleAttributeScopeClass ::= globalAttributeScopeClass
+ruleAttributeScopeStack ::= globalAttributeScopeStack
+
+ruleBacktrackFailure() ::= <<
+<if(backtracking)>
+@state.backtracking > 0 and raise( ANTLR3::Error::BacktrackingFailed )<\n>
+<endif>
+>>
+
+ruleBody() ::= <<
+<if(memoize)><if(backtracking)>
+success = false # flag used for memoization<\n>
+<endif><endif>
+begin
+  <ruleMemoization(ruleName)><block><ruleCleanUp()><(ruleDescriptor.actions.after):execAction()>
+<if(memoize)><if(backtracking)>
+  success = true<\n>
+<endif><endif>
+<if(exceptions)>
+  <exceptions:{e|<catch(decl=e.decl,action=e.action)><\n>}>
+<else>
+<if(!emptyRule)>
+<if(actions.(actionScope).rulecatch)>
+
+# - - - - - - - - @rulecatch - - - - - - - -
+<actions.(actionScope).rulecatch>
+<else>
+rescue ANTLR3::Error::RecognitionError => re
+  report_error(re)
+  recover(re)
+  <@setErrorReturnValue()>
+<endif>
+<endif>
+<endif>
+
+ensure
+  <traceOut()><memoize()><ruleScopeCleanUp()><finally>
+end
+>>
+
+ruleReturnValue() ::= <%
+<if(!ruleDescriptor.isSynPred)>
+<if(ruleDescriptor.hasReturnValue)>
+<if(ruleDescriptor.hasSingleReturnValue)>
+<ruleDescriptor.singleValueReturnName>
+<else>
+return_value
+<endif>
+<endif>
+<endif>
+%>
+
+
+ruleDeclarations() ::= <<
+<if(ruleDescriptor.hasMultipleReturnValues)>
+return_value = <returnStructName(r=ruleDescriptor)>.new
+
+# $rule.start = the first token seen before matching
+return_value.start = @input.look<\n>
+<else>
+<ruleDescriptor.returnScope.attributes:{a|<a.name> = <if(a.initValue)><a.initValue><else>nil<endif><\n>}>
+<endif>
+<if(memoize)>
+<ruleDescriptor.name>_start_index = @input.index<\n>
+<endif>
+>>
+
+ruleLabelDef(label) ::= <<
+<label.label.text; format="label"> = nil<\n>
+>>
+
+ruleLabelDefs() ::= <<
+<[
+    ruleDescriptor.tokenLabels,
+    ruleDescriptor.tokenListLabels,
+    ruleDescriptor.wildcardTreeLabels,
+    ruleDescriptor.wildcardTreeListLabels,
+    ruleDescriptor.ruleLabels,
+    ruleDescriptor.ruleListLabels
+ ]:
+ {<it.label.text; format="label"> = nil<\n>}
+><[
+    ruleDescriptor.tokenListLabels,
+    ruleDescriptor.ruleListLabels,
+    ruleDescriptor.wildcardTreeListLabels
+  ]:
+  {list_of_<it.label.text; format="label"> = []<\n>}
+>
+>>
+
+/* * * * * * * * * * * * * R U L E   H E L P E R S * * * * * * * * * * * * */
+
+traceIn() ::= <<
+<if(trace)>
+trace_in( __method__, <ruleDescriptor.index> )<\n>
+<else>
+# -> uncomment the next line to manually enable rule tracing
+# trace_in( __method__, <ruleDescriptor.index> )<\n>
+<endif>
+>>
+
+traceOut() ::= <<
+<if(trace)>
+trace_out( __method__, <ruleDescriptor.index> )<\n>
+<else>
+# -> uncomment the next line to manually enable rule tracing
+# trace_out( __method__, <ruleDescriptor.index> )<\n>
+<endif>
+>>
+
+ruleCleanUp() ::= <<
+<if(ruleDescriptor.hasMultipleReturnValues)>
+<if(!TREE_PARSER)>
+# - - - - - - - rule clean up - - - - - - - -
+return_value.stop = @input.look( -1 )<\n>
+<endif>
+<endif>
+>>
+
+ruleMemoization(name) ::= <<
+<if(memoize)>
+# rule memoization
+if @state.backtracking > 0 and already_parsed_rule?( __method__ )
+  success = true
+  return <ruleReturnValue()>
+end<\n>
+<endif>
+>>
+
+
+ruleScopeSetUp() ::= <<
+<ruleDescriptor.useScopes:{it | @<it>_stack.push( @@<it>.new )<\n>}><ruleDescriptor.ruleScope:{it | @<it.name>_stack.push( @@<it.name>.new )<\n>}>
+>>
+
+ruleScopeCleanUp() ::= <<
+<ruleDescriptor.useScopes:{it | @<it>_stack.pop<\n>}><ruleDescriptor.ruleScope:{it | @<it.name>_stack.pop<\n>}>
+>>
+
+memoize() ::= <<
+<if(memoize)><if(backtracking)>
+memoize( __method__, <ruleDescriptor.name>_start_index, success ) if @state.backtracking > 0<\n>
+<endif><endif>
+>>
+
+/** helper template to format a ruby method call */
+methodCall(n, del, args) ::= <<
+<if(del)>@<del:delegateName()>.<endif><n><if(args)>( <args; separator=", "> )<endif>
+>>
+
+/* * * * * * * * * * * * * L E X E R   P A R T S * * * * * * * * * * * * * */
+
+actionGate() ::= "@state.backtracking == 0"
+
+/** A (...) subrule with multiple alternatives */
+block(alts,decls,decision,enclosingBlockLevel,blockLevel,decisionNumber,maxK,maxAlt,description) ::= <<
+# at line <description>
+alt_<decisionNumber> = <maxAlt>
+<decls>
+<@body><blockBody()><@end>
+>>
+
+/** A rule block with multiple alternatives */
+ruleBlock(alts,decls,decision,enclosingBlockLevel,blockLevel,decisionNumber,maxK,maxAlt,description) ::= <<
+# at line <description>
+alt_<decisionNumber> = <maxAlt>
+<decls>
+<@decision><decision><@end>
+case alt_<decisionNumber>
+<alts:{a | <altSwitchCase(i,a)>}; separator="\n">
+end
+>>
+
+ruleBlockSingleAlt(alts,decls,decision,enclosingBlockLevel,blockLevel,decisionNumber,description) ::= <<
+<decls>
+<@prealt()>
+<alts>
+>>
+
+/** A special case of a (...) subrule with a single alternative */
+blockSingleAlt(alts,decls,decision,enclosingBlockLevel,blockLevel,decisionNumber,description) ::= <<
+# at line <description>
+<decls>
+<@prealt()>
+<alts>
+>>
+
+/** A (..)+ block with 0 or more alternatives */
+positiveClosureBlock(alts,decls,decision,enclosingBlockLevel,blockLevel,decisionNumber,maxK,maxAlt,description) ::= <<
+# at file <description>
+<decls>
+<@loopBody>
+<positiveClosureBlockLoop()>
+<@end>
+>>
+
+positiveClosureBlockSingleAlt ::= positiveClosureBlock
+
+/** A (..)* block with 0 or more alternatives */
+closureBlock(alts,decls,decision,enclosingBlockLevel,blockLevel,decisionNumber,maxK,maxAlt,description) ::= <<
+# at line <description>
+<decls>
+<@loopBody>
+<closureBlockLoop()>
+<@end>
+>>
+
+closureBlockSingleAlt ::= closureBlock
+
+/** Optional blocks (x)? are translated to (x|) by before code
+  * generation so we can just use the normal block template
+  */
+optionalBlock ::= block
+
+optionalBlockSingleAlt ::= block
+
+/** An alternative is just a list of elements; at outermost
+  * level
+  */
+alt(elements,altNum,description,autoAST,outerAlt,treeLevel,rew) ::= <<
+# at line <description>
+<elements:element()><rew>
+>>
+
+/** match a token optionally with a label in front */
+tokenRef(token,label,elementIndex,terminalOptions) ::= <<
+<if(label)><label; format="label"> = <endif>match( <token>, TOKENS_FOLLOWING_<token>_IN_<ruleName>_<elementIndex> )
+>>
+
+/** ids+=ID */
+tokenRefAndListLabel(token,label,elementIndex,terminalOptions) ::= <<
+<tokenRef(...)>
+<addToList(elem={<label; format="label">},...)>
+>>
+
+/* TRY THIS:
+tokenRefAndListLabel(token,label,elementIndex,terminalOptions) ::= <<
+list_of_<label; format="label"> << match( <token>, TOKENS_FOLLOWING_<token>_IN_<ruleName>_<elementIndex> )
+>>
+*/
+
+addToList(label,elem) ::= <<
+list_of_<label; format="label"> \<\< <elem><\n>
+>>
+
+listLabel ::= addToList
+
+/** For now, sets are interval tests and must be tested inline */
+matchSet(s,label,elementIndex,terminalOptions,postmatchCode) ::= <<
+<if(label)>
+<label; format="label"> = @input.look<\n>
+<endif>
+if <s>
+  @input.consume
+  <postmatchCode>
+<if(!LEXER)>
+  @state.error_recovery = false<\n>
+<endif>
+else
+  <ruleBacktrackFailure()>
+  mse = MismatchedSet( nil )
+  <@mismatchedSetException()>
+<if(LEXER)>
+  recover mse
+  raise mse<\n>
+<else>
+  raise mse<\n>
+<endif>
+end
+<\n>
+>>
+
+
+matchSetAndListLabel(s,label,elementIndex,postmatchCode) ::= <<
+<matchSet(...)>
+<addToList(elem={<label; format="label">},...)>
+>>
+
+matchRuleBlockSet ::= matchSet
+
+wildcard(token,label,elementIndex,terminalOptions) ::= <<
+<if(label)>
+<label; format="label"> = @input.look<\n>
+<endif>
+match_any
+>>
+
+/* TRY THIS:
+wildcard(label,elementIndex) ::= <<
+<if(label)><label; format="label"> = <endif>match_any
+>>
+*/
+
+wildcardAndListLabel(token,label,elementIndex,terminalOptions) ::= <<
+<wildcard(...)>
+<addToList(elem={<label; format="label">},...)>
+>>
+
+
+/** Match a rule reference by invoking it possibly with
+  * arguments and a return value or values.
+  */
+ruleRef(rule,label,elementIndex,args,scope) ::= <<
+@state.following.push( TOKENS_FOLLOWING_<rule.name>_IN_<ruleName>_<elementIndex> )
+<if(label)><label; format="label"> = <endif><methodCall(del=scope, n={<rule.name>}, args=args)>
+@state.following.pop
+>>
+
+/** ids+=ID */
+ruleRefAndListLabel(rule,label,elementIndex,args,scope) ::= <<
+<ruleRef(...)>
+<addToList(elem={<label; format="label">},...)>
+>>
+
+/** match ^(root children) in tree parser */
+tree(root, actionsAfterRoot, children, nullableChildList, enclosingTreeLevel, treeLevel) ::= <<
+<root:element()>
+<actionsAfterRoot:element()>
+<if(nullableChildList)>
+if @input.peek == DOWN
+  match( DOWN, nil )
+  <children:element()>
+  match( UP, nil )
+end
+<else>
+match( DOWN, nil )
+<children:element()>
+match( UP, nil )
+<endif>
+>>
+
+/** Every predicate is used as a validating predicate (even when
+  * it is also hoisted into a prediction expression).
+  */
+validateSemanticPredicate(pred,description) ::= <<
+<if(backtracking)>
+unless ( <evalPredicate(...)> )
+  <ruleBacktrackFailure()>
+  raise FailedPredicate( "<ruleName>", "<description>" )
+end
+<else>
+raise FailedPredicate( "<ruleName>", "<description>" ) unless ( <evalPredicate(...)> )
+<endif>
+>>
+
+dfaState(k,edges,eotPredictsAlt,description,stateNumber,semPredState) ::= <<
+look_<decisionNumber>_<stateNumber> = @input.peek( <k> )<\n>
+<edges; separator="\nels">
+else
+<if(eotPredictsAlt)>
+  alt_<decisionNumber> = <eotPredictsAlt><\n>
+<else>
+<if(backtracking)>
+  <ruleBacktrackFailure()><\n>
+<endif>
+<@noViableAltException>
+  raise NoViableAlternative( "<description>", <decisionNumber>, <stateNumber> )<\n>
+<@end>
+<endif>
+end
+>>
+
+/** Same as a normal DFA state except that we don't examine
+  * look for the bypass alternative.  It delays error
+  * detection but this is faster, smaller, and more what people
+  * expect.  For (X)? people expect "if ( LA(1)==X ) match(X);"
+  * and that's it. *  If a semPredState, don't force look
+  * lookup; preds might not need.
+  */
+dfaOptionalBlockState(k,edges,eotPredictsAlt,description,stateNumber,semPredState) ::= <<
+look_<decisionNumber>_<stateNumber> = @input.peek( <k> )<\n>
+<edges; separator="\nels">
+end
+>>
+
+
+/** A DFA state that is actually the loopback decision of a
+  * closure loop.  If end-of-token (EOT) predicts any of the
+  * targets then it should act like a default clause (i.e., no
+  * error can be generated). This is used only in the lexer so
+  * that for ('a')* on the end of a rule anything other than 'a'
+  * predicts exiting. *  If a semPredState, don't force
+  * look lookup; preds might not need.
+  */
+dfaLoopbackState(k,edges,eotPredictsAlt,description,stateNumber,semPredState) ::= <<
+look_<decisionNumber>_<stateNumber> = @input.peek( <k> )<\n>
+<edges; separator="\nels"><\n>
+<if(eotPredictsAlt)>
+else
+  alt_<decisionNumber> = <eotPredictsAlt><\n>
+<endif>
+end
+>>
+
+
+/** An accept state indicates a unique alternative has been
+  * predicted
+  */
+dfaAcceptState(alt) ::= "alt_<decisionNumber> = <alt>"
+
+/** A simple edge with an expression.  If the expression is
+  * satisfied, enter to the target state.  To handle gated
+  * productions, we may have to evaluate some predicates for
+  * this edge.
+  */
+dfaEdge(labelExpr, targetState, predicates) ::= <<
+if ( <labelExpr> )<if(predicates)> and ( <predicates> )<endif>
+  <targetState>
+>>
+
+
+/** A DFA state where a SWITCH may be generated.  The code
+  * generator decides if this is possible:
+  * CodeGenerator.canGenerateSwitch().
+  */
+dfaStateSwitch(k,edges,eotPredictsAlt,description,stateNumber,semPredState) ::= <<
+case look_<decisionNumber> = @input.peek( <k> )
+<edges; separator="\n">
+else
+<if(eotPredictsAlt)>
+  alt_<decisionNumber> = <eotPredictsAlt><\n>
+<else>
+<if(backtracking)>
+  <ruleBacktrackFailure()><\n>
+<endif>
+<@noViableAltException>
+  raise NoViableAlternative( "<description>", <decisionNumber>, <stateNumber> )<\n>
+<@end>
+<endif>
+end
+>>
+
+
+dfaOptionalBlockStateSwitch(k, edges, eotPredictsAlt, description, stateNumber, semPredState) ::= <<
+case look_<decisionNumber> = @input.peek( <k> )
+<edges; separator="\n">
+end
+>>
+
+dfaLoopbackStateSwitch(k, edges, eotPredictsAlt, description, stateNumber, semPredState) ::= <<
+case look_<decisionNumber> = @input.peek( <k> )
+<edges; separator="\n">
+<if(eotPredictsAlt)>
+else
+  alt_<decisionNumber> = <eotPredictsAlt>
+<endif>
+end
+>>
+
+dfaEdgeSwitch(labels, targetState) ::= <<
+when <labels:{it | <it>}; separator=", "> then <targetState>
+>>
+
+/** The code to initiate execution of a cyclic DFA; this is used
+  * in the rule to predict an alt just like the fixed DFA case.
+  * The <name> attribute is inherited via the parser, lexer, ...
+  */
+dfaDecision(decisionNumber, description) ::= <<
+alt_<decisionNumber> = @dfa<decisionNumber>.predict( @input )
+>>
+
+/** Generate the tables and support code needed for the DFAState
+  * object argument.  Unless there is a semantic predicate (or
+  * syn pred, which become sem preds), all states should be
+  * encoded in the state tables. Consequently,
+  * cyclicDFAState/cyclicDFAEdge,eotDFAEdge templates are not
+  * used except for special DFA states that cannot be encoded as
+  * a transition table.
+  */
+cyclicDFA(dfa) ::= <<
+class DFA<dfa.decisionNumber> \< ANTLR3::DFA
+  EOT = unpack( <dfa.javaCompressedEOT; anchor, separator=", ", wrap="\n"> )
+  EOF = unpack( <dfa.javaCompressedEOF; anchor, separator=", ", wrap="\n"> )
+  MIN = unpack( <dfa.javaCompressedMin; anchor, separator=", ", wrap="\n"> )
+  MAX = unpack( <dfa.javaCompressedMax; anchor, separator=", ", wrap="\n"> )
+  ACCEPT = unpack( <dfa.javaCompressedAccept; anchor, separator=", ", wrap="\n"> )
+  SPECIAL = unpack( <dfa.javaCompressedSpecial; anchor, separator=", ", wrap="\n"> )
+  TRANSITION = [
+    <dfa.javaCompressedTransition:{s|unpack( <s; wrap="\n", anchor, separator=", "> )}; separator=",\n">
+  ].freeze
+
+  ( 0 ... MIN.length ).zip( MIN, MAX ) do | i, a, z |
+    if a \> 0 and z \< 0
+      MAX[ i ] %= 0x10000
+    end
+  end
+
+  @decision = <dfa.decisionNumber>
+
+  <@errorMethod()>
+<if(dfa.description)>
+
+  def description
+    \<\<-'__dfa_description__'.strip!
+      <dfa.description>
+    __dfa_description__
+  end<\n>
+<endif>
+end<\n>
+>>
+
+
+specialStateTransitionMethod(dfa) ::= <<
+def special_state_transition_for_dfa<dfa.decisionNumber>(s, input)
+  case s
+  <dfa.specialStateSTs:{state|when <i0>
+  <state>}; separator="\n">
+  end
+<if(backtracking)>
+  @state.backtracking > 0 and raise ANTLR3::Error::BacktrackingFailed<\n>
+<endif>
+  nva = ANTLR3::Error::NoViableAlternative.new( @dfa<dfa.decisionNumber>.description, <dfa.decisionNumber>, s, input )
+  @dfa<dfa.decisionNumber>.error( nva )
+  raise nva
+end
+>>
+
+cyclicDFASynpred( name ) ::= <<
+def <name>() @recognizer.<name> end<\n>
+>>
+
+cyclicDFAInit(dfa) ::= <<
+<if(dfa.specialStateSTs)>
+@dfa<dfa.decisionNumber> = DFA<dfa.decisionNumber>.new( self, <dfa.decisionNumber> ) do |s|
+  case s
+  <dfa.specialStateSTs:{state|when <i0>
+  <state>}; separator="\n">
+  end
+
+  if s \< 0
+<if(backtracking)>
+    @state.backtracking > 0 and raise ANTLR3::Error::BacktrackingFailed<\n>
+<endif>
+    nva = ANTLR3::Error::NoViableAlternative.new( @dfa<dfa.decisionNumber>.description, <dfa.decisionNumber>, s, input )
+    @dfa<dfa.decisionNumber>.error( nva )
+    raise nva
+  end
+
+  s
+end<\n>
+<else>
+@dfa<dfa.decisionNumber> = DFA<dfa.decisionNumber>.new( self, <dfa.decisionNumber> )<\n>
+<endif>
+>>
+
+
+/** A special state in a cyclic DFA; special means has a
+  * semantic predicate or it's a huge set of symbols to check.
+  */
+cyclicDFAState(decisionNumber, stateNumber, edges, needErrorClause, semPredState) ::= <<
+look_<decisionNumber>_<stateNumber> = @input.peek
+<if(semPredState)>
+index_<decisionNumber>_<stateNumber> = @input.index
+@input.rewind( @input.last_marker, false )<\n>
+<endif>
+s = -1
+<edges; separator="els">end
+<if(semPredState)> <! return input cursor to state before we rewound !>
+@input.seek( index_<decisionNumber>_<stateNumber> )<\n>
+<endif>
+>>
+
+/** Just like a fixed DFA edge, test the look and indicate
+  * what state to jump to next if successful.  Again, this is
+  * for special states.
+  */
+cyclicDFAEdge(labelExpr, targetStateNumber, edgeNumber, predicates) ::= <<
+if ( <labelExpr> )<if(predicates)> and ( <predicates> )<endif>
+  s = <targetStateNumber><\n>
+>>
+
+/** An edge pointing at end-of-token; essentially matches any
+  * char; always jump to the target.
+  */
+eotDFAEdge(targetStateNumber, edgeNumber, predicates) ::= <<
+e
+  s = <targetStateNumber><\n>
+>>
+
+andPredicates(left,right) ::= "( <left> ) and ( <right> )"
+
+orPredicates(operands) ::= "( <first(operands)> )<rest(operands):{o|  or ( <o> )}>"
+
+notPredicate(pred) ::= "not ( <pred> )"
+
+evalPredicate(pred,description) ::= "( <pred> )"
+
+evalSynPredicate(pred,description) ::= <<
+syntactic_predicate?( :<pred:{it | <it>}> )
+>>
+
+lookaheadTest(atom, k, atomAsInt) ::= "look_<decisionNumber>_<stateNumber> == <atom>"
+
+/** Sometimes a look test cannot assume that LA(k) is in a
+  * temp variable somewhere.  Must ask for the look
+  * directly.
+  */
+isolatedLookaheadTest(atom, k, atomAsInt) ::= "@input.peek(<k>) == <atom>"
+
+lookaheadRangeTest(lower, upper, k, rangeNumber, lowerAsInt, upperAsInt) ::= <<
+look_<decisionNumber>_<stateNumber>.between?( <lower>, <upper> )
+>>
+
+isolatedLookaheadRangeTest(lower, upper, k, rangeNumber, lowerAsInt, upperAsInt) ::= <<
+@input.peek( <k> ).between?( <lower>, <upper> )
+>>
+
+setTest(ranges) ::= <<
+<ranges; separator=" || ">
+>>
+
+parameterAttributeRef(attr) ::= "<attr.name>"
+
+parameterSetAttributeRef(attr,expr) ::= "<attr.name> = <expr>"
+
+scopeAttributeRef(scope, attr, index, negIndex) ::= <<
+<if(negIndex)>
+@<scope>_stack[ -<negIndex> ].<attr.name>
+<else>
+<if(index)>
+@<scope>_stack[ <index> ].<attr.name>
+<else>
+@<scope>_stack.last.<attr.name>
+<endif>
+<endif>
+>>
+
+
+scopeSetAttributeRef(scope, attr, expr, index, negIndex) ::= <<
+<if(negIndex)>
+@<scope>_stack[ -<negIndex> ].<attr.name> = <expr>
+<else>
+<if(index)>
+@<scope>_stack[ <index> ].<attr.name> = <expr>
+<else>
+@<scope>_stack.last.<attr.name> = <expr>
+<endif>
+<endif>
+>>
+
+
+/** $x is either global scope or x is rule with dynamic scope;
+  * refers to stack itself not top of stack.  This is useful for
+  * predicates like {$function.size()>0 &&
+  * $function::name.equals("foo")}?
+  */
+isolatedDynamicScopeRef(scope) ::= "@<scope>_stack"
+
+/** reference an attribute of rule; might only have single
+  * return value
+  */
+ruleLabelRef(referencedRule, scope, attr) ::= <<
+<if(referencedRule.hasMultipleReturnValues)>
+( <scope; format="label">.nil? ? nil : <scope; format="label">.<attr.name> )
+<else>
+<scope; format="label">
+<endif>
+>>
+
+returnAttributeRef(ruleDescriptor, attr) ::= <<
+<if(ruleDescriptor.hasMultipleReturnValues)>
+return_value.<attr.name>
+<else>
+<attr.name>
+<endif>
+>>
+
+returnSetAttributeRef(ruleDescriptor, attr, expr) ::= <<
+<if(ruleDescriptor.hasMultipleReturnValues)>
+return_value.<attr.name> = <expr>
+<else>
+<attr.name> = <expr>
+<endif>
+>>
+
+/** How to translate $tokenLabel */
+tokenLabelRef(label) ::= "<label; format=\"label\">"
+
+/** ids+=ID {$ids} or e+=expr {$e} */
+listLabelRef(label) ::= "list_of_<label; format=\"label\">"
+
+tokenLabelPropertyRef_text(scope, attr) ::= "<scope; format=\"label\">.text"
+tokenLabelPropertyRef_type(scope, attr) ::= "<scope; format=\"label\">.type"
+tokenLabelPropertyRef_line(scope, attr) ::= "<scope; format=\"label\">.line"
+tokenLabelPropertyRef_pos(scope, attr) ::= "<scope; format=\"label\">.column"
+tokenLabelPropertyRef_channel(scope, attr) ::= "<scope; format=\"label\">.channel"
+tokenLabelPropertyRef_index(scope, attr) ::= "<scope; format=\"label\">.index"
+tokenLabelPropertyRef_tree(scope, attr) ::= "tree_for_<scope>"
+
+ruleLabelPropertyRef_start(scope, attr) ::= "<scope; format=\"label\">.start"
+ruleLabelPropertyRef_stop(scope, attr) ::= "<scope; format=\"label\">.stop"
+ruleLabelPropertyRef_tree(scope, attr) ::= "<scope; format=\"label\">.tree"
+
+ruleLabelPropertyRef_text(scope, attr) ::= <<
+<if(TREE_PARSER)>
+(
+  @input.token_stream.to_s(
+    @input.tree_adaptor.token_start_index( <scope; format="label">.start ),
+    @input.tree_adaptor.token_stop_index( <scope; format="label">.start )
+  ) if <scope; format="label">
+)
+<else>
+( <scope; format="label"> && @input.to_s( <scope; format="label">.start, <scope; format="label">.stop ) )
+<endif>
+>>
+ruleLabelPropertyRef_st(scope, attr) ::= "( <scope; format=\"label\"> && <scope; format=\"label\">.template )"
+
+/******************************************************************************
+ *****************  L E X E R - O N L Y   T E M P L A T E S  ******************
+ ******************************************************************************/
+
+lexerSynpred(name) ::= ""
+
+lexer(grammar, name, tokens, scopes, rules, numRules, labelType="ANTLR3::Token", filterMode, superClass="ANTLR3::Lexer") ::= <<
+<if(grammar.grammarIsRoot)><autoloadDelegates()><endif>
+
+class <if(grammar.delegator)><grammar.name><else>Lexer<endif> \< <superClass>
+  @grammar_home = <grammar.name>
+<if(!grammar.grammarIsRoot)>
+  <autoloadDelegates()><\n>
+<endif>
+  include TokenData
+<if(filterMode)>
+  include ANTLR3::FilterMode<\n>
+<endif>
+  <scopes:{it | <if(it.isDynamicGlobalScope)><globalAttributeScopeClass()><\n><endif>}>
+
+  begin
+    generated_using( "<fileName>", "<ANTLRVersion>", "<runtimeLibraryVersion()>" )
+  rescue NoMethodError => error
+    # ignore
+  end
+
+  RULE_NAMES   = [ <trunc(rules):{r|"<r.ruleName>"}; separator=", ", wrap="\n", anchor> ].freeze
+  RULE_METHODS = [ <trunc(rules):{r|:<r.ruleName; format="lexerRule">}; separator=", ", wrap="\n", anchor> ].freeze
+
+<if(grammar.delegators)>
+  masters( <grammar.delegators:{d|:<d.name>}; separator=", "> )<\n>
+<endif>
+<if(grammar.directDelegates)>
+  imports( <grammar.directDelegates:{d|:<d.name>}; separator=", "> )<\n>
+<endif>
+
+  def initialize( <grammar.delegators:{g|<g:delegateName()>, }>input=nil, options = {} )
+    super( input, options )
+<if(memoize)>
+<if(grammar.grammarIsRoot)>
+    @state.rule_memory = {}<\n>
+<endif>
+<endif>
+    <grammar.delegators:{g|@<g:delegateName()> = <g:delegateName()><\n>}><grammar.directDelegates:{g|@<g:delegateName()> = <newDelegate(g)><\n>}><last(grammar.delegators):{g|@parent = @<g:delegateName()><\n>}><placeAction(scope="lexer",name="init")>
+  end
+
+  <placeAction(scope="lexer",name="members")>
+
+  # - - - - - - - - - - - lexer rules - - - - - - - - - - - -
+  <rules:{it | <it><\n>}>
+<if(grammar.delegatedRules)>
+
+  # - - - - - - - - - - delegated rules - - - - - - - - - - -
+  <grammar.delegatedRules:{ruleDescriptor|<delegateLexerRule(ruleDescriptor)><\n><\n>}>
+<endif>
+<if(cyclicDFAs)>
+
+  # - - - - - - - - - - DFA definitions - - - - - - - - - - -
+  <cyclicDFAs:cyclicDFA()>
+
+  private
+
+  def initialize_dfas
+    super rescue nil
+    <cyclicDFAs:cyclicDFAInit()>
+  end
+
+<endif>
+end # class <if(grammar.delegator)><grammar.name><else>Lexer<endif> \< <superClass>
+<if(!actions.(actionScope).main)>
+
+at_exit { <if(grammar.delegator)><grammar.name><else>Lexer<endif>.main( ARGV ) } if __FILE__ == $0
+<endif>
+>>
+
+
+lexerRuleLabelDefs() ::= <<
+<if([ruleDescriptor.tokenLabels,ruleDescriptor.tokenListLabels,ruleDescriptor.ruleLabels,ruleDescriptor.charLabels,ruleDescriptor.tokenListLabels,ruleDescriptor.ruleListLabels])>
+# - - - - label initialization - - - -
+<[ruleDescriptor.tokenLabels,ruleDescriptor.tokenListLabels,ruleDescriptor.ruleLabels,ruleDescriptor.charLabels]:{it | <it.label.text; format="label"> = nil<\n>}>
+<[ruleDescriptor.tokenListLabels,ruleDescriptor.ruleListLabels]:{it | list_of_<it.label.text; format="label"> = [] unless defined?(list_of_<it.label.text; format="label">)<\n>}>
+<endif>
+>>
+
+
+/** How to generate a rule in the lexer; naked blocks are used
+  * for fragment rules.
+  */
+lexerRule(ruleName,nakedBlock,ruleDescriptor,block,memoize) ::= <<
+# lexer rule <ruleName; format="lexerRule"> (<ruleName>)
+# (in <fileName>)
+def <ruleName; format="lexerRule"><if(ruleDescriptor.parameterScope)>( <ruleDescriptor.parameterScope:parameterScope()> )<endif>
+  <traceIn()><ruleScopeSetUp()><ruleDeclarations()><if(memoize)>
+<if(backtracking)>
+
+  # backtracking success
+  success = false<\n>
+<endif>
+<endif>
+<if(nakedBlock)>
+  <ruleMemoization({<ruleName; format="lexerRule">})><lexerRuleLabelDefs()><action(name="init", code=ruleDescriptor.actions.init)>
+
+  # - - - - main rule block - - - -
+  <block>
+<else>
+
+  type = <ruleName>
+  channel = ANTLR3::DEFAULT_CHANNEL
+  <ruleMemoization(ruleName)><lexerRuleLabelDefs()><action(name="init", code=ruleDescriptor.actions.init)>
+
+  # - - - - main rule block - - - -
+  <block>
+  <ruleCleanUp()>
+
+  @state.type = type
+  @state.channel = channel
+<(ruleDescriptor.actions.after):execAction()>
+<endif>
+<if(memoize)><if(backtracking)>
+  success = false<\n>
+<endif><endif>
+ensure
+  <traceOut()><ruleScopeCleanUp()><memoize()>
+end
+<! <if(ruleDescriptor.modifier)>
+
+<ruleDescriptor.modifier> :<ruleName; format="lexerRule"><\n>
+<endif> !>
+>>
+
+
+/** Isolated $RULE ref ok in lexer as it's a Token */
+lexerRuleLabel(label) ::= "<label; format=\"label\">"
+lexerRuleLabelPropertyRef_line(scope, attr) ::= "<scope; format=\"label\">.line"
+lexerRuleLabelPropertyRef_type(scope, attr) ::= "<scope; format=\"label\">.type"
+lexerRuleLabelPropertyRef_pos(scope, attr) ::= "<scope; format=\"label\">.column"
+lexerRuleLabelPropertyRef_channel(scope, attr) ::= "<scope; format=\"label\">.channel"
+lexerRuleLabelPropertyRef_index(scope, attr) ::= "<scope; format=\"label\">.index"
+lexerRuleLabelPropertyRef_text(scope, attr) ::= "<scope; format=\"label\">.text"
+
+
+/** How to generate code for the implicitly-defined lexer
+  * grammar rule that chooses between lexer rules.
+  */
+tokensRule(ruleName,nakedBlock,args,block,ruleDescriptor) ::= <<
+# main rule used to study the input at the current position,
+# and choose the proper lexer rule to call in order to
+# fetch the next token
+#
+# usually, you don't make direct calls to this method,
+# but instead use the next_token method, which will
+# build and emit the actual next token
+def <ruleName; format="lexerRule">
+  <block>
+end
+>>
+
+lexerRulePropertyRef_text(scope, attr) ::= "self.text"
+lexerRulePropertyRef_type(scope, attr) ::= "type"
+lexerRulePropertyRef_line(scope, attr) ::= "@state.token_start_line"
+lexerRulePropertyRef_pos(scope, attr)  ::= "@state.token_start_column"
+
+/** Undefined, but present for consistency with Token
+  * attributes; set to -1
+  */
+lexerRulePropertyRef_index(scope, attr) ::= "-1"
+lexerRulePropertyRef_channel(scope, attr) ::= "channel"
+lexerRulePropertyRef_start(scope, attr) ::= "@state.token_start_position"
+lexerRulePropertyRef_stop(scope, attr) ::= "( self.character_index - 1 )"
+
+/** A lexer rule reference */
+lexerRuleRef(rule,label,args,elementIndex,scope) ::= <<
+<if(label)>
+<label; format="label">_start_<elementIndex> = self.character_index
+<methodCall(n={<rule.name; format="lexerRule">},del=scope,args=args)>
+<label; format="label"> = create_token do |t|
+  t.input   = @input
+  t.type    = ANTLR3::INVALID_TOKEN_TYPE
+  t.channel = ANTLR3::DEFAULT_CHANNEL
+  t.start   = <label; format="label">_start_<elementIndex>
+  t.stop    = self.character_index - 1
+end
+<else>
+<methodCall(n={<rule.name; format="lexerRule">}, del=scope, args=args)>
+<endif>
+>>
+
+
+/** i+=INT in lexer */
+lexerRuleRefAndListLabel(rule,label,args,elementIndex,scope) ::= <<
+<lexerRuleRef(...)>
+<addToList(elem={<label; format="label">},...)>
+>>
+
+
+/** Match . wildcard in lexer */
+wildcardChar(label, elementIndex) ::= <<
+<if(label)>
+<label; format="label"> = @input.peek<\n>
+<endif>
+match_any
+>>
+
+wildcardCharListLabel(label, elementIndex) ::= <<
+<wildcardChar(...)>
+<addToList(elem={<label; format="label">},...)>
+>>
+
+/** match a character */
+charRef(char,label) ::= <<
+<if(label)>
+<label; format="label"> = @input.peek<\n>
+<endif>
+match( <char> )
+>>
+
+/** match a character range */
+charRangeRef(a,b,label) ::= <<
+<if(label)>
+<label; format="label"> = @input.peek<\n>
+<endif>
+match_range( <a>, <b> )
+>>
+
+filteringNextToken() ::= ""
+filteringActionGate() ::= "@state.backtracking == 1"
+
+/** Match a string literal */
+lexerStringRef(string,label,elementIndex) ::= <<
+<if(label)>
+<label; format="label">_start = self.character_index
+match( <string> )
+<label; format="label"> = create_token do |t|
+  t.input   = @input
+  t.type    = ANTLR3::INVALID_TOKEN_TYPE
+  t.channel = ANTLR3::DEFAULT_CHANNEL
+  t.start   = <label; format="label">_start
+  t.stop    = character_index - 1
+end
+<else>
+match( <string> )
+<endif>
+>>
+
+
+/** EOF in the lexer */
+lexerMatchEOF(label,elementIndex) ::= <<
+<if(label)>
+<label; format="label">_start_<elementIndex> = character_index
+match( ANTLR3::EOF )
+<label; format="label"> = create_token do |t|
+  t.input   = @input
+  t.type    = ANTLR3::INVALID_TOKEN_TYPE
+  t.channel = ANTLR3::DEFAULT_CHANNEL
+  t.start   = <label; format="label">_start_<elementIndex>
+  t.stop    = character_index - 1
+end<\n>
+<else>
+match( ANTLR3::EOF )<\n>
+<endif>
+>>
+
+// used for left-recursive rules
+recRuleDefArg()                       ::= "int <recRuleArg()>"
+recRuleArg()                          ::= "_p"
+recRuleAltPredicate(ruleName,opPrec)  ::= "<recRuleArg()> \<= <opPrec>"
+recRuleSetResultAction()              ::= "root_0=$<ruleName>_primary.tree;"
+recRuleSetReturnAction(src,name)      ::= "$<name>=$<src>.<name>;"
+
+/** $start in parser rule */
+rulePropertyRef_start(scope, attr) ::= "return_value.start"
+
+/** $stop in parser rule */
+rulePropertyRef_stop(scope, attr) ::= "return_value.stop"
+
+/** $tree in parser rule */
+rulePropertyRef_tree(scope, attr) ::= "return_value.tree"
+
+/** $text in parser rule */
+rulePropertyRef_text(scope, attr) ::= "@input.to_s( return_value.start, @input.look( -1 ) )"
+
+/** $template in parser rule */
+rulePropertyRef_st(scope, attr) ::= "return_value.template"
+
+ruleSetPropertyRef_tree(scope, attr, expr) ::= "return_value.tree = <expr>"
+
+ruleSetPropertyRef_st(scope, attr, expr) ::= "return_value.template = <expr>"
+
+/** How to execute an action */
+execAction(action) ::= <<
+<if(backtracking)>
+# syntactic predicate action gate test
+if <actions.(actionScope).synpredgate>
+  # --> action
+  <action>
+  # \<-- action
+end
+<else>
+# --> action
+<action>
+# \<-- action
+<endif>
+>>
+
+codeFileExtension() ::= ".rb"
+
+true()  ::= "true"
+false() ::= "false"
+
+action(name, code) ::= <<
+<if(code)>
+# - - - - @<name> action - - - -
+<code><\n>
+<endif>
+>>
+
+autoloadDelegates() ::= <<
+<if(grammar.directDelegates)>
+<grammar.directDelegates:{it | autoload :<it.name>, "<it.recognizerName>"<\n>}>
+<endif>
+>>
+
+delegateLexerRule(ruleDescriptor) ::= <<
+# delegated lexer rule <ruleDescriptor.name; format="lexerRule"> (<ruleDescriptor.name> in the grammar)
+def <ruleDescriptor.name; format="lexerRule"><if(ruleDescriptor.parameterScope)>( <ruleDescriptor.parameterScope:parameterScope()> )<endif>
+  <methodCall(del=ruleDescriptor.grammar, n={<ruleDescriptor.name; format="lexerRule">}, args=ruleDescriptor.parameterScope.attributes)>
+end
+>>
+
+rootClassName() ::= <<
+<if(grammar.grammarIsRoot)><grammar.name><else><grammar.composite.rootGrammar.name><endif>::<if(TREE_PARSER)>TreeParser<elseif(PARSER)>Parser<else>Lexer<endif>
+>>
+
+grammarClassName() ::= <<
+<gram.name>::<if(TREE_PARSER)>TreeParser<elseif(PARSER)>Parser<else>Lexer<endif>
+>>
+
+newDelegate(gram) ::= <<
+<gram.name>.new( <trunc(gram.delegators):{p|<p:delegateName()>, }>
+  self, @input, :state => @state<@delegateOptions()>
+)
+>>
+
+placeAction(scope, name) ::= <<
+<if(actions.(scope).(name))>
+# - - - - - - begin action @<scope>::<name> - - - - - -
+<if(fileName)># <fileName><\n><endif>
+<actions.(scope).(name)>
+# - - - - - - end action @<scope>::<name> - - - - - - -<\n>
+<endif>
+>>
+
+runtimeLibraryVersion() ::= "1.8.1"

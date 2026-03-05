@@ -1,4 +1,4 @@
-//  Copyright (c) 2018 Alachisoft
+//  Copyright (c) 2026 Alachisoft
 //  
 //  Licensed under the Apache License, Version 2.0 (the "License");
 //  you may not use this file except in compliance with the License.
@@ -20,14 +20,11 @@ using System.IO;
 /// The namespace provides the CompactReader and CompactWriter that are required 
 /// while implementing the Serialize and Deserialize methods of ICompactSerializable interface.
 /// </summary>
-
 namespace Alachisoft.NCache.Runtime.Serialization.IO
 {
     /// <summary>
     /// CompactReader is the  base class for CompactBinaryReader.
     /// </summary>
-
-    //[CLSCompliant(false)]
     public abstract class CompactReader
     {
         /// <summary>

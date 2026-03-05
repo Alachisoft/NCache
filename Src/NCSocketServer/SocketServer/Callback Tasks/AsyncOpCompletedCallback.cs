@@ -1,4 +1,4 @@
-//  Copyright (c) 2021 Alachisoft
+//  Copyright (c) 2026 Alachisoft
 //  
 //  Licensed under the Apache License, Version 2.0 (the "License");
 //  you may not use this file except in compliance with the License.
@@ -18,6 +18,7 @@ using Alachisoft.NCache.Util;
 using Alachisoft.NCache.Common.Protobuf;
 using System.Collections.Generic;
 using System.Collections;
+using Alachisoft.NCache.Common.ResponseSerialization;
 
 namespace Alachisoft.NCache.SocketServer.CallbackTasks
 {
@@ -42,8 +43,7 @@ namespace Alachisoft.NCache.SocketServer.CallbackTasks
             string key = (string)package[0];
             AsyncCallbackInfo cbInfo = (AsyncCallbackInfo)package[1];
             object opResult = package[2];
-
-
+          
             ClientManager clientManager = null;
 
             lock (ConnectionManager.ConnectionTable) 
@@ -51,15 +51,22 @@ namespace Alachisoft.NCache.SocketServer.CallbackTasks
 
             if (clientManager != null)
             {
-                Alachisoft.NCache.Common.Protobuf.Response response = new Alachisoft.NCache.Common.Protobuf.Response();
-                response.requestId = cbInfo.RequestID;
-                response.asyncOpCompletedCallback = Alachisoft.NCache.SocketServer.Util.EventHelper.GetAsyncOpCompletedResponse(clientManager, cbInfo, opResult, _opCode, key);
-                response.responseType = Alachisoft.NCache.Common.Protobuf.Response.Type.ASYNC_OP_COMPLETED_CALLBACK;
+                Response response = new Response
+                {
+                    requestId = cbInfo.RequestID,
+                    asyncOpCompletedCallback = Util.EventHelper.GetAsyncOpCompletedResponse(clientManager, cbInfo, opResult, _opCode, key),
+                    responseType = Response.Type.ASYNC_OP_COMPLETED_CALLBACK
+                };
 
-                IList serializedResponse = Alachisoft.NCache.Common.Util.ResponseHelper.SerializeResponse(response,Common.Protobuf.Response.Type.ASYNC_OP_COMPLETED_CALLBACK);
+                var configValues = new ResponseOptions()
+                {
+                    Response = response,
+                    ResponseType = Response.Type.ASYNC_OP_COMPLETED_CALLBACK
+                };
+
+                IList serializedResponse = clientManager.ResponseBuilder.BuildResponse(configValues);
 
                 ConnectionManager.AssureSend(clientManager, serializedResponse, false);
-
             }
         }
     }

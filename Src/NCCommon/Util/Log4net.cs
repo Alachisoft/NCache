@@ -1,4 +1,4 @@
-//  Copyright (c) 2021 Alachisoft
+//  Copyright (c) 2026 Alachisoft
 //  
 //  Licensed under the Apache License, Version 2.0 (the "License");
 //  you may not use this file except in compliance with the License.
@@ -16,7 +16,7 @@ using System.Collections;
 
 using System.IO;
 using System.Reflection;
-using log4net.Appender;
+using log4net.Extended.Appender;
 using System.Text;
 
 namespace Alachisoft.NCache.Common.Util
@@ -30,8 +30,8 @@ namespace Alachisoft.NCache.Common.Util
         static string _cacheserver="NCache";
         private const string DIRNAME = @"log-files";
         private static byte[] log4netXML = Encoding.ASCII.GetBytes("<?xml version=\"1.0\"?> <configuration>  <configSections>   <section name=\"log4net\" type=\"log4net.Config.Log4NetConfigurationSectionHandler, log4net, Version=1.2.10.0, Culture = neutral, PublicKeyToken=1b44e1d426115821 \"/> </configSections>   <log4net> </log4net> </configuration>");
-        public static log4net.Core.Level criticalInfo = new log4net.Core.Level(5000000, "CRIT", "INFO");
-        public static log4net.Repository.ILoggerRepository LogRepository = log4net.LogManager.GetRepository(Assembly.GetCallingAssembly());
+        public static log4net.Extended.Core.Level criticalInfo = new log4net.Extended.Core.Level(5000000, "CRIT", "INFO");
+        public static log4net.Extended.Repository.ILoggerRepository LogRepository = log4net.Extended.LogManager.GetRepository(Assembly.GetCallingAssembly());
         static private string s_configDir = "";
         static private string path = "";
         static object lockObj = new Object();
@@ -66,7 +66,7 @@ namespace Alachisoft.NCache.Common.Util
             }
             try
             {
-                log4net.LogManager.GetRepository(LogRepository.Name).LevelMap.Add(criticalInfo);
+                log4net.Extended.LogManager.GetRepository(LogRepository.Name).LevelMap.Add(criticalInfo);
 
                 if (!System.IO.Directory.Exists(path))
                     System.IO.Directory.CreateDirectory(path);
@@ -95,7 +95,7 @@ namespace Alachisoft.NCache.Common.Util
             lock (lockObj)
             {
                 MemoryStream logStream = new MemoryStream(log4netXML);
-                log4net.Config.XmlConfigurator.Configure(LogRepository, logStream);
+                log4net.Extended.Config.XmlConfigurator.Configure(LogRepository, logStream);
 
                 string logger_name = "";
 
@@ -252,7 +252,7 @@ namespace Alachisoft.NCache.Common.Util
             {
 
                 MemoryStream logStream = new MemoryStream(log4netXML);
-                log4net.Config.XmlConfigurator.Configure(LogRepository, logStream);
+                log4net.Extended.Config.XmlConfigurator.Configure(LogRepository, logStream);
 
                 string logName = loggerNameEnum.ToString();
 
@@ -357,9 +357,9 @@ namespace Alachisoft.NCache.Common.Util
 
                             if (temploggerName != null)
                             {
-                                log4net.ILog log = log4net.LogManager.GetLogger(LogRepository.Name, temploggerName);
+                                log4net.Extended.ILog log = log4net.Extended.LogManager.GetLogger(LogRepository.Name, temploggerName);
 
-                                log4net.Core.IAppenderAttachable closingAppenders = (log4net.Core.IAppenderAttachable)log.Logger;
+                                log4net.Extended.Core.IAppenderAttachable closingAppenders = (log4net.Extended.Core.IAppenderAttachable)log.Logger;
                                 AppenderCollection collection = closingAppenders.Appenders;
                                 for (int i = 0; i < collection.Count; i++)
                                 {
@@ -389,9 +389,9 @@ namespace Alachisoft.NCache.Common.Util
         /// <param name="cacheName">CacheName used to name the Buffer Appender</param>
         /// <param name="fileName">File name to log into</param>
         /// <returns>Returns the created Appender</returns>
-        private static log4net.Appender.IAppender CreateBufferAppender(string cacheName, string fileName)
+        private static log4net.Extended.Appender.IAppender CreateBufferAppender(string cacheName, string fileName)
         {
-            log4net.Appender.BufferingForwardingAppender appender = new BufferingForwardingAppender();
+            log4net.Extended.Appender.BufferingForwardingAppender appender = new BufferingForwardingAppender();
             appender.Name = "BufferingForwardingAppender" + cacheName;
             //Pick from config
             int bufferSize = NCacheLog.bufferDefaultSize;
@@ -406,7 +406,7 @@ namespace Alachisoft.NCache.Common.Util
 
 
             //Threshold is maintained by the logger rather than the appenders
-            appender.Threshold = log4net.Core.Level.All;
+            appender.Threshold = log4net.Extended.Core.Level.All;
 
             //Adds the appender to which it will pass on all the logging levels upon filling up the buffer
             appender.AddAppender(CreateRollingFileAppender(cacheName, fileName));
@@ -424,9 +424,9 @@ namespace Alachisoft.NCache.Common.Util
         /// <param name="cacheName">Name of the file appender</param>
         /// <param name="fileName">Filename to which is to write logs</param>
         /// <returns>returns the created appender</returns>
-        private static log4net.Appender.IAppender CreateRollingFileAppender(string cacheName, string fileName)
+        private static log4net.Extended.Appender.IAppender CreateRollingFileAppender(string cacheName, string fileName)
         {
-            log4net.Appender.RollingFileAppender appender = new log4net.Appender.RollingFileAppender();
+            log4net.Extended.Appender.RollingFileAppender appender = new log4net.Extended.Appender.RollingFileAppender();
             appender.Name = "RollingFileAppender" + cacheName;
             appender.File = fileName;
             //doesnt matter since all files are created with a new name
@@ -437,9 +437,9 @@ namespace Alachisoft.NCache.Common.Util
             appender.MaxSizeRollBackups = -1;
 
             //Threshold is maintained by the logger rather than the appenders
-            appender.Threshold = log4net.Core.Level.All;
+            appender.Threshold = log4net.Extended.Core.Level.All;
 
-            log4net.Layout.PatternLayout layout = new log4net.Layout.PatternLayout();
+            log4net.Extended.Layout.PatternLayout layout = new log4net.Extended.Layout.PatternLayout();
 
             layout.ConversionPattern = "%-27date{ISO8601}" + "\t%-45.42appdomain" + "\t%-35logger" + "\t%-42thread" + "\t%-9level" + "\t%message" + "%newline";
 
@@ -458,18 +458,18 @@ namespace Alachisoft.NCache.Common.Util
         /// </summary>
         /// <param name="loggerName">Name of the logger to which the appender is to be added</param>
         /// <param name="appender">Appender to add to the logger</param>
-        private static void AddAppender(string loggerName, log4net.Appender.IAppender appender)
+        private static void AddAppender(string loggerName, log4net.Extended.Appender.IAppender appender)
         {
-            log4net.ILog log = log4net.LogManager.GetLogger(LogRepository.Name, loggerName);
-            log4net.Repository.Hierarchy.Logger l = (log4net.Repository.Hierarchy.Logger)log.Logger;
+            log4net.Extended.ILog log = log4net.Extended.LogManager.GetLogger(LogRepository.Name, loggerName);
+            log4net.Extended.Repository.Hierarchy.Logger l = (log4net.Extended.Repository.Hierarchy.Logger)log.Logger;
 
             l.AddAppender(appender);
         }
 
         private static void RemoveAllAppender(string loggerName)
         {
-            log4net.ILog log = log4net.LogManager.GetLogger(LogRepository.Name, loggerName);
-            log4net.Repository.Hierarchy.Logger l = (log4net.Repository.Hierarchy.Logger)log.Logger;
+            log4net.Extended.ILog log = log4net.Extended.LogManager.GetLogger(LogRepository.Name, loggerName);
+            log4net.Extended.Repository.Hierarchy.Logger l = (log4net.Extended.Repository.Hierarchy.Logger)log.Logger;
 
             l.RemoveAllAppenders();
         }
@@ -483,41 +483,41 @@ namespace Alachisoft.NCache.Common.Util
         /// <param name="levelName">Name of the desire level</param>
         private static void SetLevel(string loggerName, string levelName)
         {
-            log4net.Core.Level lvl;
+            log4net.Extended.Core.Level lvl;
             switch (levelName.ToLower())
             {
                 case "all":
-                    lvl = log4net.Core.Level.All;
+                    lvl = log4net.Extended.Core.Level.All;
                     break;
                 case "error":
-                    lvl = log4net.Core.Level.Error;
+                    lvl = log4net.Extended.Core.Level.Error;
                     break;
                 case "fatal":
-                    lvl = log4net.Core.Level.Fatal;
+                    lvl = log4net.Extended.Core.Level.Fatal;
                     break;
                 case "info":
-                    lvl = log4net.Core.Level.Info;
+                    lvl = log4net.Extended.Core.Level.Info;
                     break;
                 case "debug":
-                    lvl = log4net.Core.Level.Debug;
+                    lvl = log4net.Extended.Core.Level.Debug;
                     break;
                 case "warn":
-                    lvl = log4net.Core.Level.Warn;
+                    lvl = log4net.Extended.Core.Level.Warn;
                     break;
                 case "off":
-                    lvl = log4net.Core.Level.Off;
+                    lvl = log4net.Extended.Core.Level.Off;
                     break;
                 default:
-                    lvl = log4net.Core.Level.All;
+                    lvl = log4net.Extended.Core.Level.All;
                     break;
 
             }
 
 
             //If the logger doesnot exist it will create one else fetches one
-            log4net.ILog log = log4net.LogManager.GetLogger(LogRepository.Name, loggerName);
+            log4net.Extended.ILog log = log4net.Extended.LogManager.GetLogger(LogRepository.Name, loggerName);
             //adds the logger as a seperate hierchy, not dependant on any other logger
-            log4net.Repository.Hierarchy.Logger l = (log4net.Repository.Hierarchy.Logger)log.Logger;
+            log4net.Extended.Repository.Hierarchy.Logger l = (log4net.Extended.Repository.Hierarchy.Logger)log.Logger;
 
             //Applies the logger threshold level
             l.Level = l.Hierarchy.LevelMap[levelName];
@@ -548,8 +548,8 @@ namespace Alachisoft.NCache.Common.Util
         private static void EnableFilter(string loggerName, string stringToMatch)
         {
 
-            log4net.ILog log = log4net.LogManager.GetLogger(LogRepository.Name, loggerName);
-            log4net.Repository.Hierarchy.Logger l = (log4net.Repository.Hierarchy.Logger)log.Logger;
+            log4net.Extended.ILog log = log4net.Extended.LogManager.GetLogger(LogRepository.Name, loggerName);
+            log4net.Extended.Repository.Hierarchy.Logger l = (log4net.Extended.Repository.Hierarchy.Logger)log.Logger;
         }
 
         /// <summary>
@@ -557,9 +557,9 @@ namespace Alachisoft.NCache.Common.Util
         /// </summary>
         /// <param name="appenderName">name of the appender to find</param>
         /// <returns> if not found null will be returned</returns>
-        public static log4net.Appender.IAppender FindAppender(string appenderName)
+        public static log4net.Extended.Appender.IAppender FindAppender(string appenderName)
         {
-            foreach (log4net.Appender.IAppender appender in log4net.LogManager.GetRepository(LogRepository.Name).GetAppenders())
+            foreach (log4net.Extended.Appender.IAppender appender in log4net.Extended.LogManager.GetRepository(LogRepository.Name).GetAppenders())
             {
                 if (appender.Name == appenderName)
                 {

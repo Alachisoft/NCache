@@ -125,7 +125,6 @@ namespace Alachisoft.NGroups.Stack
 			}
 			
 			// moved out of sync scope: Retransmitter.reset()/add()/remove() are sync'ed anyway
-			// Bela Jan 15 2003
 			retransmitter.reset();
 		}
 		
@@ -234,7 +233,6 @@ namespace Alachisoft.NGroups.Stack
 					{
 						// find the message to retransmit
 						retransmit_command.retransmit(i, msg);
-						//System.out.println("### retr(" + first_seqno + "): tstamp=" + System.currentTimeMillis());
 					}
 				}
 			}

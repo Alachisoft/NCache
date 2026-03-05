@@ -1,4 +1,4 @@
-//  Copyright (c) 2021 Alachisoft
+//  Copyright (c) 2026 Alachisoft
 //  
 //  Licensed under the Apache License, Version 2.0 (the "License");
 //  you may not use this file except in compliance with the License.
@@ -45,18 +45,18 @@ namespace Alachisoft.NCache.Management
             ICacheServer cs = null;
 
             CacheService cacheService = new NCacheRPCService(null);
-            CacheServerConfig config = null;
+            CacheConfigInfo config = null;
             try
-			{
+            {
                 cacheService.ServerName = serverName;
                 cacheService.Port = port;
                 cs = cacheService.GetCacheServer(new TimeSpan(0, 0, 0, 30));
 				if (cs != null)
 				{
-                    config = cs.GetCacheConfiguration(cacheId);
+                    config = cs.GetCacheConfigInfo(cacheId);
                     if (config != null)
                     {
-                        if (!config.InProc)
+                        if (!config.IsInproc)
                             cs.StartCache(cacheId);
                     }
                     else
@@ -142,7 +142,7 @@ namespace Alachisoft.NCache.Management
             if (port != 0)
                 cacheService.Port = port;
             string startingNode = initialNodeName;
-            Alachisoft.NCache.Config.Dom.CacheServerConfig cacheServerConfig = null;
+            Alachisoft.NCache.Config.Dom.CacheConfigInfo cacheConfigInfo = null;
             Alachisoft.NCache.Management.ICacheServer cacheServer = null;
             Dictionary<Runtime.CacheManagement.ServerNode, List<Runtime.Caching.ClientInfo>> clientList = new Dictionary<Runtime.CacheManagement.ServerNode, List<Runtime.Caching.ClientInfo>>();
 
@@ -150,29 +150,28 @@ namespace Alachisoft.NCache.Management
             {
                 if (initialNodeName.Equals(string.Empty))
                 {
-                    cacheServerConfig = GetCacheConfigThroughClientConfig(cacheName,port,context);
+                    cacheConfigInfo = GetCacheConfigThroughClientConfig(cacheName, port, context);
 
-                    if (cacheServerConfig == null)
+                    if (cacheConfigInfo == null)
                         throw new ManagementException("cache with name " + cacheName + " not found in " + config);
                 }
                 else
                 {
+                    //if initial node not up then ???
                     cacheService.ServerName = initialNodeName;
                     cacheServer = cacheService.GetCacheServer(new TimeSpan(0, 0, 0, 30));
                     if (cacheServer == null)
                         throw new ManagementException("provided initial node not available");
 
-                    cacheServerConfig = cacheServer.GetCacheConfiguration(cacheName);
-                    if (cacheServerConfig == null)
+                    cacheConfigInfo = cacheServer.GetCacheConfigInfo(cacheName);
+                    if (cacheConfigInfo == null)
                         throw new ManagementException(ErrorCodes.CacheInit.CACHE_NOT_REGISTERED_ON_NODE,ErrorMessages.GetErrorMessage(ErrorCodes.CacheInit.CACHE_NOT_REGISTERED_ON_NODE,cacheName));
-                }
-
-                //Copied Code from NCManager                        
+                }                     
 
                 //For Local Cache
-                if (cacheServerConfig.CacheType.Equals(LOCALCACHE, StringComparison.OrdinalIgnoreCase))
+                if (cacheConfigInfo.IsLocalCache)
                 {
-                    if (cacheServerConfig.InProc)
+                    if (cacheConfigInfo.IsInproc)
                         throw new ArgumentException("API is not supported for Local Inproc Cache");
                     
                     cacheService.ServerName = Environment.MachineName;
@@ -186,7 +185,7 @@ namespace Alachisoft.NCache.Management
                             Runtime.CacheManagement.ServerNode serverNode = new Runtime.CacheManagement.ServerNode();
                             serverNode.ServerIP = Environment.MachineName;
 
-                            List<Alachisoft.NCache.Common.Monitoring.ClientProcessStats> clients = cacheServer.GetClientProcessStats(cacheServerConfig.Name);
+                            List<Alachisoft.NCache.Common.Monitoring.ClientProcessStats> clients = cacheServer.GetClientProcessStats(cacheName);
                             List<Runtime.Caching.ClientInfo> list = new List<Runtime.Caching.ClientInfo>();
                             foreach (Alachisoft.NCache.Common.Monitoring.ClientProcessStats clientNode in clients)
                             {
@@ -204,8 +203,8 @@ namespace Alachisoft.NCache.Management
                 }
                 //For Clustered Cache
                 else
-                {                                       
-                    ArrayList initialHost = InitialHostList(cacheServerConfig.Cluster.Channel.InitialHosts);
+                {
+                    ArrayList initialHost = InitialHostList(cacheConfigInfo.InitialHostList);
                     foreach (object host in initialHost)
                     {
                         try
@@ -216,9 +215,9 @@ namespace Alachisoft.NCache.Management
                             {
                                 Runtime.CacheManagement.ServerNode serverNode = new Runtime.CacheManagement.ServerNode();
                                 serverNode.ServerIP = host as string;
-                                serverNode.Port = cacheServerConfig.Cluster.Channel.TcpPort;
+                                serverNode.Port = cacheConfigInfo.TcpPort;
 
-                                List<Alachisoft.NCache.Common.Monitoring.ClientProcessStats> clients = cacheServer.GetClientProcessStats(cacheServerConfig.Name);
+                                List<Alachisoft.NCache.Common.Monitoring.ClientProcessStats> clients = cacheServer.GetClientProcessStats(cacheName);
                                 List<Runtime.Caching.ClientInfo> list = new List<Runtime.Caching.ClientInfo>();
                                 foreach (Alachisoft.NCache.Common.Monitoring.ClientProcessStats clientNode in clients)
                                 {
@@ -248,13 +247,24 @@ namespace Alachisoft.NCache.Management
                 cacheService.Dispose();
             }
         }
+        public static object ExecuteMethodOnService(string serverName, int port, CloudServiceParams cloudServiceParams)
+        {
+            ICacheServer cs = null;
+            CacheService cacheService = new NCacheRPCService(null);
+            cacheService.ServerName = serverName;
+            cacheService.Port = port;
+            cs = cacheService.GetCacheServer(new TimeSpan(0, 0, 0, 30));
+            if (cs == null)
+            {
+                throw new Exception("Could not connect to server");
+            }
 
-      
+            return cs.PerformCloudServiceRelatedTasks(cloudServiceParams);
+        }
         private static CacheService GetCacheService(Common.CacheManagement.CacheContext context) 
         {
             switch (context) 
             {
-                case Common.CacheManagement.CacheContext.TayzGrid: return new JvCacheRPCService(null);
                 case Common.CacheManagement.CacheContext.NCache: return new NCacheRPCService(null);                             
             }
             return null;
@@ -294,9 +304,9 @@ namespace Alachisoft.NCache.Management
             }
         }
 
-        private static CacheServerConfig GetCacheConfigThroughClientConfig(string cacheName, int port, Common.CacheManagement.CacheContext context)
+        private static CacheConfigInfo GetCacheConfigThroughClientConfig(string cacheName, int port, Common.CacheManagement.CacheContext context)
         {
-            CacheServerConfig cacheServerConfig = null;
+            CacheConfigInfo cacheConfigInfo = null;
             ClientConfiguration.Dom.CacheServer[] serverNodes = null;
             ICacheServer cacheServer = null;
 
@@ -335,11 +345,11 @@ namespace Alachisoft.NCache.Management
                             cacheServer = cacheService.GetCacheServer(new TimeSpan(0, 0, 0, 30));
                             if (cacheServer != null)
                             {
-                                cacheServerConfig = cacheServer.GetCacheConfiguration(cacheName);
+                                cacheConfigInfo = cacheServer.GetCacheConfigInfo(cacheName);
                                 cacheServer.Dispose();
                                 cacheServer = null;
 
-                                if (cacheServerConfig != null)
+                                if (cacheConfigInfo != null)
                                     break;
                             }
 
@@ -361,7 +371,7 @@ namespace Alachisoft.NCache.Management
                 if ( cacheServer !=null ) cacheServer.Dispose();
                 if( cacheService !=null) cacheService.Dispose();
             }
-            return cacheServerConfig;
+            return cacheConfigInfo;
 
         }
 
@@ -371,34 +381,35 @@ namespace Alachisoft.NCache.Management
             if (port != 0)
                 cacheService.Port = port;
             string startingNode = initialNodeName;
-            CacheServerConfig cacheServerConfig = null;
+            CacheConfigInfo cacheConfigInfo = null;
             ICacheServer cacheServer = null;
 
             try
             {
                 if (initialNodeName.Equals(string.Empty))
                 {
-                    cacheServerConfig = GetCacheConfigThroughClientConfig(cacheName, port, context);
-                    if (cacheServerConfig == null)
+                    cacheConfigInfo = GetCacheConfigThroughClientConfig(cacheName, port, context);
+                    if (cacheConfigInfo == null)
                         throw new ManagementException("cache with name " + cacheName + " not found in " + config);
                 }
                 else
                 {
+                    //if initial node not up then ???
                     cacheService.ServerName = initialNodeName;
                     cacheServer = cacheService.GetCacheServer(new TimeSpan(0, 0, 0, 30));
                     if (cacheServer == null)
                         throw new ManagementException("provided initial node not available");
 
-                    cacheServerConfig = cacheServer.GetCacheConfiguration(cacheName);
-                    if (cacheServerConfig == null)
+                    cacheConfigInfo = cacheServer.GetCacheConfigInfo(cacheName);
+                    if (cacheConfigInfo == null)
                         throw new ManagementException(ErrorCodes.CacheInit.CACHE_NOT_REGISTERED_ON_NODE, ErrorMessages.GetErrorMessage(ErrorCodes.CacheInit.CACHE_NOT_REGISTERED_ON_NODE, cacheName));
                 }
 
 
                 //For Local Cache
-                if (cacheServerConfig.CacheType.Equals(LOCALCACHE, StringComparison.OrdinalIgnoreCase))
+                if (cacheConfigInfo.IsLocalCache)
                 {
-                    if (cacheServerConfig.InProc)
+                    if (cacheConfigInfo.IsInproc)
                         throw new ArgumentException("API is not supported for Local Inproc Cache");
 
                     cacheService.ServerName = Environment.MachineName;
@@ -406,14 +417,14 @@ namespace Alachisoft.NCache.Management
 
                     if (cacheServer != null && cacheServer.IsRunning(cacheName))
                     {
-                        return cacheServer.GetTopicStats(cacheServerConfig.Name);
+                        return cacheServer.GetTopicStats(cacheName);
                     }
                 }
                 //For Clustered Cache
                 else
                 {
                     Dictionary<string, TopicStats> topicWiseStat = new Dictionary<string, TopicStats>();
-                    ArrayList initialHost = InitialHostList(cacheServerConfig.Cluster.Channel.InitialHosts);
+                    ArrayList initialHost = InitialHostList(cacheConfigInfo.InitialHostList);
                     foreach (object host in initialHost)
                     {
                         try
@@ -422,7 +433,7 @@ namespace Alachisoft.NCache.Management
                             cacheServer = cacheService.GetCacheServer(new TimeSpan(0, 0, 0, 30));
                             if (cacheServer.IsRunning(cacheName))
                             {
-                                Dictionary<string, TopicStats> NodeWisetopicStat = cacheServer.GetTopicStats(cacheServerConfig.Name);
+                                Dictionary<string, TopicStats> NodeWisetopicStat = cacheServer.GetTopicStats(cacheName);
                                 if (NodeWisetopicStat != null)
                                 {
                                     foreach (var item in NodeWisetopicStat)

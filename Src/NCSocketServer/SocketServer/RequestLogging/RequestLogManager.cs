@@ -1,4 +1,4 @@
-﻿//  Copyright (c) 2021 Alachisoft
+﻿//  Copyright (c) 2026 Alachisoft
 //  
 //  Licensed under the Apache License, Version 2.0 (the "License");
 //  you may not use this file except in compliance with the License.
@@ -24,7 +24,6 @@ namespace Alachisoft.NCache.SocketServer.RequestLogging
     class RequestLogManager
     {
         Dictionary<string, Dictionary<long, RequestStatus>> _clientRequestLog;
-        //Dictionary<string, long> _lastRemovedRequestId;
         Thread expireOldEntries;
 
         const int NO_REQUEST_REMOVED = -1;
@@ -54,7 +53,6 @@ namespace Alachisoft.NCache.SocketServer.RequestLogging
                 {
                     RequestStatus status = new RequestStatus();
                     status.Status = Alachisoft.NCache.Common.Enum.RequestStatus.RECEIVED_AND_INEXECUTION;
-                    //status.RequestLogTime = DateTime.Now;
 
                     Dictionary<long, RequestStatus> clientRequests;
                     bool found = false;
@@ -207,7 +205,6 @@ namespace Alachisoft.NCache.SocketServer.RequestLogging
                                     bool requestFound = clientRequests.TryGetValue(reqId, out status);
                                     if (requestFound)
                                     {
-
                                     }
 
                                     reqCount--;

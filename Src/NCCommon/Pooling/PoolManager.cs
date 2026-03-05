@@ -1,4 +1,4 @@
-﻿//  Copyright (c) 2021 Alachisoft
+﻿//  Copyright (c) 2026 Alachisoft
 //  
 //  Licensed under the Apache License, Version 2.0 (the "License");
 //  you may not use this file except in compliance with the License.
@@ -17,7 +17,7 @@ using Alachisoft.NCache.Common.Util;
 using Alachisoft.NCache.Common.Pooling.Lease;
 using Alachisoft.NCache.Common.Pooling.Stats;
 using Alachisoft.NCache.Common.Pooling.Internal;
-using ProtoBuf.Serializers.Pooling;
+using ProtoBuf.Extended.Serializers.Pooling;
 
 namespace Alachisoft.NCache.Common.Pooling
 {
@@ -61,14 +61,11 @@ namespace Alachisoft.NCache.Common.Pooling
             if (_objectPools[index] != null)
                 return;
 
-            // We ought to avoid locking here
-            // since we initialize all the pools synchronously
-            //lock (_objectPools)
-            //{
-                // A form of double check locking
-                if (_objectPools[index] == null)
-                    _objectPools[index] = pool;
-            //}
+           
+            // A form of double check locking
+            if (_objectPools[index] == null)
+                _objectPools[index] = pool;
+            
         }
 
         public void AddPool<T>(ArrayPoolType poolType, ArrayPool<T> pool)
@@ -85,14 +82,11 @@ namespace Alachisoft.NCache.Common.Pooling
             if (_arrayPools[index] != null)
                 return;
 
-            // We ought to avoid locking here
-            // since we initialize all the pools synchronously
-            //lock (_arrayPools)
-            //{
-                // A form of double check locking
-                if (_arrayPools[index] == null)
-                    _arrayPools[index] = pool;
-            //}
+            
+            // A form of double check locking
+            if (_arrayPools[index] == null)
+                _arrayPools[index] = pool;
+            
         }
 
         public void CreatePool<T>(ObjectPoolType poolType, PoolingOptions<T> options) where T : ILeasable
@@ -109,14 +103,11 @@ namespace Alachisoft.NCache.Common.Pooling
             if (_objectPools[index] != null)
                 return;
 
-            // We ought to avoid locking here
-            // since we initialize all the pools synchronously
-            //lock (_objectPools)
-            //{
-                // A form of double check locking
-                if (_objectPools[index] == null)
-                    _objectPools[index] = CreateObjectPool(options);
-            //}
+            
+            // A form of double check locking
+            if (_objectPools[index] == null)
+                _objectPools[index] = CreateObjectPool(options);
+            
         }
 
         public void CreateSimplePool<T>(ObjectPoolType poolType, PoolingOptions<T> options) where T : ILeasable
@@ -133,14 +124,11 @@ namespace Alachisoft.NCache.Common.Pooling
             if (_objectPools[index] != null)
                 return;
 
-            // We ought to avoid locking here
-            // since we initialize all the pools synchronously
-            //lock (_objectPools)
-            //{
-                // A form of double check locking
-                if (_objectPools[index] == null)
-                    _objectPools[index] = CreateSimpleObjectPool(options);
-            //}
+            
+            // A form of double check locking
+            if (_objectPools[index] == null)
+                _objectPools[index] = CreateSimpleObjectPool(options);
+            
         }
 
         public ProtoPoolBase<T> GetSimplePool<T>(ObjectPoolType poolType) where T : ILeasable
@@ -172,14 +160,11 @@ namespace Alachisoft.NCache.Common.Pooling
             if (_arrayPools[index] != null)
                 return;
 
-            // We ought to avoid locking here
-            // since we initialize all the pools synchronously
-            //lock (_arrayPools)
-            //{
-                // A form of double check locking
-                if (_arrayPools[index] == null)
-                    _arrayPools[index] = CreateArrayPool<T>(growable);
-            //}
+            
+            // A form of double check locking
+            if (_arrayPools[index] == null)
+                _arrayPools[index] = CreateArrayPool<T>(growable);
+            
         }
 
         public ProtoPoolBase<T> GetPool<T>(ObjectPoolType poolType) where T : ILeasable

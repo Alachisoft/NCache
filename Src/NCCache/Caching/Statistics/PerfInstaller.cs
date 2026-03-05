@@ -1,4 +1,4 @@
-//  Copyright (c) 2021 Alachisoft
+//  Copyright (c) 2026 Alachisoft
 //  
 //  Licensed under the Apache License, Version 2.0 (the "License");
 //  you may not use this file except in compliance with the License.
@@ -14,6 +14,7 @@
 using System;
 using System.Collections;
 using System.ComponentModel;
+using System.Diagnostics;
 using Alachisoft.NCache.Common.Collections;
 #if !NETCORE
 using System.Configuration.Install;
@@ -27,11 +28,11 @@ namespace Alachisoft.NCache.Caching.Statistics
     /// </summary>
 #if !NETCORE
 	[RunInstaller(true)]
-	public class PerfInstaller : System.Configuration.Install.Installer
+	public class PerfInstaller : System.Configuration.Install.Installer, IPerfInstaller
 	{
 		private System.Diagnostics.PerformanceCounterInstaller pcInstaller;
 #elif NETCORE
-    public class PerfInstaller
+    public class PerfInstaller : IPerfInstaller
     {
 #endif
         /// <summary>
@@ -39,12 +40,12 @@ namespace Alachisoft.NCache.Caching.Statistics
         /// </summary>
         private System.ComponentModel.Container components = null;
 
-		public PerfInstaller()
+        public CounterCreationData[] CounterData { get; set; }
+
+        public PerfInstaller()
 		{
 			// This call is required by the Designer.
 			InitializeComponent();
-
-			// TODO: Add any initialization after the InitializeComponent call
 		}
 
 #if !NETCORE
@@ -77,13 +78,17 @@ namespace Alachisoft.NCache.Caching.Statistics
 #if !NETCORE
             this.pcInstaller = new System.Diagnostics.PerformanceCounterInstaller();
 
-			
-            this.pcInstaller.CategoryName = categoryNameNCache;
+			// 
+			// pcInstaller
+			//
 
+
+            this.pcInstaller.CategoryName = categoryNameNCache;
 
             System.Diagnostics.CounterCreationData [] counterCreationData = new System.Diagnostics.CounterCreationData[]
 #elif NETCORE
-            System.Diagnostics.CounterCreationDataCollection counterCreationData = new System.Diagnostics.CounterCreationDataCollection()
+            System.Diagnostics.CounterCreationDataCollection counterCreationDataColl = new System.Diagnostics.CounterCreationDataCollection();
+            System.Diagnostics.CounterCreationData[] counterCreationData = new System.Diagnostics.CounterCreationData[]
 #endif
             {
             new System.Diagnostics.CounterCreationData("# Clients", "Number of connected clients to an instance of cache.", System.Diagnostics.PerformanceCounterType.NumberOfItems64),
@@ -105,25 +110,22 @@ namespace Alachisoft.NCache.Caching.Statistics
             new System.Diagnostics.CounterCreationData("Average us/cache operation base", "Base counter for average microseconds (us) /cache-operation", System.Diagnostics.PerformanceCounterType.AverageBase),
             new System.Diagnostics.CounterCreationData("Expirations/sec", "Number of items being expired currently per second", System.Diagnostics.PerformanceCounterType.SampleCounter),
             new System.Diagnostics.CounterCreationData("Evictions/sec", "Number of items evicted per second.", System.Diagnostics.PerformanceCounterType.SampleCounter),
-#if !(DEVELOPMENT || CLIENT)
             new System.Diagnostics.CounterCreationData("State Transfer/sec", "Number of items this node is either reading from other nodes or sending to other nodes during a state transfer mode.", System.Diagnostics.PerformanceCounterType.SampleCounter),
             new System.Diagnostics.CounterCreationData("Mirror queue size", "Number of items in the Mirror queue.", System.Diagnostics.PerformanceCounterType.NumberOfItems64),
             new System.Diagnostics.CounterCreationData("Sliding Index queue size", "Number of items in the Sliding-Index queue.", System.Diagnostics.PerformanceCounterType.NumberOfItems64),
-#endif
             new System.Diagnostics.CounterCreationData("Hits/sec", "Number of successful Get operations per second.", System.Diagnostics.PerformanceCounterType.SampleCounter),
             new System.Diagnostics.CounterCreationData("Misses/sec", "Number of failed Get operations per second.", System.Diagnostics.PerformanceCounterType.SampleCounter),
             new System.Diagnostics.CounterCreationData("Hits ratio/sec (%)", "Ratio of number of successful Get operations per second and total number of Get operations per second ", System.Diagnostics.PerformanceCounterType.SampleFraction),
             new System.Diagnostics.CounterCreationData("Hits ratio/sec base", "Base counter for Hits ratio/sec", System.Diagnostics.PerformanceCounterType.SampleBase),
-#if !(DEVELOPMENT || CLIENT)
-            //Moiz: perfmon description task 29-10-13
-            //previous description (till 4.1 sp3) for DispatchEnter,TcpDown,Clustered opsent,clusters oprecv, reponse sent (Number of clustered operations sent to other nodes in cluster per second.)
+
+
+
             new System.Diagnostics.CounterCreationData("Data balance/sec", "Number of items this node is either reading from other nodes or sending to other nodes during a Data Load Balancing mode.", System.Diagnostics.PerformanceCounterType.SampleCounter),
             new System.Diagnostics.CounterCreationData("Cluster ops/sec", "Number of clustered operations performed per second.", System.Diagnostics.PerformanceCounterType.SampleCounter),
             new System.Diagnostics.CounterCreationData("TcpdownEnter/sec", "", System.Diagnostics.PerformanceCounterType.SampleCounter),
             new System.Diagnostics.CounterCreationData("Clustered opssent/sec", "Number of clustered operations sent to other nodes in cluster per second.", System.Diagnostics.PerformanceCounterType.SampleCounter),
             new System.Diagnostics.CounterCreationData("Clustered opsrecv/sec", "Number of clustered operations received from other nodes in cluster per second.", System.Diagnostics.PerformanceCounterType.SampleCounter),
             new System.Diagnostics.CounterCreationData("Response sent/sec", "Number of responses sent to other nodes in cluster per second.", System.Diagnostics.PerformanceCounterType.SampleCounter),
-#endif
             new System.Diagnostics.CounterCreationData("Bytes sent/sec", "Number of bytes sent per second to other nodes of the cluster.", System.Diagnostics.PerformanceCounterType.SampleCounter),
             new System.Diagnostics.CounterCreationData("Bytes received/sec", "Number of bytes received per second from other nodes of the cluster.", System.Diagnostics.PerformanceCounterType.SampleCounter),
             new System.Diagnostics.CounterCreationData("Requests/sec", "Number of requests received (meaning cache commands like add, get, insert, remove etc.) from all clients to this cache server.", System.Diagnostics.PerformanceCounterType.RateOfCountsPerSecond64),
@@ -134,10 +136,8 @@ namespace Alachisoft.NCache.Caching.Statistics
             new System.Diagnostics.CounterCreationData("Client bytes received/sec", "Bytes being received by cache server from all its clients.", System.Diagnostics.PerformanceCounterType.RateOfCountsPerSecond64),
             new System.Diagnostics.CounterCreationData("TcpUpQueueCount", "Number of items in TCP up-queue.", System.Diagnostics.PerformanceCounterType.NumberOfItems64),
             new System.Diagnostics.CounterCreationData("TcpDownQueueCount", "Number of items in TCP down-queue.", System.Diagnostics.PerformanceCounterType.NumberOfItems64),
-#if !(DEVELOPMENT || CLIENT)
             new System.Diagnostics.CounterCreationData("BcastQueueCount", "Number of items in BCast queue waiting to be processed on sequence.", System.Diagnostics.PerformanceCounterType.NumberOfItems64),
             new System.Diagnostics.CounterCreationData("McastQueueCount", "Number of items in MCast queue waiting to be processed on sequence.", System.Diagnostics.PerformanceCounterType.NumberOfItems64),
-#endif
             new System.Diagnostics.CounterCreationData("Socket send time (msec)", "Time in milli seconds it took for the last message to be sent over the socket.", System.Diagnostics.PerformanceCounterType.NumberOfItems64),
             new System.Diagnostics.CounterCreationData("Socket send size (bytes)", "How much data was sent in the last message.", System.Diagnostics.PerformanceCounterType.NumberOfItems64),
             new System.Diagnostics.CounterCreationData("Socket recv time (msec)", "Time in milli seconds it took to receive the last message.", System.Diagnostics.PerformanceCounterType.NumberOfItems64),
@@ -173,16 +173,22 @@ namespace Alachisoft.NCache.Caching.Statistics
             new System.Diagnostics.CounterCreationData(CounterNames.MessageExpiredPerSec, "Number of messages expired per second.", System.Diagnostics.PerformanceCounterType.SampleCounter),
 
             #endregion
-           
-            };
+        };
 
 #if !NETCORE
             this.pcInstaller.Counters.AddRange(counterCreationData);
               this.Installers.AddRange(new System.Configuration.Install.Installer[] {
             this.pcInstaller});
+            CounterData = counterCreationData;
 #elif NETCORE
+            foreach (var count in counterCreationData)
+            {
+                counterCreationDataColl.Add((CounterCreationData)count);
+            }
+            CounterData = counterCreationData;
             if (!System.Diagnostics.PerformanceCounterCategory.Exists(categoryNameNCache))
-                System.Diagnostics.PerformanceCounterCategory.Create(categoryNameNCache, "Visit Documentation", System.Diagnostics.PerformanceCounterCategoryType.MultiInstance, counterCreationData);
+                System.Diagnostics.PerformanceCounterCategory.Create(categoryNameNCache, "Visit Documentation", System.Diagnostics.PerformanceCounterCategoryType.MultiInstance, counterCreationDataColl);
+            CounterData = counterCreationData;
 #endif
         }
 

@@ -1,4 +1,4 @@
-// $Id: ChannelException.java,v 1.4 2004/08/04 14:26:34 belaban Exp $
+
 using System;
 using System.Runtime.Serialization;
 

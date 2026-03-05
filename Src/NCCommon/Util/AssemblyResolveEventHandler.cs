@@ -1,4 +1,4 @@
-﻿//  Copyright (c) 2021 Alachisoft
+﻿//  Copyright (c) 2026 Alachisoft
 //  
 //  Licensed under the Apache License, Version 2.0 (the "License");
 //  you may not use this file except in compliance with the License.
@@ -30,8 +30,7 @@ namespace Alachisoft.NCache.Common.Util
                 asmName += ".dll";
             }
 
-            if (asmName.StartsWith("System.IO.FileSystem.resources") ||
-              asmName.StartsWith("System.Runtime.Serialization.Formatters.resources"))
+            if (asmName.StartsWith("System.") || asmName.StartsWith("Microsoft"))
                 return null;
 
             string deployAssemblyDirPath = string.Empty;
@@ -47,17 +46,40 @@ namespace Alachisoft.NCache.Common.Util
             }
             else
             {
-                deployAssemblyDirPath = AppUtil.DeployedAssemblyDir;
-                string[] deployDirectories = Directory.GetDirectories(deployAssemblyDirPath);
-
-                foreach (string deploy in deployDirectories)
+                if (args != null && args.RequestingAssembly != null)
                 {
-                    try
+                    if (File.Exists(Path.Combine(Path.GetDirectoryName(args.RequestingAssembly.Location), asmName)))
                     {
-                        asm = Assembly.LoadFrom(deploy + Path.DirectorySeparatorChar + asmName);
-                        break;
+                        var path = Path.Combine(Path.GetDirectoryName(args.RequestingAssembly.Location), asmName);
+                        asm = Assembly.LoadFrom(path);
+                        if (asm != null)
+                            return asm;
                     }
-                    catch (Exception ex) { }
+                }
+
+                string fromServiceDir = Path.Combine(AppUtil.InstallDir, "bin", "service", asmName);
+
+                if (File.Exists(fromServiceDir))
+                {
+                    asm = Assembly.LoadFrom(fromServiceDir);
+                    if (asm != null)
+                        return asm;
+                }
+
+                deployAssemblyDirPath = AppUtil.DeployedAssemblyDir;
+                if (Directory.Exists(deployAssemblyDirPath))
+                {
+                    string[] deployDirectories = Directory.GetDirectories(deployAssemblyDirPath);
+
+                    foreach (string deploy in deployDirectories)
+                    {
+                        try
+                        {
+                            asm = Assembly.LoadFrom(deploy + Path.DirectorySeparatorChar + asmName);
+                            break;
+                        }
+                        catch (Exception ex) { }
+                    }
                 }
             }
             return asm;

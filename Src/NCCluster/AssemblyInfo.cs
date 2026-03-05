@@ -13,25 +13,18 @@ using System.Runtime.InteropServices;
 [assembly: ComVisible(false)]
 
 [assembly: AssemblyConfiguration("")]
-//#if LOCAL
-//[assembly: AssemblyDescription("Local Edition")]
-//#elif SESSION
-//[assembly: AssemblyDescription("SessionState Edition")]
-//#else
-//[assembly: AssemblyDescription("Enterprise Edition")]
-//#endif
 
 [assembly: AssemblyCompany("Alachisoft")]
-
 
 #if NETCORE
 [assembly: AssemblyTitle("Alachisoft.NCache.Cluster (.NETCore)")]
 #else
-[assembly: AssemblyTitle("Alachisoft.NCache.Cluster")]
+[assembly: AssemblyTitle("Alachisoft.NCache.Cluster (.NET)")]
 #endif
 [assembly: AssemblyProduct("Alachisoft® NCache OpenSource")]
+
 [assembly: AssemblyTrademark("NCache ™ is a registered trademark of Alachisoft.")]
-[assembly: AssemblyCopyright("Copyright © 2005-2021 Alachisoft")]
+[assembly: AssemblyCopyright("Copyright © 2005-2026 Alachisoft")]
 [assembly: AssemblyCulture("")]		
 
 //
@@ -45,7 +38,7 @@ using System.Runtime.InteropServices;
 // You can specify all the values or you can default the Revision and Build Numbers 
 // by using the '*' as shown below:
 
-[assembly: AssemblyVersion("5.0.0")]
+[assembly: AssemblyVersion("5.3.0")]
 
 //
 // In order to sign your assembly you must specify a key to use. Refer to the 
@@ -74,11 +67,6 @@ using System.Runtime.InteropServices;
 //
 [assembly: AssemblyDelaySign(false)]
 [assembly: AssemblyKeyName("")]
-#if DEBUG
-[assembly: AssemblyKeyFile("..\\..\\Resources\\ncache.snk")]
-#else
-[assembly: AssemblyKeyFile("..\\..\\Resources\\ncache.snk")]
-#endif
 [assembly: AssemblyDescriptionAttribute("Cluster Core")]
-[assembly: AssemblyFileVersionAttribute("5.0.5.0")]
-[assembly: AssemblyInformationalVersion("5.0.0")]
+[assembly: AssemblyFileVersionAttribute("5.3.6.0")]
+[assembly: AssemblyInformationalVersion("5.3.0")]

@@ -1,4 +1,4 @@
-//  Copyright (c) 2021 Alachisoft
+//  Copyright (c) 2026 Alachisoft
 //  
 //  Licensed under the Apache License, Version 2.0 (the "License");
 //  you may not use this file except in compliance with the License.
@@ -20,10 +20,13 @@ using System.Configuration;
 using System.Diagnostics;
 using System.IO;
 using Microsoft.Win32;
+
 using Alachisoft.NCache.Management;
 using Alachisoft.NCache.Common;
+
 using Runtime = Alachisoft.NCache.Runtime;
 using Alachisoft.NCache.Web.SessionStateManagement;
+
 using Alachisoft.NCache.Web.SessionState.DistributionStrategy;
 using Alachisoft.NCache.Common.Util;
 using Alachisoft.NCache.Common.Logger;
@@ -54,7 +57,7 @@ namespace Alachisoft.NCache.Web.SessionState
         private bool _detailedLogs = false;
         private bool _isAbandoned = false;
         private bool _writeExceptionsToEventLog = false;
-        private ISessionCache _cache = null;//private Cache _cache = null;
+        private ISessionCache _cache = null;
 
         private EventHandler _onAcqStateHandler;
         private EventHandler _onReleaseStateHandler;
@@ -246,7 +249,6 @@ namespace Alachisoft.NCache.Web.SessionState
             try
             {
                 this._transformer.FillSessionFromCache(cache, this._httpSession, this, this._clearASPSession);
-                //Trace("Session: " + _httpSession.Count + "<br>");
             }
             catch (Exception e)
             {
@@ -261,7 +263,7 @@ namespace Alachisoft.NCache.Web.SessionState
         private void FillNCacheFromAspNetSession(HttpContext context)
         {
             ISessionCache cache = GetCache(context);
-            // No need to fill Cache if _httpSession is null. ARIF
+            // No need to fill Cache if _httpSession is null.
             if (cache == null || _httpSession == null) return;
             try
             {

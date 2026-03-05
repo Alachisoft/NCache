@@ -1,0 +1,20 @@
+-- *****************************************************************
+
+-- SNMPv2-CONF.my:  SNMPv2 Conformance MIB file
+--
+-- May 1994, Jeffrey T. Johnson
+--
+-- Copyright (c) 1994,1996 by cisco Systems, Inc.
+-- All rights reserved.
+-- 
+-- *****************************************************************
+--
+--    This mib was extracted from RFC 1904
+--    All macro definitions have been removed because they are
+--    predefined in the mib compiler
+
+SNMPv2-CONF DEFINITIONS ::= BEGIN
+
+-- everything is predefined in the mib compiler
+
+END

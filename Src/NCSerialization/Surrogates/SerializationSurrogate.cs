@@ -1,4 +1,4 @@
-//  Copyright (c) 2021 Alachisoft
+//  Copyright (c) 2026 Alachisoft
 //  
 //  Licensed under the Apache License, Version 2.0 (the "License");
 //  you may not use this file except in compliance with the License.
@@ -102,11 +102,8 @@ namespace Alachisoft.NCache.Serialization.Surrogates
                 ObjectProvider provider = objManager.GetProvider(ActualType);
                 if (provider != null)
                 {
-                    //Trace.error("Deserialization.GetInstance",ActualType + " being rented");
                     obj = provider.RentAnObject();
                 }
-                //else
-                    //Trace.error("Deserialization.GetInstance",ActualType + " no rented available");
             }
             return obj;
         }

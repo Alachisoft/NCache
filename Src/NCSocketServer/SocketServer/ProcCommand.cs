@@ -1,4 +1,4 @@
-//  Copyright (c) 2021 Alachisoft
+//  Copyright (c) 2026 Alachisoft
 //  
 //  Licensed under the Apache License, Version 2.0 (the "License");
 //  you may not use this file except in compliance with the License.
@@ -15,12 +15,12 @@ using Alachisoft.NCache.Common.Stats;
 
 namespace Alachisoft.NCache.SocketServer
 {
-    public class ProcCommand
+    public class ProcCommand : ICommand
     {
-        public long Acknowledgementid;
-        public object CommandInst;
-        public ClientManager ClientManager;
-        public UsageStats Stats;
-        public short cmdType;
+        public object Command { get; set; }
+        public short CommandType { get; set; }
+        public long AcknowledgementId { get; set; }
+        public ClientManager ClientManager { get; set; }
+        public UsageStats Stats { get; set; }
     }
 }

@@ -1,0 +1,17 @@
+#
+.1.3,Lextm.SharpSnmpLib.Mib.ObjectIdentifierType,org,iso
+.1.3.6,Lextm.SharpSnmpLib.Mib.ObjectIdentifierType,dod,org
+.1.3.6.1,Lextm.SharpSnmpLib.Mib.ObjectIdentifierType,internet,dod
+.1.3.6.1.1,Lextm.SharpSnmpLib.Mib.ObjectIdentifierType,directory,internet
+.1.3.6.1.2,Lextm.SharpSnmpLib.Mib.ObjectIdentifierType,mgmt,internet
+.1.3.6.1.2.1,Lextm.SharpSnmpLib.Mib.ObjectIdentifierType,mib-2,mgmt
+.1.3.6.1.2.1.10,Lextm.SharpSnmpLib.Mib.ObjectIdentifierType,transmission,mib-2
+.1.3.6.1.3,Lextm.SharpSnmpLib.Mib.ObjectIdentifierType,experimental,internet
+.1.3.6.1.4,Lextm.SharpSnmpLib.Mib.ObjectIdentifierType,private,internet
+.1.3.6.1.4.1,Lextm.SharpSnmpLib.Mib.ObjectIdentifierType,enterprises,private
+.1.3.6.1.5,Lextm.SharpSnmpLib.Mib.ObjectIdentifierType,security,internet
+.1.3.6.1.6,Lextm.SharpSnmpLib.Mib.ObjectIdentifierType,snmpV2,internet
+.1.3.6.1.6.1,Lextm.SharpSnmpLib.Mib.ObjectIdentifierType,snmpDomains,snmpV2
+.1.3.6.1.6.2,Lextm.SharpSnmpLib.Mib.ObjectIdentifierType,snmpProxys,snmpV2
+.1.3.6.1.6.3,Lextm.SharpSnmpLib.Mib.ObjectIdentifierType,snmpModules,snmpV2
+.0.0,Lextm.SharpSnmpLib.Mib.ObjectIdentityMacro,zeroDotZero,ccitt

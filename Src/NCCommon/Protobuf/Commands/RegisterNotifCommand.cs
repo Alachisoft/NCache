@@ -10,14 +10,14 @@
 // Generated from: RegisterNotifCommand.proto
 namespace Alachisoft.NCache.Common.Protobuf
 {
-    [global::System.Serializable, global::ProtoBuf.ProtoContract(Name = @"RegisterNotifCommand")]
-    public partial class RegisterNotifCommand : global::ProtoBuf.IExtensible
+    [global::System.Serializable, global::ProtoBuf.Extended.ProtoContract(Name = @"RegisterNotifCommand")]
+    public partial class RegisterNotifCommand : global::ProtoBuf.Extended.IExtensible
     {
         public RegisterNotifCommand() { }
 
 
         private long _requestId = default(long);
-        [global::ProtoBuf.ProtoMember(1, IsRequired = false, Name = @"requestId", DataFormat = global::ProtoBuf.DataFormat.TwosComplement)]
+        [global::ProtoBuf.Extended.ProtoMember(1, IsRequired = false, Name = @"requestId", DataFormat = global::ProtoBuf.Extended.DataFormat.TwosComplement)]
         [global::System.ComponentModel.DefaultValue(default(long))]
         public long requestId
         {
@@ -26,7 +26,7 @@ namespace Alachisoft.NCache.Common.Protobuf
         }
 
         private int _notifMask = default(int);
-        [global::ProtoBuf.ProtoMember(2, IsRequired = false, Name = @"notifMask", DataFormat = global::ProtoBuf.DataFormat.TwosComplement)]
+        [global::ProtoBuf.Extended.ProtoMember(2, IsRequired = false, Name = @"notifMask", DataFormat = global::ProtoBuf.Extended.DataFormat.TwosComplement)]
         [global::System.ComponentModel.DefaultValue(default(int))]
         public int notifMask
         {
@@ -35,7 +35,7 @@ namespace Alachisoft.NCache.Common.Protobuf
         }
 
         private int _eventType = default(int);
-        [global::ProtoBuf.ProtoMember(3, IsRequired = false, Name = @"eventType", DataFormat = global::ProtoBuf.DataFormat.TwosComplement)]
+        [global::ProtoBuf.Extended.ProtoMember(3, IsRequired = false, Name = @"eventType", DataFormat = global::ProtoBuf.Extended.DataFormat.TwosComplement)]
         [global::System.ComponentModel.DefaultValue(default(int))]
         public int eventType
         {
@@ -44,7 +44,7 @@ namespace Alachisoft.NCache.Common.Protobuf
         }
 
         private int _datafilter = default(int);
-        [global::ProtoBuf.ProtoMember(4, IsRequired = false, Name = @"datafilter", DataFormat = global::ProtoBuf.DataFormat.ZigZag)]
+        [global::ProtoBuf.Extended.ProtoMember(4, IsRequired = false, Name = @"datafilter", DataFormat = global::ProtoBuf.Extended.DataFormat.ZigZag)]
         [global::System.ComponentModel.DefaultValue(default(int))]
         public int datafilter
         {
@@ -53,16 +53,16 @@ namespace Alachisoft.NCache.Common.Protobuf
         }
 
         private int _sequence = (int)-1;
-        [global::ProtoBuf.ProtoMember(5, IsRequired = false, Name = @"sequence", DataFormat = global::ProtoBuf.DataFormat.TwosComplement)]
+        [global::ProtoBuf.Extended.ProtoMember(5, IsRequired = false, Name = @"sequence", DataFormat = global::ProtoBuf.Extended.DataFormat.TwosComplement)]
         [global::System.ComponentModel.DefaultValue((int)-1)]
         public int sequence
         {
             get { return _sequence; }
             set { _sequence = value; }
         }
-        private global::ProtoBuf.IExtension extensionObject;
-        global::ProtoBuf.IExtension global::ProtoBuf.IExtensible.GetExtensionObject(bool createIfMissing)
-        { return global::ProtoBuf.Extensible.GetExtensionObject(ref extensionObject, createIfMissing); }
+        private global::ProtoBuf.Extended.IExtension extensionObject;
+       global::ProtoBuf.Extended.IExtension global::ProtoBuf.Extended.IExtensible.GetExtensionObject(bool createIfMissing)
+        { return global::ProtoBuf.Extended.Extensible.GetExtensionObject(ref extensionObject, createIfMissing); }
     }
 
 }

@@ -1,4 +1,4 @@
-//  Copyright (c) 2021 Alachisoft
+//  Copyright (c) 2026 Alachisoft
 //  
 //  Licensed under the Apache License, Version 2.0 (the "License");
 //  you may not use this file except in compliance with the License.
@@ -17,7 +17,9 @@ using System.Text;
 using Alachisoft.NCache.Serialization.Formatters;
 using Alachisoft.NCache.Serialization.Surrogates;
 using Alachisoft.NCache.Serialization;
+
 using Alachisoft.NCache.Runtime.Serialization.IO;
+
 
 namespace Alachisoft.NCache.IO
 {
@@ -77,8 +79,6 @@ namespace Alachisoft.NCache.IO
         /// <param name="graph">Object to write</param>
         public override void WriteObject(object graph)
         {
-            //Console.WriteLine(graph);
-
             // Find an appropriate surrogate for the object
             ISerializationSurrogate surrogate = TypeSurrogateSelector.GetSurrogateForObject(graph, context.CacheContext);
             // write type handle
@@ -108,8 +108,6 @@ namespace Alachisoft.NCache.IO
             }
             catch (Exception e)
             {
-                //Trace.error("CompactBinaryWriter.WriteObject", "type: " + surrogate.ActualType + " handle: " + surrogate.TypeHandle
-                //    + "exception : " + e);
                 throw new CompactSerializationException(e.Message);
             }
         }

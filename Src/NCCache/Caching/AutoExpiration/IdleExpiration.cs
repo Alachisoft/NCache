@@ -1,4 +1,4 @@
-//  Copyright (c) 2021 Alachisoft
+//  Copyright (c) 2026 Alachisoft
 //  
 //  Licensed under the Apache License, Version 2.0 (the "License");
 //  you may not use this file except in compliance with the License.
@@ -16,11 +16,12 @@ using System;
 using Alachisoft.NCache.Util;
 
 using Alachisoft.NCache.Common;
+
 using Alachisoft.NCache.Runtime.Serialization.IO;
 using Alachisoft.NCache.Common.Pooling;
 using Alachisoft.NCache.Caching.Pooling;
-using Alachisoft.NCache.Runtime.Serialization;
 
+using Alachisoft.NCache.Runtime.Serialization;
 
 namespace Alachisoft.NCache.Caching.AutoExpiration
 {
@@ -35,7 +36,7 @@ namespace Alachisoft.NCache.Caching.AutoExpiration
         private const int IdleExpirationSize = 2 * Common.MemoryUtil.NetIntSize;
 
 		/// <summary> the idle time to live value </summary>
-		private UInt16		_idleTimeToLive;
+		private UInt32 _idleTimeToLive;
 
 		/// <summary> last timestamp when the expiration was checked </summary>
 		private int		_lastTimeStamp;
@@ -56,7 +57,7 @@ namespace Alachisoft.NCache.Caching.AutoExpiration
         {
             var expiration = Create(poolManager);
             expiration.SetBit(IS_VARIANT);
-            expiration._idleTimeToLive = (ushort)idleTTL.TotalSeconds;
+            expiration._idleTimeToLive = (UInt32)idleTTL.TotalSeconds;
             expiration._lastTimeStamp = AppUtil.DiffSeconds(DateTime.Now);
 
             return expiration;
@@ -83,7 +84,7 @@ namespace Alachisoft.NCache.Caching.AutoExpiration
         }
 
 		/// <summary> key to compare expiration hints. </summary>
-		internal override int SortKey { get { return _lastTimeStamp + _idleTimeToLive; } }
+		internal override int SortKey { get { return _lastTimeStamp + Convert.ToInt32(_idleTimeToLive); } }
 
 
 		/// <summary>
@@ -115,14 +116,39 @@ namespace Alachisoft.NCache.Caching.AutoExpiration
 		public new void Deserialize(CompactReader reader)
 		{
             base.Deserialize(reader);
-            _idleTimeToLive = reader.ReadUInt16();
-			_lastTimeStamp = reader.ReadInt32();
-		}
+            /*Following complex read/write logic is added for Live upgrade from older version
+            to 5.0 SP4 and above through bridge. In older version _idleTimeToLive was ushort */
+            bool oldVersion = true;
+            long startIndex = reader.BaseStream.Position;
+            try
+            {
+
+                var version = reader.ReadString();
+
+                if (!string.IsNullOrEmpty(version) && version == "$v5.0SP4")
+                    oldVersion = false;
+
+            }
+            catch (Exception) { }
+
+            if (oldVersion)
+            {
+                reader.BaseStream.Position = startIndex;
+                _idleTimeToLive = reader.ReadUInt16();
+                _lastTimeStamp = reader.ReadInt32();
+            }
+            else
+            {
+                _idleTimeToLive = reader.ReadUInt32();
+                _lastTimeStamp = reader.ReadInt32();
+            }
+        }
 
 		public new void Serialize(CompactWriter writer)
 		{
             base.Serialize(writer);
-			writer.Write(_idleTimeToLive);
+            writer.Write("$v5.0SP4");
+            writer.Write(_idleTimeToLive);
 			writer.Write(_lastTimeStamp);
 		}
 
@@ -163,7 +189,6 @@ namespace Alachisoft.NCache.Caching.AutoExpiration
 
         public sealed override void ReturnLeasableToPool()
         {
-
         }
 
         #endregion

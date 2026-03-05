@@ -25,14 +25,14 @@
 // Note: requires additional types generated from: ClientConnectivityChangeEventResponse.proto
 namespace Alachisoft.NCache.Common.Protobuf
 {
-  [global::System.Serializable, global::ProtoBuf.ProtoContract(Name=@"BulkEventItemResponse")]
-  public partial class BulkEventItemResponse : global::ProtoBuf.IExtensible
+  [global::System.Serializable, global::ProtoBuf.Extended.ProtoContract(Name=@"BulkEventItemResponse")]
+  public partial class BulkEventItemResponse : global::ProtoBuf.Extended.IExtensible
   {
     public BulkEventItemResponse() {}
     
 
     private Alachisoft.NCache.Common.Protobuf.BulkEventItemResponse.EventType _eventType = Alachisoft.NCache.Common.Protobuf.BulkEventItemResponse.EventType.ITEM_ADDED_EVENT;
-    [global::ProtoBuf.ProtoMember(1, IsRequired = false, Name=@"eventType", DataFormat = global::ProtoBuf.DataFormat.TwosComplement)]
+    [global::ProtoBuf.Extended.ProtoMember(1, IsRequired = false, Name=@"eventType", DataFormat = global::ProtoBuf.Extended.DataFormat.TwosComplement)]
     [global::System.ComponentModel.DefaultValue(Alachisoft.NCache.Common.Protobuf.BulkEventItemResponse.EventType.ITEM_ADDED_EVENT)]
     public Alachisoft.NCache.Common.Protobuf.BulkEventItemResponse.EventType eventType
     {
@@ -41,7 +41,7 @@ namespace Alachisoft.NCache.Common.Protobuf
     }
 
     private Alachisoft.NCache.Common.Protobuf.ItemRemovedEventResponse _itemRemovedEvent = null;
-    [global::ProtoBuf.ProtoMember(2, IsRequired = false, Name=@"itemRemovedEvent", DataFormat = global::ProtoBuf.DataFormat.Default)]
+    [global::ProtoBuf.Extended.ProtoMember(2, IsRequired = false, Name=@"itemRemovedEvent", DataFormat = global::ProtoBuf.Extended.DataFormat.Default)]
     [global::System.ComponentModel.DefaultValue(null)]
     public Alachisoft.NCache.Common.Protobuf.ItemRemovedEventResponse itemRemovedEvent
     {
@@ -50,7 +50,7 @@ namespace Alachisoft.NCache.Common.Protobuf
     }
 
     private Alachisoft.NCache.Common.Protobuf.ItemUpdatedEventResponse _itemUpdatedEvent = null;
-    [global::ProtoBuf.ProtoMember(3, IsRequired = false, Name=@"itemUpdatedEvent", DataFormat = global::ProtoBuf.DataFormat.Default)]
+    [global::ProtoBuf.Extended.ProtoMember(3, IsRequired = false, Name=@"itemUpdatedEvent", DataFormat = global::ProtoBuf.Extended.DataFormat.Default)]
     [global::System.ComponentModel.DefaultValue(null)]
     public Alachisoft.NCache.Common.Protobuf.ItemUpdatedEventResponse itemUpdatedEvent
     {
@@ -59,7 +59,7 @@ namespace Alachisoft.NCache.Common.Protobuf
     }
 
     private Alachisoft.NCache.Common.Protobuf.ItemAddedEventResponse _itemAddedEvent = null;
-    [global::ProtoBuf.ProtoMember(4, IsRequired = false, Name=@"itemAddedEvent", DataFormat = global::ProtoBuf.DataFormat.Default)]
+    [global::ProtoBuf.Extended.ProtoMember(4, IsRequired = false, Name=@"itemAddedEvent", DataFormat = global::ProtoBuf.Extended.DataFormat.Default)]
     [global::System.ComponentModel.DefaultValue(null)]
     public Alachisoft.NCache.Common.Protobuf.ItemAddedEventResponse itemAddedEvent
     {
@@ -68,7 +68,7 @@ namespace Alachisoft.NCache.Common.Protobuf
     }
 
     private Alachisoft.NCache.Common.Protobuf.AsyncOperationCompletedCallbackResponse _asyncOperationCompletedCallback = null;
-    [global::ProtoBuf.ProtoMember(5, IsRequired = false, Name=@"asyncOperationCompletedCallback", DataFormat = global::ProtoBuf.DataFormat.Default)]
+    [global::ProtoBuf.Extended.ProtoMember(5, IsRequired = false, Name=@"asyncOperationCompletedCallback", DataFormat = global::ProtoBuf.Extended.DataFormat.Default)]
     [global::System.ComponentModel.DefaultValue(null)]
     public Alachisoft.NCache.Common.Protobuf.AsyncOperationCompletedCallbackResponse asyncOperationCompletedCallback
     {
@@ -77,7 +77,7 @@ namespace Alachisoft.NCache.Common.Protobuf
     }
 
     private Alachisoft.NCache.Common.Protobuf.ItemRemoveCallbackResponse _itemRemoveCallback = null;
-    [global::ProtoBuf.ProtoMember(6, IsRequired = false, Name=@"itemRemoveCallback", DataFormat = global::ProtoBuf.DataFormat.Default)]
+    [global::ProtoBuf.Extended.ProtoMember(6, IsRequired = false, Name=@"itemRemoveCallback", DataFormat = global::ProtoBuf.Extended.DataFormat.Default)]
     [global::System.ComponentModel.DefaultValue(null)]
     public Alachisoft.NCache.Common.Protobuf.ItemRemoveCallbackResponse itemRemoveCallback
     {
@@ -87,7 +87,7 @@ namespace Alachisoft.NCache.Common.Protobuf
 
    
     private Alachisoft.NCache.Common.Protobuf.DSUpdatedCallbackResponse _DSUpdatedCallback = null;
-    [global::ProtoBuf.ProtoMember(8, IsRequired = false, Name=@"DSUpdatedCallback", DataFormat = global::ProtoBuf.DataFormat.Default)]
+    [global::ProtoBuf.Extended.ProtoMember(8, IsRequired = false, Name=@"DSUpdatedCallback", DataFormat = global::ProtoBuf.Extended.DataFormat.Default)]
     [global::System.ComponentModel.DefaultValue(null)]
     public Alachisoft.NCache.Common.Protobuf.DSUpdatedCallbackResponse DSUpdatedCallback
     {
@@ -96,7 +96,7 @@ namespace Alachisoft.NCache.Common.Protobuf
     }
 
     private Alachisoft.NCache.Common.Protobuf.CustomEventResponse _CustomEvent = null;
-    [global::ProtoBuf.ProtoMember(9, IsRequired = false, Name=@"CustomEvent", DataFormat = global::ProtoBuf.DataFormat.Default)]
+    [global::ProtoBuf.Extended.ProtoMember(9, IsRequired = false, Name=@"CustomEvent", DataFormat = global::ProtoBuf.Extended.DataFormat.Default)]
     [global::System.ComponentModel.DefaultValue(null)]
     public Alachisoft.NCache.Common.Protobuf.CustomEventResponse CustomEvent
     {
@@ -105,7 +105,7 @@ namespace Alachisoft.NCache.Common.Protobuf
     }
 
     private Alachisoft.NCache.Common.Protobuf.ItemUpdatedCallbackResponse _ItemUpdatedCallback = null;
-    [global::ProtoBuf.ProtoMember(10, IsRequired = false, Name=@"ItemUpdatedCallback", DataFormat = global::ProtoBuf.DataFormat.Default)]
+    [global::ProtoBuf.Extended.ProtoMember(10, IsRequired = false, Name=@"ItemUpdatedCallback", DataFormat = global::ProtoBuf.Extended.DataFormat.Default)]
     [global::System.ComponentModel.DefaultValue(null)]
     public Alachisoft.NCache.Common.Protobuf.ItemUpdatedCallbackResponse ItemUpdatedCallback
     {
@@ -114,7 +114,7 @@ namespace Alachisoft.NCache.Common.Protobuf
     }
 
     private Alachisoft.NCache.Common.Protobuf.CacheClearedEventResponse _cacheClearedEvent = null;
-    [global::ProtoBuf.ProtoMember(11, IsRequired = false, Name=@"cacheClearedEvent", DataFormat = global::ProtoBuf.DataFormat.Default)]
+    [global::ProtoBuf.Extended.ProtoMember(11, IsRequired = false, Name=@"cacheClearedEvent", DataFormat = global::ProtoBuf.Extended.DataFormat.Default)]
     [global::System.ComponentModel.DefaultValue(null)]
     public Alachisoft.NCache.Common.Protobuf.CacheClearedEventResponse cacheClearedEvent
     {
@@ -123,7 +123,7 @@ namespace Alachisoft.NCache.Common.Protobuf
     }
 
     private Alachisoft.NCache.Common.Protobuf.CacheStoppedEventResponse _cacheStoppedEvent = null;
-    [global::ProtoBuf.ProtoMember(12, IsRequired = false, Name=@"cacheStoppedEvent", DataFormat = global::ProtoBuf.DataFormat.Default)]
+    [global::ProtoBuf.Extended.ProtoMember(12, IsRequired = false, Name=@"cacheStoppedEvent", DataFormat = global::ProtoBuf.Extended.DataFormat.Default)]
     [global::System.ComponentModel.DefaultValue(null)]
     public Alachisoft.NCache.Common.Protobuf.CacheStoppedEventResponse cacheStoppedEvent
     {
@@ -132,7 +132,7 @@ namespace Alachisoft.NCache.Common.Protobuf
     }
 
     private Alachisoft.NCache.Common.Protobuf.PollNotifyEventResponse _pollNotifyEvent = null;
-    [global::ProtoBuf.ProtoMember(13, IsRequired = false, Name=@"pollNotifyEvent", DataFormat = global::ProtoBuf.DataFormat.Default)]
+    [global::ProtoBuf.Extended.ProtoMember(13, IsRequired = false, Name=@"pollNotifyEvent", DataFormat = global::ProtoBuf.Extended.DataFormat.Default)]
     [global::System.ComponentModel.DefaultValue(null)]
     public Alachisoft.NCache.Common.Protobuf.PollNotifyEventResponse pollNotifyEvent
     {
@@ -142,63 +142,63 @@ namespace Alachisoft.NCache.Common.Protobuf
 
 
     private Alachisoft.NCache.Common.Protobuf.ClientConnectivityChangeEventResponse _clientConnectivityChangeEvent = null;
-    [global::ProtoBuf.ProtoMember(15, IsRequired = false, Name=@"clientConnectivityChangeEvent", DataFormat = global::ProtoBuf.DataFormat.Default)]
+    [global::ProtoBuf.Extended.ProtoMember(15, IsRequired = false, Name=@"clientConnectivityChangeEvent", DataFormat = global::ProtoBuf.Extended.DataFormat.Default)]
     [global::System.ComponentModel.DefaultValue(null)]
     public Alachisoft.NCache.Common.Protobuf.ClientConnectivityChangeEventResponse clientConnectivityChangeEvent
     {
       get { return _clientConnectivityChangeEvent; }
       set { _clientConnectivityChangeEvent = value; }
     }
-    [global::ProtoBuf.ProtoContract(Name=@"EventType")]
+    [global::ProtoBuf.Extended.ProtoContract(Name=@"EventType")]
     public enum EventType
     {
             
-      [global::ProtoBuf.ProtoEnum(Name=@"ITEM_ADDED_EVENT", Value=1)]
+      [global::ProtoBuf.Extended.ProtoEnum(Name=@"ITEM_ADDED_EVENT", Value=1)]
       ITEM_ADDED_EVENT = 1,
             
-      [global::ProtoBuf.ProtoEnum(Name=@"ITEM_UPDATED_EVENT", Value=2)]
+      [global::ProtoBuf.Extended.ProtoEnum(Name=@"ITEM_UPDATED_EVENT", Value=2)]
       ITEM_UPDATED_EVENT = 2,
             
-      [global::ProtoBuf.ProtoEnum(Name=@"ITEM_REMOVED_EVENT", Value=3)]
+      [global::ProtoBuf.Extended.ProtoEnum(Name=@"ITEM_REMOVED_EVENT", Value=3)]
       ITEM_REMOVED_EVENT = 3,
             
-      [global::ProtoBuf.ProtoEnum(Name=@"RAISE_CUSTOM_EVENT", Value=4)]
+      [global::ProtoBuf.Extended.ProtoEnum(Name=@"RAISE_CUSTOM_EVENT", Value=4)]
       RAISE_CUSTOM_EVENT = 4,
             
-      [global::ProtoBuf.ProtoEnum(Name=@"ASYNC_OP_COMPLETED_EVENT", Value=5)]
+      [global::ProtoBuf.Extended.ProtoEnum(Name=@"ASYNC_OP_COMPLETED_EVENT", Value=5)]
       ASYNC_OP_COMPLETED_EVENT = 5,
             
-      [global::ProtoBuf.ProtoEnum(Name=@"ITEM_REMOVED_CALLBACK", Value=6)]
+      [global::ProtoBuf.Extended.ProtoEnum(Name=@"ITEM_REMOVED_CALLBACK", Value=6)]
       ITEM_REMOVED_CALLBACK = 6,
             
-      [global::ProtoBuf.ProtoEnum(Name=@"ITEM_UPDATED_CALLBACK", Value=7)]
+      [global::ProtoBuf.Extended.ProtoEnum(Name=@"ITEM_UPDATED_CALLBACK", Value=7)]
       ITEM_UPDATED_CALLBACK = 7,
             
-      [global::ProtoBuf.ProtoEnum(Name=@"CQ_CALLBACK", Value=8)]
+      [global::ProtoBuf.Extended.ProtoEnum(Name=@"CQ_CALLBACK", Value=8)]
       CQ_CALLBACK = 8,
             
-      [global::ProtoBuf.ProtoEnum(Name=@"DS_UPDATED_CALLBACK", Value=9)]
+      [global::ProtoBuf.Extended.ProtoEnum(Name=@"DS_UPDATED_CALLBACK", Value=9)]
       DS_UPDATED_CALLBACK = 9,
             
-      [global::ProtoBuf.ProtoEnum(Name=@"CACHE_CLEARED_EVENT", Value=10)]
+      [global::ProtoBuf.Extended.ProtoEnum(Name=@"CACHE_CLEARED_EVENT", Value=10)]
       CACHE_CLEARED_EVENT = 10,
             
-      [global::ProtoBuf.ProtoEnum(Name=@"CACHE_STOPPED_EVENT", Value=11)]
+      [global::ProtoBuf.Extended.ProtoEnum(Name=@"CACHE_STOPPED_EVENT", Value=11)]
       CACHE_STOPPED_EVENT = 11,
             
-      [global::ProtoBuf.ProtoEnum(Name=@"POLL_NOTIFY_EVENT", Value=12)]
+      [global::ProtoBuf.Extended.ProtoEnum(Name=@"POLL_NOTIFY_EVENT", Value=12)]
       POLL_NOTIFY_EVENT = 12,
             
-      [global::ProtoBuf.ProtoEnum(Name=@"TASK_CALLBACK", Value=13)]
+      [global::ProtoBuf.Extended.ProtoEnum(Name=@"TASK_CALLBACK", Value=13)]
       TASK_CALLBACK = 13,
             
-      [global::ProtoBuf.ProtoEnum(Name=@"CLIENT_CONNECTIVITY", Value=14)]
+      [global::ProtoBuf.Extended.ProtoEnum(Name=@"CLIENT_CONNECTIVITY", Value=14)]
       CLIENT_CONNECTIVITY = 14
     }
   
-    private global::ProtoBuf.IExtension extensionObject;
-    global::ProtoBuf.IExtension global::ProtoBuf.IExtensible.GetExtensionObject(bool createIfMissing)
-      { return global::ProtoBuf.Extensible.GetExtensionObject(ref extensionObject, createIfMissing); }
+    private global::ProtoBuf.Extended.IExtension extensionObject;
+   global::ProtoBuf.Extended.IExtension global::ProtoBuf.Extended.IExtensible.GetExtensionObject(bool createIfMissing)
+      { return global::ProtoBuf.Extended.Extensible.GetExtensionObject(ref extensionObject, createIfMissing); }
   }
   
 }

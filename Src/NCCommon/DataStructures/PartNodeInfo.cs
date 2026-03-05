@@ -1,4 +1,4 @@
-//  Copyright (c) 2021 Alachisoft
+//  Copyright (c) 2026 Alachisoft
 //  
 //  Licensed under the Apache License, Version 2.0 (the "License");
 //  you may not use this file except in compliance with the License.
@@ -13,10 +13,14 @@
 //  limitations under the License
 using System;
 using Alachisoft.NCache.Common.Net;
+using Alachisoft.NCache.Runtime.Serialization;
+using Alachisoft.NCache.Runtime.Serialization.IO;
+using Newtonsoft.Json;
 
 namespace Alachisoft.NCache.Common.DataStructures
 {
-    public class PartNodeInfo
+
+    public class PartNodeInfo : ICompactSerializable
     {
         Address _address;
         String _subGroupId;
@@ -38,29 +42,37 @@ namespace Alachisoft.NCache.Common.DataStructures
             _isCoordinator = isCoordinator;
         }
 
-
+        [JsonProperty("NodeAddress")]
         public Address NodeAddress
         {
             get { return _address; }
             set { _address = value; }
         }
-
+        [JsonProperty("SubGroup")]
         public string SubGroup
         {
             get { return _subGroupId; }
             set { _subGroupId = value; }
         }
-
+        [JsonProperty("IsCoordinator")]
         public bool IsCoordinator
         {
             get { return _isCoordinator; }
             set { _isCoordinator = value; }
         }
-
+        [JsonProperty("PriorityIndex")]
         public int PriorityIndex
         {
             get { return _priorityIndex; }
             set { _priorityIndex = value; }
+        }
+
+        public void Deserialize(CompactReader reader)
+        {
+            _address = reader.ReadObject() as Address;
+            _subGroupId = reader.ReadString();
+            _isCoordinator = reader.ReadBoolean();
+            _priorityIndex = reader.ReadInt32();
         }
 
         public override bool Equals(object obj)
@@ -72,6 +84,14 @@ namespace Alachisoft.NCache.Common.DataStructures
                     return true;
             }
             return false;
+        }
+
+        public void Serialize(CompactWriter writer)
+        {
+            writer.WriteObject(_address);
+            writer.Write(_subGroupId);
+            writer.Write(_isCoordinator);
+            writer.Write(_priorityIndex);
         }
 
         public override string ToString()

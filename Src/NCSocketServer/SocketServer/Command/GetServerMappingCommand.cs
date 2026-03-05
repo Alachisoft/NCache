@@ -1,4 +1,4 @@
-//  Copyright (c) 2021 Alachisoft
+//  Copyright (c) 2026 Alachisoft
 //  
 //  Licensed under the Apache License, Version 2.0 (the "License");
 //  you may not use this file except in compliance with the License.
@@ -12,6 +12,7 @@
 //  See the License for the specific language governing permissions and
 //  limitations under the License
 using System;
+using Alachisoft.NCache.Common.Util;
 using Alachisoft.NCache.Config;
 namespace Alachisoft.NCache.SocketServer.Command
 {
@@ -29,7 +30,7 @@ namespace Alachisoft.NCache.SocketServer.Command
                 Common.Protobuf.Response response = new Common.Protobuf.Response();
                 Common.Protobuf.GetServerMappingResponse getServerMappingResponse = new Common.Protobuf.GetServerMappingResponse();
 
-                if (mappedServers != null)
+                if (mappedServers != null && mappedServers.Length > 0)
                 {
                     for (int i = 0; i < mappedServers.Length; i++)
                     {
@@ -42,11 +43,25 @@ namespace Alachisoft.NCache.SocketServer.Command
 
                         //Adding to list to be sent as a response
                         getServerMappingResponse.serverMapping.Add(mappingObject);
-
                     }
+
+                    
                 }
+                else if (!String.IsNullOrEmpty(ServiceConfiguration.PublicIP))
+                {
+                    Common.Protobuf.ServerMapping mapping = new Common.Protobuf.ServerMapping
+                    {
+                        privateIp = ServiceConfiguration.BindToIP.ToString(),
+                        privatePort = ServiceConfiguration.Port,
+                        publicIp = ServiceConfiguration.PublicIP,
+                        publicPort = ServiceConfiguration.Port
+                    };
+
+                    getServerMappingResponse.serverMapping.Add(mapping);
+                }
+
                 else
-                    SocketServer.Logger.NCacheLog.Error("Server Mapping is null");
+                 if (SocketServer.Logger.IsErrorLogsEnabled) SocketServer.Logger.NCacheLog.Error("Server Mapping is null");
 
                 response.getServerMappingResponse = getServerMappingResponse;
                 response.responseType = Common.Protobuf.Response.Type.GET_SERVER_MAPPING;

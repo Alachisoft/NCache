@@ -1,4 +1,5 @@
-﻿using Alachisoft.NCache.Config.Dom;
+﻿using Alachisoft.NCache.Common.Monitoring;
+using Alachisoft.NCache.Config.Dom;
 using System;
 using System.Collections.Generic;
 using System.Diagnostics;
@@ -7,7 +8,7 @@ using System.Text;
 
 namespace Alachisoft.NCache.Caching.CacheHealthAlerts
 {
-    public class AlertCollectorsBase
+    public class AlertCollectorsBase : ICollector
     {
 
         ResourceAtribute resouerceAttribute;
@@ -17,12 +18,19 @@ namespace Alachisoft.NCache.Caching.CacheHealthAlerts
         string name;
         double lastValue = -1;
 
+        public AlertCollectorsBase()
+        {
+
+        }
         internal AlertCollectorsBase(ResourceAtribute attribute, CacheRuntimeContext cacheRuntimeContext)
         {
             resouerceAttribute = attribute;
             context = cacheRuntimeContext;
         }
-
+        internal AlertCollectorsBase(CacheRuntimeContext cacheRuntimeContext)
+        {
+            context = cacheRuntimeContext;
+        }
         internal CacheRuntimeContext Context
         {
             get
@@ -33,7 +41,7 @@ namespace Alachisoft.NCache.Caching.CacheHealthAlerts
 
         public string CouneterName
         {
-          internal  set
+            set
             {
                counterName= value;
             }
@@ -45,7 +53,7 @@ namespace Alachisoft.NCache.Caching.CacheHealthAlerts
 
         public string Name
         {
-            internal set
+             set
             {
                 name = value;
             }
@@ -58,7 +66,7 @@ namespace Alachisoft.NCache.Caching.CacheHealthAlerts
 
         public double LastValue
         {
-            internal set
+             set
             {
                 lastValue = value;
             }

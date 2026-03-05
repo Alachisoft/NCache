@@ -1,0 +1,1133 @@
+-- *------------------------------------------------------------------
+-- * ACTONA-ACTASTOR-MIB.my: The WAFS Statistics MIB.
+-- *
+-- * Actona Technologies was acquired by Cisco Systems on August 2, 2004
+-- *
+-- * Copyright (c) 2004-2005 by Cisco Systems, Inc.
+-- * All rights reserved.
+-- *
+-- *------------------------------------------------------------------
+ACTONA-ACTASTOR-MIB DEFINITIONS
+::= BEGIN
+
+IMPORTS
+  OBJECT-GROUP,
+  NOTIFICATION-GROUP
+     FROM SNMPv2-CONF
+  enterprises,
+  MODULE-IDENTITY,
+  OBJECT-IDENTITY,
+  OBJECT-TYPE,
+  NOTIFICATION-TYPE,
+  Counter32,
+  Integer32,
+  TimeTicks,
+  Unsigned32
+    FROM SNMPv2-SMI
+  DisplayString
+    FROM SNMPv2-TC;
+
+actona MODULE-IDENTITY
+  LAST-UPDATED "200501050000Z"
+  ORGANIZATION "Cisco Systems, Inc."
+  CONTACT-INFO
+    "Cisco Systems
+     170 W Tasman Drive
+     San Jose, CA 95134
+     USA
+     Tel: +1 800 553-NETS
+     E-mail: cs-webcache@cisco.com"
+  DESCRIPTION
+    "Actona ActaStor MIB file"
+  REVISION "200412230000Z"
+  DESCRIPTION
+    "(1) Added aclogSeverity and aclogMsgText objects.
+     (2) deprecated csLogsTrap, esLogsTrap, mgrLogsTrap objects
+       and replaced it with acCsLOgsTrap, acEsLogsTrap,
+       and acMgrLogsTrap objects.
+     (2) deprecated logNotificationsGroup and replaced it with
+       logNotificationsGroupRev1."
+  REVISION "200311241610Z"	-- Nov 24, 2003 4:10:00 PM
+  DESCRIPTION
+    "Actona Technologies"
+ -- 1.3.6.1.4.1.17471 --
+
+::= { enterprises 17471 }
+
+acNotifications
+  OBJECT IDENTIFIER ::= { actona 0 }
+
+actastor OBJECT-IDENTITY
+  STATUS current
+  DESCRIPTION
+    "Actona ActaStor product"
+ -- 1.3.6.1.4.1.17471.1 --
+::= { actona 1 }
+
+generalInformation OBJECT-IDENTITY
+  STATUS current
+  DESCRIPTION
+    "ActaStor general information"
+ -- 1.3.6.1.4.1.17471.1.1 --
+::= { actastor 1 }
+
+actastorVersion OBJECT-TYPE
+  SYNTAX OCTET STRING
+  MAX-ACCESS read-only
+  STATUS current
+  DESCRIPTION
+    "ActaStor installed version number"
+ -- 1.3.6.1.4.1.17471.1.1.1 --
+::= { generalInformation 1 }
+
+buildString OBJECT-TYPE
+  SYNTAX OCTET STRING
+  MAX-ACCESS read-only
+  STATUS current
+  DESCRIPTION
+    "ActaStor installed build label"
+ -- 1.3.6.1.4.1.17471.1.1.2 --
+::= { generalInformation 2 }
+
+support OBJECT-IDENTITY
+  STATUS current
+  DESCRIPTION
+    "Actona Support contact information"
+ -- 1.3.6.1.4.1.17471.1.1.3 --
+::= { generalInformation 3 }
+
+email OBJECT-TYPE
+  SYNTAX OCTET STRING
+  MAX-ACCESS read-only
+  STATUS current
+  DESCRIPTION
+    "Actona Support email address"
+ -- 1.3.6.1.4.1.17471.1.1.3.1 --
+::= { support 1 }
+
+license OBJECT-IDENTITY
+  STATUS current
+  DESCRIPTION
+    "ActaStor license infromation"
+ -- 1.3.6.1.4.1.17471.1.1.4 --
+::= { generalInformation 4 }
+
+isValid OBJECT-TYPE
+  SYNTAX INTEGER {
+      no(0),
+      yes(1) }
+  MAX-ACCESS read-only
+  STATUS current
+  DESCRIPTION
+    "Indicates whether the installed license is valid"
+ -- 1.3.6.1.4.1.17471.1.1.4.1 --
+::= { license 1 }
+
+daysLeft OBJECT-TYPE
+  SYNTAX Integer32 (0..99999)
+  UNITS
+    "days (99999 is unlimited license)"
+  MAX-ACCESS read-only
+  STATUS current
+  DESCRIPTION
+    "The number of days remaining until the installed license expires"
+ -- 1.3.6.1.4.1.17471.1.1.4.2 --
+::= { license 2 }
+
+manager OBJECT-IDENTITY
+  STATUS current
+  DESCRIPTION
+    "ActaStor manager-related information"
+ -- 1.3.6.1.4.1.17471.1.2 --
+::= { actastor 2 }
+
+mgrCentralServerHost OBJECT-TYPE
+  SYNTAX OCTET STRING
+  MAX-ACCESS read-only
+  STATUS current
+  DESCRIPTION
+    "The name/IP address of the host acting as the Central Manager
+     of this gateway, in the ActaStor network"
+ -- 1.3.6.1.4.1.17471.1.2.1 --
+::= { manager 1 }
+
+mgrLogsTrap NOTIFICATION-TYPE
+  STATUS    deprecated
+  DESCRIPTION
+      "The OID of trap messages related to ActaStor management.
+       This object is deprecated in the favor of acMgrLogsTrap."
+::= { manager 2 }
+
+
+coreServer OBJECT-IDENTITY
+  STATUS current
+  DESCRIPTION
+    "ActaStor CoreServer-related information"
+ -- 1.3.6.1.4.1.17471.1.3 --
+::= { actastor 3 }
+
+csGeneral OBJECT-IDENTITY
+  STATUS current
+  DESCRIPTION
+    "CoreServer general infromation"
+ -- 1.3.6.1.4.1.17471.1.3.1 --
+::= { coreServer 1 }
+
+csIsConfigured OBJECT-TYPE
+  SYNTAX INTEGER {
+      no(0),
+      yes(1) }
+  MAX-ACCESS read-only
+  STATUS current
+  DESCRIPTION
+    "Indicates whether the CoreServer component has been configured
+     to run on this gateway"
+ -- 1.3.6.1.4.1.17471.1.3.1.1 --
+::= { csGeneral 1 }
+
+csIsAlive OBJECT-TYPE
+  SYNTAX INTEGER {
+      no(0),
+      yes(1) }
+  MAX-ACCESS read-only
+  STATUS current
+  DESCRIPTION
+    "Indicates whether the CoreServer component is currently
+     running on this gateway"
+ -- 1.3.6.1.4.1.17471.1.3.1.2 --
+::= { csGeneral 2 }
+
+csUpTime OBJECT-TYPE
+  SYNTAX TimeTicks
+  MAX-ACCESS read-only
+  STATUS current
+  DESCRIPTION
+    "The elapsed time since the CoreServer was started"
+ -- 1.3.6.1.4.1.17471.1.3.1.3 --
+::= { csGeneral 3 }
+
+csState OBJECT-IDENTITY
+  STATUS current
+  DESCRIPTION
+    "The current run-time state of the CoreServer"
+ -- 1.3.6.1.4.1.17471.1.3.2 --
+::= { coreServer 2 }
+
+csConnectivityTable OBJECT-TYPE
+  SYNTAX SEQUENCE OF CsConnectivityEntry
+  MAX-ACCESS not-accessible
+  STATUS current
+  DESCRIPTION
+    "A table describing the current state of EdgeServer
+     connections to this CoreServer"
+ -- 1.3.6.1.4.1.17471.1.3.2.1 --
+::= { csState 1 }
+
+csConnectivityEntry OBJECT-TYPE
+  SYNTAX CsConnectivityEntry
+  MAX-ACCESS not-accessible
+  STATUS current
+  DESCRIPTION
+    "A single entry in the connection table - denoting a
+     specific EdgeServer"
+  INDEX {
+    csConTabIndex }
+ -- 1.3.6.1.4.1.17471.1.3.2.1.1 --
+::= { csConnectivityTable 1 }
+
+CsConnectivityEntry
+::= SEQUENCE {
+  csConTabIndex          Integer32,
+  csConTabClusterID        Integer32,
+  csConTabClusterName       OCTET STRING,
+  csConTabIsConnected       INTEGER,
+  csConTabTotalSentMessages    Counter32,
+  csConTabSentCompressionRatio   Integer32,
+  csConTabTotalReceivedMessages  Counter32,
+  csConTabReceivedCompressionRatio Integer32,
+  csConTabTotalSentKBytes     Unsigned32,
+  csConTabTotalReceivedKBytes    Unsigned32 }
+
+csConTabIndex OBJECT-TYPE
+  SYNTAX Integer32 (1..1000)
+  MAX-ACCESS not-accessible
+  STATUS current
+  DESCRIPTION
+    "Index column - sequential line number in the table"
+ -- 1.3.6.1.4.1.17471.1.3.2.1.1.1 --
+::= { csConnectivityEntry 1 }
+
+csConTabClusterID OBJECT-TYPE
+  SYNTAX Integer32 (0..2147483647)
+  MAX-ACCESS read-only
+  STATUS current
+  DESCRIPTION
+    "ID of the CoreServer cluster to which this CoreServer belongs"
+ -- 1.3.6.1.4.1.17471.1.3.2.1.1.2 --
+::= { csConnectivityEntry 2 }
+
+csConTabClusterName OBJECT-TYPE
+  SYNTAX OCTET STRING
+  MAX-ACCESS read-only
+  STATUS current
+  DESCRIPTION
+    "Name of the CoreServer cluster to which this CoreServer belongs"
+ -- 1.3.6.1.4.1.17471.1.3.2.1.1.3 --
+::= { csConnectivityEntry 3 }
+
+csConTabIsConnected OBJECT-TYPE
+  SYNTAX INTEGER {
+      no(0),
+      yes(1) }
+  MAX-ACCESS read-only
+  STATUS current
+  DESCRIPTION
+    "Indicates whether the EdgeServer is currently connected to
+     this CoreServer"
+ -- 1.3.6.1.4.1.17471.1.3.2.1.1.4 --
+::= { csConnectivityEntry 4 }
+
+csConTabTotalSentMessages OBJECT-TYPE
+  SYNTAX Counter32
+  MAX-ACCESS read-only
+  STATUS current
+  DESCRIPTION
+    "The total number of messages sent from the CoreServer
+     to this EdgeServer"
+ -- 1.3.6.1.4.1.17471.1.3.2.1.1.5 --
+::= { csConnectivityEntry 5 }
+
+csConTabSentCompressionRatio OBJECT-TYPE
+  SYNTAX Integer32 (0..100)
+  UNITS
+    "%"
+  MAX-ACCESS read-only
+  STATUS current
+  DESCRIPTION
+    "The compression ratio (in %) of the messages sent from
+     the CoreServer to this EdgeServer"
+ -- 1.3.6.1.4.1.17471.1.3.2.1.1.6 --
+::= { csConnectivityEntry 6 }
+
+csConTabTotalReceivedMessages OBJECT-TYPE
+  SYNTAX Counter32
+  MAX-ACCESS read-only
+  STATUS current
+  DESCRIPTION
+    "The total number of messages received by the CoreServer
+     from this EdgeServer"
+ -- 1.3.6.1.4.1.17471.1.3.2.1.1.7 --
+::= { csConnectivityEntry 7 }
+
+csConTabReceivedCompressionRatio OBJECT-TYPE
+  SYNTAX Integer32 (0..100)
+  UNITS
+    "%"
+  MAX-ACCESS read-only
+  STATUS current
+  DESCRIPTION
+    "The compression ratio (in %) of the messages received by
+     the CoreServer from this EdgeServer"
+ -- 1.3.6.1.4.1.17471.1.3.2.1.1.8 --
+::= { csConnectivityEntry 8 }
+
+csConTabTotalSentKBytes OBJECT-TYPE
+  SYNTAX Unsigned32
+  UNITS
+    "KB"
+  MAX-ACCESS read-only
+  STATUS current
+  DESCRIPTION
+    "The total number of kilobytes sent from the CoreServer to
+     this EdgeServer"
+ -- 1.3.6.1.4.1.17471.1.3.2.1.1.9 --
+::= { csConnectivityEntry 9 }
+
+csConTabTotalReceivedKBytes OBJECT-TYPE
+  SYNTAX Unsigned32
+  UNITS
+    "KB"
+  MAX-ACCESS read-only
+  STATUS current
+  DESCRIPTION
+    "The total number of kilobytes received by the CoreServer from
+     this EdgeServer"
+ -- 1.3.6.1.4.1.17471.1.3.2.1.1.10 --
+::= { csConnectivityEntry 10 }
+
+csDeviceName OBJECT-TYPE
+  SYNTAX OCTET STRING
+  MAX-ACCESS read-only
+  STATUS current
+  DESCRIPTION
+    "The network interface card inside the appliance used by
+     the CoreServer (ETH0 or ETH1)"
+ -- 1.3.6.1.4.1.17471.1.3.2.2 --
+::= { csState 2 }
+
+csWINS OBJECT-TYPE
+  SYNTAX OCTET STRING
+  MAX-ACCESS read-only
+  STATUS current
+  DESCRIPTION
+    "The WINS server defined for this CoreServer (if any)"
+ -- 1.3.6.1.4.1.17471.1.3.2.3 --
+::= { csState 3 }
+
+csCIFSServersTable OBJECT-TYPE
+  SYNTAX SEQUENCE OF CsCIFSServersEntry
+  MAX-ACCESS not-accessible
+  STATUS current
+  DESCRIPTION
+    "A table listing all the CIFS file servers exported by this CoreServer"
+ -- 1.3.6.1.4.1.17471.1.3.2.4 --
+::= { csState 4 }
+
+csCIFSServersEntry OBJECT-TYPE
+  SYNTAX CsCIFSServersEntry
+  MAX-ACCESS not-accessible
+  STATUS current
+  DESCRIPTION
+    "A single entry in the CIFS server table"
+  INDEX {
+    csCIFSServersTabIndex }
+ -- 1.3.6.1.4.1.17471.1.3.2.4.1 --
+::= { csCIFSServersTable 1 }
+
+CsCIFSServersEntry
+::= SEQUENCE {
+
+  csCIFSServersTabIndex   Integer32,
+  csCIFSServersTabServerName OCTET STRING }
+
+csCIFSServersTabIndex OBJECT-TYPE
+  SYNTAX Integer32 (1..1000)
+  MAX-ACCESS not-accessible
+  STATUS current
+  DESCRIPTION
+    "Index column - sequential line number in the table"
+ -- 1.3.6.1.4.1.17471.1.3.2.4.1.1 --
+::= { csCIFSServersEntry 1 }
+
+csCIFSServersTabServerName OBJECT-TYPE
+  SYNTAX OCTET STRING
+  MAX-ACCESS read-only
+  STATUS current
+  DESCRIPTION
+    "Name of the CIFS server exported by this CoreServer"
+ -- 1.3.6.1.4.1.17471.1.3.2.4.1.2 --
+::= { csCIFSServersEntry 2 }
+
+csNFSServersTable OBJECT-TYPE
+  SYNTAX SEQUENCE OF CsNFSServersEntry
+  MAX-ACCESS not-accessible
+  STATUS current
+  DESCRIPTION
+    "A table listing all the NFS servers exported by this CoreServer"
+ -- 1.3.6.1.4.1.17471.1.3.2.5 --
+::= { csState 5 }
+
+csNFSServersEntry OBJECT-TYPE
+  SYNTAX CsNFSServersEntry
+  MAX-ACCESS not-accessible
+  STATUS current
+  DESCRIPTION
+    "A single entry in the NFS server table"
+  INDEX {
+    csNFSServersTabIndex }
+ -- 1.3.6.1.4.1.17471.1.3.2.5.1 --
+::= { csNFSServersTable 1 }
+
+CsNFSServersEntry
+::= SEQUENCE {
+
+  csNFSServersTabIndex   Integer32,
+  csNFSServersTabServerName OCTET STRING,
+  csNFSServersTabUseTCP   INTEGER,
+  csNFSServersTabUseUDP   INTEGER }
+
+csNFSServersTabIndex OBJECT-TYPE
+  SYNTAX Integer32 (1..1000)
+  MAX-ACCESS not-accessible
+  STATUS current
+  DESCRIPTION
+    "Index column - sequential line number in the table"
+ -- 1.3.6.1.4.1.17471.1.3.2.5.1.1 --
+::= { csNFSServersEntry 1 }
+
+csNFSServersTabServerName OBJECT-TYPE
+  SYNTAX OCTET STRING
+  MAX-ACCESS read-only
+  STATUS current
+  DESCRIPTION
+    "Name of the NFS server exported by this CoreServer"
+ -- 1.3.6.1.4.1.17471.1.3.2.5.1.2 --
+::= { csNFSServersEntry 2 }
+
+csNFSServersTabUseTCP OBJECT-TYPE
+  SYNTAX INTEGER {
+      no(0),
+      yes(1) }
+  MAX-ACCESS read-only
+  STATUS current
+  DESCRIPTION
+    "Indicates whether this NFS server supports
+     the TCP transport layer protocol"
+ -- 1.3.6.1.4.1.17471.1.3.2.5.1.3 --
+::= { csNFSServersEntry 3 }
+
+csNFSServersTabUseUDP OBJECT-TYPE
+  SYNTAX INTEGER {
+      no(0),
+      yes(1) }
+  MAX-ACCESS read-only
+  STATUS current
+  DESCRIPTION
+    "Indicates whether this NFS server supports
+     the UDP transport layer protocol"
+ -- 1.3.6.1.4.1.17471.1.3.2.5.1.4 --
+::= { csNFSServersEntry 4 }
+
+csLogsTrap NOTIFICATION-TYPE
+    STATUS    deprecated
+    DESCRIPTION
+      "The OID of trap messages related to the CoreServer.
+       This object is deprecated in favor of acCsLogsTrap."
+::= { coreServer 3 }
+
+
+
+edgeServer OBJECT-IDENTITY
+  STATUS current
+  DESCRIPTION
+    "ActaStor EdgeServer-related information"
+ -- 1.3.6.1.4.1.17471.1.4 --
+::= { actastor 4 }
+
+esGeneral OBJECT-IDENTITY
+  STATUS current
+  DESCRIPTION
+    "EdgeServer general information"
+ -- 1.3.6.1.4.1.17471.1.4.1 --
+::= { edgeServer 1 }
+
+esIsConfigured OBJECT-TYPE
+  SYNTAX INTEGER {
+      no(0),
+      yes(1) }
+  MAX-ACCESS read-only
+  STATUS current
+  DESCRIPTION
+    "Indicates whether the EdgeServer component has been configured
+     to run on this gateway"
+ -- 1.3.6.1.4.1.17471.1.4.1.1 --
+::= { esGeneral 1 }
+
+esIsAlive OBJECT-TYPE
+  SYNTAX INTEGER {
+      no(0),
+      yes(1) }
+  MAX-ACCESS read-only
+  STATUS current
+  DESCRIPTION
+    "Indicates whether the EdgeServer component is currently
+     running on this gateway"
+ -- 1.3.6.1.4.1.17471.1.4.1.2 --
+::= { esGeneral 2 }
+
+esUpTime OBJECT-TYPE
+  SYNTAX TimeTicks
+  MAX-ACCESS read-only
+  STATUS current
+  DESCRIPTION
+    "The elapsed time since the EdgeServer was started"
+ -- 1.3.6.1.4.1.17471.1.4.1.3 --
+::= { esGeneral 3 }
+
+esState OBJECT-IDENTITY
+  STATUS current
+  DESCRIPTION
+    "The current run-time state of the EdgeServer"
+ -- 1.3.6.1.4.1.17471.1.4.2 --
+::= { edgeServer 2 }
+
+esConnectivityTable OBJECT-TYPE
+  SYNTAX SEQUENCE OF EsConnectivityEntry
+  MAX-ACCESS not-accessible
+  STATUS current
+  DESCRIPTION
+    "A table describing the current state of CoreServer
+     connections to this EdgeServer"
+ -- 1.3.6.1.4.1.17471.1.4.2.1 --
+::= { esState 1 }
+
+esConnectivityEntry OBJECT-TYPE
+  SYNTAX EsConnectivityEntry
+  MAX-ACCESS not-accessible
+  STATUS current
+  DESCRIPTION
+    "A single entry in the connection table - denoting
+     a specific CoreServer"
+  INDEX {
+    esConTabIndex }
+ -- 1.3.6.1.4.1.17471.1.4.2.1.1 --
+::= { esConnectivityTable 1 }
+
+EsConnectivityEntry
+::= SEQUENCE {
+
+  esConTabIndex          Integer32,
+  esConTabClusterID        Integer32,
+  esConTabClusterName       OCTET STRING,
+  esConTabIsConnected       INTEGER,
+  esConTabTotalSentMessages    Counter32,
+  esConTabSentCompressionRatio   Integer32,
+  esConTabTotalReceivedMessages  Counter32,
+  esConTabReceivedCompressionRatio Integer32,
+  esConTabTotalSentKBytes      Unsigned32,
+  esConTabTotalReceivedKBytes    Unsigned32 }
+
+esConTabIndex OBJECT-TYPE
+  SYNTAX Integer32 (1..1000)
+  MAX-ACCESS not-accessible
+  STATUS current
+  DESCRIPTION
+    "Index column - sequential line number in the table"
+ -- 1.3.6.1.4.1.17471.1.4.2.1.1.1 --
+::= { esConnectivityEntry 1 }
+
+esConTabClusterID OBJECT-TYPE
+  SYNTAX Integer32 (0..2147483647)
+  MAX-ACCESS read-only
+  STATUS current
+  DESCRIPTION
+    "ID of the CoreServer cluster to which this CoreServer belongs"
+ -- 1.3.6.1.4.1.17471.1.4.2.1.1.2 --
+::= { esConnectivityEntry 2 }
+
+esConTabClusterName OBJECT-TYPE
+  SYNTAX OCTET STRING
+  MAX-ACCESS read-only
+  STATUS current
+  DESCRIPTION
+    "Name of the CoreServer cluster to which this CoreServer belongs"
+ -- 1.3.6.1.4.1.17471.1.4.2.1.1.3 --
+::= { esConnectivityEntry 3 }
+
+esConTabIsConnected OBJECT-TYPE
+  SYNTAX INTEGER {
+      no(0),
+      yes(1) }
+  MAX-ACCESS read-only
+  STATUS current
+  DESCRIPTION
+    "Indicates whether the CoreServer is currently connected
+     to this EdgeServer"
+ -- 1.3.6.1.4.1.17471.1.4.2.1.1.4 --
+::= { esConnectivityEntry 4 }
+
+esConTabTotalSentMessages OBJECT-TYPE
+  SYNTAX Counter32
+  MAX-ACCESS read-only
+  STATUS current
+  DESCRIPTION
+    "The total number of messasges sent from the EdgeServer to
+     this CoreServer"
+ -- 1.3.6.1.4.1.17471.1.4.2.1.1.5 --
+::= { esConnectivityEntry 5 }
+
+esConTabSentCompressionRatio OBJECT-TYPE
+  SYNTAX Integer32 (0..100)
+  UNITS
+    "%"
+  MAX-ACCESS read-only
+  STATUS current
+  DESCRIPTION
+    "The compression ratio (in %) of the messages sent from the
+     EdgeServer to this CoreServer"
+ -- 1.3.6.1.4.1.17471.1.4.2.1.1.6 --
+::= { esConnectivityEntry 6 }
+
+esConTabTotalReceivedMessages OBJECT-TYPE
+  SYNTAX Counter32
+  MAX-ACCESS read-only
+  STATUS current
+  DESCRIPTION
+    "The total number of messages received by the EdgeServer
+     from this CoreServer"
+ -- 1.3.6.1.4.1.17471.1.4.2.1.1.7 --
+::= { esConnectivityEntry 7 }
+
+esConTabReceivedCompressionRatio OBJECT-TYPE
+  SYNTAX Integer32 (0..100)
+  UNITS
+    "%"
+  MAX-ACCESS read-only
+  STATUS current
+  DESCRIPTION
+    "The compression ratio (in %) of the messages received by
+     the EdgeServer from this CoreServer"
+ -- 1.3.6.1.4.1.17471.1.4.2.1.1.8 --
+::= { esConnectivityEntry 8 }
+
+esConTabTotalSentKBytes OBJECT-TYPE
+  SYNTAX Unsigned32
+  UNITS
+    "KB"
+  MAX-ACCESS read-only
+  STATUS current
+  DESCRIPTION
+    "The total number of kilobytes sent from the EdgeServer
+     to this CoreServer"
+ -- 1.3.6.1.4.1.17471.1.4.2.1.1.9 --
+::= { esConnectivityEntry 9 }
+
+esConTabTotalReceivedKBytes OBJECT-TYPE
+  SYNTAX Unsigned32
+  UNITS
+    "KB"
+  MAX-ACCESS read-only
+  STATUS current
+  DESCRIPTION
+    "The total number of kilobytes received by
+     the EdgeServer from this CoreServer"
+ -- 1.3.6.1.4.1.17471.1.4.2.1.1.10 --
+::= { esConnectivityEntry 10 }
+
+esCIFSInfo OBJECT-IDENTITY
+  STATUS current
+  DESCRIPTION
+    "EdgeServer CIFS (Windows) protocol information"
+ -- 1.3.6.1.4.1.17471.1.4.2.2 --
+::= { esState 2 }
+
+esTotalBytesRead OBJECT-TYPE
+  SYNTAX Unsigned32
+  UNITS
+    "KB"
+  MAX-ACCESS read-only
+  STATUS current
+  DESCRIPTION
+    "The total number of kilobytes read by clients from
+     the EdgeServer (via cache or remotely) using the CIFS protocol"
+ -- 1.3.6.1.4.1.17471.1.4.2.2.1 --
+::= { esCIFSInfo 1 }
+
+esTotalWrittenBytes OBJECT-TYPE
+  SYNTAX Unsigned32
+  UNITS
+    "KB"
+  MAX-ACCESS read-only
+  STATUS current
+  DESCRIPTION
+    "The total number of kilobytes written to
+     the EdgeServer using the CIFS protocol"
+ -- 1.3.6.1.4.1.17471.1.4.2.2.2 --
+::= { esCIFSInfo 2 }
+
+esRemoteRequestCount OBJECT-TYPE
+  SYNTAX Counter32
+  MAX-ACCESS read-only
+  STATUS current
+  DESCRIPTION
+    "The total number of remote synchronous CIFS requests
+     sent to the CoreServer"
+ -- 1.3.6.1.4.1.17471.1.4.2.2.3 --
+::= { esCIFSInfo 3 }
+
+esLocalRequestCount OBJECT-TYPE
+  SYNTAX Counter32
+  MAX-ACCESS read-only
+  STATUS current
+  DESCRIPTION
+    "The total number of CIFS requests the EdgeServer handled locally
+     or sent asynchronously to the CoreServer"
+ -- 1.3.6.1.4.1.17471.1.4.2.2.4 --
+::= { esCIFSInfo 4 }
+
+esTotalRemoteTime OBJECT-TYPE
+  SYNTAX TimeTicks
+  MAX-ACCESS read-only
+  STATUS current
+  DESCRIPTION
+    "The total duration of all remote synchronous CIFS requests
+     sent to the CoreServer"
+ -- 1.3.6.1.4.1.17471.1.4.2.2.5 --
+::= { esCIFSInfo 5 }
+
+esTotalLocalTime OBJECT-TYPE
+  SYNTAX TimeTicks
+  MAX-ACCESS read-only
+  STATUS current
+  DESCRIPTION
+    "The total duration of all CIFS requests to
+     the EdgeServer (handled either locally or asynchronously)"
+ -- 1.3.6.1.4.1.17471.1.4.2.2.6 --
+::= { esCIFSInfo 6 }
+
+esConnectedSessionCount OBJECT-TYPE
+  SYNTAX Integer32 (0..1000)
+  MAX-ACCESS read-only
+  STATUS current
+  DESCRIPTION
+    "The number of currently connected CIFS sessions"
+ -- 1.3.6.1.4.1.17471.1.4.2.2.7 --
+::= { esCIFSInfo 7 }
+
+esCifsOpenFiles OBJECT-TYPE
+  SYNTAX Integer32 (0..1000000)
+  MAX-ACCESS read-only
+  STATUS current
+  DESCRIPTION
+    "The number of currently open CIFS files"
+ -- 1.3.6.1.4.1.17471.1.4.2.2.8 --
+::= { esCIFSInfo 8 }
+
+esCacheInfo OBJECT-IDENTITY
+  STATUS current
+  DESCRIPTION
+    "EdgeServer cache state information"
+ -- 1.3.6.1.4.1.17471.1.4.2.4 --
+::= { esState 4 }
+
+esMaxCacheVolume OBJECT-TYPE
+  SYNTAX Unsigned32
+  UNITS
+    "KB"
+  MAX-ACCESS read-only
+  STATUS current
+  DESCRIPTION
+    "The maximum disk space (in KB) allocated for data in
+     the EdgeServer cache"
+ -- 1.3.6.1.4.1.17471.1.4.2.4.1 --
+::= { esCacheInfo 1 }
+
+esCurrentCacheVolume OBJECT-TYPE
+  SYNTAX Unsigned32
+  UNITS
+    "KB"
+  MAX-ACCESS read-only
+  STATUS current
+  DESCRIPTION
+    "The amount of disk space currently being used for data
+     in the EdgeServer cache"
+ -- 1.3.6.1.4.1.17471.1.4.2.4.2 --
+::= { esCacheInfo 2 }
+
+esMaxCacheResources OBJECT-TYPE
+  SYNTAX Integer32 (0..2147483647)
+  MAX-ACCESS read-only
+  STATUS current
+  DESCRIPTION
+    "The maximum number of cache resources (files and directories)
+     supported by the EdgeServer cache, regardless of the size of
+     these resources"
+ -- 1.3.6.1.4.1.17471.1.4.2.4.3 --
+::= { esCacheInfo 3 }
+
+esCurrentCacheResources OBJECT-TYPE
+  SYNTAX Integer32 (0..2147483647)
+  MAX-ACCESS read-only
+  STATUS current
+  DESCRIPTION
+    "The current number of cache resources (files and directories)
+     held in the EdgeServer cache"
+ -- 1.3.6.1.4.1.17471.1.4.2.4.4 --
+::= { esCacheInfo 4 }
+
+esResourceEvictedNum OBJECT-TYPE
+  SYNTAX Counter32
+  MAX-ACCESS read-only
+  STATUS current
+  DESCRIPTION
+    "The number of cache resources (files and directories) that have been
+     evicted from the cache since the EdgeServer started"
+ -- 1.3.6.1.4.1.17471.1.4.2.4.5 --
+::= { esCacheInfo 5 }
+
+esLastEvictedTime OBJECT-TYPE
+  SYNTAX TimeTicks
+  MAX-ACCESS read-only
+  STATUS current
+  DESCRIPTION
+    "The time cache resources (files and directories) were last evicted
+     from the EdgeServer cache. 00:00 is displayed if no cache resources
+     have been evicted since the EdgeServer started."
+ -- 1.3.6.1.4.1.17471.1.4.2.4.6 --
+::= { esCacheInfo 6 }
+
+esVolHiWatermark OBJECT-TYPE
+  SYNTAX Integer32 (0..100)
+  UNITS
+    "%"
+  MAX-ACCESS read-only
+  STATUS current
+  DESCRIPTION
+    "The disk-usage percentage that triggers the eviction of
+     resources from the EdgeServer cache"
+ -- 1.3.6.1.4.1.17471.1.4.2.4.7 --
+::= { esCacheInfo 7 }
+
+esVolLoWatermark OBJECT-TYPE
+  SYNTAX Integer32 (0..100)
+  UNITS
+    "%"
+  MAX-ACCESS read-only
+  STATUS current
+  DESCRIPTION
+    "The target disk-usage percentage to be reached via cache eviction
+     when triggered by esVolHiWatermark. When this low watermark
+     is reached, cache eviction stops."
+ -- 1.3.6.1.4.1.17471.1.4.2.4.8 --
+::= { esCacheInfo 8 }
+
+esAmntHiWatermark OBJECT-TYPE
+  SYNTAX Integer32 (0..100)
+  UNITS
+    "%"
+  MAX-ACCESS read-only
+  STATUS current
+  DESCRIPTION
+    "The percentage of maximum cache resources
+     (defined by esMaxCacheResources) that triggers the eviction
+     of resources from the EdgeServer cache"
+ -- 1.3.6.1.4.1.17471.1.4.2.4.9 --
+::= { esCacheInfo 9 }
+
+esAmntLoWatermark OBJECT-TYPE
+  SYNTAX Integer32 (0..100)
+  UNITS
+    "%"
+  MAX-ACCESS read-only
+  STATUS current
+  DESCRIPTION
+    "The target percetage of total cache resources
+     (defined by esMaxCacheResources) to be reached
+     via cache eviction when triggered by esAmntHiWatermark.
+     When this low watermark is reached, cache eviction stops."
+ -- 1.3.6.1.4.1.17471.1.4.2.4.10 --
+::= { esCacheInfo 10 }
+
+
+esEvictedAge OBJECT-TYPE
+  SYNTAX TimeTicks
+  MAX-ACCESS read-only
+  STATUS current
+  DESCRIPTION
+    "The amount of time spent in the EdgeServer cache by the resource
+     that was last evicted. If this amount is too short or too long,
+     it is recommended to modify the size of the cache."
+ -- 1.3.6.1.4.1.17471.1.4.2.4.11 --
+::= { esCacheInfo 11 }
+
+esEvictedLastAccess OBJECT-TYPE
+  SYNTAX OCTET STRING
+  MAX-ACCESS read-only
+  STATUS current
+  DESCRIPTION
+    "The time when the resource last evicted from the EdgeServer
+     cache was last accessed"
+ -- 1.3.6.1.4.1.17471.1.4.2.4.12 --
+::= { esCacheInfo 12 }
+
+esLogsTrap NOTIFICATION-TYPE
+  STATUS    deprecated
+  DESCRIPTION
+    "The OID of trap messages related to the EdgeServer.
+     This object is deprecated in favor of acEsLogsTrap."
+::= { edgeServer 3 }
+
+
+notificationsInfo OBJECT-IDENTITY
+  STATUS current
+  DESCRIPTION
+    "ActaStor notification related information"
+ -- 1.3.6.1.4.1.17471.1.5 --
+::= { actastor 5 }
+
+acLogSeverity   OBJECT-TYPE
+  SYNTAX   INTEGER {
+    fatal(1),
+    error(2),
+    warning(3),
+    info(4),
+    debug(5)
+  }
+  MAX-ACCESS accessible-for-notify
+  STATUS   current
+  DESCRIPTION
+    "The severity level of the actastor log message"
+ -- 1.3.6.1.4.1.17471.1.5.1 --
+  ::= { notificationsInfo 1 }
+
+acLogMsgText   OBJECT-TYPE
+  SYNTAX   DisplayString (SIZE(0..255))
+  MAX-ACCESS accessible-for-notify
+  STATUS   current
+  DESCRIPTION
+    "The actastor log message text"
+ -- 1.3.6.1.4.1.17471.1.5.2 --
+  ::= { notificationsInfo 2 }
+
+acCsLogsTrap NOTIFICATION-TYPE
+    OBJECTS {
+      acLogSeverity,
+      acLogMsgText
+    }
+    STATUS    current
+    DESCRIPTION
+      "This trap indicates that the CoreServer has generated a
+       log message. This object supersedes mgrLogsTrap"
+::= { acNotifications 0 }
+
+acMgrLogsTrap NOTIFICATION-TYPE
+  OBJECTS {
+     acLogSeverity,
+     acLogMsgText
+  }
+  STATUS    current
+  DESCRIPTION
+      "This trap indicates that the ManagerServer has generated a
+       log message. This object supersedes mgrLogsTrap"
+::= { acNotifications 1 }
+
+acEsLogsTrap NOTIFICATION-TYPE
+  OBJECTS {
+     acLogSeverity,
+     acLogMsgText
+  }
+  STATUS    current
+  DESCRIPTION
+      "This trap indicates that the EdgeServer has generated a
+       log message. This object supersedes esLogsTrap"
+::= { acNotifications 2 }
+
+actastorGroups OBJECT-IDENTITY
+  STATUS current
+  DESCRIPTION
+    "ActaStor object groups"
+ -- 1.3.6.1.4.1.17471.2 --
+::= { actona 2 }
+
+generalGroup OBJECT-GROUP
+  OBJECTS {
+    actastorVersion,
+    buildString,
+    email,
+    isValid,
+    daysLeft }
+  STATUS current
+  DESCRIPTION
+    "General information group"
+ -- 1.3.6.1.4.1.17471.2.1 --
+::= { actastorGroups 1 }
+
+managerGroup OBJECT-GROUP
+  OBJECTS {
+    mgrCentralServerHost}
+  STATUS current
+  DESCRIPTION
+    "Manager group"
+ -- 1.3.6.1.4.1.17471.2.2 --
+::= { actastorGroups 2 }
+
+coreServerGroup OBJECT-GROUP
+  OBJECTS {
+    csDeviceName,
+    csIsConfigured,
+    csIsAlive,
+    csUpTime,
+    csWINS,
+    csConTabClusterID,
+    csConTabClusterName,
+    csConTabIsConnected,
+    csConTabTotalSentMessages,
+    csConTabSentCompressionRatio,
+    csConTabTotalReceivedMessages,
+    csConTabReceivedCompressionRatio,
+    csConTabTotalSentKBytes,
+    csConTabTotalReceivedKBytes,
+    csCIFSServersTabServerName,
+    csNFSServersTabServerName,
+    csNFSServersTabUseTCP,
+    csNFSServersTabUseUDP }
+  STATUS current
+  DESCRIPTION
+    "CoreServer group"
+ -- 1.3.6.1.4.1.17471.2.3 --
+::= { actastorGroups 3 }
+
+edgeServerGroup OBJECT-GROUP
+  OBJECTS {
+    esIsConfigured,
+    esIsAlive,
+    esUpTime,
+    esTotalBytesRead,
+    esTotalWrittenBytes,
+    esRemoteRequestCount,
+    esLocalRequestCount,
+    esConnectedSessionCount,
+    esCifsOpenFiles,
+    esMaxCacheVolume,
+    esCurrentCacheVolume,
+    esMaxCacheResources,
+    esCurrentCacheResources,
+    esTotalRemoteTime,
+    esTotalLocalTime,
+    esConTabClusterID,
+    esConTabClusterName,
+    esConTabIsConnected,
+    esConTabTotalSentMessages,
+    esConTabSentCompressionRatio,
+    esConTabTotalReceivedMessages,
+    esConTabReceivedCompressionRatio,
+    esConTabTotalSentKBytes,
+    esConTabTotalReceivedKBytes,
+    esResourceEvictedNum,
+    esLastEvictedTime,
+    esVolHiWatermark,
+    esVolLoWatermark,
+    esAmntHiWatermark,
+    esAmntLoWatermark,
+    esEvictedAge,
+    esEvictedLastAccess }
+  STATUS current
+  DESCRIPTION
+    "EdgeServer group"
+ -- 1.3.6.1.4.1.17471.2.4 --
+::= { actastorGroups 4 }
+
+logNotificationsGroup NOTIFICATION-GROUP
+  NOTIFICATIONS {
+    csLogsTrap,
+    esLogsTrap,
+    mgrLogsTrap }
+  STATUS deprecated -- replaced by logNotificationsGroupRev1
+  DESCRIPTION
+    "Log message traps group"
+ -- 1.3.6.1.4.1.17471.2.5 --
+::= { actastorGroups 5 }
+
+logNotificationsGroupRev1 NOTIFICATION-GROUP
+  NOTIFICATIONS {
+    acCsLogsTrap,
+    acEsLogsTrap,
+    acMgrLogsTrap }
+  STATUS current
+  DESCRIPTION
+    "Log message traps group"
+ -- 1.3.6.1.4.1.17471.2.5 --
+::= { actastorGroups 6 }
+
+acNotificationInfoGroup OBJECT-GROUP
+  OBJECTS {
+    acLogSeverity,
+    acLogMsgText
+  }
+  STATUS current
+  DESCRIPTION
+    "A collection of objects which provides info
+     about notifications."
+  ::= { actastorGroups 7 }
+
+END

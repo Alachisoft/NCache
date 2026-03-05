@@ -16,7 +16,7 @@ namespace Alachisoft.NCache.Runtime.JSON
 
             return (T)Convert.ChangeType(value, typeof(T));
 
-            // throw new InvalidCastException($"Value of type '{valueType.FullName}' cannot be casted to '{typeof(T).FullName}'.");
+
         }
     }
 }

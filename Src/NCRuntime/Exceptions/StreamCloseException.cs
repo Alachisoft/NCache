@@ -1,4 +1,4 @@
-//  Copyright (c) 2018 Alachisoft
+//  Copyright (c) 2026 Alachisoft
 //  
 //  Licensed under the Apache License, Version 2.0 (the "License");
 //  you may not use this file except in compliance with the License.
@@ -16,8 +16,8 @@ using System.Collections.Generic;
 using System.Text;
 using System.Runtime.Serialization;
 using System.Security.Permissions;
-namespace Alachisoft.NCache.Runtime.Exceptions
 
+namespace Alachisoft.NCache.Runtime.Exceptions
 {
     /// <summary>
     /// StreamCloseException is thrown if a write operation is performed on closed
@@ -43,7 +43,6 @@ namespace Alachisoft.NCache.Runtime.Exceptions
         /// <param name="errorCode">error code for the exception</param>
         /// <param name="reason">reason for exception</param>
         public StreamCloseException(int errorCode, string reason="Stream is closed") : base(errorCode,reason) { }
-        //public StreamCloseException(int errorCode, string reason = "Stream is closed") : base(errorCode, reason) { }
         #region ISerializable Members
 
         /// <summary> 

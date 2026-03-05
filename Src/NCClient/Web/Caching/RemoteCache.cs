@@ -1,4 +1,4 @@
-//  Copyright (c) 2021 Alachisoft
+//  Copyright (c) 2026 Alachisoft
 //  
 //  Licensed under the Apache License, Version 2.0 (the "License");
 //  you may not use this file except in compliance with the License.
@@ -39,8 +39,7 @@ using Alachisoft.NCache.Common.Caching;
 using Alachisoft.NCache.Management.Statistics;
 using Alachisoft.NCache.Caching.Events;
 using Alachisoft.NCache.Common.Pooling;
-
-
+using Alachisoft.NCache.Common.Monitoring;
 
 namespace Alachisoft.NCache.Client
 {
@@ -54,7 +53,7 @@ namespace Alachisoft.NCache.Client
     /// </remarks>
     /// <requirements>
     /// </requirements>
-    internal sealed class RemoteCache : CacheImplBase
+    internal sealed class RemoteCache : CacheImplBase, IPublisherContextMetaPublisher
     {
         private Broker _broker = null;
         private Hashtable _compactTypes;
@@ -84,10 +83,15 @@ namespace Alachisoft.NCache.Client
         Stopwatch _dedicatedCallMonitoring = new Stopwatch();
         bool _isDedicatedCall = false;
         object _mutexlock = new object();
+        string _monitoringSessionId;
+        string _cacheConfigId;
 
         #region ---------------------- Properties ----------------------
 
 
+        protected internal override string MonitoringSessionId { get { return _monitoringSessionId; } }
+
+        protected internal override string CacheConfigId { get { return _cacheConfigId; } }
 
         protected override internal TypeInfoMap TypeMap
         {
@@ -354,6 +358,11 @@ namespace Alachisoft.NCache.Client
             RegisterNotifications(NotificationsType.RegHashmapChangedNotif, connection);
         }
 
+        internal void RegisterModuleHashmapChangedEvent(Connection connection)
+        {
+            RegisterNotifications(NotificationsType.RegModuleHashmapChangedNotif, connection);
+        }
+
         public override void UnregisterAddEvent()
         {
             _addNotifRegistered = false;
@@ -435,14 +444,17 @@ namespace Alachisoft.NCache.Client
             }
 
             _cacheId = cacheId;
+            base.SetClientInfo();
 
             _broker = new Broker(this, cacheConnectionOptions, perfStatsCol, LocalClientInfo);
 
-            //moiz: changed this for init param task
             ServerInfo server = _broker.GetInitialServer();
 
             _broker.StartServices(cacheId, server.IpString, server.Port);
-
+            //Calling SetClientInfo() to set IPAddress
+            SetClientInfo();
+            _monitoringSessionId = _broker.MonitoringSessionId;
+            _cacheConfigId = _broker.CacheConfigId;
             if (!_broker.IsConnected)
                 throw new OperationFailedException(ErrorCodes.Common.NO_SERVER_AVAILABLE_FOR_CACHE,ErrorMessages.GetErrorMessage(ErrorCodes.Common.NO_SERVER_AVAILABLE_FOR_CACHE,_cacheId));
 
@@ -632,7 +644,7 @@ namespace Alachisoft.NCache.Client
 
             Request request = _broker.CreateRequest(command);
 
-            bool waitForResponse = true; //bool.Parse(ConfigurationManager.AppSettings["WaitForResponse"]);
+            bool waitForResponse = true;
 
             if (waitForResponse)
             {
@@ -847,7 +859,10 @@ namespace Alachisoft.NCache.Client
             res.FlagValueEntry.Type = res.EntryType;
             return res.FlagValueEntry;
 
-           
+            //return CompressedValueEntry.CreateCompressedCacheEntry(null,
+            //    CacheHelper.GetObjectOrInitializedCollection<T>(key, res.EntryType, res.FlagValueEntry.Value, _parent),
+            //    flagMap, res.EntryType);
+            
         }
 
         /// <summary>
@@ -1069,9 +1084,6 @@ namespace Alachisoft.NCache.Client
         {
             var containsResult = false;
             var bulkResult = ContainsBulk(new string[] { key });
-
-            // The following code is a bit aggressive.
-            // That's cuz I'm paranoid like that.
             if (bulkResult?.Count > 0)
             {
                 if (!bulkResult.TryGetValue(key, out containsResult))
@@ -1951,6 +1963,19 @@ namespace Alachisoft.NCache.Client
             res.ParseResponse();
         }
 
+internal override void SetClientInfo()
+        {
+            Connection connection = _broker.GetAnyConnection();
+            if(connection != null)
+                LocalClientInfo.IPAddress= System.Net.IPAddress.Parse(connection.GetClientLocalIP());
+        }
+        internal override ClientInfo LocalClientInfo { get {
+                if (_broker != null)
+                {
+                    base.LocalClientInfo.Status = _broker.PoolConnectivityStatus;
+                }
+                return base.LocalClientInfo; } 
+        }
         public override void RegisterKeyNotificationCallback(string[] key, short update, short remove, EventDataFilter datafilter, bool notifyOnItemExpiration, CallbackType callbackType = CallbackType.PushBasedNotification)
         {
             CommandBase command = new RegisterBulkKeyNotificationCommand(key, update, remove, datafilter, notifyOnItemExpiration, callbackType);
@@ -2195,7 +2220,6 @@ namespace Alachisoft.NCache.Client
             }
         }
 
-      
 
 
         #region ---------------------- Touch ----------------------
@@ -2394,14 +2418,21 @@ namespace Alachisoft.NCache.Client
 
         #endregion
 
-     
-
-        
 
 
 
-      
-        private CommandResponse ExecuteCommand(CommandBase command)
+        public void PublishMetadata(IMetricsTransporter transporter)
+        {
+            ClientMetaData clientMetaData = new ClientMetaData
+            {
+                CacheConfigId = this.CacheConfigId,
+                CacheName = _cacheId,
+                BindIP = ServiceConfiguration.BindToIP.ToString(),
+            };
+            transporter.PublishMetadata(MonitoringSessionId + ":" + "NCacheClient", Common.Monitoring.Version.GetVersion(), clientMetaData);
+        }
+
+            private CommandResponse ExecuteCommand(CommandBase command)
         {
             Request request = _broker.CreateRequest(command);
 

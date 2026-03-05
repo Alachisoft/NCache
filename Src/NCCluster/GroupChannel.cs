@@ -1,4 +1,4 @@
-// $Id: GroupChannel.java,v 1.25 2004/08/29 19:35:03 belaban Exp $
+
 using System;
 
 using ProtocolStack = Alachisoft.NGroups.Stack.ProtocolStack;
@@ -61,7 +61,7 @@ namespace Alachisoft.NGroups
         private bool is_in_transfer_event_received = false;
 
         /// <summary>wait until we have a non-null local_addr </summary>
-        private long LOCAL_ADDR_TIMEOUT = 30000; //=Long.parseLong(System.getProperty("local_addr.timeout", "30000"));
+        private long LOCAL_ADDR_TIMEOUT = 30000;
 		/*flag to indicate whether to receive views from the protocol stack*/
 		private bool receive_views = true;
 		/*flag to indicate whether to receive suspect messages*/
@@ -303,10 +303,8 @@ namespace Alachisoft.NGroups
 				else
 					this.channel_name = channel_name;
 
-				//=============================================
 				if (subGroup_name != null)
 					this.subGroup_name = subGroup_name;
-				//=============================================
 				
 				try
 				{
@@ -340,7 +338,6 @@ namespace Alachisoft.NGroups
 						wait_time -= ((System.DateTime.Now.Ticks - 621355968000000000) / 10000 - start);
 					}
 
-					// SAL:
 					if (wait_time < 0)
 					{
 						NCacheLog.Fatal( "[Timeout]GroupChannel.connect:" + wait_time);
@@ -889,7 +886,6 @@ namespace Alachisoft.NGroups
 				case Event.VIEW_CHANGE: 
 					my_view = (View) evt.Arg;
 					
-					// we simply set the state to connected
 					if (connected == false)
 					{
 						connected = true;

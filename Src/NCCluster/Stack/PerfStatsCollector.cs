@@ -197,8 +197,6 @@ namespace Alachisoft.NGroups.Stack
         ////
 
         /// <summary> performance counter for Cache hits per second. </summary>
-        //public NewTrace nTrace;
-        //public string _cacheName;
         private ILogger _ncacheLog;
         public ILogger NCacheLog
         {

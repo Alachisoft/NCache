@@ -35,7 +35,6 @@ namespace Alachisoft.NCache.Common.DataStructures
             {
 				return ordKey;
 			}
-			
 		}
 
 		///<summary>
@@ -47,7 +46,6 @@ namespace Alachisoft.NCache.Common.DataStructures
             {
 				return objValue;
 			}
-			
 		}
 
 

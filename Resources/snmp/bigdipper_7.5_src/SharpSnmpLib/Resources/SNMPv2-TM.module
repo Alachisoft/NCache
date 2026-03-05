@@ -1,0 +1,9 @@
+#SNMPv2-SMI,SNMPv2-TC,
+.1.3.6.1.6.3.19,Lextm.SharpSnmpLib.Mib.ModuleIdentityMacro,snmpv2tm,snmpModules
+.1.3.6.1.6.1.1,Lextm.SharpSnmpLib.Mib.ObjectIdentityMacro,snmpUDPDomain,snmpDomains
+.1.3.6.1.6.1.2,Lextm.SharpSnmpLib.Mib.ObjectIdentityMacro,snmpCLNSDomain,snmpDomains
+.1.3.6.1.6.1.3,Lextm.SharpSnmpLib.Mib.ObjectIdentityMacro,snmpCONSDomain,snmpDomains
+.1.3.6.1.6.1.4,Lextm.SharpSnmpLib.Mib.ObjectIdentityMacro,snmpDDPDomain,snmpDomains
+.1.3.6.1.6.1.5,Lextm.SharpSnmpLib.Mib.ObjectIdentityMacro,snmpIPXDomain,snmpDomains
+.1.3.6.1.6.2.1,Lextm.SharpSnmpLib.Mib.ObjectIdentifierType,rfc1157Proxy,snmpProxys
+.1.3.6.1.6.2.1.1,Lextm.SharpSnmpLib.Mib.ObjectIdentityMacro,rfc1157Domain,rfc1157Proxy

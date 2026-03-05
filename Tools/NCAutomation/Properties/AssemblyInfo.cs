@@ -14,14 +14,14 @@ using System.Runtime.InteropServices;
 
 [assembly: AssemblyTitle("Alachisoft.NCache.Automation")]
 
-[assembly: AssemblyProduct("Alachisoft® NCache Enterprise")]
+[assembly: AssemblyProduct("Alachisoft® NCache Community")]
 
 [assembly: AssemblyTrademark("NCache ™ is a registered trademark of Alachisoft.")]
 
 [assembly: AssemblyConfiguration("")]
 [assembly: AssemblyCompany("Alachisoft")]
 
-[assembly: AssemblyCopyright("Copyright © 2005-2021 Alachisoft")]
+[assembly: AssemblyCopyright("Copyright © 2026 Alachisoft")]
 [assembly: AssemblyCulture("")]
 
 //
@@ -35,7 +35,7 @@ using System.Runtime.InteropServices;
 // You can specify all the values or you can default the Revision and Build Numbers 
 // by using the '*' as shown below:
 
-[assembly: AssemblyVersion("5.0.0.0")]
+[assembly: AssemblyVersion("5.3.0.0")]
 //
 // In order to sign your assembly you must specify a key to use. Refer to the 
 // Microsoft .NET Framework documentation for more information on assembly signing.
@@ -63,11 +63,7 @@ using System.Runtime.InteropServices;
 //
 [assembly: AssemblyDelaySign(false)]
 [assembly: AssemblyKeyName("")]
-#if DEBUG
-[assembly: AssemblyKeyFile("..\\..\\Resources\\ncache.snk")]
-#else
-[assembly: AssemblyKeyFile("..\\..\\Resources\\ncache.snk")]
-#endif
-[assembly: AssemblyFileVersion("5.0.5.0")]
+
+[assembly: AssemblyFileVersionAttribute("5.3.6.0")]
 [assembly: AssemblyDescriptionAttribute("Tools core")]
-[assembly: AssemblyInformationalVersion("5.0.0")]
+[assembly: AssemblyInformationalVersion("5.3.0")]

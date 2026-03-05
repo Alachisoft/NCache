@@ -10,14 +10,14 @@
 // Generated from: LCDataResponse.proto
 namespace Alachisoft.NCache.Common.Protobuf
 {
-  [global::System.Serializable, global::ProtoBuf.ProtoContract(Name=@"LCDataResponse")]
-  public partial class LCDataResponse : global::ProtoBuf.IExtensible
+  [global::System.Serializable, global::ProtoBuf.Extended.ProtoContract(Name=@"LCDataResponse")]
+  public partial class LCDataResponse : global::ProtoBuf.Extended.IExtensible
   {
     public LCDataResponse() {}
     
 
     private byte[] _lcData = null;
-    [global::ProtoBuf.ProtoMember(1, IsRequired = false, Name=@"lcData", DataFormat = global::ProtoBuf.DataFormat.Default)]
+    [global::ProtoBuf.Extended.ProtoMember(1, IsRequired = false, Name=@"lcData", DataFormat = global::ProtoBuf.Extended.DataFormat.Default)]
     [global::System.ComponentModel.DefaultValue(null)]
     public byte[] lcData
     {
@@ -26,16 +26,16 @@ namespace Alachisoft.NCache.Common.Protobuf
     }
 
     private int _opCode = default(int);
-    [global::ProtoBuf.ProtoMember(2, IsRequired = false, Name=@"opCode", DataFormat = global::ProtoBuf.DataFormat.TwosComplement)]
+    [global::ProtoBuf.Extended.ProtoMember(2, IsRequired = false, Name=@"opCode", DataFormat = global::ProtoBuf.Extended.DataFormat.TwosComplement)]
     [global::System.ComponentModel.DefaultValue(default(int))]
     public int opCode
     {
       get { return _opCode; }
       set { _opCode = value; }
     }
-    private global::ProtoBuf.IExtension extensionObject;
-    global::ProtoBuf.IExtension global::ProtoBuf.IExtensible.GetExtensionObject(bool createIfMissing)
-      { return global::ProtoBuf.Extensible.GetExtensionObject(ref extensionObject, createIfMissing); }
+    private global::ProtoBuf.Extended.IExtension extensionObject;
+   global::ProtoBuf.Extended.IExtension global::ProtoBuf.Extended.IExtensible.GetExtensionObject(bool createIfMissing)
+      { return global::ProtoBuf.Extended.Extensible.GetExtensionObject(ref extensionObject, createIfMissing); }
   }
   
 }

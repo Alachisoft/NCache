@@ -1,4 +1,4 @@
-//  Copyright (c) 2021 Alachisoft
+//  Copyright (c) 2026 Alachisoft
 //  
 //  Licensed under the Apache License, Version 2.0 (the "License");
 //  you may not use this file except in compliance with the License.
@@ -17,7 +17,7 @@ using Alachisoft.NCache.Runtime.Events;
 using Alachisoft.NCache.SocketServer.RuntimeLogging;
 using Alachisoft.NCache.Common.Monitoring;
 using Alachisoft.NCache.Common;
-using Alachisoft.NCache.SocketServer.Util;
+using Alachisoft.NCache.Common.ResponseSerialization;
 
 namespace Alachisoft.NCache.SocketServer.Command
 {
@@ -69,8 +69,14 @@ namespace Alachisoft.NCache.SocketServer.Command
                 if (!base.immatureId.Equals("-2"))
                 {
                     //PROTOBUF:RESPONSE
-                    _serializedResponsePackets.Add(Alachisoft.NCache.Common.Util.ResponseHelper.SerializeExceptionResponseWithType(exc, command.requestID, command.commandID, clientManager.ClientVersion));
-                    //   _commandBytes = clientManager.ReplyPacket(base.ExceptionPacket(exc, base.immatureId), base.ParsingExceptionMessage(exc));
+                    ResponseOptions responseOptions = new ResponseOptions()
+                    {
+                        Exception = exc,
+                        RequestId = command.requestID,
+                        CommandId = command.commandID,
+                    };
+
+                    _serializedResponsePackets.Add(clientManager.ResponseBuilder.BuildExceptionResponse(responseOptions));
                 }
                 return;
             }
@@ -102,7 +108,7 @@ namespace Alachisoft.NCache.SocketServer.Command
                 context.Add(OperationContextFieldName.ClientId, !string.IsNullOrEmpty(cmdInfo.SurrogateClientID) ? cmdInfo.SurrogateClientID : clientManager.ClientID);
                 context.Add(OperationContextFieldName.ClientOperationTimeout, clientManager.RequestTimeout);
                 context.CancellationToken = CancellationToken;
-                CommandsUtil.PopulateClientIdInContext(ref context, clientManager.ClientAddress);
+
                 nCache.Cache.RegisterKeyNotificationCallback(cmdInfo.Keys,
                     cbUpdate, cbRemove, context);
                 if (clientManager.ClientVersion < 5000 && !clientManager.CreateEventSubscription)
@@ -120,7 +126,12 @@ namespace Alachisoft.NCache.SocketServer.Command
                 if (clientManager.ClientVersion >= 5000)
                 {
                     Common.Util.ResponseHelper.SetResponse(registerBulkKeyNotifResponse, command.requestID, command.commandID);
-                    _serializedResponsePackets.Add(Common.Util.ResponseHelper.SerializeResponse(registerBulkKeyNotifResponse, Common.Protobuf.Response.Type.REGISTER_BULK_KEY_NOTIF));
+                    ResponseOptions responseOptions = new ResponseOptions()
+                    {
+                        Response = registerBulkKeyNotifResponse,
+                        ResponseType = Common.Protobuf.Response.Type.REGISTER_BULK_KEY_NOTIF
+                    };
+                    _serializedResponsePackets.Add(clientManager.ResponseBuilder.BuildResponse(responseOptions));
                 }
                 else
                 {
@@ -128,7 +139,12 @@ namespace Alachisoft.NCache.SocketServer.Command
                     Common.Protobuf.Response response = new Common.Protobuf.Response();
                     response.registerBulkKeyNotifResponse = registerBulkKeyNotifResponse;
                     Common.Util.ResponseHelper.SetResponse(response, command.requestID, command.commandID, Common.Protobuf.Response.Type.REGISTER_BULK_KEY_NOTIF);
-                    _serializedResponsePackets.Add(Alachisoft.NCache.Common.Util.ResponseHelper.SerializeResponse(response));
+                    ResponseOptions responseOptions = new ResponseOptions()
+                    {
+                        Response = response,
+                        ResponseType = Common.Protobuf.Response.Type.REGISTER_BULK_KEY_NOTIF
+                    };
+                    _serializedResponsePackets.Add(clientManager.ResponseBuilder.BuildResponse(responseOptions));
                 }
             }
             catch (OperationCanceledException ex)
@@ -142,7 +158,14 @@ namespace Alachisoft.NCache.SocketServer.Command
                 exception = exc.ToString();
 
                 //PROTOBUF:RESPONSE
-                _serializedResponsePackets.Add(Alachisoft.NCache.Common.Util.ResponseHelper.SerializeExceptionResponseWithType(exc, command.requestID, command.commandID, clientManager.ClientVersion));
+                ResponseOptions responseOptions = new ResponseOptions()
+                {
+                    Exception = exc,
+                    RequestId = command.requestID,
+                    CommandId = command.commandID,
+                };
+
+                _serializedResponsePackets.Add(clientManager.ResponseBuilder.BuildExceptionResponse(responseOptions));
             }
             finally
             {
@@ -155,8 +178,6 @@ namespace Alachisoft.NCache.SocketServer.Command
                         APILogItemBuilder log = new APILogItemBuilder(MethodsName.RegisterKeyNotificationCallback.ToLower());
                         log.GenerateKeyNotificationCallback(cmdInfo.Keys.Length, cmdInfo.UpdateCallbackId, cmdInfo.RemoveCallbackId, overload, exception, executionTime, clientManager.ClientID.ToLower(), clientManager.ClientSocketId.ToString());
 
-
-
                     }
                 }
                 catch
@@ -166,11 +187,11 @@ namespace Alachisoft.NCache.SocketServer.Command
 
         }
 
+
         //PROTOBUF
         private CommandInfo ParseCommand(Alachisoft.NCache.Common.Protobuf.Command command, ClientManager clientManager)
         {
             CommandInfo cmdInfo = new CommandInfo();
-            //HACK:notifMask
             Alachisoft.NCache.Common.Protobuf.RegisterBulkKeyNotifCommand registerBulkKeyNotifCommand = command.registerBulkKeyNotifCommand;
             cmdInfo.Keys = registerBulkKeyNotifCommand.keys.ToArray();
             cmdInfo.PackageSize = registerBulkKeyNotifCommand.keys.Count;
@@ -184,7 +205,5 @@ namespace Alachisoft.NCache.SocketServer.Command
             return cmdInfo;
         }
 
-
-        
     }
 }

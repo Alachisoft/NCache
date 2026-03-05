@@ -1,4 +1,4 @@
-//  Copyright (c) 2021 Alachisoft
+//  Copyright (c) 2026 Alachisoft
 //  
 //  Licensed under the Apache License, Version 2.0 (the "License");
 //  you may not use this file except in compliance with the License.
@@ -42,7 +42,7 @@ namespace Alachisoft.NCache.Client
 
         protected override void SerializeCommandInternal(Stream stream)
         {
-            ProtoBuf.Serializer.Serialize(stream, _lockVerifyCommand);
+            ProtoBuf.Extended.Serializer.Serialize(stream, _lockVerifyCommand);
         }
 
         protected override short GetCommandHandle()
@@ -52,11 +52,6 @@ namespace Alachisoft.NCache.Client
 
         protected override void CreateCommand()
         {
-            //base._command = new Alachisoft.NCache.Common.Protobuf.Command();
-            //base._command.requestID = base.RequestId;
-            //base._command.lockVerifyCommand = _lockVerifyCommand;
-            //base._command.type = Alachisoft.NCache.Common.Protobuf.Command.Type.LOCK_VERIFY;
-
             _lockVerifyCommand.requestId = base.RequestId;
            
         }

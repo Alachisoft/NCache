@@ -1,4 +1,4 @@
-﻿//  Copyright (c) 2021 Alachisoft
+﻿//  Copyright (c) 2026 Alachisoft
 //  
 //  Licensed under the Apache License, Version 2.0 (the "License");
 //  you may not use this file except in compliance with the License.
@@ -16,6 +16,7 @@ using System.Collections.Generic;
 using System.Text;
 using Alachisoft.NCache.SocketServer.Command;
 using Alachisoft.NCache.Caching;
+using Alachisoft.NCache.Common.ResponseSerialization;
 
 namespace Alachisoft.NCache.SocketServer.Command
 {
@@ -43,7 +44,17 @@ namespace Alachisoft.NCache.SocketServer.Command
             catch (Exception exc)
             {
                 if (!base.immatureId.Equals("-2"))
-                    _serializedResponsePackets.Add(Alachisoft.NCache.Common.Util.ResponseHelper.SerializeExceptionResponseWithoutType(exc, command.requestID, command.commandID));
+                {
+                    ResponseOptions responseOptions = new ResponseOptions()
+                    {
+                        Exception = exc,
+                        RequestId = command.requestID,
+                        CommandId = command.commandID,
+                    };
+
+                    _serializedResponsePackets.Add(clientManager.ResponseBuilder.BuildExceptionResponse(responseOptions));
+                }
+
                 return;
             }
 
@@ -55,12 +66,13 @@ namespace Alachisoft.NCache.SocketServer.Command
                 int port = ConnectionManager.ServerPort;
 
                 Dictionary<string, int> runningServers = new Dictionary<string, int>();
+                Dictionary<string, int> runningServersPublicIp = new Dictionary<string, int>();
                 runningServers = ((NCache)clientManager.CmdExecuter).Cache.GetRunningServers(server, port);
+                runningServersPublicIp = ((NCache)clientManager.CmdExecuter).Cache.GetRunningServersPublicIps(server, port);
 
                 Alachisoft.NCache.Common.Protobuf.Response response = new Alachisoft.NCache.Common.Protobuf.Response();
                 Alachisoft.NCache.Common.Protobuf.GetRunningServersResponse getRunningServerResponse = new Alachisoft.NCache.Common.Protobuf.GetRunningServersResponse();
 
-                //getRunningServerResponse = new List<Common.Protobuf.KeyValuePair>();
                 if (runningServers != null)
                 {
                     Dictionary<string, int>.Enumerator ide = runningServers.GetEnumerator();
@@ -70,6 +82,17 @@ namespace Alachisoft.NCache.SocketServer.Command
                         pair.key = ide.Current.Key;
                         pair.value = ide.Current.Value.ToString();
                         getRunningServerResponse.keyValuePair.Add(pair);
+                    }
+                }
+                if (runningServersPublicIp != null && runningServersPublicIp.Count > 0)
+                {
+                    Dictionary<string, int>.Enumerator ide = runningServersPublicIp.GetEnumerator();
+                    while (ide.MoveNext())
+                    {
+                        Common.Protobuf.KeyValuePair pair = new Common.Protobuf.KeyValuePair();
+                        pair.key = ide.Current.Key;
+                        pair.value = ide.Current.Value.ToString();
+                        getRunningServerResponse.publicIpList.Add(pair);
                     }
                 }
 

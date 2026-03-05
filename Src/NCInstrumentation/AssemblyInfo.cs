@@ -1,4 +1,4 @@
-﻿//  Copyright (c) 2021 Alachisoft
+﻿//  Copyright (c) 2026 Alachisoft
 //  
 //  Licensed under the Apache License, Version 2.0 (the "License");
 //  you may not use this file except in compliance with the License.
@@ -23,17 +23,16 @@ using System.Runtime.InteropServices;
 //#if !DEBUG
 [assembly: CLSCompliant(true)]
 //#endif
-[assembly: AssemblyTitle("Alachisoft.NCache.Instrumentation")]
-
+#if NETCORE
+[assembly: AssemblyTitle("Alachisoft.NCache.Instrumentation (.NETCore)")]
+#else
+[assembly: AssemblyTitle("Alachisoft.NCache.Instrumentation (.NET)")]
+#endif
 [assembly: AssemblyConfiguration("")]
 [assembly: AssemblyCompany("Alachisoft")]
-
-
 [assembly: AssemblyProduct("Alachisoft® NCache OpenSource")]
-
 [assembly: AssemblyTrademark("NCache ™ is a registered trademark of Alachisoft.")]
-
-[assembly: AssemblyCopyright("Copyright © 2005-2021 Alachisoft")]
+[assembly: AssemblyCopyright("Copyright © 2005-2026 Alachisoft")]
 [assembly: AssemblyCulture("")]		
 
 // Setting ComVisible to false makes the types in this assembly not visible 
@@ -54,7 +53,7 @@ using System.Runtime.InteropServices;
 // You can specify all the values or you can default the Revision and Build Numbers 
 // by using the '*' as shown below:
 
-[assembly: AssemblyVersion("5.0.0")]
+[assembly: AssemblyVersion("5.3.0")]
 
 
 //
@@ -84,6 +83,6 @@ using System.Runtime.InteropServices;
 //
 [assembly: AssemblyDelaySign(false)]
 [assembly: AssemblyKeyName("")]
-[assembly: AssemblyFileVersionAttribute("5.0.5.0")]
+[assembly: AssemblyFileVersionAttribute("5.3.6.0")]
 [assembly: AssemblyDescriptionAttribute("WMI Statistics Publisher")]
-[assembly: AssemblyInformationalVersion("5.0.0")]
+[assembly: AssemblyInformationalVersion("5.3.0")]

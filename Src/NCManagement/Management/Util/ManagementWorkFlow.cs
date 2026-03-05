@@ -1,4 +1,4 @@
-﻿//  Copyright (c) 2021 Alachisoft
+﻿//  Copyright (c) 2026 Alachisoft
 //  
 //  Licensed under the Apache License, Version 2.0 (the "License");
 //  you may not use this file except in compliance with the License.
@@ -16,6 +16,9 @@ using System.Collections.Generic;
 using Alachisoft.NCache.Management.ServiceControl;
 using System.Collections;
 using Alachisoft.NCache.Config;
+using Alachisoft.NCache.Common;
+using System.Diagnostics;
+using System.Linq;
 
 namespace Alachisoft.NCache.Management.Management.Util
 {
@@ -24,14 +27,15 @@ namespace Alachisoft.NCache.Management.Management.Util
         public static Mapping[] GetUpdatedMappingList(Mapping[] oldMapping, Mapping[] newMapping)
         {
             Dictionary<string, Mapping> updatedMappingDictionary = new Dictionary<string, Mapping>();
-            foreach (Mapping mapping in newMapping)
+
+            foreach (Mapping mapping in oldMapping)
             {
                 if (mapping != null)
                 {
                     updatedMappingDictionary.Add(mapping.PrivateIP, mapping);
                 }
             }
-            foreach (Mapping mapping in oldMapping)
+            foreach (Mapping mapping in newMapping)
             {
                 if (mapping != null)
                 {
@@ -62,6 +66,8 @@ namespace Alachisoft.NCache.Management.Management.Util
             else
                 return null;
         }
+
+
 
         public static void UpdateServerMappingConfig(string[] nodes)
         {
@@ -109,7 +115,9 @@ namespace Alachisoft.NCache.Management.Management.Util
             return null;
         }
 
-        private static void UpdateServerMappings(MappingConfiguration.Dom.MappingConfiguration mappingConfiguration,string[] nodes)
+
+
+        private static void UpdateServerMappings(MappingConfiguration.Dom.MappingConfiguration mappingConfiguration, string[] nodes, int port = -1)
         {
             if (nodes != null && mappingConfiguration != null)
             {
@@ -117,7 +125,11 @@ namespace Alachisoft.NCache.Management.Management.Util
                 {
                     try
                     {
-                        NCacheRPCService NCache = new NCacheRPCService(node);
+                        NCacheRPCService NCache = null;
+                        if (port == -1)
+                            NCache = new NCacheRPCService(node);
+                        else
+                            NCache = new NCacheRPCService(node, port);
                         ICacheServer cacheServer = NCache.GetCacheServer(new TimeSpan(0, 0, 0, 30));
                         cacheServer.UpdateServerMappingConfig(mappingConfiguration);
                         cacheServer.Dispose();
