@@ -1,1 +1,0 @@
-start powershell -noexit -Command "Get-Command -Module ncacheps"
