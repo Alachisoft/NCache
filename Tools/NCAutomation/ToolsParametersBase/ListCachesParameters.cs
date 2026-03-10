@@ -1,17 +1,5 @@
-﻿//  Copyright (c) 2021 Alachisoft
-//  
-//  Licensed under the Apache License, Version 2.0 (the "License");
-//  you may not use this file except in compliance with the License.
-//  You may obtain a copy of the License at
-//  
-//     http://www.apache.org/licenses/LICENSE-2.0
-//  
-//  Unless required by applicable law or agreed to in writing, software
-//  distributed under the License is distributed on an "AS IS" BASIS,
-//  WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
-//  See the License for the specific language governing permissions and
-//  limitations under the License
-using Alachisoft.NCache.Automation.Util;
+﻿using Alachisoft.NCache.Automation.Util;
+using Alachisoft.NCache.Common.Enum;
 using Alachisoft.NCache.Tools.Common;
 using System;
 using System.Collections.Generic;
@@ -27,6 +15,9 @@ namespace Alachisoft.NCache.Automation.ToolsParametersBase
         private string _server = string.Empty;
         private int _port = -1;
         private bool _detailed;
+        private StoreType? _storeType = null;
+        CacheTopologyParam? _topology = null;
+
 
         [Parameter(
            ValueFromPipeline = true,
@@ -34,6 +25,30 @@ namespace Alachisoft.NCache.Automation.ToolsParametersBase
         [ArgumentAttribute(@"/s", @"/server", @"-s", @"--server")]
         public string Server { get { return _server; } set { _server = value; } }
 
+        [Parameter(
+         Mandatory = false,
+         ValueFromPipelineByPropertyName = true,
+         ValueFromPipeline = true,
+         HelpMessage = Message.STORETYPE)]
+        [ArgumentAttribute(@"/e", @"/storetype", @"-e", @"--storetype")]
+        public StoreType? InMemoryStoreType
+        {
+            get { return _storeType; }
+            set { _storeType = value; }
+        }
+
+        [Parameter(
+          Mandatory = false,
+          ValueFromPipelineByPropertyName = true,
+          ValueFromPipeline = true,
+          HelpMessage = Message.TOPOLOGY)]
+        [ArgumentAttribute(@"/t", @"/topology", @"-t", @"--topology")]
+        [ValidateNotNullOrEmpty]
+        public CacheTopologyParam? Topology
+        {
+            get { return _topology; }
+            set { _topology = value; }
+        }
 
         [Parameter(
         ValueFromPipelineByPropertyName  = true,

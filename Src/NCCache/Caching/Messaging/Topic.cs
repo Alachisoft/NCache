@@ -1,4 +1,4 @@
-﻿//  Copyright (c) 2021 Alachisoft
+﻿//  Copyright (c) 2026 Alachisoft
 //  
 //  Licensed under the Apache License, Version 2.0 (the "License");
 //  you may not use this file except in compliance with the License.
@@ -28,7 +28,6 @@ using System;
 using System.Linq;
 using Alachisoft.NCache.Runtime.Exceptions;
 using System.Threading;
-using Alachisoft.NCache.Common.FeatureUsageData;
 
 namespace Alachisoft.NCache.Caching.Messaging
 {
@@ -115,19 +114,11 @@ namespace Alachisoft.NCache.Caching.Messaging
                     switch (subscriptionInfo.SubPolicyType)
                     {
                         case SubscriptionPolicyType.NonDurableExclusiveSubscription:
-                            FeatureUsageCollector.Instance.GetFeature(FeatureEnum.data_sharing).UpdateUsageTime();
-                            FeatureUsageCollector.Instance.GetFeature(FeatureEnum.pubsub, FeatureEnum.data_sharing).UpdateUsageTime();
-                            FeatureUsageCollector.Instance.GetFeature(FeatureEnum.non_durable_subscription, FeatureEnum.pubsub).UpdateUsageTime();
-
                             if (subscriptionInfo.Type != SubscriptionType.Publisher)
                                 subscription = new ExclusiveSubscriptions(subscriptionInfo.ClientId, subscriptionInfo.SubscriptionId, subscriptionInfo.SubPolicyType, subscriptionInfo.Expiration, _context);
                             else
                             {
                                 subscription = new ExclusiveSubscriptions(subscriptionInfo.ClientId, subscriptionInfo.SubscriptionId, subscriptionInfo.SubPolicyType, subscriptionInfo.Expiration, _context, subscriptionInfo.Type);
-
-                                FeatureUsageCollector.Instance.GetFeature(FeatureEnum.data_sharing).UpdateUsageTime();
-                                FeatureUsageCollector.Instance.GetFeature(FeatureEnum.pubsub, FeatureEnum.data_sharing).UpdateUsageTime();
-                                FeatureUsageCollector.Instance.GetFeature(FeatureEnum.delivery_failure_notificatiion, FeatureEnum.pubsub).UpdateUsageTime();
                             }
 
                             break;
@@ -145,12 +136,6 @@ namespace Alachisoft.NCache.Caching.Messaging
 
         public void CreateSubscription(SubscriptionInfo subscriptionInfo, bool isUserOperation=true)
         {
-            if (subscriptionInfo.SubPolicyType != SubscriptionPolicyType.EventSubscription)
-            {
-                FeatureUsageCollector.Instance.GetFeature(FeatureEnum.data_sharing).UpdateUsageTime();
-                FeatureUsageCollector.Instance.GetFeature(FeatureEnum.pubsub, FeatureEnum.data_sharing).UpdateUsageTime();
-
-            }
 
             SubscriptionIdentifier subscriptionIdentifier = new SubscriptionIdentifier(subscriptionInfo.SubscriptionId, subscriptionInfo.SubPolicyType);
             ClientSubscriptionManager clientSubscriptionManger = null;
@@ -255,7 +240,6 @@ namespace Alachisoft.NCache.Caching.Messaging
                         if (!subscription.IsActive()&& isDispose==false)
                         {
                             _subscriptions.Remove(subIdentifier);
-                            //_subscriptionExpirationIndex.Remove(subIdentifier);
                         }
                     }
                 }
@@ -839,6 +823,7 @@ namespace Alachisoft.NCache.Caching.Messaging
                                     {
                                         if (clientManager.HasMessageSubscriptons(SubscriptionType.Subscriber))
                                             assigned |= clientManager.AssignMessageToSubscription(message, subscriptionInfo);
+                                        // assigned = true;
                                     }
                                 }
                             }
@@ -952,7 +937,7 @@ namespace Alachisoft.NCache.Caching.Messaging
                         client.AcknowledgeMessageRecepit(message);
 
                     if (message==null ) return;
-                    if (message.MessageMetaData.Delivered)
+                    if (message.MessageMetaData.Delivered /*&& !(_durableSubscriptionAssignedMessages.ContainsKey(messageId))*/)
                     {
                         _deliveredMessages.Enqueue(message.MessageId, message);
                         delivered = true;

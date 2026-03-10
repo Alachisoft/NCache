@@ -1,4 +1,4 @@
-//  Copyright (c) 2021 Alachisoft
+//  Copyright (c) 2026 Alachisoft
 //  
 //  Licensed under the Apache License, Version 2.0 (the "License");
 //  you may not use this file except in compliance with the License.
@@ -18,7 +18,6 @@ using Alachisoft.NCache.Common.Caching;
 using Alachisoft.NCache.Runtime.Events;
 using System.Collections.Generic;
 using System.Collections;
-
 
 namespace Alachisoft.NCache.SocketServer.CallbackTasks
 {
@@ -57,11 +56,15 @@ namespace Alachisoft.NCache.SocketServer.CallbackTasks
                 response.itemRemovedCallback = Alachisoft.NCache.SocketServer.Util.EventHelper.GetItemRemovedCallbackResponse(_eventContext,_id, _key, _value, _flag, _reason,_dataFilter);
                 response.responseType = Alachisoft.NCache.Common.Protobuf.Response.Type.ITEM_REMOVED_CALLBACK;
 
-                IList serializedResponse = Alachisoft.NCache.Common.Util.ResponseHelper.SerializeResponse(response,Common.Protobuf.Response.Type.ITEM_REMOVED_CALLBACK);
+                IList serializedResponse = clientManager.ResponseBuilder.BuildResponse(new Common.ResponseSerialization.ResponseOptions()
+                {
+                    Response = response,
+                    ResponseType = response.responseType
+                }
+               );
 
                 ConnectionManager.AssureSend(clientManager, serializedResponse, false);
                 
-                //ConnectionManager.AssureSend(clientManager, clientManager.ReplyPacket("REMOVECALLBACK \"" + _id + "\"" + _key + "\"" + ((int)_reason).ToString() + "\"" + _flag.Data.ToString() + "\"", _value.Size),_value.Data);
             }
 
         }

@@ -1,4 +1,4 @@
-﻿//  Copyright (c) 2021 Alachisoft
+﻿//  Copyright (c) 2026 Alachisoft
 //  
 //  Licensed under the Apache License, Version 2.0 (the "License");
 //  you may not use this file except in compliance with the License.
@@ -16,6 +16,7 @@ using System.Collections;
 using System.Collections.Specialized;
 using System.Globalization;
 using System.Threading;
+using Alachisoft.NCache.Common.Configuration;
 using Alachisoft.NCache.Common.Util;
 
 namespace Alachisoft.NCache.Config.Dom
@@ -73,17 +74,27 @@ namespace Alachisoft.NCache.Config.Dom
 
             private static void GetCache(CacheServerConfig cache, Hashtable settings)
             {
+                if (settings.ContainsKey(ConfigurationAttributeNames.STORE_TYPE))
+                    cache.Store = settings[ConfigurationAttributeNames.STORE_TYPE].ToString();
+
                 if (settings.ContainsKey("config-id"))
                     cache.ConfigID = settings["config-id"].ToString();
 
                 if (settings.ContainsKey("last-modified"))
                     cache.LastModified = settings["last-modified"].ToString();
+
                 if (settings.ContainsKey("log"))
                     cache.Log = GetLog((Hashtable)settings["log"]);
+                
                 if (settings.ContainsKey("cache-classes"))
                     GetCacheClasses(cache, (Hashtable)settings["cache-classes"]);
+                
                 if (settings.ContainsKey("perf-counters"))
                     cache.PerfCounters = GetPerfCounters(settings);
+                if (settings.ContainsKey(SerializationUtility.SerializationConfigAttribute))
+                    cache.SerializationFormatter = settings[SerializationUtility.SerializationConfigAttribute].ToString();
+                if (settings.ContainsKey("client-death-detection"))
+                    cache.ClientDeathDetection = GetClientDeathDetection((Hashtable)settings["client-death-detection"]);
 
             }
 
@@ -111,8 +122,6 @@ namespace Alachisoft.NCache.Config.Dom
             }
 
 
-
-
             private static SQLDependencyConfig GetSQLDependency(Hashtable settings)
             {
                 SQLDependencyConfig sqlDependencyConfig = new SQLDependencyConfig();
@@ -120,7 +129,6 @@ namespace Alachisoft.NCache.Config.Dom
                     sqlDependencyConfig.UseDefault = Convert.ToBoolean(settings["use-default"]);
                 return sqlDependencyConfig;
             }
-
 
             private static SynchronizationStrategy GetSynchronizationStrategy(Hashtable settings)
             {
@@ -166,8 +174,6 @@ namespace Alachisoft.NCache.Config.Dom
 
             private static void GetClassifiedCache(CacheServerConfig cache, Hashtable settings)
             {
-                if (settings.ContainsKey("data-load-balancing"))
-                    cache.AutoLoadBalancing = GetAutoLoadBalancing((Hashtable)settings["data-load-balancing"]);
                 if (settings.ContainsKey("cluster"))
                     cache.Cluster = GetCluster(settings);
                 if (settings.ContainsKey("internal-cache"))
@@ -228,17 +234,18 @@ namespace Alachisoft.NCache.Config.Dom
             private static EvictionPolicy GetEvictionPolicy(Hashtable settings)
             {
                 EvictionPolicy evictionPolicy = new EvictionPolicy();
+                if (settings.ContainsKey("eviction-enabled"))
+                    evictionPolicy.Enabled = Convert.ToBoolean(settings["eviction-enabled"]);
                 if (settings.ContainsKey("priority"))
                     evictionPolicy.DefaultPriority = ((Hashtable)settings["priority"])["default-value"].ToString();
+
+                if (settings.ContainsKey("class"))
+                    evictionPolicy.Policy = settings["class"] as string;
+
                 if (settings.ContainsKey("evict-ratio"))
                     evictionPolicy.EvictionRatio = Convert.ToDecimal(settings["evict-ratio"]);
                 return evictionPolicy;
             }
-
-
-
-
-
 
             private static Attrib[] GetIndexAttributes(Hashtable settings)
             {
@@ -248,7 +255,6 @@ namespace Alachisoft.NCache.Config.Dom
                     attributes[i++] = GetIndexAttribute(attrib);
                 return attributes;
             }
-
             private static Attrib GetIndexAttribute(Hashtable settings)
             {
                 Attrib attrib = new Attrib();
@@ -271,38 +277,6 @@ namespace Alachisoft.NCache.Config.Dom
                 if (settings.ContainsKey("heap"))
                     storage.Size = Convert.ToInt64(((Hashtable)settings["heap"])["max-size"]);
                 return storage;
-            }
-
-            private static Security GetSecurity(Hashtable settings)
-            {
-                Security security = new Security();
-                if (settings.ContainsKey("enabled"))
-                    security.Enabled = Convert.ToBoolean(settings["enabled"]);
-                if (settings.ContainsKey("domain-controller"))
-                    security.DomainController = settings["domain-controller"].ToString();
-                if (settings.ContainsKey("user"))
-                    security.Users = GetSecurityUser((Hashtable)settings["user"]);
-                if (settings.ContainsKey("port"))
-                    security.LdapPort = settings["port"].ToString();
-                return security;
-            }
-
-            private static User[] GetSecurityUser(Hashtable settings)
-            {
-                User[] users = null;
-
-                if (settings.Count != 0)
-                {
-                    users = new User[settings.Count];
-                    int index = 0;
-                    IDictionaryEnumerator ide = settings.GetEnumerator();
-                    while (ide.MoveNext())
-                    {
-                        users[index] = new User((string)ide.Key.ToString());
-                        index++;
-                    }
-                }
-                return users;
             }
 
             private static Cluster GetCluster(Hashtable settings)
@@ -332,9 +306,6 @@ namespace Alachisoft.NCache.Config.Dom
                 if (settings.ContainsKey("tcpping"))
                     GetTcpPing(channel, (Hashtable)settings["tcpping"]);
 
-                if (settings.ContainsKey("pbcast.gms"))
-                    GetGMS(channel, (Hashtable)settings["pbcast.gms"]);
-
                 return channel;
             }
 
@@ -363,10 +334,6 @@ namespace Alachisoft.NCache.Config.Dom
 
             private static void GetGMS(Channel channel, Hashtable settings)
             {
-                if (settings.ContainsKey("join_retry_count"))
-                    channel.JoinRetries = Convert.ToInt32(settings["join_retry_count"].ToString());
-                if (settings.ContainsKey("join_retry_timeout"))
-                    channel.JoinRetryInterval = Convert.ToInt32(settings["join_retry_timeout"]);
             }
 
 
@@ -377,12 +344,8 @@ namespace Alachisoft.NCache.Config.Dom
                     log.Enabled = Convert.ToBoolean(settings["enabled"]);
                 if (settings.ContainsKey("trace-errors"))
                     log.TraceErrors = Convert.ToBoolean(settings["trace-errors"]);
-                if (settings.ContainsKey("trace-notices"))
-                    log.TraceNotices = Convert.ToBoolean(settings["trace-notices"]);
                 if (settings.ContainsKey("trace-debug"))
                     log.TraceDebug = Convert.ToBoolean(settings["trace-debug"]);
-                if (settings.ContainsKey("trace-warnings"))
-                    log.TraceWarnings = Convert.ToBoolean(settings["trace-warnings"]);
                 if (settings.ContainsKey("log-path"))
                     log.LogPath = Convert.ToString(settings["log-path"]);
                 return log;
@@ -398,69 +361,6 @@ namespace Alachisoft.NCache.Config.Dom
                 return deathDetection;
             }
 
-            private static BackingSource GetBackingSource(Hashtable settings)
-            {
-                BackingSource backingSource = new BackingSource();
-                if (settings.ContainsKey("read-thru"))
-                    backingSource.Readthru = GetReadThru((Hashtable)settings["read-thru"]);
-                if (settings.ContainsKey("write-thru"))
-                    backingSource.Writethru = GetWriteThru((Hashtable)settings["write-thru"]);
-                return backingSource;
-            }
-
-
-          
-            private static LoaderTag[] GetTags(Hashtable settings)
-            {
-                if (settings == null)
-                    return null;
-                LoaderTag[] tags = new LoaderTag[settings.Count];
-                for (int i = 0; i < settings.Count; i++)
-                {
-                    tags[i] = new LoaderTag();
-                    tags[i].Name = (string)settings[i];
-                }
-
-                return tags;
-            }
-
-            private static Writethru GetWriteThru(Hashtable settings)
-            {
-                Writethru writeThru = new Writethru();
-                if (settings.ContainsKey("write-thru-providers"))
-                    writeThru.Providers = GetProviders(settings["write-thru-providers"] as Hashtable);
-                if (settings.ContainsKey("write-behind"))
-                    writeThru.WriteBehind = GetWriteBehind(settings["write-behind"] as Hashtable);
-                return writeThru;
-            }
-
-            private static Readthru GetReadThru(Hashtable settings)
-            {
-                Readthru readThru = new Readthru();
-                if (settings.ContainsKey("read-thru-providers"))
-                    readThru.Providers = GetProviders(settings["read-thru-providers"] as Hashtable);
-                return readThru;
-            }
-
-            private static WriteBehind GetWriteBehind(Hashtable settings)
-            {
-                if (settings == null) return null;
-
-                WriteBehind writeBehind = new WriteBehind();
-
-                if (settings.ContainsKey("mode"))
-                    writeBehind.Mode = settings["mode"].ToString();
-                if (settings.ContainsKey("throttling-rate-per-sec"))
-                    writeBehind.Throttling = settings["throttling-rate-per-sec"].ToString();
-                if (settings.ContainsKey("failed-operations-queue-limit"))
-                    writeBehind.RequeueLimit = settings["failed-operations-queue-limit"].ToString();
-                if (settings.ContainsKey("failed-operations-eviction-ratio"))
-                    writeBehind.Eviction = settings["failed-operations-eviction-ratio"].ToString();
-                if (settings.ContainsKey("batch-mode-config"))
-                    writeBehind.BatchConfig = GetBatchConfig(settings["batch-mode-config"] as Hashtable);
-
-                return writeBehind;
-            }
 
             private static BatchConfig GetBatchConfig(Hashtable settings)
             {
@@ -564,7 +464,6 @@ namespace Alachisoft.NCache.Config.Dom
                     config.Add("id", cache.Name);
                     config.Add("cache", GetCache(cache));
                     config.Add("web-cache", GetWebCache(cache));
-
                 }
                 finally
                 {
@@ -655,6 +554,7 @@ namespace Alachisoft.NCache.Config.Dom
                         }
                         #endregion
 
+                        //Modified for Attribute level Compact Serilization Changes
                         Hashtable nonCompactFields = null;
                         if (cls.NonCompactFieldsTable.Count > 0)
                         {
@@ -770,24 +670,40 @@ namespace Alachisoft.NCache.Config.Dom
             {
                 Hashtable settings = new Hashtable();
                 settings.Add("name", cache.Name);
+
                 if (cache.Log != null)
                     settings.Add("log", GetLog(cache.Log));
+                settings.Add(ConfigurationAttributeNames.STORE_TYPE, cache.Store);
                 settings.Add("config-id", cache.ConfigID);
                 settings.Add("config-version", cache.ConfigVersion);
                 settings.Add("deployment-version", cache.DeploymentVersion);
+                
                 if (cache.LastModified != null)
                     settings.Add("last-modified", cache.LastModified);
+
                 if (cache.DataFormat != null)
                     settings.Add("data-format", cache.DataFormat);
+
+                settings.Add(SerializationUtility.SerializationConfigAttribute, cache.SerializationFormatter);
+
                 settings.Add("cache-classes", GetCacheClasses(cache));
                 settings.Add("class", cache.Name);
+
                 if (cache.PerfCounters != null)
                     settings.Add("perf-counters", cache.PerfCounters.Enabled);
 
+                if (cache.ClientDeathDetection != null)
+                    settings.Add("client-death-detection", GetClientDeathDetection(cache.ClientDeathDetection));
                 return settings;
             }
 
-
+            private static Hashtable GetClientDeathDetection(ClientDeathDetection deathDetection)
+            {
+                Hashtable settings = new Hashtable();
+                settings.Add("enable", deathDetection.Enabled.ToString().ToLower());
+                settings.Add("grace-interval", deathDetection.GraceInterval.ToString());
+                return settings;
+            }
             private static Hashtable GetParameters(Parameter[] parameters)
             {
                 if (parameters == null)
@@ -814,10 +730,6 @@ namespace Alachisoft.NCache.Config.Dom
             {
                 Hashtable settings = new Hashtable();
                 settings.Add("id", cache.Name);
-                if (cache.AutoLoadBalancing != null)
-                {
-                    settings.Add("data-load-balancing", GetAutoLoadBalancing(cache.AutoLoadBalancing));
-                }
 
                 if (cache.Cluster == null)
                 {
@@ -864,10 +776,14 @@ namespace Alachisoft.NCache.Config.Dom
             {
                 Hashtable settings = new Hashtable();
 
+                settings.Add("class", evictionPolicy.Policy);
+
+                settings.Add("eviction-enabled", evictionPolicy.Enabled);
                 settings.Add("priority", GetEvictionPriority(evictionPolicy));
                 settings.Add("evict-ratio", evictionPolicy.EvictionRatio.ToString());
                 return settings;
             }
+
 
             private static Hashtable GetEvictionPriority(EvictionPolicy evictionPolicy)
             {
@@ -939,8 +855,6 @@ namespace Alachisoft.NCache.Config.Dom
 
             }
 
-
-
             private static Hashtable GetServerMapping(ServerMapping serverMapping)
             {
                 Hashtable settings = new Hashtable();
@@ -974,7 +888,6 @@ namespace Alachisoft.NCache.Config.Dom
                 return settings;
             }
 
-            //-
 
             private static Hashtable GetChannel(Channel channel, bool useHeartBeat)
             {
@@ -1010,8 +923,6 @@ namespace Alachisoft.NCache.Config.Dom
             private static Hashtable GetGMS(Channel channel)
             {
                 Hashtable settings = new Hashtable();
-                settings.Add("join_retry_count", channel.JoinRetries.ToString());
-                settings.Add("join_retry_timeout", channel.JoinRetryInterval.ToString());
                 return settings;
             }
 
@@ -1022,9 +933,7 @@ namespace Alachisoft.NCache.Config.Dom
                 Hashtable settings = new Hashtable();
                 settings.Add("enabled", log.Enabled.ToString().ToLower());
                 settings.Add("trace-errors", log.TraceErrors.ToString().ToLower());
-                settings.Add("trace-notices", log.TraceNotices.ToString().ToLower());
                 settings.Add("trace-debug", log.TraceDebug.ToString().ToLower());
-                settings.Add("trace-warnings", log.TraceWarnings.ToString().ToLower());
                 settings.Add("log-path", log.LogPath.ToLower());
                 return settings;
             }
@@ -1039,6 +948,16 @@ namespace Alachisoft.NCache.Config.Dom
                 Hashtable settings = new Hashtable();
                 foreach (CacheServerConfig cache in caches)
                     settings.Add(cache.Name, GetCacheConfiguration(cache));
+                return settings;
+            }
+            public static Hashtable GetClientActivityNotification(ClientActivityNotification config)
+            {
+                Hashtable settings = new Hashtable();
+                if (config.Enabled)
+                {
+                    settings.Add("enabled", config.Enabled);
+                    settings.Add("retention-period", config.Retention);
+                }
                 return settings;
             }
 

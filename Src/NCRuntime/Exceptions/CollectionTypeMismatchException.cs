@@ -14,19 +14,6 @@ namespace Alachisoft.NCache.Runtime.Exceptions
     /// if created collection on cache store is of differente type then it throws this type of exception
     /// </summary>
     /// <example>The following example demonstrates how to use this exception in your code.
-    /// <code>
-    /// 
-    /// try
-    /// {
-    ///	    IDistributedList<int> distributedList = cache.Collections.CreateList<int>("key");
-    ///	    IDistributedQueue<int> distributedQueue = cache.Collections.GetQueue<int>("key");
-    /// }
-    /// catch(CollectionTypeMismatch ex)
-    /// {
-    ///     ...
-    /// }
-    /// 
-    /// </code>
     /// </example>
     [Serializable]
     public class CollectionTypeMismatchException : CacheException

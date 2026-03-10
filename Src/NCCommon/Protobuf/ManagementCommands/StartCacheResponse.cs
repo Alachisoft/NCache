@@ -10,23 +10,23 @@
 // Generated from: StartCacheResponse.proto
 namespace Alachisoft.NCache.Common.Protobuf
 {
-  [global::System.Serializable, global::ProtoBuf.ProtoContract(Name=@"StartCacheResponse")]
-  public partial class StartCacheResponse : global::ProtoBuf.IExtensible
+  [global::System.Serializable, global::ProtoBuf.Extended.ProtoContract(Name=@"StartCacheResponse")]
+  public partial class StartCacheResponse : global::ProtoBuf.Extended.IExtensible
   {
     public StartCacheResponse() {}
     
 
     private bool _started = default(bool);
-    [global::ProtoBuf.ProtoMember(1, IsRequired = false, Name=@"started", DataFormat = global::ProtoBuf.DataFormat.Default)]
+    [global::ProtoBuf.Extended.ProtoMember(1, IsRequired = false, Name=@"started", DataFormat = global::ProtoBuf.Extended.DataFormat.Default)]
     [global::System.ComponentModel.DefaultValue(default(bool))]
     public bool started
     {
       get { return _started; }
       set { _started = value; }
     }
-    private global::ProtoBuf.IExtension extensionObject;
-    global::ProtoBuf.IExtension global::ProtoBuf.IExtensible.GetExtensionObject(bool createIfMissing)
-      { return global::ProtoBuf.Extensible.GetExtensionObject(ref extensionObject, createIfMissing); }
+    private global::ProtoBuf.Extended.IExtension extensionObject;
+   global::ProtoBuf.Extended.IExtension global::ProtoBuf.Extended.IExtensible.GetExtensionObject(bool createIfMissing)
+      { return global::ProtoBuf.Extended.Extensible.GetExtensionObject(ref extensionObject, createIfMissing); }
   }
   
 }

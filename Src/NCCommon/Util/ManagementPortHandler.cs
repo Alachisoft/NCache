@@ -1,4 +1,4 @@
-﻿//  Copyright (c) 2021 Alachisoft
+﻿//  Copyright (c) 2026 Alachisoft
 //  
 //  Licensed under the Apache License, Version 2.0 (the "License");
 //  you may not use this file except in compliance with the License.
@@ -27,7 +27,7 @@ using System.Text.RegularExpressions;
 using System.Reflection;
 using Alachisoft.NCache.Common.Configuration;
 #if NETCORE
-using Alachisoft.NCache.Licensing.NetCore.LinuxUtil;
+using Alachisoft.NCache.Licensing.LinuxUtil;
 #endif
 
 namespace Alachisoft.NCache.Common.Util
@@ -195,7 +195,7 @@ namespace Alachisoft.NCache.Common.Util
 #if !NETCORE
                         if ((LookupProcess(Convert.ToInt32(tokens[5]))).Equals("Alachisoft.NCache.CacheHost"))
 #elif NETCORE
-                        if ((LookupProcess(Convert.ToInt32(tokens[5]))).Equals("dotnet"))
+                        if ((LookupProcess(Convert.ToInt32(tokens[5]))).Equals("Alachisoft.NCache.CacheHost"))
 #endif
                         {
                             string localAddress = Regex.Replace(tokens[2], @"\[(.*?)\]", "1.1.1.1");

@@ -11,21 +11,21 @@
 // Note: requires additional types generated from: BulkEventItemResponse.proto
 namespace Alachisoft.NCache.Common.Protobuf
 {
-  [global::System.Serializable, global::ProtoBuf.ProtoContract(Name=@"BulkEventResponse")]
-  public partial class BulkEventResponse : global::ProtoBuf.IExtensible
+  [global::System.Serializable, global::ProtoBuf.Extended.ProtoContract(Name=@"BulkEventResponse")]
+  public partial class BulkEventResponse : global::ProtoBuf.Extended.IExtensible
   {
     public BulkEventResponse() {}
     
     private readonly global::System.Collections.Generic.List<Alachisoft.NCache.Common.Protobuf.BulkEventItemResponse> _eventList = new global::System.Collections.Generic.List<Alachisoft.NCache.Common.Protobuf.BulkEventItemResponse>();
-    [global::ProtoBuf.ProtoMember(1, Name=@"eventList", DataFormat = global::ProtoBuf.DataFormat.Default)]
+    [global::ProtoBuf.Extended.ProtoMember(1, Name=@"eventList", DataFormat = global::ProtoBuf.Extended.DataFormat.Default)]
     public global::System.Collections.Generic.List<Alachisoft.NCache.Common.Protobuf.BulkEventItemResponse> eventList
     {
       get { return _eventList; }
     }
   
-    private global::ProtoBuf.IExtension extensionObject;
-    global::ProtoBuf.IExtension global::ProtoBuf.IExtensible.GetExtensionObject(bool createIfMissing)
-      { return global::ProtoBuf.Extensible.GetExtensionObject(ref extensionObject, createIfMissing); }
+    private global::ProtoBuf.Extended.IExtension extensionObject;
+   global::ProtoBuf.Extended.IExtension global::ProtoBuf.Extended.IExtensible.GetExtensionObject(bool createIfMissing)
+      { return global::ProtoBuf.Extended.Extensible.GetExtensionObject(ref extensionObject, createIfMissing); }
   }
   
 }

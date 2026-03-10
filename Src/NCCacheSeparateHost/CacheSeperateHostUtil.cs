@@ -1,4 +1,4 @@
-﻿//  Copyright (c) 2021 Alachisoft
+﻿//  Copyright (c) 2026 Alachisoft
 //  
 //  Licensed under the Apache License, Version 2.0 (the "License");
 //  you may not use this file except in compliance with the License.
@@ -235,12 +235,12 @@ namespace Alachisoft.NCache.CacheHost
 
                 _socketServer.CacheName = cacheName;
                 Alachisoft.NCache.SocketServer.CacheProvider.Provider = _nchost.HostServer;
+                _socketServer.Start(clientServerIp, Alachisoft.NCache.Common.Logger.LoggerNames.SocketServerLogs, "Cache Host", CommandManagerType.NCacheClient, ConnectionManagerType.HostClient);
                 _managementSocketServer = new SocketServer.SocketServer(managementPort, sendBuffer, receiveBuffer);
 
-
                 _managementSocketServer.Start(clusterIp, Alachisoft.NCache.Common.Logger.LoggerNames.CacheManagementSocketServer, "NManagement", CommandManagerType.NCacheHostManagement, ConnectionManagerType.Management);
-                _socketServer.Start(clientServerIp, Alachisoft.NCache.Common.Logger.LoggerNames.SocketServerLogs, "Cache Host", CommandManagerType.NCacheClient, ConnectionManagerType.HostClient);
-
+                
+               
                 CacheServer.SocketServerPort = managementPort;
                 CacheServer.ConnectionManager = SocketServer.SocketServer.HostClientConnectionManager;
                 _nchost.HostServer.SynchronizeClientConfig();

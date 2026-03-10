@@ -1,4 +1,4 @@
-//  Copyright (c) 2021 Alachisoft
+//  Copyright (c) 2026 Alachisoft
 //  
 //  Licensed under the Apache License, Version 2.0 (the "License");
 //  you may not use this file except in compliance with the License.
@@ -26,7 +26,7 @@ namespace Alachisoft.NCache.SocketServer
     {
         string ID { get;}
         void OnClientConnected(string clientID, string cacheId, ClientInfo clientInfo, long count);
-        void OnClientDisconnected(string clientID, string cacheId, Runtime.Caching.ClientInfo clientInfo, long count);
+        void OnClientDisconnected(string clientID, string cacheId, long count);
         void UpdateSocketServerStats(SocketServerStats stats);
         void RegisterNotification(NotificationsType type);
         bool IsCoordinator(string srcCacheUniqueID);

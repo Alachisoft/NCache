@@ -95,7 +95,6 @@ namespace Alachisoft.NGroups.Stack
 		/// then the range [last_seqno, first_seqno] is added instead
 		/// <p>
 		/// If retransmitter thread is suspended, wake it up
-		/// TODO:
 		/// Does not check for duplicates !
 		/// </summary>
 		public virtual void  add(long first_seqno, long last_seqno)

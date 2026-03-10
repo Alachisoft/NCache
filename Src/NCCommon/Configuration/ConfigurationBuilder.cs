@@ -1,4 +1,4 @@
-//  Copyright (c) 2021 Alachisoft
+//  Copyright (c) 2026 Alachisoft
 //  
 //  Licensed under the Apache License, Version 2.0 (the "License");
 //  you may not use this file except in compliance with the License.
@@ -187,7 +187,10 @@ namespace Alachisoft.NCache.Common.Configuration
             XmlDocument document = new XmlDocument();
             try
             {
-                document.Load(fileName);
+                using (FileStream fileStream = new FileStream(fileName, FileMode.Open, FileAccess.Read, FileShare.ReadWrite))
+                {
+                    document.Load(fileStream);
+                }
             }
             catch (Exception e)
             {
@@ -587,7 +590,6 @@ namespace Alachisoft.NCache.Common.Configuration
                             break;
 
                         case "System.Boolean":
-                            //[bug-id: 1434] in case of boolean we can ignore the the case as "True", "true" and "tRue" are the same
                             if (isNullable)
                                 primitiveValue = value != null ? Convert.ToBoolean(value) : (Boolean?)null;
                             else

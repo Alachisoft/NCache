@@ -46,7 +46,8 @@ namespace Alachisoft.NCache.Common.ErrorHandling
             public const int CACHE_NOT_REGISTERED_ON_NODE = 10011;
             public const int CACHE_ALREADY_RUNNING = 10012;
             public const int CACHE_ID_NOT_REGISTERED = 10013;
-            
+            public const int CONFIG_NOT_FOUND = 10014;
+
         }
         public class Licensing
         {
@@ -70,8 +71,9 @@ namespace Alachisoft.NCache.Common.ErrorHandling
             public const int EVALUATION_PERIOD_EXPIRED = 15017;
             public const int LICENSING_DLL_MISSING = 15018;
             public const int LICENSING_INFO_CORRUPTED = 15019;
-            public const int NCLICENSE_LOAD_FAILURE = 15020;
-
+            public const int NCLICENSE_LOAD_FAILURE = 15020; 
+            public const int UNREGISTERED_MACHINE =15021;
+	    public const int DATA_CORRUPTED = 15023;
         }
         public class Common
         {
@@ -89,6 +91,7 @@ namespace Alachisoft.NCache.Common.ErrorHandling
             public const int EMPTY_KEY = 17511;
             public const int DEPENDENCY_KEY_NOT_FOUND = 17512;
             public const int NOT_ENOUGH_ITEMS_EVICTED = 17513;
+            public const int VERSION_MISMATCH = 17514;
 
         }
         public class PubSub

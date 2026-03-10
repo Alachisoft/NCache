@@ -1,4 +1,4 @@
-//  Copyright (c) 2021 Alachisoft
+//  Copyright (c) 2026 Alachisoft
 //  
 //  Licensed under the Apache License, Version 2.0 (the "License");
 //  you may not use this file except in compliance with the License.
@@ -25,6 +25,7 @@ using Alachisoft.NCache.Common.Net;
 using Alachisoft.NCache.Common.Protobuf;
 using Alachisoft.NCache.Common.Threading;
 using Alachisoft.NCache.Common.Util;
+using Alachisoft.NCache.Licensing;
 using Alachisoft.NCache.Management.Statistics;
 using Alachisoft.NCache.Runtime.Caching;
 using Alachisoft.NCache.Runtime.Events;
@@ -39,9 +40,12 @@ using System.Threading;
 using System.Threading.Tasks;
 using System.Timers;
 using ConfigurationException = Alachisoft.NCache.Runtime.Exceptions.ConfigurationException;
-using EncryptionUtil = Alachisoft.NCache.Common.EncryptionUtil;
 using EventId = Alachisoft.NCache.Caching.EventId;
 using Exception = System.Exception;
+using Alachisoft.NCache.Common.Licensing;
+using System.Runtime.InteropServices;
+using Alachisoft.NCache.Common.Monitoring;
+using System.Linq;
 
 namespace Alachisoft.NCache.Client
 {
@@ -51,13 +55,10 @@ namespace Alachisoft.NCache.Client
         internal ClientConfiguration _clientConfig;
         private OnCommandRecieved _commandReieved = null;
         private OnServerLost _serverLost = null;
-       
-
-#if !DEVELOPMENT
         private delegate void OnNewHashmapRecieved(NewHashmap newHashmap, int bucketSize);
         private OnNewHashmapRecieved _onNewHashmapRecieved = null;
-#endif
-
+        private delegate void OnNewModuleHashmapRecieved(NewHashmap newHashmap, int bucketSize, bool isLuceneCache);
+        private OnNewModuleHashmapRecieved _onNewModuleHashmapRecieved = null;
         private delegate void OnNewSerializedMap(byte[] buffer);
         private OnNewSerializedMap _onNewSerializedMap = null;
 
@@ -79,7 +80,10 @@ namespace Alachisoft.NCache.Client
         }
         private int _connectionTimeout = 5000;
 
-        
+        private NewHashmap _moduleHashmap;
+        object _moduleHashmapUpdateMutex = new object();
+        private int _bucketSize;
+
         private bool _retryConnection = true;
         private DateTime _retryConnectionStartTime = DateTime.Now;
 
@@ -92,6 +96,7 @@ namespace Alachisoft.NCache.Client
 
         private int _operationTimeout = 90000;//default 90 sec.
         private Logs _logger = new Logs();
+
         public Logs Logger
         {
             get { return  _logger; }
@@ -129,7 +134,6 @@ namespace Alachisoft.NCache.Client
         private long _shutdownTimeout = 180;
 
         private MutableQueue<Address> connectionQueue = new MutableQueue<Address>();
-        private ThrottlingManager _throttleManager = new ThrottlingManager(100);
         private AddressUtil _addressUtil;
         private bool _isLocalAddress = false;
         private static IDictionary<string, long> _requestDic = new Dictionary<string, long>();
@@ -137,9 +141,23 @@ namespace Alachisoft.NCache.Client
         long _allowedRequests = 200000;
         private Runtime.Caching.ClientInfo _clientInfo;
         Latch _hashMapStatus = new Latch(HashMapStatus.UNINITIALIZE);
+        Latch _moduleHashMapStatus = new Latch(HashMapStatus.UNINITIALIZE);
         private InitCommand _command;
         private IDictionary<Address, ReconnectTask> _reconnectTasks = new Dictionary<Address, ReconnectTask>();
-        
+        private string _monitoringSessionId;
+        private string _cacheConfigId;
+        private bool _isInitialConnectUsingLoadBalancer = true;
+        private IPAddress _loadBalancerIP = null;
+        [ThreadStatic]
+        private static string _cacheStoreType;
+        private Hashtable _mappedServer = new Hashtable();
+internal ConnectivityStatus PoolConnectivityStatus
+        {
+            get
+            {
+                return _pool.FullyDisConnnected ? ConnectivityStatus.Disconnected : ConnectivityStatus.Connected;
+            }
+        }
         public bool IsPersistenceEnabled
         {
             get { return  _isPersistEnabled; }
@@ -174,8 +192,23 @@ namespace Alachisoft.NCache.Client
         {
             get { return  _operationTimeout; }
         }
-		
-		
+
+
+      
+
+        public string MonitoringSessionId
+        {
+            get { return _monitoringSessionId; }
+        }
+
+        public string CacheConfigId
+        {
+            get { return _cacheConfigId; }
+        }
+        public static string CacheStoreType
+        {
+            get { return _cacheStoreType; }
+        }
         internal Broker(RemoteCache cache,  CacheConnectionOptions cacheConnectionOptions, StatisticsCounter statsCol, Runtime.Caching.ClientInfo clientInfo)
             : this(cache, true, statsCol, cacheConnectionOptions)
         {
@@ -198,34 +231,7 @@ namespace Alachisoft.NCache.Client
         }
 
 
-        private void CheckPendingRequests(string cacheId)
-        {
-            long val = 0;
-            lock (_requestsLock)
-            {
-                if (_requestDic.ContainsKey(cacheId.ToLower()))
-                {
-                    _requestDic.TryGetValue(cacheId.ToLower(), out val);
-                    if (val >= 0)
-                    {
-                        if (val >= _allowedRequests)
-                        {
-                            throw new LicensingException("Clients running under DEV license cannot send more than 200,000 requests to remote cache.");
-                        }
-
-                        val += 1;
-                        _requestDic[cacheId.ToLower()] = val;
-
-                    }
-
-                }
-                else
-                {
-                    _requestDic.Add(cacheId.ToLower(), 1);
-                }
-
-            }
-        }
+      
         private Broker(RemoteCache cache, bool importHashMap, StatisticsCounter perfStatsColl, CacheConnectionOptions cacheConnectionOptions)
         {
             _bulkEventCallback = new WaitCallback(RaiseBulkEvent);
@@ -238,10 +244,11 @@ namespace Alachisoft.NCache.Client
             _operationTimeout = _clientConfig.ClientRequestTimeout;
             _connectionTimeout = _clientConfig.ConnectionTimeout;
             _connectionRetries = 3;
+            _connectionRetries = _clientConfig.ConnectionRetries;  
             _retryInterval = 3;
          
             _perfStatsColl = perfStatsColl;
-
+          
 
             int pid = AppUtil.CurrentProcess.Id;
             string instanceName = "Client." + cache.CacheId + "." + pid;
@@ -352,10 +359,13 @@ namespace Alachisoft.NCache.Client
                 }
 
 
+               
+                // Not needed here as the server activated with client-server licensing will throw licensing exception in case a free clien tries connect.
+
                 int conTimeout = _connectionRetries * (_connectionTimeout + _retryInterval);
                 if (conTimeout > 0) _connectionMutexTimeout = conTimeout;
                 if (_operationTimeout < 60000) _operationTimeout = 60000; //minimum timeout is 60 seconds.
-
+                _port = _clientConfig.ServerPort;
                 _connection = new Connection(this, _commandReieved, _serverLost, _logger, _perfStatsColl, _responseIntegrator, _clientConfig.BindIP, this._cacheId);
 
                 ServerInfo remoteServer = new ServerInfo(server, port);
@@ -424,8 +434,6 @@ namespace Alachisoft.NCache.Client
                             _logger.NCacheLog.Error("Broker.StartServices", "Problem occured while starting 'ConnectionKeepAlive'" + ex.ToString());
                     }
                 }
-
-                // Console.WriteLine("EnablePipelining: "+ _clientConfig.EnablePipelining);
                
             }
             catch(Exception)
@@ -436,6 +444,30 @@ namespace Alachisoft.NCache.Client
         }
 
         ConnectionKeepAlive _connectionPinger;
+
+        public ServerInfo GetMappedServer(string ip, int port = 9800)
+        {
+            ServerInfo mapping = null;
+
+            ServerInfo mappingServer = new ServerInfo(ip, port);
+
+            if (_mappedServer != null || _mappedServer.Count != 0)
+            {
+                foreach (ServerInfo rm in _mappedServer.Keys)
+                {
+                    if (rm.Equals(mappingServer))
+                    {
+                        mapping = (ServerInfo)_mappedServer[rm];
+                        break;
+                    }
+                }
+            }
+            //Incase the map is null the method will return the original IP and Port
+            if (mapping == null)
+                mapping = mappingServer;
+
+            return mapping;
+        }
 
         private void InitializeLogs(bool enable_logs, bool detailed_logs)
         {
@@ -455,8 +487,26 @@ namespace Alachisoft.NCache.Client
                 {
                     localLogger.NCacheLog.SetLevel("criticalinfo");
                 }
+                string version = null;
+                try
+                {
+                    if (AppUtil.IsNuGetOnlyInstallation)
+                    {
+                        version = Common.Monitoring.Version.GetVersionForNuGet();
+                    }
+                    else
+                    {
+                        version = Common.Monitoring.Version.GetVersion();
+                    }
+                }
+                catch (Exception)
+                {
 
-                localLogger.NCacheLog.Info("Broker.InitializeLogs", "PID :" + pid + " ClientID : " + _cache.ClientID);
+                    version = "Null";
+                }
+
+
+                localLogger.NCacheLog.Info("Broker.InitializeLogs", "NCache Version : " + version + "PID :" + pid + " ClientID : " + _cache.ClientID);
                 _logger = localLogger;
             }
             else
@@ -481,8 +531,8 @@ namespace Alachisoft.NCache.Client
         private int _poolSize;
         private bool _connectionRectified;
         private Thread _dedicatedWriter;
+        private bool _isModuleCache = true;
 
-   
         private Alachisoft.NCache.Persistence.EventType ConvertEventType(EventInfo.EventType protoEventType)
         {
             switch (protoEventType)
@@ -511,31 +561,46 @@ namespace Alachisoft.NCache.Client
 
         internal void InitializeCache(Connection connection, IPAddress address, int port, bool balanceNodes)
         {
-            _command = new InitCommand(_cache.ClientID, _cacheId, connection.GetClientLocalIP(), connection.Address, _clientInfo, _operationTimeout);
+           
+            _command = new InitCommand(_cache.ClientID, _cacheId, connection.Address, _clientInfo, _operationTimeout);
+           
             Request request = new Request(false, _operationTimeout);
             request.AddCommand(connection.ServerAddress, _command);
+
+            if (_logger != null && _logger.IsErrorLogsEnabled)
+            {
+                _logger.NCacheLog.CriticalInfo("Broker.InitializeCache", $"disposed: {_isDisposing} {connection.ServerAddress} isOptimziedFlag: {connection.Optimized} ");
+            }
+
             ExecuteRequest(request, connection, false, false);
+
             connection.Optimized = true;
             CommandResponse res = connection.RecieveCommandResponse();
+            if (_logger != null && _logger.IsErrorLogsEnabled)
+            {
+                _logger.NCacheLog.CriticalInfo("Broker.SecureConnectionIfEnabled", $"{connection.ServerAddress} isOptimziedFlag: {connection.Optimized}: server: {res.SecureConnectionEnabled}");
+            }
 
             switch (res.CacheType)
             {
+                case "local-cache":
+                    this._balanceNode = false;
+                    this._importHashmap = false;
+                    break;
                 case "mirror-server":
                     this._balanceNode = false;
                     this._importHashmap = false;
                     break;
 
-                case "local-cache":
-                    this._balanceNode = false;
+                case "replicated-server":
                     this._importHashmap = false;
-
-                    break;                
+                    break;
             }
             
             connection.RequestInquiryEnabled = res.RequestInquiryEnabled;
             if (res != null)
                 res.ParseResponse();
-
+            
 
             if (res.ProtobufResponse.initCache.isShutDownProcessEnabled)
             {
@@ -552,9 +617,10 @@ namespace Alachisoft.NCache.Client
                     }
                 }
             }
+            _monitoringSessionId = res.ProtobufResponse.initCache.monitoringSessionId;
+            _cacheConfigId = res.ProtobufResponse.initCache.cacheConfigId;
+            _cacheStoreType = res.ProtobufResponse.initCache.cacheStoreType;
         }
-
-    
 
         internal void GetLoggingInfo(Connection connection)
         {
@@ -585,7 +651,6 @@ namespace Alachisoft.NCache.Client
 
         internal void GetHashmap(Connection connection)
         {
-#if !DEVELOPMENT
             GetHashmapCommand command = new GetHashmapCommand();
             Request request = new Request(false, _operationTimeout);
             Address ipAddress = connection == null ? _connection.ServerAddress : connection.ServerAddress;
@@ -617,12 +682,12 @@ namespace Alachisoft.NCache.Client
             if (this._onNewHashmapRecieved == null) this._onNewHashmapRecieved = new OnNewHashmapRecieved(NewHashmapRecieved);
             this._onNewHashmapRecieved.BeginInvoke(hashmap, res.BucketSize, new AsyncCallback(NewHashmapRecievedCompleted), null);
 #elif NETCORE
-            //TODO: ALACHISOFT (BeginInvoke is not supported in .Net Core thus using TaskFactory)
             TaskFactory factory = new TaskFactory();
             Task task = factory.StartNew(NewHashmapRecieved, new { BucketSize = res.BucketSize, NewHashmap = hashmap });
 #endif
-#endif
         }
+        
+        
 
         public bool IsConnected
         {
@@ -804,6 +869,7 @@ namespace Alachisoft.NCache.Client
                 case Response.Type.COUNT:
                 case Response.Type.REGISTER_NOTIF:
                 case Response.Type.GET_OPTIMAL_SERVER:
+                case Response.Type.GET_SERVER_IDENTITY:
                 case Response.Type.GET_ENUMERATOR:
                 case Response.Type.ADD_BULK:
                 case Response.Type.INSERT_BULK:
@@ -863,7 +929,7 @@ namespace Alachisoft.NCache.Client
                 case Response.Type.PING:
                 case Response.Type.MESSAGE_COUNT:
                 case Response.Type.GET_SERIALIZATION_FORMAT:
-				case Response.Type.MODULE:
+                case Response.Type.MODULE:
                     ProcessRawResponse(request, response, remoteServerAddress);
                     break;
                 case Response.Type.SURROGATE:
@@ -1012,9 +1078,8 @@ namespace Alachisoft.NCache.Client
                     break;
 
                 case Response.Type.HASHMAP_CHANGED_EVENT:
-                    ThreadPool.QueueUserWorkItem(new WaitCallback(UpdateHashmapAsync), response.Value);
+                    ThreadPool.QueueUserWorkItem(new WaitCallback(UpdateHashmapAsync), response.NewMap);
                     break;
-
                 case Response.Type.CONFIG_MODIFIED_EVENT:
                     break;
 
@@ -1409,18 +1474,29 @@ namespace Alachisoft.NCache.Client
             catch (Exception ex)
             { }
         }
-        private void UpdateHashmapAsync(object state)
+        private void UpdateHashmapAsync(object newHashmap)
         {
-            byte[] serializedMap = state as byte[];
             try
             {
-#if !DEVELOPMENT
-                if (serializedMap != null)
+                NewHashmapRecieved(newHashmap as NewHashmap);
+            }
+            catch (Exception e)
+            {
+                try
                 {
-                    NewHashmap map = NewHashmap.Deserialize(serializedMap, this._cacheId);
-                    NewHashmapRecieved(map);
+                    if (_logger.IsErrorLogsEnabled) _logger.NCacheLog.Error("Broker.UpdateHashmapAsync", "An error occurred while installing updated hashmap. Error :" + e.ToString());
                 }
-#endif
+                catch (Exception) { }
+            }
+        }
+
+        private void UpdateModuleHashmapAsync(object state)
+        {
+            var map = state as NewHashmap;
+            try
+            {
+                NewModuleHashmapRecieved(map);
+
             }
             catch (Exception e)
             {
@@ -1437,7 +1513,6 @@ namespace Alachisoft.NCache.Client
             byte[] serializedMap = state as byte[];
             try
             {
-#if !DEVELOPMENT
                 if (serializedMap != null)
                 {
                     Hashtable updatedCompactTypesConfigFromByteBuffer = CompactBinaryFormatter.FromByteBuffer(serializedMap, this._cacheId) as Hashtable;
@@ -1453,6 +1528,7 @@ namespace Alachisoft.NCache.Client
                         IDictionaryEnumerator ide = updatedCompactTypes.GetEnumerator();
                         while (ide.MoveNext())
                         {
+                            //Numan Hanif: Code change for handling Non Compact Fields in Compact Serilization context
                             Hashtable handleNonCompactFields = (Hashtable)ide.Value;
                             short typeHandle = (short)handleNonCompactFields["handle"];
                             Hashtable nonCompactFields = null;
@@ -1476,7 +1552,6 @@ namespace Alachisoft.NCache.Client
                         }
                     }
                 }
-#endif
             }
             catch (Exception e)
             {
@@ -1550,7 +1625,7 @@ namespace Alachisoft.NCache.Client
                         this._lock.AcquireWriterLock(Timeout.Infinite);
                         isReleaseLock = true;
 
-                        this._connection.StatusLatch.SetStatusBit(ConnectionStatus.Connecting | ConnectionStatus.LoadBalance, ConnectionStatus.Connected | ConnectionStatus.Disconnected);
+                        this._connection.UpdateConnnectionStatus(ConnectionStatus.Connecting | ConnectionStatus.LoadBalance, ConnectionStatus.Connected | ConnectionStatus.Disconnected);
                         int totalTimeToWait = _operationTimeout;
                         int timeSlice = 2000;
                         int nextInterval = NextWaitInterval(ref totalTimeToWait, timeSlice);
@@ -1579,7 +1654,7 @@ namespace Alachisoft.NCache.Client
 
 
                         ResetBroker(this._serverIP);
-                        _connection.StatusLatch.SetStatusBit(ConnectionStatus.Connecting, ConnectionStatus.LoadBalance);
+                        _connection.UpdateConnnectionStatus(ConnectionStatus.Connecting, ConnectionStatus.LoadBalance);
                         _connection.Disconnect();
                         Thread.Sleep(5000);
                         Exception exception = null;
@@ -1590,7 +1665,7 @@ namespace Alachisoft.NCache.Client
                             TryNextServer();
                         }
                         else
-                            this._connection.StatusLatch.SetStatusBit(ConnectionStatus.Connected, ConnectionStatus.Connecting);
+                            this._connection.UpdateConnnectionStatus(ConnectionStatus.Connected, ConnectionStatus.Connecting);
                     }
                     finally
                     {
@@ -1606,6 +1681,39 @@ namespace Alachisoft.NCache.Client
         }
 
         /// <summary>
+        /// Map conatins the running nodes map addresses so Members also only the running nodes
+        /// </summary>
+        /// <param name="map"></param>
+        /// <returns></returns>
+        private ArrayList FilterOutRunningNodesFromMap(Hashtable map)
+        {
+            ArrayList distinctAddress = new ArrayList();
+            foreach (DictionaryEntry item in map)
+            {
+                var address = (string)item.Value;
+                if (!distinctAddress.Contains(address))
+                {
+                    distinctAddress.Add(address);
+                }
+            }
+            return distinctAddress;
+        }
+
+        private NewHashmap SetMappedServerAddress(NewHashmap newHashmap)
+        {
+            ServerInfo srvr = new ServerInfo();
+            string add = null;
+            for (int key = 0; key < newHashmap.Map.Count; key++)
+            {
+                add = (string)newHashmap.Map[key];
+
+                srvr = _clientConfig.GetMappedServer(add);
+                newHashmap.Map[key] = new Address(srvr.Name, srvr.Port);
+            }
+            return newHashmap;
+        }
+
+        /// <summary>
         /// New hashmap recieved. 
         /// </summary>
         /// <param name="buffer"></param>
@@ -1617,22 +1725,7 @@ namespace Alachisoft.NCache.Client
         }
 #if !DEVELOPMENT
 
-#if !NETCORE
-        /// <summary>
-        /// New hashmap recieved. Depending on new and old hashmap, some connections are
-        /// disposed and some new connections are formed(not always as in some cases only buckets have
-        /// transfered between servers). This method should be called asynchronously so the recieve thread
-        /// will be free to recieve other command responces.
-        /// </summary>
-        /// <param name="newHashmap">new hashmap returned from primary server</param>
-        /// <param name="bucketSize">bucket size</param>
-        private void NewHashmapRecieved(NewHashmap newHashmap, int bucketSize)
-        {
-            if (newHashmap == null) return;
-            this._pool.BucketSize = bucketSize;
-            NewHashmapRecieved(newHashmap);
-        }
-#elif NETCORE
+#if NETCORE
         private void NewHashmapRecieved(object args)
         {
             dynamic arguments = args;
@@ -1640,7 +1733,59 @@ namespace Alachisoft.NCache.Client
             this._pool.BucketSize = arguments.BucketSize;
             NewHashmapRecieved(arguments.NewHashmap);
         }
+
+        private void NewModuleHashMapReceived(object args)
+        {
+            dynamic arguments = args;
+            this._isModuleCache = arguments.IsLuceneCache;
+            if (!arguments.IsLuceneCache) return;
+            if (arguments.NewHashmap == null) return;
+            this._bucketSize = arguments.BucketSize;
+            NewModuleHashmapRecieved(arguments.NewHashmap);
+        }
 #endif
+
+        /// <summary>
+        /// New hashmap recieved. Just save the module map
+        /// </summary>
+        /// <param name="newHashmap">new hashmap returned from primary server</param>
+        /// <param name="bucketSize">bucket size</param>
+        private void NewModuleHashmapRecieved(NewHashmap newHashmap)
+        {
+            if (newHashmap == null) return;
+
+            try
+            {
+                this._hashMapStatus.WaitForAny(HashMapStatus.INITIALIZE);
+                //we are acquring this lock first to avoid deadlock caused during connection establishment with new servers
+                this._lock.AcquireWriterLock(Timeout.Infinite);
+
+                lock (_moduleHashmapUpdateMutex)
+                {
+                    if (_logger.IsDetailedLogsEnabled)
+                    {
+                        _logger.NCacheLog.Debug("Broker.NewModuleHashmapReceived", "Module Hashmap " + newHashmap.ToString());
+                    }
+                    // We are only updating the Members with running nodes, ClusterMember consist of all cluster nodes.
+                    newHashmap.Members = FilterOutRunningNodesFromMap(newHashmap.Map);
+                    newHashmap = SetMappedServerAddress(newHashmap);
+                    this._moduleHashmap = newHashmap;
+                    this._moduleHashMapStatus.SetStatusBit(HashMapStatus.INITIALIZE, HashMapStatus.UNINITIALIZE);
+                    if (_logger.IsDetailedLogsEnabled)
+                    {
+                        _logger.NCacheLog.Debug("Broker.NewModuleHashmapReceived", "Module Hashmap applied " + newHashmap.ToString());
+                    }
+                }
+            }
+            catch (Exception exc)
+            {
+                if (_logger.IsErrorLogsEnabled) _logger.NCacheLog.Error("Broker.NewModuleHashmapRecieved", exc.Message);
+            }
+            finally
+            {
+                this._lock.ReleaseWriterLock();
+            }
+        }
 
         /// <summary>
         /// New hashmap recieved. Depending on new and old hashmap, some connections are
@@ -1688,17 +1833,22 @@ namespace Alachisoft.NCache.Client
                                 return;
                             }
                         }
-
                         if (_clientConfig.IPMappingConfigured)
                         {
-                            this.GetServerMapping(null, false);
+                            _clientConfig.UpdateMappedServers(newHashmap.ServerMapping, _port);
+
+                            if (_logger != null && _logger.NCacheLog != null && newHashmap.ServerMapping.Count > 0)
+                            {
+                                _logger.NCacheLog.CriticalInfo("Broker.NewHashmapReceived", "Server Mapping: " + string.Join(", ", newHashmap.ServerMapping.Cast<DictionaryEntry>().Select(entry => $"{entry.Key}: {entry.Value}")));
+                            }
+
                         }
+
                         for (int i = 0; i < newHashmap.Members.Count; i++)
                         {
                             string ip = (string)newHashmap.Members[i];
                             int serverPort = this._port;
 
-                            //+MOiz: Azure remote client task
                             if (_clientConfig.IPMappingConfigured)
                             {
                                 ServerInfo server = _clientConfig.GetMappedServer(ip, serverPort);
@@ -1706,7 +1856,6 @@ namespace Alachisoft.NCache.Client
                                 serverPort = server.Port;
                                 newHashmap.Members[i] = ip + ":" + serverPort.ToString();
                             }
-                            //-MOiz
 
                             Address addr = new Address(ip, serverPort);
 
@@ -1723,7 +1872,6 @@ namespace Alachisoft.NCache.Client
 
                                     if (ConnectRemoteServer(connection, address, serverPort, false, false, false, ref exception))
                                     {
-                                        this._pool.Add(addr, connection);
                                         this._clientConfig.AddServer(new ServerInfo(address, serverPort));
                                         if (_logger.IsDetailedLogsEnabled) _logger.NCacheLog.Debug("Broker.NewHashmapRecieved", "Connection made to " + ip + ", and added to pool");
                                     }
@@ -1734,6 +1882,9 @@ namespace Alachisoft.NCache.Client
                                             _logger.NCacheLog.Error("Broker.NewHashmapRecieved", "Could not connect to " + ip + ". " + exception.ToString());
                                         }
                                     }
+                                    if (_clientConfig.ConnectUsingLoadBalancer)
+                                        connection.ServerAddress = addr;
+                                    this._pool.Add(addr, connection);
                                 }
                                 catch (SecurityException sxc)
                                 {
@@ -1743,11 +1894,7 @@ namespace Alachisoft.NCache.Client
                                 {
                                     if (_logger.IsErrorLogsEnabled) _logger.NCacheLog.Error("Broker.StartServices", ex.ToString());
                                 }
-                                catch(LicensingException ex)
-                                {
-
-                                    if (_logger.IsErrorLogsEnabled) _logger.NCacheLog.Error("Broker.StartServices", ex.ToString());
-                                }
+                              
                                 catch (Exception exc)
                                 {
                                     this._pool.Add(addr, connection);
@@ -1887,7 +2034,40 @@ namespace Alachisoft.NCache.Client
             this._onNewHashmapRecieved.EndInvoke(result);
 #endif
         }
-        
+
+#if !NETCORE
+        /// <summary>
+        /// New hashmap recieved. Depending on new and old hashmap, some connections are
+        /// disposed and some new connections are formed(not always as in some cases only buckets have
+        /// transfered between servers). This method should be called asynchronously so the recieve thread
+        /// will be free to recieve other command responces.
+        /// </summary>
+        /// <param name="newHashmap">new hashmap returned from primary server</param>
+        /// <param name="bucketSize">bucket size</param>
+        private void NewHashmapRecieved(NewHashmap newHashmap, int bucketSize)
+        {
+            if (newHashmap == null) return;
+            this._pool.BucketSize = bucketSize;
+            NewHashmapRecieved(newHashmap);
+        }
+
+        /// <summary>
+        /// New hashmap recieved. 
+        /// We will hold the newHashmap for module client.
+        /// </summary>
+        /// <param name="newHashmap">new hashmap returned from primary server</param>
+        /// <param name="bucketSize">bucket size</param>
+        /// <param name="isLuceneCache">Is cache is enabled Lucene</param>
+        private void NewModuleHashmapRecieved(NewHashmap newHashmap, int bucketSize, bool isLuceneCache)
+        {
+            this._isModuleCache = isLuceneCache;
+            if (!isLuceneCache) return;
+            if (newHashmap == null) return;
+            this._bucketSize = bucketSize;
+            NewModuleHashmapRecieved(newHashmap);
+        }
+#endif
+
         internal bool GetKeysDistributionMap(string[] keys, CacheItem[] items,
             ref Dictionary<Address, KeyValuePair<string[], CacheItem[]>> keysDistributionMap)
         {
@@ -2397,7 +2577,10 @@ namespace Alachisoft.NCache.Client
 
                         try
                         {
-                            
+                            if (command.SupportsSurrogation)
+                            {
+                                command = GetSurrogateCommand(request, command, connection, ip);
+                            }
                             SendCommand(connection, command, true, false);
                         }
                         catch (ActivityBlockedException ex)
@@ -2406,10 +2589,19 @@ namespace Alachisoft.NCache.Client
                                 throw new OperationFailedException(ErrorCodes.Common.ENUMERATION_MODIFIED, ErrorMessages.GetErrorMessage(ErrorCodes.Common.ENUMERATION_MODIFIED));
                             if (!command.IsInternalCommand)
                             {
-                                bool dedicatedResend = RetrySendBulkCommand(command);
-                                //if resent as dedicated command, no need to execute remaining commands
-                                if (dedicatedResend)
-                                    break;
+                                if (command.SupportsSurrogation)
+                                {
+                                    connection = VerifyServerConnectivity(ip, true);
+                                    command = GetSurrogateCommand(request, command, connection, ip);
+                                    SendCommand(connection, command, true, true);
+                                }
+                                else
+                                {
+                                    bool dedicatedResend = RetrySendBulkCommand(command);
+                                    //if resent as dedicated command, no need to execute remaining commands
+                                    if (dedicatedResend)
+                                        break;
+                                }
                             }
                             else throw new InternalCommandException(ex.Message, ex);
                         }
@@ -2420,12 +2612,10 @@ namespace Alachisoft.NCache.Client
                                 throw new OperationFailedException(ErrorCodes.Common.ENUMERATION_MODIFIED, ErrorMessages.GetErrorMessage(ErrorCodes.Common.ENUMERATION_MODIFIED));
                             if (!command.IsInternalCommand)
                             {
-                                
-                                    bool dedicatedResend = RetrySendBulkCommand(command);
-                                    //if resent as dedicated command, no need to execute remaining commands
-                                    if (dedicatedResend)
-                                        break;
-                                
+                                bool dedicatedResend = RetrySendBulkCommand(command);
+                                //if resent as dedicated command, no need to execute remaining commands
+                                if (dedicatedResend)
+                                    break;
                             }
                             else throw new InternalCommandException(ex.Message, ex);
                         }
@@ -2439,7 +2629,6 @@ namespace Alachisoft.NCache.Client
                         }
                     }
                 }
-
                 if (waitForResponse)
                 {
                     bool reacquiredLock = true;
@@ -2455,7 +2644,20 @@ namespace Alachisoft.NCache.Client
                             if (request.IsAsync)
                                 break;
 
-                   
+                            List<KeyValuePair<Address, CommandBase>> failedSendCommands = request.GetSendFailureCommands();
+                            if (failedSendCommands != null)
+                            {
+                                request.RemoveResponse(failedSendCommands);
+
+                                if (request.IsBulk)
+                                {
+                                    RetryBulkRequest(failedSendCommands);
+                                }
+                                else
+                                {
+                                    RetryNonBulkRequest(failedSendCommands);
+                                }
+                            }
 
                             if (request.IsCompleteResponseReceived)
                             {
@@ -2495,8 +2697,14 @@ namespace Alachisoft.NCache.Client
                                     continue;
                                 timeout = Convert.ToInt32(request.RequestTimeout) -
                                           (int)((System.DateTime.Now.Ticks - 621355968000000000) / 10000 - startTime);
-                                if (!request.IsCompleteResponseReceived && timeout > 0) // fix for non-negative value exception
-                                    reacquiredLock = Monitor.Wait(request, timeout);
+
+                                if (!request.IsCompleteResponseReceived)
+                                {
+                                    if (timeout > 0)
+                                        reacquiredLock = Monitor.Wait(request, timeout);
+                                    else
+                                        throw new OperationFailedException(request.TimeoutMessage);
+                                }
 
                                 if (!reacquiredLock)
                                 {
@@ -2552,8 +2760,29 @@ namespace Alachisoft.NCache.Client
                 requestModerator.UnRegisterRequest(request.RequestId);
             }
         }
-		
-		
+
+        private CommandBase GetSurrogateCommand(Request request, CommandBase command, Connection connection, Address actualTargetNode)
+        {
+            SurrogateCommand surrogateCommand = null;
+            if (command is SurrogateCommand)
+            {
+                //unregister old surrogate command
+                surrogateCommand = command as SurrogateCommand;
+                request.RemoveSurrogateCommand(connection.ServerAddress, surrogateCommand.ActualTargetNode);
+                command = surrogateCommand.WrappedCommand;
+            }
+
+            if (command.SupportsSurrogation && connection != null && !connection.ServerAddress.Equals(actualTargetNode))
+            {
+                surrogateCommand = new SurrogateCommand(command, actualTargetNode);
+                request.AddSurrogateCommand(surrogateCommand, connection.ServerAddress);
+                command = surrogateCommand;
+            }
+
+            return command;
+        }
+
+
         private void RetrySafeCommand(Request request, IEnumerable<CommandBase> failedCommands)
         {
             request.ClearResponses();
@@ -2777,7 +3006,7 @@ namespace Alachisoft.NCache.Client
                 connection = _connection;
             }
 
-            SendCommand(connection, command, true, waitUntilSend);
+                SendCommand(connection, command, true, waitUntilSend);
         }
 
         internal void SendCommand(Connection connection, CommandBase command, bool checkConnected, bool waitUntilSend)
@@ -2790,11 +3019,11 @@ namespace Alachisoft.NCache.Client
             try
             {
                 DoSendCommand(connection, command, checkConnected, waitUntilSend);
-                if (_logger.IsDetailedLogsEnabled) _logger.NCacheLog.Debug("Broker.SendCommand", "RequestID : " + command.RequestId + " " + command.CommandName + " sent to server " + connection.IpAddress);
+                if (_logger.IsDetailedLogsEnabled) _logger.NCacheLog.Debug("Broker.SendCommand", "RequestID : " + command.RequestId + " " + command.CommandName + " sent to server " + connection.ServerAddress);
             }
             catch (OperationFailedException e)
             {
-                if (_logger.IsErrorLogsEnabled) _logger.NCacheLog.Error("Broker.SendCommand", "RequestID :" + command.RequestId + " " + command.CommandName + " can not sent to server " + connection.IpAddress + " " + e.ToString());
+                if (_logger.IsErrorLogsEnabled) _logger.NCacheLog.Error("Broker.SendCommand", "RequestID :" + command.RequestId + " " + command.CommandName + " can not sent to server " + connection.ServerAddress + " " + e.ToString());
 
                 throw;
             }
@@ -2804,7 +3033,7 @@ namespace Alachisoft.NCache.Client
             }
             catch (Exception e)
             {
-                if (_logger.IsErrorLogsEnabled) _logger.NCacheLog.Error("Broker.SendCommand", "RequestID :" + command.RequestId + " " + command.CommandName + " can not sent to server " + connection.IpAddress + " " + e.ToString());
+                if (_logger.IsErrorLogsEnabled) _logger.NCacheLog.Error("Broker.SendCommand", "RequestID :" + command.RequestId + " " + command.CommandName + " can not sent to server " + connection.ServerAddress + " " + e.ToString());
                 throw new OperationFailedException(e.Message, e);
             }
         }
@@ -2948,16 +3177,14 @@ namespace Alachisoft.NCache.Client
                 //secure-communication path as isolated it can be from the old communication path.
                 if (!connection.Optimized)
                 {
-                  
                         
-                        connection.AssureSendDirect(command.ToByte(acknowledgement, connection.RequestInquiryEnabled), connection.PrimaryClientSocket, checkConnected);
+                    connection.AssureSendDirect(command.ToByte(acknowledgement, connection.RequestInquiryEnabled), connection.PrimaryClientSocket, checkConnected);
                     
                 }
                 else if (command is InitSecondarySocketCommand)
                 {
-                   
-                        connection.AssureSendDirect(command.ToByte(acknowledgement, connection.RequestInquiryEnabled), connection.SecondaryClientSocket, checkConnected);
-                   
+                    connection.AssureSendDirect(command.ToByte(acknowledgement, connection.RequestInquiryEnabled), connection.SecondaryClientSocket, checkConnected);
+                    
                 }
                 else
                 {
@@ -3160,7 +3387,7 @@ namespace Alachisoft.NCache.Client
                 {
                     this._cache.ReRegisterGeneralNotification(selected);
 
-                    //[Ata] No need, it would already be registered when 
+                    //No need, it would already be registered when 
                     //connection is created
 
                     selected.NotifRegistered = true;
@@ -3235,7 +3462,7 @@ namespace Alachisoft.NCache.Client
                     {
                         if (!this._connection.IsConnected)
                         {
-                            this._connection.StatusLatch.SetStatusBit(ConnectionStatus.Connecting, ConnectionStatus.Connected | ConnectionStatus.Disconnected);
+                            this._connection.UpdateConnnectionStatus(ConnectionStatus.Connecting, ConnectionStatus.Connected | ConnectionStatus.Disconnected);
 
                             if (_clientConfig == null)
                                 _clientConfig = new ClientConfiguration(_cacheId);
@@ -3259,12 +3486,24 @@ namespace Alachisoft.NCache.Client
                             {
                                 if (!_clientConfig.BalanceNodes)
                                     _clientConfig.CurrentServerIndex = 0;
-                                ServerInfo nextServer = _clientConfig.NextServer;
+                                ServerInfo nextServer = null;
+
+                                nextServer = _clientConfig.NextServer;
                                 startingServer = nextServer;
                                 bool triedWithParamPort = true;
                                 while (!connected)
                                 {
                                     if (nextServer == null) break;
+                                    if (_clientConfig.ConnectUsingLoadBalancer && !_isInitialConnectUsingLoadBalancer && nextServer.IsLoadBalancer)
+                                    {
+                                        nextServer = _clientConfig.NextServer;
+
+                                        if (startingServer.IsLoadBalancer)
+                                            startingServer = nextServer;
+
+                                        continue;
+                                    }
+
                                     if (nextServer.IP != null)
                                     {
                                         for (int i = 0; i < nextServer.PortRange; i++)
@@ -3276,7 +3515,6 @@ namespace Alachisoft.NCache.Client
                                                     Exception exception = null;
                                                     connected = ConnectRemoteServer(this._connection, nextServer.IP,
                                                         nextServer.Port + i, this._balanceNode, this._importHashmap, true, ref exception);
-
                                                 }
                                                 if (connected)
                                                 {
@@ -3330,7 +3568,7 @@ namespace Alachisoft.NCache.Client
                                 continue;
                             }
                             else
-                                throw new ConfigurationException(ErrorCodes.CacheInit.SERVER_INFO_NOT_FOUND,ErrorMessages.GetErrorMessage(ErrorCodes.CacheInit.SERVER_INFO_NOT_FOUND));
+                                throw new ConfigurationException(ErrorCodes.CacheInit.SERVER_INFO_NOT_FOUND,ErrorMessages.GetErrorMessage(ErrorCodes.CacheInit.SERVER_INFO_NOT_FOUND, _cacheId));
                         }
                         else
                             connected = true;
@@ -3345,7 +3583,7 @@ namespace Alachisoft.NCache.Client
                 //set the connection status
                 byte setStatus = connected ? ConnectionStatus.Connected : ConnectionStatus.Disconnected;
                 byte unsetStatus = (byte)((!connected ? ConnectionStatus.Connected : ConnectionStatus.Disconnected) | ConnectionStatus.Connecting);
-                _connection.StatusLatch.SetStatusBit(setStatus, unsetStatus);
+                _connection.UpdateConnnectionStatus(setStatus, unsetStatus);
 
                 _retryConnection = connected;
 
@@ -3367,9 +3605,10 @@ namespace Alachisoft.NCache.Client
                             if (!first)
                             {
                                 sb.Append(" ,");
-                                first = false;
+                             
                             }
                             sb.Append("\'" + ie.Current as string + "\'");
+                            first = false;
                         }
 
                         throw new SecurityException(sb.ToString());
@@ -3427,7 +3666,7 @@ namespace Alachisoft.NCache.Client
                 {
                     if (!connection.IsConnected)
                     {
-                        connection.StatusLatch.SetStatusBit(ConnectionStatus.Connecting,
+                        connection.UpdateConnnectionStatus(ConnectionStatus.Connecting,
                             ConnectionStatus.Connected | ConnectionStatus.Disconnected);
 
                         if (nextServer == null) break;
@@ -3493,9 +3732,9 @@ namespace Alachisoft.NCache.Client
             {
                 byte setStatus = connected ? ConnectionStatus.Connected : ConnectionStatus.Disconnected;
                 byte unsetStatus = (byte)((!connected ? ConnectionStatus.Connected : ConnectionStatus.Disconnected) | ConnectionStatus.Connecting);
-                connection.StatusLatch.SetStatusBit(setStatus, unsetStatus);
+                connection.UpdateConnnectionStatus(setStatus, unsetStatus);
 
-                _retryConnection = connected; //[KS : Connection is up again so we can retry ]
+                _retryConnection = connected;
 
                 _lock.ReleaseWriterLock();
 
@@ -3514,9 +3753,10 @@ namespace Alachisoft.NCache.Client
                             if (!first)
                             {
                                 sb.Append(" ,");
-                                first = false;
+                               
                             }
                             sb.Append("\'" + ie.Current as string + "\'");
+                            first = false;
                         }
 
                         throw new SecurityException(sb.ToString());
@@ -3558,6 +3798,12 @@ namespace Alachisoft.NCache.Client
         /// <returns>connection. it may be connected or disconnected</returns>
         private Connection GetConnection(Address ip, bool strictMatch)
         {
+            // this is for lucene cache 
+            if (_isModuleCache && ip != null)
+            {
+                ip.Port = _port;
+            }
+
             Connection connection = this._pool[ip];
             if (connection != null)
             {
@@ -3618,9 +3864,7 @@ namespace Alachisoft.NCache.Client
                 {
                     try
                     {
-
-
-                        connection.StatusLatch.SetStatusBit(ConnectionStatus.Connecting, ConnectionStatus.Connected | ConnectionStatus.Disconnected);
+                        connection.UpdateConnnectionStatus(ConnectionStatus.Connecting, ConnectionStatus.Connected | ConnectionStatus.Disconnected);
 
                         if (connectionWaitInterval > 0) Thread.Sleep(connectionWaitInterval);
 
@@ -3652,7 +3896,9 @@ namespace Alachisoft.NCache.Client
                     {
                         byte setStatus = connected ? ConnectionStatus.Connected : ConnectionStatus.Disconnected;
                         byte unsetStatus = (byte)((!connected ? ConnectionStatus.Connected : ConnectionStatus.Disconnected) | ConnectionStatus.Connecting);
-                        connection.StatusLatch.SetStatusBit(setStatus, unsetStatus);
+
+                       
+                            connection.UpdateConnnectionStatus(setStatus, unsetStatus);
                         _retryConnection = connected;
                     }
                 }
@@ -3693,23 +3939,46 @@ namespace Alachisoft.NCache.Client
             ServerInfo nextServer = _clientConfig.GetServerAt(index);
             ServerInfo startingServer = new ServerInfo(nextServer.IP.ToString(), nextServer.Port);
 
+            if (_clientConfig.ConnectUsingLoadBalancer)
+            {
+                if (startingServer.IsLoadBalancer)
+                {
+                    index++;
+                    nextServer = _clientConfig.GetServerAt(index);
+                    startingServer = nextServer;
+                }
+            }
+
             while (true && !_isDisposing)
             {
                 if (_clientConfig.ServerCount > 0 && index < _clientConfig.ServerCount)
                 {
-                    connection = this._pool[new Address(nextServer.IP.ToString(), nextServer.Port)];
+                    if (_clientConfig.ConnectUsingLoadBalancer)
+                    {
+                        while (nextServer != null && nextServer.IsLoadBalancer != false)
+                        {
+                            index++;
+                            nextServer = _clientConfig.GetServerAt(index);
+                        }
+
+                        if (nextServer != null)
+                            connection = this._pool[new Address(nextServer.IP.ToString(), nextServer.Port)];
+                    }
+                    else
+                    {
+                        connection = this._pool[new Address(nextServer.IP.ToString(), nextServer.Port)];
+                    }
+
 
                     if (connection != null && connection.IsConnected) break;
 
                     else if (connection != null && !connection.IsReconnecting)
                     {
                         ReconectInBackground(connection.ServerAddress, connection);
-                        //connection = null;
                     }
                     else
                     {
                         nextServer = _clientConfig.GetServerAt(++index);
-                        //   nextServer = _clientConfig.NextServer;
                         if (startingServer.Equals(nextServer)) break;
                     }
                 }
@@ -3731,15 +4000,43 @@ namespace Alachisoft.NCache.Client
                     if (_clientConfig.ServerCount > 0 && index < _clientConfig.ServerCount)
                     {
                         bool found = false;
-                        if (this._pool.Contains(new Address(nextServer.IP.ToString(), nextServer.Port)))
+                        if (_clientConfig.ConnectUsingLoadBalancer)
                         {
-                            connection = this._pool[new Address(nextServer.IP.ToString(), nextServer.Port)];
-                            found = true;
+                            while (true)
+                            {
+                                if (index >= _clientConfig.ServerCount || nextServer == null)
+                                    index = 0;
+                                if (startingServer.Equals(nextServer))
+                                    break;
+                                if (!nextServer.IsLoadBalancer)
+                                {
+                                    if (this._pool.Contains(new Address(nextServer.IP.ToString(), nextServer.Port)))
+                                    {
+                                        connection = this._pool[new Address(nextServer.IP.ToString(), nextServer.Port)];
+                                        found = true;
+                                        break;
+                                    }
+                                }
+
+                                index++;
+                                nextServer = _clientConfig.GetServerAt(index);
+                      
+                            }
+
                         }
                         else
                         {
-                            connection = new Connection(this, this._commandReieved, this._serverLost, this._logger, _perfStatsColl, _responseIntegrator, _clientConfig.BindIP, this._cacheId);
-                        }  
+                            if (this._pool.Contains(new Address(nextServer.IP.ToString(), nextServer.Port)))
+                            {
+                                connection = this._pool[new Address(nextServer.IP.ToString(), nextServer.Port)];
+                                found = true;
+                            }
+                            else
+                            {
+                                connection = new Connection(this, this._commandReieved, this._serverLost, this._logger, _perfStatsColl, _responseIntegrator, _clientConfig.BindIP, this._cacheId);
+                            }
+                        }
+
 
                         if (!connection.IsConnected)
                         {
@@ -3802,9 +4099,9 @@ namespace Alachisoft.NCache.Client
         }
 
   
-      
-
      
+
+      
 
         /// <summary>
         /// Try to connect with the server. The connection object will be used to connect with the ip
@@ -3820,7 +4117,52 @@ namespace Alachisoft.NCache.Client
         /// <returns>true if connecion is established, false otherwise</returns>
         private bool ConnectRemoteServer(Connection connection, IPAddress addr, int port, bool balanceNodes, bool importHashmap, bool registerNotifs, ref Exception exception)
         {
-            bool connected = connection.Connect(addr, port);
+            bool connected = false;
+            //Check from config if load balancer is enabled
+            string machineIp = string.Empty;        //Used in the case of load balancer
+            if (_clientConfig.ConnectUsingLoadBalancer)
+            {
+                int loadBalancerConnectionRetries = _clientConfig.LoadBalancerConnectionRetries;
+
+                if (_isInitialConnectUsingLoadBalancer)   //First time the ip will be of the load balancer
+                {
+                    _loadBalancerIP = addr;
+                    if (_logger != null && _logger.IsErrorLogsEnabled)
+                        _logger.NCacheLog.CriticalInfo("Boker.ConnectRemoteServer", $"setting loadbalancer ip:{_loadBalancerIP}");
+                }
+
+                string serverToConnect = connection.ServerAddress?.IpAddress?.ToString();
+
+                //This will compare the received address with the one we wanted to connect to. If they match proceed to connection to server
+                //Otherwise retry connection until we reach the service (correct machine) we want to contact
+                //This is because we don't know which machine the load balancer will throw us to.
+                while (loadBalancerConnectionRetries-- > 0 && (machineIp != addr.ToString() && machineIp != serverToConnect))
+                {
+                    connected = false;
+                    connection.Disconnect();
+                    connected = connection.Connect(_loadBalancerIP, port, true, _clientConfig.EnableNagling);      //use the IP of the load balancer to connect
+                    machineIp = GetIpOfConnectedMachine(connection);        //Send RPC command identify the machines Ip
+                    if (_logger != null && _logger.IsErrorLogsEnabled)
+                        _logger.NCacheLog.CriticalInfo("Boker.ConnectRemoteServer", $"connected through:{_loadBalancerIP}:{port}; actual server:{machineIp},desired server:{addr}");
+
+                    if (_isInitialConnectUsingLoadBalancer)  //If first time we can simply note down the server details and proceed to get port and connect to cache
+                    {
+                        break;
+                    }
+                }
+                if (loadBalancerConnectionRetries <= 0)
+                {
+                    connection.Disconnect();        //We were unable to connect to the right machine and the number retries are exhausted
+                    connected = false;
+                }
+                else
+                    connection.ServerAddress = new Address(machineIp, port);
+
+            }
+            else
+            {
+                connected = connection.Connect(addr, port, false, _clientConfig.EnableNagling);
+            }
             //remove old entry from message integrator if exist
             _responseIntegrator.RemoveServer(new Address(addr, port));
             if (connected)
@@ -3828,24 +4170,22 @@ namespace Alachisoft.NCache.Client
                 try
                 {
                     Dictionary<string, int> runningServers;
-#if !(DEVELOPMENT || PROF_DEV)
                     //Populating the server list at initialization time.
-                    if (_clientConfig.IPMappingConfigured)
-                    {
-                        GetServerMapping(connection, true);
-                    }
+                   
+                    GetServerMapping(connection, true);
+                    
                     // connect with cache host
-                    connected = ConnectWithCacheHost(connection, addr, port);
+                    connected = ConnectWithCacheHost(connection, addr, port, _loadBalancerIP, machineIp);
 
-                    if (balanceNodes)
+                    if (!_clientConfig.ConnectUsingLoadBalancer && balanceNodes)
                     {
                         CommandResponse response = IsOptimalServer(connection, addr, port);
+                        _clientConfig.UpdateMappedServers(response.OptimalServerPublicIp, response.ServerPort);
                         ServerInfo rm = _clientConfig.GetMappedServer(response.ServerIPAddress.ToString(), response.ServerPort);
 
                         if (response != null && (addr.ToString() != rm.Name || port != rm.Port))
                             connected = TryConnectTo(connection, rm);
                     }
-#endif
                     if (connected)
                     {
                         if (_logger.IsDetailedLogsEnabled)
@@ -3858,7 +4198,6 @@ namespace Alachisoft.NCache.Client
 
 
                         InitializeCache(connection, addr, port, balanceNodes);
-                      
                         if (connection.SupportDualSocket) InitializeSecondarySocket(connection, addr, port);
 
                         runningServers =  GetRunningServers(connection, addr, port);
@@ -3909,6 +4248,15 @@ namespace Alachisoft.NCache.Client
                     connected = false;
                     throw;
                 }
+                catch (OperationFailedException ex)
+                {
+                    connection.Disconnect();
+                    connected = false;
+                    if (ex.ErrorCode == ErrorCodes.Common.VERSION_MISMATCH)
+                    {
+                        throw;
+                    }
+                }
                 catch (Exception e)
                 {
                     if (_logger.IsErrorLogsEnabled) _logger.NCacheLog.Error("Broker.ConnectRemoteServer", e.ToString());
@@ -3931,12 +4279,27 @@ namespace Alachisoft.NCache.Client
                 _serverIP = connection.ServerAddress;
                 _port = connection.Port;
 
-                _pool.Add(connection.ServerAddress, connection);
+                if (_clientConfig.ConnectUsingLoadBalancer)  //Store actual Ip of machine in the case of load balancer
+                {
+                    connection.ServerAddress = new Address(machineIp, connection.ServerAddress.Port);
+                    _pool.Add(new Address(machineIp, connection.ServerAddress.Port), connection);
+
+                    bool isLoadBalancer = false;        //Machines added in the pool are the actual machines and not load balancers
+                    ServerInfo serverInfo = new ServerInfo(isLoadBalancer, machineIp, connection.ServerAddress.Port);
+                    serverInfo.IsUserProvided = true;
+                    _clientConfig.AddServer(serverInfo);
+                }
+                else
+                {
+                    _pool.Add(connection.ServerAddress, connection);
+                }
 
                 if (importHashmap)
                 {
                     GetHashmap(connection);
                 }
+
+
                 if (registerNotifs)
                 {
                     _cache.ReRegisterGeneralNotification(connection);
@@ -3946,6 +4309,9 @@ namespace Alachisoft.NCache.Client
                 {
                     _cache.RegisterHashmapChangedEvent(connection);
                 }
+
+                if (_isModuleCache)
+                    _cache.RegisterModuleHashmapChangedEvent(connection);
 
                 _cache.GetTypeInfoMap(connection);
                 _cache.GetSerializationFormat(connection);
@@ -3978,15 +4344,27 @@ namespace Alachisoft.NCache.Client
         {
             int mainPort = connection.Port;
             string mainIp = connection.IpAddress;
+            string ipOfMachineToConnect = connection.ServerAddress.IpAddress.ToString();        //This will be used for the case of load balancer
             bool mainDisconnected = false, connected = true;
 
             try
             {
                 connection.Disconnect();
                 mainDisconnected = true;
-                if (connected = connection.Connect(remoteServer.IpString, remoteServer.Port))
+
+                if (connected = connection.Connect(remoteServer.IpString, remoteServer.Port, _clientConfig.ConnectUsingLoadBalancer, _clientConfig.EnableNagling))
                 {
-                    connected = ConnectWithCacheHost(connection, remoteServer.IP, remoteServer.Port);
+                    string machineIp = string.Empty;
+                    if (_clientConfig.ConnectUsingLoadBalancer)
+                    {
+                        int retries = 20;
+                        //While using load balancer we need to make sure we are connected to the right machine
+                        while (retries-- > 0 && machineIp != ipOfMachineToConnect)
+                        {
+                            machineIp = GetIpOfConnectedMachine(connection);
+                        }
+                    }
+                    connected = ConnectWithCacheHost(connection, remoteServer.IP, remoteServer.Port, _loadBalancerIP, machineIp);
                 }
                 else
                 {
@@ -3997,8 +4375,21 @@ namespace Alachisoft.NCache.Client
 
                     try { connection.Disconnect(); } catch { }
 
-                    if (connected = connection.Connect(mainIp, mainPort))
-                        connected = ConnectWithCacheHost(connection, IPAddress.Parse(mainIp), mainPort);
+                    if (connected = connection.Connect(mainIp, mainPort, _clientConfig.ConnectUsingLoadBalancer, _clientConfig.EnableNagling))
+                    {
+                        string machineIp = string.Empty;
+                        if (_clientConfig.ConnectUsingLoadBalancer)
+                        {
+                            int retries = 20;
+                                                //While using load balancer we need to make sure we are connected to the right machine
+                            while (retries-- > 0 && machineIp != ipOfMachineToConnect)
+                            {
+                                machineIp = GetIpOfConnectedMachine(connection);
+                            }
+                        }
+
+                        connected = ConnectWithCacheHost(connection, IPAddress.Parse(mainIp), mainPort, _loadBalancerIP, machineIp);
+                    }
                     else
                         if (_logger.IsErrorLogsEnabled)
                             _logger.NCacheLog.Error("Broker.ConnectRemoteServer", "Unable to restoring connection to [" + mainIp.ToString() + ":" + mainPort + "]");
@@ -4012,8 +4403,21 @@ namespace Alachisoft.NCache.Client
                 {
                     try { connection.Disconnect(); } catch { }
 
-                    if (connected = connection.Connect(mainIp, mainPort))
-                        connected = ConnectWithCacheHost(connection, IPAddress.Parse(mainIp), mainPort);
+                    if (connected = connection.Connect(mainIp, mainPort, _clientConfig.ConnectUsingLoadBalancer, _clientConfig.EnableNagling))
+                    {
+                        string machineIp = string.Empty;
+                        if (_clientConfig.ConnectUsingLoadBalancer)
+                        {
+                            int retries = 20;
+                                                //While using load balancer we need to make sure we are connected to the right machine
+                            while (retries-- > 0 && machineIp != ipOfMachineToConnect)
+                            {
+                                machineIp = GetIpOfConnectedMachine(connection);
+                            }
+                        }
+
+                        connected = ConnectWithCacheHost(connection, IPAddress.Parse(mainIp), mainPort, _loadBalancerIP, machineIp);
+                    }
                     else
                         if (_logger.IsErrorLogsEnabled) _logger.NCacheLog.Error("Broker.ConnectRemoteServer", "Unable to restoring connection to ["
                             + mainIp + ":" + mainPort + "]");
@@ -4022,20 +4426,60 @@ namespace Alachisoft.NCache.Client
             return connected;
         }
 
-        private bool ConnectWithCacheHost(Connection connection, IPAddress address, int port)
+        private bool ConnectWithCacheHost(Connection connection, IPAddress address, int port, IPAddress loadBalancerIp, string machineIp = null)
         {
             bool connectedWithHost = true;
 
             // getting management port to transfer connection 
             int cachePort = GetCachePort(connection);
 
+            if (_logger != null && _logger.IsErrorLogsEnabled)
+                _logger.NCacheLog.CriticalInfo("Boker.ConnectWithCacheHost", $"cache is listening on port:{cachePort}");
             //.Net core does not support socket transfer from one process to other. In this case, client needs to directly connect to the cache host.
             //However for .net framework, service will transfer connection to the cache host.
             if (cachePort != port)
             {
                 connection.Disconnect(false);
+                if (!_clientConfig.ConnectUsingLoadBalancer)
+                    connectedWithHost = connection.SwitchTo(this, this._commandReieved, this._serverLost, this._logger, _perfStatsColl, _responseIntegrator, _clientConfig.BindIP, this._cacheId, address, cachePort, _clientConfig.ConnectUsingLoadBalancer, _clientConfig.EnableNagling);
+                else
+                {
+                    //Indicates a special case where a loader balancer is between client and server, so we retry until 
+                    //the load balancer throws us to the server we are trying to reach
 
-                connectedWithHost = connection.SwitchTo(this, this._commandReieved, this._serverLost, this._logger, _perfStatsColl, _responseIntegrator, _clientConfig.BindIP, this._cacheId, address, cachePort);
+                    int loadBalancerConnectionRetries = _clientConfig.LoadBalancerConnectionRetries;
+
+                    while (loadBalancerConnectionRetries-- > 0)
+                    {
+                        connectedWithHost = connection.SwitchTo(this, this._commandReieved, this._serverLost, this._logger, _perfStatsColl, _responseIntegrator, _clientConfig.BindIP, this._cacheId, loadBalancerIp, cachePort, _clientConfig.ConnectUsingLoadBalancer, _clientConfig.EnableNagling);
+
+                        if (connectedWithHost)
+                        {
+                            string connectedMachineIp = GetIpOfConnectedMachine(connection);
+                            if (_logger != null && _logger.IsErrorLogsEnabled)
+                                _logger.NCacheLog.CriticalInfo("Boker.ConnectWithCacheHost", $"connected with cachehost(port:{cachePort});actual server:{connectedMachineIp};desired server:{machineIp} ");
+
+                            if (connectedMachineIp == machineIp)
+                            {
+                                if (_isInitialConnectUsingLoadBalancer)
+                                {
+                                    _isInitialConnectUsingLoadBalancer = false;
+                                }
+
+                                break;              //We connected sucessfully to the machine we were trying to connect to
+                            }
+                        }
+                        else
+                        {
+                            if (_logger != null && _logger.IsErrorLogsEnabled)
+                                _logger.NCacheLog.Error("Boker.ConnectWithCacheHost", $"Could not connect with cachehost {machineIp} (port:{cachePort}); ");
+
+                            break;      //Error case: Connection could not be established (unable to connect to any host)
+                        }
+                    }
+                    if (loadBalancerConnectionRetries <= 0)
+                        connectedWithHost = false;      //We could not connect with the correct host in the configure retries
+                }
                 if (!connectedWithHost)
                 {
                     if (_logger.IsErrorLogsEnabled) _logger.NCacheLog.Error("Broker.ConnectWithCacheHost", "Failed to connect with cache host directly on port :" + cachePort);
@@ -4053,10 +4497,15 @@ namespace Alachisoft.NCache.Client
             ExecuteRequest(request, conn, false, false);
             CommandResponse runningServers = conn.RecieveCommandResponse();
 
+
             if (runningServers != null)
             {
                 runningServers.ParseResponse();
-                return runningServers.RunningServer;
+                if (_clientConfig.IPMappingConfigured)
+                    return runningServers.RunningServerPublicIp;
+
+                else
+                    return runningServers.RunningServer;
             }
 
             return null;
@@ -4086,7 +4535,7 @@ namespace Alachisoft.NCache.Client
                 {
                     serverMapRes.ParseResponse();
                 }
-                _clientConfig.AddMappedServers(serverMapRes.ServerMappingList);
+                _clientConfig.AddMappedServers(serverMapRes.ServerMappingList, connection);
 
             }
             catch (Exception exp)
@@ -4095,6 +4544,37 @@ namespace Alachisoft.NCache.Client
                 {
                     _logger.NCacheLog.Debug(exp.Message);
                 }
+            }
+
+        }
+
+        /// <summary>
+        /// This is used for the case of load balancer when server are behind a load balancer
+        /// This is used to get the actual IP of the server, something that is not visible if the machine
+        /// is behind a load balancer
+        /// </summary>
+        /// <param name="connection"></param>
+        /// <returns>The IP of the machine the client is connected to</returns>
+        private string GetIpOfConnectedMachine(Connection connection)
+        {
+            GetServerIdentityCommand command = new GetServerIdentityCommand();
+            CommandResponse IpResponse = null;
+            Request request = CreateRequest(command);
+
+            try
+            {
+                ExecuteRequest(request, connection, false, false);
+                IpResponse = connection.RecieveCommandResponse();
+                return IpResponse.MachineIp;
+
+            }
+            catch (Exception exp)
+            {
+                if (_logger.IsErrorLogsEnabled)
+                {
+                    _logger.NCacheLog.Error(exp.Message);
+                }
+                return string.Empty;
             }
 
         }
@@ -4438,8 +4918,5 @@ namespace Alachisoft.NCache.Client
                 }
             }
         }
-		
-	
-        
     }
 }

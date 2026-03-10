@@ -1,4 +1,4 @@
-﻿//  Copyright (c) 2021 Alachisoft
+﻿//  Copyright (c) 2026 Alachisoft
 //  
 //  Licensed under the Apache License, Version 2.0 (the "License");
 //  you may not use this file except in compliance with the License.
@@ -22,6 +22,9 @@ using Alachisoft.NCache.Runtime.Exceptions;
 using Alachisoft.NCache.Common.ErrorHandling;
 using System;
 using System.Collections.Generic;
+using Alachisoft.NCache.Common;
+using Alachisoft.NCache.Common.Monitoring.MetricsServer;
+using Alachisoft.NCache.Common.Monitoring;
 
 namespace Alachisoft.NCache.Client
 {
@@ -190,6 +193,7 @@ namespace Alachisoft.NCache.Client
                         if (!_cacheCollection.Contains(cacheIdWithAlias))
                         {
                             CacheImplBase cacheImpl = null;
+                            StatisticsCounter perfStatsCollector = null;
 
                             if (config != null && config.InProc)
                             {
@@ -241,25 +245,15 @@ namespace Alachisoft.NCache.Client
                                     try
                                     {
 
-                                        StatisticsCounter perfStatsCollector;
                                         if (ServiceConfiguration.PublishCountersToCacheHost)
-                                        {
                                             perfStatsCollector = new CustomStatsCollector(cacheName, false);
-                                            ClientConfiguration clientConfig = new ClientConfiguration(cacheName);
-                                            clientConfig.LoadConfiguration();
-                                            perfStatsCollector.StartPublishingCounters(clientConfig.BindIP);
-
-                                        }
                                         else
-                                        {
                                             perfStatsCollector = new PerfStatsCollector(cacheName, false);
-                                        }
 
-                                      
+
                                         primaryCache = new Cache(null, cacheName, perfStatsCollector);
 
-                                        cacheImpl = new RemoteCache(cacheName, primaryCache, cacheConnectionOptions, perfStatsCollector);
-                                        perfStatsCollector.InitializePerfCounters(false);
+                                        cacheImpl = new RemoteCache(cacheName, primaryCache, cacheConnectionOptions, perfStatsCollector);                                      
                                         primaryCache.CacheImpl = cacheImpl;
 
                                         break;
@@ -274,6 +268,35 @@ namespace Alachisoft.NCache.Client
 
                             if (primaryCache != null)
                             {
+                                if (!(config != null && config.InProc))
+                                {
+                                    perfStatsCollector.InitializePerfCounters(false);
+
+                                    if (!AppUtil.IsNuGetOnlyInstallation)
+                                    {
+                                        MetricsTransporterFactory transporterFactory = new MetricsTransporterFactory();
+
+                                        Common.Monitoring.MetricsPublisher metricsPublisher = new Common.Monitoring.MetricsPublisher(transporterFactory, cacheImpl);
+                                        perfStatsCollector.StatsPublisher = metricsPublisher;
+                                        try
+                                        {
+                                            MonitoringConfigManager monitoringConfigManager = new MonitoringConfigManager();
+                                            perfStatsCollector.Category = monitoringConfigManager.GetCategory(CategoriesConstants.NCacheClient);
+                                        }
+                                        catch (Exception ex)
+                                        {
+
+                                        }
+                                        ClientConfiguration clientConfig = new ClientConfiguration(cacheName);
+                                        clientConfig.LoadConfiguration();
+                                        perfStatsCollector.StartPublishingCounters(clientConfig.BindIP);
+
+                                        perfStatsCollector.RegisterOnMetricsPublisher();
+                                        metricsPublisher.SessionId = cacheImpl.MonitoringSessionId;
+                                        metricsPublisher.CacheConfigID = cacheImpl.CacheConfigId;
+                                        metricsPublisher.Initialize();
+                                    }
+                                }
                                 primaryCache.InitializeCompactFramework();
                                 _cacheCollection.AddCache(cacheIdWithAlias, primaryCache);
                                 primaryCache.InitializeEncryption();

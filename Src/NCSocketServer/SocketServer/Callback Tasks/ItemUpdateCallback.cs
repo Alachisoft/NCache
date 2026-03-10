@@ -1,4 +1,4 @@
-//  Copyright (c) 2021 Alachisoft
+//  Copyright (c) 2026 Alachisoft
 //  
 //  Licensed under the Apache License, Version 2.0 (the "License");
 //  you may not use this file except in compliance with the License.
@@ -15,7 +15,6 @@ using Alachisoft.NCache.Caching;
 using Alachisoft.NCache.Runtime.Events;
 using System.Collections.Generic;
 using System.Collections;
-
 
 namespace Alachisoft.NCache.SocketServer.CallbackTasks
 {
@@ -47,11 +46,14 @@ namespace Alachisoft.NCache.SocketServer.CallbackTasks
                 response.itemUpdatedCallback = Alachisoft.NCache.SocketServer.Util.EventHelper.GetItemUpdatedCallbackResponse(_eventContext, _key, _id, _dataFilter);
                 response.responseType = Alachisoft.NCache.Common.Protobuf.Response.Type.ITEM_UPDATED_CALLBACK;
 
-                IList serializedResponse = Alachisoft.NCache.Common.Util.ResponseHelper.SerializeResponse(response,Common.Protobuf.Response.Type.ITEM_UPDATED_CALLBACK);
+                IList serializedResponse = clientManager.ResponseBuilder.BuildResponse(new Common.ResponseSerialization.ResponseOptions()
+                {
+                    Response = response,
+                    ResponseType = response.responseType
+                }
+                );
 
                 ConnectionManager.AssureSend(clientManager, serializedResponse, false);
-                
-                //ConnectionManager.AssureSend(clientManager, clientManager.ReplyPacket("UPDATECALLBACK \"" + _id + "\"" + _key + "\"", new byte[0]));
             }
         }
     }

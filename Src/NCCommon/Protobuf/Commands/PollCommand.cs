@@ -10,14 +10,14 @@
 // Generated from: PollCommand.proto
 namespace Alachisoft.NCache.Common.Protobuf
 {
-  [global::System.Serializable, global::ProtoBuf.ProtoContract(Name=@"PollCommand")]
-  public partial class PollCommand : global::ProtoBuf.IExtensible
+  [global::System.Serializable, global::ProtoBuf.Extended.ProtoContract(Name=@"PollCommand")]
+  public partial class PollCommand : global::ProtoBuf.Extended.IExtensible
   {
     public PollCommand() {}
     
 
     private long _requestId = default(long);
-    [global::ProtoBuf.ProtoMember(1, IsRequired = false, Name=@"requestId", DataFormat = global::ProtoBuf.DataFormat.TwosComplement)]
+    [global::ProtoBuf.Extended.ProtoMember(1, IsRequired = false, Name=@"requestId", DataFormat = global::ProtoBuf.Extended.DataFormat.TwosComplement)]
     [global::System.ComponentModel.DefaultValue(default(long))]
     public long requestId
     {
@@ -26,7 +26,7 @@ namespace Alachisoft.NCache.Common.Protobuf
     }
 
     private long _clientLastViewId = (long)-1;
-    [global::ProtoBuf.ProtoMember(2, IsRequired = false, Name=@"clientLastViewId", DataFormat = global::ProtoBuf.DataFormat.TwosComplement)]
+    [global::ProtoBuf.Extended.ProtoMember(2, IsRequired = false, Name=@"clientLastViewId", DataFormat = global::ProtoBuf.Extended.DataFormat.TwosComplement)]
     [global::System.ComponentModel.DefaultValue((long)-1)]
     public long clientLastViewId
     {
@@ -35,16 +35,16 @@ namespace Alachisoft.NCache.Common.Protobuf
     }
 
     private int _commandVersion = (int)0;
-    [global::ProtoBuf.ProtoMember(3, IsRequired = false, Name=@"commandVersion", DataFormat = global::ProtoBuf.DataFormat.TwosComplement)]
+    [global::ProtoBuf.Extended.ProtoMember(3, IsRequired = false, Name=@"commandVersion", DataFormat = global::ProtoBuf.Extended.DataFormat.TwosComplement)]
     [global::System.ComponentModel.DefaultValue((int)0)]
     public int commandVersion
     {
       get { return _commandVersion; }
       set { _commandVersion = value; }
     }
-    private global::ProtoBuf.IExtension extensionObject;
-    global::ProtoBuf.IExtension global::ProtoBuf.IExtensible.GetExtensionObject(bool createIfMissing)
-      { return global::ProtoBuf.Extensible.GetExtensionObject(ref extensionObject, createIfMissing); }
+    private global::ProtoBuf.Extended.IExtension extensionObject;
+   global::ProtoBuf.Extended.IExtension global::ProtoBuf.Extended.IExtensible.GetExtensionObject(bool createIfMissing)
+      { return global::ProtoBuf.Extended.Extensible.GetExtensionObject(ref extensionObject, createIfMissing); }
   }
   
 }

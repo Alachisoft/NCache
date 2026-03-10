@@ -10,37 +10,37 @@
 // Generated from: CacheItemType.proto
 namespace Alachisoft.NCache.Common.Protobuf
 {
-  [global::System.Serializable, global::ProtoBuf.ProtoContract(Name=@"CacheItemType")]
-  public partial class CacheItemType : global::ProtoBuf.IExtensible
+  [global::System.Serializable, global::ProtoBuf.Extended.ProtoContract(Name=@"CacheItemType")]
+  public partial class CacheItemType : global::ProtoBuf.Extended.IExtensible
   {
     public CacheItemType() {}
     
-    [global::ProtoBuf.ProtoContract(Name=@"ItemType")]
+    [global::ProtoBuf.Extended.ProtoContract(Name=@"ItemType")]
     public enum ItemType
     {
             
-      [global::ProtoBuf.ProtoEnum(Name=@"CACHEITEM", Value=1)]
+      [global::ProtoBuf.Extended.ProtoEnum(Name=@"CACHEITEM", Value=1)]
       CACHEITEM = 1,
             
-      [global::ProtoBuf.ProtoEnum(Name=@"LIST", Value=2)]
+      [global::ProtoBuf.Extended.ProtoEnum(Name=@"LIST", Value=2)]
       LIST = 2,
             
-      [global::ProtoBuf.ProtoEnum(Name=@"QUEUE", Value=3)]
+      [global::ProtoBuf.Extended.ProtoEnum(Name=@"QUEUE", Value=3)]
       QUEUE = 3,
             
-      [global::ProtoBuf.ProtoEnum(Name=@"SET", Value=4)]
+      [global::ProtoBuf.Extended.ProtoEnum(Name=@"SET", Value=4)]
       SET = 4,
             
-      [global::ProtoBuf.ProtoEnum(Name=@"DICTIONARY", Value=5)]
+      [global::ProtoBuf.Extended.ProtoEnum(Name=@"DICTIONARY", Value=5)]
       DICTIONARY = 5,
             
-      [global::ProtoBuf.ProtoEnum(Name=@"COUNTER", Value=6)]
+      [global::ProtoBuf.Extended.ProtoEnum(Name=@"COUNTER", Value=6)]
       COUNTER = 6
     }
   
-    private global::ProtoBuf.IExtension extensionObject;
-    global::ProtoBuf.IExtension global::ProtoBuf.IExtensible.GetExtensionObject(bool createIfMissing)
-      { return global::ProtoBuf.Extensible.GetExtensionObject(ref extensionObject, createIfMissing); }
+    private global::ProtoBuf.Extended.IExtension extensionObject;
+   global::ProtoBuf.Extended.IExtension global::ProtoBuf.Extended.IExtensible.GetExtensionObject(bool createIfMissing)
+      { return global::ProtoBuf.Extended.Extensible.GetExtensionObject(ref extensionObject, createIfMissing); }
   }
   
 }

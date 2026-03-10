@@ -1,4 +1,3 @@
-// $Id: MessageDispatcher.java,v 1.30 2004/09/02 14:00:40 belaban Exp $
 
 using Alachisoft.NCache.Common.Logger;
 using Alachisoft.NCache.Common.Net;

@@ -1,4 +1,4 @@
-﻿//  Copyright (c) 2021 Alachisoft
+﻿//  Copyright (c) 2026 Alachisoft
 //  
 //  Licensed under the Apache License, Version 2.0 (the "License");
 //  you may not use this file except in compliance with the License.
@@ -13,10 +13,9 @@
 //  limitations under the License
 using System;
 using System.Diagnostics;
-using Alachisoft.NCache.Caching;
 using Alachisoft.NCache.Common.Monitoring;
+using Alachisoft.NCache.Common.ResponseSerialization;
 using Alachisoft.NCache.SocketServer.RuntimeLogging;
-using Alachisoft.NCache.SocketServer.Util;
 
 namespace Alachisoft.NCache.SocketServer.Command
 {
@@ -39,7 +38,6 @@ namespace Alachisoft.NCache.SocketServer.Command
 
         public override void ExecuteCommand(ClientManager clientManager, Common.Protobuf.Command command)
         {
-            // int overload;
             string exception = null;
 
             Stopwatch stopwatch = new Stopwatch();
@@ -47,16 +45,13 @@ namespace Alachisoft.NCache.SocketServer.Command
 
             long messageCount = 0;
 
-
             try
             {
                 NCache nCache = clientManager.CmdExecuter as NCache;
 
                 if (nCache != null)
                 {
-                    OperationContext operationContext = null;
-                    CommandsUtil.PopulateClientIdInContext(ref operationContext, clientManager.ClientAddress);
-                    messageCount = nCache.Cache.GetMessageCount(command.messageCountCommand.topicName, operationContext);
+                    messageCount = nCache.Cache.GetMessageCount(command.messageCountCommand.topicName);
                     _operationSuccessStatus = true;
                 }
                 stopwatch.Stop();
@@ -64,11 +59,15 @@ namespace Alachisoft.NCache.SocketServer.Command
                 Common.Protobuf.MessageCountResponse messageCountResponse = new Common.Protobuf.MessageCountResponse();
                 messageCountResponse.messageCount = messageCount;
 
-
                 if (clientManager.ClientVersion >= 5000)
                 {
                     Common.Util.ResponseHelper.SetResponse(messageCountResponse, command.requestID, command.commandID);
-                    _serializedResponsePackets.Add(Common.Util.ResponseHelper.SerializeResponse(messageCountResponse, Common.Protobuf.Response.Type.MESSAGE_COUNT));
+                    ResponseOptions responseOptions = new ResponseOptions()
+                    {
+                        Response = messageCountResponse,
+                        ResponseType = Common.Protobuf.Response.Type.MESSAGE_COUNT
+                    };
+                    _serializedResponsePackets.Add(clientManager.ResponseBuilder.BuildResponse(responseOptions));
                 }
                 else
                 {
@@ -76,13 +75,25 @@ namespace Alachisoft.NCache.SocketServer.Command
                     Common.Protobuf.Response response = new Common.Protobuf.Response();
                     response.messageCountResponse = messageCountResponse;
                     Common.Util.ResponseHelper.SetResponse(response, command.requestID, command.commandID, Common.Protobuf.Response.Type.MESSAGE_COUNT);
-                    _serializedResponsePackets.Add(Alachisoft.NCache.Common.Util.ResponseHelper.SerializeResponse(response));
+                    ResponseOptions responseOptions = new ResponseOptions()
+                    {
+                        Response = response,
+                        ResponseType = Common.Protobuf.Response.Type.MESSAGE_COUNT
+                    };
+                    _serializedResponsePackets.Add(clientManager.ResponseBuilder.BuildResponse(responseOptions));
                 }
             }
             catch (Exception e)
             {
                 exception = e.ToString();
-                _serializedResponsePackets.Add(Common.Util.ResponseHelper.SerializeExceptionResponseWithType(e, command.requestID, command.commandID, clientManager.ClientVersion));
+                ResponseOptions responseOptions = new ResponseOptions()
+                {
+                    Exception = e,
+                    RequestId = command.requestID,
+                    CommandId = command.commandID,
+                };
+
+                _serializedResponsePackets.Add(clientManager.ResponseBuilder.BuildExceptionResponse(responseOptions));
             }
             finally
             {

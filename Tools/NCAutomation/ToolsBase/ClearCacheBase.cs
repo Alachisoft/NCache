@@ -1,17 +1,4 @@
-﻿//  Copyright (c) 2021 Alachisoft
-//  
-//  Licensed under the Apache License, Version 2.0 (the "License");
-//  you may not use this file except in compliance with the License.
-//  You may obtain a copy of the License at
-//  
-//     http://www.apache.org/licenses/LICENSE-2.0
-//  
-//  Unless required by applicable law or agreed to in writing, software
-//  distributed under the License is distributed on an "AS IS" BASIS,
-//  WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
-//  See the License for the specific language governing permissions and
-//  limitations under the License
-using Alachisoft.NCache.Automation.ToolsOutput;
+﻿using Alachisoft.NCache.Automation.ToolsOutput;
 using Alachisoft.NCache.Automation.ToolsParametersBase;
 using Alachisoft.NCache.Automation.Util;
 using Alachisoft.NCache.Tools.Common;
@@ -37,7 +24,7 @@ namespace Alachisoft.NCache.Automation.ToolsBase
             {
 
                 if (!ValidateParameters()) return;
-                ClearCache(Name, ForceClear);
+                ClearCache(Name,Force,Server);
 
             }
             catch (Exception ex)
@@ -48,7 +35,7 @@ namespace Alachisoft.NCache.Automation.ToolsBase
         }
 
 
-        public void ClearCache(string cacheId, bool forceClear)
+        public void ClearCache(string cacheId, bool forceClear, string server)
         {
             ICache cache = null;
 
@@ -56,10 +43,11 @@ namespace Alachisoft.NCache.Automation.ToolsBase
             {
                 CacheConnectionOptions cacheParams = new CacheConnectionOptions();
 
+                cacheParams = ToolsUtil.AddServersInCacheConnectionOptions(server, cacheParams);
                 cache = CacheManager.GetCache(cacheId.ToLower(), cacheParams);
 
 
-                if (!ForceClear)
+                if (!Force)
                 {
                     long count = cache.Count;
                     OutputProvider.WriteLine("");
@@ -97,8 +85,7 @@ namespace Alachisoft.NCache.Automation.ToolsBase
             }
             catch (Exception e)
             {
-                OutputProvider.WriteLine("Error: " + e.Message);
-                OutputProvider.WriteErrorLine(e.ToString());
+                OutputProvider.WriteErrorLine("Error: " + e.Message);
             }
             finally
             {
@@ -121,6 +108,7 @@ namespace Alachisoft.NCache.Automation.ToolsBase
                 OutputProvider.WriteErrorLine("\nError: Cache name not specified.");
                 return false;
             }
+         
             ToolsUtil.PrintLogo(OutputProvider, printLogo, TOOLNAME);
 
             return true;

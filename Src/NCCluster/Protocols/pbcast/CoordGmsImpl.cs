@@ -1,4 +1,4 @@
-// $Id: CoordGmsImpl.java,v 1.13 2004/09/08 09:17:17 belaban Exp $
+
 using System;
 using System.Collections;
 using Alachisoft.NGroups;
@@ -257,7 +257,7 @@ namespace Alachisoft.NGroups.Protocols.pbcast
         /// <summary> Computes the new view (including the newly joined member) and get the digest from PBCAST.
         /// Returns both in the form of a JoinRsp
         /// </summary>
-        public override JoinRsp handleJoin(Address mbr, string subGroup_name, bool isStartedAsMirror, string gmsId)
+        public override JoinRsp handleJoin(Address mbr, string subGroup_name, bool isStartedAsMirror, string gmsId, ref bool acquireHashmap)
         {
             lock (this)
             {
@@ -276,6 +276,7 @@ namespace Alachisoft.NGroups.Protocols.pbcast
                 if (gms.members.contains(mbr))
                 {
                     gms.Stack.NCacheLog.Error("CoordGmsImpl.handleJoin()", "member " + mbr + " already present; returning existing view " + Global.CollectionToString(gms.members.Members));
+                    acquireHashmap = false;
                     View view = new View(gms.view_id, gms.members.Members);
                     view.CoordinatorGmsId = gms.unique_id;
                     JoinRsp rsp = new JoinRsp(view, gms.Digest);
@@ -284,8 +285,13 @@ namespace Alachisoft.NGroups.Protocols.pbcast
                     return rsp;
                     // already joined: return current digest and membership
                 }
+                else if (gms.members.Members.Count >= 3)
+                {
+                    View view = new View(gms.view_id, gms.members.Members);
+                    return new JoinRsp(view, gms.Digest,JoinResult.MaxMbrLimitReached);
+                }
                 new_mbrs.Add(mbr);
-                //=====================================
+
                 // update the subGroupMbrsMap and mbrSubGroupMap
                 if (gms._subGroupMbrsMap.Contains(subGroup_name))
                 {
@@ -313,7 +319,6 @@ namespace Alachisoft.NGroups.Protocols.pbcast
                         gms._mbrSubGroupMap[mbr] = subGroup_name;
                     }
                 }
-                //=====================================
                 tmp = gms.Digest; // get existing digest
                 if (tmp == null)
                 {
@@ -332,7 +337,6 @@ namespace Alachisoft.NGroups.Protocols.pbcast
                 v.MbrsSubgroupMap = gms._mbrSubGroupMap;
                 v.AddGmsId(mbr, gmsId);
 
-                //add coordinator own's gms id[bug fix]; so that new member could know cordinator id
                 v.AddGmsId(gms.local_addr, gms.unique_id);
 
                 if (gms.GmsIds != null)
@@ -416,15 +420,12 @@ namespace Alachisoft.NGroups.Protocols.pbcast
 
                     if (gms.view_id == null)
                     {
-                        // we're probably not the coord anymore (we just left ourselves), let someone else do it
-                        // (client will retry when it doesn't get a response
                         gms.Stack.NCacheLog.Debug("pbcast.CoordGmsImpl.handleLeave()", "gms.view_id is null, I'm not the coordinator anymore (leaving=" + leaving + "); the new coordinator will handle the leave request");
                         return;
                     }
 
                     if (!suspected) sendLeaveResponse(leavingNode); // send an ack to the leaving member
 
-                    //===============================================
                     //this mbr will now be removed from the list of live mbrs.
                     //so properly update the gms' subgroupMbrMap so that all the 
                     //nodes know who is the next sequencer for their subgroup.
@@ -452,9 +453,8 @@ namespace Alachisoft.NGroups.Protocols.pbcast
                     //requests the gms to acquire a new map after this member leaves.
                     System.Collections.ArrayList mbrs = new System.Collections.ArrayList(1);
                     mbrs.Add(leavingNode);
-                   
+                    gms.acquireHashmap(mbrs, false, subGroup, false);
                 }
-                //===============================================
 
 
                 if (suspected)
@@ -743,7 +743,6 @@ namespace Alachisoft.NGroups.Protocols.pbcast
                         }
                     }
 
-                    // SAL:
                     if (time_to_wait < 0)
                     {
                         gms.Stack.NCacheLog.Fatal("[Timeout]CoordGmsImpl.getMergeDataFromSubgroupCoordinators:" + time_to_wait);
@@ -762,7 +761,6 @@ namespace Alachisoft.NGroups.Protocols.pbcast
         internal object generateMergeId()
         {
             return new ViewId(gms.local_addr, (System.DateTime.Now.Ticks - 621355968000000000) / 10000);
-            // we're (ab)using ViewId as a merge id
         }
 
         /// <summary> Merge all MergeData. All MergeData elements should be disjunct (both views and digests). However,

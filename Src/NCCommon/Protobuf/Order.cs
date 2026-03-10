@@ -10,14 +10,14 @@
 // Generated from: Order.proto
 namespace Alachisoft.NCache.Common.Protobuf
 {
-    [global::ProtoBuf.ProtoContract(Name=@"Order")]
+    [global::ProtoBuf.Extended.ProtoContract(Name=@"Order")]
     public enum Order
     {
             
-      [global::ProtoBuf.ProtoEnum(Name=@"ASC", Value=0)]
+      [global::ProtoBuf.Extended.ProtoEnum(Name=@"ASC", Value=0)]
       ASC = 0,
             
-      [global::ProtoBuf.ProtoEnum(Name=@"DESC", Value=1)]
+      [global::ProtoBuf.Extended.ProtoEnum(Name=@"DESC", Value=1)]
       DESC = 1
     }
   

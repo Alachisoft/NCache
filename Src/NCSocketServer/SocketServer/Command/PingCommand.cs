@@ -1,4 +1,4 @@
-//  Copyright (c) 2021 Alachisoft
+//  Copyright (c) 2026 Alachisoft
 //  
 //  Licensed under the Apache License, Version 2.0 (the "License");
 //  you may not use this file except in compliance with the License.
@@ -12,6 +12,7 @@
 //  See the License for the specific language governing permissions and
 //  limitations under the License
 using Alachisoft.NCache.Common.Monitoring;
+using Alachisoft.NCache.Common.ResponseSerialization;
 using Alachisoft.NCache.SocketServer.RuntimeLogging;
 using System;
 using System.Diagnostics;
@@ -48,7 +49,17 @@ namespace Alachisoft.NCache.SocketServer.Command
             }
             catch (Exception exc)
             {
-                if (!immatureId.Equals("-2")) _serializedResponsePackets.Add(Common.Util.ResponseHelper.SerializeExceptionResponseWithType(exc, command.requestID, command.commandID, clientManager.ClientVersion));
+                if (!immatureId.Equals("-2"))
+                {
+                    ResponseOptions responseOptions = new ResponseOptions()
+                    {
+                        Exception = exc,
+                        RequestId = command.requestID,
+                        CommandId = command.commandID,
+                    };
+
+                    _serializedResponsePackets.Add(clientManager.ResponseBuilder.BuildExceptionResponse(responseOptions));
+                }
                 return;
             }
 
@@ -56,26 +67,31 @@ namespace Alachisoft.NCache.SocketServer.Command
             {
                 stopWatch.Stop();
 
-               // Common.Protobuf.Response response = new Common.Protobuf.Response();
-                //response.requestId = Convert.ToInt64(_cmdInfo.RequestId);
-                //response.commandID = command.commandID;
-                //response.responseType = Common.Protobuf.Response.Type.PING;
                 Common.Protobuf.PingResponse pingResponse = new Common.Protobuf.PingResponse();
 
                 if (_cmdInfo.HasResponse)
                 {
-                    // _serializedResponsePackets.Add(Common.Util.ResponseHelper.SerializeResponse(response,Common.Protobuf.Response.Type.PING));
                     if (clientManager.ClientVersion >= 5000)
                     {
                         Common.Util.ResponseHelper.SetResponse(pingResponse, command.requestID, command.commandID);
-                        _serializedResponsePackets.Add(Common.Util.ResponseHelper.SerializeResponse(pingResponse, Common.Protobuf.Response.Type.PING));
+                        ResponseOptions responseOptions = new ResponseOptions()
+                        {
+                            Response = pingResponse,
+                            ResponseType = Common.Protobuf.Response.Type.PING
+                        };
+                        _serializedResponsePackets.Add(clientManager.ResponseBuilder.BuildResponse(responseOptions));
                     }
                     else
                     {
                         Common.Protobuf.Response response = new Common.Protobuf.Response();
                         response.pingResponse = pingResponse;
                         Common.Util.ResponseHelper.SetResponse(response, command.requestID, command.commandID, Common.Protobuf.Response.Type.PING);
-                        _serializedResponsePackets.Add(Alachisoft.NCache.Common.Util.ResponseHelper.SerializeResponse(response));
+                        ResponseOptions responseOptions = new ResponseOptions()
+                        {
+                            Response = response,
+                            ResponseType = Common.Protobuf.Response.Type.PING
+                        };
+                        _serializedResponsePackets.Add(clientManager.ResponseBuilder.BuildResponse(responseOptions));
                     }
                 }
             }
@@ -85,7 +101,16 @@ namespace Alachisoft.NCache.SocketServer.Command
                 exception = exc.ToString();
 
                 if (_cmdInfo.HasResponse)
-                    _serializedResponsePackets.Add(Common.Util.ResponseHelper.SerializeExceptionResponseWithType(exc, command.requestID, command.commandID, clientManager.ClientVersion));
+                {
+                    ResponseOptions responseOptions = new ResponseOptions()
+                    {
+                        Exception = exc,
+                        RequestId = command.requestID,
+                        CommandId = command.commandID,
+                    };
+
+                    _serializedResponsePackets.Add(clientManager.ResponseBuilder.BuildExceptionResponse(responseOptions));
+                }
             }
             finally
             {

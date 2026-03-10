@@ -11,14 +11,14 @@
 // Note: requires additional types generated from: EventId.proto
 namespace Alachisoft.NCache.Common.Protobuf
 {
-  [global::System.Serializable, global::ProtoBuf.ProtoContract(Name=@"NodeJoinedEventResponse")]
-  public partial class NodeJoinedEventResponse : global::ProtoBuf.IExtensible
+  [global::System.Serializable, global::ProtoBuf.Extended.ProtoContract(Name=@"NodeJoinedEventResponse")]
+  public partial class NodeJoinedEventResponse : global::ProtoBuf.Extended.IExtensible
   {
     public NodeJoinedEventResponse() {}
     
 
     private string _clusterIp = "";
-    [global::ProtoBuf.ProtoMember(1, IsRequired = false, Name=@"clusterIp", DataFormat = global::ProtoBuf.DataFormat.Default)]
+    [global::ProtoBuf.Extended.ProtoMember(1, IsRequired = false, Name=@"clusterIp", DataFormat = global::ProtoBuf.Extended.DataFormat.Default)]
     [global::System.ComponentModel.DefaultValue("")]
     public string clusterIp
     {
@@ -27,7 +27,7 @@ namespace Alachisoft.NCache.Common.Protobuf
     }
 
     private string _clusterPort = "";
-    [global::ProtoBuf.ProtoMember(2, IsRequired = false, Name=@"clusterPort", DataFormat = global::ProtoBuf.DataFormat.Default)]
+    [global::ProtoBuf.Extended.ProtoMember(2, IsRequired = false, Name=@"clusterPort", DataFormat = global::ProtoBuf.Extended.DataFormat.Default)]
     [global::System.ComponentModel.DefaultValue("")]
     public string clusterPort
     {
@@ -36,7 +36,7 @@ namespace Alachisoft.NCache.Common.Protobuf
     }
 
     private string _serverIp = "";
-    [global::ProtoBuf.ProtoMember(3, IsRequired = false, Name=@"serverIp", DataFormat = global::ProtoBuf.DataFormat.Default)]
+    [global::ProtoBuf.Extended.ProtoMember(3, IsRequired = false, Name=@"serverIp", DataFormat = global::ProtoBuf.Extended.DataFormat.Default)]
     [global::System.ComponentModel.DefaultValue("")]
     public string serverIp
     {
@@ -45,7 +45,7 @@ namespace Alachisoft.NCache.Common.Protobuf
     }
 
     private string _serverPort = "";
-    [global::ProtoBuf.ProtoMember(4, IsRequired = false, Name=@"serverPort", DataFormat = global::ProtoBuf.DataFormat.Default)]
+    [global::ProtoBuf.Extended.ProtoMember(4, IsRequired = false, Name=@"serverPort", DataFormat = global::ProtoBuf.Extended.DataFormat.Default)]
     [global::System.ComponentModel.DefaultValue("")]
     public string serverPort
     {
@@ -54,7 +54,7 @@ namespace Alachisoft.NCache.Common.Protobuf
     }
 
     private bool _reconnect = default(bool);
-    [global::ProtoBuf.ProtoMember(5, IsRequired = false, Name=@"reconnect", DataFormat = global::ProtoBuf.DataFormat.Default)]
+    [global::ProtoBuf.Extended.ProtoMember(5, IsRequired = false, Name=@"reconnect", DataFormat = global::ProtoBuf.Extended.DataFormat.Default)]
     [global::System.ComponentModel.DefaultValue(default(bool))]
     public bool reconnect
     {
@@ -63,16 +63,16 @@ namespace Alachisoft.NCache.Common.Protobuf
     }
 
     private Alachisoft.NCache.Common.Protobuf.EventId _eventId = null;
-    [global::ProtoBuf.ProtoMember(6, IsRequired = false, Name=@"eventId", DataFormat = global::ProtoBuf.DataFormat.Default)]
+    [global::ProtoBuf.Extended.ProtoMember(6, IsRequired = false, Name=@"eventId", DataFormat = global::ProtoBuf.Extended.DataFormat.Default)]
     [global::System.ComponentModel.DefaultValue(null)]
     public Alachisoft.NCache.Common.Protobuf.EventId eventId
     {
       get { return _eventId; }
       set { _eventId = value; }
     }
-    private global::ProtoBuf.IExtension extensionObject;
-    global::ProtoBuf.IExtension global::ProtoBuf.IExtensible.GetExtensionObject(bool createIfMissing)
-      { return global::ProtoBuf.Extensible.GetExtensionObject(ref extensionObject, createIfMissing); }
+    private global::ProtoBuf.Extended.IExtension extensionObject;
+   global::ProtoBuf.Extended.IExtension global::ProtoBuf.Extended.IExtensible.GetExtensionObject(bool createIfMissing)
+      { return global::ProtoBuf.Extended.Extensible.GetExtensionObject(ref extensionObject, createIfMissing); }
   }
   
 }

@@ -1,4 +1,4 @@
-//  Copyright (c) 2021 Alachisoft
+//  Copyright (c) 2026 Alachisoft
 //  
 //  Licensed under the Apache License, Version 2.0 (the "License");
 //  you may not use this file except in compliance with the License.
@@ -23,13 +23,6 @@ namespace Alachisoft.NCache.Caching.EvictionPolicies
 
     internal interface IEvictionPolicy:ISizableIndex
     {
-        /// <summary>
-        /// Updates the data associated with indices. 
-        /// </summary>
-        /// <param name="key"></param>
-        /// <param name="oldHint"></param>
-        /// <param name="newHint"></param>
-        //void UpdateIndex(object key, EvictionHint oldHint, EvictionHint newHint);
         void Notify(object key, EvictionHint oldhint, EvictionHint newHint);
 
         /// <summary>
@@ -45,12 +38,6 @@ namespace Alachisoft.NCache.Caching.EvictionPolicies
         /// <returns>a hint compatible to the eviction policy.</returns>
         EvictionHint CompatibleHint(EvictionHint eh,PoolManager poolManager);
 
-        /// <summary>
-        /// Get the list of items that are selected for eviction.
-        /// </summary>
-        /// <param name="size">size of data in store, in bytes</param>
-        /// <returns>list of items selected for eviction.</returns>
-        //ArrayList SelectItemsForEviction(long count);
         long Execute(CacheBase cache,CacheRuntimeContext context, long size);
 
         /// <summary>

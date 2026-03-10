@@ -1,4 +1,4 @@
-// $Id: List.java,v 1.6 2004/07/05 14:17:35 belaban Exp $
+
 using System;
 using Alachisoft.NCache.Runtime.Serialization.IO;
 using Alachisoft.NCache.Runtime.Serialization;

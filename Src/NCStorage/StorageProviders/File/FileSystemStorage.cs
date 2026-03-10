@@ -1,4 +1,4 @@
-//  Copyright (c) 2021 Alachisoft
+//  Copyright (c) 2026 Alachisoft
 //  
 //  Licensed under the Apache License, Version 2.0 (the "License");
 //  you may not use this file except in compliance with the License.
@@ -70,7 +70,6 @@ namespace Alachisoft.NCache.Storage.Util
 			}
 			catch(Exception err)
 			{
-				
 				throw err;
 			}
 		}
@@ -95,7 +94,7 @@ namespace Alachisoft.NCache.Storage.Util
 			}
 			catch (Exception err)
 			{
-			
+				//Trace.error("FileSystemStorage.Dispose", err.Message.ToString());
 				throw err;
 			}
 		}
@@ -187,7 +186,6 @@ namespace Alachisoft.NCache.Storage.Util
 			}
 			catch (Exception err)
 			{
-				//Trace.error("FileSystemStorage.Clear()", err.Message.ToString());
 				throw err;
 			}
 		}
@@ -224,7 +222,6 @@ namespace Alachisoft.NCache.Storage.Util
 			}
 			catch (Exception Err)
 			{
-				//Trace.error("FileSystemStorage.Get()", Err.Message.ToString());
 				throw Err;
 			}
 		}
@@ -244,7 +241,6 @@ namespace Alachisoft.NCache.Storage.Util
 			}
 			catch(Exception err)
 			{
-				//Trace.error("FileSystemStorage.Add()",err.Message.ToString());
 				throw err;
 			}
 		}
@@ -272,7 +268,6 @@ namespace Alachisoft.NCache.Storage.Util
 			}
 			catch(Exception err)
 			{
-				//Trace.error("FileSystemStorage.Insert()",err.Message.ToString());
 				throw err;
 			}
 		}
@@ -290,7 +285,6 @@ namespace Alachisoft.NCache.Storage.Util
 			}
 			catch(Exception err)
 			{
-				//Trace.error("FileSystemStorage.Remove()",err.Message.ToString());
 				throw err;
 			}
 		}

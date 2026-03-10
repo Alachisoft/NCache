@@ -1,4 +1,4 @@
-//  Copyright (c) 2021 Alachisoft
+//  Copyright (c) 2026 Alachisoft
 //  
 //  Licensed under the Apache License, Version 2.0 (the "License");
 //  you may not use this file except in compliance with the License.
@@ -18,10 +18,23 @@ using Microsoft.Win32;
 using System.IO;
 using System.Threading;
 using Alachisoft.NCache.Common.Logger;
-#if NETCORE 
+using Alachisoft.NCache.Runtime;
+using Newtonsoft.Json;
+using Newtonsoft.Json.Linq;
+using Alachisoft.NCache.Common.RuntimeEnvironment;
+using Alachisoft.NCache.Licensing.RegistryUtil;
+using Alachisoft.NCache.Common.Licensing;
+
+using System.Web;
+using System.Linq;
+
+
+
+#if NETCORE
 using System.Runtime.InteropServices;
 #endif
 using Alachisoft.NCache.Common.Util;
+
 
 namespace Alachisoft.NCache.Common
 {
@@ -34,6 +47,7 @@ namespace Alachisoft.NCache.Common
         static bool isRunningAsWow64 = false;
         static string installDir = null;
 
+        public readonly static string DeployedCachingModuleAssemblyDir = "bin" + Path.DirectorySeparatorChar + "modules" + Path.DirectorySeparatorChar;
         public readonly static string DeployedAssemblyDir = "deploy" + Path.DirectorySeparatorChar;
         public readonly static string serviceLogsPath = "log-files" + Path.DirectorySeparatorChar + "service.log";
 
@@ -66,6 +80,7 @@ namespace Alachisoft.NCache.Common
 
             javaLibDir = GetJavaLibDir();
             DeployedAssemblyDir = Path.Combine(installDir, DeployedAssemblyDir);
+            DeployedCachingModuleAssemblyDir = Path.Combine(installDir, DeployedCachingModuleAssemblyDir);
 
             if (ServiceConfiguration.EventLogLevel != null && ServiceConfiguration.EventLogLevel != "")
             {
@@ -96,9 +111,12 @@ namespace Alachisoft.NCache.Common
 
         private static string GetInstallDir()
         {
-
+            if (!string.IsNullOrEmpty(NCacheConfigurationOptions.InstallDir))
+            {
+                return NCacheConfigurationOptions.InstallDir;
+            }
             string installPath = System.Configuration.ConfigurationSettings.AppSettings["InstallDir"];
-            if (installPath != null && installPath != string.Empty)
+            if (!string.IsNullOrEmpty(installPath))
             {
                 return installPath;
             }
@@ -110,31 +128,42 @@ namespace Alachisoft.NCache.Common
 #if NETCORE
                 if (!System.Runtime.InteropServices.RuntimeInformation.IsOSPlatform(System.Runtime.InteropServices.OSPlatform.Windows))
                 {
-                    NCache.Licensing.NetCore.RegistryUtil.RegUtil.LoadRegistry();
-                    if (NCache.Licensing.NetCore.RegistryUtil.RegUtil.LicenseProperties != null ||
-                        NCache.Licensing.NetCore.RegistryUtil.RegUtil.LicenseProperties.Product != null ||
-                        !string.IsNullOrEmpty(NCache.Licensing.NetCore.RegistryUtil.RegUtil.LicenseProperties.Product.InstallDir))
-                        path = NCache.Licensing.NetCore.RegistryUtil.RegUtil.LicenseProperties.Product.InstallDir;
+                    NCache.Licensing.RegistryUtil.RegUtil.LoadRegistry();
+                    if (NCache.Licensing.RegistryUtil.RegUtil.LicenseProperties != null ||
+                        NCache.Licensing.RegistryUtil.RegUtil.LicenseProperties.Product != null || 
+                        !string.IsNullOrEmpty(NCache.Licensing.RegistryUtil.RegUtil.LicenseProperties.Product.InstallDir))
+                        path = NCache.Licensing.RegistryUtil.RegUtil.LicenseProperties.Product.InstallDir;
                 }
                 else
 #endif
-                    path = GetAppSetting("InstallDir");
+                path = GetAppSetting("InstallDir");
 
             }
             catch (Exception e)
             {
-                //ignore this exception as in case of Nuget client package, nclicense.dll is not shipped with
+                if (InstallationTypeProvider.Provider.IsServerInstallation)
+                    throw;
             }
             if (path == null || path.Length == 0)
-                path = System.Environment.CurrentDirectory + Path.DirectorySeparatorChar;
+            {
+                if (InstallationTypeProvider.Provider.IsServerInstallation)
+                    return null;
+                else
+                    path = System.Environment.CurrentDirectory + Path.DirectorySeparatorChar;
+
+            }
 
             return path;
         }
 
         private static string GetLogDir()
         {
+            if (!string.IsNullOrEmpty(NCacheConfigurationOptions.LogPath))
+            {
+                return NCacheConfigurationOptions.LogPath;
+            }
             string installPath = System.Configuration.ConfigurationSettings.AppSettings["NCache.LogPath"];
-            if (installPath != null && installPath != string.Empty)
+            if (!string.IsNullOrEmpty(installPath))
             {
                 return installPath;
             }
@@ -142,22 +171,41 @@ namespace Alachisoft.NCache.Common
 
             try
             {
-
-#if !NETCORE
+#if NETCORE
+                if (!System.Runtime.InteropServices.RuntimeInformation.IsOSPlatform(System.Runtime.InteropServices.OSPlatform.Windows))
+                {
+                    NCache.Licensing.RegistryUtil.RegUtil.LoadRegistry();
+                    if (NCache.Licensing.RegistryUtil.RegUtil.LicenseProperties != null ||
+                        NCache.Licensing.RegistryUtil.RegUtil.LicenseProperties.Product != null ||
+                        !string.IsNullOrEmpty(NCache.Licensing.RegistryUtil.RegUtil.LicenseProperties.Product.InstallDir))
+                        path = NCache.Licensing.RegistryUtil.RegUtil.LicenseProperties.Product.InstallDir;
+                }
+                else
+                    path = GetAppSetting("InstallDir");
+#elif !NETCORE
                 path = GetAppSetting("InstallDir");
 #endif 
             }
             catch (Exception)
             {
-#if CLIENT
-                //ignore this exception as in case of Nuget client package, nclicense.dll is not shipped with
-#else
-                throw;
-#endif
+                if (InstallationTypeProvider.Provider.IsServerInstallation)
+                {
+                    throw;
+                }
             }
             if (path == null || path.Length == 0)
-                path = System.Environment.CurrentDirectory + Path.DirectorySeparatorChar;
+            {
 
+                if (InstallationTypeProvider.Provider.IsServerInstallation)
+                {
+                    return null;
+                }
+                else
+                {
+                    path = System.Environment.CurrentDirectory + Path.DirectorySeparatorChar;
+
+                }
+            }
             return path;
         }
 
@@ -183,8 +231,7 @@ namespace Alachisoft.NCache.Common
         /// <returns>Data of the value.</returns>
         public static string GetAppSetting(string section, string key)
         {
-            if (!IsRunningAsWow64)
-                section = RegHelper.ROOT_KEY + section;
+            section = RegHelper.ROOT_KEY + section;
             object tempVal = RegHelper.GetRegValue(section, key, 0);
             if (!(tempVal is string))
             {
@@ -250,7 +297,13 @@ namespace Alachisoft.NCache.Common
         {
             get { return installDir; }
         }
-
+        public static string DumpsDir
+        {
+            get
+            {
+                return Path.Combine(installDir, "memory-dumps");
+            }
+        }
         public static string ModulesDir
         {
             get
@@ -261,9 +314,36 @@ namespace Alachisoft.NCache.Common
             }
         }
 
+        public static string MapDistributionDir
+        {
+            get
+            {
+                return RuntimeEnvironment.NCacheRuntimeEnvironment.GetEnvironment.LuceneIndexPath;
+            }
+        }
+
         public static string LogDir
         {
             get { return logDir; }
+        }
+
+        public static bool IsNuGetOnlyInstallation
+        {
+            get
+            {
+                string filePath = string.Empty;
+                string fileDirectory = Path.Combine(InstallDir, "bin", "service");
+#if !NETCORE
+                filePath = Path.Combine(fileDirectory, "Alachisoft.NCache.CacheHost.exe");
+#else
+                filePath = Path.Combine(fileDirectory, "Alachisoft.NCache.CacheHost.dll");
+#endif
+
+                if (File.Exists(filePath))
+                    return false;
+                else
+                    return true;
+            }
         }
 
         private static string GetJavaLibDir()
@@ -367,7 +447,6 @@ namespace Alachisoft.NCache.Common
         /// <summary>
         /// Store all date time values as a difference to this time
         /// </summary>
-        //private static DateTime START_DT = new DateTime(2004, 12, 31).ToUniversalTime();
         private static DateTime START_DT = new DateTime(2004, 12, 31, 0, 0, 0, 0, DateTimeKind.Utc);
         private static Process s_currentProcess;
 
@@ -564,12 +643,13 @@ namespace Alachisoft.NCache.Common
         {
             try
             {
+                double millisec = 0;
                 DateTime randomTime = GetRandomDate(start, end);
                 //convert to local time.
                 TimeZone zone = TimeZone.CurrentTimeZone;
                 randomTime = zone.ToLocalTime(randomTime);
-                var millisec = (randomTime - DateTime.Now).TotalMilliseconds;
-                if (millisec < 0 || millisec >= Double.MaxValue)
+                millisec = (double)(randomTime - DateTime.Now).TotalMilliseconds;
+                if (millisec < 0 || millisec >= Int32.MaxValue)
                     millisec = 1000 * 60 * 30;
                 return Convert.ToDouble(millisec);
             }
@@ -611,6 +691,70 @@ namespace Alachisoft.NCache.Common
                 return s_currentProcess;
             }
         }
+        
+        public static bool IsFullPath(string path)
+        {
+            // Checks for null and invalid strings
+            // IsPathRooted will check for most cases, however, we need to exclude UNC paths
+            // Also Windows paths must start with a drive letter
+            if (string.IsNullOrWhiteSpace(path) || path.IndexOfAny(Path.GetInvalidPathChars()) != -1 || !Path.IsPathRooted(path))
+                return false;
 
+            string pathRoot = Path.GetPathRoot(path);
+
+            // Linux root paths will start with a forward slash
+            if (pathRoot.Length <= 2 && pathRoot != "/")
+                return false;
+
+            // Paths should not start with double backslashes, as these are used for shared paths
+            return (pathRoot[0] != '\\' || pathRoot[1] != '\\') ? true : false;
+        }
+
+        public static string GetHost()
+        {
+            string hostURl = @"https://app.alachisoft.com";
+            try
+            {
+                string path = Path.Combine(NCacheRuntimeEnvironment.GetEnvironment.NActivatePath, "activate.json");
+                if (File.Exists(path))
+                {
+                    using (StreamReader file = File.OpenText(path))
+                    using (JsonTextReader reader = new JsonTextReader(file))
+                    {
+                        var host = (JObject)JToken.ReadFrom(reader);
+                        var onPremHostURl = host["Host"].Value<string>();
+                        if (!string.IsNullOrEmpty(onPremHostURl))
+                            hostURl = onPremHostURl;
+                    }
+                }
+            }
+            catch (Exception) { }
+            return hostURl;
+        }
+
+        public static string GetCloudHost()
+        {
+            string hostURl = @"https://cloud.alachisoft.com";
+
+            try
+            {
+                if (!string.IsNullOrEmpty(RegUtil.LicenseProperties.UserInfo.CloudUrl))
+                {
+                    hostURl = RegUtil.LicenseProperties.UserInfo.CloudUrl;
+                }
+            }
+            catch (Exception) { }
+            return hostURl;
+        }
+        public static string BuildHeartbeatServerUrl(string subscriptionId, string licenseDuration, string azureFunctionUrl)
+        {
+            var uriBuilder = new UriBuilder(azureFunctionUrl);
+            var query = HttpUtility.ParseQueryString(uriBuilder.Query);
+            query["subscriptionId"] = subscriptionId;
+            query["licenseDuration"] = licenseDuration;
+            query["macAddress"] = string.Join(",", MachineInfo.MacAddresses.Where(m => !string.IsNullOrWhiteSpace(m)));
+            uriBuilder.Query = query.ToString();
+            return uriBuilder.ToString();
+        }
     }
 }

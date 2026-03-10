@@ -1,4 +1,4 @@
-//  Copyright (c) 2021 Alachisoft
+//  Copyright (c) 2026 Alachisoft
 //  
 //  Licensed under the Apache License, Version 2.0 (the "License");
 //  you may not use this file except in compliance with the License.
@@ -17,6 +17,7 @@ using System.Text;
 using System.Collections;
 using Alachisoft.NCache.Caching;
 using Alachisoft.NCache.Common.DataStructures.Clustered;
+using Alachisoft.NCache.Common.ResponseSerialization;
 
 namespace Alachisoft.NCache.SocketServer.Command.ResponseBuilders
 {
@@ -49,7 +50,12 @@ namespace Alachisoft.NCache.SocketServer.Command.ResponseBuilders
 
                         response.responseType = Alachisoft.NCache.Common.Protobuf.Response.Type.GET_BULK;
                         response.bulkGet = bulkGetResponse;
-                        _serializedResponse.Add(Alachisoft.NCache.Common.Util.ResponseHelper.SerializeResponse(response, Common.Protobuf.Response.Type.GET_BULK));
+                        ResponseOptions responseOptions = new ResponseOptions()
+                        {
+                            Response = response,
+                            ResponseType = response.responseType
+                        };
+                        _serializedResponse.Add(clientManager.ResponseBuilder.BuildResponse(responseOptions));
                     }
                 break;
                 case 1: //Verion 4.1 or later
@@ -66,7 +72,12 @@ namespace Alachisoft.NCache.SocketServer.Command.ResponseBuilders
                             {
                                 bulkGetResponse.sequenceId = sequenceId++;
                                 bulkGetResponse.keyValuePackage = package;
-                                _serializedResponse.Add(Alachisoft.NCache.Common.Util.ResponseHelper.SerializeResponse(bulkGetResponse, Common.Protobuf.Response.Type.GET_BULK));
+                                ResponseOptions responseOptions = new ResponseOptions()
+                                {
+                                    Response = bulkGetResponse,
+                                    ResponseType = Common.Protobuf.Response.Type.GET_BULK
+                                };
+                                _serializedResponse.Add(clientManager.ResponseBuilder.BuildResponse(responseOptions));
                             }
                         }
                         else
@@ -79,7 +90,12 @@ namespace Alachisoft.NCache.SocketServer.Command.ResponseBuilders
                                 response.sequenceId = sequenceId++;
                                 bulkGetResponse.keyValuePackage = package;
                                 response.bulkGet = bulkGetResponse;
-                                _serializedResponse.Add(Alachisoft.NCache.Common.Util.ResponseHelper.SerializeResponse(response));
+                                ResponseOptions responseOptions = new ResponseOptions()
+                                {
+                                    Response = response,
+                                    ResponseType = Common.Protobuf.Response.Type.GET_BULK
+                                };
+                                _serializedResponse.Add(clientManager.ResponseBuilder.BuildResponse(responseOptions));
                             }
                         }
                     }

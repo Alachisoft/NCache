@@ -12,6 +12,7 @@ import "GetCommand.proto";
 import "GetCompactTypesCommand.proto";
 import "GetEnumeratorCommand.proto";
 import "GetHashmapCommand.proto";
+import "GetModuleHashmapCommand.proto";
 import "GetOptimalServerCommand.proto";
 import "GetTypeInfoMapCommand.proto";
 import "InitCommand.proto";
@@ -69,6 +70,8 @@ import "BulkGetCacheItemCommand.proto";
 import "ContainsBulkCommand.proto";
 import "SurrogateCommand.proto";
 import "ModuleCommand.proto";
+import "GetModuleStateCommand.proto";
+import "SetModuleStateCommand.proto";
 option java_outer_classname="CommandProtocol";
 package Alachisoft.NCache.Common.Protobuf;
 
@@ -146,6 +149,10 @@ message Command
 		DATATYPE_MANAGEMENT=109;
 		MODULE=117;
 		SURROGATE=118;
+		GETMODULESTATE=119;
+		SETMODULESTATE=120;
+		GETMODULEHASHMAP=121;		
+		GET_SERVER_IDENTITY = 122;
 	}
 	
 	optional Type type = 1;
@@ -236,4 +243,8 @@ message Command
 	optional ContainsBulkCommand containsBulkCommand=114;
 	optional ModuleCommand moduleCommand=115;
 	optional SurrogateCommand surrogateCommand=116;
+	optional GetModuleStateCommand getModuleStateCommand=117;
+	optional SetModuleStateCommand setModuleStateCommand=118;
+	optional GetModuleHashmapCommand getModuleHashmapCommand=119;
+	optional GetServerIdentityCommand getServerIdentityCommand = 120;
 }

@@ -1,4 +1,4 @@
-//  Copyright (c) 2021 Alachisoft
+//  Copyright (c) 2026 Alachisoft
 //  
 //  Licensed under the Apache License, Version 2.0 (the "License");
 //  you may not use this file except in compliance with the License.
@@ -14,10 +14,12 @@
 using System;
 using System.Collections;
 using Alachisoft.NCache.Serialization.Surrogates;
+
 using System.Collections.Generic;
 using Alachisoft.NCache.Common.Pooling;
-using Alachisoft.NCache.Runtime.Serialization;
 
+
+using Alachisoft.NCache.Runtime.Serialization;
 
 namespace Alachisoft.NCache.Serialization
 {
@@ -270,13 +272,10 @@ namespace Alachisoft.NCache.Serialization
         /// <param name="type">the specified type</param>
         static public void UnregisterCompactType(Type type)
         {
-           // throw new NotImplementedException();
             if (type == null) throw new ArgumentNullException("type");
             if (TypeSurrogateSelector.GetSurrogateForTypeStrict(type,null) == null) return;
 
             if (type.IsArray ||
-                //typeof(IDictionary).IsAssignableFrom(type) ||
-                //typeof(IList).IsAssignableFrom(type) ||
                 typeof(Dictionary<,>).Equals(type) ||
                 typeof(List<>).Equals(type) ||
                 typeof(ICompactSerializable).IsAssignableFrom(type) ||
@@ -303,8 +302,6 @@ namespace Alachisoft.NCache.Serialization
 			if (TypeSurrogateSelector.GetSurrogateForTypeStrict(type,cacheContext) == null) return;
 
 			if (type.IsArray ||
-                //typeof(IDictionary).IsAssignableFrom(type) ||
-                //typeof(IList).IsAssignableFrom(type) ||
                 typeof(Dictionary<,>).Equals(type) ||
                 typeof(List<>).Equals(type) ||
 				typeof(ICompactSerializable).IsAssignableFrom(type) ||

@@ -1,4 +1,4 @@
-//  Copyright (c) 2021 Alachisoft
+//  Copyright (c) 2026 Alachisoft
 //  
 //  Licensed under the Apache License, Version 2.0 (the "License");
 //  you may not use this file except in compliance with the License.
@@ -22,17 +22,17 @@ namespace Alachisoft.NCache.Common.Protobuf.Util
     {
         public static void Serialize<T>(Stream stream, T obj)
         {
-            ProtoBuf.Serializer.Serialize<T>(stream, obj);
+            ProtoBuf.Extended.Serializer.Serialize<T>(stream, obj);
         }
 
         public static void Serialize(Stream stream, object instance)
         {
-            ProtoBuf.Serializer.NonGeneric.Serialize(stream, instance);
+            ProtoBuf.Extended.Serializer.NonGeneric.Serialize(stream, instance);
         }
 
         public static T Deserialize<T>(Stream stream)
         {
-            return ProtoBuf.Serializer.Deserialize<T>(stream);            
+            return ProtoBuf.Extended.Serializer.Deserialize<T>(stream);            
         }
     }
 }

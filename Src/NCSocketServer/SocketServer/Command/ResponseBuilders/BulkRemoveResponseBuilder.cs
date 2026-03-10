@@ -1,4 +1,4 @@
-//  Copyright (c) 2021 Alachisoft
+//  Copyright (c) 2026 Alachisoft
 //  
 //  Licensed under the Apache License, Version 2.0 (the "License");
 //  you may not use this file except in compliance with the License.
@@ -16,6 +16,7 @@ using System.Collections.Generic;
 using System.Text;
 using System.Collections;
 using Alachisoft.NCache.Caching;
+using Alachisoft.NCache.Common.ResponseSerialization;
 
 namespace Alachisoft.NCache.SocketServer.Command.ResponseBuilders
 {
@@ -33,7 +34,6 @@ namespace Alachisoft.NCache.SocketServer.Command.ResponseBuilders
         public static IList BuildResponse(Hashtable removeResult, int commandVersion, long requestId, IList _serializedResponse, int commandID, long requestID, Caching.Cache cache, ClientManager clientManager)
         {
             Alachisoft.NCache.SocketServer.Util.KeyPackageBuilder.Cache = cache;
-            //long requestId = Convert.ToInt64(RequestId);
             switch (commandVersion)
             {
                 case 0: //Versions earlier than NCache 4.1 because all of them expect responses as one chunck
@@ -46,12 +46,16 @@ namespace Alachisoft.NCache.SocketServer.Command.ResponseBuilders
 
                         response.responseType = Alachisoft.NCache.Common.Protobuf.Response.Type.REMOVE_BULK;
                         response.bulkRemove = bulkRemoveResponse;
-                        _serializedResponse.Add(Alachisoft.NCache.Common.Util.ResponseHelper.SerializeResponse(response,Common.Protobuf.Response.Type.REMOVE_BULK));
+                        ResponseOptions responseOptions = new ResponseOptions()
+                        {
+                            Response = response,
+                            ResponseType = response.responseType
+                        };
+                        _serializedResponse.Add(clientManager.ResponseBuilder.BuildResponse(responseOptions));
                     }
                     break;
                 case 1: //Verion 4.1 or later
                     {
-                        
                         IList keyValuesPackageChuncks = Alachisoft.NCache.SocketServer.Util.KeyPackageBuilder.PackageKeysValues(removeResult);
                         int sequenceId = 1;
                         Alachisoft.NCache.Common.Protobuf.Response response = new Alachisoft.NCache.Common.Protobuf.Response();
@@ -64,7 +68,12 @@ namespace Alachisoft.NCache.SocketServer.Command.ResponseBuilders
                             {
                                 bulkRemoveResponse.sequenceId = sequenceId++;
                                 bulkRemoveResponse.keyValuePackage = package;
-                                _serializedResponse.Add(Common.Util.ResponseHelper.SerializeResponse(bulkRemoveResponse, Common.Protobuf.Response.Type.REMOVE_BULK));
+                                ResponseOptions responseOptions = new ResponseOptions()
+                                {
+                                    Response = bulkRemoveResponse,
+                                    ResponseType = Common.Protobuf.Response.Type.REMOVE_BULK
+                                };
+                                _serializedResponse.Add(clientManager.ResponseBuilder.BuildResponse(responseOptions));
                             }
                         }
                         else
@@ -77,7 +86,12 @@ namespace Alachisoft.NCache.SocketServer.Command.ResponseBuilders
                                 response.sequenceId = sequenceId++;
                                 bulkRemoveResponse.keyValuePackage = package;
                                 response.bulkRemove = bulkRemoveResponse;
-                                _serializedResponse.Add(Alachisoft.NCache.Common.Util.ResponseHelper.SerializeResponse(response));
+                                ResponseOptions responseOptions = new ResponseOptions()
+                                {
+                                    Response = response,
+                                    ResponseType = Common.Protobuf.Response.Type.REMOVE_BULK
+                                };
+                                _serializedResponse.Add(clientManager.ResponseBuilder.BuildResponse(responseOptions));
 
                             }
                         }

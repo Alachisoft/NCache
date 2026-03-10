@@ -1,4 +1,4 @@
-//  Copyright (c) 2021 Alachisoft
+//  Copyright (c) 2026 Alachisoft
 //  
 //  Licensed under the Apache License, Version 2.0 (the "License");
 //  you may not use this file except in compliance with the License.
@@ -21,19 +21,6 @@ namespace Alachisoft.NCache.Runtime.Exceptions
     /// This exception is thrown whenever the connection with cache server is lost while performing an operation on an outproc cache.
     /// </summary>
     /// <example>The following example demonstrates how to use this exception in your code.
-    /// <code>
-    /// 
-    /// try
-    /// {
-    ///	    Cache cache = NCache.InitializeCache("sampleCache");
-    ///     cache.Add("TestKey","sampleData");
-    /// }
-    /// catch(ConnectionException ex)
-    /// {
-    ///     
-    /// }
-    /// 
-    /// </code>
     /// </example>
     [Serializable]
     public class ConnectionException : OperationFailedException

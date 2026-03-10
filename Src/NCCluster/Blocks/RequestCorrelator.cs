@@ -483,8 +483,6 @@ namespace Alachisoft.NGroups.Blocks
             RequestEntry entry;
             System.Collections.ArrayList copy;
 
-            // copy so we don't run into bug #761804 - Bela June 27 2003
-            //lock (requests.SyncRoot)
             req_lock.AcquireReaderLock(Timeout.Infinite);
             try
             {
@@ -517,8 +515,7 @@ namespace Alachisoft.NGroups.Blocks
 				return ;
 			
 			NCacheLog.Debug("suspect=" + mbr);
-					
-			// copy so we don't run into bug #761804 - Bela June 27 2003
+			
             req_lock.AcquireReaderLock(Timeout.Infinite);
             try
             {
@@ -723,7 +720,6 @@ namespace Alachisoft.NGroups.Blocks
 			RequestEntry entry;
 			System.Collections.ArrayList copy;
 			ArrayList oldMembers = new ArrayList();
-			// copy so we don't run into bug #761804 - Bela June 27 2003
             req_lock.AcquireReaderLock(Timeout.Infinite);
             try
 			{
@@ -928,10 +924,7 @@ namespace Alachisoft.NGroups.Blocks
 		{
 			System.Int64 id_obj = (long) id;
 			
-			// changed by bela Feb 28 2003 (bug fix for 690606)
-			// changed back to use synchronization by bela June 27 2003 (bug fix for #761804),
 			// we can do this because we now copy for iteration (viewChange() and suspect())
-			//lock (requests.SyncRoot)
             req_lock.AcquireWriterLock(Timeout.Infinite);
             try
             {
@@ -1213,7 +1206,6 @@ namespace Alachisoft.NGroups.Blocks
 
             rsp = req.makeReply();
             if (replyTo != null) rsp.Dest = replyTo;
-			// changed (bela Feb 20 2004): catch exception and return exception
 			try
 			{
                 if (retval is OperationResponse)
@@ -1452,9 +1444,6 @@ namespace Alachisoft.NGroups.Blocks
 			/// <summary>msg is synchronous if true </summary>
 			public bool rsp_expected = true;
 			
-			/// <summary>The unique name of the associated <tt>RequestCorrelator</tt> </summary>
-			//public string name = null;
-			
 			/// <summary>Contains senders (e.g. P --> Q --> R) </summary>
 			public System.Collections.ArrayList call_stack = null;
 			
@@ -1488,7 +1477,6 @@ namespace Alachisoft.NGroups.Blocks
 				this.type = type;
 				this.id = id;
 				this.rsp_expected = rsp_expected;
-				//this.name = name;
 			}
 
             /// <param name="type">type of header (<tt>REQ</tt>/<tt>RSP</tt>)
@@ -1507,13 +1495,11 @@ namespace Alachisoft.NGroups.Blocks
                 this.type = type;
                 this.id = id;
                 this.rsp_expected = rsp_expected;
-               // this.name = name;
 
             }
 			public override string ToString()
 			{
 				System.Text.StringBuilder ret = new System.Text.StringBuilder();
-				//ret.Append("[HDR: name=" + name + ", type=");
                 string typeStr = "<unknown>";
                 switch (type)
                 {
@@ -1598,11 +1584,6 @@ namespace Alachisoft.NGroups.Blocks
 				rsp_expected = reader.ReadBoolean();
                 reqStatus = reader.ReadObject() as RequestStatus;
                 status_reqId = reader.ReadInt64();
-				//name = reader.ReadString();
-				//call_stack = (System.Collections.ArrayList)reader.ReadObject();
-                //byte[] arr = (byte[])reader.ReadObject();
-                //dest_mbrs = arr != null ?(System.Collections.IList)CompactBinaryFormatter.FromByteBuffer(arr, null): null;
-				//dest_mbrs = (System.Collections.IList)reader.ReadObject();
                 dest_mbrs = (System.Collections.ArrayList)reader.ReadObject();
                 doProcess = reader.ReadBoolean();
                 whomToReply = (Address)reader.ReadObject();

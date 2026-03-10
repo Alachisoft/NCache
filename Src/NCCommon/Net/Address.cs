@@ -1,4 +1,4 @@
-//  Copyright (c) 2021 Alachisoft
+//  Copyright (c) 2026 Alachisoft
 //  
 //  Licensed under the Apache License, Version 2.0 (the "License");
 //  you may not use this file except in compliance with the License.
@@ -98,8 +98,8 @@ namespace Alachisoft.NCache.Common.Net
         }
 
 
-        public IPAddress IpAddress { get { return ip_addr; } }
-		public int Port { get { return port; } }
+		public IPAddress IpAddress { get { return ip_addr; } set { ip_addr = value; } }
+		public int Port { get { return port; } set { port = value; } }
 		public bool MulticastAddress { get { return ip_addr != null ? isMulticastAddress(ip_addr) : false; } }
 		public byte[] AdditionalData
 		{

@@ -1,4 +1,4 @@
-//  Copyright (c) 2021 Alachisoft
+//  Copyright (c) 2026 Alachisoft
 //  
 //  Licensed under the Apache License, Version 2.0 (the "License");
 //  you may not use this file except in compliance with the License.
@@ -24,14 +24,6 @@ namespace Alachisoft.NCache.IO
     public class SerializationContext
     {
         internal const int INVALID_COOKIE = -1;
-
-        /*
-         * ISSUE: Using an ArrayList to maintain context doubles the prformance but for 
-         * small number of objects only. This is good if there arent any containers, but as
-         * the number of objects grow a hashtable performs much better.
-         * 
-         * TODO: Come up with a structure that performs neraly linearly in most situations.
-         */
         /// <summary> Represents a list of objects known in the context so far. </summary>
         private Hashtable graphList = new Hashtable();
         private Hashtable cookieList = new Hashtable();
@@ -95,7 +87,7 @@ namespace Alachisoft.NCache.IO
         {
             int cookie = graphList.Count;
             graphList.Add(cookie, graph);
-            //huma: BigCluster fix: We will add in cookieList in serialization flow only.
+            //BigCluster fix: We will add in cookieList in serialization flow only.
             //In case of deserilization, we have zero object which may cause exception while insertion in hastable.
             if(updateCookieList) 
                 cookieList.Add(graph, cookie);

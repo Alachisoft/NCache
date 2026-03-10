@@ -1,4 +1,4 @@
-//  Copyright (c) 2021 Alachisoft
+//  Copyright (c) 2026 Alachisoft
 //  
 //  Licensed under the Apache License, Version 2.0 (the "License");
 //  you may not use this file except in compliance with the License.
@@ -22,7 +22,7 @@ using System.Diagnostics;
 using Alachisoft.NCache.Common.Monitoring;
 using Alachisoft.NCache.Common.Protobuf;
 using Alachisoft.NCache.Common.Util;
-using Alachisoft.NCache.SocketServer.Util;
+using Alachisoft.NCache.Common.ResponseSerialization;
 
 namespace Alachisoft.NCache.SocketServer.Command
 {
@@ -62,7 +62,14 @@ namespace Alachisoft.NCache.SocketServer.Command
             {
                 if (!base.immatureId.Equals("-2"))
                 {
-                    _serializedResponsePackets.Add(Alachisoft.NCache.Common.Util.ResponseHelper.SerializeExceptionResponseWithType(exc, command.requestID, command.commandID, clientManager.ClientVersion));
+                    ResponseOptions responseOptions = new ResponseOptions()
+                    {
+                        Exception = exc,
+                        RequestId = command.requestID,
+                        CommandId = command.commandID,
+                    };
+
+                    _serializedResponsePackets.Add(clientManager.ResponseBuilder.BuildExceptionResponse(responseOptions));
                 }
                 return;
             }
@@ -70,10 +77,8 @@ namespace Alachisoft.NCache.SocketServer.Command
             data = new byte[1];
             try
             {
-                var operationContext = new OperationContext(OperationContextFieldName.OperationType, OperationContextOperationType.CacheOperation);
-                CommandsUtil.PopulateClientIdInContext(ref operationContext, clientManager.ClientAddress);
                 //PROTOBUF:RESPONSE
-                bool result = nCache.Cache.AddExpirationHint(cmdInfo.Key, cmdInfo.ExpHint, operationContext);
+                bool result = nCache.Cache.AddExpirationHint(cmdInfo.Key, cmdInfo.ExpHint, new OperationContext(OperationContextFieldName.OperationType, OperationContextOperationType.CacheOperation));
                 //PROTOBUF:RESPONSE
                 stopWatch.Stop();
 
@@ -82,24 +87,44 @@ namespace Alachisoft.NCache.SocketServer.Command
                 if (clientManager.ClientVersion >= 5000)
                 {
                     ResponseHelper.SetResponse(addResponse, command.requestID, command.commandID);
-                    _serializedResponsePackets.Add(ResponseHelper.SerializeResponse(addResponse, Response.Type.ADD_ATTRIBUTE));
+                    var responseOption = new ResponseOptions()
+                    {
+                        Response = addResponse,
+                        ResponseType = Response.Type.ADD_ATTRIBUTE
+                    };
+                    _serializedResponsePackets.Add(clientManager.ResponseBuilder.BuildResponse(responseOption));
                 }
                 else
                 {
                     //PROTOBUF:RESPONSE
-                    Response response = new Response();
-                    response.addAttributeResponse = addResponse;
+                    Response response = new Response
+                    {
+                        addAttributeResponse = addResponse
+                    };
+
                     ResponseHelper.SetResponse(response, command.requestID, command.commandID, Response.Type.ADD_ATTRIBUTE);
-                    _serializedResponsePackets.Add(Alachisoft.NCache.Common.Util.ResponseHelper.SerializeResponse(response));
+
+                    var responseOption = new ResponseOptions()
+                    {
+                        Response = response,
+                        CommandId = command.commandID,
+                        RequestId = command.requestID,
+                        ResponseType = Response.Type.ADD_ATTRIBUTE
+                    };
+                    _serializedResponsePackets.Add(clientManager.ResponseBuilder.BuildResponse(responseOption));
                 }
             }
             catch (System.Exception exc)
             {
-                //_resultPacket = clientManager.ReplyPacket(base.ExceptionPacket(exc, cmdInfo.RequestId), base.ExceptionMessage(exc));
-                //PROTOBUF:RESPONSEexception = exc.ToString();
                 exception = exc.ToString();
-                //_resultPacket = Alachisoft.NCache.Common.Util.ResponseHelper.SerializeExceptionResponse(exc, command.requestID);
-                _serializedResponsePackets.Add(Alachisoft.NCache.Common.Util.ResponseHelper.SerializeExceptionResponseWithType(exc, command.requestID, command.commandID, clientManager.ClientVersion));
+                ResponseOptions responseOptions = new ResponseOptions()
+                {
+                    Exception = exc,
+                    RequestId = command.requestID,
+                    CommandId = command.commandID,
+                };
+
+                _serializedResponsePackets.Add(clientManager.ResponseBuilder.BuildExceptionResponse(responseOptions));
             }
             finally
             {

@@ -1,4 +1,4 @@
-//  Copyright (c) 2021 Alachisoft
+//  Copyright (c) 2026 Alachisoft
 //  
 //  Licensed under the Apache License, Version 2.0 (the "License");
 //  you may not use this file except in compliance with the License.
@@ -21,8 +21,9 @@ using System.Threading;
 using System.Net;
 using Alachisoft.NCache.Common;
 using Alachisoft.NCache.Common.Monitoring;
-using Alachisoft.NCache.Common.FeatureUsageData;
-using Alachisoft.NCache.Management;
+using Alachisoft.NCache.Common.Licensing;
+using Alachisoft.NCache.Common.ResponseSerialization;
+using Alachisoft.NCache.Common.ErrorHandling;
 
 namespace Alachisoft.NCache.SocketServer.Command
 {
@@ -36,27 +37,33 @@ namespace Alachisoft.NCache.SocketServer.Command
             public string Password;
             public bool IsDotNetClient;
             public string ClientID;
-            public string LicenceCode;
+            public string LicenseCode;
             public int clientVersion;
             public Runtime.Caching.ClientInfo clientInfo;
+
             public byte[] UserNameBinary;
             public byte[] PassworNameBinary;
             public string clientIP;
             public bool isAzureClient;
+            public bool FromClientCache;
             public int CommandVersion;
             public string clientEditionId;
             public bool SecureConnectionEnabled;
             public int operationTimeout;
             internal int cores;
+            internal int physicalCores;
+            internal int logicalCores;
+
         }
         private bool requestLoggingEnabled;
-       
+
         //PROTOBUF
 
         public InitializeCommand(bool requestLoggingEnabled)
         {
             this.requestLoggingEnabled = requestLoggingEnabled;
         }
+
         public override void ExecuteCommand(ClientManager clientManager, Alachisoft.NCache.Common.Protobuf.Command command)
         {
             CommandInfo cmdInfo;
@@ -75,7 +82,8 @@ namespace Alachisoft.NCache.SocketServer.Command
                 }
                 return;
             }
-
+            NCacheRPCService cacheService = null;
+            Management.ICacheServer nCacheServer = null;
             try
             {
                 clientManager.ClientID = cmdInfo.ClientID;
@@ -88,14 +96,51 @@ namespace Alachisoft.NCache.SocketServer.Command
 
                 GetClientUsage(clientManager, cmdInfo);
 
-                ClientLedger.Instance.RegisterClientForCache(clientManager.ClientAddress, clientManager.ClientID);
                 //Older client do not send operation timeout
-                clientManager.RequestTimeout = cmdInfo.operationTimeout != -1? cmdInfo.operationTimeout: 90* 1000;
+                clientManager.RequestTimeout = cmdInfo.operationTimeout != -1 ? cmdInfo.operationTimeout : 90 * 1000;
 
-                clientManager.CmdExecuter = new NCache(cmdInfo.CacheId, cmdInfo.IsDotNetClient, clientManager, cmdInfo.LicenceCode, cmdInfo.UserName, cmdInfo.Password, cmdInfo.UserNameBinary, cmdInfo.PassworNameBinary, cmdInfo.clientInfo);
 
-               
-        
+
+
+
+                clientManager.CmdExecuter = new NCache(cmdInfo.CacheId, cmdInfo.IsDotNetClient, clientManager, cmdInfo.LicenseCode, cmdInfo.UserName, cmdInfo.Password, cmdInfo.UserNameBinary, cmdInfo.PassworNameBinary, cmdInfo.clientInfo);
+
+                //connected client for usage log
+                try
+                {
+                    bool debug = false;
+                    cacheService = new NCacheRPCService(ServiceConfiguration.BindToIP.ToString());
+                    nCacheServer = cacheService.GetCacheServer(new TimeSpan(0, 0, 0, 30));
+
+                    if (nCacheServer == null)
+                    {
+                        cacheService = new NCacheRPCService(ServiceConfiguration.BindToIP.ToString());
+                        nCacheServer = cacheService.GetCacheServer(new TimeSpan(0, 0, 0, 30));
+                    }
+                    var server = nCacheServer.GetCacheServers(cmdInfo.CacheId);
+                    if (!IsServerAsClient(server, cmdInfo.clientInfo.IPAddress.ToString()) && !((Alachisoft.NCache.SocketServer.NCache)clientManager.CmdExecuter).Cache.CacheType.ToString().Equals("local-cache"))
+                    {
+                        ClientProfile clientProfile = new ClientProfile();
+
+                        if (clientManager.IsDotNetClient) clientProfile.Install_type = "DotNetClient";
+                        clientProfile.Install_type = "NotDotNetClient";
+
+                        clientProfile.EditionID = cmdInfo.clientEditionId;
+                        clientProfile.ClientId = cmdInfo.ClientID;
+                        clientProfile.Cores = cmdInfo.clientInfo.LogicalCores;
+                        clientProfile.Mac = cmdInfo.clientInfo.MacAddress;
+                        clientProfile.IpAddress = cmdInfo.clientInfo.IPAddress.ToString();
+                    }
+                }
+                catch (Exception ex)
+                {
+                    if (SocketServer.Logger.IsErrorLogsEnabled) SocketServer.Logger.NCacheLog.Error("InitializeCommand.Execute", clientManager.ClientSocket.RemoteEndPoint.ToString() + " add new client error " + ex.ToString());
+                }
+                finally
+                {
+
+                }
+
                 if (clientManager.PoolManager == null)
                 {
                     var shouldCreateFakePools = (clientManager.CmdExecuter as NCache).Cache.TransactionalPoolManager.IsUsingFakePools;
@@ -104,8 +149,7 @@ namespace Alachisoft.NCache.SocketServer.Command
 
                 clientManager.CacheTransactionalPool = ((NCache)clientManager.CmdExecuter).Cache.Context.TransactionalPoolManager;
                 clientManager.CacheFakePool = ((NCache)clientManager.CmdExecuter).Cache.Context.FakeObjectPool;
-                
-             
+
 
                 ClientManager cmgr = null;
                 int noOfConnectedClients = 0;
@@ -136,11 +180,14 @@ namespace Alachisoft.NCache.SocketServer.Command
                     if (SocketServer.Logger.IsErrorLogsEnabled) SocketServer.Logger.NCacheLog.Error("InitializeCommand.Execute", " an error occurred while forcefully disposing a client. " + e.ToString());
                 }
 
+                ResponseBuilderConfiguration responseBuilderConfiguration = new ResponseBuilderConfiguration(clientManager.ClientVersion, cmdInfo.IsDotNetClient);
+                clientManager.ResponseBuilder = ResponseBuilderFactory.Create(responseBuilderConfiguration);
+
                 clientManager.EventQueue = new EventsQueue();
                 clientManager.SlaveId = clientManager.ConnectionManager.EventsAndCallbackQueue.RegisterSlaveQueue(clientManager.EventQueue, clientManager.ClientID); // register queue with distributed queue.   
                 if (SocketServer.Logger.IsErrorLogsEnabled) SocketServer.Logger.NCacheLog.Error("InitializeCommand.Execute", clientManager.ClientID + " is connected to " + cmdInfo.CacheId);
 
-           
+
                 //PROTOBUF:RESPONSE
                 Alachisoft.NCache.Common.Protobuf.Response response = new Alachisoft.NCache.Common.Protobuf.Response();
                 Alachisoft.NCache.Common.Protobuf.InitializeCacheResponse initializeCacheResponse = new Alachisoft.NCache.Common.Protobuf.InitializeCacheResponse();
@@ -153,6 +200,10 @@ namespace Alachisoft.NCache.SocketServer.Command
                 initializeCacheResponse.isPersistenceEnabled = ((NCache)clientManager.CmdExecuter).Cache.IsPersistEnabled;
                 initializeCacheResponse.persistenceInterval = ((NCache)clientManager.CmdExecuter).Cache.PersistenceInterval;
                 initializeCacheResponse.cacheType = ((NCache)clientManager.CmdExecuter).Cache.CacheType.ToLower();
+                initializeCacheResponse.monitoringSessionId = ((NCache)clientManager.CmdExecuter).Cache.MonitoringId;
+                initializeCacheResponse.cacheConfigId = ((NCache)
+                    clientManager.CmdExecuter).Cache.Configuration.ConfigID;
+                initializeCacheResponse.cacheStoreType = ((NCache)clientManager.CmdExecuter).Cache.Configuration.Store;
 
 #if SERVER
                 initializeCacheResponse.targetCacheUniqueID = ((NCache)(clientManager.CmdExecuter)).Cache.TargetCacheUniqueID;
@@ -185,7 +236,7 @@ namespace Alachisoft.NCache.SocketServer.Command
             {
                 if (SocketServer.Logger.IsErrorLogsEnabled) SocketServer.Logger.NCacheLog.Error("InitializeCommand.Execute", clientManager.ClientSocket.RemoteEndPoint.ToString() + " : " + clientManager.ClientID + " failed to connect to " + cmdInfo.CacheId + " Error: " + sec.ToString());
                 //PROTOBUF:RESPONSE
-                _serializedResponsePackets.Add(Alachisoft.NCache.Common.Util.ResponseHelper.SerializeExceptionResponseWithoutType(sec, command.requestID,command.commandID));
+                _serializedResponsePackets.Add(Alachisoft.NCache.Common.Util.ResponseHelper.SerializeExceptionResponseWithoutType(sec, command.requestID, command.commandID));
             }
 
             catch (Exception exc)
@@ -194,7 +245,13 @@ namespace Alachisoft.NCache.SocketServer.Command
                 //PROTOBUF:RESPONSE
                 _serializedResponsePackets.Add(Alachisoft.NCache.Common.Util.ResponseHelper.SerializeExceptionResponseWithoutType(exc, command.requestID, command.commandID));
             }
+            finally
+            {
+                if (nCacheServer != null)
+                    nCacheServer.Dispose();
+            }
         }
+
 
         private bool IsServerAsClient(Node[] server, string clientIp)
         {
@@ -219,9 +276,8 @@ namespace Alachisoft.NCache.SocketServer.Command
             cmdInfo.CacheId = initCommand.cacheId;
             cmdInfo.ClientID = initCommand.clientId;
             cmdInfo.IsDotNetClient = initCommand.isDotnetClient;
-            cmdInfo.LicenceCode = initCommand.licenceCode;
+            cmdInfo.LicenseCode = initCommand.licenceCode;
             cmdInfo.operationTimeout = initCommand.operationTimeout;
-            
 
             cmdInfo.Password = initCommand.pwd;
             cmdInfo.PassworNameBinary = initCommand.binaryPwd;
@@ -235,31 +291,31 @@ namespace Alachisoft.NCache.SocketServer.Command
             cmdInfo.clientEditionId = initCommand.clientEditionId;
             cmdInfo.SecureConnectionEnabled = initCommand.secureConnectionEnabled;
             cmdInfo.CommandVersion = command.commandVersion;
-           
-            if (cmdInfo.clientVersion < 4620)
-            {
-                cmdInfo.clientInfo = ClientInfo.TryParseLegacyClientID(initCommand.clientId);
-                if (cmdInfo.clientInfo != null)
-                {
-                    cmdInfo.clientInfo.IPAddress = clientManager.ClientAddress;
-                    cmdInfo.clientInfo.ClientID = "Legacy Client (AppName Not Supported)";
 
-                }
+
+            cmdInfo.clientInfo = new Runtime.Caching.ClientInfo();
+            cmdInfo.clientInfo.ProcessID = command.initCommand.clientInfo.processId;
+            cmdInfo.clientInfo.AppName = command.initCommand.clientInfo.appName;
+            cmdInfo.clientInfo.ClientID = command.initCommand.clientInfo.clientId;
+            cmdInfo.clientInfo.MachineName = command.initCommand.clientInfo.machineName;
+            cmdInfo.clientInfo.IPAddress = clientManager.ClientAddress;
+            cmdInfo.clientInfo.MacAddress = initCommand.clientInfo.macAddress;
+            cmdInfo.clientInfo.Memory = command.initCommand.memory;
+            cmdInfo.clientInfo.IsDotNetCore = command.initCommand.isDotNetCoreClient;
+            cmdInfo.clientInfo.OperationSystem = command.initCommand.OperationSystem;
+
+
+            if (initCommand.clientInfo.physicalCores <= 0)
+            {
+                cmdInfo.clientInfo.PhysicalCores = initCommand.clientInfo.cores * 4;
+                cmdInfo.clientInfo.LogicalCores = initCommand.clientInfo.cores * 4;
             }
             else
             {
-                cmdInfo.clientInfo = new Runtime.Caching.ClientInfo();
-                cmdInfo.clientInfo.ProcessID = command.initCommand.clientInfo.processId;
-                cmdInfo.clientInfo.AppName = command.initCommand.clientInfo.appName;
-                cmdInfo.clientInfo.ClientID = command.initCommand.clientInfo.clientId;
-                cmdInfo.clientInfo.MacAddress = command.initCommand.clientInfo.macAddress;
-                cmdInfo.clientInfo.MachineName = command.initCommand.clientInfo.machineName;
-                cmdInfo.clientInfo.IPAddress = clientManager.ClientAddress;
-                cmdInfo.clientInfo.Cores = initCommand.clientInfo.cores;
-                cmdInfo.clientInfo.Memory = command.initCommand.memory;
-                cmdInfo.clientInfo.IsDotNetCore = command.initCommand.isDotNetCoreClient;
-                cmdInfo.clientInfo.OperationSystem = command.initCommand.OperationSystem;
+                cmdInfo.clientInfo.PhysicalCores = initCommand.clientInfo.physicalCores;
+                cmdInfo.clientInfo.LogicalCores = initCommand.clientInfo.logicalCores;
             }
+
 
             return cmdInfo;
         }
@@ -278,20 +334,16 @@ namespace Alachisoft.NCache.SocketServer.Command
 
             clientProfile.EditionID = cmdInfo.clientEditionId;
             clientProfile.ClientId = cmdInfo.ClientID;
-            clientProfile.Cores = cmdInfo.clientInfo.Cores;
+            clientProfile.Cores = cmdInfo.physicalCores;
             clientProfile.Mac = cmdInfo.clientInfo.MacAddress;
             clientProfile.IpAddress = cmdInfo.clientInfo.IPAddress.ToString();
-            clientProfile.Version = ProductVersion.GetVersion();
             clientProfile.OperatingSystem = cmdInfo.clientInfo.OperationSystem;
             clientProfile.Memory = cmdInfo.clientInfo.Memory;
             clientManager.ClientProfile = clientProfile;
 
-
-            if (cmdInfo.clientInfo != null && cmdInfo.clientInfo.AppName != null && cmdInfo.clientInfo.AppName.Contains(FeatureUsageCollector.FeatureTag))
-            {
-                FeatureUsageCollector.Instance.GetClientFeature(cmdInfo.clientInfo.AppName).UpdateUsageTime();
-            }
-
         }
+
     }
-}
+
+   }
+

@@ -35,7 +35,6 @@ namespace Alachisoft.NCache.Daemon
 
                 else
                 {
-                  //  ProcessStartInfo startInfo = new ProcessStartInfo() { FileName = "/bin/bash", Arguments = "-c \" " + args[0] + "/dotnet " + args[1] + "/bin/service/Alachisoft.NCache.Daemon.dll start " + "\"" };
                     ProcessStartInfo startInfo = new ProcessStartInfo() { FileName = "/bin/bash", Arguments = "-c \" " + "dotnet " + args[0] + "/bin/service/Alachisoft.NCache.Daemon.dll start " + "\"" };
                     Process proc = new Process() { StartInfo = startInfo, };
                     proc.Start();
@@ -63,15 +62,10 @@ namespace Alachisoft.NCache.Daemon
         {
             try
             {
-                AssemblyName asmName=new AssemblyName(args.Name);
-                if (asmName.Name.StartsWith("System.IO.FileSystem.resources") ||
-                    asmName.Name.StartsWith("System.Runtime.Serialization.Formatters.resources"))
-                    return null;
-
                 string location = Assembly.GetExecutingAssembly().Location;
                 DirectoryInfo directoryInfo = Directory.GetParent(location);
                 string installDir = directoryInfo.Parent.Parent.FullName;
-                return Assembly.LoadFrom(Path.Combine(Path.Combine(installDir, "lib"), asmName.Name + ".dll"));
+                return Assembly.LoadFrom(Path.Combine(Path.Combine(installDir, "lib"), new AssemblyName(args.Name).Name + ".dll"));
             }
             catch (Exception ex)
             {

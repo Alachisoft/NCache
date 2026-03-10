@@ -6,36 +6,49 @@ using System.Text;
 using System.Threading;
 using System.Threading.Tasks;
 using Alachisoft.NCache.SocketServer;
+using Alachisoft.NCache.Common.Util;
+using Alachisoft.NCache.Common;
+using System.Diagnostics;
 
 namespace Alachisoft.NCache.NetCore.Service
 {
-    public class NCacheService : BackgroundService
+    public class NCacheService :BackgroundService
     {
-        private Alachisoft.NCache.SocketServer.ServiceHost _serviceHost = new Alachisoft.NCache.SocketServer.ServiceHost();
-       
+        private Alachisoft.NCache.SocketServer.ServiceHost _serviceHost;
         public NCacheService()
         {
-            
+
+            try
+            {
+                ServiceConfiguration.Load();
+                _serviceHost = new ServiceHost();
+            }
+            catch
+            {
+                throw;
+            }
         }
+
+
 
 
 
         public override Task StartAsync(CancellationToken cancellationToken)
         {
-            _serviceHost.Start();
+            _serviceHost?.Start();
             return Task.CompletedTask;
         }
 
         public override Task StopAsync(CancellationToken cancellationToken)
         {
-            _serviceHost.Stop();
+            _serviceHost?.Stop();
             return Task.CompletedTask;
 
         }
 
         protected override async Task ExecuteAsync(CancellationToken stoppingToken)
         {
-            while (!stoppingToken.IsCancellationRequested)
+            while (!stoppingToken.IsCancellationRequested && _serviceHost != null)
             {
                 await Task.Delay(1000, stoppingToken);
             }

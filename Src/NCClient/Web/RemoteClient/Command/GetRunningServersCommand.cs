@@ -1,4 +1,4 @@
-//  Copyright (c) 2021 Alachisoft
+//  Copyright (c) 2026 Alachisoft
 //  
 //  Licensed under the Apache License, Version 2.0 (the "License");
 //  you may not use this file except in compliance with the License.
@@ -20,7 +20,6 @@ namespace Alachisoft.NCache.Client
 
         private byte[] _userName;
         private byte[] _password;
-        // LiveUpgrade Task 2-12-2013
         private Alachisoft.NCache.Common.ProductVersion _currentVersion;
         #region Helper Methods
         //This function is needed to parse byte to byte[] because all values in protobuf.ProductVersion are byte[]
@@ -31,7 +30,6 @@ namespace Alachisoft.NCache.Client
             return tempArray;
         }
         #endregion
-        
 
         public GetRunningServersCommand(string id, byte[] userName, byte[] password)
         {
@@ -45,7 +43,6 @@ namespace Alachisoft.NCache.Client
             _getRunningServersCommand.isDotnetClient = true;
             _getRunningServersCommand.requestId = base.RequestId;
 
-            // Live upgrade task  
             //Protobuf. Product Version is assigned values 
             if (_getRunningServersCommand.productVersion == null)
                 _getRunningServersCommand.productVersion = new Common.Protobuf.ProductVersion();
@@ -58,7 +55,6 @@ namespace Alachisoft.NCache.Client
             _getRunningServersCommand.productVersion.MinorVersion2 = this.ParseToByteArray(_currentVersion.MinorVersion2);
             _getRunningServersCommand.productVersion.ProductName = _currentVersion.ProductName;
 
-            
         }
 
         internal override CommandType CommandType

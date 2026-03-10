@@ -853,7 +853,6 @@ namespace Alachisoft.NGroups.Protocols
                 if (Stack.NCacheLog.IsInfoEnabled) Stack.NCacheLog.Info("TOTAL._sendMcastRequest()", "shortcut mcast seq# " + seqid);
                 return;
             }
-            //lock (reqTbl.SyncRoot)
             request_lock.AcquireWriterLock(Timeout.Infinite);
             try
             {
@@ -883,7 +882,7 @@ namespace Alachisoft.NGroups.Protocols
             // i. Store away the message while waiting for the sequencer's reply
             // ii. Send a bcast request immediatelly and also schedule a
             // retransmission
-            msg.Dest = null;  
+            msg.Dest = null;  //To make sure that this message will be broadcasted.
             if (addr.CompareTo(this.sequencerAddr) == 0)
             {
                 long seqid = NextSequenceID;
@@ -1938,7 +1937,6 @@ namespace Alachisoft.NGroups.Protocols
                             //if it is a unicast msg with a single destination.
                             if (msg.Dests == null)
                             {
-                                //msg = _sendUcast(msg);
                                 evt.Arg = msg;
                             }
                             // if it is a multicast msg with multiple destinations.
@@ -1963,7 +1961,6 @@ namespace Alachisoft.NGroups.Protocols
                 }
                 finally
                 {
-                    //stateLock.ReleaseReaderLock();
                 }
             }
             catch (ThreadInterruptedException ex)
@@ -1992,7 +1989,6 @@ namespace Alachisoft.NGroups.Protocols
             _mcastUpTbl = Hashtable.Synchronized(new Hashtable());
             //======================================================
 
-            //NewTrace nTrace = stack.nTrace;
             retransmitter = new AckSenderWindow(new Command(this), AVG_RETRANSMIT_INTERVAL, stack.NCacheLog);
             _mcastRetransmitter = new AckSenderWindow(new MCastCommand(this), AVG_MCAST_RETRANSMIT_INTERVAL, stack.NCacheLog);
         }

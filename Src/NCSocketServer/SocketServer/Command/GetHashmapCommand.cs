@@ -1,4 +1,4 @@
-//  Copyright (c) 2021 Alachisoft
+//  Copyright (c) 2026 Alachisoft
 //  
 //  Licensed under the Apache License, Version 2.0 (the "License");
 //  you may not use this file except in compliance with the License.
@@ -14,6 +14,8 @@
 using System;
 using System.Collections;
 using Alachisoft.NCache.Common.DataStructures;
+using Alachisoft.NCache.Common.ResponseSerialization;
+
 namespace Alachisoft.NCache.SocketServer.Command
 {
     class GetHashmapCommand : CommandBase
@@ -49,34 +51,48 @@ namespace Alachisoft.NCache.SocketServer.Command
                         getHashmapResponse.members.Add(member);
                     }
 
+                    if (hashmap.ServerMapping != null)
+                    {
+                        foreach (DictionaryEntry entry in hashmap.ServerMapping)
+                        {
+                            Common.Protobuf.KeyValuePair serverMapped = new Common.Protobuf.KeyValuePair();
+                            serverMapped.key = entry.Key.ToString();
+                            serverMapped.value = entry.Value.ToString();
+
+                            getHashmapResponse.serverMapping.Add(serverMapped);
+                        }
+                    }
+
                     foreach (DictionaryEntry entry in hashmap.Map)
                     {
                         Common.Protobuf.KeyValuePair keyValue = new Common.Protobuf.KeyValuePair();
                         keyValue.key = entry.Key.ToString();
                         keyValue.value = entry.Value.ToString();
 
-                        //nCache.Cache.NCacheLog.CriticalInfo("GetHashmapCommand", string.Format("Bucket id : {0} , Server : {1}", keyValue.key, keyValue.value));
-
                         getHashmapResponse.keyValuePair.Add(keyValue);
                     }
                 }
 
-                if (clientManager.ClientVersion >= 5000)
+                ResponseOptions responseOptions = new ResponseOptions()
                 {
-                    _serializedResponsePackets.Add(Alachisoft.NCache.Common.Util.ResponseHelper.SerializeResponse(response, Common.Protobuf.Response.Type.GET_HASHMAP));
-                }
-                else
-                {
-                    _serializedResponsePackets.Add(Alachisoft.NCache.Common.Util.ResponseHelper.SerializeResponse(response));
-                }
+                    Response = response,
+                    ResponseType = Common.Protobuf.Response.Type.GET_HASHMAP
+                };
+                _serializedResponsePackets.Add(clientManager.ResponseBuilder.BuildResponse(responseOptions));
 
             }
             catch (Exception exc)
             {
                 if (SocketServer.Logger.IsErrorLogsEnabled) SocketServer.Logger.NCacheLog.Error("GetHashmapCommand.Execute", clientManager.ClientSocket.RemoteEndPoint.ToString() + " : "+exc.ToString());
 
-                //_resultPacket = clientManager.ReplyPacket(base.ExceptionPacket(exc, cmdInfo.RequestId), base.ExceptionMessage(exc));
-                _serializedResponsePackets.Add(Alachisoft.NCache.Common.Util.ResponseHelper.SerializeExceptionResponseWithType(exc, command.requestID, command.commandID, clientManager.ClientVersion));
+                ResponseOptions responseOptions = new ResponseOptions()
+                {
+                    Exception = exc,
+                    RequestId = command.requestID,
+                    CommandId = command.commandID,
+                };
+
+                _serializedResponsePackets.Add(clientManager.ResponseBuilder.BuildExceptionResponse(responseOptions));
             }
 #endif
         }

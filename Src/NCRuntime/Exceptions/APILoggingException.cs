@@ -1,4 +1,4 @@
-﻿//  Copyright (c) 2021 Alachisoft
+﻿//  Copyright (c) 2026 Alachisoft
 //  
 //  Licensed under the Apache License, Version 2.0 (the "License");
 //  you may not use this file except in compliance with the License.
@@ -24,18 +24,6 @@ namespace Alachisoft.NCache.Runtime.Exceptions
     /// This Exception is thrown when Logging is stopped because of some connection loss or due to some other problem.
     /// </summary>
     /// <example>The following example demonstrates how to use this exception in your code.
-    /// <code>
-    /// 
-    /// try
-    /// {
-    ///	    ...
-    /// }
-    /// catch(APILoggingException ex)
-    /// {
-    ///     ...
-    /// }
-    /// 
-    /// </code>
     /// </example>
     public class APILoggingException :OperationFailedException
     {

@@ -14,6 +14,7 @@ namespace Alachisoft.NCache.Common.FeatureUsageData.Dom
         private string _name;
         private int _noOfCaches;
         private int _maxClusterSize;
+        private string _storeType;
 
         public Topology()
         {
@@ -24,6 +25,13 @@ namespace Alachisoft.NCache.Common.FeatureUsageData.Dom
         {
             set { _name = value; }
             get { return _name; }
+        }
+
+        [ConfigurationAttribute("store-type")]
+        public string StoreType
+        {
+            set { _storeType = value; }
+            get { return _storeType; }
         }
 
         [ConfigurationAttribute("no-of-caches")]
@@ -48,6 +56,7 @@ namespace Alachisoft.NCache.Common.FeatureUsageData.Dom
             topologies.Name = Name;
             topologies.NoOfCaches = NoOfCaches;
             topologies.MaxClusterSize = MaxClusterSize;
+            topologies.StoreType = StoreType;
             return topologies;
         }
 
@@ -56,6 +65,7 @@ namespace Alachisoft.NCache.Common.FeatureUsageData.Dom
             _name = reader.ReadObject() as string;
             _noOfCaches = reader.ReadInt32();
             _maxClusterSize = reader.ReadInt32();
+            _storeType = reader.ReadObject() as string;
         }
 
         public void Serialize(CompactWriter writer)
@@ -63,6 +73,7 @@ namespace Alachisoft.NCache.Common.FeatureUsageData.Dom
             writer.WriteObject(_name);
             writer.WriteObject(_noOfCaches);
             writer.WriteObject(_maxClusterSize);
+            writer.WriteObject(_storeType);
         }
     }
 }

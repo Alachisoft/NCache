@@ -1,4 +1,4 @@
-//  Copyright (c) 2021 Alachisoft
+//  Copyright (c) 2018 Alachisoft
 //  
 //  Licensed under the Apache License, Version 2.0 (the "License");
 //  you may not use this file except in compliance with the License.
@@ -93,11 +93,16 @@ namespace Alachisoft.NCache.Service
 			// 
 			// serviceInstaller
 			// 
-
+#if JAVA
+            this.serviceInstaller.DisplayName = "TayzGrid";
+#else
             this.serviceInstaller.DisplayName = "NCache";
-            
+#endif
+#if JAVA
+            this.serviceInstaller.ServiceName = "TayzGridSvc";
+#else
             this.serviceInstaller.ServiceName = "NCacheSvc";
-
+#endif
             this.serviceInstaller.StartType = System.ServiceProcess.ServiceStartMode.Automatic;
 			// 
 			// ProjectInstaller
@@ -124,7 +129,16 @@ namespace Alachisoft.NCache.Service
 			{
 				RegistryKey services = Registry.LocalMachine.OpenSubKey(@"System\CurrentControlSet\Services");
 				RegistryKey service = services.OpenSubKey(serviceInstaller.ServiceName, true);
+#if JAVA
+                service.SetValue("Description", "Provides out-proc caching and clustering. Allows local and remote management of TayzGrid configuration.");
+#else
                 service.SetValue("Description", "Provides out-proc caching and clustering. Allows local and remote management of NCache configuration.");
+#endif
+                //(Optional) Add some custom information your service will use...
+				//config = service.CreateSubKey("Parameters");
+
+
+				//config.SetValue("Path", loc);
 
 			}
 			catch(Exception e)
@@ -167,20 +181,26 @@ namespace Alachisoft.NCache.Service
         {
             try
             {
-
+#if JAVA
+                Process[] nCacheSvcProc = Process.GetProcessesByName("Alachisoft.TayzGrid.Service");
+#else
                 Process[] nCacheSvcProc = Process.GetProcessesByName("Alachisoft.NCache.Service");
                 Process[] nCacheBridgeSvcProc = Process.GetProcessesByName("Alachisoft.NCache.BridgeService");
-
+#endif
                 if (nCacheSvcProc != null && nCacheSvcProc.Length > 0)
                     (nCacheSvcProc[0]).Kill();
-
+#if !JAVA
                 if (nCacheBridgeSvcProc != null && nCacheBridgeSvcProc.Length > 0)
                     (nCacheBridgeSvcProc[0]).Kill();
-
+#endif
+#if JAVA
+                nCacheSvcProc = Process.GetProcessesByName("Alachisoft.TayzGrid.Service.exe");
+#else
                 nCacheSvcProc = Process.GetProcessesByName("Alachisoft.NCache.Service.exe");
-
+#endif
+#if !JAVA
                 nCacheBridgeSvcProc = Process.GetProcessesByName("Alachisoft.NCache.BridgeService.exe");
-
+#endif
             }
             catch (Exception)
             {

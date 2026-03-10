@@ -1,4 +1,4 @@
-//  Copyright (c) 2021 Alachisoft
+//  Copyright (c) 2026 Alachisoft
 //  
 //  Licensed under the Apache License, Version 2.0 (the "License");
 //  you may not use this file except in compliance with the License.
@@ -43,6 +43,7 @@ using System.Threading;
 using Alachisoft.NCache.Common.Pooling.Lease;
 using Alachisoft.NCache.Common.Pooling;
 using Alachisoft.NCache.Caching.Util;
+using Alachisoft.NCache.Common.Enum;
 
 namespace Alachisoft.NCache.Caching.Topologies.Clustered
 {
@@ -210,6 +211,7 @@ namespace Alachisoft.NCache.Caching.Topologies.Clustered
         private ClusterOperationSynchronizer _asynHandler;
 
         private Hashtable _membersRenders = Hashtable.Synchronized(new Hashtable());
+        protected Hashtable _serverMapping = new Hashtable();
 
         private long _lastViewId;
 
@@ -267,7 +269,7 @@ namespace Alachisoft.NCache.Caching.Topologies.Clustered
         /// Overloaded constructor. Takes the listener as parameter.
         /// </summary>
         /// <param name="listener">listener of Cache events.</param>
-        public ClusterService(CacheRuntimeContext context, IClusterParticipant part, IDistributionPolicyMember distributionMbr)//, IMirrorManagementMember mirrorManagementMbr)
+        public ClusterService(CacheRuntimeContext context, IClusterParticipant part, IDistributionPolicyMember distributionMbr)
         {
             _context = context;
             _ncacheLog = context.NCacheLog;
@@ -459,6 +461,7 @@ namespace Alachisoft.NCache.Caching.Topologies.Clustered
 
         public Hashtable Renderers { get { return this._membersRenders; } }
 
+        public Hashtable ServerMapping { get { return this._serverMapping; } }
 
         public Latch ViewInstallationLatch = new Latch(ViewStatus.NONE);
         private long _requestId;
@@ -577,10 +580,8 @@ namespace Alachisoft.NCache.Caching.Topologies.Clustered
                     if (_subgroupid != null) _subgroupid = _subgroupid.ToLower();
                     identity.SubGroupName = _subgroupid;
                 }
-                // =======================================
                 else
                     _subgroupid = name;
-                // =======================================
 
                 if (name != null) name = name.ToLower();
                 if (_subgroupid != null) _subgroupid = _subgroupid.ToLower();
@@ -644,10 +645,8 @@ namespace Alachisoft.NCache.Caching.Topologies.Clustered
                     if (_subgroupid != null) _subgroupid = _subgroupid.ToLower();
                     identity.SubGroupName = _subgroupid;
                 }
-                // =======================================
                 else
                     _subgroupid = name;
-                // =======================================
 
                 if (name != null) name = name.ToLower();
                 if (_subgroupid != null) _subgroupid = _subgroupid.ToLower();
@@ -656,8 +655,6 @@ namespace Alachisoft.NCache.Caching.Topologies.Clustered
                  PopulateClusterNodes(new Hashtable(clusterProps));
               
 #endif
-                //A property or indexer may not be passed as an out or ref parameter.
-                 //string loggerName = _context.LoggerName;
                 _channel = new GroupChannel(channelProps, _context.NCacheLog);
 
                 Hashtable config = new Hashtable();
@@ -1303,32 +1300,6 @@ namespace Alachisoft.NCache.Caching.Topologies.Clustered
                     return false;
                 }
 
-                if (_participant is MirrorCacheBase)
-                {
-                    if (_validMembers.Count > 2)
-                    {
-                        NCacheLog.Error("ClusterService.OnMemberJoined()", "A new node attempted to join the cluster when it alreay has 2 nodes -> " + address);
-                        ArrayList tmp = new ArrayList(2);
-                        tmp.Add(_validMembers[0]);
-                        tmp.Add(_validMembers[1]);                       
-
-                        lock (_servers.SyncRoot)
-                        {
-                            _validMembers.Clear();
-                            _servers.Clear();
-                            _validMembers = _servers = tmp.Clone() as ArrayList;
-
-                            if (LocalAddress.Equals(address))
-                            {
-                                _validMembers.Clear();
-                                _servers.Clear();
-                                _validMembers.Add(address);
-                                _servers.Add(address);
-                            }
-                        }
-                        return false;
-                    }
-                }
 
                 SubCluster group = null;
                 if (identity.HasStorage && identity.SubGroupName != null)
@@ -1373,6 +1344,12 @@ namespace Alachisoft.NCache.Caching.Topologies.Clustered
                             _listener.OnMemberJoined(address, renderer);
                         }
                     }
+
+                    if (identity.Mapping != null)
+                    {
+                        _serverMapping.Add(renderer, identity.Mapping);
+                        NCacheLog.CriticalInfo("ClusterService.OnMemberJoined ", "Public IP: " + identity.Mapping);
+                    }
                 }
 
                 return joined;
@@ -1414,7 +1391,11 @@ namespace Alachisoft.NCache.Caching.Topologies.Clustered
                     Address renderer = (Address)_membersRenders[address];
                     _membersRenders.Remove(address);
 
-                    if (_listener != null && !identity.IsStartedAsMirror) 
+                    if (_serverMapping != null && _serverMapping.ContainsKey(renderer))
+                        _serverMapping.Remove(renderer);
+                    
+
+                    if (_listener != null && !identity.IsStartedAsMirror) // invisible replica's don't raise events.
                         _listener.OnMemberLeft(address, renderer);
                 }
 
@@ -1556,7 +1537,11 @@ namespace Alachisoft.NCache.Caching.Topologies.Clustered
                         ipAddr = (Address)ipAddr.Clone();
 
                        
-                        if (OnMemberJoined(ipAddr, CompactBinaryFormatter.FromByteBuffer(ipAddr.AdditionalData, _context.SerializationContext) as NodeIdentity, joining_mbrs))
+                        if (!OnMemberJoined(ipAddr, CompactBinaryFormatter.FromByteBuffer(ipAddr.AdditionalData, _context.SerializationContext) as NodeIdentity, joining_mbrs))
+                        {
+                           
+                        }
+                        else
                         {
                             if (NCacheLog.IsInfoEnabled) NCacheLog.Info("ClusterServices.ViewAccepted", ipAddr.ToString() + " is added to _servers list.");
                             lock (_servers.SyncRoot)
@@ -1564,7 +1549,6 @@ namespace Alachisoft.NCache.Caching.Topologies.Clustered
                                 _servers.Add(ipAddr);
                             }
                         }
-                       
                         ipAddr.AdditionalData = null;
                     }
                 }
@@ -2004,6 +1988,7 @@ namespace Alachisoft.NCache.Caching.Topologies.Clustered
 
         internal void PopulateClusterNodes(Hashtable clusterProps)
         {
+            {
                 Hashtable nodeList = new Hashtable();
                 try
                 {
@@ -2023,15 +2008,17 @@ namespace Alachisoft.NCache.Caching.Topologies.Clustered
 
                 }
                 catch (Exception) { }
-            
+            }
         }
         
         private string ExtractCacheName(string cacheName)
         {
+           
                 if (cacheName.ToUpper().IndexOf("_BK_") != -1)
                     return cacheName.Remove(cacheName.ToUpper().IndexOf("_BK"), cacheName.Length - cacheName.ToUpper().IndexOf("_BK"));
                 else
                     return cacheName;
+            
         }
 
         internal void SetOperationModeOnMerge(OperationMode mode)

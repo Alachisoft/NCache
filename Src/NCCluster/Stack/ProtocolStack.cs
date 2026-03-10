@@ -1,4 +1,4 @@
-// $Id: ProtocolStack.java,v 1.12 2004/07/05 14:17:33 belaban Exp $
+
 using System;
 using Alachisoft.NCache.Common.Threading;
 using Alachisoft.NCache.Common.Util;
@@ -268,12 +268,12 @@ namespace Alachisoft.NGroups.Stack
 		
 		public override void  startUpHandler()
 		{
-			// DON'T REMOVE !!!!  Avoids a superfluous thread
+			//Avoids a superfluous thread
 		}
 		
 		public override void  startDownHandler()
 		{
-			// DON'T REMOVE !!!!  Avoids a superfluous thread
+			//Avoids a superfluous thread
 		}
 		
 		
@@ -314,7 +314,6 @@ namespace Alachisoft.NGroups.Stack
 		
 		public override void  stopInternal()
 		{
-			// do nothing, DON'T REMOVE !!!!
 		}
 		
 		

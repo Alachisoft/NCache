@@ -1,4 +1,4 @@
-﻿//  Copyright (c) 2021 Alachisoft
+﻿//  Copyright (c) 2026 Alachisoft
 //  
 //  Licensed under the Apache License, Version 2.0 (the "License");
 //  you may not use this file except in compliance with the License.
@@ -39,7 +39,6 @@ namespace Alachisoft.NCache.Client
                 cacheItem.CacheItemVersion = new CacheItemVersion();             
                 cacheItem.CacheItemVersion.Version = entry.itemVersion;                
                 cacheItem.CacheItemPriority = (CacheItemPriority)entry.priority;
-                //cacheItem.ResyncOptions = new Runtime.Caching.ResyncOptions(false, "");
                 cacheItem.Flagmap = new Common.BitSet((byte)entry.flagMap);
 
                 if (entry.value.Count > 0)

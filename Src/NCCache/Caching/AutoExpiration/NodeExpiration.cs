@@ -1,4 +1,4 @@
-//  Copyright (c) 2021 Alachisoft
+//  Copyright (c) 2026 Alachisoft
 //  
 //  Licensed under the Apache License, Version 2.0 (the "License");
 //  you may not use this file except in compliance with the License.
@@ -13,14 +13,9 @@
 //  limitations under the License
 
 using System;
-#if !( DEVELOPMENT || CLIENT)
 using Alachisoft.NCache.Caching.Topologies.Clustered;
 using Alachisoft.NGroups;
-#endif
-
 using Alachisoft.NCache.Runtime.Serialization.IO;
-
-
 using Alachisoft.NCache.Common.Net;
 using Alachisoft.NCache.Caching.Pooling;
 using Alachisoft.NCache.Common.Pooling;
@@ -62,7 +57,6 @@ namespace Alachisoft.NCache.Caching.AutoExpiration
 
         #endregion
 
-#if !(DEVELOPMENT || CLIENT)
         /// <summary>
         /// virtual method that returns true when the expiration has taken place, returns 
         /// false otherwise.
@@ -92,7 +86,6 @@ namespace Alachisoft.NCache.Caching.AutoExpiration
             internal set { _node = value; }
         }
 
-#endif
         /// <summary>
         /// returns false if given node is alive, returns true otherwise.
         /// </summary>
@@ -126,7 +119,6 @@ namespace Alachisoft.NCache.Caching.AutoExpiration
 
         public sealed override void ReturnLeasableToPool()
         {
-
         }
 
         #endregion

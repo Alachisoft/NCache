@@ -1,4 +1,4 @@
-﻿//  Copyright (c) 2021 Alachisoft
+﻿//  Copyright (c) 2026 Alachisoft
 //  
 //  Licensed under the Apache License, Version 2.0 (the "License");
 //  you may not use this file except in compliance with the License.
@@ -46,52 +46,10 @@ namespace Alachisoft.NCache.Common.Pooling.Lease
 
         public virtual void MarkInUse(int moduleRefId)
         {
-            //// When an item is not fetched from pool, 
-            //// its marking should be ignored.
-            //if (!IsFromPool)
-            //    return;
-
-            ////if (moduleRefId < 0 || moduleRefId >= NCModulesConstants.ModulesCount)
-            ////    throw new ArgumentException("Invalid module reference provided.", nameof(moduleRefId));
-
-            //lock (_leaseOperationLock)
-            //{
-            //    var refCount = ++_moduleReferenceBook[moduleRefId];
-
-            //    if (refCount > 1)
-            //        return;
-
-            //    _moduleRefCount++;
-            //}
         }
 
         public virtual void MarkFree(int moduleRefId)
         {
-            //// When an item is not fetched from pool, 
-            //// its marking should be ignored.
-            //if (!IsFromPool)
-            //    return;
-
-            ////if (moduleRefId < 0 || moduleRefId >= NCModulesConstants.ModulesCount)
-            ////    throw new ArgumentException("Invalid module reference provided.", nameof(moduleRefId));
-
-            //// If a certain module has exhausted its 
-            //// free markings, its marking should be ignored.
-            //if (_moduleReferenceBook[moduleRefId] == 0)
-            //    return;
-
-            //lock (_leaseOperationLock)
-            //{
-            //    var refCount = --_moduleReferenceBook[moduleRefId];
-
-            //    if (refCount != 0)
-            //        return;
-
-            //    _moduleRefCount--;
-
-            //    if (!IsInUse)
-            //        ReturnLeasableToPool();
-            //}
         }
 
         public abstract void ResetLeasable();

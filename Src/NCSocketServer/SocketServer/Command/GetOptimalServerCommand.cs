@@ -1,4 +1,4 @@
-//  Copyright (c) 2021 Alachisoft
+//  Copyright (c) 2026 Alachisoft
 //  
 //  Licensed under the Apache License, Version 2.0 (the "License");
 //  you may not use this file except in compliance with the License.
@@ -17,6 +17,7 @@ using System.Text;
 using Alachisoft.NCache.Caching;
 using Alachisoft.NCache.SocketServer.Util;
 using System.Collections.Generic;
+using System.Collections;
 
 namespace Alachisoft.NCache.SocketServer.Command
 {
@@ -70,6 +71,7 @@ namespace Alachisoft.NCache.SocketServer.Command
             {
                 string server = ConnectionManager.ServerIpAddress;
                 int port = ConnectionManager.ServerPort;
+                Hashtable serverPublicIp = null;
                 cache = CacheProvider.Provider.GetCacheInstanceIgnoreReplica(cmdInfo.CacheId);
                 if (cache == null) throw new Exception("Cache is not registered");
                 if (!cache.IsRunning) throw new Exception("Cache is not running");
@@ -77,88 +79,50 @@ namespace Alachisoft.NCache.SocketServer.Command
 
 #if (SERVER ) 
 
-                
+               
                     if (cache.CacheType.Equals("replicated-server"))
-                        cache.GetLeastLoadedServer(ref server, ref port);
+                        cache.GetLeastLoadedServer(ref server, ref port, ref serverPublicIp);
                     else
                     {
-                        if (cache.IsCoordinator) { /*return this node information...*/ }
+
+                        if (cache.IsCoordinator) {  }
                         else
                             cache.GetActiveServer(ref server, ref port);
+
+                        cache.GetServersPublicIPs(ref serverPublicIp);
                     }
-                
 #endif
 
                 Alachisoft.NCache.Common.Protobuf.Response response = new Alachisoft.NCache.Common.Protobuf.Response();
                 Alachisoft.NCache.Common.Protobuf.GetOptimalServerResponse getOptimalServerResponse = new Alachisoft.NCache.Common.Protobuf.GetOptimalServerResponse();
                 getOptimalServerResponse.server = server;
                 getOptimalServerResponse.port = port;
+
+                if (serverPublicIp != null && serverPublicIp.Count > 0)
+                {
+                    foreach (DictionaryEntry entry in serverPublicIp)
+                    {
+                        Common.Protobuf.KeyValuePair serverPublicip = new Common.Protobuf.KeyValuePair();
+                        serverPublicip.key = entry.Key.ToString();
+                        serverPublicip.value = entry.Value.ToString();
+                        getOptimalServerResponse.serverPublicIp.Add(serverPublicip);
+                    }
+                }
                 response.requestId = Convert.ToInt64(cmdInfo.RequestId);
                 response.commandID = command.commandID;
                 response.getOptimalServer = getOptimalServerResponse;
                 response.responseType = Alachisoft.NCache.Common.Protobuf.Response.Type.GET_OPTIMAL_SERVER;
 
                 //PROTOBUF:RESPONSE
-                //_resultPacket = clientManager.ReplyPacket("OPTIMALSERVERRESULT \"" + cmdInfo.RequestId + "\"" + server + "\"" + port.ToString() + "\"", new byte[0]);
 
                 _serializedResponsePackets.Add(Alachisoft.NCache.Common.Util.ResponseHelper.SerializeResponse(response));
             }
             catch (Exception exc)
             {
-                //_resultPacket = clientManager.ReplyPacket(base.ExceptionPacket(exc, cmdInfo.RequestId), base.ExceptionMessage(exc));
+                
                 _serializedResponsePackets.Add(Alachisoft.NCache.Common.Util.ResponseHelper.SerializeExceptionResponseWithoutType(exc, command.requestID, command.commandID));
             }
         }
-
-//        public override void ExecuteCommand(ClientManager clientManager, string command, byte[] data)
-//        {
-//            CommandInfo cmdInfo;
-//            try
-//            {
-//                cmdInfo = ParseCommand(ref command,data);
-//            }
-//            catch (Exception exc)
-//            {
-//                if (!base.immatureId.Equals("-2")) _resultPacket = clientManager.ReplyPacket(base.ExceptionPacket(exc, base.immatureId), base.ParsingExceptionMessage(exc));
-//                return;
-//            }
-
-//            Cache cache = null;
-
-//            try
-//            {
-//                string server = ConnectionManager.ServerIpAddress;
-//                int port = ConnectionManager.ServerPort;
-
-//                if(cmdInfo.IsDotNetClient)
-//                    cache = CacheProvider.Provider.GetCacheInstanceIgnoreReplica(cmdInfo.CacheId, cmdInfo.UserNameBinary, cmdInfo.PasswordBinary);
-//                else
-//                    cache = CacheProvider.Provider.GetCacheInstanceIgnoreReplica(cmdInfo.CacheId, cmdInfo.UserName, cmdInfo.Password);
-
-                
-//                if (cache == null) throw new Exception("Cache is not registered");
-//                if (!cache.IsRunning) throw new Exception("Cache is not running");
-
-//#if (ENTERPRISE || PROFESSIONAL) && (!PROF_CLIENT && !PROF_DEV)
-//                if (!cache.CacheType.Equals("mirror-server"))
-//                    cache.GetLeastLoadedServer(ref server, ref port);
-//                else
-//                {
-//                    if (cache.IsCoordinator) { /*return this node information...*/ }
-//                    else
-//                        cache.GetActiveServer(ref server, ref port);
-//                    //muds:
-//                    //return the active node information for the cache...
-//                }
-//#endif
-
-//                _resultPacket = clientManager.ReplyPacket("OPTIMALSERVERRESULT \"" + cmdInfo.RequestId + "\"" + server + "\"" + port.ToString() + "\"", new byte[0]);
-//            }
-//            catch (Exception exc)
-//            {
-//                _resultPacket = clientManager.ReplyPacket(base.ExceptionPacket(exc, cmdInfo.RequestId), base.ExceptionMessage(exc));
-//            }            
-//        }
 
         //PROTOBUF
         private CommandInfo ParseCommand(Alachisoft.NCache.Common.Protobuf.Command command, ClientManager clientManager)
@@ -177,47 +141,5 @@ namespace Alachisoft.NCache.SocketServer.Command
 
             return cmdInfo;
         }
-
-        //private CommandInfo ParseCommand(ref string command,byte[] data)
-        //{
-        //    CommandInfo cmdInfo = new CommandInfo();
-
-        //    int beginQuoteIndex = 0, endQuoteIndex = 0;
-
-        //    base.UpdateDelimIndexes(ref command, '"', ref beginQuoteIndex, ref endQuoteIndex);
-        //    base.UpdateDelimIndexes(ref command, '"', ref beginQuoteIndex, ref endQuoteIndex);
-
-        //    //if (beginQuoteIndex + 1 == endQuoteIndex) throw new ArgumentNullException("requestId");
-        //    cmdInfo.CacheId = command.Substring(beginQuoteIndex + 1, endQuoteIndex - beginQuoteIndex - 1);
-
-        //    base.UpdateDelimIndexes(ref command, '"', ref beginQuoteIndex, ref endQuoteIndex);
-        //    cmdInfo.RequestId = command.Substring(beginQuoteIndex + 1, endQuoteIndex - beginQuoteIndex - 1);
-        //    base.immatureId = cmdInfo.RequestId;
-
-        //    base.UpdateDelimIndexes(ref command, '"', ref beginQuoteIndex, ref endQuoteIndex);
-        //    cmdInfo.UserName = command.Substring(beginQuoteIndex + 1, endQuoteIndex - beginQuoteIndex - 1);
-
-        //    base.UpdateDelimIndexes(ref command, '"', ref beginQuoteIndex, ref endQuoteIndex);
-        //    cmdInfo.Password = command.Substring(beginQuoteIndex + 1, endQuoteIndex - beginQuoteIndex - 1);
-
-        //    base.UpdateDelimIndexes(ref command, '"', ref beginQuoteIndex, ref endQuoteIndex);
-        //    cmdInfo.IsDotNetClient = command.Substring(beginQuoteIndex + 1, endQuoteIndex - beginQuoteIndex - 1).Equals("Y");
-
-        //    if (cmdInfo.IsDotNetClient)
-        //    {
-
-        //        byte[] dataLength = HelperFxn.CopyPartial(data, 0, ConnectionManager.valSizeHolderBytesCount);
-
-
-        //        int uidLength = Util.HelperFxn.ToInt32(dataLength);
-        //        cmdInfo.UserNameBinary = HelperFxn.CopyPartial(data, ConnectionManager.valSizeHolderBytesCount, ConnectionManager.valSizeHolderBytesCount + uidLength);
-
-        //        dataLength = HelperFxn.CopyTw(data, ConnectionManager.valSizeHolderBytesCount + uidLength, ConnectionManager.valSizeHolderBytesCount);
-
-        //        int pwdLength = Util.HelperFxn.ToInt32(dataLength);
-        //        cmdInfo.PasswordBinary = HelperFxn.CopyTw(data, 2 * ConnectionManager.valSizeHolderBytesCount + uidLength, pwdLength);
-        //    }
-        //    return cmdInfo;
-        //}
     }
 }

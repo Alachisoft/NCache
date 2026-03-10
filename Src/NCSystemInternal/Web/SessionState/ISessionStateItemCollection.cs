@@ -11,7 +11,6 @@ namespace System.Web.SessionState
     // Summary:
     //     Defines the contract for the collection used by ASP.NET session state to manage
     //     session.
-    //[DefaultMember("Item")]
     public interface ISessionStateItemCollection : ICollection, IEnumerable
     {
         //

@@ -1,4 +1,4 @@
-// $Id: GmsImpl.java,v 1.4 2004/09/03 12:28:04 belaban Exp $
+
 using System;
 using Alachisoft.NGroups;
 using Alachisoft.NCache.Common.Enum;
@@ -51,7 +51,7 @@ namespace Alachisoft.NGroups.Protocols.pbcast
         } // only processed by participants
 
 
-        public abstract JoinRsp handleJoin(Address mbr, string subGroup_name, bool isStartedAsMirror, string gmsId);
+        public abstract JoinRsp handleJoin(Address mbr, string subGroup_name, bool isStartedAsMirror, string gmsId, ref bool acquireHashmap);
 		public abstract void  handleLeave(Address mbr, bool suspected);
 		public abstract void  handleViewChange(View new_view, Digest digest);
 		public abstract void  handleSuspect(Address mbr);

@@ -1,4 +1,4 @@
-//  Copyright (c) 2021 Alachisoft
+//  Copyright (c) 2026 Alachisoft
 //  
 //  Licensed under the Apache License, Version 2.0 (the "License");
 //  you may not use this file except in compliance with the License.
@@ -12,6 +12,9 @@
 //  See the License for the specific language governing permissions and
 //  limitations under the License
 
+using Alachisoft.NCache.Common.ErrorHandling;
+using Alachisoft.NCache.Config;
+using Alachisoft.NCache.Runtime.Exceptions;
 using System;
 using System.Collections;
 using System.Collections.Generic;
@@ -29,7 +32,7 @@ namespace Alachisoft.NCache.Client
     {
         #region Fields
 
-        private bool _balanceNodes = true; //true by default. decision made by Sir Iqbal. Mail dated Mon 6/9/2008
+        private bool _balanceNodes = true;
         private bool _loadServersFromConfigFile = true;
 
         private int _serverPort = 9800;
@@ -49,6 +52,10 @@ namespace Alachisoft.NCache.Client
         private Hashtable _mappedServer = new Hashtable();
         private Search _search = Search.LocalSearch;
         private Search _result = Search.LocalSearch;
+        private bool _connectUsingLoadBalancer = false;
+        private int _loadBalancerConnectionRetries = 15;
+        private bool _isConnectedWithPrivateIP = false;
+        private bool _enableNagling = false;
 
         #endregion
 
@@ -69,13 +76,15 @@ namespace Alachisoft.NCache.Client
                     foreach (var serverInfo in _cacheConnectionOptions.ServerList)
                     {
                         serverInfo.IsUserProvided = true;
+                        if (serverInfo.IsLoadBalancer)
+                            ConnectUsingLoadBalancer = true;    //If provided server is a load balancer, we set this flag true to signify that all connections should be done through load balancer  
                         AddServer(serverInfo);
                     }
                     _loadServersFromConfigFile = false;
                 }
             }
         }
-
+      
         public bool EnableClientLogs { get; set; }
 
         public bool EnableDetailedClientLogs { get; set; }
@@ -100,11 +109,54 @@ namespace Alachisoft.NCache.Client
             set { _balanceNodes = value; }
         }
 
+        /// <summary>
+        /// This is used in the case of when the cluster machines are behind a load balancer. 
+        /// This property signifies that the IP in the client config is that of the Load balancer and
+        /// not of the underlying machines in the cluster
+        /// </summary>
+        public bool ConnectUsingLoadBalancer
+        {
+            get { return _connectUsingLoadBalancer; }
+            set { _connectUsingLoadBalancer = value; }
+        }
+
+        public int LoadBalancerConnectionRetries
+        {
+            get
+            {
+                if (_cacheConnectionOptions != null && _cacheConnectionOptions.LoadBalancerConnectionRetries.HasValue)
+                    return _cacheConnectionOptions.LoadBalancerConnectionRetries.Value;
+
+                return _loadBalancerConnectionRetries;
+            }
+            set
+            {
+                _loadBalancerConnectionRetries = value;
+
+                if (_loadBalancerConnectionRetries < 2)
+                {
+                    _loadBalancerConnectionRetries = 2;
+                }
+            }
+        }
+        public bool EnableNagling
+        {
+            get { return _enableNagling; }
+        }
         public bool ImportHashmap { get; set; } = true ;
 
 
-       
-      
+        public int ConnectionRetries
+        {
+            get
+            {
+                if (_cacheConnectionOptions != null && _cacheConnectionOptions.IsSet(ConnectionStrings.CONNECTIONRETRIES))
+                    return _cacheConnectionOptions.ConnectionRetries.Value;
+
+                return _retries;
+            }
+        }
+
 
         public string BindIP
         {
@@ -315,7 +367,7 @@ namespace Alachisoft.NCache.Client
             }
         }
 
-        public ServerInfo GetMappedServer(string ip, int port)
+        public ServerInfo GetMappedServer(string ip, int port = 9800)
         {
             ServerInfo mapping = null;
 
@@ -351,6 +403,9 @@ namespace Alachisoft.NCache.Client
                 c_configFileName = DirectoryUtil.GetBaseFilePath("client.ncconf", _search, out _result);
 
                 if (c_configFileName == null) return;
+
+                if (!File.Exists(c_configFileName))
+                    throw new ConfigurationException(ErrorCodes.CacheInit.CONFIG_NOT_FOUND, ErrorMessages.GetErrorMessage(ErrorCodes.CacheInit.CONFIG_NOT_FOUND, c_configFileName));
 
                 FileInfo fileInfo = new FileInfo(c_configFileName);
                 fs = fileInfo.OpenRead();
@@ -388,6 +443,10 @@ namespace Alachisoft.NCache.Client
                                 {
                                     _serverPort = ConfigServerPort;
                                 }
+                                if (attributes["enable-nagling"] != null && attributes["enable-nagling"].Value != null)
+                                {
+                                    _enableNagling = Convert.ToBoolean(attributes["enable-nagling"].Value);
+                                }
 
                                 if (_cacheConnectionOptions != null && _cacheConnectionOptions.ClientRequestTimeOut.HasValue)
                                 {
@@ -401,7 +460,28 @@ namespace Alachisoft.NCache.Client
                                     }
                                 }
 
-                            
+                                if (_cacheConnectionOptions != null && _cacheConnectionOptions.ConnectionRetries.HasValue)
+                                {
+                                    _retries = _cacheConnectionOptions.ConnectionRetries.Value;
+                                }
+                                else
+                                {
+                                    if (attributes["connection-retries"] != null && attributes["connection-retries"].Value != null)
+                                    {
+                                        _retries = Convert.ToInt32(attributes["connection-retries"].Value);
+                                    }
+                                }
+                                if (_cacheConnectionOptions != null && _cacheConnectionOptions.LoadBalancerConnectionRetries.HasValue)
+                                {
+                                    LoadBalancerConnectionRetries = _cacheConnectionOptions.LoadBalancerConnectionRetries.Value;
+                                }
+                                else
+                                {
+                                    if (attributes["load-balancer-connection-retries"] != null && attributes["load-balancer-connection-retries"].Value != null)
+                                    {
+                                        LoadBalancerConnectionRetries = Convert.ToInt32(attributes["load-balancer-connection-retries"].Value);
+                                    }
+                                }
                                 if (_cacheConnectionOptions != null && _cacheConnectionOptions.ConnectionTimeout.HasValue)
                                 {
                                     _connectionTimeout = Convert.ToInt32(_cacheConnectionOptions.ConnectionTimeout.Value.TotalMilliseconds);
@@ -435,6 +515,10 @@ namespace Alachisoft.NCache.Client
                             if (cache.Attributes["load-balance"] != null)
                             {
                                 _balanceNodes = Convert.ToBoolean(cache.Attributes["load-balance"].Value);
+                            }
+                            if (cache.Attributes["load-balancer-connection-retries"] != null)
+                            {
+                                LoadBalancerConnectionRetries = Convert.ToInt32(cache.Attributes["load-balancer-connection-retries"].Value);
                             }
                             if (_cacheConnectionOptions != null && _cacheConnectionOptions.LoadBalance.HasValue)
                             {
@@ -540,6 +624,8 @@ namespace Alachisoft.NCache.Client
             }
         }
 
+
+
         private void LoadRemoteServerConfig(XmlNodeList cacheConfig)
         {
             try
@@ -558,6 +644,17 @@ namespace Alachisoft.NCache.Client
                         try
                         {
                             remoteServer.Name = currentConfig.Attributes["name"].InnerText;
+
+                            if (currentConfig.Attributes["is-load-balancer"] != null)
+                            {
+                                //If any one server is a load balancer we set the below flags to true to signify that
+                                //all clients using this config should connect through the load balancer, since all
+                                //machines in the cluster may not be directly accessible
+                                bool connectUsingLoadBalancer = Convert.ToBoolean(currentConfig.Attributes["is-load-balancer"].InnerText);
+
+                                remoteServer.IsLoadBalancer = connectUsingLoadBalancer;
+                                _connectUsingLoadBalancer = connectUsingLoadBalancer;
+                            }
                             remoteServer.Priority = Convert.ToInt16(PriorityCounter);
                             PriorityCounter = PriorityCounter + 1;
 
@@ -662,7 +759,7 @@ namespace Alachisoft.NCache.Client
             catch (Exception) { }
         }
 
-        internal void AddMappedServers(List<Config.Mapping> mappedServerList)
+        internal void AddMappedServers(List<Config.Mapping> mappedServerList, Connection connection = null)
         {
             Hashtable updatedServerMap = new Hashtable();
             if (mappedServerList != null)
@@ -714,12 +811,19 @@ namespace Alachisoft.NCache.Client
                                 _mappedServer.Add(privateServer, publicServer);
                             }
                         }
+
+                        if (connection != null && connection.IpAddress.Contains(privateServer.Name) || ConnectUsingLoadBalancer)
+                            _isConnectedWithPrivateIP = true;
                     }
                 }
+
                 foreach (ServerInfo rms in updatedServerMap.Keys)
                 {
                     _mappedServer[rms] = updatedServerMap[rms];
                 }
+
+                if (!_isConnectedWithPrivateIP && mappedServerList.Count > 0)
+                    IPMappingConfigured = true;
             }
         }
 
@@ -728,6 +832,31 @@ namespace Alachisoft.NCache.Client
             if (usedParamPort == ConfigServerPort)
                 return false;
             return true;
+        }
+
+        internal void UpdateMappedServers(Hashtable mappedServerList, int port)
+        {
+            if (mappedServerList != null && mappedServerList.Count > 0)
+            {
+                foreach (DictionaryEntry entry in mappedServerList)
+                {
+                    List<Mapping> mappedServers = new List<Mapping>();
+                    string[] ipAndPort = entry.Key.ToString().Split(':');
+
+                    Mapping mapping = new Mapping();
+
+                    mapping.PublicIP = entry.Value.ToString();
+                    mapping.PrivateIP = ipAndPort[0];
+                    mapping.PrivatePort = port; //client port 9800
+                    mapping.PublicPort = port; //client port 9800
+
+                    mappedServers.Add(mapping);
+
+                    AddMappedServers(mappedServers);
+
+
+                }
+            }
         }
     }
 }

@@ -1,4 +1,4 @@
-//  Copyright (c) 2021 Alachisoft
+//  Copyright (c) 2026 Alachisoft
 //  
 //  Licensed under the Apache License, Version 2.0 (the "License");
 //  you may not use this file except in compliance with the License.
@@ -15,7 +15,9 @@ using System;
 using System.Collections;
 using System.Text;
 using Alachisoft.NCache.Common.Configuration;
+
 using Alachisoft.NCache.Runtime.Serialization;
+
 using Runtime = Alachisoft.NCache.Runtime;
 
 namespace Alachisoft.NCache.Config.Dom
@@ -42,20 +44,6 @@ namespace Alachisoft.NCache.Config.Dom
         {
             get { return traceErrors; }
             set { traceErrors = value; }
-        }
-
-        [ConfigurationAttribute("trace-notices")]
-        public bool TraceNotices
-        {
-            get { return traceNotices; }
-            set { traceNotices = value; }
-        }
-
-        [ConfigurationAttribute("trace-warnings")]
-        public bool TraceWarnings
-        {
-            get { return traceWarnings; }
-            set { traceWarnings = value; }
         }
 
         [ConfigurationAttribute("trace-debug")]
@@ -86,8 +74,6 @@ namespace Alachisoft.NCache.Config.Dom
             log.Enabled = Enabled;
             log.TraceDebug = TraceDebug;
             log.TraceErrors = TraceErrors;
-            log.TraceNotices = TraceNotices;
-            log.TraceWarnings = TraceWarnings;
             log.LogPath = LogPath;
             return log;
         }
@@ -104,7 +90,6 @@ namespace Alachisoft.NCache.Config.Dom
             traceNotices = reader.ReadBoolean();
             traceDebug = reader.ReadBoolean();
             location = (string)reader.ReadObject();
-  
         }
 
         public void Serialize(Runtime.Serialization.IO.CompactWriter writer)
@@ -115,7 +100,6 @@ namespace Alachisoft.NCache.Config.Dom
             writer.Write(traceNotices);
             writer.Write(traceDebug);
             writer.WriteObject(location);
-           
         }
 
         #endregion

@@ -1,4 +1,4 @@
-//  Copyright (c) 2021 Alachisoft
+//  Copyright (c) 2026 Alachisoft
 //  
 //  Licensed under the Apache License, Version 2.0 (the "License");
 //  you may not use this file except in compliance with the License.
@@ -107,18 +107,11 @@ namespace Alachisoft.NCache.Common
         /// <returns></returns>
         static public object GetRegValue(string section, string key,short prodId)
         {
-            if (AppUtil.IsRunningAsWow64)
-                return GetRegValueInternal(section, key, prodId);
-
             try
             {
-                RegistryKey root = Registry.LocalMachine.OpenSubKey(section);
-                if (root != null)
-                    return root.GetValue(key);
-
-                return null;
+                return GetRegValueInternal(section, key, prodId);
             }
-            catch (Exception ex)
+            catch
             {
                 return null;
             }
@@ -146,63 +139,6 @@ namespace Alachisoft.NCache.Common
                     string[] keys = root.GetValueNames();
                     for (int i = 0; i < keys.Length; i++)
                         ht[keys[i]] = GetRegValue(keypath, keys[i], prodId);
-                }                
-            }
-            catch (Exception)
-            {
-            }
-            return ht.Count;
-        }
-
-
-        static public int GetRegValuesFromCurrentUser(string keypath, Hashtable ht, short prodId)
-        {
-            RegistryKey root;
-
-            if (AppUtil.IsRunningAsWow64)
-            {
-                GetRegValuesInternalWow64(keypath, ht, prodId);
-                return ht.Count;
-            }
-            try
-            {
-                root = Registry.CurrentUser.OpenSubKey(keypath);
-                if (root != null)
-                {
-                    string[] keys = root.GetValueNames();
-                    for (int i = 0; i < keys.Length; i++)
-                        ht[keys[i]] = GetRegValue(keypath, keys[i], prodId);
-                }
-            }
-            catch (Exception)
-            {
-            }
-            return ht.Count;
-        }
-
-
-        /// <summary>
-        /// Get a key value from the registry.
-        /// </summary>
-        /// <param name="section"></param>
-        /// <param name="key"></param>
-        /// <returns></returns>
-        static public int GetBooleanRegValues(string keypath, Hashtable ht, short prodId)
-        {
-            if(AppUtil.IsRunningAsWow64)
-            {
-                GetBooleanRegValuesInternalWow64(keypath,ht,prodId);
-                return ht.Count;
-            }
-            RegistryKey root;
-            try
-            {
-                root = Registry.LocalMachine.OpenSubKey(keypath);
-                if (root != null)
-                {
-                    string[] keys = root.GetValueNames();
-                    for (int i = 0; i < keys.Length; i++)
-                        ht[keys[i]] = Convert.ToBoolean(GetRegValue(keypath, keys[i], prodId));
                 }                
             }
             catch (Exception)
@@ -346,25 +282,21 @@ namespace Alachisoft.NCache.Common
         {
             try
             {
-                StringBuilder regVal = new StringBuilder(500);
-                StringBuilder sbSection = new StringBuilder(section);
-                StringBuilder sbKey = new StringBuilder(key);
-                StringBuilder sbDefaultVal = new StringBuilder("");
-
-                NCRegistryDLL.GetRegVal(regVal, sbSection, sbKey, sbDefaultVal, prodId);
-                return regVal.ToString();
-            }
-            catch (Exception ex)
-            {
-                if (ex.InnerException != null)
+                string value64 = string.Empty;
+                RegistryKey localKey =
+                    RegistryKey.OpenBaseKey(Microsoft.Win32.RegistryHive.LocalMachine,
+                        RegistryView.Registry64);
+                localKey = localKey.OpenSubKey(section);
+                if (localKey != null)
                 {
-                    AppUtil.LogEvent("RegHelper::Stage 001" + ex.Message + ex.InnerException.Message, EventLogEntryType.Error);
+                    var regValue = localKey.GetValue(key);
+                    if (regValue != null)
+                        value64 = regValue.ToString();
+                    localKey.Close();
                 }
-                else
-                {
-                    AppUtil.LogEvent("RegHelper::Stage 001" + ex.Message, EventLogEntryType.Error);
-                }
+                return value64;
             }
+            catch (Exception ex) { }
             return "";
         }
 
@@ -389,65 +321,7 @@ namespace Alachisoft.NCache.Common
 
             }
             return caches;
-        }
-
-        static private void GetRegValuesInternalWow64(string keypath, Hashtable ht, short prodId) 
-        {
-            try
-            {
-                StringBuilder regVal = new StringBuilder(2048);
-                StringBuilder sbSection = new StringBuilder(keypath);
-                StringBuilder sbKey = new StringBuilder("");
-                StringBuilder sbDefaultVal = new StringBuilder("");
-                NCRegistryDLL.GetRegKeys(regVal, sbSection, sbKey, sbDefaultVal, prodId);
-
-                string keys = regVal.ToString();
-                string[] statKeys = keys.Split(':');
-
-                for (int i = 0; i < statKeys.Length; i++)
-                {
-                    string subKey = statKeys[i];
-                    if (!String.IsNullOrEmpty(subKey))
-                    {
-                        string result = GetRegValueInternal(keypath, subKey, prodId);
-                        ht[statKeys[i]] = result;
-                    }
-                }
-            }
-            catch (Exception ex)
-            {
-                AppUtil.LogEvent("RegHelper::Stage 002" + ex.Message + ex.InnerException.Message, EventLogEntryType.Error);
-            }
-        }
-
-        static private void GetBooleanRegValuesInternalWow64(string keypath, Hashtable ht,short prodId) 
-        {
-            try
-            {
-                StringBuilder regVal = new StringBuilder(2048);
-                StringBuilder sbSection = new StringBuilder(keypath);
-                StringBuilder sbKey = new StringBuilder("");
-                StringBuilder sbDefaultVal = new StringBuilder("");
-                NCRegistryDLL.GetRegKeys(regVal, sbSection, sbKey, sbDefaultVal, prodId);
-
-                string keys = regVal.ToString();
-                string[] statKeys = keys.Split(':');
-
-                for (int i = 0; i < statKeys.Length; i++)
-                {
-                    string subKey = statKeys[i];
-                    if (!String.IsNullOrEmpty(subKey))
-                    {
-                        string result = GetRegValueInternal(keypath, subKey,prodId);
-                        ht[statKeys[i]] = Convert.ToBoolean(result);
-                    }
-                }
-            }
-            catch (Exception ex)
-            {
-                AppUtil.LogEvent("RegHelper::Stage 003" + ex.Message + ex.InnerException.Message, EventLogEntryType.Error);
-            }
-        }
+        } 
 
         public static object GetRegValueFromCurrentUser(string section, string key, short prodId)
         {

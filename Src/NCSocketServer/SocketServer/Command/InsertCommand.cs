@@ -1,4 +1,5 @@
 using System;
+
 using Alachisoft.NCache.Caching;
 using Alachisoft.NCache.Common;
 using System.Collections;
@@ -13,8 +14,7 @@ using Alachisoft.NCache.Common.Pooling;
 using Alachisoft.NCache.SocketServer.Pooling;
 using Alachisoft.NCache.Util;
 using System.Diagnostics;
-using Alachisoft.NCache.SocketServer.Util;
-
+using Alachisoft.NCache.Common.ResponseSerialization;
 namespace Alachisoft.NCache.SocketServer.Command
 {
     class InsertCommand : AddAndInsertCommandBase
@@ -100,7 +100,14 @@ namespace Alachisoft.NCache.SocketServer.Command
                     _insertResult = OperationResult.Failure;
                     {
                         //PROTOBUF:RESPONSE
-                        _serializedResponsePackets.Add(Alachisoft.NCache.Common.Util.ResponseHelper.SerializeExceptionResponseWithType(exc, command.requestID, command.commandID, clientManager.ClientVersion));
+                        ResponseOptions responseOptions = new ResponseOptions()
+                        {
+                            Exception = exc,
+                            RequestId = command.requestID,
+                            CommandId = command.commandID,
+                        };
+
+                        _serializedResponsePackets.Add(clientManager.ResponseBuilder.BuildExceptionResponse(responseOptions));
                     }
                     return;
                 }
@@ -138,7 +145,7 @@ namespace Alachisoft.NCache.SocketServer.Command
                     {
                         operationContext = _operationContext;
                         operationContext.Add(OperationContextFieldName.OperationType, OperationContextOperationType.CacheOperation);
-                        CommandsUtil.PopulateClientIdInContext(ref operationContext, clientManager.ClientAddress);
+                        
                         operationContext.Add(OperationContextFieldName.RaiseCQNotification, true);
                         UInt64 itemVersion = 0;
                         if (cmdInfo.ItemVersion == 0)
@@ -177,7 +184,12 @@ namespace Alachisoft.NCache.SocketServer.Command
                         {
                             ResponseHelper.SetResponse(_insertResponse, command.requestID, command.commandID);
 
-                            _serializedResponsePackets.Add(ResponseHelper.SerializeInsertResponse(_insertResponse, Response.Type.INSERT));
+                            ResponseOptions responseOptions = new ResponseOptions()
+                            {
+                                Response = _insertResponse,
+                                ResponseType = Response.Type.INSERT
+                            };
+                            _serializedResponsePackets.Add(clientManager.ResponseBuilder.BuildResponse(responseOptions));
                         }
                         else
                         {
@@ -185,7 +197,12 @@ namespace Alachisoft.NCache.SocketServer.Command
                             response.insert = _insertResponse;
                             ResponseHelper.SetResponse(response, command.requestID, command.commandID, Response.Type.INSERT);
 
-                            _serializedResponsePackets.Add(Alachisoft.NCache.Common.Util.ResponseHelper.SerializeResponse(response));
+                            ResponseOptions responseOptions = new ResponseOptions()
+                            {
+                                Response = _insertResponse,
+                                ResponseType = Response.Type.INSERT
+                            };
+                            _serializedResponsePackets.Add(clientManager.ResponseBuilder.BuildResponse(responseOptions));
                         }
                     }
                     catch (System.Exception exc)
@@ -194,7 +211,14 @@ namespace Alachisoft.NCache.SocketServer.Command
                         exception = exc.ToString();
 
                         //PROTOBUF:RESPONSE
-                        _serializedResponsePackets.Add(Alachisoft.NCache.Common.Util.ResponseHelper.SerializeExceptionResponseWithType(exc, command.requestID, command.commandID, clientManager.ClientVersion));
+                        ResponseOptions responseOptions = new ResponseOptions()
+                        {
+                            Exception = exc,
+                            RequestId = command.requestID,
+                            CommandId = command.commandID,
+                        };
+
+                        _serializedResponsePackets.Add(clientManager.ResponseBuilder.BuildExceptionResponse(responseOptions));
                     }
                     finally
                     {
@@ -208,7 +232,6 @@ namespace Alachisoft.NCache.SocketServer.Command
                             MiscUtil.ReturnUserBinaryObjectToPool(userBinaryObject, userBinaryObject.PoolManager);
 
                         MiscUtil.ReturnExpirationHintToPool(cmdInfo.ExpirationHint, cmdInfo.ExpirationHint?.PoolManager);
-                        //MiscUtil.ReturnSyncDependencyToPool(cmdInfo.SyncDependency, cmdInfo.SyncDependency?.PoolManager);
 
                         TimeSpan executionTime = stopWatch.Elapsed;
 

@@ -1,4 +1,4 @@
-//  Copyright (c) 2021 Alachisoft
+//  Copyright (c) 2026 Alachisoft
 //  
 //  Licensed under the Apache License, Version 2.0 (the "License");
 //  you may not use this file except in compliance with the License.
@@ -51,12 +51,12 @@ namespace Alachisoft.NCache.Client
         private Dictionary<Common.Net.Address, EnumerationDataChunk> _chunks;
         private List<CommandBase> _failedCommands;
         private List<CommandResponse> _rawResponses = null;
-		
-		
+
+        private Dictionary<Common.Net.Address, IDictionary<Address, SurrogateCommand>> _surrogateCommands = new Dictionary<Address, IDictionary<Address, SurrogateCommand>>();
+
         private long _timeout = 90000;
         private bool _isrequestTimeoutReset = false;
         private Common.Net.Address _reRoutedAddress = null;
-
 
         public Request(bool isBulk, long timeout)
         {
@@ -308,8 +308,24 @@ namespace Alachisoft.NCache.Client
         internal void AddResponse(Common.Net.Address address, CommandResponse response)
         {
             _type = response.Type;
-
-           
+            if (response.IsSurrogate)
+            {
+                if (_surrogateCommands != null)
+                {
+                    var tempRes = response;
+                    using (Stream tempStream = new ClusteredMemoryStream(tempRes.SerializedResponse))
+                    {
+                        var surrogteRes = ResponseHelper.DeserializeResponse(tempRes.Type, tempStream);
+                        var actualTargetNode = Address.Parse(surrogteRes.surrogateResponse?.targetServer);
+                        if (_surrogateCommands.TryGetValue(address, out var commands))
+                        {
+                            commands.Remove(actualTargetNode);
+                            address = actualTargetNode;
+                            response.ActualTargetNode = actualTargetNode;
+                        }
+                    }
+                }
+            }
 
             lock (_responseMutex)
             {
@@ -364,7 +380,6 @@ namespace Alachisoft.NCache.Client
 
                     respnse.NeedsDeserialization = false;
                     AddResponse(respnse.Src, respnse);
-                
                 }
                 _rawResponses.Clear();
             }
@@ -381,7 +396,6 @@ namespace Alachisoft.NCache.Client
             lock (_responseMutex)
             {
                 if (_responses == null) _responses = new Dictionary<Common.Net.Address, Dictionary<int, ResponseList>>();
-                //RemoveResponse(address, command.CommandID);
                 if (!_responses.ContainsKey(address))
                 {
                     _responses.Add(address, new Dictionary<int, ResponseList>());
@@ -454,6 +468,22 @@ namespace Alachisoft.NCache.Client
         {
             ResetInternal(ip);
 
+            if (_surrogateCommands != null)
+            {
+
+                if (_surrogateCommands.TryGetValue(ip, out var commands))
+                {
+                    foreach (var actualAddress in commands.Keys)
+                    {
+                        if (actualAddress != null)
+                        {
+                            //as surrogate command was executed this faulity node, therefore we need to reset it as well.
+                            ResetInternal(actualAddress);
+                        }
+                    }
+                    _surrogateCommands.Remove(ip);
+                }
+            }
 
         }
 
@@ -636,7 +666,9 @@ namespace Alachisoft.NCache.Client
                     }
                     _finalResponse.SetBroker = false;
                     break;
-
+#if SERVER
+               
+#endif
                 case Common.Protobuf.Response.Type.SEARCH:
                 case Common.Protobuf.Response.Type.SEARCH_CQ:
                 case Common.Protobuf.Response.Type.SEARCH_ENTRIES:
@@ -719,7 +751,33 @@ namespace Alachisoft.NCache.Client
                 }
             }
         }
-		
-	
+        internal void AddSurrogateCommand(SurrogateCommand surrogateCommand, Address address)
+        {
+            if (_surrogateCommands == null)
+                _surrogateCommands = new Dictionary<Address, IDictionary<Address, SurrogateCommand>>();
+
+            surrogateCommand.Parent = this;
+
+            if (!_surrogateCommands.ContainsKey(address))
+            {
+                _surrogateCommands.Add(address, new Dictionary<Address, SurrogateCommand>());
+            }
+
+            var dictionary = _surrogateCommands[address];
+            if (!dictionary.ContainsKey(surrogateCommand.ActualTargetNode))
+                dictionary.Add(surrogateCommand.ActualTargetNode, surrogateCommand);
+        }
+
+        internal void RemoveSurrogateCommand(Address address, Address actualTargetNode)
+        {
+            if (_surrogateCommands != null)
+            {
+                if (_surrogateCommands.TryGetValue(address, out IDictionary<Address, SurrogateCommand> surrogateCommands))
+                {
+                    surrogateCommands.Remove(actualTargetNode);
+                }
+            }
+        }
+
     }
 }

@@ -1,4 +1,4 @@
-﻿//  Copyright (c) 2021 Alachisoft
+﻿//  Copyright (c) 2026 Alachisoft
 //  
 //  Licensed under the Apache License, Version 2.0 (the "License");
 //  you may not use this file except in compliance with the License.
@@ -18,6 +18,7 @@ using Alachisoft.NCache.SocketServer.Command;
 using Alachisoft.NCache.Common.Util;
 using Alachisoft.NCache.Config.Dom;
 using Alachisoft.NCache.Common.Protobuf;
+using Alachisoft.NCache.Common.ResponseSerialization;
 
 namespace Alachisoft.NCache.SocketServer.Command
 {
@@ -61,7 +62,14 @@ namespace Alachisoft.NCache.SocketServer.Command
             {
                 if (!base.immatureId.Equals("-2"))
                 {
-                    _serializedResponsePackets.Add(ResponseHelper.SerializeExceptionResponseWithoutType(exc, command.requestID, command.commandID));
+                    ResponseOptions responseOptions = new ResponseOptions()
+                    {
+                        Exception = exc,
+                        RequestId = command.requestID,
+                        CommandId = command.commandID,
+                    };
+
+                    _serializedResponsePackets.Add(clientManager.ResponseBuilder.BuildExceptionResponse(responseOptions));
                 }
                 return;
             }
@@ -79,12 +87,26 @@ namespace Alachisoft.NCache.SocketServer.Command
                 response.commandID = command.commandID;
                 response.responseType = Alachisoft.NCache.Common.Protobuf.Response.Type.GET_CACHE_BINDING;
                 response.getCacheBindingResponse = getCacheBindingResponse;
-                _serializedResponsePackets.Add(ResponseHelper.SerializeResponse(response));
+                ResponseOptions responseOptions = new ResponseOptions()
+                {
+                    Response = response,
+                    CommandId = command.commandID,
+                    RequestId = command.requestID,
+                    ResponseType = response.responseType,
+                };
+                _serializedResponsePackets.Add(clientManager.ResponseBuilder.BuildResponse(responseOptions));
 
             }
             catch (System.Exception ex)
             {
-                _serializedResponsePackets.Add(ResponseHelper.SerializeExceptionResponseWithoutType(ex, command.requestID, command.commandID));
+                ResponseOptions responseOptions = new ResponseOptions()
+                {
+                    Exception = ex,
+                    RequestId = command.requestID,
+                    CommandId = command.commandID,
+                };
+
+                _serializedResponsePackets.Add(clientManager.ResponseBuilder.BuildExceptionResponse(responseOptions));
             }
         }
 

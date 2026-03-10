@@ -317,10 +317,9 @@ namespace Alachisoft.NCache.Common.DataStructures.Clustered
                 return Task.FromException(ex);
             }
         }
-#endif // FEATURE_ASYNC_IO
+#endif
 
 
-        //Changelog: Used ClusteredArray's internal CopyTo method.
 #if DEBUG
         [TargetedPatchingOptOut("Performance critical to inline across NGen image boundaries")]
 #endif
@@ -573,7 +572,7 @@ namespace Alachisoft.NCache.Common.DataStructures.Clustered
                 return Task.FromException<int>(exception);
             }
         }
-#endif //FEATURE_ASYNC_IO
+#endif
 
 
         public override int ReadByte()
@@ -645,7 +644,7 @@ namespace Alachisoft.NCache.Common.DataStructures.Clustered
                 return Task.FromException(ex);
             }
         }
-#endif //FEATURE_ASYNC_IO
+#endif
 
 
         public override long Seek(long offset, SeekOrigin loc)
@@ -817,7 +816,7 @@ namespace Alachisoft.NCache.Common.DataStructures.Clustered
                 return Task.FromException(exception);
             }
         }
-#endif // FEATURE_ASYNC_IO
+#endif
 
         public override void WriteByte(byte value)
         {

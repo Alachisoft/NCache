@@ -1,4 +1,4 @@
-﻿//  Copyright (c) 2021 Alachisoft
+﻿//  Copyright (c) 2026 Alachisoft
 //  
 //  Licensed under the Apache License, Version 2.0 (the "License");
 //  you may not use this file except in compliance with the License.
@@ -67,13 +67,11 @@ namespace Alachisoft.NCache.SocketServer.MultiBufferReceive
         public override bool CanWrite { get { return false; } }
         public override long Length { get { return _commandLength; } }
         public override long Position { get { return _position; } set { _position = value; } }
-
-        // TODO: Introduce the .Net 4.7.x's Span class here.
         public override int Read(byte[] buffer, int offset, int count)
         {
             if (buffer == null) throw new ArgumentNullException("buffer");
-            if (offset < 0 /*|| _commandLength - _position < offset*/) throw new ArgumentOutOfRangeException("offset");
-            if (count < 0 /*|| _commandLength - _position < count*/) throw new ArgumentOutOfRangeException("count");
+            if (offset < 0 ) throw new ArgumentOutOfRangeException("offset");
+            if (count < 0 ) throw new ArgumentOutOfRangeException("count");
             if (buffer.Length - offset < count) throw new ArgumentException("Argument_InvalidOffLen");
             if (_buffers.Count == 0) throw new Exception("No Buffer");
 
@@ -81,8 +79,6 @@ namespace Alachisoft.NCache.SocketServer.MultiBufferReceive
             while (bytesRead < count && _currBufferIndex < _buffers.Count)
             {
                 SocketBuffer currentBuffer = _buffers[_currBufferIndex];
-
-               
                 bytesRead += SocketBufferUtil.ReadBytesFromSocketBuffer(buffer, offset + bytesRead, count - bytesRead, currentBuffer);
                 _position += bytesRead;
                 if (currentBuffer.UnreadBytes == 0) _currBufferIndex++;
@@ -261,7 +257,7 @@ namespace Alachisoft.NCache.SocketServer.MultiBufferReceive
                         }
                     }
 
-                    command = ProtoBuf.Serializer.Deserialize<Common.Protobuf.Command>(this);
+                    command = ProtoBuf.Extended.Serializer.Deserialize<Common.Protobuf.Command>(this);
 
                     _state = DeserializationState.DeserializingLength;
                     return true;
@@ -291,7 +287,7 @@ namespace Alachisoft.NCache.SocketServer.MultiBufferReceive
                         }
                     }
 
-                    command = ProtoBuf.Serializer.Deserialize<Common.Protobuf.Command>(this);
+                    command = ProtoBuf.Extended.Serializer.Deserialize<Common.Protobuf.Command>(this);
                     _state = DeserializationState.DeserializingLength;
                     return true;
             }
@@ -394,7 +390,5 @@ namespace Alachisoft.NCache.SocketServer.MultiBufferReceive
         }
 
         #endregion
-
-       
     }
 }

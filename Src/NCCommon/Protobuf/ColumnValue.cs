@@ -11,14 +11,14 @@
 // Note: requires additional types generated from: AverageResult.proto
 namespace Alachisoft.NCache.Common.Protobuf
 {
-  [global::System.Serializable, global::ProtoBuf.ProtoContract(Name=@"ColumnValue")]
-  public partial class ColumnValue : global::ProtoBuf.IExtensible
+  [global::System.Serializable, global::ProtoBuf.Extended.ProtoContract(Name=@"ColumnValue")]
+  public partial class ColumnValue : global::ProtoBuf.Extended.IExtensible
   {
     public ColumnValue() {}
     
 
     private string _stringValue = "";
-    [global::ProtoBuf.ProtoMember(1, IsRequired = false, Name=@"stringValue", DataFormat = global::ProtoBuf.DataFormat.Default)]
+    [global::ProtoBuf.Extended.ProtoMember(1, IsRequired = false, Name=@"stringValue", DataFormat = global::ProtoBuf.Extended.DataFormat.Default)]
     [global::System.ComponentModel.DefaultValue("")]
     public string stringValue
     {
@@ -27,16 +27,16 @@ namespace Alachisoft.NCache.Common.Protobuf
     }
 
     private Alachisoft.NCache.Common.Protobuf.AverageResult _avgResult = null;
-    [global::ProtoBuf.ProtoMember(2, IsRequired = false, Name=@"avgResult", DataFormat = global::ProtoBuf.DataFormat.Default)]
+    [global::ProtoBuf.Extended.ProtoMember(2, IsRequired = false, Name=@"avgResult", DataFormat = global::ProtoBuf.Extended.DataFormat.Default)]
     [global::System.ComponentModel.DefaultValue(null)]
     public Alachisoft.NCache.Common.Protobuf.AverageResult avgResult
     {
       get { return _avgResult; }
       set { _avgResult = value; }
     }
-    private global::ProtoBuf.IExtension extensionObject;
-    global::ProtoBuf.IExtension global::ProtoBuf.IExtensible.GetExtensionObject(bool createIfMissing)
-      { return global::ProtoBuf.Extensible.GetExtensionObject(ref extensionObject, createIfMissing); }
+    private global::ProtoBuf.Extended.IExtension extensionObject;
+   global::ProtoBuf.Extended.IExtension global::ProtoBuf.Extended.IExtensible.GetExtensionObject(bool createIfMissing)
+      { return global::ProtoBuf.Extended.Extensible.GetExtensionObject(ref extensionObject, createIfMissing); }
   }
   
 }

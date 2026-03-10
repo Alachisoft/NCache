@@ -7,35 +7,21 @@ using System.Threading.Tasks;
 
 namespace Alachisoft.NCache.SocketServer.MultiBufferSend
 {
-    internal  class ResponseBuffers
+    public class ResponseBuffers
     {
         private int _index;
 
         private readonly IList _buffers;
-        
+
         internal ResponseBuffers(IList buffers)
         {
             _buffers = buffers;
             _index = 0;
-            Size = 0;
-
-            if(buffers.Count==1)
-            {
-                Size = ((byte[])buffers[0]).Length;
-            }
-            else
-            {
-                for (int i = 0; i < buffers.Count; i++)
-                {
-                    Size += ((byte[])buffers[i]).Length;
-                }
-            }
-           
-
+            Size = CalculateSize(buffers);
             CreationTime = DateTime.UtcNow;
         }
 
-        internal long Size { get; }
+        internal int Size { get; }
 
         internal DateTime CreationTime { get; }
 
@@ -55,6 +41,24 @@ namespace Alachisoft.NCache.SocketServer.MultiBufferSend
             }
 
             return true;
+        }
+
+
+        internal IList GetBuffer()
+        {
+            return _buffers;
+        }
+
+        private int CalculateSize(IList buffers)
+        {
+            int size = 0;
+
+            for (int i = 0; i < buffers.Count; i++)
+            {
+                size += ((byte[])buffers[i]).Length;
+            }
+
+            return size;
         }
     }
 }

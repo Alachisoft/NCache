@@ -1,4 +1,4 @@
-//  Copyright (c) 2021 Alachisoft
+//  Copyright (c) 2026 Alachisoft
 //  
 //  Licensed under the Apache License, Version 2.0 (the "License");
 //  you may not use this file except in compliance with the License.
@@ -59,7 +59,6 @@ namespace Alachisoft.NCache.Caching
             NeedUserPayload = true;
             CloneCacheEntry = true;
             UseObjectPool = true;
-            //CreateOperationId();
         }
 
         public OperationContext(OperationContextFieldName fieldName, object fieldValue) : this()
@@ -198,11 +197,8 @@ namespace Alachisoft.NCache.Caching
 
         #region ILeasable
 
-
-
         public override void MarkFree(int moduleRefId)
         {
-            
         }
 
         public override void ResetLeasable()

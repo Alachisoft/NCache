@@ -1,4 +1,4 @@
-//  Copyright (c) 2021 Alachisoft
+//  Copyright (c) 2026 Alachisoft
 //  
 //  Licensed under the Apache License, Version 2.0 (the "License");
 //  you may not use this file except in compliance with the License.
@@ -18,10 +18,8 @@ using System.Threading;
 using Alachisoft.NCache.Caching.AutoExpiration;
 using Alachisoft.NCache.Caching.EvictionPolicies;
 using Alachisoft.NCache.Caching.Statistics;
-#if !CLIENT
 using Alachisoft.NCache.Caching.Topologies.Clustered;
 using Alachisoft.NCache.Caching.Topologies.Clustered.Operations;
-#endif
 using Alachisoft.NCache.Common;
 using Alachisoft.NCache.Common.DataStructures;
 using Alachisoft.NCache.Common.Enum;
@@ -37,6 +35,7 @@ using Alachisoft.NCache.Util;
 using Alachisoft.NCache.Caching.Messaging;
 using Alachisoft.NCache.Caching.Pooling;
 using Alachisoft.NCache.Common.Pooling;
+
 namespace Alachisoft.NCache.Caching.Topologies
 {
     /// <summary>
@@ -223,7 +222,155 @@ namespace Alachisoft.NCache.Caching.Topologies
             {
                 return Internal.Keys;
             }
-        }      
+        }
+
+        #region Hashed cache related
+
+        public override void GetKeyList(int bucketId, bool startLogging, out ClusteredArrayList keyList)
+        {
+            _cache.GetKeyList(bucketId, startLogging, out keyList);
+        }
+
+        public override void RemoveBucket(int bucket)
+        {
+            Sync.AcquireWriterLock(Timeout.Infinite);
+            try
+            {
+                _cache.RemoveBucket(bucket);
+            }
+            finally
+            {
+                Sync.ReleaseWriterLock();
+            }
+        }
+
+        public override void RemoveExtraBuckets(ArrayList bucketIds)
+        {
+            try
+            {
+                Sync.AcquireWriterLock(Timeout.Infinite);
+                _cache.RemoveExtraBuckets(bucketIds);
+            }
+            finally
+            {
+                Sync.ReleaseWriterLock();
+            }
+        }
+
+        public override Hashtable GetLogTable(ArrayList bucketIds, ref bool isLoggingStopped, OPLogType type = OPLogType.Cache)
+        {
+            Sync.AcquireReaderLock(Timeout.Infinite);
+            try
+            {
+                return _cache.GetLogTable(bucketIds, ref isLoggingStopped, type);
+            }
+            finally
+            {
+                Sync.ReleaseReaderLock();
+            }
+        }
+
+        public override int BucketSize
+        {
+            set
+            {
+                Sync.AcquireWriterLock(Timeout.Infinite);
+                try
+                {
+                    _cache.BucketSize = value;
+                }
+                finally
+                {
+                    Sync.ReleaseWriterLock();
+                }
+            }
+        }
+
+        public override void RemoveBucketData(int bucketId)
+        {
+            Sync.AcquireWriterLock(Timeout.Infinite);
+            try
+            {
+                _cache.RemoveBucketData(bucketId);
+            }
+            finally
+            {
+                Sync.ReleaseWriterLock();
+            }
+        }
+
+        public override void AddLoggedData(ArrayList bucketIds, OPLogType type = OPLogType.Cache)
+        {
+            Sync.AcquireWriterLock(Timeout.Infinite);
+            try
+            {
+                _cache.AddLoggedData(bucketIds, type);
+            }
+            finally
+            {
+                Sync.ReleaseWriterLock();
+            }
+        }
+
+        public override void UpdateLocalBuckets(ArrayList bucketIds)
+        {
+            _cache.UpdateLocalBuckets(bucketIds);
+        }
+
+        public override void RemoveFromLogTbl(int bucketId)
+        {
+            Sync.AcquireWriterLock(Timeout.Infinite);
+            try
+            {
+                _cache.RemoveFromLogTbl(bucketId);
+            }
+            finally
+            {
+                Sync.ReleaseWriterLock();
+            }
+        }
+
+        public override void StartLogging(int bucketId)
+        {
+            _cache.StartLogging(bucketId);
+        }
+
+        public override void PrepareBucketForStateTrxfer(int bucketId)
+        {
+            _cache.PrepareBucketForStateTrxfer(bucketId);
+        }
+
+   
+
+        public override BucketStatistics[] LocalBuckets
+        {
+            get
+            {
+                Sync.AcquireReaderLock(Timeout.Infinite);
+                try
+                {
+                    return _cache.LocalBuckets;
+                }
+                finally
+                {
+                    Sync.ReleaseReaderLock();
+                }
+            }
+            set
+            {
+                Sync.AcquireWriterLock(Timeout.Infinite);
+                try
+                {
+                    _cache.LocalBuckets = value;
+                }
+                finally
+                {
+                    Sync.ReleaseWriterLock();
+                }
+            }
+        }
+
+        #endregion
 
         #region	/                 --- ICache ---                                 /
 
@@ -770,6 +917,7 @@ namespace Alachisoft.NCache.Caching.Topologies
 #if SERVER 
             bool requiresReplication = _context.CacheImpl.RequiresReplication;
 #endif
+            //if (ServerMonitor.MonitorActivity) ServerMonitor.LogClientActivity("CacheSyncWrp.Add_1", "enter");
             CacheEntry clone = null;
 
             var lockKey = GetStringFromPool((string)key);
@@ -806,18 +954,10 @@ namespace Alachisoft.NCache.Caching.Topologies
                             _context.CachingSubSystemDataService.GetEntryClone(clone, out cloneWithoutvalue, out userPayLoad, out payLoadSize);
                             _context.CacheImpl.EnqueueForReplication(cacheEntry.Type != Common.Caching.EntryType.CacheItem?null:key, (int)ClusterCacheBase.OpCodes.Add, new object[] { key, cloneWithoutvalue, taskId, operationContext }, clone.Size, userPayLoad, payLoadSize);
 
-                            #region [Enable When Entries for Bridge are to be Cloned from Transactional Pool]
-                         
-                            #endregion
                         }
                     }
                     else
                     {
-                        #region [Enable When Entries for Bridge are to be Cloned from Transactional Pool]
-                        // Bridge or Replication operations are ignored since add failed
-                        //if (!ReferenceEquals(cacheEntry, clone))
-                        //    MiscUtil.ReturnEntryToPool(clone, Context.TransactionalPoolManager);
-                        #endregion
                     }
                 }
 #endif
@@ -985,7 +1125,6 @@ namespace Alachisoft.NCache.Caching.Topologies
 #if SERVER 
             bool requiresReplication = _context.CacheImpl.RequiresReplication;
 #endif
-            //if (ServerMonitor.MonitorActivity) ServerMonitor.LogClientActivity("CacheSyncWrp.AddBlk", "enter");
             try
             {
 #if SERVER
@@ -1038,25 +1177,17 @@ namespace Alachisoft.NCache.Caching.Topologies
 
                                         }
                                     }
-                                    else
-                                    {
-                                     
-                                    }
+
                                 }
                                 else
                                 {
-                                    
                                 }
                             }
-                            else
-                            {
-                              
-                            }
+
                         }
                     }
                     else
                     {
-                     
                     }
                     
                     if (successfulKeys.Count > 0)
@@ -1134,7 +1265,7 @@ namespace Alachisoft.NCache.Caching.Topologies
             CacheEntry clone = null;
             var lockKey = GetStringFromPool((string)key);
             KeyLocker.GetWriterLock(lockKey);
-            try
+            try          
             {
                 operationContext?.MarkInUse(NCModulesConstants.CacheSync);
                 if (cacheEntry != null)
@@ -1181,17 +1312,10 @@ namespace Alachisoft.NCache.Caching.Topologies
                                 cloneValue.Flag.UnsetBit(BitSetConstants.LockedItem);
 
                             _context.CacheImpl.EnqueueForReplication(key, (int)ClusterCacheBase.OpCodes.Insert, new object[] { key, cloneValue, taskId, operationContext }, clone.Size, userPayLoad, payLoadSize);
-
-                         
                         }
                     }
                     else
                     {
-                        #region [Enable When Entries for Bridge are to be Cloned from Transactional Pool]
-                        // Bridge or replication operations are ignored since insert failed
-                        //if (!ReferenceEquals(cacheEntry, clone))
-                        //    MiscUtil.ReturnEntryToPool(clone, Context.TransactionalPoolManager);
-                        #endregion
                     }
                 }
 #endif
@@ -1356,17 +1480,14 @@ namespace Alachisoft.NCache.Caching.Topologies
                                         }
                                         else
                                         {
-                                           
                                         }
                                     }
                                     else
                                     {
-                                    
                                     }
                                 }
                                 else
                                 {
-                                   
                                 }
                             }
                             
@@ -1387,10 +1508,6 @@ namespace Alachisoft.NCache.Caching.Topologies
                         }
                         else
                         {
-                            #region [Enable When Entries for Bridge are to be Cloned from Transactional Pool]
-                            // All keys probably failed to insert so return all clones to pool
-                            //MiscUtil.ReturnEntriesToPool(clone, Context.TransactionalPoolManager);
-                            #endregion
                         }
                     }
 #endif
@@ -1529,6 +1646,7 @@ namespace Alachisoft.NCache.Caching.Topologies
                         }
                         if (requiresReplication)
                         {
+                            //we generate a unique key to be passed to async replicator because
                             //it is required by the replicator and we do not want this operation 2 be overriden
                             //in optimized queue.
                             string uniqueKey = System.Guid.NewGuid().ToString() + keys[0];
@@ -1676,6 +1794,7 @@ namespace Alachisoft.NCache.Caching.Topologies
 #if SERVER
                 if (_context.CacheImpl.RequiresReplication)
                 {
+                    //we generate a unique key to be passed to async replicator because
                     //it is required by the replicator and we do not want this operation 2 be overriden
                     //in optimized queue.
                     string uniqueKey = System.Guid.NewGuid().ToString() + group;
@@ -1721,9 +1840,9 @@ namespace Alachisoft.NCache.Caching.Topologies
         /// <param name="notifId"></param>
         /// <param name="data"></param>
         /// <param name="async"></param>
-        public override void SendNotification(object notifId, object data, OperationContext operationContext)
+        public override void SendNotification(object notifId, object data)
         {
-            Internal.SendNotification(notifId, data, operationContext);
+            Internal.SendNotification(notifId, data);
         }
 
         /// <summary>
@@ -1765,7 +1884,15 @@ namespace Alachisoft.NCache.Caching.Topologies
               
 #endif
                 Internal.RegisterKeyNotification(key, updateCallback, removeCallback, operationContext);
+#if SERVER
+                
+                    if (_context.CacheImpl.RequiresReplication)
+                    {
+                        string uniqueKey = System.Guid.NewGuid().ToString() + key;
+                        _context.CacheImpl.EnqueueForReplication(null, (int)ClusterCacheBase.OpCodes.RegisterKeyNotification, new object[] { key, updateCallback, removeCallback, operationContext });
+                    }
 
+#endif
             }
             finally
             {
@@ -2211,14 +2338,12 @@ namespace Alachisoft.NCache.Caching.Topologies
             try
             {
                 stored = Internal.StoreMessage(topic, message, context);
-#if !CLIENT
                 //we do not want to replicate event message
                 if (_context.CacheImpl.RequiresReplication && !(message is EventMessage))
                 {
                     StoreMessageOperation storeMessageOperation = new StoreMessageOperation(topic, message, context);
                     _context.CacheImpl.EnqueueForReplication(null, (int)ClusterCacheBase.OpCodes.StoreMessage, storeMessageOperation);
                 }
-#endif
             }
             finally
             {
@@ -2240,7 +2365,6 @@ namespace Alachisoft.NCache.Caching.Topologies
             try
             {
                 result = Internal.AssignmentOperation(messageInfo, subscriptionInfo, type, context);
-#if !CLIENT
                 if (_context.CacheImpl.RequiresReplication)
                 {
                     if (!messageInfo.IsEventMessage)
@@ -2250,7 +2374,6 @@ namespace Alachisoft.NCache.Caching.Topologies
                     }
 
                 }
-#endif
             }
             finally
             {
@@ -2268,13 +2391,11 @@ namespace Alachisoft.NCache.Caching.Topologies
             try
             {
                 Internal.AcknowledgeMessageReceipt(clientId, topicWiseMessageIds, operationContext);
-#if !CLIENT
                 if (_context.CacheImpl.RequiresReplication)
                 {
                     AcknowledgeMessageOperation acknowledgeMessageOperation = new AcknowledgeMessageOperation(clientId, topicWiseMessageIds, operationContext);
                     _context.CacheImpl.EnqueueForReplication(null, (int)ClusterCacheBase.OpCodes.Message_Acknowldegment, acknowledgeMessageOperation);
                 }
-#endif
             }
             finally
             {
@@ -2288,20 +2409,17 @@ namespace Alachisoft.NCache.Caching.Topologies
 
         public override void RemoveMessages(IList<MessageInfo> messagesTobeRemoved, MessageRemovedReason reason, OperationContext context)
         {
-            if (!IsCacheOperationAllowed(context))
-                return;
+
             if (ServerMonitor.MonitorActivity) ServerMonitor.LogClientActivity("CacheSyncWrp.RemoveMessages", "enter");
 
             try
             {
                 Internal.RemoveMessages(messagesTobeRemoved, reason, context);
-#if !CLIENT
                 if (_context.CacheImpl.RequiresReplication)
                 {
                     RemoveMessagesOperation removeMessagesOperation = new RemoveMessagesOperation(messagesTobeRemoved, reason, context);
                     _context.CacheImpl.EnqueueForReplication(null, (int)ClusterCacheBase.OpCodes.RemoveMessages, removeMessagesOperation);
                 }
-#endif
             }
             finally
             {
@@ -2348,13 +2466,13 @@ namespace Alachisoft.NCache.Caching.Topologies
             return Internal.GetMessageList(bucketId,includeEventMessages);
         }
 
-        public override long GetMessageCount(string topicName, OperationContext operationContext)
+        public override long GetMessageCount(string topicName)
         {
             if (Internal == null)
             {
                 throw new InvalidOperationException(string.Empty, new ArgumentNullException("Internal"));
             }
-            return Internal.GetMessageCount(topicName, operationContext);
+            return Internal.GetMessageCount(topicName);
         }
 
         public override TransferrableMessage GetTransferrableMessage(string topic, string messageId)
@@ -2401,20 +2519,11 @@ namespace Alachisoft.NCache.Caching.Topologies
 #endregion
 
 
-        public override void ClientDisconnected(string client, bool isInproc, Runtime.Caching.ClientInfo clientInfo)
+        public override void ClientDisconnected(string client, bool isInproc)
         {
             if (Internal != null)
             {
-                Internal.ClientDisconnected(client, isInproc, clientInfo);
-            }
-
-        }
-
-        public override void ClientConnected(string client, bool isInproc, Runtime.Caching.ClientInfo clientInfo)
-        {
-            if (Internal != null)
-            {
-                Internal.ClientConnected(client, isInproc, clientInfo);
+                Internal.ClientDisconnected(client, isInproc);
             }
 
         }
@@ -2439,7 +2548,7 @@ namespace Alachisoft.NCache.Caching.Topologies
             if (Context != null && Context.CacheImpl != null) Context.CacheImpl.SetClusterInactive(reason);
         }
 
-       
+
         #region Private Methods
 
         private string GetStringFromPool(string str)

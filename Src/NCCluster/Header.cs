@@ -10,7 +10,7 @@ namespace Alachisoft.NGroups
 	/// <p><b>Date:</b>  12/03/2003</p>
 	/// </summary>
 	[Serializable]
-	public abstract class Header //: ICloneable
+	public abstract class Header
 	{
 		public const long HDR_OVERHEAD = 255; // estimated size of a header (used to estimate the size of the entire msg)
 

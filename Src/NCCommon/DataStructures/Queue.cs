@@ -1,4 +1,4 @@
-//  Copyright (c) 2021 Alachisoft
+//  Copyright (c) 2026 Alachisoft
 //  
 //  Licensed under the Apache License, Version 2.0 (the "License");
 //  you may not use this file except in compliance with the License.
@@ -21,7 +21,7 @@ namespace Alachisoft.NCache.Common.DataStructures
     /// 1 producer and 1 consumer may add/remove elements concurrently. The class is not
     /// explicitely designed for multiple producers or consumers.
     /// </summary>
-    /// <author> 
+    /// <author>  S.Hameed
     /// </author>
     public class Queue
     {

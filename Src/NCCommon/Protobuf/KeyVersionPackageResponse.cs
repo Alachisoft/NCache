@@ -10,28 +10,28 @@
 // Generated from: KeyVersionPackageResponse.proto
 namespace Alachisoft.NCache.Common.Protobuf
 {
-  [global::System.Serializable, global::ProtoBuf.ProtoContract(Name=@"KeyVersionPackageResponse")]
-  public partial class KeyVersionPackageResponse : global::ProtoBuf.IExtensible
+  [global::System.Serializable, global::ProtoBuf.Extended.ProtoContract(Name=@"KeyVersionPackageResponse")]
+  public partial class KeyVersionPackageResponse : global::ProtoBuf.Extended.IExtensible
   {
     public KeyVersionPackageResponse() {}
     
     private readonly global::System.Collections.Generic.List<string> _keys = new global::System.Collections.Generic.List<string>();
-    [global::ProtoBuf.ProtoMember(1, Name=@"keys", DataFormat = global::ProtoBuf.DataFormat.Default)]
+    [global::ProtoBuf.Extended.ProtoMember(1, Name=@"keys", DataFormat = global::ProtoBuf.Extended.DataFormat.Default)]
     public global::System.Collections.Generic.List<string> keys
     {
       get { return _keys; }
     }
   
     private readonly global::System.Collections.Generic.List<ulong> _versions = new global::System.Collections.Generic.List<ulong>();
-    [global::ProtoBuf.ProtoMember(2, Name=@"versions", DataFormat = global::ProtoBuf.DataFormat.TwosComplement)]
+    [global::ProtoBuf.Extended.ProtoMember(2, Name=@"versions", DataFormat = global::ProtoBuf.Extended.DataFormat.TwosComplement)]
     public global::System.Collections.Generic.List<ulong> versions
     {
       get { return _versions; }
     }
   
-    private global::ProtoBuf.IExtension extensionObject;
-    global::ProtoBuf.IExtension global::ProtoBuf.IExtensible.GetExtensionObject(bool createIfMissing)
-      { return global::ProtoBuf.Extensible.GetExtensionObject(ref extensionObject, createIfMissing); }
+    private global::ProtoBuf.Extended.IExtension extensionObject;
+   global::ProtoBuf.Extended.IExtension global::ProtoBuf.Extended.IExtensible.GetExtensionObject(bool createIfMissing)
+      { return global::ProtoBuf.Extended.Extensible.GetExtensionObject(ref extensionObject, createIfMissing); }
   }
   
 }

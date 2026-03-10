@@ -1,4 +1,4 @@
-//  Copyright (c) 2021 Alachisoft
+//  Copyright (c) 2026 Alachisoft
 //  
 //  Licensed under the Apache License, Version 2.0 (the "License");
 //  you may not use this file except in compliance with the License.
@@ -593,7 +593,6 @@ namespace Alachisoft.NCache.Common.Util
         {
             using (MemoryStream stream = new MemoryStream(50))
             {
-                //TODO
                 int requestIdLength = 0;
                 if (WriteRequestIdInResponse)
                 {
@@ -611,7 +610,7 @@ namespace Alachisoft.NCache.Common.Util
                 byte[] size = new byte[10];
                 stream.Write(size, 0, size.Length);
 
-                ProtoBuf.Serializer.Serialize(stream, response);
+                ProtoBuf.Extended.Serializer.Serialize(stream, response);
 
                 int messageLen = (int)stream.Length - (size.Length + responseTypeBytes.Length + requestIdLength);
                 size = UTF8Encoding.UTF8.GetBytes(messageLen.ToString());
@@ -630,7 +629,6 @@ namespace Alachisoft.NCache.Common.Util
         {
             using (ClusteredMemoryStream stream = new ClusteredMemoryStream())
             {
-                //TODO
                 int requestIdLength = 0;
                 if (WriteRequestIdInResponse)
                 {
@@ -814,7 +812,7 @@ namespace Alachisoft.NCache.Common.Util
                 byte[] size = new byte[10];
                 stream.Write(size, 0, size.Length);
 
-                ProtoBuf.Serializer.Serialize(stream, response);
+                ProtoBuf.Extended.Serializer.Serialize(stream, response);
 
                 int messageLen = (int)stream.Length - (size.Length + responseTypeBytes.Length + requestIdLength);
                 size = UTF8Encoding.UTF8.GetBytes(messageLen.ToString());
@@ -833,7 +831,6 @@ namespace Alachisoft.NCache.Common.Util
         {
             using (ClusteredMemoryStream stream = new ClusteredMemoryStream())
             {
-                //TODO
                 byte[] size = new byte[10];
                 stream.Write(size, 0, size.Length);
 
@@ -889,7 +886,7 @@ namespace Alachisoft.NCache.Common.Util
             Response response = GetExceptionResponse(exc, requestId, commandID);
             using (MemoryStream stream = new MemoryStream())
             {
-                ProtoBuf.Serializer.Serialize(stream, response);
+                ProtoBuf.Extended.Serializer.Serialize(stream, response);
                 serializedResponse = stream.ToArray();
             }
             return serializedResponse;
@@ -1004,7 +1001,6 @@ namespace Alachisoft.NCache.Common.Util
             {
                 TypeIndexNotDefined temp = (TypeIndexNotDefined)exc;
                 ex.type = Alachisoft.NCache.Common.Protobuf.Exception.Type.TYPE_INDEX_NOT_FOUND;
-         //to do 
             }
             else if (exc is AttributeIndexNotDefined)
             {
@@ -1014,13 +1010,7 @@ namespace Alachisoft.NCache.Common.Util
             {
                 ex.type = Alachisoft.NCache.Common.Protobuf.Exception.Type.STATE_TRANSFER_EXCEPTION;
             }
-            else if (exc is LicensingException)
-            {
-                LicensingException temp = (LicensingException)exc;
-                ex.type = Alachisoft.NCache.Common.Protobuf.Exception.Type.LICENSING_EXCEPTION;
-                ex.errorCode = temp.ErrorCode;
-                ex.stackTrace = temp.StackTrace;
-            }
+            
             else if(exc is CacheException)
             {
                 CacheException temp = (CacheException)exc;

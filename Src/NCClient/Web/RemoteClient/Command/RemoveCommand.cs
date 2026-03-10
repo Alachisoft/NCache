@@ -1,4 +1,4 @@
-//  Copyright (c) 2021 Alachisoft
+//  Copyright (c) 2026 Alachisoft
 //  
 //  Licensed under the Apache License, Version 2.0 (the "License");
 //  you may not use this file except in compliance with the License.
@@ -74,7 +74,7 @@ namespace Alachisoft.NCache.Client
 
         protected override void SerializeCommandInternal(Stream stream)
         {
-            ProtoBuf.Serializer.Serialize(stream, _removeCommand);
+            ProtoBuf.Extended.Serializer.Serialize(stream, _removeCommand);
         }
 
         protected override short GetCommandHandle()
@@ -84,12 +84,6 @@ namespace Alachisoft.NCache.Client
 
         protected override void CreateCommand()
         {
-            //base._command = new Alachisoft.NCache.Common.Protobuf.Command();
-            //base._command.requestID = base.RequestId;
-            //base._command.removeCommand = _removeCommand;
-            //base._command.type = Alachisoft.NCache.Common.Protobuf.Command.Type.REMOVE;
-            //base._command.MethodOverload = _methodOverload;
-
             _removeCommand.requestId = base.RequestId;
             _removeCommand.commandID = base.CommandID;
             _removeCommand.MethodOverload = _methodOverload;

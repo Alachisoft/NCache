@@ -1,4 +1,4 @@
-//  Copyright (c) 2021 Alachisoft
+//  Copyright (c) 2026 Alachisoft
 //  
 //  Licensed under the Apache License, Version 2.0 (the "License");
 //  you may not use this file except in compliance with the License.
@@ -17,6 +17,7 @@ using System.Collections;
 using Alachisoft.NCache.Common.DataStructures.Clustered;
 using Alachisoft.NCache.Common.Protobuf;
 using System.Collections.Generic;
+using Alachisoft.NCache.Common.ResponseSerialization;
 
 namespace Alachisoft.NCache.SocketServer.Command.ResponseBuilders
 {
@@ -66,13 +67,17 @@ namespace Alachisoft.NCache.SocketServer.Command.ResponseBuilders
                 Common.Util.ResponseHelper.SetResponse(getMessageResponse, requestID, commandId);
                 if (resultInChunks.Count == 0)
                 {
-                    serializedResponse.Add(Common.Util.ResponseHelper.SerializeResponse(getMessageResponse, Common.Protobuf.Response.Type.GET_MESSAGE));
+                    ResponseOptions responseOption = new ResponseOptions()
+                    {
+                        Response = getMessageResponse,
+                        ResponseType = Response.Type.GET_MESSAGE
+                    };
+                    serializedResponse.Add(clientManager.ResponseBuilder.BuildResponse(responseOption));
                     return;
                 }
                 
                 foreach (var pair in resultInChunks)
                 {
-                    //response.sequenceId = sequenceId++;
                     TopicMessages topicMessage = new TopicMessages();
                     topicMessage.topic = pair.Key;
 
@@ -83,8 +88,12 @@ namespace Alachisoft.NCache.SocketServer.Command.ResponseBuilders
                     getMessageResponse.topicMessages.Add(topicMessage);
                 }
 
-              
-                serializedResponse.Add(Common.Util.ResponseHelper.SerializeResponse(getMessageResponse, Common.Protobuf.Response.Type.GET_MESSAGE));
+                ResponseOptions responseOptions = new ResponseOptions()
+                {
+                    Response = getMessageResponse,
+                    ResponseType = Response.Type.GET_MESSAGE
+                };
+                serializedResponse.Add(clientManager.ResponseBuilder.BuildResponse(responseOptions));
             }
             else
             {
@@ -93,13 +102,17 @@ namespace Alachisoft.NCache.SocketServer.Command.ResponseBuilders
                 if (resultInChunks.Count == 0)
                 {
                     response.getMessageResponse = getMessageResponse;
-                    serializedResponse.Add(Alachisoft.NCache.Common.Util.ResponseHelper.SerializeResponse(response));
+                    ResponseOptions responseOption = new ResponseOptions()
+                    {
+                        Response = response,
+                        ResponseType = Response.Type.GET_MESSAGE
+                    };
+                    serializedResponse.Add(clientManager.ResponseBuilder.BuildResponse(responseOption));
                     return;
                 }
                 
                 foreach (var pair in resultInChunks)
                 {
-                    //response.sequenceId = sequenceId++;
                     TopicMessages topicMessage = new TopicMessages();
                     topicMessage.topic = pair.Key;
 
@@ -110,12 +123,15 @@ namespace Alachisoft.NCache.SocketServer.Command.ResponseBuilders
                     getMessageResponse.topicMessages.Add(topicMessage);
                 }
 
-            
 
                 response.getMessageResponse = getMessageResponse;
-                serializedResponse.Add(Alachisoft.NCache.Common.Util.ResponseHelper.SerializeResponse(response));
+                ResponseOptions responseOptions = new ResponseOptions()
+                {
+                    Response = response,
+                    ResponseType = Response.Type.GET_MESSAGE
+                };
+                serializedResponse.Add(clientManager.ResponseBuilder.BuildResponse(responseOptions));
             }
-        
         }
     }
 }

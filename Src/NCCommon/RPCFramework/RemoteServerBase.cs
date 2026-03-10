@@ -1,4 +1,4 @@
-﻿//  Copyright (c) 2021 Alachisoft
+﻿//  Copyright (c) 2026 Alachisoft
 //  
 //  Licensed under the Apache License, Version 2.0 (the "License");
 //  you may not use this file except in compliance with the License.
@@ -26,6 +26,7 @@ namespace Alachisoft.NCache.Common.RPCFramework
         protected string _bindIP;
         protected bool initialized;
         protected IChannelDisconnected _channelDisconnected;
+        protected ChannelDisconnectedOnSendoperation _channelDisconnectedEvent;
 
         public RemoteServerBase(string server, int port)
             : this(server, port, null)
@@ -48,6 +49,7 @@ namespace Alachisoft.NCache.Common.RPCFramework
 
         protected virtual bool InitializeInternal()
         {
+            _requestManager.Channel.StartReceivingThread();
             return true;
         }
 
@@ -63,13 +65,24 @@ namespace Alachisoft.NCache.Common.RPCFramework
             get { return initialized; }
         }
 
+        public bool IsConnected
+        {
+            get
+            {
+                return _requestManager != null ? _requestManager.IsConnected : false;
+            }
+        }
         public void Initialize(ITraceProvider traceProvider)
         {
-            TcpChannel channel = new TcpChannel(_server, _port, _bindIP, traceProvider);
+            IChannel channel = new TcpChannel(_server, _port, _bindIP, traceProvider);
             channel.Formatter = GetChannelFormatter();
+            channel.OnChannelReconnected = () => { InitializeInternal(); };
+
             RequestManager requestManager = new RequestManager(channel, _channelDisconnected);
             channel.Connect();
             _requestManager = requestManager;
+            _requestManager.ChannelDisconnectedEvent = new ChannelDisconnectedOnSendoperation(OnChannelDisconnctedDuringSend);
+
 
             try
             {
@@ -88,7 +101,10 @@ namespace Alachisoft.NCache.Common.RPCFramework
                 _requestManager = null;
             }
         }
-
+        private void OnChannelDisconnctedDuringSend(string serverIp)
+        {
+            if (_channelDisconnectedEvent != null) _channelDisconnectedEvent(serverIp);
+        }
         public void Dispose()
         {
             try

@@ -1,4 +1,4 @@
-//  Copyright (c) 2021 Alachisoft
+//  Copyright (c) 2026 Alachisoft
 //  
 //  Licensed under the Apache License, Version 2.0 (the "License");
 //  you may not use this file except in compliance with the License.
@@ -15,7 +15,9 @@ using System;
 using System.Collections;
 using System.Text;
 using Alachisoft.NCache.Common.Configuration;
+
 using Alachisoft.NCache.Runtime.Serialization;
+
 using Runtime = Alachisoft.NCache.Runtime;
 
 namespace Alachisoft.NCache.Config.Dom
@@ -23,15 +25,13 @@ namespace Alachisoft.NCache.Config.Dom
     [Serializable]
     public class Notifications: ICloneable,ICompactSerializable
     {
-        bool /*itemRemove, itemAdd, itemUpdate,*/ cacheClear;
+        bool cacheClear;
         int expiryTime = 15;
         public Notifications() { }
 
       
-        //[ConfigurationAttribute("cache-clear")]
         public bool CacheClear
         {
-            //get { return cacheClear; }
             get { cacheClear = true; return true; }
             set { cacheClear = value; }
         }
@@ -58,14 +58,12 @@ namespace Alachisoft.NCache.Config.Dom
 
         public void Deserialize(Runtime.Serialization.IO.CompactReader reader)
         {
-
             cacheClear = reader.ReadBoolean();
             expiryTime = reader.ReadInt32();
         }
 
         public void Serialize(Runtime.Serialization.IO.CompactWriter writer)
         {
-
             writer.Write(cacheClear);
             writer.Write(expiryTime);
         }

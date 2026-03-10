@@ -1,4 +1,4 @@
-//  Copyright (c) 2018 Alachisoft
+//  Copyright (c) 2026 Alachisoft
 //  
 //  Licensed under the Apache License, Version 2.0 (the "License");
 //  you may not use this file except in compliance with the License.
@@ -21,7 +21,6 @@ using System.Text;
 /// are defined in this namespace. These exceptions can be caught in the client applications
 /// and properly dealt with once this namespace is referenced.
 ///</summary>
-
 namespace Alachisoft.NCache.Runtime.Exceptions
 {
 
@@ -30,25 +29,11 @@ namespace Alachisoft.NCache.Runtime.Exceptions
     /// So you can catch this exception for all the exceptions thrown from within the cache.
     /// </summary>
     /// <example>The following example demonstrates how to use this exception in your code.
-    /// <code>
-    /// 
-    /// try
-    /// {
-    ///	    ...
-    /// }
-    /// catch(CacheException ex)
-    /// {
-    ///     ...
-    /// }
-    /// 
-    /// </code>
     /// </example>
     [Serializable]
     public class CacheException : Exception
     {
         private string _stackTrace="";
-        //		private string		_sourceMachine = string.Empty;
-        //		private string		_sourceInstance = string.Empty;
        
         /// <summary>
         /// Property for setting ErrorCode 
@@ -136,8 +121,6 @@ namespace Alachisoft.NCache.Runtime.Exceptions
         {
             ErrorCode = errorCode;
         }
-        //		public string	SourceMachine { get { return this._sourceMachine; } }
-        //		public string	SourceInstance { get { return this._sourceInstance; } }
 
         #region /                 --- ISerializable ---           /
 
@@ -165,14 +148,6 @@ namespace Alachisoft.NCache.Runtime.Exceptions
         }
 
         #endregion
-
-        //		static public Exception WrapException(Exception e)
-        //		{
-        //			CacheException ce = e is CacheException ? (CacheException)e:new CacheException(e.Message, e);
-        //			ce._sourceMachine = Environment.MachineName;
-        //			ce._sourceInstance = "";
-        //			return ce;
-        //		}
 
         /// <summary>
         /// Represents the exception in string form with type and stack trace

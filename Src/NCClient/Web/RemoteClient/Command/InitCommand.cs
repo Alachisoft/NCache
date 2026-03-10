@@ -1,4 +1,4 @@
-//  Copyright (c) 2021 Alachisoft
+//  Copyright (c) 2026 Alachisoft
 //  
 //  Licensed under the Apache License, Version 2.0 (the "License");
 //  you may not use this file except in compliance with the License.
@@ -13,8 +13,8 @@
 //  limitations under the License
 
 using Alachisoft.NCache.Common;
+using Alachisoft.NCache.Common.Licensing;
 using Alachisoft.NCache.Common.Protobuf;
-using Alachisoft.NCache.Common.Util;
 using System;
 using System.Diagnostics;
 using System.IO;
@@ -31,9 +31,7 @@ namespace Alachisoft.NCache.Client
         private string _clientID;
         private string _licenceCode;
         private string _clientIp;
-       
 
-        //+Moiz: LiveUpgrade task 2-12-2013
         private Alachisoft.NCache.Common.ProductVersion _currentVersion;
 
         #region Helper Methods
@@ -45,14 +43,11 @@ namespace Alachisoft.NCache.Client
             return tempArray;
         }
         #endregion
-     
-
        
-        public InitCommand(string clientid, string id, string clientLocalIP, IPAddress requestedServerAddress, Runtime.Caching.ClientInfo clientInfo, int operationTimeout)
+
+        public InitCommand(string clientid, string id,  IPAddress requestedServerAddress, Runtime.Caching.ClientInfo clientInfo,  int operationTimeout,bool FromClientCache=false)
         {
             _initCommand = new Alachisoft.NCache.Common.Protobuf.InitCommand();
-
-          
             _currentVersion = Alachisoft.NCache.Common.ProductVersion.ProductInfo;
             _initCommand.cacheId = id;
             _initCommand.clientId = clientid;
@@ -64,11 +59,11 @@ namespace Alachisoft.NCache.Client
             _initCommand.clientInfo.appName = clientInfo.AppName;
             _initCommand.clientVersion = clientInfo.ClientVersion;
             _initCommand.clientInfo.clientId = clientInfo.ClientID;
-          
-
+            _initCommand.isDotNetCoreClient = clientInfo.IsDotNetCore;
             //Protobuf. Product Version is assigned values 
             if (_initCommand.productVersion == null)
                 _initCommand.productVersion = new Common.Protobuf.ProductVersion();
+
 
             _initCommand.productVersion.AddiotionalData = _currentVersion.AdditionalData;
             _initCommand.productVersion.EditionID = _currentVersion.EditionID;
@@ -77,9 +72,11 @@ namespace Alachisoft.NCache.Client
             _initCommand.productVersion.MinorVersion1 = this.ParseToByteArray(_currentVersion.MinorVersion1);
             _initCommand.productVersion.MinorVersion2 = this.ParseToByteArray(_currentVersion.MinorVersion2);
             _initCommand.productVersion.ProductName = _currentVersion.ProductName;
-            
+
+           
             _initCommand.operationTimeout = operationTimeout;
-            _initCommand.clientVersion = 5000;
+            _initCommand.FromClientCache = FromClientCache;
+            _initCommand.memory = (int)MachineInfo.Memory;
             _initCommand.OperationSystem = GetOSPlatform().ToString();
 
         }
@@ -126,7 +123,7 @@ namespace Alachisoft.NCache.Client
                 stream.Write(acknowledgementBuffer, 0, acknowledgementBuffer.Length);
                 byte[] size = new byte[Connection.CmdSizeHolderBytesCount];
                 stream.Write(size, 0, size.Length);
-                ProtoBuf.Serializer.Serialize<Alachisoft.NCache.Common.Protobuf.Command>(stream, this._command);
+                ProtoBuf.Extended.Serializer.Serialize<Alachisoft.NCache.Common.Protobuf.Command>(stream, this._command);
                 int messageLen = (int)stream.Length - (size.Length + discardingBuffer.Length + acknowledgementBuffer.Length);
 
                 size = HelperFxn.ToBytes(messageLen.ToString());
@@ -160,11 +157,11 @@ namespace Alachisoft.NCache.Client
             return _commandBytes;
         }
 
-        private OSInfo GetOSPlatform()
+        public OSInfo GetOSPlatform()
         {
             OSInfo currentOS = OSInfo.Windows;
 #if NETCORE
-            if (RuntimeInformation.IsOSPlatform(OSPlatform.Linux))
+            if (System.Runtime.InteropServices.RuntimeInformation.IsOSPlatform(System.Runtime.InteropServices.OSPlatform.Linux))
                 currentOS = OSInfo.Linux;
 #endif
             return currentOS;

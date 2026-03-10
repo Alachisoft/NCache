@@ -1,4 +1,4 @@
-//  Copyright (c) 2021 Alachisoft
+//  Copyright (c) 2026 Alachisoft
 //  
 //  Licensed under the Apache License, Version 2.0 (the "License");
 //  you may not use this file except in compliance with the License.
@@ -76,11 +76,13 @@ namespace Alachisoft.NCache.Caching.Statistics
         //Currently we have limitation of 2 nodes cluster, therefore there can
         //be maximum 2 client (nodes).
         public const int MAX_CLIENTS_IN_EXPRESS = 2;
+        /// <summary> A map of module's local buckets maintained at each node. </summary>
+        private BucketStatistics[] _moduleLocalBuckets;
 
-		/// <summary>
-		/// Constructor.
-		/// </summary>
-		public CacheStatistics():this(String.Empty, String.Empty)
+        /// <summary>
+        /// Constructor.
+        /// </summary>
+        public CacheStatistics():this(String.Empty, String.Empty)
 		{}
 
 		/// <summary>
@@ -111,7 +113,8 @@ namespace Alachisoft.NCache.Caching.Statistics
 				this._hitCount = stat._hitCount;
 				this._missCount = stat._missCount;
                 this._localBuckets = stat._localBuckets != null ? stat._localBuckets.Clone() as BucketStatistics[] : null;
-			}
+                this._moduleLocalBuckets = stat._moduleLocalBuckets != null ? stat._moduleLocalBuckets.Clone() as BucketStatistics[] : null;
+            }
 		}
 
         internal bool AcceptClient(System.Net.IPAddress clientAddress)
@@ -259,13 +262,19 @@ namespace Alachisoft.NCache.Caching.Statistics
             set { _localBuckets = value; }
         }
 
-		#region	/                 --- ICloneable ---           /
+        public BucketStatistics[] ModuleLocalBuckets
+        {
+            get { return _moduleLocalBuckets; }
+            set { _moduleLocalBuckets = value; }
+        }
 
-		/// <summary>
-		/// Creates a new object that is a copy of the current instance.
-		/// </summary>
-		/// <returns>A new object that is a copy of this instance.</returns>
-		public virtual object Clone()
+        #region	/                 --- ICloneable ---           /
+
+        /// <summary>
+        /// Creates a new object that is a copy of the current instance.
+        /// </summary>
+        /// <returns>A new object that is a copy of this instance.</returns>
+        public virtual object Clone()
         {
             return new CacheStatistics(this);
         }
@@ -287,7 +296,7 @@ namespace Alachisoft.NCache.Caching.Statistics
 				ret.Append("MxC:" + MaxCount.ToString() + ", ");
 				ret.Append("Hit:" + HitCount.ToString() + ", ");
 				ret.Append("Miss:" + MissCount.ToString() + "]");
-				return ret.ToString(); 
+				return ret.ToString();
 			}
 		}
 
@@ -370,6 +379,7 @@ namespace Alachisoft.NCache.Caching.Statistics
             Interlocked.Exchange(ref _updatesCount, reader.ReadInt64());
             
             _localBuckets = (BucketStatistics[])reader.ReadObject();
+            _moduleLocalBuckets = (BucketStatistics[])reader.ReadObject();
         }
 
         public virtual void Serialize(CompactWriter writer)
@@ -385,6 +395,7 @@ namespace Alachisoft.NCache.Caching.Statistics
             writer.Write(_missCount);
             writer.Write(Interlocked.Read(ref _updatesCount));
             writer.WriteObject(_localBuckets);
+            writer.WriteObject(_moduleLocalBuckets);
         }
 
         #endregion

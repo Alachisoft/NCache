@@ -1,4 +1,4 @@
-﻿//  Copyright (c) 2021 Alachisoft
+﻿//  Copyright (c) 2026 Alachisoft
 //  
 //  Licensed under the Apache License, Version 2.0 (the "License");
 //  you may not use this file except in compliance with the License.
@@ -29,7 +29,7 @@ namespace Alachisoft.NCache.Management.RPC
 
             using (MemoryStream stream = new MemoryStream())
             {
-                ProtoBuf.Serializer.Serialize<ManagementCommand>(stream,command);
+                ProtoBuf.Extended.Serializer.Serialize<ManagementCommand>(stream,command);
                 bufffer = stream.ToArray();
             }
 
@@ -41,7 +41,7 @@ namespace Alachisoft.NCache.Management.RPC
             ManagementResponse response = null;
             using (MemoryStream stream = new MemoryStream(buffer))
             {
-                response = ProtoBuf.Serializer.Deserialize<ManagementResponse>(stream);
+                response = ProtoBuf.Extended.Serializer.Deserialize<ManagementResponse>(stream);
             }
 
             if (response != null)

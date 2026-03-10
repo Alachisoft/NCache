@@ -1,4 +1,4 @@
-// $Id: AckMcastSenderWindow.java,v 1.5 2004/07/05 14:17:32 belaban Exp $
+
 using System;
 
 using Alachisoft.NGroups;
@@ -561,7 +561,6 @@ namespace Alachisoft.NGroups.Stack
 				}
 			}
 
-			// SAL:
 			if (time_to_wait < 0)
 			{
                 NCacheLog.Fatal("[Timeout]AckMcastSenderWindow.waitUntillAllAcksReceived:" + time_to_wait);

@@ -1,4 +1,4 @@
-//  Copyright (c) 2021 Alachisoft
+//  Copyright (c) 2026 Alachisoft
 //  
 //  Licensed under the Apache License, Version 2.0 (the "License");
 //  you may not use this file except in compliance with the License.
@@ -17,9 +17,11 @@ using System.Threading;
 using Alachisoft.NCache.Util;
 
 using Alachisoft.NCache.Common;
+
 using Alachisoft.NCache.Runtime.Serialization;
 using Alachisoft.NCache.Runtime.Serialization.IO;
 using Alachisoft.NCache.Common.Logger;
+
 using Runtime = Alachisoft.NCache.Runtime;
 using Alachisoft.NCache.Caching.Pooling;
 using Alachisoft.NCache.Common.Pooling.Lease;
@@ -202,7 +204,7 @@ namespace Alachisoft.NCache.Caching.AutoExpiration
 			}
 			else
 			{
-				return 1; 
+				return 1; // Consider throwing an exception
 			}
 		}
 
@@ -229,19 +231,19 @@ namespace Alachisoft.NCache.Caching.AutoExpiration
                 case ExpirationHintType.TTLExpiration:
                     var ttle = TTLExpiration.Create(poolManager);
                     ((ICompactSerializable)ttle).Deserialize(reader);
-                    return ttle;                    
+                    return ttle;                 
                 
                 case ExpirationHintType.FixedIdleExpiration:
                     var fie = FixedIdleExpiration.Create(poolManager);
                     ((ICompactSerializable)fie).Deserialize(reader);
                     return fie;     
                     
-#if !( DEVELOPMENT || CLIENT)
+
                 case ExpirationHintType.NodeExpiration:
                     var ne = NodeExpiration.Create(poolManager);
                     ((ICompactSerializable)ne).Deserialize(reader);
                     return ne;
-#endif
+
                 case ExpirationHintType.IdleExpiration:
                     var ie = IdleExpiration.Create(poolManager);
                     ((ICompactSerializable)ie).Deserialize(reader);
@@ -334,12 +336,11 @@ namespace Alachisoft.NCache.Caching.AutoExpiration
         {
             _bits = 0;
             _cacheKey = string.Empty;
-            _objNotify = default(IExpirationEventSink); 
+            _objNotify = default(IExpirationEventSink);
         }
 
         public override void ReturnLeasableToPool()
         {
-
         }
 
         #endregion

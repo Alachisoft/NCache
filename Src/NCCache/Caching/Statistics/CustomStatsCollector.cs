@@ -1,17 +1,4 @@
-﻿//  Copyright (c) 2021 Alachisoft
-//  
-//  Licensed under the Apache License, Version 2.0 (the "License");
-//  you may not use this file except in compliance with the License.
-//  You may obtain a copy of the License at
-//  
-//     http://www.apache.org/licenses/LICENSE-2.0
-//  
-//  Unless required by applicable law or agreed to in writing, software
-//  distributed under the License is distributed on an "AS IS" BASIS,
-//  WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
-//  See the License for the specific language governing permissions and
-//  limitations under the License
-using Alachisoft.NCache.Caching.Statistics;
+﻿using Alachisoft.NCache.Caching.Statistics;
 using System;
 using System.Collections.Generic;
 using System.Text;
@@ -23,6 +10,9 @@ using Alachisoft.NCache.Common.Caching.Statistics.CustomCounters;
 using Alachisoft.NCache.Common.Stats;
 using Alachisoft.NCache.Common.Caching;
 using Alachisoft.NCache.Common.Collections;
+using Alachisoft.NCache.Common.Monitoring;
+using System.Runtime.InteropServices;
+using Alachisoft.NCache.Common;
 
 namespace Alachisoft.NCache.Caching.Statistics
 {
@@ -31,16 +21,14 @@ namespace Alachisoft.NCache.Caching.Statistics
 
     }
 
-    public class CustomStatsCollector : IDisposable, StatisticCounter
+    public class CustomStatsCollector : CustomStatsCollectorBase, IDisposable, StatisticCounter
     {
-        private string _instanceName;
-
+        
         private float _expirations = 0;
         private float _evictions = 0;
         private float _stateXfer = 0;
         private float _dataBalance = 0;
-
-        private ILogger _ncacheLog;
+        private Dictionary<string, PerformanceCounterBase> _pubsubCounterList;
 
         private PerformanceCounterBase _countStats;
         private PerformanceCounterBase _sizeStats;
@@ -75,26 +63,15 @@ namespace Alachisoft.NCache.Caching.Statistics
         private PerformanceCounterBase _messageDeliverPerSecStats;
         private PerformanceCounterBase _messageExpiredPerSecStats;
 
-    
-        private Dictionary<string, PerformanceCounterBase> _pubsubCounterList;
 
-        public CustomStatsCollector(string instanceName, bool inProc)
+     
+
+        public CustomStatsCollector(string instanceName, bool inProc) : base(instanceName, inProc, Publisher.NCache)
         {
-            _instanceName = GetInstanceName(instanceName, 0, inProc);
-
         }
 
-        public CustomStatsCollector(string instanceName, int port, bool inProc)
+        public CustomStatsCollector(string instanceName, int port, bool inProc) : base(instanceName, port, inProc, Publisher.NCache)
         {
-            _instanceName = GetInstanceName(instanceName, port, inProc);
-        }
-
-
-        public string InstanceName { get { return _instanceName; } set { _instanceName = value; } }
-
-        public bool UserHasAccessRights
-        {
-            get { return true; }
         }
 
         public void InitializePerfCounters(bool inproc, bool ModuleConfigured = false)
@@ -143,21 +120,83 @@ namespace Alachisoft.NCache.Caching.Statistics
                 _pubsubCounterList.Add(CounterNames.MessagePublishPerSec, _messagePublishPerSecStats);
                 _pubsubCounterList.Add(CounterNames.MessageDeliveryPerSec, _messageDeliverPerSecStats);
                 _pubsubCounterList.Add(CounterNames.MessageExpiredPerSec, _messageExpiredPerSecStats);
+
+                #endregion
+             
+                _populationSuccessful = true;
+                StoreCounters(ModuleConfigured);
+
             }
             catch (Exception ex)
             {
+                _populationSuccessful = false;
                 throw new Exception("PerfStatsCollector.PerfStatsCollector()", ex);
             }
 
-            #endregion
+            if (!inproc)
+            {
+                PopulateCounters();
+                RegisterAsMonitorableEntity();
+            }
 
-         
         }
 
-        public ILogger NCacheLog
+       
+
+        private void StoreCounters(bool ModuleConfigured)
         {
-            get { return _ncacheLog; }
-            set { _ncacheLog = value; }
+            try
+            {
+                if (_ncacheCounters.Count <= 0)
+                {
+                    _ncacheCounters.Add(_countStats.Name, _countStats);
+                    _ncacheCounters.Add(_sizeStats.Name, _sizeStats);
+                    _ncacheCounters.Add(_addStats.Name, _addStats);
+                    _ncacheCounters.Add(_updateStats.Name, _updateStats);
+                    _ncacheCounters.Add(_fetchStats.Name, _fetchStats);
+                    _ncacheCounters.Add(_hitStats.Name, _hitStats);
+                    _ncacheCounters.Add(_missStats.Name, _missStats);
+                    _ncacheCounters.Add(_cacheLastAccessCountStats.Name, _cacheLastAccessCountStats);
+                    _ncacheCounters.Add(_hitsRatioSecStats.Name, _hitsRatioSecStats);
+                    _ncacheCounters.Add(_deleteStats.Name, _deleteStats);
+                    _ncacheCounters.Add(_evictPerSecStats.Name, _evictPerSecStats);
+                    _ncacheCounters.Add(_expiryPerSecStats.Name, _expiryPerSecStats);
+                    _ncacheCounters.Add(_stateTxfrPerSecStats.Name, _stateTxfrPerSecStats);
+                    _ncacheCounters.Add(_dataBalPerSecStats.Name, _dataBalPerSecStats);
+                    _ncacheCounters.Add(_msecPerGetAvgStats.Name, _msecPerGetAvgStats);
+                    _ncacheCounters.Add(_msecPerAddAvgStats.Name, _msecPerAddAvgStats);
+                    _ncacheCounters.Add(_msecPerUpdateAvgStats.Name, _msecPerUpdateAvgStats);
+                    _ncacheCounters.Add(_msecPerDeleteAvgStats.Name, _msecPerDeleteAvgStats);
+                    _ncacheCounters.Add(_mirrorQueueSizeStats.Name, _mirrorQueueSizeStats);
+                    _ncacheCounters.Add(_slidingIndexQueueSizeStats.Name, _slidingIndexQueueSizeStats);
+                    _ncacheCounters.Add(_expirationIndexSizeStats.Name, _expirationIndexSizeStats);
+                    _ncacheCounters.Add(_evictionIndexSizeStats.Name, _evictionIndexSizeStats);
+
+                    _usageMsecPerGetStats = new UsageStats();
+                    _usageMsecPerAddStats = new UsageStats();
+                    _usageMsecPerUpdateStats = new UsageStats();
+                    _usageMsecPerDeleteStats = new UsageStats();
+                    _usageMsecPerGetStats = new UsageStats();
+
+                    #region Pub_Sub
+                    _ncacheCounters.Add(_messageCountStats.Name, _messageCountStats);
+                    _ncacheCounters.Add(_topicCountStats.Name, _topicCountStats);
+                    _ncacheCounters.Add(_messageStoreSizeStats.Name, _messageStoreSizeStats);
+                    _ncacheCounters.Add(_messagePublishPerSecStats.Name, _messagePublishPerSecStats);
+                    _ncacheCounters.Add(_messageDeliverPerSecStats.Name, _messageDeliverPerSecStats);
+                    _ncacheCounters.Add(_messageExpiredPerSecStats.Name, _messageExpiredPerSecStats);
+
+
+                    #endregion
+                    
+                }
+
+
+            }
+            catch (Exception)
+            {
+                throw;
+            }
         }
 
         public void Dispose()
@@ -194,7 +233,7 @@ namespace Alachisoft.NCache.Caching.Statistics
             if (_messagePublishPerSecStats != null) _messagePublishPerSecStats.Reset();
             if (_messageDeliverPerSecStats != null) _messageDeliverPerSecStats.Reset();
             if (_messageExpiredPerSecStats != null) _messageExpiredPerSecStats.Reset();
-            if (_pubsubCounterList != null) _pubsubCounterList = null;
+           
         }
 
         public double GetCounterValue(string counterName)
@@ -287,9 +326,7 @@ namespace Alachisoft.NCache.Caching.Statistics
                     break;
                 case CounterNames.MessageExpiredPerSec:
                     counter = _messageExpiredPerSecStats;
-                    break;
-               
-            }
+                    break;            }
 
             if (counter != null)
             {
@@ -300,11 +337,6 @@ namespace Alachisoft.NCache.Caching.Statistics
             }
 
             return value;
-        }
-
-        public string GetInstanceName(string instanceName, int port, bool inProc)
-        {
-            return !inProc ? instanceName : instanceName + " - " + Process.GetCurrentProcess().Id.ToString() + ":" + port.ToString();
         }
 
         public void IncrementAddPerSecStats()
@@ -606,7 +638,7 @@ namespace Alachisoft.NCache.Caching.Statistics
                 lock (_msecPerAddAvgStats)
                 {
                     _usageMsecPerAddStats.EndSample();
-                    _msecPerAddAvgStats.IncrementBy(_usageMsecPerAddStats.Current * 1000000 / Stopwatch.Frequency); //ts.Milliseconds);
+                    _msecPerAddAvgStats.IncrementBy(_usageMsecPerAddStats.Current * 1000000 / Stopwatch.Frequency);
                 }
             }
         }
@@ -623,7 +655,7 @@ namespace Alachisoft.NCache.Caching.Statistics
                 lock (_msecPerDeleteAvgStats)
                 {
                     _usageMsecPerDeleteStats.EndSample();
-                    _msecPerDeleteAvgStats.IncrementBy(_usageMsecPerDeleteStats.Current * 1000000 / Stopwatch.Frequency); //ts.Milliseconds);
+                    _msecPerDeleteAvgStats.IncrementBy(_usageMsecPerDeleteStats.Current * 1000000 / Stopwatch.Frequency);
                 }
             }
         }
@@ -640,7 +672,7 @@ namespace Alachisoft.NCache.Caching.Statistics
                 lock (_msecPerGetAvgStats)
                 {
                     _usageMsecPerGetStats.EndSample();
-                    _msecPerGetAvgStats.IncrementBy(_usageMsecPerGetStats.Current * 1000000 / Stopwatch.Frequency);// ts.Milliseconds);
+                    _msecPerGetAvgStats.IncrementBy(_usageMsecPerGetStats.Current * 1000000 / Stopwatch.Frequency);
                 }
             }
         }
@@ -658,7 +690,7 @@ namespace Alachisoft.NCache.Caching.Statistics
                 lock (_msecPerUpdateAvgStats)
                 {
                     _usageMsecPerUpdateStats.EndSample();
-                    _msecPerUpdateAvgStats.IncrementBy(_usageMsecPerUpdateStats.Current * 1000000 / Stopwatch.Frequency);//ts.Milliseconds);
+                    _msecPerUpdateAvgStats.IncrementBy(_usageMsecPerUpdateStats.Current * 1000000 / Stopwatch.Frequency);;
                 }
             }
         }
@@ -730,15 +762,19 @@ namespace Alachisoft.NCache.Caching.Statistics
                 }
             }
         }
-        
-
 
         public void DataTypeCounterSetter(string counterType, long size)
         {
-
         }
 
-       
+        internal override ICustomCountersInstaller GetCustomCountersInstaller()
+        {
+            return new CustomCountersInstaller();
+        }
 
+        internal override IPerfInstaller GetPerfInstaller()
+        {
+            return new PerfInstaller();
+        }
     }
 }

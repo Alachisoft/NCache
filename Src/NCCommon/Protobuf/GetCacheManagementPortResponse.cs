@@ -10,14 +10,14 @@
 // Generated from: GetCacheManagementPortResponse.proto
 namespace Alachisoft.NCache.Common.Protobuf
 {
-  [global::System.Serializable, global::ProtoBuf.ProtoContract(Name=@"GetCacheManagementPortResponse")]
-  public partial class GetCacheManagementPortResponse : global::ProtoBuf.IExtensible
+  [global::System.Serializable, global::ProtoBuf.Extended.ProtoContract(Name=@"GetCacheManagementPortResponse")]
+  public partial class GetCacheManagementPortResponse : global::ProtoBuf.Extended.IExtensible
   {
     public GetCacheManagementPortResponse() {}
     
 
     private string _server = "";
-    [global::ProtoBuf.ProtoMember(1, IsRequired = false, Name=@"server", DataFormat = global::ProtoBuf.DataFormat.Default)]
+    [global::ProtoBuf.Extended.ProtoMember(1, IsRequired = false, Name=@"server", DataFormat = global::ProtoBuf.Extended.DataFormat.Default)]
     [global::System.ComponentModel.DefaultValue("")]
     public string server
     {
@@ -26,7 +26,7 @@ namespace Alachisoft.NCache.Common.Protobuf
     }
 
     private int _port = default(int);
-    [global::ProtoBuf.ProtoMember(2, IsRequired = false, Name=@"port", DataFormat = global::ProtoBuf.DataFormat.TwosComplement)]
+    [global::ProtoBuf.Extended.ProtoMember(2, IsRequired = false, Name=@"port", DataFormat = global::ProtoBuf.Extended.DataFormat.TwosComplement)]
     [global::System.ComponentModel.DefaultValue(default(int))]
     public int port
     {
@@ -35,16 +35,16 @@ namespace Alachisoft.NCache.Common.Protobuf
     }
 
     private bool _isRunning = default(bool);
-    [global::ProtoBuf.ProtoMember(3, IsRequired = false, Name=@"isRunning", DataFormat = global::ProtoBuf.DataFormat.Default)]
+    [global::ProtoBuf.Extended.ProtoMember(3, IsRequired = false, Name=@"isRunning", DataFormat = global::ProtoBuf.Extended.DataFormat.Default)]
     [global::System.ComponentModel.DefaultValue(default(bool))]
     public bool isRunning
     {
       get { return _isRunning; }
       set { _isRunning = value; }
     }
-    private global::ProtoBuf.IExtension extensionObject;
-    global::ProtoBuf.IExtension global::ProtoBuf.IExtensible.GetExtensionObject(bool createIfMissing)
-      { return global::ProtoBuf.Extensible.GetExtensionObject(ref extensionObject, createIfMissing); }
+    private global::ProtoBuf.Extended.IExtension extensionObject;
+   global::ProtoBuf.Extended.IExtension global::ProtoBuf.Extended.IExtensible.GetExtensionObject(bool createIfMissing)
+      { return global::ProtoBuf.Extended.Extensible.GetExtensionObject(ref extensionObject, createIfMissing); }
   }
   
 }

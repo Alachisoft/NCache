@@ -1,4 +1,4 @@
-//  Copyright (c) 2021 Alachisoft
+//  Copyright (c) 2026 Alachisoft
 //  
 //  Licensed under the Apache License, Version 2.0 (the "License");
 //  you may not use this file except in compliance with the License.
@@ -27,32 +27,36 @@ using System.Runtime.InteropServices;
 
 
 #if NETCORE
-#if CLIENT 
-[assembly: AssemblyTitle("Alachisoft.NCache.Cache (.NETCore Client)")]
-#else
 [assembly: AssemblyTitle("Alachisoft.NCache.Cache (.NETCore)")]
-#endif
 #else
-[assembly: AssemblyTitle("Alachisoft.NCache.Cache")]
+[assembly: AssemblyTitle("Alachisoft.NCache.Cache (.NET)")]
 #endif
+
 
 [assembly: AssemblyProduct("Alachisoft® NCache OpenSource")]
-[assembly: AssemblyTrademark("NCache ™ is a registered trademark of Alachisoft.")]
 
+
+[assembly: AssemblyTrademark("NCache ™ is a registered trademark of Alachisoft.")]
 
 [assembly: AssemblyConfiguration("")]
 [assembly: AssemblyCompany("Alachisoft")]
 
 
 
-[assembly: AssemblyCopyright("Copyright © 2005-2021 Alachisoft")]
+[assembly: AssemblyCopyright("Copyright © 2005-2026 Alachisoft")]
 [assembly: AssemblyCulture("")]
 
-[assembly: InternalsVisibleTo("Alachisoft.NCache.Client, PublicKey=00240000048000009400000006020000002400005253413100040000010001001d52e880bc916ccf859cdcec2e364e066e86136ffef5b9dae06fd02970d1a2b224658f100c17216c40532dfe8f0c274342b20ebfa506067ad95a92891a0381df679be792585190a38e36e117aea93773923bba28bb185ef03ffc5fbec4351ba7fff68bce21d378f30acff1fc1fabdcbf0afc8b6287060fc6fc66bcd75db006bb")]
-[assembly: InternalsVisibleTo("Alachisoft.NCache.SocketServer, PublicKey=00240000048000009400000006020000002400005253413100040000010001001d52e880bc916ccf859cdcec2e364e066e86136ffef5b9dae06fd02970d1a2b224658f100c17216c40532dfe8f0c274342b20ebfa506067ad95a92891a0381df679be792585190a38e36e117aea93773923bba28bb185ef03ffc5fbec4351ba7fff68bce21d378f30acff1fc1fabdcbf0afc8b6287060fc6fc66bcd75db006bb")]
-[assembly: InternalsVisibleTo("Alachisoft.NCache.Runtime, PublicKey=00240000048000009400000006020000002400005253413100040000010001001d52e880bc916ccf859cdcec2e364e066e86136ffef5b9dae06fd02970d1a2b224658f100c17216c40532dfe8f0c274342b20ebfa506067ad95a92891a0381df679be792585190a38e36e117aea93773923bba28bb185ef03ffc5fbec4351ba7fff68bce21d378f30acff1fc1fabdcbf0afc8b6287060fc6fc66bcd75db006bb")]
+[assembly: InternalsVisibleTo("Alachisoft.NCache.Client")]
+[assembly: InternalsVisibleTo("Alachisoft.NCache.SocketServer")]
+[assembly: InternalsVisibleTo("Alachisoft.NCache.Runtime")]
 
 
+
+[assembly: InternalsVisibleTo("EladLicenseGenerator,PublicKey=002400000480000094000000060200000024000052534131000400000100010005a3e761ae2217"
++ "0e7f5cc1208e5a2e51fef749c98ee0cc3c94dc1d688fe0324370d327bb3e33248ad603831c8b5b"
++ "7316c451e26b5fcb99ec05884419f7102942e7446a51e0c5812530af21c49330e45baaba4247cb"
++ "07f4807a1d051466040c77d437fb79ffe78a2330d4d5a6830577b98907cba0365ced3f9c4bb91f"
++ "b9520bc9")]
 //
 // Version information for an assembly consists of the following four values:
 //
@@ -64,7 +68,7 @@ using System.Runtime.InteropServices;
 // You can specify all the values or you can default the Revision and Build Numbers 
 // by using the '*' as shown below:
 
-[assembly: AssemblyVersion("5.0.0")]
+[assembly: AssemblyVersion("5.3.0")]
 
 //
 // In order to sign your assembly you must specify a key to use. Refer to the 
@@ -93,13 +97,6 @@ using System.Runtime.InteropServices;
 //
 [assembly: AssemblyDelaySign(false)]
 [assembly: AssemblyKeyName("")]
-#if DEBUG
-[assembly: AssemblyKeyFile("..\\..\\Resources\\ncache.snk")]
-#else
-[assembly: AssemblyKeyFile("..\\..\\Resources\\ncache.snk")]
-#endif
 [assembly: AssemblyDescriptionAttribute("Cache Core")]
-
-[assembly: AssemblyFileVersionAttribute("5.0.5.0")]
-
-[assembly: AssemblyInformationalVersion("5.0.0")]
+[assembly: AssemblyInformationalVersion("5.3.0")]
+[assembly: AssemblyFileVersionAttribute("5.3.6.1")]

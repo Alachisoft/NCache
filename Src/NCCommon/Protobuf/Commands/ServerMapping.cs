@@ -10,14 +10,14 @@
 // Generated from: ServerMapping.proto
 namespace Alachisoft.NCache.Common.Protobuf
 {
-  [global::System.Serializable, global::ProtoBuf.ProtoContract(Name=@"ServerMapping")]
-  public partial class ServerMapping : global::ProtoBuf.IExtensible
+  [global::System.Serializable, global::ProtoBuf.Extended.ProtoContract(Name=@"ServerMapping")]
+  public partial class ServerMapping : global::ProtoBuf.Extended.IExtensible
   {
     public ServerMapping() {}
     
 
     private string _publicIp = "";
-    [global::ProtoBuf.ProtoMember(1, IsRequired = false, Name=@"publicIp", DataFormat = global::ProtoBuf.DataFormat.Default)]
+    [global::ProtoBuf.Extended.ProtoMember(1, IsRequired = false, Name=@"publicIp", DataFormat = global::ProtoBuf.Extended.DataFormat.Default)]
     [global::System.ComponentModel.DefaultValue("")]
     public string publicIp
     {
@@ -26,7 +26,7 @@ namespace Alachisoft.NCache.Common.Protobuf
     }
 
     private int _publicPort = default(int);
-    [global::ProtoBuf.ProtoMember(2, IsRequired = false, Name=@"publicPort", DataFormat = global::ProtoBuf.DataFormat.TwosComplement)]
+    [global::ProtoBuf.Extended.ProtoMember(2, IsRequired = false, Name=@"publicPort", DataFormat = global::ProtoBuf.Extended.DataFormat.TwosComplement)]
     [global::System.ComponentModel.DefaultValue(default(int))]
     public int publicPort
     {
@@ -35,7 +35,7 @@ namespace Alachisoft.NCache.Common.Protobuf
     }
 
     private string _privateIp = "";
-    [global::ProtoBuf.ProtoMember(3, IsRequired = false, Name=@"privateIp", DataFormat = global::ProtoBuf.DataFormat.Default)]
+    [global::ProtoBuf.Extended.ProtoMember(3, IsRequired = false, Name=@"privateIp", DataFormat = global::ProtoBuf.Extended.DataFormat.Default)]
     [global::System.ComponentModel.DefaultValue("")]
     public string privateIp
     {
@@ -44,16 +44,16 @@ namespace Alachisoft.NCache.Common.Protobuf
     }
 
     private int _privatePort = default(int);
-    [global::ProtoBuf.ProtoMember(4, IsRequired = false, Name=@"privatePort", DataFormat = global::ProtoBuf.DataFormat.TwosComplement)]
+    [global::ProtoBuf.Extended.ProtoMember(4, IsRequired = false, Name=@"privatePort", DataFormat = global::ProtoBuf.Extended.DataFormat.TwosComplement)]
     [global::System.ComponentModel.DefaultValue(default(int))]
     public int privatePort
     {
       get { return _privatePort; }
       set { _privatePort = value; }
     }
-    private global::ProtoBuf.IExtension extensionObject;
-    global::ProtoBuf.IExtension global::ProtoBuf.IExtensible.GetExtensionObject(bool createIfMissing)
-      { return global::ProtoBuf.Extensible.GetExtensionObject(ref extensionObject, createIfMissing); }
+    private global::ProtoBuf.Extended.IExtension extensionObject;
+   global::ProtoBuf.Extended.IExtension global::ProtoBuf.Extended.IExtensible.GetExtensionObject(bool createIfMissing)
+      { return global::ProtoBuf.Extended.Extensible.GetExtensionObject(ref extensionObject, createIfMissing); }
   }
   
 }

@@ -1,4 +1,4 @@
-// $Id: Protocol.java,v 1.18 2004/07/05 14:17:33 belaban Exp $
+
 using System;
 using System.Threading;
 using System.Collections;

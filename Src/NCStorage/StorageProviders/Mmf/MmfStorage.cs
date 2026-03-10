@@ -1,4 +1,4 @@
-//  Copyright (c) 2021 Alachisoft
+//  Copyright (c) 2026 Alachisoft
 //  
 //  Licensed under the Apache License, Version 2.0 (the "License");
 //  you may not use this file except in compliance with the License.
@@ -72,7 +72,6 @@ namespace Alachisoft.NCache.Storage.Mmf
             }
             catch(Exception e)
             {
-                //Console.WriteLine("MmfStorage.OpenMemoryMappedStore" + "Error:" + e);
                 throw;
             }
             
@@ -180,7 +179,7 @@ namespace Alachisoft.NCache.Storage.Mmf
                     MemArena arena = view.Allocate((uint)item.Length);
                     if (arena == null) return null;
 
-                    if (!arena.SetMemContents(item)) // It would return false only when size of Arena allocated is less then required even after all efforts to get arena of required size. 
+                    if (!arena.SetMemContents(item)) //It would return false only when size of Arena allocated is less then required even after all efforts to get arena of required size. 
                     {
                         view.DeAllocate(arena);
                         return null;
@@ -222,11 +221,7 @@ namespace Alachisoft.NCache.Storage.Mmf
 			{
 				// Try to add it elsewhere and then delete the current space.                
                 MmfObjectPtr newInfo = Add(item);
-				//if (newInfo != null)
-				//{                    
-                    //Remove(info);  //as we are updating original hash table links, so before call remove we must update the hash-table entry, instead of updating later.
-                    //I am moving this remove call to MmfStorageProvide 'Insert' methods ....
-				//}
+
 				info = newInfo;
 			}
 			

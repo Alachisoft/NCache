@@ -11,14 +11,14 @@
 // Note: requires additional types generated from: EventId.proto
 namespace Alachisoft.NCache.Common.Protobuf
 {
-  [global::System.Serializable, global::ProtoBuf.ProtoContract(Name=@"EventInfo")]
-  public partial class EventInfo : global::ProtoBuf.IExtensible
+  [global::System.Serializable, global::ProtoBuf.Extended.ProtoContract(Name=@"EventInfo")]
+  public partial class EventInfo : global::ProtoBuf.Extended.IExtensible
   {
     public EventInfo() {}
     
 
     private int _callbackId = default(int);
-    [global::ProtoBuf.ProtoMember(1, IsRequired = false, Name=@"callbackId", DataFormat = global::ProtoBuf.DataFormat.ZigZag)]
+    [global::ProtoBuf.Extended.ProtoMember(1, IsRequired = false, Name=@"callbackId", DataFormat = global::ProtoBuf.Extended.DataFormat.ZigZag)]
     [global::System.ComponentModel.DefaultValue(default(int))]
     public int callbackId
     {
@@ -27,7 +27,7 @@ namespace Alachisoft.NCache.Common.Protobuf
     }
 
     private string _key = "";
-    [global::ProtoBuf.ProtoMember(2, IsRequired = false, Name=@"key", DataFormat = global::ProtoBuf.DataFormat.Default)]
+    [global::ProtoBuf.Extended.ProtoMember(2, IsRequired = false, Name=@"key", DataFormat = global::ProtoBuf.Extended.DataFormat.Default)]
     [global::System.ComponentModel.DefaultValue("")]
     public string key
     {
@@ -36,7 +36,7 @@ namespace Alachisoft.NCache.Common.Protobuf
     }
 
     private int _itemRemoveReason = default(int);
-    [global::ProtoBuf.ProtoMember(3, IsRequired = false, Name=@"itemRemoveReason", DataFormat = global::ProtoBuf.DataFormat.TwosComplement)]
+    [global::ProtoBuf.Extended.ProtoMember(3, IsRequired = false, Name=@"itemRemoveReason", DataFormat = global::ProtoBuf.Extended.DataFormat.TwosComplement)]
     [global::System.ComponentModel.DefaultValue(default(int))]
     public int itemRemoveReason
     {
@@ -45,7 +45,7 @@ namespace Alachisoft.NCache.Common.Protobuf
     }
 
     private int _flag = default(int);
-    [global::ProtoBuf.ProtoMember(4, IsRequired = false, Name=@"flag", DataFormat = global::ProtoBuf.DataFormat.TwosComplement)]
+    [global::ProtoBuf.Extended.ProtoMember(4, IsRequired = false, Name=@"flag", DataFormat = global::ProtoBuf.Extended.DataFormat.TwosComplement)]
     [global::System.ComponentModel.DefaultValue(default(int))]
     public int flag
     {
@@ -53,7 +53,7 @@ namespace Alachisoft.NCache.Common.Protobuf
       set { _flag = value; }
     }
     private readonly global::System.Collections.Generic.List<byte[]> _value = new global::System.Collections.Generic.List<byte[]>();
-    [global::ProtoBuf.ProtoMember(5, Name=@"value", DataFormat = global::ProtoBuf.DataFormat.Default)]
+    [global::ProtoBuf.Extended.ProtoMember(5, Name=@"value", DataFormat = global::ProtoBuf.Extended.DataFormat.Default)]
     public global::System.Collections.Generic.List<byte[]> value
     {
       get { return _value; }
@@ -61,7 +61,7 @@ namespace Alachisoft.NCache.Common.Protobuf
   
 
     private Alachisoft.NCache.Common.Protobuf.EventId _eventId = null;
-    [global::ProtoBuf.ProtoMember(6, IsRequired = false, Name=@"eventId", DataFormat = global::ProtoBuf.DataFormat.Default)]
+    [global::ProtoBuf.Extended.ProtoMember(6, IsRequired = false, Name=@"eventId", DataFormat = global::ProtoBuf.Extended.DataFormat.Default)]
     [global::System.ComponentModel.DefaultValue(null)]
     public Alachisoft.NCache.Common.Protobuf.EventId eventId
     {
@@ -70,7 +70,7 @@ namespace Alachisoft.NCache.Common.Protobuf
     }
 
     private int _changeType = default(int);
-    [global::ProtoBuf.ProtoMember(7, IsRequired = false, Name=@"changeType", DataFormat = global::ProtoBuf.DataFormat.TwosComplement)]
+    [global::ProtoBuf.Extended.ProtoMember(7, IsRequired = false, Name=@"changeType", DataFormat = global::ProtoBuf.Extended.DataFormat.TwosComplement)]
     [global::System.ComponentModel.DefaultValue(default(int))]
     public int changeType
     {
@@ -79,7 +79,7 @@ namespace Alachisoft.NCache.Common.Protobuf
     }
 
     private string _queryId = "";
-    [global::ProtoBuf.ProtoMember(8, IsRequired = false, Name=@"queryId", DataFormat = global::ProtoBuf.DataFormat.Default)]
+    [global::ProtoBuf.Extended.ProtoMember(8, IsRequired = false, Name=@"queryId", DataFormat = global::ProtoBuf.Extended.DataFormat.Default)]
     [global::System.ComponentModel.DefaultValue("")]
     public string queryId
     {
@@ -88,42 +88,42 @@ namespace Alachisoft.NCache.Common.Protobuf
     }
 
     private Alachisoft.NCache.Common.Protobuf.EventInfo.EventType _eventType = Alachisoft.NCache.Common.Protobuf.EventInfo.EventType.ITEM_REMOVED_CALLBACK;
-    [global::ProtoBuf.ProtoMember(9, IsRequired = false, Name=@"eventType", DataFormat = global::ProtoBuf.DataFormat.TwosComplement)]
+    [global::ProtoBuf.Extended.ProtoMember(9, IsRequired = false, Name=@"eventType", DataFormat = global::ProtoBuf.Extended.DataFormat.TwosComplement)]
     [global::System.ComponentModel.DefaultValue(Alachisoft.NCache.Common.Protobuf.EventInfo.EventType.ITEM_REMOVED_CALLBACK)]
     public Alachisoft.NCache.Common.Protobuf.EventInfo.EventType eventType
     {
       get { return _eventType; }
       set { _eventType = value; }
     }
-    [global::ProtoBuf.ProtoContract(Name=@"EventType")]
+    [global::ProtoBuf.Extended.ProtoContract(Name=@"EventType")]
     public enum EventType
     {
             
-      [global::ProtoBuf.ProtoEnum(Name=@"ITEM_REMOVED_CALLBACK", Value=1)]
+      [global::ProtoBuf.Extended.ProtoEnum(Name=@"ITEM_REMOVED_CALLBACK", Value=1)]
       ITEM_REMOVED_CALLBACK = 1,
             
-      [global::ProtoBuf.ProtoEnum(Name=@"ITEM_UPDATED_CALLBACK", Value=2)]
+      [global::ProtoBuf.Extended.ProtoEnum(Name=@"ITEM_UPDATED_CALLBACK", Value=2)]
       ITEM_UPDATED_CALLBACK = 2,
             
-      [global::ProtoBuf.ProtoEnum(Name=@"ITEM_ADDED_EVENT", Value=3)]
+      [global::ProtoBuf.Extended.ProtoEnum(Name=@"ITEM_ADDED_EVENT", Value=3)]
       ITEM_ADDED_EVENT = 3,
             
-      [global::ProtoBuf.ProtoEnum(Name=@"ITEM_REMOVED_EVENT", Value=4)]
+      [global::ProtoBuf.Extended.ProtoEnum(Name=@"ITEM_REMOVED_EVENT", Value=4)]
       ITEM_REMOVED_EVENT = 4,
             
-      [global::ProtoBuf.ProtoEnum(Name=@"ITEM_UPDATED_EVENT", Value=5)]
+      [global::ProtoBuf.Extended.ProtoEnum(Name=@"ITEM_UPDATED_EVENT", Value=5)]
       ITEM_UPDATED_EVENT = 5,
             
-      [global::ProtoBuf.ProtoEnum(Name=@"CACHE_CLEARED_EVENT", Value=6)]
+      [global::ProtoBuf.Extended.ProtoEnum(Name=@"CACHE_CLEARED_EVENT", Value=6)]
       CACHE_CLEARED_EVENT = 6,
             
-      [global::ProtoBuf.ProtoEnum(Name=@"CQ_CALLBACK", Value=7)]
+      [global::ProtoBuf.Extended.ProtoEnum(Name=@"CQ_CALLBACK", Value=7)]
       CQ_CALLBACK = 7
     }
   
-    private global::ProtoBuf.IExtension extensionObject;
-    global::ProtoBuf.IExtension global::ProtoBuf.IExtensible.GetExtensionObject(bool createIfMissing)
-      { return global::ProtoBuf.Extensible.GetExtensionObject(ref extensionObject, createIfMissing); }
+    private global::ProtoBuf.Extended.IExtension extensionObject;
+   global::ProtoBuf.Extended.IExtension global::ProtoBuf.Extended.IExtensible.GetExtensionObject(bool createIfMissing)
+      { return global::ProtoBuf.Extended.Extensible.GetExtensionObject(ref extensionObject, createIfMissing); }
   }
   
 }

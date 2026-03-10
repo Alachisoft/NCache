@@ -10,14 +10,14 @@
 // Generated from: FragmentedResponse.proto
 namespace Alachisoft.NCache.Common.Protobuf
 {
-  [global::System.Serializable, global::ProtoBuf.ProtoContract(Name=@"FragmentedResponse")]
-  public partial class FragmentedResponse : global::ProtoBuf.IExtensible
+  [global::System.Serializable, global::ProtoBuf.Extended.ProtoContract(Name=@"FragmentedResponse")]
+  public partial class FragmentedResponse : global::ProtoBuf.Extended.IExtensible
   {
     public FragmentedResponse() {}
     
 
     private long _messageId = default(long);
-    [global::ProtoBuf.ProtoMember(1, IsRequired = false, Name=@"messageId", DataFormat = global::ProtoBuf.DataFormat.TwosComplement)]
+    [global::ProtoBuf.Extended.ProtoMember(1, IsRequired = false, Name=@"messageId", DataFormat = global::ProtoBuf.Extended.DataFormat.TwosComplement)]
     [global::System.ComponentModel.DefaultValue(default(long))]
     public long messageId
     {
@@ -26,7 +26,7 @@ namespace Alachisoft.NCache.Common.Protobuf
     }
 
     private int _fragmentNo = default(int);
-    [global::ProtoBuf.ProtoMember(2, IsRequired = false, Name=@"fragmentNo", DataFormat = global::ProtoBuf.DataFormat.TwosComplement)]
+    [global::ProtoBuf.Extended.ProtoMember(2, IsRequired = false, Name=@"fragmentNo", DataFormat = global::ProtoBuf.Extended.DataFormat.TwosComplement)]
     [global::System.ComponentModel.DefaultValue(default(int))]
     public int fragmentNo
     {
@@ -35,7 +35,7 @@ namespace Alachisoft.NCache.Common.Protobuf
     }
 
     private int _totalFragments = default(int);
-    [global::ProtoBuf.ProtoMember(3, IsRequired = false, Name=@"totalFragments", DataFormat = global::ProtoBuf.DataFormat.TwosComplement)]
+    [global::ProtoBuf.Extended.ProtoMember(3, IsRequired = false, Name=@"totalFragments", DataFormat = global::ProtoBuf.Extended.DataFormat.TwosComplement)]
     [global::System.ComponentModel.DefaultValue(default(int))]
     public int totalFragments
     {
@@ -44,16 +44,16 @@ namespace Alachisoft.NCache.Common.Protobuf
     }
 
     private byte[] _message = null;
-    [global::ProtoBuf.ProtoMember(4, IsRequired = false, Name=@"message", DataFormat = global::ProtoBuf.DataFormat.Default)]
+    [global::ProtoBuf.Extended.ProtoMember(4, IsRequired = false, Name=@"message", DataFormat = global::ProtoBuf.Extended.DataFormat.Default)]
     [global::System.ComponentModel.DefaultValue(null)]
     public byte[] message
     {
       get { return _message; }
       set { _message = value; }
     }
-    private global::ProtoBuf.IExtension extensionObject;
-    global::ProtoBuf.IExtension global::ProtoBuf.IExtensible.GetExtensionObject(bool createIfMissing)
-      { return global::ProtoBuf.Extensible.GetExtensionObject(ref extensionObject, createIfMissing); }
+    private global::ProtoBuf.Extended.IExtension extensionObject;
+   global::ProtoBuf.Extended.IExtension global::ProtoBuf.Extended.IExtensible.GetExtensionObject(bool createIfMissing)
+      { return global::ProtoBuf.Extended.Extensible.GetExtensionObject(ref extensionObject, createIfMissing); }
   }
   
 }

@@ -1,4 +1,4 @@
-//  Copyright (c) 2021 Alachisoft
+//  Copyright (c) 2026 Alachisoft
 //  
 //  Licensed under the Apache License, Version 2.0 (the "License");
 //  you may not use this file except in compliance with the License.
@@ -13,14 +13,14 @@
 //  limitations under the License
 namespace Alachisoft.NCache.Common.Protobuf
 {
-    [global::System.Serializable, global::ProtoBuf.ProtoContract(Name=@"GetOptimalServerResponse")]
-    public partial class GetOptimalServerResponse : global::ProtoBuf.IExtensible
+    [global::System.Serializable, global::ProtoBuf.Extended.ProtoContract(Name=@"GetOptimalServerResponse")]
+    public partial class GetOptimalServerResponse : global::ProtoBuf.Extended.IExtensible
     {
       public GetOptimalServerResponse() {}
       
 
     private string _server = "";
-    [global::ProtoBuf.ProtoMember(1, IsRequired = false, Name=@"server", DataFormat = global::ProtoBuf.DataFormat.Default)][global::System.ComponentModel.DefaultValue("")]
+    [global::ProtoBuf.Extended.ProtoMember(1, IsRequired = false, Name=@"server", DataFormat = global::ProtoBuf.Extended.DataFormat.Default)][global::System.ComponentModel.DefaultValue("")]
     public string server
     {
       get { return _server; }
@@ -28,15 +28,22 @@ namespace Alachisoft.NCache.Common.Protobuf
     }
 
     private int _port = default(int);
-    [global::ProtoBuf.ProtoMember(2, IsRequired = false, Name=@"port", DataFormat = global::ProtoBuf.DataFormat.TwosComplement)][global::System.ComponentModel.DefaultValue(default(int))]
+    [global::ProtoBuf.Extended.ProtoMember(2, IsRequired = false, Name=@"port", DataFormat = global::ProtoBuf.Extended.DataFormat.TwosComplement)][global::System.ComponentModel.DefaultValue(default(int))]
     public int port
     {
       get { return _port; }
       set { _port = value; }
     }
-      private global::ProtoBuf.IExtension extensionObject;
-      global::ProtoBuf.IExtension global::ProtoBuf.IExtensible.GetExtensionObject(bool createIfMissing)
-        { return global::ProtoBuf.Extensible.GetExtensionObject(ref extensionObject, createIfMissing); }
+      private global::ProtoBuf.Extended.IExtension extensionObject;
+     global::ProtoBuf.Extended.IExtension global::ProtoBuf.Extended.IExtensible.GetExtensionObject(bool createIfMissing)
+        { return global::ProtoBuf.Extended.Extensible.GetExtensionObject(ref extensionObject, createIfMissing); }
+
+    private readonly global::System.Collections.Generic.List<Alachisoft.NCache.Common.Protobuf.KeyValuePair> _serverPublicIp = new global::System.Collections.Generic.List<Alachisoft.NCache.Common.Protobuf.KeyValuePair>();
+    [global::ProtoBuf.Extended.ProtoMember(3, Name = @"serverPublicIp", DataFormat = global::ProtoBuf.Extended.DataFormat.Default)]
+    public global::System.Collections.Generic.List<Alachisoft.NCache.Common.Protobuf.KeyValuePair> serverPublicIp
+        {
+        get { return _serverPublicIp; }
+    }
     }
   
 }

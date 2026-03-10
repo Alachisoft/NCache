@@ -1,4 +1,4 @@
-//  Copyright (c) 2021 Alachisoft
+//  Copyright (c) 2026 Alachisoft
 //  
 //  Licensed under the Apache License, Version 2.0 (the "License");
 //  you may not use this file except in compliance with the License.
@@ -53,7 +53,7 @@ namespace Alachisoft.NCache.Caching.EvictionPolicies
 		/// </summary>
 		/// <param name="properties"></param>
 		/// <param name="ratio"></param>
-		public PriorityEvictionPolicy(IDictionary properties, float ratio) 
+		public PriorityEvictionPolicy(IDictionary properties, float ratio)
 		{
 			if(properties != null)
 			{
@@ -415,7 +415,7 @@ namespace Alachisoft.NCache.Caching.EvictionPolicies
                     for (int i = 0; i < 5; i++)
                         if (_index[i] != null)
                         {                            
-                            _index[i] = new HashVector(25000, 0.7f);
+                            _index[i] = new HashVector();
                         }
             }
         }

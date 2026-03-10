@@ -1,4 +1,4 @@
-//  Copyright (c) 2021 Alachisoft
+﻿//  Copyright (c) 2026 Alachisoft
 //  
 //  Licensed under the Apache License, Version 2.0 (the "License");
 //  you may not use this file except in compliance with the License.
@@ -18,7 +18,6 @@ using System.Net;
 using System.Text;
 using System.Collections;
 using System.Reflection;
-//using System.Runtime.Remoting;
 using System.Runtime.InteropServices;
 using System.Runtime.Serialization.Formatters.Binary;
 using System.Threading;
@@ -30,35 +29,35 @@ namespace Alachisoft.NCache.Common.Interop
 	/// Utility class to help with interop tasks.
 	/// </summary>
 	[CLSCompliant(false)]
-	public class Win32
-	{
-		private Win32() { }
+    public class Win32
+    {
+        private Win32() { }
 
         [DllImport("kernel32")]
         public static extern bool QueryPerformanceFrequency(ref long frequency);
 
-		[DllImport("kernel32")]
-		public static extern void QueryPerformanceCounter(ref long ticks);
-
-		[DllImport("kernel32")]
-		public static extern void GetSystemInfo(ref SYSTEM_INFO pSI);
-        
         [DllImport("kernel32")]
-        public static extern void GetNativeSystemInfo(ref SYSTEM_INFO pSI);        
+        public static extern void QueryPerformanceCounter(ref long ticks);
 
-		[DllImport("kernel32")]
-		public static extern uint GetLastError();
+        [DllImport("kernel32")]
+        public static extern void GetSystemInfo(ref SYSTEM_INFO pSI);
 
-		[DllImport("kernel32")]
-		public static extern uint FormatMessage(
-			uint dwFlags, // Source and processing options
-			IntPtr lpSource, // Message source
-			uint dwMessageId, // Message identifier
-			uint dwLanguageId, // Language identifier
-			StringBuilder lpBuffer, // Message buffer
-			uint nSize, // Maximum size of message buffer
-			IntPtr Arguments  // Array of message inserts
-			);
+        [DllImport("kernel32")]
+        public static extern void GetNativeSystemInfo(ref SYSTEM_INFO pSI);
+
+        [DllImport("kernel32")]
+        public static extern uint GetLastError();
+
+        [DllImport("kernel32")]
+        public static extern uint FormatMessage(
+            uint dwFlags, // Source and processing options
+            IntPtr lpSource, // Message source
+            uint dwMessageId, // Message identifier
+            uint dwLanguageId, // Language identifier
+            StringBuilder lpBuffer, // Message buffer
+            uint nSize, // Maximum size of message buffer
+            IntPtr Arguments  // Array of message inserts
+            );
 
         [DllImport("kernel32.dll", SetLastError = true, CallingConvention = CallingConvention.Winapi)]
         [return: MarshalAs(UnmanagedType.Bool)]
@@ -68,7 +67,7 @@ namespace Alachisoft.NCache.Common.Interop
         );
 
         public static bool InternalCheckIsWow64()
-        {          
+        {
             if ((Environment.OSVersion.Version.Major == 5 && Environment.OSVersion.Version.Minor >= 1) ||
                 Environment.OSVersion.Version.Major >= 6)
             {

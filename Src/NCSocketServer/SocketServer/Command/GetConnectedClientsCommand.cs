@@ -1,4 +1,4 @@
-﻿//  Copyright (c) 2021 Alachisoft
+﻿//  Copyright (c) 2026 Alachisoft
 //  
 //  Licensed under the Apache License, Version 2.0 (the "License");
 //  you may not use this file except in compliance with the License.
@@ -20,6 +20,7 @@ using Exception = System.Exception;
 using Alachisoft.NCache.Common.Monitoring;
 using Alachisoft.NCache.SocketServer.RuntimeLogging;
 using System;
+using Alachisoft.NCache.Common.ResponseSerialization;
 
 namespace Alachisoft.NCache.SocketServer.Command
 {
@@ -59,7 +60,12 @@ namespace Alachisoft.NCache.SocketServer.Command
                 if (clientManager.ClientVersion >= 5000)
                 {
                     Common.Util.ResponseHelper.SetResponse(clientsResponse, command.requestID, command.commandID);
-                    _serializedResponsePackets.Add(Common.Util.ResponseHelper.SerializeResponse(clientsResponse, Response.Type.GET_CONNECTED_CLIENTS));
+                    ResponseOptions responseOptions = new ResponseOptions()
+                    {
+                        Response = clientsResponse,
+                        ResponseType = Response.Type.GET_CONNECTED_CLIENTS
+                    };
+                    _serializedResponsePackets.Add(clientManager.ResponseBuilder.BuildResponse(responseOptions));
                 }
                 else
                 {
@@ -67,14 +73,26 @@ namespace Alachisoft.NCache.SocketServer.Command
                     Common.Protobuf.Response response = new Common.Protobuf.Response();
                     response.getConnectedClientsResponse = clientsResponse;
                     Common.Util.ResponseHelper.SetResponse(response, command.requestID, command.commandID, Response.Type.GET_CONNECTED_CLIENTS);
-                    _serializedResponsePackets.Add(Alachisoft.NCache.Common.Util.ResponseHelper.SerializeResponse(response));
+                    ResponseOptions responseOptions = new ResponseOptions()
+                    {
+                        Response = response,
+                        ResponseType = Response.Type.GET_CONNECTED_CLIENTS
+                    };
+                    _serializedResponsePackets.Add(clientManager.ResponseBuilder.BuildResponse(responseOptions));
                 }
 
 
             }
             catch (Exception exc)
             {
-                _serializedResponsePackets.Add(Alachisoft.NCache.Common.Util.ResponseHelper.SerializeExceptionResponseWithType(exc, command.requestID, command.commandID, clientManager.ClientVersion));
+                ResponseOptions responseOptions = new ResponseOptions()
+                {
+                    Exception = exc,
+                    RequestId = command.requestID,
+                    CommandId = command.commandID,
+                };
+
+                _serializedResponsePackets.Add(clientManager.ResponseBuilder.BuildExceptionResponse(responseOptions));
             }
             finally
             {

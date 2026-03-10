@@ -1,4 +1,4 @@
-﻿//  Copyright (c) 2021 Alachisoft
+﻿//  Copyright (c) 2026 Alachisoft
 //  
 //  Licensed under the Apache License, Version 2.0 (the "License");
 //  you may not use this file except in compliance with the License.
@@ -26,7 +26,7 @@ using Alachisoft.NCache.Common.Enum;
 
 using Alachisoft.NCache.Common.DataStructures.Clustered;
 using Alachisoft.NCache.Common;
-using Alachisoft.NCache.SocketServer.Util;
+using Alachisoft.NCache.Common.ResponseSerialization;
 
 namespace Alachisoft.NCache.SocketServer.Command
 {
@@ -56,7 +56,14 @@ namespace Alachisoft.NCache.SocketServer.Command
             }
             catch(System.Exception exc)
             {
-                _serializedResponsePackets.Add(Alachisoft.NCache.Common.Util.ResponseHelper.SerializeExceptionResponseWithType(exc, command.requestID, command.commandID, clientManager.ClientVersion));
+                ResponseOptions responseOptions = new ResponseOptions()
+                {
+                    Exception = exc,
+                    RequestId = command.requestID,
+                    CommandId = command.commandID,
+                };
+
+                _serializedResponsePackets.Add(clientManager.ResponseBuilder.BuildExceptionResponse(responseOptions));
                 return;
             }
 
@@ -73,37 +80,52 @@ namespace Alachisoft.NCache.SocketServer.Command
                 {
                     operationContext.Add(OperationContextFieldName.ClientLastViewId, cmdInfo.ClientLastViewId);
                 }
-                CommandsUtil.PopulateClientIdInContext(ref operationContext, clientManager.ClientAddress);
+
                 operationContext.Add(OperationContextFieldName.ClientLastViewId, cmdInfo.ClientLastViewId);
                 operationContext.Add(OperationContextFieldName.ClientId, clientManager.ClientID);
                 PollingResult result = cmdExecuter.Cache.Poll(operationContext);
                 stopWatch.Stop();
                 PollResponse pollResponse = new PollResponse();
-
                 pollResponse.removedKeys.AddRange(result.RemovedKeys);
                 pollResponse.updatedKeys.AddRange(result.UpdatedKeys);
                 updateCount = result.UpdatedKeys.Count;
                 removeCount = result.RemovedKeys.Count;
 
-                
                 if (clientManager.ClientVersion >= 5000)
                 {
                     Common.Util.ResponseHelper.SetResponse(pollResponse, command.requestID, command.commandID);
-                    _serializedResponsePackets.Add(Common.Util.ResponseHelper.SerializeResponse(pollResponse, Common.Protobuf.Response.Type.POLL));
+                    ResponseOptions responseOptions = new ResponseOptions()
+                    {
+                        Response = pollResponse,
+                        ResponseType = Response.Type.POLL
+                    };
+                    _serializedResponsePackets.Add(clientManager.ResponseBuilder.BuildResponse(responseOptions));
                 }
                 else
                 {
                     Common.Protobuf.Response response = new Common.Protobuf.Response();
                     response.pollResponse = pollResponse;
                     Common.Util.ResponseHelper.SetResponse(response, command.requestID, command.commandID, Common.Protobuf.Response.Type.POLL);
-                    _serializedResponsePackets.Add(Alachisoft.NCache.Common.Util.ResponseHelper.SerializeResponse(response));
+                    ResponseOptions responseOptions = new ResponseOptions()
+                    {
+                        Response = response,
+                        ResponseType = Response.Type.POLL
+                    };
+                    _serializedResponsePackets.Add(clientManager.ResponseBuilder.BuildResponse(responseOptions));
                 }
 
             }
             catch (System.Exception exc)
             {
                 exception = exc.ToString();
-                _serializedResponsePackets.Add(Alachisoft.NCache.Common.Util.ResponseHelper.SerializeExceptionResponseWithType(exc, command.requestID, command.commandID, clientManager.ClientVersion));
+                ResponseOptions responseOptions = new ResponseOptions()
+                {
+                    Exception = exc,
+                    RequestId = command.requestID,
+                    CommandId = command.commandID,
+                };
+
+                _serializedResponsePackets.Add(clientManager.ResponseBuilder.BuildExceptionResponse(responseOptions));
             }
             finally
             {

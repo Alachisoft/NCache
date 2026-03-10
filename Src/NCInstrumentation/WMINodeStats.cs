@@ -1,4 +1,4 @@
-//  Copyright (c) 2021 Alachisoft
+//  Copyright (c) 2026 Alachisoft
 //  
 //  Licensed under the Apache License, Version 2.0 (the "License");
 //  you may not use this file except in compliance with the License.
@@ -146,6 +146,21 @@ namespace Alachisoft.NCache.Instrumentation
         }
 
         /// <summary>
+        /// Get or set id of node
+        /// </summary>
+        //public string NodeId
+        //{
+        //    get
+        //    {
+        //        return _nodeId;
+        //    }
+        //    set
+        //    {
+        //        _nodeId = value;
+        //    }
+        //}
+
+        /// <summary>
         /// The time at which the Node was started
         /// </summary>
         public DateTime NodeUpTime
@@ -216,7 +231,101 @@ namespace Alachisoft.NCache.Instrumentation
             set { this._removeTime = value; }
         }
 
-       
+        /// <summary>
+        /// Avg no of items addded on current node per sec
+        /// </summary>
+        //public float AvgAdds
+        //{
+        //    get
+        //    {
+        //        return _addSec;
+        //    }
+
+        //    set
+        //    {
+        //        if (value != -1) _addSec = value;
+        //    }
+        //}
+
+        /// <summary>
+        /// Avg no of items retrieved from current node per sec
+        /// </summary>
+        //public float AvgGets
+        //{
+        //    get
+        //    {
+        //        return _getSec;
+        //    }
+
+        //    set
+        //    {
+        //        _getSec = value;
+        //    }
+        //}
+
+        /// <summary>
+        /// Avg no of items updated/inserted on current node per sec
+        /// </summary>
+        //public float AvgUpdates
+        //{
+        //    get
+        //    {
+        //        return _insertSec;
+        //    }
+
+        //    set
+        //    {
+        //        _insertSec = value;
+        //    }
+        //}
+
+        /// <summary>
+        /// Avg # of items removed from current node per sec
+        /// </summary>
+        //public float AvgRemoves
+        //{
+        //    get
+        //    {
+        //        return _remvSec;
+        //    }
+
+        //    set
+        //    {
+        //        _remvSec = value;
+        //    }
+        //}
+
+        ///// <summary>
+        ///// Avg # of requests recieved on current node per sec
+        ///// </summary>
+        //public ulong HitsCount
+        //{
+        //    get
+        //    {
+        //        return _hitsSec;
+        //    }
+
+        //    set
+        //    {
+        //        _hitsSec = value;
+        //    }
+        //}
+
+        ///// <summary>
+        ///// //Avg # of requests not fullfiled on current node per sec
+        ///// </summary>
+        //public ulong MissesCount
+        //{
+        //    get
+        //    {
+        //        return _missesSec;
+        //    }
+
+        //    set
+        //    {
+        //        _missesSec = value;
+        //    }
+        //}
 
         /// <summary>
         /// Total # of Clients connected to the Cache on the current node
@@ -252,6 +361,11 @@ namespace Alachisoft.NCache.Instrumentation
             set { this._bytesRecievedPerSec = value; }
         }
 
+        //public ulong ClusterRequestsSentPerSec
+        //{
+        //    get { return this._requestSentPerSec; }
+        //    set { this._requestSentPerSec = value; }
+        //}
 
         public float EvictionsPerSec
         {
@@ -377,6 +491,7 @@ namespace Alachisoft.NCache.Instrumentation
                     {
                         try
                         {
+                            //removed = (ClientStats)_clientnodes[client];
                             ClientStats removed = (ClientStats)de.Value;
                             removed.Dispose();
                         }

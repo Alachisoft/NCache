@@ -25,6 +25,7 @@ namespace Alachisoft.NCache.Common.ErrorHandling
             _errorMessageMap.Add(ErrorCodes.Common.EMPTY_KEY, "key cannot be empty string");
             _errorMessageMap.Add(ErrorCodes.Common.DEPENDENCY_KEY_NOT_FOUND, "One of the dependency keys does not exist.");
             _errorMessageMap.Add(ErrorCodes.Common.NOT_ENOUGH_ITEMS_EVICTED, "The cache is full and not enough items could be evicted.");
+            _errorMessageMap.Add(ErrorCodes.Common.VERSION_MISMATCH, "{0} edition of NCache only accepts the connection requests from an {0} client");
             #endregion
 
             #region Cache Init Exceptions
@@ -37,7 +38,8 @@ namespace Alachisoft.NCache.Common.ErrorHandling
             _errorMessageMap.Add(ErrorCodes.CacheInit.CACHE_NOT_INIT, "Cache is not initialized");
             _errorMessageMap.Add(ErrorCodes.CacheInit.L1_CACHE_NOT_INIT, "level1Cache not initialized");
             _errorMessageMap.Add(ErrorCodes.CacheInit.L2_CACHE_NOT_INIT, "level2Cache not initialized");
-            _errorMessageMap.Add(ErrorCodes.CacheInit.SERVER_INFO_NOT_FOUND, "'client.ncconf' not found or does not contain server information");
+            _errorMessageMap.Add(ErrorCodes.CacheInit.SERVER_INFO_NOT_FOUND, "'client.ncconf' does not contain the configuration for cache '{0}'");
+            _errorMessageMap.Add(ErrorCodes.CacheInit.CONFIG_NOT_FOUND, "'client.ncconf' not found at path {0}");
             _errorMessageMap.Add(ErrorCodes.CacheInit.CACHE_ID_EMPTY_STRING, "cacheId cannot be an empty string");
             _errorMessageMap.Add(ErrorCodes.CacheInit.CACHE_NOT_REGISTERED_ON_NODE, "cache with name '{0}' not registered on specified node");
             _errorMessageMap.Add(ErrorCodes.CacheInit.CACHE_ALREADY_RUNNING, "Specified cacheId is already running");
@@ -66,6 +68,8 @@ namespace Alachisoft.NCache.Common.ErrorHandling
             _errorMessageMap.Add(ErrorCodes.Licensing.LICENSING_DLL_MISSING, "DLL NOT FOUND EXCEPTION {0}");
             _errorMessageMap.Add(ErrorCodes.Licensing.LICENSING_INFO_CORRUPTED, "EvaluationLicense information is either missing or corrupted.");
             _errorMessageMap.Add(ErrorCodes.Licensing.NCLICENSE_LOAD_FAILURE, "Unable to load nclicense.dll");
+            _errorMessageMap.Add(ErrorCodes.Licensing.UNREGISTERED_MACHINE, $"The machine does not have a valid evaluation or activation information. Please register this machine with a FREE evaluation key. You can get free evaluation key from https://www.alachisoft.com/trial-key.html");
+            _errorMessageMap.Add(ErrorCodes.Licensing.DATA_CORRUPTED, $"Could not get evaluation information because possible data corruption was detected while reading evaluation data.");            
             #endregion
 
             #region PubSub Exceptions
@@ -151,16 +155,11 @@ namespace Alachisoft.NCache.Common.ErrorHandling
             #endregion
 
             #region
-            _errorMessageMap.Add(ErrorCodes.Security.CLIENT_SERVER_SECURITY_MISMATCH, "Mistmatch between Client - Server connection security detected.The '{0}' node must have Secured-Connection(SSL / TLS) enabled in order to communicate with a {1} node with Secured-Connection.");
-            #endregion
-
-            #region
             _errorMessageMap.Add(ErrorCodes.SQLDependency.INCORRECT_SYNTAX, "'{0}'");//"Incorrect syntax near the keyword"
             #endregion
 
+
         }
-
-
 
 
 
@@ -181,6 +180,5 @@ namespace Alachisoft.NCache.Common.ErrorHandling
             }
             return String.Format("Missing error message for code ({0}) in error to exception map", new object[] { errorCode });
         }
-
     }
 }

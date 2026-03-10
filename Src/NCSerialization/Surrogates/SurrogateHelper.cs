@@ -1,4 +1,4 @@
-//  Copyright (c) 2021 Alachisoft
+//  Copyright (c) 2026 Alachisoft
 //  
 //  Licensed under the Apache License, Version 2.0 (the "License");
 //  you may not use this file except in compliance with the License.
@@ -15,17 +15,19 @@ using System;
 using System.Net;
 using System.Collections;
 using System.Reflection;
-//using System.Web.SessionState;
 using System.Runtime.Serialization.Formatters;
 using System.Runtime.Serialization.Formatters.Binary;
 using Alachisoft.NCache.Serialization.Formatters;
 using Alachisoft.NCache.Common;
 using Alachisoft.NCache.Common.Net;
+
 using System.Reflection.Emit;
+
+
 using Alachisoft.NCache.Runtime.Serialization;
 using System.Web;
-using Alachisoft.NCache.Runtime.Serialization.IO;
 
+using Alachisoft.NCache.Runtime.Serialization.IO;
 
 namespace Alachisoft.NCache.Serialization.Surrogates
 {
@@ -51,8 +53,6 @@ namespace Alachisoft.NCache.Serialization.Surrogates
         {
             if (genericType == null)
                 throw new ArgumentNullException("genericType");
-            //if (!genericType.IsGenericTypeDefinition)
-            //    throw new ArgumentException(Resources.Type_NotGenericDef, "genericType");
 
             try
             {

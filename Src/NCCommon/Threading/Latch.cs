@@ -1,4 +1,4 @@
-//  Copyright (c) 2021 Alachisoft
+//  Copyright (c) 2026 Alachisoft
 //  
 //  Licensed under the Apache License, Version 2.0 (the "License");
 //  you may not use this file except in compliance with the License.
@@ -24,13 +24,28 @@ namespace Alachisoft.NCache.Common.Threading
         private Promise _initWatch = new Promise();
         /// <summary> The runtime status of this node. </summary>
         private BitSet _status = new BitSet();
+        private bool _disposed;
 
         public Latch() { }
         public Latch(byte initialStatus) { _status.Data = initialStatus; }
 
         public BitSet Status { get { return _status; } }
-
-
+        /// <summary>
+        /// Blocks the thread until any of the two statii is reached.
+        /// </summary>
+        /// <param name="status"></param>
+        public void WaitForAnyUpdated(byte status)
+        {
+            while (!IsAnyBitsSet(status) && !_disposed)
+            {
+                object result = _initWatch.WaitResult(Timeout.Infinite);
+            }
+        }
+        public void Dispose()
+        {
+            _disposed = true;
+            _initWatch.Dispose();
+        }
         /// <summary>
         /// Check is aall of the bits given in the bitset is set.
         /// </summary>

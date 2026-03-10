@@ -1,4 +1,4 @@
-//  Copyright (c) 2021 Alachisoft
+//  Copyright (c) 2026 Alachisoft
 //  
 //  Licensed under the Apache License, Version 2.0 (the "License");
 //  you may not use this file except in compliance with the License.
@@ -15,6 +15,7 @@ using System;
 using System.Collections;
 using System.Collections.Generic;
 using System.IO;
+using System.Runtime.InteropServices;
 using System.Text;
 using Alachisoft.NCache.Common;
 using Alachisoft.NCache.Common.Configuration;
@@ -157,59 +158,64 @@ namespace Alachisoft.NCache.Management
                 s_configFileName = "";
                 throw new ManagementException(e.Message, e);
             }
-
-            try
+#if NETCORE
+            if (!RuntimeInformation.IsOSPlatform(OSPlatform.Linux))
+#endif
             {
-                object v = RegHelper.GetRegValue(REGKEY, "NCacheTcp.Port",0);
-                if (v != null)
+                try
                 {
-                    int port = Convert.ToInt32(v);
-                    if (port >= System.Net.IPEndPoint.MinPort &&
-                        port <= System.Net.IPEndPoint.MaxPort) s_ncacheTcpPort = port;
+                    object v = RegHelper.GetRegValue(REGKEY, "NCacheTcp.Port", 0);
+                    if (v != null)
+                    {
+                        int port = Convert.ToInt32(v);
+                        if (port >= System.Net.IPEndPoint.MinPort &&
+                            port <= System.Net.IPEndPoint.MaxPort) s_ncacheTcpPort = port;
+                    }
                 }
-            }
-            catch (FormatException) { }
-            catch (OverflowException) { }
+                catch (FormatException) { }
+                catch (OverflowException) { }
 
-            try
-            {
-                object v = RegHelper.GetRegValue(REGKEY, "TayzGridTcp.Port", 0);
-                if (v != null)
+                try
                 {
-                    int port = Convert.ToInt32(v);
-                    if (port >= System.Net.IPEndPoint.MinPort &&
-                        port <= System.Net.IPEndPoint.MaxPort) s_jvcacheTcpPort = port;
+                    object v = RegHelper.GetRegValue(REGKEY, "TayzGridTcp.Port", 0);
+                    if (v != null)
+                    {
+                        int port = Convert.ToInt32(v);
+                        if (port >= System.Net.IPEndPoint.MinPort &&
+                            port <= System.Net.IPEndPoint.MaxPort) s_jvcacheTcpPort = port;
+                    }
                 }
-            }
-            catch (FormatException) { }
-            catch (OverflowException) { }
+                catch (FormatException) { }
+                catch (OverflowException) { }
 
-            try
-            {
-                object v = RegHelper.GetRegValue(REGKEY, "Http.Port",0);
-                if (v != null)
+                try
                 {
-                    int port = Convert.ToInt32(v);
-                    if (port >= System.Net.IPEndPoint.MinPort &&
-                        port <= System.Net.IPEndPoint.MaxPort) s_httpPort = port;
+                    object v = RegHelper.GetRegValue(REGKEY, "Http.Port", 0);
+                    if (v != null)
+                    {
+                        int port = Convert.ToInt32(v);
+                        if (port >= System.Net.IPEndPoint.MinPort &&
+                            port <= System.Net.IPEndPoint.MaxPort) s_httpPort = port;
+                    }
                 }
-            }
-            catch (FormatException) { }
-            catch (OverflowException) { }
-            try
-            {
-                object v = RegHelper.GetRegValue(REGKEY, "IPC.PortName",0);
-                if (v != null)
+                catch (FormatException) { }
+                catch (OverflowException) { }
+                try
                 {
-                    string portName = Convert.ToString(v);
-                    if (portName != null)
-                        s_ipcPortName = portName;
+                    object v = RegHelper.GetRegValue(REGKEY, "IPC.PortName", 0);
+                    if (v != null)
+                    {
+                        string portName = Convert.ToString(v);
+                        if (portName != null)
+                            s_ipcPortName = portName;
+                    }
                 }
-            }
-            catch (System.ArgumentException) { }
-            catch (OverflowException) { }
+                catch (System.ArgumentException) { }
+                catch (OverflowException) { }
 
+            }
         }
+
 
         /// <summary>
         /// Initialize a registered cache given by the ID.

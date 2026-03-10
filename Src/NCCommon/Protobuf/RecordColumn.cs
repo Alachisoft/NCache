@@ -14,13 +14,13 @@
 // Note: requires additional types generated from: ColumnDataType.proto
 namespace Alachisoft.NCache.Common.Protobuf
 {
-  [global::System.Serializable, global::ProtoBuf.ProtoContract(Name=@"RecordColumn")]
-  public partial class RecordColumn : global::ProtoBuf.IExtensible
+  [global::System.Serializable, global::ProtoBuf.Extended.ProtoContract(Name=@"RecordColumn")]
+  public partial class RecordColumn : global::ProtoBuf.Extended.IExtensible
   {
     public RecordColumn() {}
     
     private string _name = "";
-    [global::ProtoBuf.ProtoMember(1, IsRequired = false, Name=@"name", DataFormat = global::ProtoBuf.DataFormat.Default)]
+    [global::ProtoBuf.Extended.ProtoMember(1, IsRequired = false, Name=@"name", DataFormat = global::ProtoBuf.Extended.DataFormat.Default)]
     [global::System.ComponentModel.DefaultValue("")]
     public string name
     {
@@ -29,7 +29,7 @@ namespace Alachisoft.NCache.Common.Protobuf
     }
 
     private bool _isHidden = default(bool);
-    [global::ProtoBuf.ProtoMember(2, IsRequired = false, Name=@"isHidden", DataFormat = global::ProtoBuf.DataFormat.Default)]
+    [global::ProtoBuf.Extended.ProtoMember(2, IsRequired = false, Name=@"isHidden", DataFormat = global::ProtoBuf.Extended.DataFormat.Default)]
     [global::System.ComponentModel.DefaultValue(default(bool))]
     public bool isHidden
     {
@@ -38,7 +38,7 @@ namespace Alachisoft.NCache.Common.Protobuf
     }
 
     private Alachisoft.NCache.Common.Protobuf.ColumnType _columnType = Alachisoft.NCache.Common.Protobuf.ColumnType.ATTRIBUTE_COLUMN;
-    [global::ProtoBuf.ProtoMember(3, IsRequired = false, Name=@"columnType", DataFormat = global::ProtoBuf.DataFormat.TwosComplement)]
+    [global::ProtoBuf.Extended.ProtoMember(3, IsRequired = false, Name=@"columnType", DataFormat = global::ProtoBuf.Extended.DataFormat.TwosComplement)]
     [global::System.ComponentModel.DefaultValue(Alachisoft.NCache.Common.Protobuf.ColumnType.ATTRIBUTE_COLUMN)]
     public Alachisoft.NCache.Common.Protobuf.ColumnType columnType
     {
@@ -47,7 +47,7 @@ namespace Alachisoft.NCache.Common.Protobuf
     }
 
     private Alachisoft.NCache.Common.Protobuf.ColumnDataType _dataType = Alachisoft.NCache.Common.Protobuf.ColumnDataType.OBJECT;
-    [global::ProtoBuf.ProtoMember(4, IsRequired = false, Name=@"dataType", DataFormat = global::ProtoBuf.DataFormat.TwosComplement)]
+    [global::ProtoBuf.Extended.ProtoMember(4, IsRequired = false, Name=@"dataType", DataFormat = global::ProtoBuf.Extended.DataFormat.TwosComplement)]
     [global::System.ComponentModel.DefaultValue(Alachisoft.NCache.Common.Protobuf.ColumnDataType.OBJECT)]
     public Alachisoft.NCache.Common.Protobuf.ColumnDataType dataType
     {
@@ -56,7 +56,7 @@ namespace Alachisoft.NCache.Common.Protobuf
     }
 
     private Alachisoft.NCache.Common.Protobuf.AggregateFunctionType _aggregateFunctionType = Alachisoft.NCache.Common.Protobuf.AggregateFunctionType.NOTAPPLICABLE;
-    [global::ProtoBuf.ProtoMember(5, IsRequired = false, Name=@"aggregateFunctionType", DataFormat = global::ProtoBuf.DataFormat.TwosComplement)]
+    [global::ProtoBuf.Extended.ProtoMember(5, IsRequired = false, Name=@"aggregateFunctionType", DataFormat = global::ProtoBuf.Extended.DataFormat.TwosComplement)]
     [global::System.ComponentModel.DefaultValue(Alachisoft.NCache.Common.Protobuf.AggregateFunctionType.NOTAPPLICABLE)]
     public Alachisoft.NCache.Common.Protobuf.AggregateFunctionType aggregateFunctionType
     {
@@ -65,7 +65,7 @@ namespace Alachisoft.NCache.Common.Protobuf
     }
 
     private bool _isFilled = default(bool);
-    [global::ProtoBuf.ProtoMember(6, IsRequired = false, Name=@"isFilled", DataFormat = global::ProtoBuf.DataFormat.Default)]
+    [global::ProtoBuf.Extended.ProtoMember(6, IsRequired = false, Name=@"isFilled", DataFormat = global::ProtoBuf.Extended.DataFormat.Default)]
     [global::System.ComponentModel.DefaultValue(default(bool))]
     public bool isFilled
     {
@@ -74,7 +74,7 @@ namespace Alachisoft.NCache.Common.Protobuf
     }
         
     private bool _isUserSpecifiedColumn = default(bool);
-    [global::ProtoBuf.ProtoMember(7, IsRequired = false, Name = @"isUserSpecifiedColumn", DataFormat = global::ProtoBuf.DataFormat.Default)]
+    [global::ProtoBuf.Extended.ProtoMember(7, IsRequired = false, Name = @"isUserSpecifiedColumn", DataFormat = global::ProtoBuf.Extended.DataFormat.Default)]
     [global::System.ComponentModel.DefaultValue(default(bool))]
     public bool isUserSpecifiedColumn
         {
@@ -82,8 +82,8 @@ namespace Alachisoft.NCache.Common.Protobuf
         set { _isUserSpecifiedColumn = value; }
     }
 
-    private global::ProtoBuf.IExtension extensionObject;
-    global::ProtoBuf.IExtension global::ProtoBuf.IExtensible.GetExtensionObject(bool createIfMissing)
-      { return global::ProtoBuf.Extensible.GetExtensionObject(ref extensionObject, createIfMissing); }
+    private global::ProtoBuf.Extended.IExtension extensionObject;
+   global::ProtoBuf.Extended.IExtension global::ProtoBuf.Extended.IExtensible.GetExtensionObject(bool createIfMissing)
+      { return global::ProtoBuf.Extended.Extensible.GetExtensionObject(ref extensionObject, createIfMissing); }
   }
 }

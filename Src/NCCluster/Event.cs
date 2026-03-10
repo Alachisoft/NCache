@@ -4,8 +4,6 @@ using Alachisoft.NCache.Common.Enum;
 
 namespace Alachisoft.NGroups
 {
-	//public enum Priority {Critical, Normal, Low};
-
 	/// <summary>
 	/// Used for intra-stack communication.
 	/// <p><b>Author:</b> Chris Koiak, Bela Ban</p>
@@ -61,7 +59,6 @@ namespace Alachisoft.NGroups
 		public const int SUBVIEWSET_MERGE = 49; // arg = vector of addresses; see JGroups/EVS/Readme.txt
 		public const int HEARD_FROM = 50; // arg = Vector (list of Addresses)
 		public const int UNSUSPECT = 51; // arg = Address (of unsuspected member)
-//		public const int SET_PID = 52; // arg = Integer (process id)
 		public const int MERGE_DIGEST = 53; // arg = Digest
 		public const int BLOCK_SEND = 54; // arg = null
 		public const int UNBLOCK_SEND = 55; // arg = null
@@ -238,9 +235,9 @@ namespace Alachisoft.NGroups
 				case SET_DIGEST:  return "SET_DIGEST";
 				case GET_DIGEST_STATE:  return "GET_DIGEST_STATE";
 				case GET_DIGEST_STATE_OK:  return "GET_DIGEST_STATE_OK";
-				case SET_PARTITIONS:  return "SET_PARTITIONS"; // Added by gianlucac@tin.it to support PARTITIONER
-				case MERGE:  return "MERGE"; // Added by gianlucac@tin.it to support partitions merging in GMS
-				case MERGE_DENIED:  return "MERGE_DENIED"; // as above
+				case SET_PARTITIONS:  return "SET_PARTITIONS";
+				case MERGE:  return "MERGE";
+				case MERGE_DENIED:  return "MERGE_DENIED";
 				case EXIT:  return "EXIT";
 				case PERF_START:  return "PERF_START";
                 case PERF_STOP: return "PERF_STOP";
@@ -248,7 +245,6 @@ namespace Alachisoft.NGroups
 				case SUBVIEWSET_MERGE:  return "SUBVIEWSET_MERGE";
 				case HEARD_FROM:  return "HEARD_FROM";
 				case UNSUSPECT:  return "UNSUSPECT";
-//				case SET_PID:  return "SET_PID";
 				case MERGE_DIGEST:  return "MERGE_DIGEST";
 				case BLOCK_SEND:  return "BLOCK_SEND";
 				case UNBLOCK_SEND:  return "UNBLOCK_SEND";

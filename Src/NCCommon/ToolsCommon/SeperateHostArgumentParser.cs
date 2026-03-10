@@ -36,8 +36,6 @@ namespace Alachisoft.NCache.Tools.Common
                         propInfo = objProps[j];
                         customParams = propInfo.GetCustomAttributes(typeof(ArgumentAttribute), false);
 
-                        // propInfo = objProps[propLoc];
-                        //customAttribs = propInfo.GetCustomAttributes(typeof(ToolAttrib), false);
                         if (customParams != null && customParams.Length > 0)
                         {
                             ArgumentAttribute param = customParams[0] as ArgumentAttribute;

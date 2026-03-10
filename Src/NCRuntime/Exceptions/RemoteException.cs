@@ -1,4 +1,4 @@
-//  Copyright (c) 2021 Alachisoft
+//  Copyright (c) 2026 Alachisoft
 //  
 //  Licensed under the Apache License, Version 2.0 (the "License");
 //  you may not use this file except in compliance with the License.
@@ -46,24 +46,7 @@ namespace Alachisoft.NCache.Runtime.Exceptions
         {
 
         }
-         //public RemoteException(int errorCode,Exception e):base(errorCode,)
-        ///// <summary> 
-        ///// Overloaded constructor, takes the reason as parameter. 
-        ///// </summary>
-        // Internal RemoteException(string reason)
-        //    : base(reason)
-        //{
-        //}
-
-        ///// <summary>
-        ///// Overloaded constructor. 
-        ///// </summary>
-        ///// <param name="reason">Reason for exception</param>
-        ///// <param name="inner">Nested exception</param>
-        //internal RemoteException(string reason, Exception inner)
-        //    : base(reason, inner)
-        //{
-        //}
+        
 
         /// <summary>
         /// Gets the stack trace of the exception

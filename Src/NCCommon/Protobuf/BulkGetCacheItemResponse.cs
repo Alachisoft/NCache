@@ -11,13 +11,13 @@
 // Note: requires additional types generated from: KeyCacheItemPair.proto
 namespace Alachisoft.NCache.Common.Protobuf
 {
-  [global::System.Serializable, global::ProtoBuf.ProtoContract(Name=@"BulkGetCacheItemResponse")]
-  public partial class BulkGetCacheItemResponse : global::ProtoBuf.IExtensible
+  [global::System.Serializable, global::ProtoBuf.Extended.ProtoContract(Name=@"BulkGetCacheItemResponse")]
+  public partial class BulkGetCacheItemResponse : global::ProtoBuf.Extended.IExtensible
   {
     public BulkGetCacheItemResponse() {}
     
     private readonly global::System.Collections.Generic.List<Alachisoft.NCache.Common.Protobuf.KeyCacheItemPair> _KeyCacheItemPairs = new global::System.Collections.Generic.List<Alachisoft.NCache.Common.Protobuf.KeyCacheItemPair>();
-    [global::ProtoBuf.ProtoMember(1, Name=@"KeyCacheItemPairs", DataFormat = global::ProtoBuf.DataFormat.Default)]
+    [global::ProtoBuf.Extended.ProtoMember(1, Name=@"KeyCacheItemPairs", DataFormat = global::ProtoBuf.Extended.DataFormat.Default)]
     public global::System.Collections.Generic.List<Alachisoft.NCache.Common.Protobuf.KeyCacheItemPair> KeyCacheItemPairs
     {
       get { return _KeyCacheItemPairs; }
@@ -25,7 +25,7 @@ namespace Alachisoft.NCache.Common.Protobuf
   
 
     private int _commandID = (int)-1;
-    [global::ProtoBuf.ProtoMember(2, IsRequired = false, Name=@"commandID", DataFormat = global::ProtoBuf.DataFormat.TwosComplement)]
+    [global::ProtoBuf.Extended.ProtoMember(2, IsRequired = false, Name=@"commandID", DataFormat = global::ProtoBuf.Extended.DataFormat.TwosComplement)]
     [global::System.ComponentModel.DefaultValue((int)-1)]
     public int commandID
     {
@@ -34,16 +34,16 @@ namespace Alachisoft.NCache.Common.Protobuf
     }
 
     private long _requestId = default(long);
-    [global::ProtoBuf.ProtoMember(3, IsRequired = false, Name=@"requestId", DataFormat = global::ProtoBuf.DataFormat.TwosComplement)]
+    [global::ProtoBuf.Extended.ProtoMember(3, IsRequired = false, Name=@"requestId", DataFormat = global::ProtoBuf.Extended.DataFormat.TwosComplement)]
     [global::System.ComponentModel.DefaultValue(default(long))]
     public long requestId
     {
       get { return _requestId; }
       set { _requestId = value; }
     }
-    private global::ProtoBuf.IExtension extensionObject;
-    global::ProtoBuf.IExtension global::ProtoBuf.IExtensible.GetExtensionObject(bool createIfMissing)
-      { return global::ProtoBuf.Extensible.GetExtensionObject(ref extensionObject, createIfMissing); }
+    private global::ProtoBuf.Extended.IExtension extensionObject;
+   global::ProtoBuf.Extended.IExtension global::ProtoBuf.Extended.IExtensible.GetExtensionObject(bool createIfMissing)
+      { return global::ProtoBuf.Extended.Extensible.GetExtensionObject(ref extensionObject, createIfMissing); }
   }
   
 }

@@ -12,7 +12,6 @@ namespace System.Web
     // Summary:
     //     Provides a collection of application-scoped objects for the System.Web.HttpApplicationState.StaticObjects
     //     property.
-    //[DefaultMember("Item")]
     public sealed class HttpStaticObjectsCollection : ICollection, IEnumerable
     {
         //
@@ -20,7 +19,6 @@ namespace System.Web
         //     Initializes a new instance of the System.Web.HttpStaticObjectsCollection class.
         public HttpStaticObjectsCollection()
         {
-            //TODO: ALACHISOFT
         }
 
         //
@@ -89,7 +87,6 @@ namespace System.Web
         //     method.
         public static HttpStaticObjectsCollection Deserialize(BinaryReader reader)
         {
-            //TODO: ALACHISOFT
             throw new NotImplementedException();
         }
         //
@@ -104,7 +101,6 @@ namespace System.Web
         //     The member of the collection where copying starts.
         public void CopyTo(Array array, int index)
         {
-            //TODO: ALACHISOFT
             throw new NotImplementedException();
         }
         //
@@ -116,7 +112,6 @@ namespace System.Web
         //     The enumerator for the collection.
         public IEnumerator GetEnumerator()
         {
-            //TODO: ALACHISOFT
             throw new NotImplementedException();
         }
         //
@@ -133,7 +128,6 @@ namespace System.Web
         [TargetedPatchingOptOut("Performance critical to inline this type of method across NGen image boundaries")]
         public object GetObject(string name)
         {
-            //TODO: ALACHISOFT
             throw new NotImplementedException();
         }
         //
@@ -146,7 +140,6 @@ namespace System.Web
         //     or encoded string.
         public void Serialize(BinaryWriter writer)
         {
-            //TODO: ALACHISOFT
             throw new NotImplementedException();
         }
     }

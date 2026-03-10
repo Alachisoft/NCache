@@ -1,4 +1,4 @@
-﻿//  Copyright (c) 2021 Alachisoft
+﻿//  Copyright (c) 2026 Alachisoft
 //  
 //  Licensed under the Apache License, Version 2.0 (the "License");
 //  you may not use this file except in compliance with the License.
@@ -20,8 +20,8 @@ namespace Alachisoft.NCache.Tools.Common
 {
     public class ConfigurationValidator
     {
-        private bool _isLocal = false;
-
+        
+        private bool _isPORtopology = false;
         public ConfigurationValidator()
         {
 
@@ -90,8 +90,8 @@ namespace Alachisoft.NCache.Tools.Common
                                 if (sectionName != null && sectionName == "cache-topology" && propertyValue is string)
                                 {
                                     if (propertyValue is string)
-                                        if ((string)propertyValue == "local-cache")
-                                            _isLocal = true;
+                                        if ((string)propertyValue == "partitioned-replica")
+                                            _isPORtopology = true;
                                 }
 
                                 if (propertyValue == null && attrib.IsRequired)
@@ -144,7 +144,7 @@ namespace Alachisoft.NCache.Tools.Common
                                 else if (propertyValue == null && attrib.IsRequired)
                                 {
                                     if (attrib.SectionName is string)
-                                        if ((string)attrib.SectionName == "data-replication" && !_isLocal)
+                                        if ((string)attrib.SectionName == "data-replication" && _isPORtopology)
                                             throw new Exception("Error: " + attrib.SectionName + " section is missing in the specified configuration.");
                                 }
                             }

@@ -169,7 +169,7 @@ namespace Alachisoft.NCache.Caching.CacheHealthAlerts
                     var avgValue = valueStorage.OfType<double>().Average();
 
                     avgValue = Math.Round(avgValue, 3);
-                    data = Math.Round(data, 3); // figure should vbe round
+                    data = Math.Round(data, 3); // figure should be round
 
                     if (avgValue<= alertCollector.MinThreshold)
                     {

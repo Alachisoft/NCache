@@ -12,13 +12,13 @@
 // Note: requires additional types generated from: ClientInfo.proto
 namespace Alachisoft.NCache.Common.Protobuf
 {
-  [global::System.Serializable, global::ProtoBuf.ProtoContract(Name=@"InitCommand")]
-  public partial class InitCommand : global::ProtoBuf.IExtensible
+  [global::System.Serializable, global::ProtoBuf.Extended.ProtoContract(Name=@"InitCommand")]
+  public partial class InitCommand : global::ProtoBuf.Extended.IExtensible
   {
     public InitCommand() {}
     
     private string _cacheId = "";
-    [global::ProtoBuf.ProtoMember(1, IsRequired = false, Name=@"cacheId", DataFormat = global::ProtoBuf.DataFormat.Default)]
+    [global::ProtoBuf.Extended.ProtoMember(1, IsRequired = false, Name=@"cacheId", DataFormat = global::ProtoBuf.Extended.DataFormat.Default)]
     [global::System.ComponentModel.DefaultValue("")]
     public string cacheId
     {
@@ -26,7 +26,7 @@ namespace Alachisoft.NCache.Common.Protobuf
       set { _cacheId = value; }
     }
     private long _requestId = default(long);
-    [global::ProtoBuf.ProtoMember(2, IsRequired = false, Name=@"requestId", DataFormat = global::ProtoBuf.DataFormat.TwosComplement)]
+    [global::ProtoBuf.Extended.ProtoMember(2, IsRequired = false, Name=@"requestId", DataFormat = global::ProtoBuf.Extended.DataFormat.TwosComplement)]
     [global::System.ComponentModel.DefaultValue(default(long))]
     public long requestId
     {
@@ -34,7 +34,7 @@ namespace Alachisoft.NCache.Common.Protobuf
       set { _requestId = value; }
     }
     private string _clientId = "";
-    [global::ProtoBuf.ProtoMember(3, IsRequired = false, Name=@"clientId", DataFormat = global::ProtoBuf.DataFormat.Default)]
+    [global::ProtoBuf.Extended.ProtoMember(3, IsRequired = false, Name=@"clientId", DataFormat = global::ProtoBuf.Extended.DataFormat.Default)]
     [global::System.ComponentModel.DefaultValue("")]
     public string clientId
     {
@@ -42,7 +42,7 @@ namespace Alachisoft.NCache.Common.Protobuf
       set { _clientId = value; }
     }
     private string _userId = @"dummyUser";
-    [global::ProtoBuf.ProtoMember(4, IsRequired = false, Name=@"userId", DataFormat = global::ProtoBuf.DataFormat.Default)]
+    [global::ProtoBuf.Extended.ProtoMember(4, IsRequired = false, Name=@"userId", DataFormat = global::ProtoBuf.Extended.DataFormat.Default)]
     [global::System.ComponentModel.DefaultValue(@"dummyUser")]
     public string userId
     {
@@ -50,7 +50,7 @@ namespace Alachisoft.NCache.Common.Protobuf
       set { _userId = value; }
     }
     private string _pwd = @"dummypassword";
-    [global::ProtoBuf.ProtoMember(5, IsRequired = false, Name=@"pwd", DataFormat = global::ProtoBuf.DataFormat.Default)]
+    [global::ProtoBuf.Extended.ProtoMember(5, IsRequired = false, Name=@"pwd", DataFormat = global::ProtoBuf.Extended.DataFormat.Default)]
     [global::System.ComponentModel.DefaultValue(@"dummypassword")]
     public string pwd
     {
@@ -58,7 +58,7 @@ namespace Alachisoft.NCache.Common.Protobuf
       set { _pwd = value; }
     }
     private string _licenceCode = "";
-    [global::ProtoBuf.ProtoMember(6, IsRequired = false, Name=@"licenceCode", DataFormat = global::ProtoBuf.DataFormat.Default)]
+    [global::ProtoBuf.Extended.ProtoMember(6, IsRequired = false, Name=@"licenceCode", DataFormat = global::ProtoBuf.Extended.DataFormat.Default)]
     [global::System.ComponentModel.DefaultValue("")]
     public string licenceCode
     {
@@ -66,7 +66,7 @@ namespace Alachisoft.NCache.Common.Protobuf
       set { _licenceCode = value; }
     }
     private string _licenceInfo = "";
-    [global::ProtoBuf.ProtoMember(7, IsRequired = false, Name=@"licenceInfo", DataFormat = global::ProtoBuf.DataFormat.Default)]
+    [global::ProtoBuf.Extended.ProtoMember(7, IsRequired = false, Name=@"licenceInfo", DataFormat = global::ProtoBuf.Extended.DataFormat.Default)]
     [global::System.ComponentModel.DefaultValue("")]
     public string licenceInfo
     {
@@ -74,15 +74,23 @@ namespace Alachisoft.NCache.Common.Protobuf
       set { _licenceInfo = value; }
     }
     private bool _isDotnetClient = default(bool);
-    [global::ProtoBuf.ProtoMember(8, IsRequired = false, Name=@"isDotnetClient", DataFormat = global::ProtoBuf.DataFormat.Default)]
+    [global::ProtoBuf.Extended.ProtoMember(8, IsRequired = false, Name=@"isDotnetClient", DataFormat = global::ProtoBuf.Extended.DataFormat.Default)]
     [global::System.ComponentModel.DefaultValue(default(bool))]
     public bool isDotnetClient
     {
       get { return _isDotnetClient; }
       set { _isDotnetClient = value; }
     }
+    private bool _isBridgeClient = default(bool);
+    [global::ProtoBuf.Extended.ProtoMember(9, IsRequired = false, Name=@"isBridgeClient", DataFormat = global::ProtoBuf.Extended.DataFormat.Default)]
+    [global::System.ComponentModel.DefaultValue(default(bool))]
+    public bool isBridgeClient
+    {
+      get { return _isBridgeClient; }
+      set { _isBridgeClient = value; }
+    }
     private byte[] _binaryUserid = null;
-    [global::ProtoBuf.ProtoMember(10, IsRequired = false, Name=@"binaryUserid", DataFormat = global::ProtoBuf.DataFormat.Default)]
+    [global::ProtoBuf.Extended.ProtoMember(10, IsRequired = false, Name=@"binaryUserid", DataFormat = global::ProtoBuf.Extended.DataFormat.Default)]
     [global::System.ComponentModel.DefaultValue(null)]
     public byte[] binaryUserid
     {
@@ -90,7 +98,7 @@ namespace Alachisoft.NCache.Common.Protobuf
       set { _binaryUserid = value; }
     }
     private byte[] _binaryPwd = null;
-    [global::ProtoBuf.ProtoMember(11, IsRequired = false, Name=@"binaryPwd", DataFormat = global::ProtoBuf.DataFormat.Default)]
+    [global::ProtoBuf.Extended.ProtoMember(11, IsRequired = false, Name=@"binaryPwd", DataFormat = global::ProtoBuf.Extended.DataFormat.Default)]
     [global::System.ComponentModel.DefaultValue(null)]
     public byte[] binaryPwd
     {
@@ -98,7 +106,7 @@ namespace Alachisoft.NCache.Common.Protobuf
       set { _binaryPwd = value; }
     }
     private string _clientEditionId = "";
-    [global::ProtoBuf.ProtoMember(12, IsRequired = false, Name=@"clientEditionId", DataFormat = global::ProtoBuf.DataFormat.Default)]
+    [global::ProtoBuf.Extended.ProtoMember(12, IsRequired = false, Name=@"clientEditionId", DataFormat = global::ProtoBuf.Extended.DataFormat.Default)]
     [global::System.ComponentModel.DefaultValue("")]
     public string clientEditionId
     {
@@ -106,7 +114,7 @@ namespace Alachisoft.NCache.Common.Protobuf
       set { _clientEditionId = value; }
     }
     private int _clientVersion = default(int);
-    [global::ProtoBuf.ProtoMember(13, IsRequired = false, Name=@"clientVersion", DataFormat = global::ProtoBuf.DataFormat.TwosComplement)]
+    [global::ProtoBuf.Extended.ProtoMember(13, IsRequired = false, Name=@"clientVersion", DataFormat = global::ProtoBuf.Extended.DataFormat.TwosComplement)]
     [global::System.ComponentModel.DefaultValue(default(int))]
     public int clientVersion
     {
@@ -114,7 +122,7 @@ namespace Alachisoft.NCache.Common.Protobuf
       set { _clientVersion = value; }
     }
     private string _clientIP = "";
-    [global::ProtoBuf.ProtoMember(14, IsRequired = false, Name=@"clientIP", DataFormat = global::ProtoBuf.DataFormat.Default)]
+    [global::ProtoBuf.Extended.ProtoMember(14, IsRequired = false, Name=@"clientIP", DataFormat = global::ProtoBuf.Extended.DataFormat.Default)]
     [global::System.ComponentModel.DefaultValue("")]
     public string clientIP
     {
@@ -122,7 +130,7 @@ namespace Alachisoft.NCache.Common.Protobuf
       set { _clientIP = value; }
     }
     private bool _isAzureClient = default(bool);
-    [global::ProtoBuf.ProtoMember(15, IsRequired = false, Name=@"isAzureClient", DataFormat = global::ProtoBuf.DataFormat.Default)]
+    [global::ProtoBuf.Extended.ProtoMember(15, IsRequired = false, Name=@"isAzureClient", DataFormat = global::ProtoBuf.Extended.DataFormat.Default)]
     [global::System.ComponentModel.DefaultValue(default(bool))]
     public bool isAzureClient
     {
@@ -130,7 +138,7 @@ namespace Alachisoft.NCache.Common.Protobuf
       set { _isAzureClient = value; }
     }
     private Alachisoft.NCache.Common.Protobuf.ProductVersion _productVersion = null;
-    [global::ProtoBuf.ProtoMember(16, IsRequired = false, Name=@"productVersion", DataFormat = global::ProtoBuf.DataFormat.Default)]
+    [global::ProtoBuf.Extended.ProtoMember(16, IsRequired = false, Name=@"productVersion", DataFormat = global::ProtoBuf.Extended.DataFormat.Default)]
     [global::System.ComponentModel.DefaultValue(null)]
     public Alachisoft.NCache.Common.Protobuf.ProductVersion productVersion
     {
@@ -138,7 +146,7 @@ namespace Alachisoft.NCache.Common.Protobuf
       set { _productVersion = value; }
     }
     private Alachisoft.NCache.Common.Protobuf.ClientInfo _clientInfo = null;
-    [global::ProtoBuf.ProtoMember(17, IsRequired = false, Name=@"clientInfo", DataFormat = global::ProtoBuf.DataFormat.Default)]
+    [global::ProtoBuf.Extended.ProtoMember(17, IsRequired = false, Name=@"clientInfo", DataFormat = global::ProtoBuf.Extended.DataFormat.Default)]
     [global::System.ComponentModel.DefaultValue(null)]
     public Alachisoft.NCache.Common.Protobuf.ClientInfo clientInfo
     {
@@ -146,7 +154,7 @@ namespace Alachisoft.NCache.Common.Protobuf
       set { _clientInfo = value; }
     }
     private bool _secureConnectionEnabled = (bool)false;
-    [global::ProtoBuf.ProtoMember(18, IsRequired = false, Name=@"secureConnectionEnabled", DataFormat = global::ProtoBuf.DataFormat.Default)]
+    [global::ProtoBuf.Extended.ProtoMember(18, IsRequired = false, Name=@"secureConnectionEnabled", DataFormat = global::ProtoBuf.Extended.DataFormat.Default)]
     [global::System.ComponentModel.DefaultValue((bool)false)]
     public bool secureConnectionEnabled
     {
@@ -154,7 +162,7 @@ namespace Alachisoft.NCache.Common.Protobuf
       set { _secureConnectionEnabled = value; }
     }
     private int _operationTimeout = (int)-1;
-    [global::ProtoBuf.ProtoMember(19, IsRequired = false, Name=@"operationTimeout", DataFormat = global::ProtoBuf.DataFormat.TwosComplement)]
+    [global::ProtoBuf.Extended.ProtoMember(19, IsRequired = false, Name=@"operationTimeout", DataFormat = global::ProtoBuf.Extended.DataFormat.TwosComplement)]
     [global::System.ComponentModel.DefaultValue((int)-1)]
     public int operationTimeout
     {
@@ -162,7 +170,7 @@ namespace Alachisoft.NCache.Common.Protobuf
       set { _operationTimeout = value; }
     }
     private string _macAddress = "";
-    [global::ProtoBuf.ProtoMember(20, IsRequired = false, Name=@"macAddress", DataFormat = global::ProtoBuf.DataFormat.Default)]
+    [global::ProtoBuf.Extended.ProtoMember(20, IsRequired = false, Name=@"macAddress", DataFormat = global::ProtoBuf.Extended.DataFormat.Default)]
     [global::System.ComponentModel.DefaultValue("")]
     public string macAddress
     {
@@ -170,7 +178,7 @@ namespace Alachisoft.NCache.Common.Protobuf
       set { _macAddress = value; }
     }
     private bool _FromClientCache = default(bool);
-    [global::ProtoBuf.ProtoMember(21, IsRequired = false, Name=@"FromClientCache", DataFormat = global::ProtoBuf.DataFormat.Default)]
+    [global::ProtoBuf.Extended.ProtoMember(21, IsRequired = false, Name=@"FromClientCache", DataFormat = global::ProtoBuf.Extended.DataFormat.Default)]
     [global::System.ComponentModel.DefaultValue(default(bool))]
     public bool FromClientCache
     {
@@ -178,7 +186,7 @@ namespace Alachisoft.NCache.Common.Protobuf
       set { _FromClientCache = value; }
     }
     private string _OperationSystem = "";
-    [global::ProtoBuf.ProtoMember(22, IsRequired = false, Name=@"OperationSystem", DataFormat = global::ProtoBuf.DataFormat.Default)]
+    [global::ProtoBuf.Extended.ProtoMember(22, IsRequired = false, Name=@"OperationSystem", DataFormat = global::ProtoBuf.Extended.DataFormat.Default)]
     [global::System.ComponentModel.DefaultValue("")]
     public string OperationSystem
     {
@@ -186,7 +194,7 @@ namespace Alachisoft.NCache.Common.Protobuf
       set { _OperationSystem = value; }
     }
     private bool _isDotNetCoreClient = default(bool);
-    [global::ProtoBuf.ProtoMember(23, IsRequired = false, Name=@"isDotNetCoreClient", DataFormat = global::ProtoBuf.DataFormat.Default)]
+    [global::ProtoBuf.Extended.ProtoMember(23, IsRequired = false, Name=@"isDotNetCoreClient", DataFormat = global::ProtoBuf.Extended.DataFormat.Default)]
     [global::System.ComponentModel.DefaultValue(default(bool))]
     public bool isDotNetCoreClient
     {
@@ -194,16 +202,16 @@ namespace Alachisoft.NCache.Common.Protobuf
       set { _isDotNetCoreClient = value; }
     }
     private int _memory = default(int);
-    [global::ProtoBuf.ProtoMember(24, IsRequired = false, Name=@"memory", DataFormat = global::ProtoBuf.DataFormat.TwosComplement)]
+    [global::ProtoBuf.Extended.ProtoMember(24, IsRequired = false, Name=@"memory", DataFormat = global::ProtoBuf.Extended.DataFormat.TwosComplement)]
     [global::System.ComponentModel.DefaultValue(default(int))]
     public int memory
     {
       get { return _memory; }
       set { _memory = value; }
     }
-    private global::ProtoBuf.IExtension extensionObject;
-    global::ProtoBuf.IExtension global::ProtoBuf.IExtensible.GetExtensionObject(bool createIfMissing)
-      { return global::ProtoBuf.Extensible.GetExtensionObject(ref extensionObject, createIfMissing); }
+    private global::ProtoBuf.Extended.IExtension extensionObject;
+   global::ProtoBuf.Extended.IExtension global::ProtoBuf.Extended.IExtensible.GetExtensionObject(bool createIfMissing)
+      { return global::ProtoBuf.Extended.Extensible.GetExtensionObject(ref extensionObject, createIfMissing); }
   }
   
 }

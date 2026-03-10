@@ -11,14 +11,14 @@
 // Note: requires additional types generated from: Message.proto
 namespace Alachisoft.NCache.Common.Protobuf
 {
-  [global::System.Serializable, global::ProtoBuf.ProtoContract(Name=@"TopicMessages")]
-  public partial class TopicMessages : global::ProtoBuf.IExtensible
+  [global::System.Serializable, global::ProtoBuf.Extended.ProtoContract(Name=@"TopicMessages")]
+  public partial class TopicMessages : global::ProtoBuf.Extended.IExtensible
   {
     public TopicMessages() {}
     
 
     private string _topic = "";
-    [global::ProtoBuf.ProtoMember(1, IsRequired = false, Name=@"topic", DataFormat = global::ProtoBuf.DataFormat.Default)]
+    [global::ProtoBuf.Extended.ProtoMember(1, IsRequired = false, Name=@"topic", DataFormat = global::ProtoBuf.Extended.DataFormat.Default)]
     [global::System.ComponentModel.DefaultValue("")]
     public string topic
     {
@@ -26,15 +26,15 @@ namespace Alachisoft.NCache.Common.Protobuf
       set { _topic = value; }
     }
     private readonly global::System.Collections.Generic.List<Alachisoft.NCache.Common.Protobuf.Message> _messageList = new global::System.Collections.Generic.List<Alachisoft.NCache.Common.Protobuf.Message>();
-    [global::ProtoBuf.ProtoMember(2, Name=@"messageList", DataFormat = global::ProtoBuf.DataFormat.Default)]
+    [global::ProtoBuf.Extended.ProtoMember(2, Name=@"messageList", DataFormat = global::ProtoBuf.Extended.DataFormat.Default)]
     public global::System.Collections.Generic.List<Alachisoft.NCache.Common.Protobuf.Message> messageList
     {
       get { return _messageList; }
     }
   
-    private global::ProtoBuf.IExtension extensionObject;
-    global::ProtoBuf.IExtension global::ProtoBuf.IExtensible.GetExtensionObject(bool createIfMissing)
-      { return global::ProtoBuf.Extensible.GetExtensionObject(ref extensionObject, createIfMissing); }
+    private global::ProtoBuf.Extended.IExtension extensionObject;
+   global::ProtoBuf.Extended.IExtension global::ProtoBuf.Extended.IExtensible.GetExtensionObject(bool createIfMissing)
+      { return global::ProtoBuf.Extended.Extensible.GetExtensionObject(ref extensionObject, createIfMissing); }
   }
   
 }

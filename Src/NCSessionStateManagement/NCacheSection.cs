@@ -1,4 +1,4 @@
-//  Copyright (c) 2021 Alachisoft
+//  Copyright (c) 2026 Alachisoft
 //  
 //  Licensed under the Apache License, Version 2.0 (the "License");
 //  you may not use this file except in compliance with the License.
@@ -13,6 +13,7 @@
 //  limitations under the License
 using System.Configuration;
 using System.Xml;
+
 namespace Alachisoft.NCache.Web.SessionStateManagement
 {
     /// <summary>
@@ -25,8 +26,8 @@ namespace Alachisoft.NCache.Web.SessionStateManagement
     {
         /// <summary>Confiuration section name</summary>
          
-
         private const string SectionName = "ncache";
+
         private static XmlNode _ncsection = null;
 
         /// <summary>

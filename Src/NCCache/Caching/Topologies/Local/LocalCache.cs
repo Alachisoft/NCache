@@ -1,4 +1,4 @@
-//  Copyright (c) 2021 Alachisoft
+//  Copyright (c) 2026 Alachisoft
 //  
 //  Licensed under the Apache License, Version 2.0 (the "License");
 //  you may not use this file except in compliance with the License.
@@ -243,9 +243,14 @@ namespace Alachisoft.NCache.Caching.Topologies.Local
                 if (properties.Contains("scavenging-policy"))
                 {
                     IDictionary evictionProps = properties["scavenging-policy"] as IDictionary;
-                    
-                    if (Convert.ToDouble(evictionProps["evict-ratio"]) > 0)
-                        _evictionPolicy = EvictionPolicyFactory.CreateEvictionPolicy(evictionProps, _context.NCacheLog);
+                    if (evictionProps.Contains("eviction-enabled"))
+                    {
+                        if (Convert.ToBoolean(evictionProps["eviction-enabled"]) && Convert.ToDouble(evictionProps["evict-ratio"]) > 0)
+                        {
+                            _evictionPolicy = EvictionPolicyFactory.CreateEvictionPolicy(evictionProps, _context.NCacheLog);
+
+                        }
+                    }
                 }
                 else
                 {
@@ -808,8 +813,6 @@ namespace Alachisoft.NCache.Caching.Topologies.Local
 
         public override EnumerationDataChunk GetNextChunk(EnumerationPointer pointer, OperationContext operationContext)
         {
-            if (!IsCacheOperationAllowed(operationContext))
-                return null;
             if (_enumerationIndex == null)
                 _enumerationIndex = new EnumerationIndex(this);
 
@@ -969,15 +972,10 @@ namespace Alachisoft.NCache.Caching.Topologies.Local
 
         }
 
-        public override void ClientDisconnected(string client, bool isInproc, Runtime.Caching.ClientInfo clientInfo)
+        public override void ClientDisconnected(string client, bool isInproc)
         {
-            base.ClientDisconnected(client, isInproc, clientInfo);
+            base.ClientDisconnected(client, isInproc);
             _topicManager.OnClientDisconnected(client);
-        }
-
-        public override void ClientConnected(string client, bool isInproc, Runtime.Caching.ClientInfo clientInfo)
-        {
-            base.ClientConnected(client, isInproc, clientInfo);
         }
 
 
@@ -986,8 +984,6 @@ namespace Alachisoft.NCache.Caching.Topologies.Local
         public override bool TopicOperation(TopicOperation operation, OperationContext operationContext)
         {
             bool result = false;
-            if(!IsCacheOperationAllowed(operationContext))
-                return result;
             try
             {
                 
@@ -1068,9 +1064,7 @@ namespace Alachisoft.NCache.Caching.Topologies.Local
 
         public override bool StoreMessage(string topic, Messaging.Message message, OperationContext context)
         {
-            if (!IsCacheOperationAllowed(context))
-                return false;
-            Topic topicInstance = _topicManager.GetTopic(topic);
+               Topic topicInstance = _topicManager.GetTopic(topic);
                 bool stored = false;
                 if (topicInstance != null)
                 {
@@ -1142,15 +1136,11 @@ namespace Alachisoft.NCache.Caching.Topologies.Local
 
         public override MessageResponse GetAssignedMessage(SubscriptionInfo subscriptionInfo, OperationContext operationContext)
         {
-            if (!IsCacheOperationAllowed(operationContext))
-                return null;
             return _topicManager.GetAssignedMessages(subscriptionInfo);
         }
 
         public override void AcknowledgeMessageReceipt(string clientId, IDictionary<string, IList<string>> topicWiseMessageIds, OperationContext operationContext)
         {
-            if (!IsCacheOperationAllowed(operationContext))
-                return;
             HashVector errors = new HashVector();
             foreach (KeyValuePair<string, IList<string>> topicMessges in topicWiseMessageIds)
             {
@@ -1278,10 +1268,8 @@ namespace Alachisoft.NCache.Caching.Topologies.Local
             return _topicManager.GetMessageList();
         }
 
-        public override long GetMessageCount(string topicName, OperationContext operationContext)
+        public override long GetMessageCount(string topicName)
         {
-            if (!IsCacheOperationAllowed(operationContext))
-                return default;
             if (topicName == default(string))
             {
                 throw new ArgumentNullException("topicName");

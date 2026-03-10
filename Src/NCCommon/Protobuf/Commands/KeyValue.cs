@@ -1,4 +1,4 @@
-//  Copyright (c) 2021 Alachisoft
+//  Copyright (c) 2026 Alachisoft
 //  
 //  Licensed under the Apache License, Version 2.0 (the "License");
 //  you may not use this file except in compliance with the License.
@@ -13,29 +13,29 @@
 //  limitations under the License
 namespace Alachisoft.NCache.Common.Protobuf
 {
-    [global::System.Serializable, global::ProtoBuf.ProtoContract(Name=@"KeyValue")]
-    public partial class KeyValue : global::ProtoBuf.IExtensible
+    [global::System.Serializable, global::ProtoBuf.Extended.ProtoContract(Name=@"KeyValue")]
+    public partial class KeyValue : global::ProtoBuf.Extended.IExtensible
     {
       public KeyValue() {}
       
 
     private string _key = "";
-    [global::ProtoBuf.ProtoMember(1, IsRequired = false, Name=@"key", DataFormat = global::ProtoBuf.DataFormat.Default)][global::System.ComponentModel.DefaultValue("")]
+    [global::ProtoBuf.Extended.ProtoMember(1, IsRequired = false, Name=@"key", DataFormat = global::ProtoBuf.Extended.DataFormat.Default)][global::System.ComponentModel.DefaultValue("")]
     public string key
     {
       get { return _key; }
       set { _key = value; }
     }
     private readonly global::System.Collections.Generic.List<Alachisoft.NCache.Common.Protobuf.ValueWithType> _value = new global::System.Collections.Generic.List<Alachisoft.NCache.Common.Protobuf.ValueWithType>();
-    [global::ProtoBuf.ProtoMember(2, Name=@"value", DataFormat = global::ProtoBuf.DataFormat.Default)]
+    [global::ProtoBuf.Extended.ProtoMember(2, Name=@"value", DataFormat = global::ProtoBuf.Extended.DataFormat.Default)]
     public global::System.Collections.Generic.List<Alachisoft.NCache.Common.Protobuf.ValueWithType> value
     {
       get { return _value; }
     }
   
-      private global::ProtoBuf.IExtension extensionObject;
-      global::ProtoBuf.IExtension global::ProtoBuf.IExtensible.GetExtensionObject(bool createIfMissing)
-        { return global::ProtoBuf.Extensible.GetExtensionObject(ref extensionObject, createIfMissing); }
+      private global::ProtoBuf.Extended.IExtension extensionObject;
+     global::ProtoBuf.Extended.IExtension global::ProtoBuf.Extended.IExtensible.GetExtensionObject(bool createIfMissing)
+        { return global::ProtoBuf.Extended.Extensible.GetExtensionObject(ref extensionObject, createIfMissing); }
     }
   
 }

@@ -1,4 +1,4 @@
-﻿//  Copyright (c) 2021 Alachisoft
+﻿//  Copyright (c) 2026 Alachisoft
 //  
 //  Licensed under the Apache License, Version 2.0 (the "License");
 //  you may not use this file except in compliance with the License.
@@ -26,7 +26,7 @@ namespace Alachisoft.NCache.Common.Protobuf
             version = default(ulong);
             commandID = default(int);
             requestId = default(long);
-            extensionObject = default(ProtoBuf.IExtension);
+            extensionObject = default(ProtoBuf.Extended.IExtension);
         }
 
         public override sealed void ReturnLeasableToPool()

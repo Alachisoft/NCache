@@ -783,7 +783,7 @@ namespace Alachisoft.NCache.Common.DataStructures.Clustered
 #endif
             ICollection<T> c = collection as ICollection<T>;
             if (c != null)
-            {    // if collection is ICollection<T>
+            {
                 int count = c.Count;
                 if (count > 0)
                 {
@@ -1482,22 +1482,6 @@ namespace Alachisoft.NCache.Common.DataStructures.Clustered
 
             return default(IList<T>);
         }
-
-#if FEATURE_LIST_PREDICATES || FEATURE_NETCORE
-        //public bool TrueForAll(Predicate<T> match) {
-        //    if( match == null) {
-        //        ThrowHelper.ThrowArgumentNullException(ExceptionArgument.match);
-        //    }
-        //    Contract.EndContractBlock();
-
-        //    for(int i = 0 ; i < _size; i++) {
-        //        if( !match(_items[i])) {
-        //            return false;
-        //        }
-        //    }
-        //    return true;
-        //} 
-#endif // FEATURE_LIST_PREDICATES || FEATURE_NETCORE
 
         internal static IList<T> Synchronized(ClusteredList<T> list)
         {

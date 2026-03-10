@@ -1,4 +1,4 @@
-//  Copyright (c) 2021 Alachisoft
+//  Copyright (c) 2026 Alachisoft
 //  
 //  Licensed under the Apache License, Version 2.0 (the "License");
 //  you may not use this file except in compliance with the License.
@@ -279,6 +279,9 @@ namespace Alachisoft.NCache.Common.Protobuf
                 case Type.CONTAINS_BULK:
                     containsBulkCommand = null;
                     break;
+                case Type.GET_SERVER_IDENTITY:
+                    getServerIdentityCommand = null;
+                    break;
 
                 default:
                     throw new System.Exception($"Case not handled for command type '{type}' in order to reset it.");
@@ -293,7 +296,7 @@ namespace Alachisoft.NCache.Common.Protobuf
             isRetryCommand = false;
             requestID = default(long);
             intendedRecipient = string.Empty;
-            extensionObject = default(ProtoBuf.IExtension);
+            extensionObject = default(ProtoBuf.Extended.IExtension);
         }
 
         public override sealed void ReturnLeasableToPool()
@@ -351,6 +354,10 @@ namespace Alachisoft.NCache.Common.Protobuf
                     break;
 
                 case Type.GET_OPTIMAL_SERVER:
+                    break;
+
+
+                case Type.GET_SERVER_IDENTITY:
                     break;
 
                 case Type.GET_TYPEINFO_MAP:

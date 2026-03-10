@@ -1,25 +1,11 @@
-﻿//  Copyright (c) 2021 Alachisoft
-//  
-//  Licensed under the Apache License, Version 2.0 (the "License");
-//  you may not use this file except in compliance with the License.
-//  You may obtain a copy of the License at
-//  
-//     http://www.apache.org/licenses/LICENSE-2.0
-//  
-//  Unless required by applicable law or agreed to in writing, software
-//  distributed under the License is distributed on an "AS IS" BASIS,
-//  WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
-//  See the License for the specific language governing permissions and
-//  limitations under the License
-using Alachisoft.NCache.Automation.ToolsOutput;
+﻿using Alachisoft.NCache.Automation.ToolsOutput;
 using Alachisoft.NCache.Automation.ToolsParametersBase;
 using Alachisoft.NCache.Automation.Util;
 using Alachisoft.NCache.Common;
 
 #if NETCORE
-using Alachisoft.NCache.Licensing.NetCore.RegistryUtil;
-using Alachisoft.NCache.Licensing.NetCore.DOM;
-
+using Alachisoft.NCache.Licensing.RegistryUtil;
+using Alachisoft.NCache.Licensing.DOM;
 #endif
 using Alachisoft.NCache.Licensing;
 using System;
@@ -34,7 +20,7 @@ using Alachisoft.NCache.Tools.Common;
 using Newtonsoft.Json;
 using Newtonsoft.Json.Converters;
 using System.Globalization;
-using static Alachisoft.NCache.Licensing.LicenseManager;
+using Alachisoft.NCache.Licensing.RegistryUtil;
 
 namespace Alachisoft.NCache.Automation.ToolsBase
 {
@@ -55,13 +41,12 @@ namespace Alachisoft.NCache.Automation.ToolsBase
 
             return false;
         }
-
+      
         public void VerifyLicense()
         {
             ToolsUtil.PrintLogo(OutputProvider, printLogo, TOOLNAME);
             string ipAddress = "this machine";
             ServerLicenseInfo serverLicenseInfo;
-
             try
             {
                 if (string.IsNullOrEmpty(Server))
@@ -86,23 +71,31 @@ namespace Alachisoft.NCache.Automation.ToolsBase
                     }
                 }
 
+
+                
+                string[] editionIDPart = null;
+                if (!string.IsNullOrEmpty(serverLicenseInfo._editionID))
+                    editionIDPart = serverLicenseInfo._editionID.Split('-');
+
                 OutputProvider.WriteLine("This product is registered to ");
-                OutputProvider.WriteLine("User:        " + serverLicenseInfo._registeredName);
-                OutputProvider.WriteLine("Email:       " + serverLicenseInfo._email);
-                OutputProvider.WriteLine("Company:     " + serverLicenseInfo._companyName);
-                OutputProvider.WriteLine("Edition:     " + "NCache OpenSource ");
+                OutputProvider.WriteLine("User:                    " + serverLicenseInfo._registeredName);
+                OutputProvider.WriteLine("Email:                   " + serverLicenseInfo._email);
+                OutputProvider.WriteLine("Company:                 " + serverLicenseInfo._companyName);
 
-                if (LicenseManager.LicenseMode(null) == LicenseManager.LicenseType.UnRegistered)
-                {
-                    OutputProvider.WriteLine("\nThe machine does not have a valid registration information. Please register this machine with a FREE installation key.You can get free installation key from http://www.alachisoft.com/activate/RequestKey.php?Edition=NC-OSS-50-4x&Version=5.0&Source=Register-NCache");
+                if (!serverLicenseInfo.HideOperatingSystem)
+                    DisplayPlatform(serverLicenseInfo);
 
-                    OutputProvider.WriteLine("\nIf you are using this machine as NCache client, then you don't need to register NCache on this machine. Only cache server machines are required to be registered");
-                }
-                else
-                {
-                    OutputProvider.WriteLine("");
-                    OutputProvider.WriteLine("Licensed to use FREE of cost. Use As-is without support.");
-                }
+                OutputProvider.WriteLine("Edition:                 " + "OpenSource ");
+                OutputProvider.WriteLine("");
+                OutputProvider.WriteLine("Licensed to use FREE of cost. Use As-is without support.");
+                
+            }
+
+
+            catch (NullReferenceException ex)
+            {
+                OutputProvider.WriteErrorLine("Couldn't find NCache installation on this machine.");
+                return;
             }
             catch (Exception ex)
             {
@@ -113,6 +106,20 @@ namespace Alachisoft.NCache.Automation.ToolsBase
             OutputProvider.WriteLine("\n");
         }
 
+       private void DisplayPlatform(ServerLicenseInfo serverLicenseInfo)
+        {
+            string outputResult = null;
+            if (!string.IsNullOrEmpty(serverLicenseInfo.GetOS) || !string.IsNullOrEmpty(serverLicenseInfo.InstallationType))
+            {
+                outputResult = "Platform:               ";
+            }
+            outputResult = outputResult + " " + serverLicenseInfo.GetOS;
+            outputResult = outputResult + " " + RegUtil.GetInstallTypeOrFramework().ToUpper();
+            if (!string.IsNullOrEmpty(outputResult))
+                OutputProvider.WriteLine(outputResult);
+
+        }
+      
         protected override void BeginProcessing()
         {
             try

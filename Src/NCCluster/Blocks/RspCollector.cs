@@ -1,4 +1,4 @@
-// $Id: RspCollector.java,v 1.2 2004/03/30 06:47:12 belaban Exp $
+
 using Alachisoft.NCache.Common.Net;
 
 namespace Alachisoft.NGroups.Blocks

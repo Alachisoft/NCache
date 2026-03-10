@@ -7,6 +7,7 @@ using System.IO;
 using System.Linq;
 using Alachisoft.NCache.Common.Util;
 using System.Threading;
+using Alachisoft.NCache.Common.Stats;
 
 namespace Alachisoft.NCache.SocketServer.Pipelining
 {
@@ -16,16 +17,27 @@ namespace Alachisoft.NCache.SocketServer.Pipelining
         private RequestInfo _partialRequest;
         private ClientManager _clientManager;
         private ICommandManager _cmdManager;
+        private CommandProcessorPool _commandProcessorPool;
 
         private int? _expectedLength = null;
         private long _acknowledgementId = -1;
+        private long _feed = 0;
 
-        public RequestReader(ClientManager clientManager, ICommandManager commandManager)
+        public RequestReader(ClientManager clientManager, ICommandManager commandManager, IRequestProcessor requestProcessor)
         {
             _headerLength = ConnectionManager.MessageSizeHeader;
             
             _clientManager = clientManager;
             _cmdManager = commandManager;
+            if (ServiceConfiguration.UseCustomThreadPool)
+            {
+                _commandProcessorPool = new CommandProcessorPool(
+                    Environment.ProcessorCount * ServiceConfiguration.CustomPipeliningThreadPoolFactor,
+                    requestProcessor
+                );
+
+                _commandProcessorPool.Start();
+            }
         }
         
         private bool ReadPartialRequest(ref ReadOnlySequence<byte> buffer)
@@ -134,7 +146,23 @@ namespace Alachisoft.NCache.SocketServer.Pipelining
                 //Due to response pipelining, old responses of basic CRUD operations are queued for sending
                 //therefore before executing this long running command, we should send those responses
                 _clientManager.SendPendingResponses(true);
-                ThreadPool.QueueUserWorkItem(new WaitCallback(ProcessCommandAsync), new LongRunningCommand() { Command = command, CommandType = cmdType, AcknowledgementId = _acknowledgementId });
+
+                if (ServiceConfiguration.UseCustomThreadPool)
+                {
+                    var longRunningCmd = new LongRunningCommand()
+                    {
+                        Command = command,
+                        CommandType = cmdType,
+                        AcknowledgementId = _acknowledgementId,
+                        ClientManager = _clientManager,
+                    };
+
+                    _commandProcessorPool.EnqueuRequest(longRunningCmd, Interlocked.Increment(ref _feed));
+                }
+                else
+                {
+                    ThreadPool.QueueUserWorkItem(new WaitCallback(ProcessCommandAsync), new LongRunningCommand() { Command = command, CommandType = cmdType, AcknowledgementId = _acknowledgementId });
+                }
             }
 
             _expectedLength = null;
@@ -165,13 +193,21 @@ namespace Alachisoft.NCache.SocketServer.Pipelining
                 ReadRequest(ref buffer);
             } while (_expectedLength == null && buffer.Length >= _headerLength);
         }
-
-        class LongRunningCommand
+        public void Dispose()
         {
-            public object Command { get; set; }
-            public short CommandType { get; set; }
-            public long AcknowledgementId { get; set; }
+            _headerLength = 0;
+            _partialRequest = null;
+            _clientManager = null;
+            _cmdManager = null;
+            _expectedLength = null;
+            _acknowledgementId = -1;
+
+            if (ServiceConfiguration.UseCustomThreadPool && _commandProcessorPool != null)
+            {
+                _commandProcessorPool.Stop();
+            }
         }
+
     }
 }
 #endif

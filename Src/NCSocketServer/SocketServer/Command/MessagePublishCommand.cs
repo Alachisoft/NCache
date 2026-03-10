@@ -1,4 +1,4 @@
-//  Copyright (c) 2021 Alachisoft
+//  Copyright (c) 2026 Alachisoft
 //  
 //  Licensed under the Apache License, Version 2.0 (the "License");
 //  you may not use this file except in compliance with the License.
@@ -23,7 +23,7 @@ using Alachisoft.NCache.SocketServer.RuntimeLogging;
 using Alachisoft.NCache.Common.Monitoring;
 using Alachisoft.NCache.Common.Caching;
 using Alachisoft.NCache.Common.Pooling;
-using Alachisoft.NCache.SocketServer.Util;
+using Alachisoft.NCache.Common.ResponseSerialization;
 
 namespace Alachisoft.NCache.SocketServer.Command
 {
@@ -55,7 +55,6 @@ namespace Alachisoft.NCache.SocketServer.Command
                     {
                         operationContext.Add(OperationContextFieldName.ClientLastViewId, command.clientLastViewId.ToString(CultureInfo.InvariantCulture));
                     }
-                    CommandsUtil.PopulateClientIdInContext(ref operationContext, clientManager.ClientAddress);
                     BitSet flag = BitSet.CreateAndMarkInUse(clientManager.CacheFakePool, NCModulesConstants.SocketServer);
                     flag.Data =((byte)(byte)_command.flag);
                     try
@@ -89,17 +88,17 @@ namespace Alachisoft.NCache.SocketServer.Command
                     {
                         flag?.MarkFree(NCModulesConstants.SocketServer);
                     }
-                    //
                     MessagePublishResponse messagePublishResponse = new MessagePublishResponse();
-                    //response.requestId = Convert.ToInt64(_command.requestId);
-                    //response.commandID = command.commandID;
-                    //response.responseType = Response.Type.MESSAGE_PUBLISH;
-                    //_serializedResponsePackets.Add(Common.Util.ResponseHelper.SerializeResponse(response,Common.Protobuf.Response.Type.MESSAGE_PUBLISH));
 
                     if (clientManager.ClientVersion >= 5000)
                     {
                         Common.Util.ResponseHelper.SetResponse(messagePublishResponse, command.requestID, command.commandID);
-                        _serializedResponsePackets.Add(Common.Util.ResponseHelper.SerializeResponse(messagePublishResponse, Common.Protobuf.Response.Type.MESSAGE_PUBLISH));
+                        ResponseOptions responseOptions = new ResponseOptions()
+                        {
+                            Response = messagePublishResponse,
+                            ResponseType = Response.Type.MESSAGE_PUBLISH
+                        };
+                        _serializedResponsePackets.Add(clientManager.ResponseBuilder.BuildResponse(responseOptions));
                     }
                     else
                     {
@@ -107,7 +106,12 @@ namespace Alachisoft.NCache.SocketServer.Command
                         Response response = new Response();
                         response.messagePublishResponse = messagePublishResponse;
                         Common.Util.ResponseHelper.SetResponse(response, command.requestID, command.commandID, Common.Protobuf.Response.Type.MESSAGE_PUBLISH);
-                        _serializedResponsePackets.Add(Alachisoft.NCache.Common.Util.ResponseHelper.SerializeResponse(response));
+                        ResponseOptions responseOptions = new ResponseOptions()
+                        {
+                            Response = response,
+                            ResponseType = Response.Type.MESSAGE_PUBLISH
+                        };
+                        _serializedResponsePackets.Add(clientManager.ResponseBuilder.BuildResponse(responseOptions));
                     }
 
                 }
@@ -115,7 +119,14 @@ namespace Alachisoft.NCache.SocketServer.Command
             catch (System.Exception exc)
             {
                 exceptionMessage = exc.ToString();
-                _serializedResponsePackets.Add(Common.Util.ResponseHelper.SerializeExceptionResponseWithType(exc, command.requestID, command.commandID, clientManager.ClientVersion));
+                ResponseOptions responseOptions = new ResponseOptions()
+                {
+                    Exception = exc,
+                    RequestId = command.requestID,
+                    CommandId = command.commandID,
+                };
+
+                _serializedResponsePackets.Add(clientManager.ResponseBuilder.BuildExceptionResponse(responseOptions));
             }
             finally
             {
@@ -169,8 +180,6 @@ namespace Alachisoft.NCache.SocketServer.Command
             details.Append("NotifyOnDeliveryFailure : " + notifyOnFailure);
             details.Append(" ; ");
 
-
-            //details.AppendLine("Dependency: " + cmdInfo. != null ? "true" : "false");
             return details.ToString();
         }
 

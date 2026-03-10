@@ -1,4 +1,4 @@
-// $Id: TOTAL.java,v 1.6 2004/07/05 14:17:16 belaban Exp $
+
 using System;
 using Alachisoft.NGroups;
 using Alachisoft.NGroups.Protocols;
@@ -40,7 +40,6 @@ namespace Alachisoft.NGroups.Protocols
 
         }
         internal System.Collections.ArrayList members = System.Collections.ArrayList.Synchronized(new System.Collections.ArrayList(10)), initial_members = System.Collections.ArrayList.Synchronized(new System.Collections.ArrayList(10));
-        //		internal SetSupport members_set = new HashSetSupport(); //copy of the members vector for fast random access    
         internal Address local_addr = null;
         internal string group_addr = null;
         internal string subGroup_addr = null;
@@ -48,8 +47,7 @@ namespace Alachisoft.NGroups.Protocols
         internal long timeout = 5000;
         internal long num_initial_members = 20;
         internal bool twoPhaseConnect;
-        //muds: 24-06-08
-        //as per iqbal sb. decision changing the default port-range to '1'
+        //changing the default port-range to '1'
         internal int port_range = 1; // number of ports to be probed for initial membership
 
         internal ThreadClass mcast_receiver = null;
@@ -76,8 +74,7 @@ namespace Alachisoft.NGroups.Protocols
 
         private const string DEFAULT_USERID = "Ncache-Default-UserId";
         private const string DEFAULT_PASSWORD = "Ncache-Default-Password";
-        internal string userId = DEFAULT_USERID;
-        internal string password = DEFAULT_PASSWORD;
+      
         internal byte[] secureUid = null;
         internal byte[] securePwd = null;
 
@@ -162,18 +159,7 @@ namespace Alachisoft.NGroups.Protocols
                 props.Remove("discovery_port");
             }
 
-            if (props.Contains("user-id"))
-            {
-                userId = Convert.ToString(props["user-id"]);
-                secureUid = EncryptionUtil.Encrypt(userId);
-                props.Remove("user-id");
-            }
-            if (props.Contains("password"))
-            {
-                password = Convert.ToString(props["password"]);
-                securePwd = EncryptionUtil.Encrypt(password);
-                props.Remove("password");
-            }
+            
             if (props.Count > 0)
             {
                 return true;
@@ -230,9 +216,7 @@ namespace Alachisoft.NGroups.Protocols
                             bool authorized = true;
                             byte[] secureUid = hdr.userId;
                             byte[] securePwd = hdr.password;
-                            string uid = EncryptionUtil.Decrypt(secureUid);
-                            string pwd = EncryptionUtil.Decrypt(securePwd);
-                            if (Stack.NCacheLog.IsInfoEnabled) Stack.NCacheLog.Info("TCPPING.up()", " before authorizing. I have received these credentials user-id = " + userId + ", password = " + password);
+                           
 
                             if (!authorized || Stack.DisableOperationOnMerge)
                             {

@@ -1,4 +1,4 @@
-//  Copyright (c) 2021 Alachisoft
+//  Copyright (c) 2026 Alachisoft
 //  
 //  Licensed under the Apache License, Version 2.0 (the "License");
 //  you may not use this file except in compliance with the License.
@@ -40,6 +40,11 @@ namespace Alachisoft.NCache.Common.DataStructures
         /// bucket ids we store backup node address from where other nodes will transfer the bucket.
         /// </summary>
         private Hashtable _specialBucketOwners = new Hashtable();
+
+        public DistributionMaps(ArrayList hashmap)
+        {
+            _hashmap = hashmap;
+        }
 
         public DistributionMaps(ArrayList hashmap, Hashtable bucketsOwnershipMap)
         {

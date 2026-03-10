@@ -10,14 +10,14 @@
 // Generated from: GetMessageCommand.proto
 namespace Alachisoft.NCache.Common.Protobuf
 {
-  [global::System.Serializable, global::ProtoBuf.ProtoContract(Name=@"GetMessageCommand")]
-  public partial class GetMessageCommand : global::ProtoBuf.IExtensible
+  [global::System.Serializable, global::ProtoBuf.Extended.ProtoContract(Name=@"GetMessageCommand")]
+  public partial class GetMessageCommand : global::ProtoBuf.Extended.IExtensible
   {
     public GetMessageCommand() {}
     
 
     private long _requestId = default(long);
-    [global::ProtoBuf.ProtoMember(2, IsRequired = false, Name=@"requestId", DataFormat = global::ProtoBuf.DataFormat.TwosComplement)]
+    [global::ProtoBuf.Extended.ProtoMember(2, IsRequired = false, Name=@"requestId", DataFormat = global::ProtoBuf.Extended.DataFormat.TwosComplement)]
     [global::System.ComponentModel.DefaultValue(default(long))]
     public long requestId
     {
@@ -26,7 +26,7 @@ namespace Alachisoft.NCache.Common.Protobuf
     }
 
     private int _flag = default(int);
-    [global::ProtoBuf.ProtoMember(3, IsRequired = false, Name=@"flag", DataFormat = global::ProtoBuf.DataFormat.TwosComplement)]
+    [global::ProtoBuf.Extended.ProtoMember(3, IsRequired = false, Name=@"flag", DataFormat = global::ProtoBuf.Extended.DataFormat.TwosComplement)]
     [global::System.ComponentModel.DefaultValue(default(int))]
     public int flag
     {
@@ -35,7 +35,7 @@ namespace Alachisoft.NCache.Common.Protobuf
     }
 
     private long _clientLastViewId = (long)-1;
-    [global::ProtoBuf.ProtoMember(4, IsRequired = false, Name=@"clientLastViewId", DataFormat = global::ProtoBuf.DataFormat.TwosComplement)]
+    [global::ProtoBuf.Extended.ProtoMember(4, IsRequired = false, Name=@"clientLastViewId", DataFormat = global::ProtoBuf.Extended.DataFormat.TwosComplement)]
     [global::System.ComponentModel.DefaultValue((long)-1)]
     public long clientLastViewId
     {
@@ -44,7 +44,7 @@ namespace Alachisoft.NCache.Common.Protobuf
     }
 
     private string _version = "";
-    [global::ProtoBuf.ProtoMember(5, IsRequired = false, Name=@"version", DataFormat = global::ProtoBuf.DataFormat.Default)]
+    [global::ProtoBuf.Extended.ProtoMember(5, IsRequired = false, Name=@"version", DataFormat = global::ProtoBuf.Extended.DataFormat.Default)]
     [global::System.ComponentModel.DefaultValue("")]
     public string version
     {
@@ -53,7 +53,7 @@ namespace Alachisoft.NCache.Common.Protobuf
     }
 
     private int _commandVersion = (int)0;
-    [global::ProtoBuf.ProtoMember(6, IsRequired = false, Name=@"commandVersion", DataFormat = global::ProtoBuf.DataFormat.TwosComplement)]
+    [global::ProtoBuf.Extended.ProtoMember(6, IsRequired = false, Name=@"commandVersion", DataFormat = global::ProtoBuf.Extended.DataFormat.TwosComplement)]
     [global::System.ComponentModel.DefaultValue((int)0)]
     public int commandVersion
     {
@@ -62,16 +62,16 @@ namespace Alachisoft.NCache.Common.Protobuf
     }
 
     private string _intendedRecipient = "";
-    [global::ProtoBuf.ProtoMember(7, IsRequired = false, Name=@"intendedRecipient", DataFormat = global::ProtoBuf.DataFormat.Default)]
+    [global::ProtoBuf.Extended.ProtoMember(7, IsRequired = false, Name=@"intendedRecipient", DataFormat = global::ProtoBuf.Extended.DataFormat.Default)]
     [global::System.ComponentModel.DefaultValue("")]
     public string intendedRecipient
     {
       get { return _intendedRecipient; }
       set { _intendedRecipient = value; }
     }
-    private global::ProtoBuf.IExtension extensionObject;
-    global::ProtoBuf.IExtension global::ProtoBuf.IExtensible.GetExtensionObject(bool createIfMissing)
-      { return global::ProtoBuf.Extensible.GetExtensionObject(ref extensionObject, createIfMissing); }
+    private global::ProtoBuf.Extended.IExtension extensionObject;
+   global::ProtoBuf.Extended.IExtension global::ProtoBuf.Extended.IExtensible.GetExtensionObject(bool createIfMissing)
+      { return global::ProtoBuf.Extended.Extensible.GetExtensionObject(ref extensionObject, createIfMissing); }
   }
   
 }

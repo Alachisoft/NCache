@@ -1,4 +1,4 @@
-//  Copyright (c) 2021 Alachisoft
+//  Copyright (c) 2026 Alachisoft
 //  
 //  Licensed under the Apache License, Version 2.0 (the "License");
 //  you may not use this file except in compliance with the License.
@@ -16,7 +16,6 @@ using System;
 namespace Alachisoft.NCache.Storage.Interop
 {
     [Flags]
-    //[CLSCompliant(false)]
     internal enum Win32FileAttributes : uint
     {
         FILE_ATTRIBUTE_READONLY = 0x00000001,

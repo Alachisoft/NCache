@@ -1,4 +1,4 @@
-//  Copyright (c) 2021 Alachisoft
+//  Copyright (c) 2026 Alachisoft
 //  
 //  Licensed under the Apache License, Version 2.0 (the "License");
 //  you may not use this file except in compliance with the License.
@@ -28,12 +28,11 @@ using Alachisoft.NCache.Common.DataStructures.Clustered;
 using Alachisoft.NCache.Common.Caching;
 using Alachisoft.NCache.Common.Enum;
 using Alachisoft.NCache.Common.DataStructures;
+using Alachisoft.NCache.Runtime.JSON;
 
 namespace Alachisoft.NCache.Util
 {
     /// <summary>
-    /// {^[\t, ]*}internal{[a-z, ]*}class{[A-Z,a-z,\,,\:,\t, ]*$}
-    /// #if DEBUG\n\1public\2class\3\n#else\n\1internal\2class\3\n#endif
     /// Utility class to help with common tasks.
     /// </summary>
     public class SerializationUtil
@@ -122,7 +121,6 @@ namespace Alachisoft.NCache.Util
                     byte[] serializedData = null;
                     if (serializedObject is byte[])
                     {
-                       
                         serializedData = (byte[])serializedObject;
                     }
                     else if (serializedObject is UserBinaryObject)
@@ -135,8 +133,6 @@ namespace Alachisoft.NCache.Util
             catch (Exception ex)
             {
                 _ncacheLog.Error(ex.ToString());
-                //Kill the exception; it is possible that object was serialized by Java
-                //or from any other domain which can not be deserialized by us.
                 deserialized = serializedObject;
             }
 
@@ -1223,7 +1219,7 @@ namespace Alachisoft.NCache.Util
         }
 
         /// <summary>
-        /// Retruns back all registered Types w.r.t a cache, is only called at cache initialization
+        /// Returns back all registered Types w.r.t a cache, is only called at cache initialization
         /// </summary>
         /// <param name="cacheContext">Cache Name</param>
         /// <returns>Retruns back all registered Types w.r.t a cache</returns>
@@ -1267,20 +1263,31 @@ namespace Alachisoft.NCache.Util
 
             if (size <= 0)
             {
-
-                Type type = serializableObject.GetType();
-
-                if (typeof(byte[]).Equals(type) && flag != null)
+                if (userObjectType==UserObjectType.CacheItem)
                 {
-                    flag.SetBit(BitSetConstants.BinaryData);
-                    size = serializableObject is byte[] ? ((byte[])serializableObject).Length : 0;
-                    return serializableObject;
-                }
-                serializableObject = CompactBinaryFormatter.ToByteBuffer(serializableObject, serializationContext);
-                size = serializableObject is byte[] ? ((byte[])serializableObject).Length : 0;
-            }
-           
+                        Type type = serializableObject.GetType();
 
+                        if (typeof(byte[]).Equals(type) && flag != null)
+                        {
+                            flag.SetBit(BitSetConstants.BinaryData);
+                            size = serializableObject is byte[]? ((byte[])serializableObject).Length : 0;
+                            return serializableObject;
+                        }
+
+                        switch (serializationFormat)
+                        {
+                            case SerializationFormat.Binary:
+                                serializableObject = CompactBinaryFormatter.ToByteBuffer(serializableObject, serializationContext);
+                                break;
+                            case SerializationFormat.Json:
+                                serializableObject = JsonBinaryFormatter.ToByteArray(serializableObject);
+                                flag.SetBit(BitSetConstants.JsonData);
+                                break;
+                        }
+
+                        size = serializableObject is byte[]? ((byte[])serializableObject).Length : 0;
+                }
+            }
             return serializableObjectUnser;
         }
 
@@ -1288,18 +1295,31 @@ namespace Alachisoft.NCache.Util
         {
             if (serializableObject != null && isSerializationEnabled)
             {
-                Type type = serializableObject.GetType();
-
-                if (typeof(byte[]).Equals(type) && flag != null)
+                if (userObjectType==UserObjectType.CacheItem)
                 {
-                    flag.SetBit(BitSetConstants.BinaryData);
-                    size = serializableObject is byte[] ? ((byte[])serializableObject).Length : 0;
-                    return serializableObject;
+                    
+                    Type type = serializableObject.GetType();
+
+                    if (typeof(byte[]).Equals(type) && flag != null)
+                    {
+                        flag.SetBit(BitSetConstants.BinaryData);
+                        size = serializableObject is byte[]? ((byte[])serializableObject).Length : 0;
+                        return serializableObject;
+                    }
+
+                    switch (serializationFormat)
+                    {
+                        case SerializationFormat.Binary:
+                            serializableObject = CompactBinaryFormatter.ToByteBuffer(serializableObject, serializationContext);
+                            break;
+                        case SerializationFormat.Json:
+                            serializableObject = JsonBinaryFormatter.ToByteArray(serializableObject);
+                            flag.SetBit(BitSetConstants.JsonData);
+                            break;
+                    }
+
+                    size = serializableObject is byte[]? ((byte[])serializableObject).Length : 0;
                 }
-
-                serializableObject = CompactBinaryFormatter.ToByteBuffer(serializableObject, serializationContext);
-
-                size = serializableObject is byte[] ? ((byte[])serializableObject).Length : 0;
             }
             return serializableObject;
         }
@@ -1307,23 +1327,111 @@ namespace Alachisoft.NCache.Util
         public static T SafeDeserializeInProc<T>(object serializedObject, string serializationContext, BitSet flag, UserObjectType userObjectType, bool serailze)
         {
             if (serailze)
+
                 return SafeDeserializeOutProc<T>(serializedObject, serializationContext, flag, serailze, userObjectType);
 
+            if (serializedObject == default(object))
+                return (T)serializedObject;
+
+            bool userAskedForJson = typeof(JsonValueBase).IsAssignableFrom(typeof(T));
+
+            if (userObjectType==UserObjectType.CacheItem)
+            {
+                bool valueFromCacheIsJson = serializedObject is JsonValueBase;
+
+                if (valueFromCacheIsJson && !userAskedForJson)
+                    return JsonBinaryFormatter.DeserializeObject<T>(JsonBinaryFormatter.SerializeObject(serializedObject));
+
+                if (IsOfTypeJsonValue<T>() && !(serializedObject is JsonValue) && !(serializedObject is JsonObject))
+                    return (T)CreateJsonValue(serializedObject);
+
+                if (userAskedForJson)
+                    return JsonBinaryFormatter.DeserializeObject<T>(JsonBinaryFormatter.SerializeObject(serializedObject));
+
+            }
             return (T)serializedObject;
         }
 
         public static T SafeDeserializeOutProc<T>(object serializedObject, string serializationContext, BitSet flag, bool isSerializationEnabled, UserObjectType userObjectType)
         {
             object deserialized = serializedObject;
-            if (serializedObject is byte[] && isSerializationEnabled)
+            bool userAskedForJson = typeof(JsonValueBase).IsAssignableFrom(typeof(T));
+
+            if (userObjectType==UserObjectType.CacheItem)
             {
-                if (flag != null && flag.IsBitSet(BitSetConstants.BinaryData))
+                if (serializedObject is byte[] && isSerializationEnabled)
                 {
-                    return (T)serializedObject;
+                    if (flag != null && flag.IsBitSet(BitSetConstants.BinaryData))
+                    {
+                        if (!userAskedForJson)
+                            return (T)serializedObject;
+
+                        throw new InvalidOperationException("Cannot interpret binary serialized data as JSON serialized data.");
+                    }
+                    if (flag != null && flag.IsBitSet(BitSetConstants.JsonData))
+                    {
+                        if (!userAskedForJson)
+                        {
+                            deserialized = JsonBinaryFormatter.DeserializeObject<T>(
+                                JsonBinaryFormatter.DecodeString(serializedObject as byte[])
+                            );
+                        }
+                        else
+                        {
+                            deserialized = JsonBinaryFormatter.FromByteBuffer<T>(serializedObject as byte[]);
+                        }
+                    }
+                    else
+                    {
+                        deserialized = CompactBinaryFormatter.FromByteBuffer((byte[])serializedObject, serializationContext);
+                    }
                 }
-                deserialized = CompactBinaryFormatter.FromByteBuffer((byte[])serializedObject, serializationContext);
             }
             return (T)deserialized;
+        }
+
+        private static object CreateJsonValue(object value)
+        {
+            switch (value)
+            {
+                case string objectType:
+                    return (JsonValue)objectType;
+                case bool objectType:
+                    return (JsonValue)objectType;
+                case byte objectType:
+                    return (JsonValue)objectType;
+                case sbyte objectType:
+                    return (JsonValue)objectType;
+                case short objectType:
+                    return (JsonValue)objectType;
+                case ushort objectType:
+                    return (JsonValue)objectType;
+                case int objectType:
+                    return (JsonValue)objectType;
+                case uint objectType:
+                    return (JsonValue)objectType;
+                case long objectType:
+                    return (JsonValue)objectType;
+                case ulong objectType:
+                    return (JsonValue)objectType;
+                case float objectType:
+                    return (JsonValue)objectType;
+                case double objectType:
+                    return (JsonValue)objectType;
+                case decimal objectType:
+                    return (JsonValue)objectType;
+                case DateTime objectType:
+                    return (JsonValue)objectType;
+                case System.Numerics.BigInteger objectType:
+                    return (JsonValue)objectType;
+                default:
+                    return value;
+            }
+        }
+
+        private static bool IsOfTypeJsonValue<T>()
+        {
+            return typeof(JsonValue).IsAssignableFrom(typeof(T));
         }
     }
 }

@@ -1,4 +1,4 @@
-// $Id: RspList.java,v 1.3 2004/03/30 06:47:28 belaban Exp $
+
 using Alachisoft.NCache.Common.Net;
 
 namespace Alachisoft.NGroups.Util

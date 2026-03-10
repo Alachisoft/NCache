@@ -1,4 +1,4 @@
-//  Copyright (c) 2021 Alachisoft
+//  Copyright (c) 2026 Alachisoft
 //  
 //  Licensed under the Apache License, Version 2.0 (the "License");
 //  you may not use this file except in compliance with the License.
@@ -19,9 +19,9 @@ using System.Net;
 using System.Configuration;
 using Alachisoft.NCache.Config;
 using Alachisoft.NCache.Caching;
+
 using Alachisoft.NCache.Runtime.Exceptions;
 using Alachisoft.NCache.Common.Util;
-
 
 
 namespace Alachisoft.NCache.Config
@@ -248,8 +248,8 @@ namespace Alachisoft.NCache.Config
 				.Append(ConfigHelper.SafeGetPair(properties,"down_thread", null))
 				.Append(ConfigHelper.SafeGetPair(properties,"up_thread", null))
                 .Append(ConfigHelper.SafeGetPair(properties, "is_part_replica", null))
-                
-                .Append(")");
+
+				.Append(")");
 			return b.ToString();
 		}
 
@@ -305,7 +305,7 @@ namespace Alachisoft.NCache.Config
                 .Append(ConfigHelper.SafeGetPair(properties, "connection_retry_interval", 0))
                 .Append(ConfigHelper.SafeGetPair(properties, "bind_addr", bindIP))
 				.Append(ConfigHelper.SafeGetPair(properties, "start_port", null))
-                .Append(ConfigHelper.SafeGetPair(properties, "port_range", null))
+				.Append(ConfigHelper.SafeGetPair(properties, "port_range", null))
                 .Append(ConfigHelper.SafeGetPair(properties, "send_buf_size", null))				//32000
 				.Append(ConfigHelper.SafeGetPair(properties, "recv_buf_size", null))				//64000
 				.Append(ConfigHelper.SafeGetPair(properties, "reaper_interval", null))			//0

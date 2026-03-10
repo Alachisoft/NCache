@@ -1,4 +1,4 @@
-﻿//  Copyright (c) 2021 Alachisoft
+﻿//  Copyright (c) 2026 Alachisoft
 //  
 //  Licensed under the Apache License, Version 2.0 (the "License");
 //  you may not use this file except in compliance with the License.
@@ -16,7 +16,7 @@ using Alachisoft.NCache.Common.Pooling.Exception;
 using Alachisoft.NCache.Common.Pooling.Lease;
 using Alachisoft.NCache.Common.Pooling.Options;
 using Alachisoft.NCache.Common.Pooling.Stats;
-using ProtoBuf.Serializers.Pooling;
+using ProtoBuf.Extended.Serializers.Pooling;
 using System;
 using System.Collections.Generic;
 

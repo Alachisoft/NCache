@@ -8,4 +8,6 @@ message ClientInfo {
 	optional string machineName = 5;
 	optional string macAddress=6;
 	optional int32 cores=7;
+	optional int32 physicalCores=8;
+	optional int32 logicalCores=9;
 }

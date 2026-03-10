@@ -11,14 +11,14 @@
 // Note: requires additional types generated from: EventCacheItem.proto
 namespace Alachisoft.NCache.Common.Protobuf
 {
-  [global::System.Serializable, global::ProtoBuf.ProtoContract(Name=@"EventId")]
-  public partial class EventId : global::ProtoBuf.IExtensible
+  [global::System.Serializable, global::ProtoBuf.Extended.ProtoContract(Name=@"EventId")]
+  public partial class EventId : global::ProtoBuf.Extended.IExtensible
   {
     public EventId() {}
     
 
     private string _eventUniqueId = "";
-    [global::ProtoBuf.ProtoMember(1, IsRequired = false, Name=@"eventUniqueId", DataFormat = global::ProtoBuf.DataFormat.Default)]
+    [global::ProtoBuf.Extended.ProtoMember(1, IsRequired = false, Name=@"eventUniqueId", DataFormat = global::ProtoBuf.Extended.DataFormat.Default)]
     [global::System.ComponentModel.DefaultValue("")]
     public string eventUniqueId
     {
@@ -27,7 +27,7 @@ namespace Alachisoft.NCache.Common.Protobuf
     }
 
     private long _operationCounter = default(long);
-    [global::ProtoBuf.ProtoMember(2, IsRequired = false, Name=@"operationCounter", DataFormat = global::ProtoBuf.DataFormat.TwosComplement)]
+    [global::ProtoBuf.Extended.ProtoMember(2, IsRequired = false, Name=@"operationCounter", DataFormat = global::ProtoBuf.Extended.DataFormat.TwosComplement)]
     [global::System.ComponentModel.DefaultValue(default(long))]
     public long operationCounter
     {
@@ -36,7 +36,7 @@ namespace Alachisoft.NCache.Common.Protobuf
     }
 
     private int _eventCounter = default(int);
-    [global::ProtoBuf.ProtoMember(3, IsRequired = false, Name=@"eventCounter", DataFormat = global::ProtoBuf.DataFormat.TwosComplement)]
+    [global::ProtoBuf.Extended.ProtoMember(3, IsRequired = false, Name=@"eventCounter", DataFormat = global::ProtoBuf.Extended.DataFormat.TwosComplement)]
     [global::System.ComponentModel.DefaultValue(default(int))]
     public int eventCounter
     {
@@ -45,7 +45,7 @@ namespace Alachisoft.NCache.Common.Protobuf
     }
 
     private Alachisoft.NCache.Common.Protobuf.EventCacheItem _item = null;
-    [global::ProtoBuf.ProtoMember(4, IsRequired = false, Name=@"item", DataFormat = global::ProtoBuf.DataFormat.Default)]
+    [global::ProtoBuf.Extended.ProtoMember(4, IsRequired = false, Name=@"item", DataFormat = global::ProtoBuf.Extended.DataFormat.Default)]
     [global::System.ComponentModel.DefaultValue(null)]
     public Alachisoft.NCache.Common.Protobuf.EventCacheItem item
     {
@@ -54,7 +54,7 @@ namespace Alachisoft.NCache.Common.Protobuf
     }
 
     private Alachisoft.NCache.Common.Protobuf.EventCacheItem _oldItem = null;
-    [global::ProtoBuf.ProtoMember(5, IsRequired = false, Name=@"oldItem", DataFormat = global::ProtoBuf.DataFormat.Default)]
+    [global::ProtoBuf.Extended.ProtoMember(5, IsRequired = false, Name=@"oldItem", DataFormat = global::ProtoBuf.Extended.DataFormat.Default)]
     [global::System.ComponentModel.DefaultValue(null)]
     public Alachisoft.NCache.Common.Protobuf.EventCacheItem oldItem
     {
@@ -63,16 +63,16 @@ namespace Alachisoft.NCache.Common.Protobuf
     }
 
     private int _removeReason = default(int);
-    [global::ProtoBuf.ProtoMember(6, IsRequired = false, Name=@"removeReason", DataFormat = global::ProtoBuf.DataFormat.ZigZag)]
+    [global::ProtoBuf.Extended.ProtoMember(6, IsRequired = false, Name=@"removeReason", DataFormat = global::ProtoBuf.Extended.DataFormat.ZigZag)]
     [global::System.ComponentModel.DefaultValue(default(int))]
     public int removeReason
     {
       get { return _removeReason; }
       set { _removeReason = value; }
     }
-    private global::ProtoBuf.IExtension extensionObject;
-    global::ProtoBuf.IExtension global::ProtoBuf.IExtensible.GetExtensionObject(bool createIfMissing)
-      { return global::ProtoBuf.Extensible.GetExtensionObject(ref extensionObject, createIfMissing); }
+    private global::ProtoBuf.Extended.IExtension extensionObject;
+   global::ProtoBuf.Extended.IExtension global::ProtoBuf.Extended.IExtensible.GetExtensionObject(bool createIfMissing)
+      { return global::ProtoBuf.Extended.Extensible.GetExtensionObject(ref extensionObject, createIfMissing); }
   }
   
 }

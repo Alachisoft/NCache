@@ -1,4 +1,4 @@
-//  Copyright (c) 2021 Alachisoft
+//  Copyright (c) 2026 Alachisoft
 //  
 //  Licensed under the Apache License, Version 2.0 (the "License");
 //  you may not use this file except in compliance with the License.
@@ -35,7 +35,6 @@ namespace Alachisoft.NCache.SocketServer
         private GarbageCollectionTimer()
         {
             timerCallback = new TimerCallback(StartColletion);
-            //timer = new Timer(timerCallback, 2, System.Threading.Timeout.Infinite, 0);
         }
 
         /// <summary>
@@ -57,8 +56,6 @@ namespace Alachisoft.NCache.SocketServer
         {
             if (!stopped)
             {
-                //GC.Collect(2);
-
                 if (SocketServer.Logger.IsErrorLogsEnabled) SocketServer.Logger.NCacheLog.Error( "GarbageCollectionTimer.StartCollection", "Generation #2 collected.");
             }
         }
@@ -78,7 +75,6 @@ namespace Alachisoft.NCache.SocketServer
             if (timer == null)
                 timer = new Timer(timerCallback, 2, new TimeSpan(0, dueTime, 0), new TimeSpan(0, period, 0));
             stopped = false;
-
         }
 
         public void Stop()

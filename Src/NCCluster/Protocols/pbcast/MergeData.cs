@@ -1,4 +1,4 @@
-// $Id: MergeData.java,v 1.3 2004/09/06 13:55:40 belaban Exp $
+
 using System;
 using Alachisoft.NCache.Runtime.Serialization.IO;
 using Alachisoft.NCache.Runtime.Serialization;

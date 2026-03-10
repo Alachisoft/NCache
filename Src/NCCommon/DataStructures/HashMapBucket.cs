@@ -1,4 +1,4 @@
-//  Copyright (c) 2021 Alachisoft
+//  Copyright (c) 2026 Alachisoft
 //  
 //  Licensed under the Apache License, Version 2.0 (the "License");
 //  you may not use this file except in compliance with the License.
@@ -18,7 +18,7 @@ using Alachisoft.NCache.Common.Threading;
 using Alachisoft.NCache.Common.Net;
 using Alachisoft.NCache.Runtime.Serialization;
 using Alachisoft.NCache.Runtime.Serialization.IO;
-
+using Newtonsoft.Json;
 
 namespace Alachisoft.NCache.Common.DataStructures
 {
@@ -38,6 +38,10 @@ namespace Alachisoft.NCache.Common.DataStructures
         private Latch _stateTxfrLatch = new Latch(BucketStatus.Functional);
         private object _status_wait_mutex = new object();
 
+        public HashMapBucket()
+        {
+
+        }
         public HashMapBucket(Address address, int id)
         {
             _tempAddress = _permanentAddress = address;
@@ -50,18 +54,19 @@ namespace Alachisoft.NCache.Common.DataStructures
         {
             Status = status;
         }
-
+        [JsonProperty("BucketId")]
         public int BucketId
         {
             get { return _bucketId; }
+            set { _bucketId = value; }
         }
-
+        [JsonProperty("TempAddress")]
         public Address TempAddress
         {
             get { return _tempAddress; }
             set { _tempAddress = value; }
         }
-
+        [JsonProperty("PermenantAddress")]
         public Address PermanentAddress
         {
             get { return _permanentAddress; }
@@ -93,6 +98,7 @@ namespace Alachisoft.NCache.Common.DataStructures
                 Monitor.PulseAll(_status_wait_mutex);
             }
         }
+        [JsonProperty("Status")]
         /// <summary>
         /// Sets the status of the bucket. A bucket can have any of the following status
         /// 1- Functional
@@ -117,6 +123,8 @@ namespace Alachisoft.NCache.Common.DataStructures
                 }
             }
         }
+
+        [JsonIgnore()]
         public Latch StateTxfrLatch
         {
             get { return _stateTxfrLatch; }

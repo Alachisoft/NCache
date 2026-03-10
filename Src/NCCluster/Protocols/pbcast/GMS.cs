@@ -157,7 +157,6 @@ namespace Alachisoft.NGroups.Protocols.pbcast
         private bool _isStarting = true;
         ViewPromise _promise;
 
-        //TODO: how much should this be
         internal int _castViewChangeTimeOut = 15000;
         private Address _memberBeingHandled;
         private bool _isLeavingInProgress;
@@ -433,7 +432,7 @@ namespace Alachisoft.NGroups.Protocols.pbcast
 
             new_view = getNextView(new_mbrs, old_mbrs, suspected_mbrs);
 
-            if (new_view == null) 
+            if (new_view == null)
                 return null;
 
             if (mapsPackage != null)
@@ -612,7 +611,6 @@ namespace Alachisoft.NGroups.Protocols.pbcast
                     // only shun if this member was previously part of the group. avoids problem where multiple
                     // members (e.g. X,Y,Z) join {A,B} concurrently, X is joined first, and Y and Z get view
                     // {A,B,X}, which would cause Y and Z to be shunned as they are not part of the membership
-                    // bela Nov 20 2003
                     if (shun && local_addr != null && prev_members.contains(local_addr))
                     {
                         Stack.NCacheLog.CriticalInfo("I (" + local_addr + ") am being shunned, will leave and " + "rejoin group (prev_members are " + prev_members + ')');
@@ -646,14 +644,12 @@ namespace Alachisoft.NGroups.Protocols.pbcast
                         }
                     }
 
-                    //=========================================
-                    //
                     Stack.NCacheLog.CriticalInfo("GMS.InstallView", "Installing view in GMS Layer.");
 
                     if (Stack.NCacheLog.IsInfoEnabled) Stack.NCacheLog.Info("GMS.InstallView " + new_view.ToString() + "\\n" + "seq tble : " + new_view.SequencerTbl.Count);
                     this._subGroupMbrsMap = new_view.SequencerTbl.Clone() as System.Collections.Hashtable;
                     this._mbrSubGroupMap = new_view.MbrsSubgroupMap.Clone() as System.Collections.Hashtable;
-                    //=========================================
+
 
                     // serialize access to views
                     // assign new_view to view_id
@@ -879,7 +875,6 @@ namespace Alachisoft.NGroups.Protocols.pbcast
                             args[2] = hdr.isStartedAsMirror;
                             args[3] = hdr.GMSId;
                             ThreadPool.QueueUserWorkItem(new WaitCallback(handleJoinrequestAsync), args);
-                            //handleJoinRequest(hdr.mbr, hdr.subGroup_name, hdr.isStartedAsMirror, hdr.GMSId);
                             break;
 
                         case HDR.SPECIAL_JOIN_REQUEST:
@@ -1209,7 +1204,7 @@ namespace Alachisoft.NGroups.Protocols.pbcast
                     msg.putHeader(HeaderType.GMS, hdr);
                     down(new Event(Event.MSG, msg, Priority.High));
                     Object objectState = _stateTransferPromise.WaitResult(_stateTransferQueryTimesout);
-                    //huma: Service crash fix.
+                    //Service crash fix.
                     bool isInstateTransfer = objectState != null ? (bool)objectState : false;
                     if (Stack.NCacheLog.IsInfoEnabled) Stack.NCacheLog.Info("gms.IsClusterInStateTransfer", "result : " + (isInstateTransfer));
                     return isInstateTransfer;
@@ -1251,7 +1246,6 @@ namespace Alachisoft.NGroups.Protocols.pbcast
                         object[] addrs = (object[])evt.Arg;
                         group_addr = (string)addrs[0];
                         subGroup_addr = (string)addrs[1];
-                        //group_addr = (string)evt.Arg;
                         isStartedAsMirror = (bool)addrs[2];
                         twoPhaseConnect = (bool)addrs[3];
                     }
@@ -1370,12 +1364,17 @@ namespace Alachisoft.NGroups.Protocols.pbcast
                 shun = Convert.ToBoolean(props["shun"]);
                 props.Remove("shun");
             }
-          
-            //if (props.Contains("env_name"))
-            //{
-            //    environmentName = Convert.ToString(props["env_name"]);                
-            //    props.Remove("env_name");
-            //}
+            if (props.Contains("nc_version"))
+            {
+                versionType = Convert.ToString(props["nc_version"]);
+                isExpress = Version.IsExpress(versionType);
+                props.Remove("nc_version");
+            }
+            if (props.Contains("env_name"))
+            {
+                environmentName = Convert.ToString(props["env_name"]);                
+                props.Remove("env_name");
+            }
             
             if (props.Contains("is_part_replica"))
             {
@@ -1468,11 +1467,62 @@ namespace Alachisoft.NGroups.Protocols.pbcast
             view_id = null;
         }
 
+        internal void acquireHashmap(System.Collections.ArrayList mbrs, bool isJoining, string subGroup, bool isStartedAsMirror)
+        {
+            int maxTries = 3;
+            //new code for getting hash map from caching layer.
+            //main mutex dis-allow concurrent generations of map by two different threads
+            lock (_mapMainMutex)
+            {
+
+                lock (acquireMap_mutex)
+                {
+                    //-> In NCache there was a problem when sometime on starting the cache the 
+                    //Everything get's hang we get null reference exception.
+                    //The problem fixed here was that we were not reseting the _hashmap before requesting the 
+                    //new hashmap and in that case even when we wont get hashmap in three seconds we sent the old hashmap
+                    //to the joining node. For more details you can compare this code with the previous version in VSS.
+                    Event evt = new Event();
+                    evt.Type = Event.HASHMAP_REQ;
+                    evt.Arg = new object[] { mbrs, isJoining, subGroup, isStartedAsMirror };
+                    _hashmap = null; //Reseting because it will be set by the down() method of GMS when upper layer will give the new hashmap
+                    lock (evt)
+                    {
+                        System.Threading.ThreadPool.QueueUserWorkItem(new System.Threading.WaitCallback(sendUp), evt);
+                        Monitor.Wait(evt);
+                    }
+                    Stack.NCacheLog.CriticalInfo("GMS.AcquireHashmap", (isStartedAsMirror ? "Mirror" : "") + "request the caching layer for hashmap.");
+                    if (Stack.NCacheLog.IsInfoEnabled) Stack.NCacheLog.Info("pbcast.GMS.acquireHashmap()", (isStartedAsMirror ? "Mirror" : "") + " request the caching layer for hashmap");
+                    //we wait for maximum 3 seconds to acquire a hashmap ( 3 * 3[retries]] = 9 seconds MAX)
+                    do
+                    {
+
+                        Stack.NCacheLog.CriticalInfo("GMS.AcquireHashmap", "Going to wait on acquireMap_mutex try->" + maxTries.ToString());
+                        bool acquired = System.Threading.Monitor.Wait(acquireMap_mutex, 3000);
+                        Stack.NCacheLog.CriticalInfo("GMS.AcquireHashmap", "Return from wait on acquireMap_mutex try->" + maxTries.ToString());
+
+                        if (_hashmap != null)
+                        {
+                            break;
+                        }
+
+                        maxTries--;
+                        if (Stack.NCacheLog.IsInfoEnabled) Stack.NCacheLog.Info("pbcast.GMS.acquireHashmap()", (isStartedAsMirror ? "Mirror" : "") + "null map received... requesting the hashmap again");
+
+                    } while (maxTries > 0);
+                }
+            }
+
+            if (maxTries < 0 && _hashmap == null)
+            {
+                Stack.NCacheLog.Error("GMS.AcquireHashmap", "Hashmap acquisition failure for :" + Global.CollectionToString(mbrs) + " joining? " + isJoining);
+            }
+            if (Stack.NCacheLog.IsInfoEnabled) Stack.NCacheLog.Info("pbcast.GMS.acquireHashmap()", (isStartedAsMirror ? "Mirror" : "") + "request for hashmap end");
+        }
 
         internal bool allowJoin(Address mbr, bool isStartedAsMirror)
         {
            
-            //Stack.NCacheLog.DevTrace("gms.allowJoin", "start");
 
             if (!isPartReplica) return true;
             //new code for disabling the join while in state transfer.
@@ -1690,9 +1740,9 @@ namespace Alachisoft.NGroups.Protocols.pbcast
             if (allowJoin(mbr, isStartedAsMirror))
             {
                 Stack.NCacheLog.Debug("pbcast.GMS.handleJoinRequest()", " joining allowed");
-             
+                bool acauireHashmap = true;
 
-                join_rsp = impl.handleJoin(mbr, subGroup_name, isStartedAsMirror, gmsId);
+                join_rsp = impl.handleJoin(mbr, subGroup_name, isStartedAsMirror, gmsId, ref acauireHashmap);
 
                 if (join_rsp == null)
                     Stack.NCacheLog.Error("pbcast.GMS.handleJoinRequest()", impl.GetType().ToString() + ".handleJoin(" + mbr + ") returned null: will not be able to multicast new view");
@@ -1702,7 +1752,10 @@ namespace Alachisoft.NGroups.Protocols.pbcast
                 System.Collections.ArrayList mbrs = new System.Collections.ArrayList(1);
                 mbrs.Add(mbr);
                 
-               
+                //some time coordinator gms impl returns the same existing view in join response. 
+                //we dont need to acquire the hashmap again in this case coz that hashmap has already been acquired.
+                if (acauireHashmap)
+                    acquireHashmap(mbrs, true, subGroup_name, isStartedAsMirror);
 
                 // 2. Send down a local TMP_VIEW event. This is needed by certain layers (e.g. NAKACK) to compute correct digest
                 //    in case client's next request (e.g. getState()) reaches us *before* our own view change multicast.

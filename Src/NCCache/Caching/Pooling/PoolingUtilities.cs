@@ -1,4 +1,4 @@
-﻿//  Copyright (c) 2021 Alachisoft
+﻿//  Copyright (c) 2026 Alachisoft
 //  
 //  Licensed under the Apache License, Version 2.0 (the "License");
 //  you may not use this file except in compliance with the License.
@@ -21,12 +21,10 @@ namespace Alachisoft.NCache.Caching.Pooling
     {
         public static void MarkFree(this IEnumerable<ILeasable> leasables, int modulerefId)
         {
-
         }
 
         public static void MarkInUse(this IEnumerable<ILeasable> leasables, int modulerefId)
         {
-
         }
 
         public static T SwapSimpleLeasables<T>(T leasableOne, T leasableTwo) where T : SimpleLease

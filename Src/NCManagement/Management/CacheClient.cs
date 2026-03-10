@@ -1,4 +1,4 @@
-//  Copyright (c) 2021 Alachisoft
+//  Copyright (c) 2026 Alachisoft
 //  
 //  Licensed under the Apache License, Version 2.0 (the "License");
 //  you may not use this file except in compliance with the License.
@@ -94,15 +94,8 @@ namespace Alachisoft.NCache.Management
 		/// <returns>A reference to <see cref="Cache"/> object.</returns>
         private static Alachisoft.NCache.Caching.Cache ConnectCacheInstance(CacheConfig data, TimeSpan timeout, bool autoStart)
 		{
-            CacheService ncache;
-            if (RuntimeContext.CurrentContext == RtContextValue.JVCACHE)
-            {
-                ncache = new JvCacheRPCService(data.ServerName, (int)data.Port);
-            }
-            else
-            {
-                ncache = new NCacheRPCService(data.ServerName, (int)data.Port);
-            }            
+            CacheService ncache = new NCacheRPCService(data.ServerName, (int)data.Port);
+                      
 			try
 			{
 				ncache.UseTcp = data.UseTcp;

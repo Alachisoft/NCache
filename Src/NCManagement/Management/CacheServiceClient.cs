@@ -1,4 +1,4 @@
-//  Copyright (c) 2021 Alachisoft
+//  Copyright (c) 2026 Alachisoft
 //  
 //  Licensed under the Apache License, Version 2.0 (the "License");
 //  you may not use this file except in compliance with the License.
@@ -17,7 +17,6 @@ using System.Collections;
 using Alachisoft.NCache.ServiceControl;
 using Alachisoft.NCache.Common;
 using Alachisoft.NCache.Config.Dom;
-using Renci.SshNet.Common;
 using Alachisoft.NCache.Management.ServiceControl;
 
 namespace Alachisoft.NCache.Management
@@ -39,9 +38,9 @@ namespace Alachisoft.NCache.Management
         /// <summary> Bind Ip address </summary>
         private string _bindIpAddress;       
         /// <summary> User Id used for authentication and authorization </summary>
-        private string _userId = Security.UserName;
+        private string _userId ="";
         /// <summary> Password used for authentication and authorization </summary>
-        private string _password = Security.Passwd;
+        private string _password = "";
 
         private bool _useRemoting = false;
 
@@ -89,27 +88,13 @@ namespace Alachisoft.NCache.Management
         protected virtual void Initialize()
         {
 
-            CacheService cacheService = null;
-          
-            if (RuntimeContext.CurrentContext == RtContextValue.JVCACHE)
-            {
-                cacheService = new JvCacheRPCService(_address, _port);
-                cacheService.OnGetSecurityCredentials += new EventHandler<CredentialsEventArgs>(OnGetSecurityCredentials);   
-             
-            }
-            else
-            {
-                cacheService = new NCacheRPCService(_address, _port);
-            }
+            CacheService cacheService  = new NCacheRPCService(_address, _port);
 
             try
             {
                 _server = cacheService.GetCacheServer(TimeSpan.FromSeconds(7));
             }
-            catch (SshAuthenticationException)
-            {
-                throw new Exception("Could not authenticate on server. Incorrect Username or Password.");
-            }
+           
             catch (Exception)
             {
                 throw;

@@ -12,14 +12,14 @@
 // Note: requires additional types generated from: Exception.proto
 namespace Alachisoft.NCache.Common.Protobuf
 {
-  [global::System.Serializable, global::ProtoBuf.ProtoContract(Name=@"NCManagementResponse")]
-  public partial class NCManagementResponse : global::ProtoBuf.IExtensible
+  [global::System.Serializable, global::ProtoBuf.Extended.ProtoContract(Name=@"NCManagementResponse")]
+  public partial class NCManagementResponse : global::ProtoBuf.Extended.IExtensible
   {
     public NCManagementResponse() {}
     
 
     private long _requestId = default(long);
-    [global::ProtoBuf.ProtoMember(1, IsRequired = false, Name=@"requestId", DataFormat = global::ProtoBuf.DataFormat.TwosComplement)]
+    [global::ProtoBuf.Extended.ProtoMember(1, IsRequired = false, Name=@"requestId", DataFormat = global::ProtoBuf.Extended.DataFormat.TwosComplement)]
     [global::System.ComponentModel.DefaultValue(default(long))]
     public long requestId
     {
@@ -28,7 +28,7 @@ namespace Alachisoft.NCache.Common.Protobuf
     }
 
     private Alachisoft.NCache.Common.Protobuf.NCManagementResponse.Type _responseType = Alachisoft.NCache.Common.Protobuf.NCManagementResponse.Type.START_CACHE;
-    [global::ProtoBuf.ProtoMember(2, IsRequired = false, Name=@"responseType", DataFormat = global::ProtoBuf.DataFormat.TwosComplement)]
+    [global::ProtoBuf.Extended.ProtoMember(2, IsRequired = false, Name=@"responseType", DataFormat = global::ProtoBuf.Extended.DataFormat.TwosComplement)]
     [global::System.ComponentModel.DefaultValue(Alachisoft.NCache.Common.Protobuf.NCManagementResponse.Type.START_CACHE)]
     public Alachisoft.NCache.Common.Protobuf.NCManagementResponse.Type responseType
     {
@@ -37,7 +37,7 @@ namespace Alachisoft.NCache.Common.Protobuf
     }
 
     private Alachisoft.NCache.Common.Protobuf.Exception _exception = null;
-    [global::ProtoBuf.ProtoMember(3, IsRequired = false, Name=@"exception", DataFormat = global::ProtoBuf.DataFormat.Default)]
+    [global::ProtoBuf.Extended.ProtoMember(3, IsRequired = false, Name=@"exception", DataFormat = global::ProtoBuf.Extended.DataFormat.Default)]
     [global::System.ComponentModel.DefaultValue(null)]
     public Alachisoft.NCache.Common.Protobuf.Exception exception
     {
@@ -46,24 +46,24 @@ namespace Alachisoft.NCache.Common.Protobuf
     }
 
     private Alachisoft.NCache.Common.Protobuf.StartCacheResponse _startCache = null;
-    [global::ProtoBuf.ProtoMember(4, IsRequired = false, Name=@"startCache", DataFormat = global::ProtoBuf.DataFormat.Default)]
+    [global::ProtoBuf.Extended.ProtoMember(4, IsRequired = false, Name=@"startCache", DataFormat = global::ProtoBuf.Extended.DataFormat.Default)]
     [global::System.ComponentModel.DefaultValue(null)]
     public Alachisoft.NCache.Common.Protobuf.StartCacheResponse startCache
     {
       get { return _startCache; }
       set { _startCache = value; }
     }
-    [global::ProtoBuf.ProtoContract(Name=@"Type")]
+    [global::ProtoBuf.Extended.ProtoContract(Name=@"Type")]
     public enum Type
     {
             
-      [global::ProtoBuf.ProtoEnum(Name=@"START_CACHE", Value=1)]
+      [global::ProtoBuf.Extended.ProtoEnum(Name=@"START_CACHE", Value=1)]
       START_CACHE = 1
     }
   
-    private global::ProtoBuf.IExtension extensionObject;
-    global::ProtoBuf.IExtension global::ProtoBuf.IExtensible.GetExtensionObject(bool createIfMissing)
-      { return global::ProtoBuf.Extensible.GetExtensionObject(ref extensionObject, createIfMissing); }
+    private global::ProtoBuf.Extended.IExtension extensionObject;
+   global::ProtoBuf.Extended.IExtension global::ProtoBuf.Extended.IExtensible.GetExtensionObject(bool createIfMissing)
+      { return global::ProtoBuf.Extended.Extensible.GetExtensionObject(ref extensionObject, createIfMissing); }
   }
   
 }

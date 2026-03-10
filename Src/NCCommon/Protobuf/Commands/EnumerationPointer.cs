@@ -10,14 +10,14 @@
 // Generated from: EnumerationPointer.proto
 namespace Alachisoft.NCache.Common.Protobuf
 {
-  [global::System.Serializable, global::ProtoBuf.ProtoContract(Name=@"EnumerationPointer")]
-  public partial class EnumerationPointer : global::ProtoBuf.IExtensible
+  [global::System.Serializable, global::ProtoBuf.Extended.ProtoContract(Name=@"EnumerationPointer")]
+  public partial class EnumerationPointer : global::ProtoBuf.Extended.IExtensible
   {
     public EnumerationPointer() {}
     
 
     private int _chunkId = default(int);
-    [global::ProtoBuf.ProtoMember(1, IsRequired = false, Name=@"chunkId", DataFormat = global::ProtoBuf.DataFormat.ZigZag)]
+    [global::ProtoBuf.Extended.ProtoMember(1, IsRequired = false, Name=@"chunkId", DataFormat = global::ProtoBuf.Extended.DataFormat.ZigZag)]
     [global::System.ComponentModel.DefaultValue(default(int))]
     public int chunkId
     {
@@ -26,7 +26,7 @@ namespace Alachisoft.NCache.Common.Protobuf
     }
 
     private string _id = "";
-    [global::ProtoBuf.ProtoMember(2, IsRequired = false, Name=@"id", DataFormat = global::ProtoBuf.DataFormat.Default)]
+    [global::ProtoBuf.Extended.ProtoMember(2, IsRequired = false, Name=@"id", DataFormat = global::ProtoBuf.Extended.DataFormat.Default)]
     [global::System.ComponentModel.DefaultValue("")]
     public string id
     {
@@ -35,16 +35,16 @@ namespace Alachisoft.NCache.Common.Protobuf
     }
 
     private bool _isDisposed = default(bool);
-    [global::ProtoBuf.ProtoMember(3, IsRequired = false, Name=@"isDisposed", DataFormat = global::ProtoBuf.DataFormat.Default)]
+    [global::ProtoBuf.Extended.ProtoMember(3, IsRequired = false, Name=@"isDisposed", DataFormat = global::ProtoBuf.Extended.DataFormat.Default)]
     [global::System.ComponentModel.DefaultValue(default(bool))]
     public bool isDisposed
     {
       get { return _isDisposed; }
       set { _isDisposed = value; }
     }
-    private global::ProtoBuf.IExtension extensionObject;
-    global::ProtoBuf.IExtension global::ProtoBuf.IExtensible.GetExtensionObject(bool createIfMissing)
-      { return global::ProtoBuf.Extensible.GetExtensionObject(ref extensionObject, createIfMissing); }
+    private global::ProtoBuf.Extended.IExtension extensionObject;
+   global::ProtoBuf.Extended.IExtension global::ProtoBuf.Extended.IExtensible.GetExtensionObject(bool createIfMissing)
+      { return global::ProtoBuf.Extended.Extensible.GetExtensionObject(ref extensionObject, createIfMissing); }
   }
   
 }

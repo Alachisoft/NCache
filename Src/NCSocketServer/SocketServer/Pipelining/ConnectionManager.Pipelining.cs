@@ -1,5 +1,4 @@
-﻿#if SERVER || NETCORE
-using Alachisoft.NCache.Common;
+﻿using Alachisoft.NCache.Common;
 using Alachisoft.NCache.Common.Monitoring;
 using Alachisoft.NCache.Common.Util;
 using Alachisoft.NCache.SocketServer.MultiBufferReceive;
@@ -11,29 +10,39 @@ using System.Buffers;
 using System.Collections.Generic;
 using System.Diagnostics;
 using System.IO;
+#if SERVER || NETCORE
 using System.IO.Pipelines;
+#endif
 using System.Linq;
 using System.Net.Sockets;
 using System.Runtime.InteropServices;
 using System.Text;
 using System.Threading.Tasks;
 
+
 namespace Alachisoft.NCache.SocketServer
 {
-    public partial class ConnectionManager
+    public partial class ConnectionManager : IRequestProcessor
     {
+#if SERVER || NETCORE
         internal static int PauseWriterThreshold = ServiceConfiguration.PauseWriterThreshold; 
         internal static int ResumeWriterThreshold = PauseWriterThreshold/2;
 
-        async Task<Task> ProcessClientRequest(Socket socket, ClientManager clientManager)
+        async Task<Task> ProcessClientRequest(Socket socket, ClientManager clientManager, Stream stream = null)
         {
+            clientManager.InitializeClientStream();
             var pipe = new Pipe(new PipeOptions(null, null, null, PauseWriterThreshold, ResumeWriterThreshold));
-            RequestReader requestReader = new RequestReader(clientManager, _cmdManager);
+            RequestReader requestReader = new RequestReader(clientManager, _cmdManager,this);
             Task writing = FillPipeAsync(socket, pipe.Writer, clientManager);
             Task reading = ReadPipeAsync(pipe.Reader, clientManager, requestReader);
             return Task.WhenAll(reading, writing);
         }
-
+#endif
+        public void Process(ICommand procCommand)
+        {
+            _cmdManager.ProcessCommand(procCommand.ClientManager, procCommand.Command, procCommand.CommandType, procCommand.AcknowledgementId, procCommand.Stats, false);
+        }
+#if SERVER || NETCORE
         async Task FillPipeAsync(Socket socket, PipeWriter writer, ClientManager clientManager)
         {
             try
@@ -44,30 +53,35 @@ namespace Alachisoft.NCache.SocketServer
                 {
                     // Allocate at least 512 bytes from the PipeWriter
                     Memory<byte> memory = writer.GetMemory(minimumBufferSize);
+                    int bytesRead = 0;
+                    if (!socket.Connected)
+                        break;
 
-                    if (MemoryMarshal.TryGetArray(memory, out ArraySegment<byte> arraySegment))
+                    if (clientManager.HasSecureConnection)
                     {
-                        if (!socket.Connected)
-                            break;
-
-                        int bytesRead = await socket.ReceiveAsync(arraySegment, SocketFlags.None);
-
-                        clientManager.AddToClientsBytesRecieved(bytesRead);
-
-                        if (SocketServer.IsServerCounterEnabled)
-                        {
-                            PerfStatsColl.IncrementBytesReceivedPerSecStats(bytesRead);
-                        }
-
-                        if (bytesRead == 0)
-                        {
-                            DisposeClient(clientManager);
-                            break;
-                        }
-                        // Tell the PipeWriter how much was read from the Socket
-                        writer.Advance(bytesRead);
+                        var buffer = memory.ToArray();
+                        bytesRead = await clientManager.ClientStream.ReadAsync(buffer, 0, buffer.Length);
+                        buffer.AsSpan().Slice(0, bytesRead).CopyTo(memory.Span);
+                    }
+                    else if (MemoryMarshal.TryGetArray(memory, out ArraySegment<byte> arraySegment))
+                    {
+                        bytesRead = await socket.ReceiveAsync(arraySegment, SocketFlags.None);
                     }
 
+                    clientManager.AddToClientsBytesRecieved(bytesRead);
+
+                    if (SocketServer.IsServerCounterEnabled)
+                    {
+                        PerfStatsColl.IncrementBytesReceivedPerSecStats(bytesRead);
+                    }
+
+                    if (bytesRead == 0)
+                    {
+                        DisposeClient(clientManager);
+                        break;
+                    }
+                    // Tell the PipeWriter how much was read from the Socket
+                    writer.Advance(bytesRead);
 
                     // Make the data available to the PipeReader
                     FlushResult result = await writer.FlushAsync();
@@ -84,20 +98,19 @@ namespace Alachisoft.NCache.SocketServer
             }
             catch (SocketException so_ex)
             {
-                if (ServerMonitor.MonitorActivity) ServerMonitor.LogClientActivity("ConMgr.RecvClbk", "Error :" + so_ex.ToString());
+                if (ServerMonitor.MonitorActivity) ServerMonitor.LogClientActivity("ConMgr.FillPipeAsync", "Error :" + so_ex.ToString());
 
                 DisposeClient(clientManager);
             }
             catch (Exception e)
             {
-                var clientIsDisposed = clientManager.IsDisposed;
                 DisposeClient(clientManager);
 
-                if(!clientIsDisposed)
+                if (!clientManager.IsDisposed)
                     AppUtil.LogEvent(e.ToString(), EventLogEntryType.Error);
 
-                if (ServerMonitor.MonitorActivity) ServerMonitor.LogClientActivity("ConMgr.RecvClbk", "Error :" + e.ToString());
-                if (SocketServer.Logger.IsErrorLogsEnabled) SocketServer.Logger.NCacheLog.Error("ConnectionManager.ReceiveCallback", clientManager.ToString() + " Error " + e.ToString());
+                if (ServerMonitor.MonitorActivity) ServerMonitor.LogClientActivity("ConMgr.FillPipeAsync", "Error :" + e.ToString());
+                if (SocketServer.Logger.IsErrorLogsEnabled) SocketServer.Logger.NCacheLog.Error("ConnectionManager.FillPipeAsync", clientManager.ToString() + " Error " + e.ToString());
 
                 try
                 {
@@ -111,11 +124,10 @@ namespace Alachisoft.NCache.SocketServer
                 {
 
                 }
-                
+
             }
             finally
             {
-                //  clientManager.StopCommandExecution();
                 if (ServerMonitor.MonitorActivity) ServerMonitor.StopClientActivity(clientManager.ClientID);
             }
         }
@@ -149,7 +161,7 @@ namespace Alachisoft.NCache.SocketServer
             }
             catch (SocketException so_ex)
             {
-                if (ServerMonitor.MonitorActivity) ServerMonitor.LogClientActivity("ConMgr.RecvClbk", "Error :" + so_ex.ToString());
+                if (ServerMonitor.MonitorActivity) ServerMonitor.LogClientActivity("ConMgr.FillPipeAsync", "Error :" + so_ex.ToString());
 
                 DisposeClient(clientManager);
 
@@ -162,8 +174,8 @@ namespace Alachisoft.NCache.SocketServer
                 if (!clientIsDisposed)
                     AppUtil.LogEvent(e.ToString(), EventLogEntryType.Error);
 
-                if (ServerMonitor.MonitorActivity) ServerMonitor.LogClientActivity("ConMgr.RecvClbk", "Error :" + e.ToString());
-                if (SocketServer.Logger.IsErrorLogsEnabled) SocketServer.Logger.NCacheLog.Error("ConnectionManager.ReceiveCallback", clientManager.ToString() + " Error " + e.ToString());
+                if (ServerMonitor.MonitorActivity) ServerMonitor.LogClientActivity("ConMgr.FillPipeAsync", "Error :" + e.ToString());
+                if (SocketServer.Logger.IsErrorLogsEnabled) SocketServer.Logger.NCacheLog.Error("ConnectionManager.FillPipeAsync", clientManager.ToString() + " Error " + e.ToString());
 
                 try
                 {
@@ -186,7 +198,8 @@ namespace Alachisoft.NCache.SocketServer
                 if (ServerMonitor.MonitorActivity) ServerMonitor.StopClientActivity(clientManager.ClientID);
             }
         }
+#endif
     }
 }
-#endif
+
 

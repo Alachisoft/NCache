@@ -1,4 +1,4 @@
-//  Copyright (c) 2021 Alachisoft
+//  Copyright (c) 2026 Alachisoft
 //  
 //  Licensed under the Apache License, Version 2.0 (the "License");
 //  you may not use this file except in compliance with the License.
@@ -15,7 +15,9 @@ using System;
 using System.Collections;
 using System.Text;
 using Alachisoft.NCache.Common.Configuration;
+
 using Alachisoft.NCache.Runtime.Serialization;
+
 using Runtime = Alachisoft.NCache.Runtime;
 
 namespace Alachisoft.NCache.Config.NewDom
@@ -69,25 +71,10 @@ namespace Alachisoft.NCache.Config.NewDom
             set { initialHosts = value; }
         }
 
-      
         public int NumInitHosts
         {
             get { return numInitHosts; }
             set { numInitHosts = value; }
-        }
-
-        [ConfigurationAttribute("join_retry_count")]
-        public int JoinRetries
-        {
-            get { return joinRetries; }
-            set { joinRetries = value; }
-        }
-
-        [ConfigurationAttribute("join_retry_timeout")]
-        public int JoinRetryInterval
-        {
-            get { return joinRetryInterval; }
-            set { joinRetryInterval = value; }
         }
 
 

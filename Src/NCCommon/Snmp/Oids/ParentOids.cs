@@ -1,4 +1,4 @@
-﻿//  Copyright (c) 2021 Alachisoft
+﻿//  Copyright (c) 2026 Alachisoft
 //  
 //  Licensed under the Apache License, Version 2.0 (the "License");
 //  you may not use this file except in compliance with the License.
@@ -19,9 +19,29 @@ namespace Alachisoft.NCache.Common.Snmp.Oids
     {
         public const string Oid = "1.3.6.1.4.1.12";
         public const string NCache = Oid + ".1";
-        public const string Server = NCache + ".0";
+
+        #region ___________Cache Table_______________
         public const string Cache = NCache + ".1";
+        public const string CacheTable = Cache + ".1";
+        public const string CacheEntry = CacheTable + ".1";
+        #endregion
+
+        #region ___________Client Table_______________
         public const string Client = NCache + ".2";
+        public const string ClientTable = Client + ".1";
+        public const string ClientEntry = ClientTable + ".1";
+        #endregion
+
+        #region ___________Bridge Table_______________
+        public const string Bridge = NCache + ".3";
+        public const string BridgeTable = Bridge + ".1";
+        public const string BridgeEntry = BridgeTable + ".1";
+        #endregion
+        #region __________Bridge Cache Table______________
+        public const string BridgedCache = NCache + ".4";
+        public const string BridgedCacheTable = BridgedCache + ".1";
+        public const string BridgedCacheEntry = BridgedCacheTable + ".1";
+        #endregion
 
     }
 }

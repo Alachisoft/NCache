@@ -1,17 +1,4 @@
-﻿//  Copyright (c) 2021 Alachisoft
-//  
-//  Licensed under the Apache License, Version 2.0 (the "License");
-//  you may not use this file except in compliance with the License.
-//  You may obtain a copy of the License at
-//  
-//     http://www.apache.org/licenses/LICENSE-2.0
-//  
-//  Unless required by applicable law or agreed to in writing, software
-//  distributed under the License is distributed on an "AS IS" BASIS,
-//  WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
-//  See the License for the specific language governing permissions and
-//  limitations under the License
-using Alachisoft.NCache.Automation.ToolsOutput;
+﻿using Alachisoft.NCache.Automation.ToolsOutput;
 using Alachisoft.NCache.Automation.ToolsParametersBase;
 using Alachisoft.NCache.Automation.Util;
 using Alachisoft.NCache.Common;
@@ -42,13 +29,7 @@ namespace Alachisoft.NCache.Automation.ToolsBase
         /// </summary>
         public bool ValidateParameters()
         {
-            if (string.IsNullOrEmpty(Name))
-            {
-               OutputProvider.WriteErrorLine("Error: CacheId not specified");
-               return false;
-            }
-
-
+           
             if (string.IsNullOrEmpty(Server))
             {
                 OutputProvider.WriteErrorLine("Error: Server not specified");
@@ -72,15 +53,16 @@ namespace Alachisoft.NCache.Automation.ToolsBase
                 {
                     if (!System.IO.Path.HasExtension(Path))
                     {
-                        _filename = Name + ".ncconf";
+                        if (!string.IsNullOrEmpty(Name)) _filename = Name + ".ncconf";
+                        else _filename = "caches-config.ncconf";
                         Path =  Path + System.IO.Path.DirectorySeparatorChar + _filename;
                     }
                 }
                 else
                 {
-                    //Path = System.IO.Path.GetDirectoryName(System.Reflection.Assembly.GetExecutingAssembly().Location);
                     Path = System.IO.Path.Combine(AppUtil.InstallDir, @"bin"+ System.IO.Path.DirectorySeparatorChar + "tools");
-                    _filename = Name + ".ncconf";
+                    if (!string.IsNullOrEmpty(Name)) _filename = Name + ".ncconf";
+                    else _filename = "caches-config.ncconf";
                     Path = Path + System.IO.Path.DirectorySeparatorChar + _filename;
                 }
 
@@ -108,19 +90,37 @@ namespace Alachisoft.NCache.Automation.ToolsBase
 
                 if (cacheServer != null)
                 {
-                    Alachisoft.NCache.Config.NewDom.CacheServerConfig serverConfig = cacheServer.GetNewConfiguration(Name);
-                    if (serverConfig == null)
-                        throw new Exception("Specified cache is not registered on the given server.");
-                   serverConfig.CacheDeployment = null;
-                   OutputProvider.WriteLine("Creating configuration for cache '{0}' registered on server '{1}:{2}'.", Name, NCache.ServerName, NCache.Port);
-                   StringBuilder xml = new StringBuilder();
-                   List<Alachisoft.NCache.Config.NewDom.CacheServerConfig> configurations = new List<Alachisoft.NCache.Config.NewDom.CacheServerConfig>();
-                   configurations.Add(serverConfig);
-                   ConfigurationBuilder builder = new ConfigurationBuilder(configurations.ToArray());
-                   builder.RegisterRootConfigurationObject(typeof(Alachisoft.NCache.Config.NewDom.CacheServerConfig));
-                   xml.Append(builder.GetXmlString());
-                   WriteXmlToFile(xml.ToString());
-                   OutputProvider.WriteLine("Cache configuration saved successfully at " + Path + ".");
+                    StringBuilder xml = new StringBuilder();
+                    List<Alachisoft.NCache.Config.NewDom.CacheServerConfig> configurations = new List<Alachisoft.NCache.Config.NewDom.CacheServerConfig>();
+
+                    if (!string.IsNullOrEmpty(Name))
+                    {
+                        Alachisoft.NCache.Config.NewDom.CacheServerConfig serverConfig = cacheServer.GetNewConfiguration(Name);
+
+                        if (serverConfig == null)
+                            throw new Exception("Specified cache is not registered on the given server.");
+                        serverConfig.CacheDeployment = null;
+                        OutputProvider.WriteLine("Creating configuration for cache '{0}' registered on server '{1}:{2}'.", Name, NCache.ServerName, NCache.Port);
+                        configurations.Add(serverConfig);
+                        ConfigurationBuilder builder = new ConfigurationBuilder(configurations.ToArray());
+                        builder.RegisterRootConfigurationObject(typeof(Alachisoft.NCache.Config.NewDom.CacheServerConfig));
+                        xml.Append(builder.GetXmlString());
+                        WriteXmlToFile(xml.ToString());
+                        OutputProvider.WriteLine("Cache configuration saved successfully at " + Path + ".");
+                    }
+                    else
+                    {
+                        Alachisoft.NCache.Config.NewDom.CacheServerConfig[] serverConfigs = cacheServer.GetCacheServerConfiguration();
+                        if (serverConfigs == null)
+                            throw new Exception("No configured cache(s) found on the server.");
+                        OutputProvider.WriteLine("Creating configuration for caches registered on server '{0}:{1}'.", NCache.ServerName, NCache.Port);
+                        foreach (Alachisoft.NCache.Config.NewDom.CacheServerConfig serverConfig in serverConfigs)
+                        {
+                            configurations.Add(serverConfig);
+                        }
+                        SaveConfiguration(configurations.ToArray());
+                        OutputProvider.WriteLine("Configuration saved successfully at " + Path + ".");
+                    }
                 }
 
             }
@@ -136,6 +136,20 @@ namespace Alachisoft.NCache.Automation.ToolsBase
                 if (cacheServer != null)
                     cacheServer.Dispose();
             }
+        }
+
+        public void SaveConfiguration(object[] configuration)
+        {
+            StringBuilder xml = new StringBuilder();
+            xml.Append("<configuration>\r\n");
+            if (configuration != null && configuration.Length > 0)
+            {
+                ConfigurationBuilder builder = new ConfigurationBuilder(configuration);
+                builder.RegisterRootConfigurationObject(typeof(Alachisoft.NCache.Config.NewDom.CacheServerConfig));
+                xml.Append(builder.GetXmlString());
+            }
+            xml.Append("\r\n</configuration>");
+            WriteXmlToFile(xml.ToString());
         }
 
         private void WriteXmlToFile(string xml)

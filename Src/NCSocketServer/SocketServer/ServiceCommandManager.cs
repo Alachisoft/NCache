@@ -1,4 +1,4 @@
-﻿//  Copyright (c) 2021 Alachisoft
+﻿//  Copyright (c) 2026 Alachisoft
 //  
 //  Licensed under the Apache License, Version 2.0 (the "License");
 //  you may not use this file except in compliance with the License.
@@ -21,6 +21,7 @@ using Alachisoft.NCache.Caching;
 using Alachisoft.NCache.SocketServer.Statistics;
 using System.Collections;
 using Alachisoft.NCache.Common.Pooling;
+using Alachisoft.NCache.Common;
 
 namespace Alachisoft.NCache.SocketServer
 {
@@ -38,20 +39,26 @@ namespace Alachisoft.NCache.SocketServer
             if (ServerMonitor.MonitorActivity) ServerMonitor.LogClientActivity("CmdMgr.PrsCmd", "enter");
             if (ServerMonitor.MonitorActivity) ServerMonitor.LogClientActivity("CmdMgr.PrsCmd", "" + command);
             if (SocketServer.Logger.IsDetailedLogsEnabled) SocketServer.Logger.NCacheLog.Info("ConnectionManager.ReceiveCallback", clientManager.ToString() + " COMMAND to be executed : " + command.type.ToString() + " RequestId :" + command.requestID);
+            var buildType = InstallationTypeProvider.Provider.BuildType();
 
             bool clientDisposed = false;
 
             CommandBase incommingCmd = null;
             bool isUnsafeCommand = false;
 
-            switch (command.type) 
+            switch (command.type)
             {
                 case Alachisoft.NCache.Common.Protobuf.Command.Type.INIT:
                     Alachisoft.NCache.Common.Protobuf.InitCommand initCommand = command.initCommand;
                     initCommand.requestId = command.requestID;
-                    if (SocketServer.Logger.IsDetailedLogsEnabled) SocketServer.Logger.NCacheLog.Info("ConnectionManager.ReceiveCallback", clientManager.ToString() + " RequestId :" + command.requestID);
+                    if (SocketServer.Logger.IsDetailedLogsEnabled) SocketServer.Logger.NCacheLog.Info("ServiceCommandManager.ProcessCommand", clientManager.ToString() + " client_edition : " + initCommand.clientEditionId + " server_build: " + buildType + " RequestId :" + command.requestID);
+
+                    if (InstallationTypeProvider.Provider.IsServerInstallation)
+                    {
                         incommingCmd = new ServiceInitializeCommand(base.RequestLogger.RequestLoggingEnabled, acknowledgementId);
-                 break;
+                    }
+                   
+                    break;
 
                 case Alachisoft.NCache.Common.Protobuf.Command.Type.GET_OPTIMAL_SERVER:
                     command.getOptimalServerCommand.requestId = command.requestID;
@@ -71,6 +78,15 @@ namespace Alachisoft.NCache.SocketServer
                 case Alachisoft.NCache.Common.Protobuf.Command.Type.GET_CACHE_MANAGEMENT_PORT:
                     command.getCacheManagementPortCommand.requestId = command.requestID;
                     incommingCmd = new GetCacheManagementPortCommand();
+                    break;
+
+                case Alachisoft.NCache.Common.Protobuf.Command.Type.GET_LC_DATA:
+                    command.getLCCommand.requestId = command.requestID;
+                    incommingCmd = new GetLCCommand();
+                    break;
+                case Alachisoft.NCache.Common.Protobuf.Command.Type.GET_SERVER_IDENTITY:
+                    command.getServerIdentityCommand.requestId = command.requestID;
+                    incommingCmd = new ServiceGetServerIdentityCommand(acknowledgementId);
                     break;
             }
 
@@ -96,7 +112,7 @@ namespace Alachisoft.NCache.SocketServer
                         Alachisoft.NCache.Common.Enum.RequestStatus.RECEIVED_WITH_ERROR, null);
                 throw;
             }
-            if (SocketServer.Logger.IsDetailedLogsEnabled) SocketServer.Logger.NCacheLog.Info("ConnectionManager.ReceiveCallback", clientManager.ToString() + " after executing COMMAND : " + command.type.ToString() + " RequestId :" + command.requestID);
+            if (SocketServer.Logger.IsDetailedLogsEnabled) SocketServer.Logger.NCacheLog.Info("ServiceCommandManager.ProcessCommand", clientManager.ToString() + " after executing COMMAND : " + command.type.ToString() + " RequestId :" + command.requestID);
 
 
             if (SocketServer.IsServerCounterEnabled) base.PerfStatsCollector.MsecPerCacheOperationEndSample();

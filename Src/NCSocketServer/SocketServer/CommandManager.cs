@@ -1,4 +1,4 @@
-//  Copyright (c) 2021 Alachisoft
+//  Copyright (c) 2026 Alachisoft
 //  
 //  Licensed under the Apache License, Version 2.0 (the "License");
 //  you may not use this file except in compliance with the License.
@@ -20,6 +20,7 @@ using Alachisoft.NCache.Serialization;
 using System.IO;
 using Alachisoft.NCache.SocketServer.Statistics;
 using Alachisoft.NCache.SocketServer.RuntimeLogging;
+using Alachisoft.NCache.Licensing;
 using Alachisoft.NCache.Common.Threading;
 using System.Threading;
 using Alachisoft.NCache.Caching.Exceptions;
@@ -48,18 +49,14 @@ namespace Alachisoft.NCache.SocketServer
         private const long MAX_ALLOWED_REQUESTS = 500 * 1000;
         private const long MAX_ALLOWED_REQESTS_PER_SECOND = 200;
 
-        private static readonly ThrottlingManager s_throttleManager = new ThrottlingManager(MAX_ALLOWED_REQESTS_PER_SECOND);
 
         private static long _totalRequests = 0;
 
         private static bool _isReported = false;
         private static readonly object _mutex = new object();
-
-     //   private ObjectPoolWithoutBag<InsertCommand> _insertCommandPool;
     
         private Latch _operationModeChangeLatch = new Latch((byte)OperationMode.ONLINE);
- 
-    
+
         public StatisticsCounter PerfStatsCollector
         {
             get { return _perfStatsCollector; }
@@ -84,6 +81,7 @@ namespace Alachisoft.NCache.SocketServer
             CompactFormatterServices.RegisterCompactType(typeof(Common.DataStructures.EnumerationDataChunk), 162);
             if (ServiceConfiguration.EnableRequestCancellation) RequestMonitor.Instance.Initialize();
 
+           
 
         }
 
@@ -95,7 +93,7 @@ namespace Alachisoft.NCache.SocketServer
         public object Deserialize(Stream buffer)
         {
             Alachisoft.NCache.Common.Protobuf.Command command = null;
-            command = ProtoBuf.Serializer.Deserialize<Alachisoft.NCache.Common.Protobuf.Command>(buffer);
+            command = ProtoBuf.Extended.Serializer.Deserialize<Alachisoft.NCache.Common.Protobuf.Command>(buffer);
             buffer.Close();
             return command;
         }
@@ -103,7 +101,7 @@ namespace Alachisoft.NCache.SocketServer
         public virtual void ProcessCommand(ClientManager clientManager, object cmd, short cmdType, long acknowledgementId, UsageStats stats, bool waitforRequests)
         {
             var cache = clientManager.CmdExecuter as NCache;
-
+            var buildType = InstallationTypeProvider.Provider.BuildType();
             bool FiveOrAbove = clientManager.ClientVersion >= 5000;
 
             Alachisoft.NCache.Common.Protobuf.Command command = cmd as Alachisoft.NCache.Common.Protobuf.Command;
@@ -113,18 +111,14 @@ namespace Alachisoft.NCache.SocketServer
             if (cmdType == 0) type = command.type;
             else type = (Common.Protobuf.Command.Type)cmdType;
 
-            // POTeam
-            //HPTimeStats milliSecWatch = new HPTimeStats();
-            //milliSecWatch.BeginSample();
             bool clientDisposed = false;
             bool isAsync = false;
-            string _methodName = null;// type.ToString();;
-            //Stopwatch commandExecution = new Stopwatch();
-            //commandExecution.Start();
-
+            string _methodName = null;
+            if (clientManager != null) clientManager.MarkActivity();
 
             CommandBase incommingCmd = null;
             bool isUnsafeCommand = false, doThrottleCommand = true;
+
 
             switch (type)
             {
@@ -132,10 +126,16 @@ namespace Alachisoft.NCache.SocketServer
                 case Alachisoft.NCache.Common.Protobuf.Command.Type.INIT:
                     Alachisoft.NCache.Common.Protobuf.InitCommand initCommand = command.initCommand;
                     initCommand.requestId = command.requestID;
-                    if (SocketServer.Logger.IsDetailedLogsEnabled) SocketServer.Logger.NCacheLog.Info("ConnectionManager.ReceiveCallback", clientManager.ToString()  + initCommand.clientEditionId +  " RequestId :" + command.requestID);
-                    incommingCmd = new InitializeCommand(bookie.RequestLoggingEnabled);
+                    if (SocketServer.Logger.IsDetailedLogsEnabled) SocketServer.Logger.NCacheLog.Info("ConnectionManager.ReceiveCallback", clientManager.ToString() + " client_edition : " + initCommand.clientEditionId + " server_build: " + buildType + " RequestId :" + command.requestID);
+
+                    if (InstallationTypeProvider.Provider.IsServerInstallation)
+                    {
+
+                        incommingCmd = new InitializeCommand(bookie.RequestLoggingEnabled);
+                    }
+                    
                     break;
-               
+
                 // Added in server to cater getProductVersion request from client
                 case Common.Protobuf.Command.Type.GET_PRODUCT_VERSION:
                     if(FiveOrAbove)
@@ -423,9 +423,15 @@ namespace Alachisoft.NCache.SocketServer
                     incommingCmd = new GetHashmapCommand();
                     break;
 
+           
                 case Alachisoft.NCache.Common.Protobuf.Command.Type.GET_LOGGING_INFO:
                     command.getLoggingInfoCommand.requestId = command.requestID;
                     incommingCmd = new GetLogginInfoCommand();
+                    break;
+
+                case Alachisoft.NCache.Common.Protobuf.Command.Type.GET_SERVER_IDENTITY:
+                    command.getServerIdentityCommand.requestId = command.requestID;
+                    incommingCmd = new GetServerIdentityCommand();
                     break;
 
 #if !(DEVELOPMENT)
@@ -805,7 +811,7 @@ namespace Alachisoft.NCache.SocketServer
                     incommingCmd = new UnRegisterKeyNoticationCommand();
                     break;
 
-#if  (SERVER || DEVELOPMENT || CLIENT)
+#if  (SERVER || DEVELOPMENT)
 #endif
                 case Alachisoft.NCache.Common.Protobuf.Command.Type.ADD_ATTRIBUTE:
                     if (FiveOrAbove)
@@ -869,7 +875,10 @@ namespace Alachisoft.NCache.SocketServer
                     incommingCmd = new GetExpirationCommand();
                     break;
 
-               
+                case Alachisoft.NCache.Common.Protobuf.Command.Type.GET_LC_DATA:
+                    command.getLCCommand.requestId = command.requestID;
+                    incommingCmd = new GetLCCommand();
+                    break;
 
                 case Common.Protobuf.Command.Type.GET_CONNECTED_CLIENTS:
                     if (FiveOrAbove)
@@ -922,10 +931,11 @@ namespace Alachisoft.NCache.SocketServer
                     incommingCmd = new PingCommand();
                     break;
 
-             
+
+              
 
 
-#region PUB_SUB
+                #region PUB_SUB
                 case Common.Protobuf.Command.Type.GET_TOPIC:
                     if (FiveOrAbove)
                     {
@@ -1096,9 +1106,6 @@ namespace Alachisoft.NCache.SocketServer
                 incommingCmd = null;
               if (SocketServer.IsServerCounterEnabled) _perfStatsCollector.MsecPerCacheOperationBeginSample();
 
-
-          
-            
             ///*****************************************************************/
             ///**/incommingCmd.ExecuteCommand(clientManager, command, value);/**/
             ///*****************************************************************/
@@ -1128,7 +1135,6 @@ namespace Alachisoft.NCache.SocketServer
                             acknowledgementId);
 
                 }
-                
                 {
                     incommingCmd.ExecuteCommand(clientManager, command);
                 }
@@ -1157,8 +1163,7 @@ namespace Alachisoft.NCache.SocketServer
                 }
             }
 
-
-           if (SocketServer.IsServerCounterEnabled) _perfStatsCollector.MsecPerCacheOperationEndSample();
+            if (SocketServer.IsServerCounterEnabled) _perfStatsCollector.MsecPerCacheOperationEndSample();
 
             if (isUnsafeCommand && clientManager.SupportAcknowledgement)
             {
@@ -1183,7 +1188,9 @@ namespace Alachisoft.NCache.SocketServer
 
                         incommingCmd.SerializedResponsePackets.Clear();
                     }
-                   
+
+                    if (command.type == Alachisoft.NCache.Common.Protobuf.Command.Type.INIT)
+                        clientManager.IsInitialized = true;
                 }
             }
             finally
@@ -1210,7 +1217,7 @@ namespace Alachisoft.NCache.SocketServer
                     }
                 }
             }
-           
+
         }
 
         private byte[] SerializeResponse(Common.Protobuf.InsertResponse insertResponse, Alachisoft.NCache.Common.Protobuf.Response.Type type)
@@ -1224,7 +1231,7 @@ namespace Alachisoft.NCache.SocketServer
                 byte[] size = new byte[10];
                 stream.Write(size, 0, size.Length);
 
-                ProtoBuf.Serializer.Serialize(stream, insertResponse);
+                ProtoBuf.Extended.Serializer.Serialize(stream, insertResponse);
 
                 int messageLen = (int)stream.Length - (size.Length + responseTypeBytes.Length);
                 size = UTF8Encoding.UTF8.GetBytes(messageLen.ToString());
@@ -1297,5 +1304,7 @@ namespace Alachisoft.NCache.SocketServer
                 RequestMonitor.Instance.Dispose();
 
         }
+
+       
     }
 }

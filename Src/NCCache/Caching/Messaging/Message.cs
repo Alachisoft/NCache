@@ -1,4 +1,4 @@
-﻿//  Copyright (c) 2021 Alachisoft
+﻿//  Copyright (c) 2026 Alachisoft
 //  
 //  Licensed under the Apache License, Version 2.0 (the "License");
 //  you may not use this file except in compliance with the License.
@@ -69,7 +69,6 @@ namespace Alachisoft.NCache.Caching.Messaging
                 {
                     if (PayLoad is UserBinaryObject)
                     {
-                        //it is to be decided yet
                         size = ((UserBinaryObject)PayLoad).InMemorySize;
 
                     }

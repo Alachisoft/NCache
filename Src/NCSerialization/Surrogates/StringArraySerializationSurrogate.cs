@@ -1,4 +1,4 @@
-//  Copyright (c) 2021 Alachisoft
+//  Copyright (c) 2026 Alachisoft
 //  
 //  Licensed under the Apache License, Version 2.0 (the "License");
 //  you may not use this file except in compliance with the License.
@@ -43,7 +43,6 @@ namespace Alachisoft.NCache.Serialization.Surrogates
                 byte[] stream = new byte[length];
                 stream = reader.ReadBytes(length);
                 array[i] =  UTF8Encoding.UTF8.GetString(stream);
-                //array[i] = reader.ReadString();
             }
             return array;
         }
@@ -54,7 +53,6 @@ namespace Alachisoft.NCache.Serialization.Surrogates
             writer.Write(array.Length);
             for (int i = 0; i < array.Length; i++)
             {
-                //string str = (string[])graph;
                 if (array[i] != null)
                 {
                     writer.Write((short)1);
@@ -65,9 +63,7 @@ namespace Alachisoft.NCache.Serialization.Surrogates
                 else
                 {
                     writer.Write((short)0);
-                    //writer.WriteObject(null);
                 }
-                //writer.Write(array[i]);
             }
         }
 

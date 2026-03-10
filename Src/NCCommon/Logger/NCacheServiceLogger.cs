@@ -11,16 +11,8 @@ namespace Alachisoft.NCache.Common.Logger
 
         public static NCacheLogger Logger
         {
-            get
-            {
-                if (_logger == null)
-                {
-                    _logger = new NCacheLogger();
-                    _logger.Initialize(LoggerNames.ServiceLogs);
-                }
-
-                return _logger;
-            }
+            get { return _logger; }
+            set { _logger = value; }
         }
 
         public static void LogError(string message)

@@ -1,4 +1,4 @@
-//  Copyright (c) 2021 Alachisoft
+//  Copyright (c) 2026 Alachisoft
 //  
 //  Licensed under the Apache License, Version 2.0 (the "License");
 //  you may not use this file except in compliance with the License.
@@ -45,7 +45,11 @@ namespace Alachisoft.NCache.SocketServer.CallbackTasks
                     response.compactTypeRegisterEvent = compactTypeRegisterCallback;
                     response.responseType = Alachisoft.NCache.Common.Protobuf.Response.Type.COMPACT_TYPE_REGISTER_EVENT;
 
-                    IList serializedResponse = Alachisoft.NCache.Common.Util.ResponseHelper.SerializeResponse(response,Common.Protobuf.Response.Type.COMPACT_TYPE_REGISTER_EVENT);
+                    IList serializedResponse = clientManager.ResponseBuilder.BuildResponse(new Common.ResponseSerialization.ResponseOptions()
+                    {
+                        Response = response,
+                        ResponseType = Common.Protobuf.Response.Type.COMPACT_TYPE_REGISTER_EVENT
+                    });
 
                     ConnectionManager.AssureSend(clientManager, serializedResponse, false);                    
                 }

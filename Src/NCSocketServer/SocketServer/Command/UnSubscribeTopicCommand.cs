@@ -1,4 +1,4 @@
-﻿//  Copyright (c) 2021 Alachisoft
+﻿//  Copyright (c) 2026 Alachisoft
 //  
 //  Licensed under the Apache License, Version 2.0 (the "License");
 //  you may not use this file except in compliance with the License.
@@ -22,7 +22,7 @@ using System.Text;
 using Alachisoft.NCache.SocketServer.RuntimeLogging;
 using Alachisoft.NCache.Common.Monitoring;
 using Alachisoft.NCache.Runtime.Caching;
-using Alachisoft.NCache.SocketServer.Util;
+using Alachisoft.NCache.Common.ResponseSerialization;
 
 namespace Alachisoft.NCache.SocketServer.Command
 {
@@ -42,7 +42,6 @@ namespace Alachisoft.NCache.SocketServer.Command
             {
                 NCache nCache = clientManager.CmdExecuter as NCache;
                 var operationContext = new OperationContext(OperationContextFieldName.OperationType, OperationContextOperationType.CacheOperation);
-                CommandsUtil.PopulateClientIdInContext(ref operationContext, clientManager.ClientAddress);
                 if (command.commandVersion < 1)
                 {
                     operationContext.Add(OperationContextFieldName.ClientLastViewId, forcedViewId);
@@ -60,14 +59,17 @@ namespace Alachisoft.NCache.SocketServer.Command
 
                     unSubscribed = nCache.Cache.TopicOpertion(topicOperation, operationContext);
                     stopWatch.Stop();
-                    //Common.Protobuf.Response response = new Common.Protobuf.Response();
                     Common.Protobuf.UnSubscribeTopicResponse unSubscribeTopicResponse = new Common.Protobuf.UnSubscribeTopicResponse();
-
                     unSubscribeTopicResponse.success = unSubscribed;
                     if (clientManager.ClientVersion >= 5000)
                     {
                         Common.Util.ResponseHelper.SetResponse(unSubscribeTopicResponse, command.requestID, command.commandID);
-                        _serializedResponsePackets.Add(Common.Util.ResponseHelper.SerializeResponse(unSubscribeTopicResponse, Common.Protobuf.Response.Type.UNSUBSCRIBE_TOPIC));
+                        ResponseOptions responseOptions = new ResponseOptions()
+                        {
+                            Response = unSubscribeTopicResponse,
+                            ResponseType = Common.Protobuf.Response.Type.UNSUBSCRIBE_TOPIC
+                        };
+                        _serializedResponsePackets.Add(clientManager.ResponseBuilder.BuildResponse(responseOptions));
                     }
                     else
                     {
@@ -75,14 +77,26 @@ namespace Alachisoft.NCache.SocketServer.Command
                         Common.Protobuf.Response response = new Common.Protobuf.Response();
                         response.unSubscribeTopicResponse = unSubscribeTopicResponse;
                         Common.Util.ResponseHelper.SetResponse(response, command.requestID, command.commandID, Common.Protobuf.Response.Type.UNSUBSCRIBE_TOPIC);
-                        _serializedResponsePackets.Add(Alachisoft.NCache.Common.Util.ResponseHelper.SerializeResponse(response));
+                        ResponseOptions responseOptions = new ResponseOptions()
+                        {
+                            Response = response,
+                            ResponseType = Common.Protobuf.Response.Type.UNSUBSCRIBE_TOPIC
+                        };
+                        _serializedResponsePackets.Add(clientManager.ResponseBuilder.BuildResponse(responseOptions));
                     }
                 }
             }
             catch (Exception exc)
             {
                 exceptionMessage = exc.ToString();
-                _serializedResponsePackets.Add(ResponseHelper.SerializeExceptionResponseWithType(exc, command.requestID, command.commandID, clientManager.ClientVersion));
+                ResponseOptions responseOptions = new ResponseOptions()
+                {
+                    Exception = exc,
+                    RequestId = command.requestID,
+                    CommandId = command.commandID,
+                };
+
+                _serializedResponsePackets.Add(clientManager.ResponseBuilder.BuildExceptionResponse(responseOptions));
             }
             finally
             {
@@ -114,7 +128,6 @@ namespace Alachisoft.NCache.SocketServer.Command
             details.Append(" ; ");
             details.Append("SubscriptionId : " + _command.recepientId);
             details.Append(" ; ");
-            //details.AppendLine("Dependency: " + cmdInfo. != null ? "true" : "false");
             return details.ToString();
         }
     }

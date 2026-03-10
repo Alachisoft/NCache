@@ -1,4 +1,4 @@
-//  Copyright (c) 2021 Alachisoft
+//  Copyright (c) 2026 Alachisoft
 //  
 //  Licensed under the Apache License, Version 2.0 (the "License");
 //  you may not use this file except in compliance with the License.
@@ -112,13 +112,6 @@ namespace Alachisoft.NCache.Caching
 
         public override void ReturnLeasableToPool()
         {
-            // Nothing to return since everything populated here 
-            // is returned with the CacheEntry here explicitly returned
-
-            //Flag?.MarkFree(NCModulesConstants.CompressedValueEntry);
-            //(Value as UserBinaryObject)?.MarkFree(NCModulesConstants.CompressedValueEntry);
-
-            //PoolManager.GetCompressedValueEntryPool().Return(this);
         }
 
         #endregion

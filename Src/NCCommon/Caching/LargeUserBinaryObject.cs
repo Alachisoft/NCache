@@ -1,4 +1,4 @@
-﻿//  Copyright (c) 2021 Alachisoft
+﻿//  Copyright (c) 2026 Alachisoft
 //  
 //  Licensed under the Apache License, Version 2.0 (the "License");
 //  you may not use this file except in compliance with the License.
@@ -268,7 +268,6 @@ namespace Alachisoft.NCache.Common.Caching
             VirtualArray.CopyData(vBuffer, new VirtualIndex(srcOffset), vDstArray, new VirtualIndex(dstOffset), length, true);
 
             _noOfChunks = _data.Count;
-            //_lastChunkSize = ((byte[])_data[_data.Count - 1]).Length;
             _lastChunkSize += (length < 0 ? 0 : length) % LARGE_OBJECT_SIZE;
         }
 
@@ -306,7 +305,6 @@ namespace Alachisoft.NCache.Common.Caching
                     PoolManager.GetByteArrayPool().Return(chunk);
                 }
             }
-            //PoolManager.GetLargeUserBinaryObjectPool().Return(this);
         }
 
         #endregion

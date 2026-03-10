@@ -12,6 +12,8 @@ namespace Alachisoft.NCache.Client
         internal const string CONNECTIONRETRIES = "connectionRetries";
         internal const string RETRYINTERVAL = "retryInterval";
         internal const string LOADBALANCE = "balanceNodes";
+        internal const string CONNECTUSINGLOADBALANCER = "connectUsingLoadBalancer";
+        internal const string LOADBALANCERCONNECTIONRETRIES = "loadBalancerConnectionRetries";
         internal const string PORT = "port";
         internal const string CACHESYNCMODE = "cacheSyncMode";
         internal const string RETRYCONNECTIONDELAY = "retryConnectionDelay"; //[KS: for connection retry delay]
@@ -22,7 +24,6 @@ namespace Alachisoft.NCache.Client
         internal const string APPNAME = "applicationName";
         internal const string ENABLECLIENTLOGS = "enableClientLogs";
         internal const string LOGLEVEL = "logLevel";
-        //internal const string ENABLEDETAILEDCLIENTLOGS = "enableDetailedClientLogs";
         internal const string ENABLEPIPELINING = "enablePipelining";
         internal const string PIPELININGTIMEOUT = "pipeliningTimeout";
     }

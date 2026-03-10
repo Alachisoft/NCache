@@ -65,7 +65,6 @@ namespace Alachisoft.NGroups.Protocols.pbcast
 
 
 
-                // SAL: Cosider Trace
                 if (_result != null && ((_countExpected == _countReceived) || (bool)_result == true))
                 {
                     ret = _result;

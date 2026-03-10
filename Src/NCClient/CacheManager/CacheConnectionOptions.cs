@@ -1,4 +1,4 @@
-//  Copyright (c) 2021 Alachisoft
+//  Copyright (c) 2026 Alachisoft
 //  
 //  Licensed under the Apache License, Version 2.0 (the "License");
 //  you may not use this file except in compliance with the License.
@@ -45,6 +45,7 @@ namespace Alachisoft.NCache.Client
         #region Fields 
 
         private bool _loadBalance = true;
+        private int _loadBalancerConnectionRetries = 15;
         private bool _enabeKeepAlive = false;
         private bool _enableClientLogs = false;
         private bool _enablePipelining = false;
@@ -68,7 +69,6 @@ namespace Alachisoft.NCache.Client
         private IsolationLevel _mode = IsolationLevel.Default;
 
         private IList<ServerInfo> _serverList = new List<ServerInfo>();
-        //private bool _enableDetailedClientLogs = false;
         #endregion
 
 
@@ -118,8 +118,6 @@ namespace Alachisoft.NCache.Client
             set { _mode = value.Value; }
         }
 
- 
-
         /// <summary>
         /// Gets/Sets the IP for the client to be binded with
         /// </summary>
@@ -163,6 +161,29 @@ namespace Alachisoft.NCache.Client
             set {
                 _dirtyFlags[ConnectionStrings.LOADBALANCE] = true;
                 _loadBalance = value.Value; }
+        }
+
+
+
+        /// <summary>
+        /// This represents how may time the client will prompt the loadbalancer. This is used in the scenario where 
+        /// There is a load balancer between client and server cluster. The loadbalancer forwards the client to a 
+        /// server, the server may not be the one that the client wants to connect to. The value signifies how many times
+        /// the client will prompt hoping to be connected to the right machine
+        /// </summary>
+        public int? LoadBalancerConnectionRetries
+        {
+            get { return _loadBalancerConnectionRetries; }
+            set
+            {
+                _dirtyFlags[ConnectionStrings.LOADBALANCERCONNECTIONRETRIES] = true;
+                _loadBalancerConnectionRetries = value.Value;
+
+                if (_loadBalancerConnectionRetries < 2)
+                {
+                    _loadBalancerConnectionRetries = 2;
+                }
+            }
         }
 
         /// <summary>
@@ -247,10 +268,6 @@ namespace Alachisoft.NCache.Client
                 }
             }
         }
-
-
-
-   
 
         internal bool IsSet(string paramId)
         {
@@ -343,7 +360,7 @@ namespace Alachisoft.NCache.Client
                 _cloneParam.RetryInterval = RetryInterval;
                 _cloneParam.ServerList = ServerList;
                 _cloneParam.ServerName = ServerName;
-                
+                _cloneParam.LoadBalancerConnectionRetries = LoadBalancerConnectionRetries;
                 _cloneParam.EnableClientLogs = EnableClientLogs;
                 
                 _cloneParam.LogLevel = LogLevel;
@@ -389,9 +406,9 @@ namespace Alachisoft.NCache.Client
                 if (!IsSet(ConnectionStrings.ENABLECLIENTLOGS)) this._enableClientLogs = config.EnableClientLogs;
                 if (!IsSet(ConnectionStrings.LOGLEVEL)) this._logLevel = config.LogLevels;
                 if (!IsSet(ConnectionStrings.LOADBALANCE)) this._loadBalance = config.BalanceNodes;
+                if (!IsSet(ConnectionStrings.LOADBALANCERCONNECTIONRETRIES)) this.LoadBalancerConnectionRetries = config.LoadBalancerConnectionRetries;
                 if (!IsSet(ConnectionStrings.ENABLEPIPELINING)) this._enablePipelining = config.EnablePipelining;
                 if (!IsSet(ConnectionStrings.PIPELININGTIMEOUT)) this._pipeliningTimeout = config.PipeliningTimeout;
-
             }
         }
         #endregion

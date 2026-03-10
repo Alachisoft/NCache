@@ -1,4 +1,4 @@
-// $Id: Util.java,v 1.13 2004/07/28 08:14:14 belaban Exp $
+
 using System;
 using System.IO;
 using System.Net;
@@ -207,7 +207,6 @@ namespace Alachisoft.NGroups.Util
 			}
 			catch (System.Exception ex)
 			{
-				//Trace.error("util.printMessage()",ex.Message);
 				// it is not an object
 				return "";
 			}
@@ -475,7 +474,7 @@ namespace Alachisoft.NGroups.Util
 
 			return ip;
 		}
-		//:
+
 		/// <summary>Reads a number of characters from the current source TextReader and writes the data to the target array at the specified index.</summary>
 		/// <param name="sourceTextReader">The source TextReader to read from</param>
 		/// <param name="target">Contains the array of characteres read from the source TextReader.</param>

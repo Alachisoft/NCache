@@ -1,4 +1,4 @@
-//  Copyright (c) 2021 Alachisoft
+//  Copyright (c) 2026 Alachisoft
 //  
 //  Licensed under the Apache License, Version 2.0 (the "License");
 //  you may not use this file except in compliance with the License.
@@ -17,9 +17,7 @@ using Alachisoft.NCache.Caching.EvictionPolicies;
 using Alachisoft.NCache.Caching.Messaging;
 
 using Alachisoft.NCache.Caching.Statistics;
-#if !CLIENT
 using Alachisoft.NCache.Caching.Topologies.Clustered.Operations;
-#endif
 using Alachisoft.NCache.Caching.Util;
 using Alachisoft.NCache.Common;
 using Alachisoft.NCache.Common.DataStructures;
@@ -94,7 +92,6 @@ namespace Alachisoft.NCache.Caching.Topologies
 
             void AsyncProcessor.IAsyncTask.Process()
             {
-                //_listener.OnItemAdded(_key, _operationContext, _eventContext);
             }
 
         }
@@ -165,7 +162,6 @@ namespace Alachisoft.NCache.Caching.Topologies
 
             void AsyncProcessor.IAsyncTask.Process()
             {
-              //  _listener.OnItemUpdated(_key, _operationContext, _eventContext);
             }
 
         }
@@ -218,8 +214,6 @@ namespace Alachisoft.NCache.Caching.Topologies
             }
 
         }
-
-      
 
         /// <summary>
         /// Asynchronous notification dispatcher.
@@ -379,7 +373,6 @@ namespace Alachisoft.NCache.Caching.Topologies
             }
         }
 
-#if !CLIENT && !DEVELOPMENT
 
         /// <summary>
         /// Asynchronous hashmap notification dispatcher
@@ -391,10 +384,10 @@ namespace Alachisoft.NCache.Caching.Topologies
             private bool _updateClientMap;
 
 
-            public AsyncLocalNotifyHashmapCallback(ICacheEventsListener listener, long lastViewid, Hashtable newmap, ArrayList members, bool updateClientMap, bool forcefullUpdate)
+            public AsyncLocalNotifyHashmapCallback(ICacheEventsListener listener, long lastViewid, Hashtable newmap, ArrayList members, bool updateClientMap, bool forcefullUpdate, Hashtable serverMapping = null)
             {
                 this._listener = listener;
-                this._hashMap = new NewHashmap(lastViewid, newmap, members);
+                this._hashMap = new NewHashmap(lastViewid, newmap, members, serverMapping);
                 this._hashMap.ForcefulUpdate = forcefullUpdate;
                 this._updateClientMap = updateClientMap;
 
@@ -409,7 +402,6 @@ namespace Alachisoft.NCache.Caching.Topologies
 
             #endregion
         }
-#endif
 
         /// <summary>
         /// Asynchronous task notification dispatcher.
@@ -437,6 +429,33 @@ namespace Alachisoft.NCache.Caching.Topologies
             }
 
         }
+        /// <summary>
+        /// Asynchronous module hashmap notification dispatcher
+        /// </summary>
+        private class AsyncLocalNotifyModuleHashmapCallback : AsyncProcessor.IAsyncTask
+        {
+            private Cache _internalCache;
+            private NewHashmap _hashMap;
+            private bool _updateClientMap;
+
+
+            public AsyncLocalNotifyModuleHashmapCallback(Cache cache, long lastViewid, Hashtable newmap, ArrayList members, bool updateClientMap, bool forcefullUpdate)
+            {
+                this._internalCache = cache;
+                this._hashMap = new NewHashmap(lastViewid, newmap, members);
+                this._hashMap.ForcefulUpdate = forcefullUpdate;
+                this._updateClientMap = updateClientMap;
+
+            }
+
+            #region IAsyncTask Members
+
+            void AsyncProcessor.IAsyncTask.Process()
+            {
+            }
+
+            #endregion
+        }
 
 
         #endregion
@@ -454,7 +473,7 @@ namespace Alachisoft.NCache.Caching.Topologies
             CacheClear = 0x0008,
             All = ItemAdd | ItemUpdate | ItemRemove | CacheClear
         }
-
+        protected string _monitroingSessionID;
         /// <summary> Name of the cache </summary>
         private string _name = string.Empty;
 
@@ -486,7 +505,7 @@ namespace Alachisoft.NCache.Caching.Topologies
 
         public IAlertPropagator alertPropagator;
 
-        protected System.Collections.Specialized.OrderedDictionary _cacheConnectedClients = new System.Collections.Specialized.OrderedDictionary();
+
         public Cache Parent { get; set; }
 
       
@@ -495,12 +514,8 @@ namespace Alachisoft.NCache.Caching.Topologies
         public CacheStatistics stats = new CacheStatistics();
         public ArrayList ClientsInfoList = ArrayList.Synchronized(new ArrayList());
         private static int oldClients = 0;
-       
-       
 
-
-        /// <summary>
-        /// Default constructor.
+               /// Default constructor.
         /// </summary>
         protected CacheBase()
         {
@@ -515,7 +530,8 @@ namespace Alachisoft.NCache.Caching.Topologies
             _context = context;
             _listener = listener;
             _syncObj = new ReaderWriterLock();
-            _keyLockManager = new KeyLockManager<object>(); 
+            _keyLockManager = new KeyLockManager<object>();
+
           
 
        
@@ -783,7 +799,24 @@ namespace Alachisoft.NCache.Caching.Topologies
         {
             get { return null; }
         }
+        public virtual string MonitoringSessionId
+        {
+            get
+            {
+                GenerateMonitoringSessionID();
+                return _monitroingSessionID;
+            }
+            set { _monitroingSessionID = value; }
+        }
 
+        protected void GenerateMonitoringSessionID()
+        {
+            if (_monitroingSessionID == null)
+            {
+                var dateAndTime = DateTime.Now;
+                _monitroingSessionID = string.Concat(dateAndTime.Date.ToString("yyyyMMdd"), dateAndTime.TimeOfDay.TotalSeconds.ToString());
+            }
+        }
         /// <summary>
         /// Removes all the extra buckets that do not belong to this instance; according to 
         /// BucketOwnerShipMap.
@@ -863,7 +896,6 @@ namespace Alachisoft.NCache.Caching.Topologies
                 if (properties.Contains("notifications"))
                 {
                     IDictionary notifconfig = properties["notifications"] as IDictionary;
-
                     if (notifconfig.Contains("cache-clear"))
                     {
                         if (Convert.ToBoolean(notifconfig["cache-clear"]))
@@ -929,25 +961,8 @@ namespace Alachisoft.NCache.Caching.Topologies
                     }
                 }
             }
-
-            if(clientInfo.IPAddress != null && client != null)
-            {
-                lock (_cacheConnectedClients)
-                {                   
-                    if (_cacheConnectedClients.Contains(clientInfo.IPAddress))
-                    {
-                        IList<string> list = _cacheConnectedClients[clientInfo.IPAddress] as List<string>;
-                        if (list != null)
-                            list.Add(client);
-                    }
-                    else
-                        _cacheConnectedClients.Add(clientInfo.IPAddress, new List<string>() { client });
-                    
-                }
-            }
-
         }
-        public virtual void ClientDisconnected(string client, bool isInproc, Runtime.Caching.ClientInfo clientInfo)
+        public virtual void ClientDisconnected(string client, bool isInproc)
         {
             CacheStatistics stats = InternalCache.Statistics;
             if (stats != null && stats.ConnectedClients != null)
@@ -976,22 +991,6 @@ namespace Alachisoft.NCache.Caching.Topologies
                 }
 
             }
-            
-            if (clientInfo.IPAddress != null && client != null)
-            {
-                lock (_cacheConnectedClients)
-                {
-                    if (_cacheConnectedClients.Contains(clientInfo.IPAddress))
-                    {
-                        IList<string> list = _cacheConnectedClients[clientInfo.IPAddress] as List<string>;
-                        if (list != null)
-                            list.Remove(client);
-
-                        if (list == null || list.Count == 0)
-                            _cacheConnectedClients.Remove(clientInfo.IPAddress);
-                    }
-                }
-            }
         }
 
         #region/                --- Custom Callback Registration ---            /
@@ -1004,17 +1003,69 @@ namespace Alachisoft.NCache.Caching.Topologies
       
         #endregion
 
-       
+        #region /                 --- virtual methods to be overriden by hashed cache ---           /
 
-        
+        public virtual void RemoveBucketData(int bucketId)
+        {
+        }
 
-        
+        public virtual void RemoveBucketData(ArrayList bucketIds)
+        {
+            if (bucketIds != null && bucketIds.Count > 0)
+            {
+                for (int i = 0; i < bucketIds.Count; i++)
+                {
+                    RemoveBucketData((int)bucketIds[i]);
+                }
+            }
+        }
 
-       
+        public virtual void GetKeyList(int bucketId, bool startLogging, out ClusteredArrayList keyList)
+        {
+            keyList = null;
+        }
         public virtual OrderedDictionary GetMessageList(int bucketId,bool includeEventMessages)
         {
             return null;
-        } 
+        }
+        public virtual Hashtable GetLogTable(ArrayList bucketIds, ref bool isLoggingStopped, OPLogType type = OPLogType.Cache)
+        {
+            return null;
+        }
+
+        public virtual void RemoveFromLogTbl(int bucketId)
+        {
+        }
+
+        public virtual void StartLogging(int bucketId)
+        {
+        }
+
+        public virtual void PrepareBucketForStateTrxfer(int bucketId)
+        {
+        }
+
+        public virtual void AddLoggedData(ArrayList bucketIds, OPLogType type = OPLogType.Cache)
+        {
+        }
+
+        public virtual void UpdateLocalBuckets(ArrayList bucketIds)
+        {
+        }
+
+      
+
+        public virtual BucketStatistics[] LocalBuckets
+        {
+            get { return null; }
+            set {; }
+        }
+
+        public virtual int BucketSize
+        {
+            set {; }
+        }
+
         public virtual long CurrentViewId
         {
             get { return 0; }
@@ -1028,14 +1079,12 @@ namespace Alachisoft.NCache.Caching.Topologies
 
        
 
-#if !DEVELOPMENT
         public virtual NewHashmap GetOwnerHashMapTable(out int bucketSize)
         {
             bucketSize = 0;
             return null;
         }
-#endif
-
+        #endregion
 
         #region	/                 --- ICache ---           /
 
@@ -1415,11 +1464,10 @@ namespace Alachisoft.NCache.Caching.Topologies
         /// <param name="notifId"></param>
         /// <param name="data"></param>
         /// <param name="async"></param>
-        public virtual void SendNotification(object notifId, object data, OperationContext operationContext)
+        public virtual void SendNotification(object notifId, object data)
         {
         }
 
-        
         public virtual List<Event> GetFilteredEvents(string clientID, Hashtable events, EventStatus _registeredEventStatus)
         {
             return null;
@@ -1532,10 +1580,14 @@ namespace Alachisoft.NCache.Caching.Topologies
         /// <returns>IDictionaryEnumerator enumerator.</returns>
         public virtual IDictionaryEnumerator GetEnumerator()
         {
+            return GetEnumerator(null);
+        }
+
+        public virtual IDictionaryEnumerator GetEnumerator(string group)
+        {
             return null;
         }
 
-        
         public virtual EnumerationDataChunk GetNextChunk(EnumerationPointer pointer, OperationContext operationContext)
         {
             return null;
@@ -1685,9 +1737,9 @@ namespace Alachisoft.NCache.Caching.Topologies
         /// <param name="key">key of cache item</param>
         /// <param name="value">Callback entry which contains the item remove call back.</param>
         /// <param name="async">flag indicating that the notification is asynchronous</param>
-        public virtual void NotifyCustomRemoveCallback(object key, object value, ItemRemoveReason reason, bool async, OperationContext operationContext, EventContext eventContext)
+        public virtual void NotifyCustomRemoveCallback(object key, ArrayList value, ItemRemoveReason reason, bool async, OperationContext operationContext, EventContext eventContext)
         {
-          
+
             string messageID = AppUtil.GenerateMessageID(key.ToString(), eventContext.UniqueId);
             EventMessage message = null;
             try
@@ -1696,8 +1748,7 @@ namespace Alachisoft.NCache.Caching.Topologies
                 message.RemoveReason = reason;
                 message = GenerateEventMessage(key.ToString(), message, TopicConstant.ItemLevelEventsTopic, eventContext, operationContext);
                 message.IsMulticast = true;
-                message.CallbackInfos = new ArrayList();
-                message.CallbackInfos = (ArrayList)value;
+                message.CallbackInfos = value;
                 List<string> clients = message.GetDestinationClientIds();
                 if (clients.Count > 0)
                 {
@@ -1822,8 +1873,6 @@ namespace Alachisoft.NCache.Caching.Topologies
         /// <param name="async"></param>
         public virtual void NotifyCustomEvent(object notifId, object data, bool async, OperationContext operationContext, EventContext eventContext)
         {
-            if (!IsCacheOperationAllowed(operationContext))
-                return;
             if ((Listener != null))
             {
                 if (!async)
@@ -1840,13 +1889,11 @@ namespace Alachisoft.NCache.Caching.Topologies
         /// <param name="newmap">New hashmap</param>
         /// <param name="members">Current members list (contains Address)</param>
         /// <param name="async"></param>
-        protected virtual void NotifyHashmapChanged(long viewId, Hashtable newmap, ArrayList members, bool async, bool updateClientMap, bool forcefulUpdate = false)
+        protected virtual void NotifyHashmapChanged(long viewId, Hashtable newmap, ArrayList members, bool async, bool updateClientMap, bool forcefulUpdate = false, Hashtable serverMapping = null)
         {
             if (Listener != null)
             {
-#if !CLIENT && !DEVELOPMENT
-                _context.AsyncProc.Enqueue(new AsyncLocalNotifyHashmapCallback(Listener, viewId, newmap, members, updateClientMap, forcefulUpdate));
-#endif
+                _context.AsyncProc.Enqueue(new AsyncLocalNotifyHashmapCallback(Listener, viewId, newmap, members, updateClientMap, forcefulUpdate, serverMapping));
             }
         }
 
@@ -2746,6 +2793,7 @@ namespace Alachisoft.NCache.Caching.Topologies
         {
             ((IMessageStore)InternalCache).RemoveExpiredSubscriptions(removeSubscriptions, operationContext);
         }
+
        
         
         public virtual void RemoveDurableSubscriptions(IList<SubscriptionIdentifier> toRemove,OperationContext context)
@@ -2804,7 +2852,7 @@ namespace Alachisoft.NCache.Caching.Topologies
         #endregion
 
 
-        public virtual long GetMessageCount(string topicName, OperationContext operationContext)
+        public virtual long GetMessageCount(string topicName)
         {
             return 0;
         }
@@ -2889,7 +2937,6 @@ namespace Alachisoft.NCache.Caching.Topologies
                     entry.MarkFree(NCModulesConstants.Topology);
             }
         }
-
         public virtual void RaiseItemUpdateNotifier(object key, OperationContext operationContext, EventContext eventcontext)
         {
             InternalCache.RaiseItemUpdateNotifier(key, operationContext, eventcontext);
@@ -2950,58 +2997,17 @@ namespace Alachisoft.NCache.Caching.Topologies
             }
         }
 
-  
+
         #endregion
 
 
-        #region Module
 
-       
-
-        internal virtual void ReplicateModuleOperation(byte[] operationBytes)
+        internal virtual bool IsModuleUnderStateTransfer(string moduleName)
         {
-
+            return false;
         }
-
-        internal virtual List<byte[]> ExecuteProxyCommand(Address destination, string moduleName, string version, string clientID, List<byte[]> payload)
+        internal virtual void SetMapGenerationStatus(byte status)
         {
-            return null;
-        }
-        #endregion
-
-        protected bool IsCacheOperationAllowed(OperationContext operationContext)
-        {
-            bool result = true;
-            lock (_cacheConnectedClients)
-            {
-                if (_cacheConnectedClients.Count > 2)
-                {
-                    IPAddress clientip = null;
-                    if (operationContext != null)
-                    {
-                        if (operationContext.Contains(OperationContextFieldName.ClientIpAddress))
-                            clientip = operationContext.GetValueByField(OperationContextFieldName.ClientIpAddress) as IPAddress;
-                    }
-
-                    if (clientip != null)
-                    {
-                        int count = 0;
-                        foreach (var item in _cacheConnectedClients.Keys)
-                        {
-                            count++;
-                            var ipAddress = item as IPAddress;
-                            if (ipAddress != null && ipAddress == clientip)
-                                break;
-                            if (count == 2)
-                            {
-                                result = false;
-                                break;
-                            }
-                        }
-                    }
-                } 
-            }
-            return result;
         }
     }
 }

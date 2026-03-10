@@ -1,4 +1,4 @@
-//  Copyright (c) 2021 Alachisoft
+//  Copyright (c) 2026 Alachisoft
 //  
 //  Licensed under the Apache License, Version 2.0 (the "License");
 //  you may not use this file except in compliance with the License.
@@ -22,16 +22,13 @@ using Alachisoft.NCache.Common.DataStructures.Clustered;
 using Alachisoft.NCache.Common.Net;
 using Alachisoft.NCache.Common.Util;
 using Alachisoft.NCache.Config.Dom;
-
 using Alachisoft.NCache.Serialization;
 using Alachisoft.NCache.Serialization.Surrogates;
-#if !CLIENT && !DEVELOPMENT
 using Alachisoft.NCache.Caching.DataGrouping;
 using Alachisoft.NCache.Caching.Topologies.Clustered;
 using Alachisoft.NCache.Caching.Topologies.Clustered.Operations;
 using Alachisoft.NCache.Caching.Topologies.Clustered.Results;
 using Alachisoft.NCache.Caching.Topologies.Clustered.Operations.Messaging;
-#endif
 using System;
 using System.Collections;
 using System.Collections.Generic;
@@ -44,18 +41,23 @@ using Alachisoft.NCache.Runtime.Caching;
 using Alachisoft.NCache.Common;
 using Alachisoft.NCache.Common.Enum;
 using Alachisoft.NCache.Runtime.Serialization;
+#if SERVER
+using Alachisoft.NCache.Licensing;
+#endif
+using Alachisoft.NCache.Licensing;
 using Alachisoft.NCache.Common.Pooling;
 using Alachisoft.NCache.Caching.Pooling;
 using Alachisoft.NCache.Common.Pooling.Stats;
 using Alachisoft.NCache.Common.Monitoring;
-
+using Alachisoft.NCache.Common.Licensing;
 
 namespace Alachisoft.NCache.Util
 {
     public class MiscUtil
     {
-        static int _numCores;
-        static int _numProcessors;
+        static int _numPhysicalCores;
+        static int _numLicenses;
+        static int _numLogicalCores;
         static ArrayList _addresses = null;
         static StringBuilder installCode = null;
         static bool nclicensedllLoaded = false;
@@ -63,9 +65,61 @@ namespace Alachisoft.NCache.Util
 
         static MiscUtil()
         {
-          
+            try
+            {
+                installCode = new StringBuilder();
+                _numLogicalCores = MachineInfo.LogicalCores;
+                _numPhysicalCores = MachineInfo.PhysicalCores;
+                _numLicenses = MachineInfo.Licenses;
+                _addresses = new ArrayList(MachineInfo.MacAddresses);
+
+                nclicensedllLoaded = true;
+            }
+            catch(DllNotFoundException ex)
+            {
+                
+            }
         }
+        /// <summary>
+        /// Returns the number of licenses on the system.
+        /// </summary>
+        public static int NumLicenses { get { return _numLicenses; } }
+
+        /// <summary>
+        /// Returns the number of total physical cores available in the system.
+        /// </summary>
+        public static int NumPhysicalCores { get { return _numPhysicalCores; } }
+
+        /// Returns the number of total logical cores in the system.
+        /// </summary>
+        public static int NumLogicalCores { get { return _numLogicalCores; } }
+
+        /// <summary>
+        /// Returns 0 or 1, If VM based OS found returns 1 else 0
+        /// </summary>        
+        public static int IsHyperV()
+        {
+            MSHyperVThread mst = new MSHyperVThread();
+            return mst.IsHyperV();
+        }
+        public static string Platform { get { return MachineInfo.Platform; } }
+        public static decimal Memory { get { return MachineInfo.Memory; } }
+
+        /// <summary>
+        /// Returns a list of mac addresses found on the system.
+        /// </summary>
+        public static ArrayList AdapterAddresses
+        {
+            get
+            {                
+                return _addresses;
+            }
+        }
+
+  
        
+        
+
         /// <summary>
         /// Registers types with the Compact Serializatin Framework. Range of reserved
         /// typeHandle is (61 - 1000). 
@@ -100,7 +154,7 @@ namespace Alachisoft.NCache.Util
             CompactFormatterServices.RegisterCompactType(typeof(Common.ProductVersion), 302);
             CompactFormatterServices.RegisterCompactType(typeof(Common.DataStructures.RequestStatus), 303);
             CompactFormatterServices.RegisterCompactType(typeof(BucketStatistics.TopicStats), 383);
-#if (!CLIENT && !DEVELOPMENT)
+#if !DEVELOPMENT
             CompactFormatterServices.RegisterCompactType(typeof(ReadFromStreamOperation), 138);
             CompactFormatterServices.RegisterCompactType(typeof(WriteToStreamOperation), 139);
             CompactFormatterServices.RegisterCompactType(typeof(GetStreamLengthOperation), 140);
@@ -113,10 +167,11 @@ namespace Alachisoft.NCache.Util
             CompactFormatterServices.RegisterCompactType(typeof(OpenStreamOperation), 147);
             CompactFormatterServices.RegisterCompactType(typeof(CloseStreamOperation), 148);
            
+            CompactFormatterServices.RegisterCompactType(typeof(StateTxfrInfo), 116);
             CompactFormatterServices.RegisterCompactType(typeof(DataAffinity), 106);
             CompactFormatterServices.RegisterCompactType(typeof(Function), 75);
             CompactFormatterServices.RegisterCompactType(typeof(AggregateFunction), 76);
-            CompactFormatterServices.RegisterCompactType(typeof(MirrorCacheBase.Identity), 129);
+            CompactFormatterServices.RegisterCompactType(typeof(ReplicatedCacheBase.Identity), 78);
             CompactFormatterServices.RegisterCompactType(typeof(AcknowledgeMessageOperation), 358);
             CompactFormatterServices.RegisterCompactType(typeof(AssignmentOperation), 359);
             CompactFormatterServices.RegisterCompactType(typeof(ClusterTopicOperation), 360);
@@ -133,6 +188,7 @@ namespace Alachisoft.NCache.Util
            
          
           
+         
            
             CompactFormatterServices.RegisterCompactType(typeof(ReplicaStateTxfrInfo), 469);
          
@@ -189,7 +245,7 @@ namespace Alachisoft.NCache.Util
           
             CompactFormatterServices.RegisterCompactType(typeof(BucketStatistics[]), 523);
             CompactFormatterServices.RegisterCompactType(typeof(ClientProfile), 538);
-          
+            CompactFormatterServices.RegisterCompactType(typeof(CacheServerConfig[]), 550);
             #region - [PoolStats] -
             CompactFormatterServices.RegisterCompactType(typeof(PoolStats), 526);
             CompactFormatterServices.RegisterCompactType(typeof(ArrayPoolStats), 527);
@@ -201,10 +257,19 @@ namespace Alachisoft.NCache.Util
             CompactFormatterServices.RegisterCompactType(typeof(StringPoolStats[]), 533);
             #endregion
 
+            #region Caching Module Region (667 to 674)
+            CompactFormatterServices.RegisterCompactType(typeof(DistributionInfo), 667);
+            CompactFormatterServices.RegisterCompactType(typeof(PartNodeInfo), 668);
+            CompactFormatterServices.RegisterCompactType(typeof(PartNodeInfo[]), 669);
+
+            #endregion
+
+            CompactFormatterServices.RegisterCompactType(typeof(Alachisoft.NCache.Config.Dom.CacheConfigInfo), 701);
+         
 
         }
 
-        
+
 
 
 
@@ -470,13 +535,11 @@ namespace Alachisoft.NCache.Util
             return table;
         }
 
-#if !CLIENT
         /// <summary>Returns a random value in the range [1 - range] </summary>
         public static int Random(long range)
         {
             return (int)((Global.Random.NextDouble() * 100000) % range) + 1;
         }
-#endif
 
         #region Collection
 
@@ -553,11 +616,7 @@ namespace Alachisoft.NCache.Util
                     case ExpirationHintType.FixedIdleExpiration:
                         poolManager.GetFixedIdleExpirationPool().Return((FixedIdleExpiration)expirationHint);
                         break;
-#if !(DEVELOPMENT || CLIENT)
-                    case ExpirationHintType.NodeExpiration:
-                        poolManager.GetNodeExpirationPool().Return((NodeExpiration)expirationHint);
-                        break;
-#endif
+
                     case ExpirationHintType.IdleExpiration:
                         poolManager.GetIdleExpirationPool().Return((IdleExpiration)expirationHint);
                         break;

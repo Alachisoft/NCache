@@ -8,10 +8,10 @@ using System.Collections.Generic;
 using System.ComponentModel;
 using System.Linq;
 using System.Text;
-using Alachisoft.NCache.Common.Util;
-using Alachisoft.NCache.Licensing.NetCore.RegistryUtil;
+using Alachisoft.NCache.Common.Licensing;
+using System.Runtime.InteropServices;
+using Alachisoft.NCache.Licensing.RegistryUtil;
 using Alachisoft.NCache.Common.Logger;
-
 
 namespace Alachisoft.NCache.Management
 {
@@ -44,7 +44,7 @@ namespace Alachisoft.NCache.Management
         public void PopulateHardwareProfile(string machineId)
         {
             _hardwareProfile.MachineName = System.Environment.MachineName;
-            _hardwareProfile.EnvironmentName = string.Empty;
+            _hardwareProfile.Memory = MachineInfo.Memory.ToString();
             if (String.IsNullOrEmpty(_hardwareProfile.MachineID))
             {
                 if (!String.IsNullOrEmpty(machineId))
@@ -57,6 +57,7 @@ namespace Alachisoft.NCache.Management
                 }
             }
             _hardwareProfile.OperatingSystem = CacheServer.GetOSPlatform().ToString();
+
             _hardwareProfile.OtherServers = CacheServer.GetPossibleMachinesInCluster();
         }
 
@@ -91,15 +92,15 @@ namespace Alachisoft.NCache.Management
 
         public void PopulateUserProfile()
         {
-            try
-            {
-                RegUtil.LoadRegistry();
-                _userProfile.Company = RegUtil.LicenseProperties.UserInfo.Company;
-                _userProfile.Email = RegUtil.LicenseProperties.UserInfo.Email;
-                _userProfile.FirstName = RegUtil.LicenseProperties.UserInfo.FirstName;
-                _userProfile.LastName = RegUtil.LicenseProperties.UserInfo.LastName;
-            }
-            catch (Exception e)
+           try
+           {
+              RegUtil.LoadRegistry();
+             _userProfile.Company = RegUtil.LicenseProperties.UserInfo.Company;
+             _userProfile.Email = RegUtil.LicenseProperties.UserInfo.Email;
+             _userProfile.FirstName = RegUtil.LicenseProperties.UserInfo.FirstName;
+             _userProfile.LastName = RegUtil.LicenseProperties.UserInfo.LastName;
+           }
+           catch (Exception e)
             {
                 NCacheServiceLogger.LogError($"Error occurred during PopulateUserProfile(). {e}");
             }

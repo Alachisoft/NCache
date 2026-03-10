@@ -1,4 +1,4 @@
-//  Copyright (c) 2021 Alachisoft
+//  Copyright (c) 2026 Alachisoft
 //  
 //  Licensed under the Apache License, Version 2.0 (the "License");
 //  you may not use this file except in compliance with the License.
@@ -28,13 +28,18 @@ namespace Alachisoft.NCache.Common.Monitoring
         private string _partId;
         private int _pid;
         private int _managementPort;
-
+        private string _storeType;
+		
         public int ManagementPort
         {
             get { return _managementPort; }
             set { _managementPort = value; }
         }
-
+        public string StoreType
+        {
+            get { return _storeType; }
+            set { _storeType = value; }
+        }
         public int ProcessID
         {
             get { return _pid; }
@@ -100,6 +105,7 @@ namespace Alachisoft.NCache.Common.Monitoring
             _partId = reader.ReadObject() as string;
             _managementPort = reader.ReadInt32();
             _pid = reader.ReadInt32();
+            _storeType = reader.ReadObject() as string;
         }
 
         public void Serialize(Runtime.Serialization.IO.CompactWriter writer)
@@ -112,6 +118,7 @@ namespace Alachisoft.NCache.Common.Monitoring
             writer.WriteObject(_partId);
             writer.Write(_managementPort);
             writer.Write(_pid);
+            writer.WriteObject(_storeType);
         }
 
         #endregion

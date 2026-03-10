@@ -8,4 +8,5 @@ message GetHashmapResponse {
 	repeated string members = 2;
 	repeated KeyValuePair keyValuePair = 3;
 	optional int32 bucketSize = 4;
+    repeated KeyValuePair serverMapping = 5;
 }

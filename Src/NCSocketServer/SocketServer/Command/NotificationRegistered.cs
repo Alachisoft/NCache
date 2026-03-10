@@ -1,4 +1,4 @@
-//  Copyright (c) 2021 Alachisoft
+//  Copyright (c) 2026 Alachisoft
 //  
 //  Licensed under the Apache License, Version 2.0 (the "License");
 //  you may not use this file except in compliance with the License.
@@ -17,11 +17,10 @@ using System.Globalization;
 using Alachisoft.NCache.Caching;
 using Alachisoft.NCache.Common;
 using Alachisoft.NCache.Common.Enum;
+using Alachisoft.NCache.Common.ResponseSerialization;
 using Runtime = Alachisoft.NCache.Runtime;
 using Alachisoft.NCache.SocketServer.RuntimeLogging;
 using Alachisoft.NCache.Common.Monitoring;
-using Alachisoft.NCache.SocketServer.Util;
-
 namespace Alachisoft.NCache.SocketServer.Command
 {
     class NotificationRegistered : CommandBase
@@ -53,7 +52,14 @@ namespace Alachisoft.NCache.SocketServer.Command
                 if (!base.immatureId.Equals("-2"))
                 {
                     //PROTOBUF:RESPONSE
-                    _serializedResponsePackets.Add(Alachisoft.NCache.Common.Util.ResponseHelper.SerializeExceptionResponseWithType(exc, command.requestID, command.commandID, clientManager.ClientVersion));
+                    ResponseOptions responseOptions = new ResponseOptions()
+                    {
+                        Exception = exc,
+                        RequestId = command.requestID,
+                        CommandId = command.commandID,
+                    };
+
+                    _serializedResponsePackets.Add(clientManager.ResponseBuilder.BuildExceptionResponse(responseOptions));
                 }
                 return;
             }
@@ -63,6 +69,7 @@ namespace Alachisoft.NCache.SocketServer.Command
                 NCache nCache = clientManager.CmdExecuter as NCache;
                 OperationContext context = new OperationContext(OperationContextFieldName.OperationType, OperationContextOperationType.CacheOperation);
                 context.Add(OperationContextFieldName.ClientId, clientManager.ClientID);
+
                 notif = (NotificationsType)cmdInfo.RegNotifs;
 
                 if (command.commandVersion < 1)
@@ -90,18 +97,24 @@ namespace Alachisoft.NCache.SocketServer.Command
                 response.responseType = Alachisoft.NCache.Common.Protobuf.Response.Type.REGISTER_NOTIF;
                 response.registerNotifResponse = registerNotifResponse;
 
-                if (clientManager.ClientVersion >= 5000)
+                ResponseOptions responseOptions = new ResponseOptions()
                 {
-                    _serializedResponsePackets.Add(Alachisoft.NCache.Common.Util.ResponseHelper.SerializeResponse(response, Common.Protobuf.Response.Type.REGISTER_NOTIF));
-                }
-                else
-                {
-                    _serializedResponsePackets.Add(Alachisoft.NCache.Common.Util.ResponseHelper.SerializeResponse(response));
-                }
+                    Response = response,
+                    ResponseType = Common.Protobuf.Response.Type.REGISTER_NOTIF
+                };
+                _serializedResponsePackets.Add(clientManager.ResponseBuilder.BuildResponse(responseOptions));
             }
             catch (Exception exc)
             {
-                _serializedResponsePackets.Add(Alachisoft.NCache.Common.Util.ResponseHelper.SerializeExceptionResponseWithType(exc, command.requestID, command.commandID, clientManager.ClientVersion));
+
+                ResponseOptions responseOptions = new ResponseOptions()
+                {
+                    Exception = exc,
+                    RequestId = command.requestID,
+                    CommandId = command.commandID,
+                };
+
+                _serializedResponsePackets.Add(clientManager.ResponseBuilder.BuildExceptionResponse(responseOptions));
             }
             finally
             {

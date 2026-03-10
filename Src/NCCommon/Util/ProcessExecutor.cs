@@ -1,4 +1,4 @@
-﻿//  Copyright (c) 2021 Alachisoft
+﻿//  Copyright (c) 2026 Alachisoft
 //  
 //  Licensed under the Apache License, Version 2.0 (the "License");
 //  you may not use this file except in compliance with the License.
@@ -15,6 +15,8 @@ using System;
 using System.IO;
 using System.Diagnostics;
 using System.Configuration;
+using Alachisoft.NCache.Common.RuntimeEnvironment;
+
 #if NETCORE
 using System.Runtime.InteropServices;
 #endif
@@ -35,54 +37,18 @@ namespace Alachisoft.NCache.Common.Util
         public Process Execute()
         {
             Process process = null;
-            try {
-
-                process = new Process
+            try
+            {
+                RuntimeOption runtimeOption = new RuntimeOption()
                 {
-                    StartInfo = new ProcessStartInfo(),
+                    Command = command
                 };
-                process.StartInfo.WorkingDirectory = ".";
-                process.StartInfo.WindowStyle = ProcessWindowStyle.Hidden;
-                process.StartInfo.UseShellExecute = true;
-#if NETCORE
-                if (RuntimeInformation.IsOSPlatform(OSPlatform.Windows))
-                {
-                    ExecuteOnWindows(process.StartInfo);
+                process = NCacheRuntimeEnvironment.GetEnvironment.GetCacheHostProcess(runtimeOption);
 
-                    // Process is running after this call
-                    process = ProcessCreator.CreateProcess(process.StartInfo.FileName, process.StartInfo.Arguments);
-
-                    if (process != null)
-                        return process;
-
-                    throw new Runtime.Exceptions.ManagementException("Unable to start Cache Process");
-                }
-                if (RuntimeInformation.IsOSPlatform(OSPlatform.Linux))
-                {
-                    ExecuteOnLinux(process.StartInfo);
-                }
-#elif !NETCORE
-                process.StartInfo.Arguments = command;
-                string configPath = ConfigurationSettings.AppSettings["CacheHostPath"];
-                if (configPath != null)
-                {
-                    process.StartInfo.FileName = Path.Combine(configPath, "Alachisoft.NCache.CacheHost.exe");
-                }
-                else
-                {
-                    string part1 = Path.Combine(AppUtil.InstallDir, "bin");
-                    string part2 = Path.Combine(part1, "service");
-                    string part3 = Path.Combine(part2, "Alachisoft.NCache.CacheHost.exe");
-                    process.StartInfo.FileName = part3;
-                }
-#endif
-                if (!process.Start())
-                {
-                    throw new Alachisoft.NCache.Runtime.Exceptions.ManagementException("Unable to start Cache Process");
-                }
-
-            } catch (Exception exp) {
-                process.Kill();
+            }
+            catch (Exception exp)
+            {
+                process?.Kill();
                 throw exp;
             }
             return process;

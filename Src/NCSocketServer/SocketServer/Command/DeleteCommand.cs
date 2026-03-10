@@ -1,4 +1,4 @@
-//  Copyright (c) 2021 Alachisoft
+//  Copyright (c) 2026 Alachisoft
 //  
 //  Licensed under the Apache License, Version 2.0 (the "License");
 //  you may not use this file except in compliance with the License.
@@ -12,6 +12,7 @@
 //  See the License for the specific language governing permissions and
 //  limitations under the License
 using System;
+
 using Alachisoft.NCache.Caching;
 using Alachisoft.NCache.Common;
 using Alachisoft.NCache.Common.Monitoring;
@@ -26,8 +27,7 @@ using Alachisoft.NCache.Common.Util;
 using Alachisoft.NCache.Common.Protobuf;
 using Alachisoft.NCache.Common.Pooling;
 using Alachisoft.NCache.Util;
-using Alachisoft.NCache.SocketServer.Util;
-
+using Alachisoft.NCache.Common.ResponseSerialization;
 namespace Alachisoft.NCache.SocketServer.Command
 {
     class DeleteCommand : CommandBase
@@ -83,7 +83,14 @@ namespace Alachisoft.NCache.SocketServer.Command
                     if (!base.immatureId.Equals("-2"))
                     {
                         //PROTOBUF:RESPONSE
-                        _serializedResponsePackets.Add(Alachisoft.NCache.Common.Util.ResponseHelper.SerializeExceptionResponseWithType(exc, command.requestID, command.commandID, clientManager.ClientVersion));
+                        ResponseOptions responseOptions = new ResponseOptions()
+                        {
+                            Exception = exc,
+                            RequestId = command.requestID,
+                            CommandId = command.commandID,
+                        };
+
+                        _serializedResponsePackets.Add(clientManager.ResponseBuilder.BuildExceptionResponse(responseOptions));
                     }
                     return;
                 }
@@ -103,7 +110,7 @@ namespace Alachisoft.NCache.SocketServer.Command
                         operationContext.Add(OperationContextFieldName.RaiseCQNotification, true);
                         operationContext.Add(OperationContextFieldName.MethodOverload, overload);
                         operationContext.Add(OperationContextFieldName.ClientId, clientManager.ClientID);
-                        CommandsUtil.PopulateClientIdInContext(ref operationContext, clientManager.ClientAddress);
+
 
                         nCache.Cache.Delete(cmdInfo.Key, cmdInfo.FlagMap, notification, cmdInfo.LockId, cmdInfo.Version, cmdInfo.LockAccessType,  operationContext);
                         stopWatch.Stop();
@@ -113,7 +120,14 @@ namespace Alachisoft.NCache.SocketServer.Command
                         if (clientManager.ClientVersion >= 5000)
                         {
                             ResponseHelper.SetResponse(deleteResponse, command.requestID, command.commandID);
-                            _serializedResponsePackets.Add(ResponseHelper.SerializeResponse(deleteResponse, Response.Type.DELETE));
+                            
+                            ResponseOptions responseOptions = new ResponseOptions()
+                            {
+                                Response = deleteResponse,
+                                ResponseType = Response.Type.DELETE
+
+                            };
+                            _serializedResponsePackets.Add(clientManager.ResponseBuilder.BuildResponse(responseOptions));
                         }
                         else
                         {
@@ -121,7 +135,12 @@ namespace Alachisoft.NCache.SocketServer.Command
                             Response response = new Response();
                             response.deleteResponse = deleteResponse;
                             ResponseHelper.SetResponse(response, command.requestID, command.commandID, Response.Type.DELETE);
-                            _serializedResponsePackets.Add(Alachisoft.NCache.Common.Util.ResponseHelper.SerializeResponse(response));
+                            ResponseOptions responseOptions = new ResponseOptions()
+                            {
+                                Response = response,
+                                ResponseType = Response.Type.DELETE
+                            };
+                            _serializedResponsePackets.Add(clientManager.ResponseBuilder.BuildResponse(responseOptions));
                         }
 
                     }
@@ -130,7 +149,14 @@ namespace Alachisoft.NCache.SocketServer.Command
                         _removeResult = OperationResult.Failure;
                         exception = exc.ToString();
                         //PROTOBUF:RESPONSE
-                        _serializedResponsePackets.Add(Alachisoft.NCache.Common.Util.ResponseHelper.SerializeExceptionResponseWithType(exc, command.requestID, command.commandID, clientManager.ClientVersion));
+                        ResponseOptions responseOptions = new ResponseOptions()
+                        {
+                            Exception = exc,
+                            RequestId = command.requestID,
+                            CommandId = command.commandID,
+                        };
+
+                        _serializedResponsePackets.Add(clientManager.ResponseBuilder.BuildExceptionResponse(responseOptions));
                     }
                     finally
                     {

@@ -1,4 +1,4 @@
-﻿//  Copyright (c) 2021 Alachisoft
+﻿//  Copyright (c) 2026 Alachisoft
 //  
 //  Licensed under the Apache License, Version 2.0 (the "License");
 //  you may not use this file except in compliance with the License.
@@ -12,20 +12,29 @@
 //  See the License for the specific language governing permissions and
 //  limitations under the License
 using Alachisoft.NCache.Common.Caching.Statistics.CustomCounters;
+using Alachisoft.NCache.Common.Monitoring;
 using Alachisoft.NCache.Common.Stats;
 using Alachisoft.NCache.Common.Util;
 using System;
 using System.Collections.Generic;
+using System.Runtime.InteropServices;
+
+using Alachisoft.NCache.Caching.Statistics;
+using Alachisoft.NCache.Common;
+using System.Diagnostics;
 
 namespace Alachisoft.NCache.SocketServer.Statistics
 {
-    public class CustomStatsCollector : IDisposable, StatisticsCounter
+    public class CustomStatsCollector : IDisposable, StatisticsCounter, ICounterMonitorableEntity
     {
         /// <summary> Instance name. </summary>
         private string _instanceName;
         /// <summary> Port number. </summary>
         private string _port;
-
+       
+        private Dictionary<string, PerformanceCounterBase> _ncacheCounters = new Dictionary<string, PerformanceCounterBase>();
+        private bool _populationSuccessful = false;
+        
         /// <summary> performance counter for bytes sent per second. </summary>
         private PerformanceCounterBase _pcClientBytesSentPerSec = null;
         /// <summary> performance counter for bytes received per second. </summary>
@@ -74,11 +83,15 @@ namespace Alachisoft.NCache.SocketServer.Statistics
         /// 
 
         private PerformanceCounterBase _pcConnectedClients = null;
+        private CounterIDMap _counterIDMap;
+
 
         private const string PC_CATEGORY = "NCache";
         private long _queueSize;
 
+        private List<PerformanceCounterBase> _availableCounters = new List<PerformanceCounterBase>();
 
+        bool required = true;
 
         /// <summary>
         /// Constructor
@@ -106,13 +119,53 @@ namespace Alachisoft.NCache.SocketServer.Statistics
         /// Returns true if the current user has the rights to read/write to performance counters
         /// under the category of object cache.
         /// </summary>
+        MonitoringEntityType IMonitorableEntity.GetEntityType
+        {
+            get { return MonitoringEntityType.Stats; }
+        }
 
+        public CounterMetadataCollection Metadata => null;
+
+        IntervalCounterDataCollection ICounterMonitorableEntity.Data { get { return Data(); } }
+
+        public bool IsPrimary { get { return false; } }
+
+
+      
+        public MetricsPublisher StatsPublisher { get; set; }
         public bool UserHasAccessRights
         {
             get { return true; }
         }
 
+        public Category Category
+        {
+            get;
+            set;
+        }
 
+        private void StoreCounters() 
+        {
+           
+            _ncacheCounters.Add(_pcRequestsPerSec.Name, _pcRequestsPerSec);
+            _ncacheCounters.Add(_pcResponsesPerSec.Name, _pcResponsesPerSec);
+            _ncacheCounters.Add(_pcClientBytesSentPerSec.Name, _pcClientBytesSentPerSec);
+            _ncacheCounters.Add(_pcClientBytesReceiedPerSec.Name, _pcClientBytesReceiedPerSec);
+            _ncacheCounters.Add(_pcResponseQueueCount.Name, _pcResponseQueueCount);
+            _ncacheCounters.Add(_pcResponseQueueSize.Name, _pcResponseQueueSize);
+            _ncacheCounters.Add(_pcEventQueueCount.Name, _pcEventQueueCount);
+            _ncacheCounters.Add(_requestLogPerSecond.Name, _requestLogPerSecond);
+            _ncacheCounters.Add(_requestLogSize.Name, _requestLogSize);
+            _ncacheCounters.Add(_pcConnectedClients.Name, _pcConnectedClients);
+            _ncacheCounters.Add(_pcMsecPerAddBulkAvg.Name, _pcMsecPerAddBulkAvg);
+            _ncacheCounters.Add(_pcMsecPerGetBulkAvg.Name, _pcMsecPerGetBulkAvg);
+            _ncacheCounters.Add(_pcMsecPerUpdBulkAvg.Name, _pcMsecPerUpdBulkAvg);
+            _ncacheCounters.Add(_pcMsecPerDelBulkAvg.Name, _pcMsecPerDelBulkAvg);
+            _ncacheCounters.Add(_pcMsecPerAddBulkBase.Name, _pcMsecPerAddBulkBase);
+            _ncacheCounters.Add(_pcMsecPerGetBulkBase.Name, _pcMsecPerGetBulkBase);
+            _ncacheCounters.Add(_pcMsecPerUpdBulkBase.Name, _pcMsecPerUpdBulkBase);
+            _ncacheCounters.Add(_pcMsecPerDelBulkBase.Name, _pcMsecPerDelBulkBase);
+        }
 
         #region	/                 --- IDisposable ---           /
 
@@ -188,7 +241,9 @@ namespace Alachisoft.NCache.SocketServer.Statistics
                 _pcMsecPerGetBulkBase = new RateOfCounter(CustomCounterNames.MsecPerGetBulkBase, _instanceName);
                 _pcMsecPerUpdBulkBase = new RateOfCounter(CustomCounterNames.MsecPerUpdBulkBase, _instanceName);
                 _pcMsecPerDelBulkBase = new RateOfCounter(CustomCounterNames.MsecPerDelBulkBase, _instanceName);
-
+                StoreCounters();
+                PopulateCounters();
+                _populationSuccessful = true;
             }
         }
 
@@ -353,7 +408,6 @@ namespace Alachisoft.NCache.SocketServer.Statistics
             {
                 lock (_pcMsecPerCacheOperation)
                 {
-                    //_usMsecPerCacheOperation.EndSample();
                     _nsMsecPerCacheOperation.Stop();
                     long timeSpent = (long)_nsMsecPerCacheOperation.Duration(1);
                     if (timeSpent < 0)
@@ -583,5 +637,109 @@ namespace Alachisoft.NCache.SocketServer.Statistics
                     return ConnectionManager.ConnectionTable.Count;
             }
         }
+
+        #region Monitoring Entities
+        public Publisher PublisherType { get { return Publisher.NCache; } }
+
+        public bool MergeCounters => true;
+
+        public void RegisterAsMonitorableEntity()
+        {
+            if (Category != null && Category.Publish)
+            {
+                    StatsPublisher.RegisterMonitorableEntity(this);
+            }
+        }
+
+        public CounterMetadataCollection GetMetadata()
+        {
+            CounterMetadataCollection counterMetadataCollection = null;
+#if NETCORE
+            if (RuntimeInformation.IsOSPlatform(OSPlatform.Linux))
+            {
+                counterMetadataCollection = StatsMetricsUtil.Metadata(ClientCounters.GetCustomCounterCreationData(), Publisher.NCacheClient, Category);
+            }
+            else
+            {
+                counterMetadataCollection = StatsMetricsUtil.Metadata(ClientCounters.GetCounterCreationData(), Publisher.NCacheClient, Category);
+            }
+#else
+            counterMetadataCollection = StatsMetricsUtil.Metadata(ClientCounters.GetCounterCreationData(),Publisher.NCacheClient,Category);
+# endif
+            GenerateIDMap(counterMetadataCollection);
+            counterMetadataCollection.Category = Publisher.NCacheClient;
+            counterMetadataCollection.InstanceName = ServiceConfiguration.BindToIP.ToString();
+            counterMetadataCollection.Version = Common.Monitoring.Version.GetVersion();
+            return counterMetadataCollection;
+        }
+
+        private void GenerateIDMap(CounterMetadataCollection counterMetadataCollection)
+        {
+            _counterIDMap = new CounterIDMap();
+            _counterIDMap.AssignAndAddCounters(counterMetadataCollection.Counters);
+
+        }
+
+        internal void PopulateCounters()
+        {
+            if (Category != null && Category.Publish)
+            {
+                foreach (var counter in Category.Counters)
+                {
+                    PerformanceCounterBase performanceCounter;
+                    if (counter.Publish)
+                    {
+                        if (_ncacheCounters.TryGetValue(counter.Name, out performanceCounter))
+                        {
+                            if (!_availableCounters.Contains(performanceCounter))
+                                _availableCounters.Add(performanceCounter);
+                        }
+                    }
+                }
+            }
+
+        }
+
+        public MonitoringEntityType GetEntityType()
+        {
+            return MonitoringEntityType.Stats;
+        }
+
+        public IntervalCounterDataCollection Data()
+        {
+            Dictionary<short, double> counterData = new Dictionary<short, double>();
+            if (required)
+            {
+                _counterIDMap = new CounterIDMap();
+                _counterIDMap.AssignAndAddCounters(StatsPublisher.CounterMetadataCollection.Counters);
+                required = false;
+            }
+
+            lock (_availableCounters)
+            {
+                try
+                {
+                    foreach (var data in _availableCounters)
+                    {
+                        if (_counterIDMap.GetCounerID(data.Name) != -10)
+                            counterData.Add(_counterIDMap.GetCounerID(data.Name), data.Value);
+                    }
+                    return new IntervalCounterDataCollection
+                    {
+                        Values = counterData,
+                        Timestamp = DateTime.UtcNow,
+                        PublisherType = Publisher.NCache
+                    };
+                }
+                catch (Exception ex)
+                {
+                    throw ex;
+                }
+            }
+
+        }
+
+
+        #endregion
     }
 }

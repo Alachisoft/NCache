@@ -1,4 +1,4 @@
-//  Copyright (c) 2021 Alachisoft
+//  Copyright (c) 2026 Alachisoft
 //  
 //  Licensed under the Apache License, Version 2.0 (the "License");
 //  you may not use this file except in compliance with the License.
@@ -35,7 +35,6 @@ using Alachisoft.NCache.Common.Pooling.Lease;
 using Alachisoft.NCache.Common.Pooling;
 using Alachisoft.NCache.Caching.Pooling;
 using Alachisoft.NCache.Util;
-
 
 namespace Alachisoft.NCache.Caching
 {
@@ -83,11 +82,12 @@ namespace Alachisoft.NCache.Caching
        
         private Notifications _notifications;
 
+        
+ 
         public Notifications Notifications
         {
             get { return _notifications; }
             set { _notifications = value; }
-            //set { _notifications = PoolingUtilities.SwapSimpleLeasables(_notifications, value); }
         }
 
         //PullBasedCallbacks
@@ -204,8 +204,6 @@ namespace Alachisoft.NCache.Caching
                 return false;
             }
         }
-
-      
 
         public string ResyncProviderName
         {
@@ -671,7 +669,6 @@ namespace Alachisoft.NCache.Caching
             {
                 if (ExpirationHint != null)
                 {
-                   // IList<KeyDependency> keyDependencies = new List<KeyDependency>();
                     // We're working with hashtable so that same keys' values are overwritten
                     Hashtable keysIAmDependingOnWithKeyDependencyInfo = new Hashtable();
  
@@ -742,9 +739,11 @@ namespace Alachisoft.NCache.Caching
 
                     object val = value;
 
-                    if (value is Array && !(value is byte[]))
+                    Array array = val as Array;
+                    if (array != null && !(value is byte[]))
                     {
-                        val = UserBinaryObject.CreateUserBinaryObject((Array)value, PoolManager);
+                        if (array != null && array.Length > 0 && (array.GetValue(0) is byte[]))
+                            val = UserBinaryObject.CreateUserBinaryObject((Array)value, PoolManager);
                     }
                     base.Value = val;
                 }
@@ -867,7 +866,7 @@ namespace Alachisoft.NCache.Caching
             get { return _bitset.IsBitSet(BitSetConstants.Flattened); }
         }
 
-        internal bool IsCompressed
+        public bool IsCompressed
         {
             get { return _bitset.IsBitSet(BitSetConstants.Compressed); }
         }
@@ -940,7 +939,7 @@ namespace Alachisoft.NCache.Caching
                 e._type = _type;
  		        e._itemRemovedListener = _itemRemovedListener;
                 e._itemUpdateListener = _itemUpdateListener;
-
+                
             }
         }
 
@@ -972,6 +971,7 @@ namespace Alachisoft.NCache.Caching
             e.Value = Value;
             e.ExpirationHint = _exh;
             e.EvictionHint = _evh;
+
             CloneInternal(e);
             return e;
         }
@@ -1055,7 +1055,6 @@ namespace Alachisoft.NCache.Caching
                         expiry = null;
                         if (localAddress != null)
                         {
-                          //  expiry = /*PoolManager.GetNodeExpirationPool().Rent(true)*/;
                             expiry.Node = localAddress;
                         }
                         
@@ -1219,8 +1218,6 @@ namespace Alachisoft.NCache.Caching
                 _itemRemovedListener = reader.ReadObject(ArrayList.Synchronized(new ArrayList[2])) as ArrayList;
                 OldInMemorySize = reader.ReadInt32(0);
                 _notifications = reader.ReadObject(null) as Notifications;
-               
-
 
             }
         }
@@ -1251,7 +1248,6 @@ namespace Alachisoft.NCache.Caching
                 writer.WriteObject(_itemRemovedListener);
                 writer.Write(this.OldInMemorySize);
                 writer.WriteObject(_notifications);
-             
             }
         }
 
@@ -1458,7 +1454,7 @@ namespace Alachisoft.NCache.Caching
             _size = -1;
             _version = 0;
             IsStored = false;
-          
+            
         }
 
         public override void ReturnLeasableToPool()
@@ -1491,7 +1487,7 @@ namespace Alachisoft.NCache.Caching
                     clonedEntry.Value = valueAsUserBinaryObject.DeepClone(poolManager);
                     return DeepCloneInternal(poolManager, clonedEntry);
                 }
-                clonedEntry.Value = value; 
+                clonedEntry.Value = value;
                 return DeepCloneInternal(poolManager, clonedEntry);
             }
         }
@@ -1546,8 +1542,7 @@ namespace Alachisoft.NCache.Caching
             clonedEntry._providerName = _providerName;     
             clonedEntry._type = _type;
             clonedEntry.Notifications = Notifications?.DeepClone(null);
-
-        
+            
 
             if (_itemRemovedListener != null)
             {

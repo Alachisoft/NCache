@@ -1,4 +1,4 @@
-//  Copyright (c) 2021 Alachisoft
+//  Copyright (c) 2026 Alachisoft
 //  
 //  Licensed under the Apache License, Version 2.0 (the "License");
 //  you may not use this file except in compliance with the License.
@@ -22,6 +22,10 @@ using Alachisoft.NCache.Common.Topologies.Clustered;
 using Alachisoft.NCache.Common.Util;
 using Alachisoft.NCache.Common.Pooling.Stats;
 using Alachisoft.NCache.Common.FeatureUsageData.Dom;
+using Alachisoft.NCache.Common.Monitoring;
+using Alachisoft.NCache.Common.Monitoring.MetricsServer;
+using Alachisoft.NCache.Common.DataStructures;
+using System.Collections;
 
 namespace Alachisoft.NCache.Caching
 {
@@ -31,7 +35,7 @@ namespace Alachisoft.NCache.Caching
     public abstract class CacheRenderer
     {
         public delegate void ClientConnected(string client, string cacheId, ClientInfo cacheInfo, long count);
-        public delegate void ClientDisconnected(string client, string cacheId, Runtime.Caching.ClientInfo clientInfo, long count);
+        public delegate void ClientDisconnected(string client, string cacheId,long count);
 
         private ClientConnected _clientConnected;
         private ClientDisconnected _clientDisconnected;
@@ -59,6 +63,7 @@ namespace Alachisoft.NCache.Caching
 
         public abstract string ManagementIPAddress { get; set; }
 
+        public abstract string ServerMapping { get; }
         public UserInfo UserInfo { get; set; } 
 
         /// <summary>
@@ -77,6 +82,7 @@ namespace Alachisoft.NCache.Caching
 
         public virtual List<Alachisoft.NCache.Common.Monitoring.ClientNode> GetClientList(string cacheId) { return null; }
 
+        public virtual ArrayList GetClientInfoProcessStats(string cacheId) { return null; }
         public virtual List<Alachisoft.NCache.Common.Monitoring.ClientProcessStats> GetClientProcessStats(string cacheId) { return null; }
 
 
@@ -89,6 +95,10 @@ namespace Alachisoft.NCache.Caching
         public abstract void InitializePools(bool createFakePools);
 
         public abstract PoolStats GetPoolStats(PoolStatsRequest request);
+
+        public abstract MetricsPublisher StatsPublisher { get; set; }
+        public abstract IMetricsTransporterFactory MetricsTransporterFactory { get; set; }
         public abstract ClientProfileDom GetClientProfile();
+
     }
 }

@@ -1,4 +1,4 @@
-//  Copyright (c) 2021 Alachisoft
+//  Copyright (c) 2026 Alachisoft
 //  
 //  Licensed under the Apache License, Version 2.0 (the "License");
 //  you may not use this file except in compliance with the License.
@@ -17,7 +17,7 @@ using Alachisoft.NCache.Common.DataStructures;
 using Alachisoft.NCache.Common.Util;
 using Alachisoft.NCache.Common.Monitoring;
 using Alachisoft.NCache.SocketServer.RuntimeLogging;
-using Alachisoft.NCache.SocketServer.Util;
+using Alachisoft.NCache.Common.ResponseSerialization;
 
 namespace Alachisoft.NCache.SocketServer.Command
 {
@@ -44,7 +44,16 @@ namespace Alachisoft.NCache.SocketServer.Command
             catch (Exception exc)
             {
                 if (!base.immatureId.Equals("-2"))
-                    _serializedResponsePackets.Add(Alachisoft.NCache.Common.Util.ResponseHelper.SerializeExceptionResponseWithType(exc, command.requestID, command.commandID, clientManager.ClientVersion));
+                {
+                    ResponseOptions responseOptions = new ResponseOptions()
+                    {
+                        Exception = exc,
+                        RequestId = command.requestID,
+                        CommandId = command.commandID,
+                    };
+
+                    _serializedResponsePackets.Add(clientManager.ResponseBuilder.BuildExceptionResponse(responseOptions));
+                }
 
                 return;
             }
@@ -54,7 +63,6 @@ namespace Alachisoft.NCache.SocketServer.Command
                 NCache nCache = clientManager.CmdExecuter as NCache;
                 EnumerationDataChunk nextChunk = nCache.Cache.GetNextChunk(cmdInfo.Pointer, cmdInfo.OperationContext);
                 stopWatch.Stop();
-              
 
                 Alachisoft.NCache.Common.Protobuf.GetGroupNextChunkResponse getNextChunkResponse = new Alachisoft.NCache.Common.Protobuf.GetGroupNextChunkResponse();
                 getNextChunkResponse.keys.AddRange(nextChunk.Data);
@@ -63,7 +71,12 @@ namespace Alachisoft.NCache.SocketServer.Command
                 if (clientManager.ClientVersion >= 5000)
                 {
                     ResponseHelper.SetResponse(getNextChunkResponse, command.requestID, command.commandID);
-                    _serializedResponsePackets.Add(ResponseHelper.SerializeResponse(getNextChunkResponse, Common.Protobuf.Response.Type.GET_GROUP_NEXT_CHUNK));
+                    ResponseOptions responseOptions = new ResponseOptions()
+                    {
+                        Response = getNextChunkResponse,
+                        ResponseType = Common.Protobuf.Response.Type.GET_GROUP_NEXT_CHUNK
+                    };
+                    _serializedResponsePackets.Add(clientManager.ResponseBuilder.BuildResponse(responseOptions));
                 }
                 else
                 {
@@ -71,13 +84,25 @@ namespace Alachisoft.NCache.SocketServer.Command
                     Alachisoft.NCache.Common.Protobuf.Response response = new Alachisoft.NCache.Common.Protobuf.Response();
                     response.getGroupNextChunkResponse = getNextChunkResponse;
                     ResponseHelper.SetResponse(response, command.requestID, command.commandID, Common.Protobuf.Response.Type.GET_GROUP_NEXT_CHUNK);
-                    _serializedResponsePackets.Add(Alachisoft.NCache.Common.Util.ResponseHelper.SerializeResponse(response));
+                    ResponseOptions responseOptions = new ResponseOptions()
+                    {
+                        Response = response,
+                        ResponseType = Common.Protobuf.Response.Type.GET_GROUP_NEXT_CHUNK
+                    };
+                    _serializedResponsePackets.Add(clientManager.ResponseBuilder.BuildResponse(responseOptions));
                 }
             }
             catch (Exception exc)
             {
                 exception = exception.ToString();
-                _serializedResponsePackets.Add(Alachisoft.NCache.Common.Util.ResponseHelper.SerializeExceptionResponseWithType(exc, command.requestID, command.commandID, clientManager.ClientVersion));
+                ResponseOptions responseOptions = new ResponseOptions()
+                {
+                    Exception = exc,
+                    RequestId = command.requestID,
+                    CommandId = command.commandID,
+                };
+
+                _serializedResponsePackets.Add(clientManager.ResponseBuilder.BuildExceptionResponse(responseOptions));
             }
             finally
             {
@@ -89,8 +114,6 @@ namespace Alachisoft.NCache.SocketServer.Command
 
                         APILogItemBuilder log = new APILogItemBuilder(MethodsName.GetGroupNextChunk.ToLower());
                         log.GenerateGetEnumeratorAPILogItem(1, exception, executionTime, clientManager.ClientID.ToLower(), clientManager.ClientSocketId.ToString());
-
-                        // Hashtable expirationHint = log.GetDependencyExpirationAndQueryInfo(cmdInfo.ExpirationHint, cmdInfo.queryInfo);
                     }
                 }
                 catch
@@ -113,7 +136,7 @@ namespace Alachisoft.NCache.SocketServer.Command
             cmdInfo.OperationContext = new OperationContext();
             cmdInfo.OperationContext.Add(OperationContextFieldName.IntendedRecipient, intendedRecepient);
             cmdInfo.OperationContext.Add(OperationContextFieldName.ClientLastViewId, lastViewId);
-            CommandsUtil.PopulateClientIdInContext(ref cmdInfo.OperationContext, clientManager.ClientAddress);
+
             return cmdInfo;
         }
     }

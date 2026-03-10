@@ -1,4 +1,4 @@
-// $Id: VIEW_ENFORCER.java,v 1.3 2004/04/23 19:36:13 belaban Exp $
+
 using System;
 using Alachisoft.NGroups;
 using Alachisoft.NGroups.Util;

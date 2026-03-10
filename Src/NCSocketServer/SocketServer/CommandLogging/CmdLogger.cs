@@ -1,4 +1,4 @@
-﻿//  Copyright (c) 2021 Alachisoft
+﻿//  Copyright (c) 2026 Alachisoft
 //  
 //  Licensed under the Apache License, Version 2.0 (the "License");
 //  you may not use this file except in compliance with the License.
@@ -69,7 +69,6 @@ namespace Alachisoft.NCache.SocketServer.CommandLogging
                 string.Format("{0,20}     {1,20}      {2, 20}      {3, 20}     {4, 20}", "", "", "", "", "")); 
 #endif
 
-            // Start log persistence thread...
             _logThread = new Thread(Run) { IsBackground = true };
             _logThread.Start();
         }

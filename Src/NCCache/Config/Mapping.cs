@@ -1,4 +1,4 @@
-//  Copyright (c) 2021 Alachisoft
+//  Copyright (c) 2026 Alachisoft
 //  
 //  Licensed under the Apache License, Version 2.0 (the "License");
 //  you may not use this file except in compliance with the License.
@@ -12,11 +12,8 @@
 //  See the License for the specific language governing permissions and
 //  limitations under the License
 using System;
-using System.Collections.Generic;
-using System.Text;
 using Alachisoft.NCache.Common.Configuration;
 using Alachisoft.NCache.Runtime.Serialization;
-using Runtime = Alachisoft.NCache.Runtime;
 
 namespace Alachisoft.NCache.Config
 {
@@ -27,8 +24,6 @@ namespace Alachisoft.NCache.Config
         private int _privatePort;
         private string _publicIP;
         private int _publicPort;
-
-       
 
         [ConfigurationAttribute("public-ip")]
         public string PublicIP
@@ -56,7 +51,7 @@ namespace Alachisoft.NCache.Config
             get { return _privatePort; }
             set { _privatePort = value; }
         }
-     
+
 
         #region ICloneable Members
 
@@ -77,10 +72,10 @@ namespace Alachisoft.NCache.Config
 
         public void Deserialize(Runtime.Serialization.IO.CompactReader reader)
         {
-            _privateIp=reader.ReadObject()as string;
-            _privatePort=reader.ReadInt32();
-            _publicIP=reader.ReadObject()as string;
-            _publicPort=reader.ReadInt32();
+            _privateIp = reader.ReadObject() as string;
+            _privatePort = reader.ReadInt32();
+            _publicIP = reader.ReadObject() as string;
+            _publicPort = reader.ReadInt32();
         }
 
         public void Serialize(Runtime.Serialization.IO.CompactWriter writer)
@@ -88,9 +83,14 @@ namespace Alachisoft.NCache.Config
             writer.WriteObject(this._privateIp);
             writer.Write(this._privatePort);
             writer.WriteObject(this._publicIP);
-            writer.Write(this._publicPort);          
+            writer.Write(this._publicPort);
         }
 
         #endregion
+
+        public override string ToString()
+        {
+            return $"public-ip= {PublicIP} public-port= {PublicPort} private-ip={PrivateIP} private-port={PrivatePort}";
+        }
     }
 }

@@ -1,4 +1,4 @@
-//  Copyright (c) 2021 Alachisoft
+//  Copyright (c) 2026 Alachisoft
 //  
 //  Licensed under the Apache License, Version 2.0 (the "License");
 //  you may not use this file except in compliance with the License.
@@ -19,15 +19,19 @@ using System.Web.SessionState;
 using System.Runtime.Serialization;
 using System.Runtime.Serialization.Formatters;
 using System.Runtime.Serialization.Formatters.Binary;
+
 using Alachisoft.NCache.IO;
 using Alachisoft.NCache.Serialization.Formatters;
 using Alachisoft.NCache.Common;
 using Alachisoft.NCache.Common.Net;
+
 using System.Collections.Generic;
 using System.Reflection.Emit;
+
 using Alachisoft.NCache.Runtime.Serialization;
 using System.Web;
 using Alachisoft.NCache.Runtime.Serialization.IO;
+
 using System.IO;
 using System.Threading;
 
@@ -157,8 +161,6 @@ namespace Alachisoft.NCache.Serialization.Surrogates
                         number = i - 1;
                     if (attribOrder[0][number] != "skip.attribute")
                     {
-                        //if (EOF && i == attribOrder[0].Length)
-                        //    break;
                         if (attribOrder[1][number] == "-1" && EOF)
                         {
                             tempField[i] = null;
@@ -180,17 +182,6 @@ namespace Alachisoft.NCache.Serialization.Surrogates
                         tempField[i] = null;
                     }
                 }
-
-                //No Portable types found
-                //if (tempField[tempField.Length - 1] == null)
-                //{
-                //    DotNetFields = new FieldInfo[tempField.Length - 1];
-                //    for (int i = 0; i < (tempField.Length-1); i++)
-                //    {
-                //        DotNetFields[i] = tempField[i];
-                //    }
-                //}
-                //else
                 DotNetFields = tempField;
             }
             else
@@ -204,7 +195,6 @@ namespace Alachisoft.NCache.Serialization.Surrogates
             //current hashtable(attributeOrder) does not contain information of this base class, therefore no attribute ordering is done
             //visible Base attributes are resolved by BindingFlags to check all visibile, previously it was restriced to DeclaringTypes only
             //therefore, this simply does nothing
-            //GetAllFields(type.BaseType, list);
 
             return list;
         }
@@ -293,7 +283,7 @@ namespace Alachisoft.NCache.Serialization.Surrogates
             if (_nonCompactFields!=null&&_nonCompactFields.Contains(type))
                 nonCompactFieldsTable = _nonCompactFields[type] as Hashtable;
 
-            list = GetAllFields(type, list);//type.GetFields(BindingFlags.Public | BindingFlags.NonPublic | BindingFlags.Instance); //(FieldInfo[])FormatterServices.GetSerializableMembers(type);
+            list = GetAllFields(type, list);
 
             // Declare local variables for the method.
             LocalBuilder objLocal = il.DeclareLocal(type);
@@ -308,13 +298,11 @@ namespace Alachisoft.NCache.Serialization.Surrogates
             il.Emit(OpCodes.Stloc_0);
 
             // Emit write instruction for each serializable field
-            //for (int i = 0; i < fields.Length; i++)
             foreach(FieldInfo field in list)
             {
                 //FieldInfo field = fields[i];
-                ///[Ata]If the class contains a difference intance of the same class
+                ///If the class contains a difference intance of the same class
                 /// then this check will fail and the instance could not be serialized/deserialized.
-                ///if (field.FieldType.IsSerializable)
                 if (nonCompactFieldsTable != null && nonCompactFieldsTable.Contains(field.Name))
                     continue;
                 else
@@ -383,15 +371,10 @@ namespace Alachisoft.NCache.Serialization.Surrogates
             }
             else
             {
-
-                //il.Emit(OpCodes.Pop);
                 il.Emit(OpCodes.Pop);
-                //il.EmitWriteLine("init EOF");
                 il.Emit(OpCodes.Newobj, typeof(EOFJavaSerializationSurrogate).GetConstructor(System.Type.EmptyTypes));
-                //il.EmitWriteLine("init EOF done");
                 // Generate call to WriteObject() method
                 il.Emit(OpCodes.Callvirt, _compactBinaryWriter_WriteObject);
-                //il.EmitWriteLine("init EOF uploaded");
             }
         }
 
@@ -404,9 +387,7 @@ namespace Alachisoft.NCache.Serialization.Surrogates
         private static void EmitPortableWriterMethod(Type type, ILGenerator il)
         {
             List<FieldInfo> list = new List<FieldInfo>();
-            list = GetAllFields(type, list);//type.GetFields(BindingFlags.Public | BindingFlags.NonPublic | BindingFlags.Instance); //(FieldInfo[])FormatterServices.GetSerializableMembers(type);
-            
-            //il.EmitWriteLine("EmitPortableWriterMethod");
+            list = GetAllFields(type, list);
 
             string[][] attribOrder = null;
             if (_attributeOrder != null)
@@ -427,12 +408,10 @@ namespace Alachisoft.NCache.Serialization.Surrogates
 
             // Emit write instruction for each serializable field
             for (int i = 0; i < list.Count; i++)
-            //foreach (FieldInfo field in list)
             {
                 FieldInfo field = list[i];
-                ///[Ata]If the class contains a difference intance of the same class
+                ///If the class contains a difference intance of the same class
                 /// then this check will fail and the instance could not be serialized/deserialized.
-                //if (field.FieldType.IsSerializable)
                 bool toSkip = false;
                 if(i < attribOrder[1].Length && attribOrder[1][i] == "0")
                 {
@@ -457,10 +436,8 @@ namespace Alachisoft.NCache.Serialization.Surrogates
                     il.Emit(OpCodes.Ldarg_0);
                     
                     il.Emit(OpCodes.Newobj, typeof(SkipSerializationSurrogate).GetConstructor(System.Type.EmptyTypes));
-                    //il.EmitWriteLine("init EOF done");
                     // Generate call to WriteObject() method
                     il.Emit(OpCodes.Callvirt, _compactBinaryWriter_WriteObject);
-                    //il.EmitWriteLine("init EOF uploaded");
                 }
             }
             // Return from the method.
@@ -479,24 +456,16 @@ namespace Alachisoft.NCache.Serialization.Surrogates
                 if (fieldType.IsPrimitive)
                 {
                     //surrogate of a primitive WILL be returned
-                    //il.EmitWriteLine("EmitPortableWriteInstruction");
                     ISerializationSurrogate surrogate = TypeSurrogateSelector.GetSurrogateForType(fieldType, null);
-                    //il.Emit(OpCodes.Ldnull);
                     il.Emit(OpCodes.Ldarg_0);
                     il.Emit(OpCodes.Ldc_I4, (int)surrogate.TypeHandle);
                     il.Emit(OpCodes.Conv_I2);
                     MethodInfo writeMethods = typeof(CompactBinaryWriter).GetMethod("Write", new Type[1] { typeof(short) });
                     if (writeMethods != null)
                     {
-                        //il.EmitWriteLine(writeMethods.ToString());
                         // Call the specialized method
                         il.Emit(OpCodes.Callvirt, writeMethods);
-                        //il.EmitWriteLine(writeMethods.ToString());
                     }
-                    //il.EmitWriteLine("EmitPortableWriteInstruction Before ");
-                    //il.Emit(OpCodes.Ldfld, field);
-                    //il.EmitWriteLine("EmitPortableWriteInstruction Primitive ");
-                    //writeMethod = null;
                     // Find a specialized method to write to stream
                     writeMethod = typeof(CompactBinaryWriter).GetMethod("Write", new Type[1] { fieldType });
                     if (writeMethod != null)
@@ -529,12 +498,8 @@ namespace Alachisoft.NCache.Serialization.Surrogates
             }
             else
             {
-
-                //il.Emit(OpCodes.Pop);
                 il.Emit(OpCodes.Pop);
-                //il.EmitWriteLine("init EOF");
                 il.Emit(OpCodes.Newobj, typeof(EOFJavaSerializationSurrogate).GetConstructor(System.Type.EmptyTypes));
-                //il.EmitWriteLine("init EOF done");
                 // Generate call to WriteObject() method
                 
                 il.Emit(OpCodes.Callvirt, _compactBinaryWriter_WriteObject);
@@ -546,12 +511,9 @@ namespace Alachisoft.NCache.Serialization.Surrogates
                 MethodInfo writeMethods = typeof(CompactBinaryWriter).GetMethod("Write", new Type[1] { typeof(short) });
                 if (writeMethods != null)
                 {
-                    //il.EmitWriteLine(writeMethods.ToString());
                     // Call the specialized method
                     il.Emit(OpCodes.Callvirt, writeMethods);
-                    //il.EmitWriteLine(writeMethods.ToString());
                 }
-                //il.EmitWriteLine("init EOF uploaded");
             }
         } 
 
@@ -587,78 +549,6 @@ namespace Alachisoft.NCache.Serialization.Surrogates
             LocalBuilder localObj = il.DeclareLocal(type);
 
             #region TestCode
-            //List<FieldInfo> list = new List<FieldInfo>();
-            //list = GetAllFields(type, list);
-
-            //il.Emit(OpCodes.Ldarg_1);
-            //il.Emit(OpCodes.Castclass, type);
-            //il.Emit(OpCodes.Stloc_0);
-
-            //foreach (FieldInfo field in list)
-            //{
-            //    if (field.FieldType.IsPrimitive)
-            //    {
-            //        il.Emit(OpCodes.Ldloc_0);
-            //        il.Emit(OpCodes.Ldarg_0);
-
-
-
-            //        il.Emit(OpCodes.Ldarg_0);
-            //        il.Emit(OpCodes.Callvirt, _compactBinaryReader_ReadObject);
-
-            //        //il.Emit(OpCodes.Unbox_Any, field.FieldType);
-
-
-            //        //il.Emit(OpCodes.Stfld, field);
-
-
-            //        il.Emit(OpCodes.Ldloc_0);
-            //        il.Emit(OpCodes.Ldfld, field);
-            //        il.Emit(OpCodes.Box, typeof(int));
-            //        //il.Emit(OpCodes.Ldfld, field);
-            //        //il.Emit(OpCodes.Callvirt, _compactBinaryReader_ReadObject);
-            //        il.Emit(OpCodes.Callvirt, _compactBinaryReader_IfSkip);
-
-
-
-            //        //il.Emit(OpCodes.Pop);
-
-            //        il.Emit(OpCodes.Unbox_Any, field.FieldType);
-            //        il.Emit(OpCodes.Stfld, field);
-            //    }
-            //    else
-            //    {
-
-
-            //        il.Emit(OpCodes.Ldloc_0);
-            //        il.Emit(OpCodes.Ldarg_0);
-
-
-
-            //        il.Emit(OpCodes.Ldarg_0);
-            //        il.Emit(OpCodes.Callvirt, _compactBinaryReader_ReadObject);
-
-            //        //il.Emit(OpCodes.Unbox_Any, field.FieldType);
-
-
-            //        //il.Emit(OpCodes.Stfld, field);
-
-
-            //        il.Emit(OpCodes.Ldloc_0);
-            //        il.Emit(OpCodes.Ldfld, field);
-            //        //il.Emit(OpCodes.Ldfld, field);
-            //        //il.Emit(OpCodes.Callvirt, _compactBinaryReader_ReadObject);
-            //        il.Emit(OpCodes.Callvirt, _compactBinaryReader_IfSkip);
-
-            //        //il.Emit(OpCodes.Pop);
-
-            //        il.Emit(OpCodes.Castclass, field.FieldType);
-            //        il.Emit(OpCodes.Stfld, field);
-
-            //    }
-            //}
-            //il.Emit(OpCodes.Ldloc_0);
-            //il.Emit(OpCodes.Ret); 
             #endregion
 
             if (!portable)
@@ -678,7 +568,6 @@ namespace Alachisoft.NCache.Serialization.Surrogates
         /// <param name="il">The IL generator object for the dynamic method</param>
         internal static void EmitReaderMethod(Type type, ILGenerator il)
         {
-            //FieldInfo[] fields = type.GetFields(BindingFlags.Public | BindingFlags.NonPublic | BindingFlags.Instance); //(FieldInfo[])FormatterServices.GetSerializableMembers(type);
             List<FieldInfo> list = new List<FieldInfo>();
             Hashtable nonCompactFieldsTable = null;
             if(_nonCompactFields!=null && _nonCompactFields.Contains(type))
@@ -701,13 +590,11 @@ namespace Alachisoft.NCache.Serialization.Surrogates
             il.Emit(OpCodes.Stloc_0);
 
             // Emit read instruction for each serializable field
-            //for (int i = 0; i < fields.Length; i++)
             foreach(FieldInfo field in list)
             {
                 //FieldInfo field = fields[i];
-                ///[Ata]If the class contains a difference intance of the same class
+                ///If the class contains a difference intance of the same class
                 /// then this check will fail and the instance could not be serialized/deserialized.
-                ///if (field.FieldType.IsSerializable)
                 if (nonCompactFieldsTable != null && nonCompactFieldsTable.Contains(field.Name))
                     continue;
                 else
@@ -797,18 +684,14 @@ namespace Alachisoft.NCache.Serialization.Surrogates
                 //Expecting and EOF surrogate
                 // Generate call to ReadObject() method
                 //[DEBUG]
-                //il.EmitWriteLine("calling ReadObj");
                 il.Emit(OpCodes.Callvirt, _compactBinaryReader_ReadObject);
 
                 //[DEBUG]
-                //il.EmitWriteLine("Casting Value");
                 //Check if EOF for Net or not
                 il.Emit(OpCodes.Unbox_Any, typeof(Boolean));
 
                 //Jump to end and return current class (skip reading other fields)
                 //[DEBUG]
-                //il.EmitWriteLine("Jump");
-
                 il.Emit(OpCodes.Pop);
                 il.Emit(OpCodes.Brtrue, EOFNet);
 
@@ -822,7 +705,6 @@ namespace Alachisoft.NCache.Serialization.Surrogates
         /// <param name="il">The IL generator object for the dynamic method</param>
         private static void EmitPortableReaderMethod(Type type, ILGenerator il)
         {
-            //FieldInfo[] fields = type.GetFields(BindingFlags.Public | BindingFlags.NonPublic | BindingFlags.Instance); //(FieldInfo[])FormatterServices.GetSerializableMembers(type);
             List<FieldInfo> list = new List<FieldInfo>();
             list = GetAllFields(type, list);
 
@@ -849,13 +731,11 @@ namespace Alachisoft.NCache.Serialization.Surrogates
 
             // Emit read instruction for each serializable field
             for (int i = 0; i < list.Count; i++)
-            //foreach (FieldInfo field in list)
             {
                 
                 FieldInfo field = list[i];
-                ///[Ata]If the class contains a difference intance of the same class
+                ///If the class contains a difference intance of the same class
                 /// then this check will fail and the instance could not be serialized/deserialized.
-                ///if (field.FieldType.IsSerializable)
 
                 bool toSkip = false;
                 if (i < attribOrder[1].Length && attribOrder[1][i] == "0")
@@ -893,8 +773,6 @@ namespace Alachisoft.NCache.Serialization.Surrogates
                 // Value types must be boxed
                 il.Emit(OpCodes.Box, type);
             }
-            //il.Emit(OpCodes.Stloc_1);
-            //il.Emit(OpCodes.Ldloc_1);
             // Return from the method.
             il.Emit(OpCodes.Ret);
         }
@@ -918,11 +796,6 @@ namespace Alachisoft.NCache.Serialization.Surrogates
                     // Find a specialized method to read from stream
                     String methodName = "Read" + fieldType.Name;
                     readMethod = typeof(CompactBinaryReader).GetMethod(methodName, new Type[0]);
-                    //if (readMethod != null)
-                    //{
-                    //    // Call the specialized method
-                    //    il.Emit(OpCodes.Callvirt, readMethod);
-                    //}
                     il.Emit(OpCodes.Ldarg_0);
                     il.Emit(OpCodes.Callvirt, _compactBinaryReader_ReadObject);
 
@@ -933,12 +806,8 @@ namespace Alachisoft.NCache.Serialization.Surrogates
                     il.Emit(OpCodes.Callvirt, _compactBinaryReader_IfSkip);
 
 
-                    //il.EmitWriteLine("before Unboxing");
                     il.Emit(OpCodes.Unbox_Any, fieldType);
-                    //il.EmitWriteLine("after Unboxing");
                     
-                    //il.Emit(OpCodes.Pop);
-                    //il.Emit(OpCodes.Stloc_2);
                     il.Emit(OpCodes.Stfld, field);
                 }
 
@@ -984,24 +853,18 @@ namespace Alachisoft.NCache.Serialization.Surrogates
                 //Expecting and EOF surrogate
                 // Generate call to ReadObject() method
                 //[DEBUG]
-                //il.EmitWriteLine("calling ReadObj");
                 il.Emit(OpCodes.Pop);
                 il.Emit(OpCodes.Pop);
                 il.Emit(OpCodes.Ldarg_0);
                 il.Emit(OpCodes.Callvirt, _compactBinaryReader_ReadObject);
                 
                 //[DEBUG]
-                //il.EmitWriteLine("Casting Value");
                 //Check if EOF for Net or not
                 il.Emit(OpCodes.Unbox_Any, typeof(short));
 
                 //Jump to end and return current class (skip reading other fields)
                 //[DEBUG]
-                //il.EmitWriteLine("Jump");
                 il.Emit(OpCodes.Ldc_I4, (int)SubTypeHandle);
-
-                //il.Emit(OpCodes.Pop);
-                //il.Emit(OpCodes.Brtrue, EOFNet);
                 il.Emit(OpCodes.Ceq);
                 il.Emit(OpCodes.Brfalse_S, EOFNet);
             }

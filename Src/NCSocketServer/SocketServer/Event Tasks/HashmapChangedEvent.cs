@@ -1,4 +1,4 @@
-//  Copyright (c) 2021 Alachisoft
+//  Copyright (c) 2026 Alachisoft
 //  
 //  Licensed under the Apache License, Version 2.0 (the "License");
 //  you may not use this file except in compliance with the License.
@@ -17,6 +17,7 @@ using Alachisoft.NCache.SocketServer.Util;
 
 using Alachisoft.NCache.Common.DataStructures;
 using System.Text;
+using System.Collections.Generic;
 
 namespace Alachisoft.NCache.SocketServer.EventTask
 {
@@ -26,6 +27,7 @@ namespace Alachisoft.NCache.SocketServer.EventTask
         private string _clientId;
         private NewHashmap _newmap;
         private bool _isDotNetClient;
+        List<KeyValuePair<string, object>> hashmapChangedEventDetails;
 
         public HashmapChangedEvent(string cacheId, string clientId, NewHashmap newHashmap, bool isDotNetClient)
         {
@@ -40,8 +42,11 @@ namespace Alachisoft.NCache.SocketServer.EventTask
             try
             {
                 ClientManager clientManager = null;
+                Alachisoft.NCache.Common.Protobuf.Response response = new Alachisoft.NCache.Common.Protobuf.Response();
+                Alachisoft.NCache.Common.Protobuf.HashmapChangedEventResponse hashmapChangedResponse = new Alachisoft.NCache.Common.Protobuf.HashmapChangedEventResponse();
+
                 lock (ConnectionManager.ConnectionTable) clientManager = (ClientManager)ConnectionManager.ConnectionTable[this._clientId];
-                if (clientManager != null)
+                if (clientManager != null && (clientManager.ClientVersion <= 5000 || !this._isDotNetClient))
                 {
                     byte[] table = new byte[0];
                     if (this._isDotNetClient)
@@ -52,16 +57,17 @@ namespace Alachisoft.NCache.SocketServer.EventTask
                             {
                                 NewHashmap.Serialize(this._newmap, this._cacheId, true);
                             }
-                            table = this._newmap.Buffer; 
+                            table = this._newmap.Buffer;
                         }
                     }
                     else
                     {
-                        if (_newmap != null) 
+                        if (_newmap != null)
                         {
                             string map = HashtableUtil.ToString(_newmap.Map);
                             string members = HashtableUtil.ToString(_newmap.Members);
                             string lastViewId = _newmap.LastViewId.ToString();
+                            string serverMap = HashtableUtil.ToString(_newmap.ServerMapping);
                             StringBuilder toStr = new StringBuilder();
                             toStr.Append(map);
                             toStr.Append("\t");
@@ -74,11 +80,36 @@ namespace Alachisoft.NCache.SocketServer.EventTask
                             table = HelperFxn.ToBytes(toStr.ToString());
                         }
                     }
-
-                    Alachisoft.NCache.Common.Protobuf.Response response = new Alachisoft.NCache.Common.Protobuf.Response();
-                    Alachisoft.NCache.Common.Protobuf.HashmapChangedEventResponse hashmapChangedResponse = new Alachisoft.NCache.Common.Protobuf.HashmapChangedEventResponse();
-
                     hashmapChangedResponse.table = table;
+                }
+                else 
+                {
+                    foreach (var item in _newmap.Members)
+                        hashmapChangedResponse.members.Add(item.ToString());
+                    hashmapChangedResponse.last_view_id = _newmap.LastViewId;
+                    foreach (var buckets in _newmap.Map.Keys)
+                    {
+                        Alachisoft.NCache.Common.Protobuf.KeyValuePair kvp = new Alachisoft.NCache.Common.Protobuf.KeyValuePair();
+                        kvp.key = buckets.ToString();
+                        kvp.value = _newmap.Map[buckets].ToString();
+                        hashmapChangedResponse.map.Add(kvp);
+                    }
+
+                    if (_newmap.ServerMapping != null && _newmap.ServerMapping.Count > 0)
+                    {
+                        foreach (DictionaryEntry entry in _newmap.ServerMapping)
+                        {
+                            Common.Protobuf.KeyValuePair serverMapped = new Common.Protobuf.KeyValuePair();
+                            serverMapped.key = entry.Key.ToString();
+                            serverMapped.value = entry.Value.ToString();
+
+                            hashmapChangedResponse.serverMapping.Add(serverMapped);
+                        }
+                    }
+
+                    hashmapChangedResponse.update_map = _newmap.UpdateMap;
+                    hashmapChangedResponse.forceful_update = _newmap.ForcefulUpdate;
+                }
 
                     response.hashmapChanged = hashmapChangedResponse;
                     response.responseType = Alachisoft.NCache.Common.Protobuf.Response.Type.HASHMAP_CHANGED_EVENT;
@@ -86,7 +117,6 @@ namespace Alachisoft.NCache.SocketServer.EventTask
                     IList serializedResponse = Alachisoft.NCache.Common.Util.ResponseHelper.SerializeResponse(response,Common.Protobuf.Response.Type.HASHMAP_CHANGED_EVENT);
 
                     ConnectionManager.AssureSend(clientManager, serializedResponse, false);
-                }
             }
             catch (Exception exc)
             {

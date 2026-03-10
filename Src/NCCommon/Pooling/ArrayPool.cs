@@ -1,4 +1,4 @@
-﻿//  Copyright (c) 2021 Alachisoft
+﻿//  Copyright (c) 2026 Alachisoft
 //  
 //  Licensed under the Apache License, Version 2.0 (the "License");
 //  you may not use this file except in compliance with the License.
@@ -13,7 +13,7 @@
 //  limitations under the License
 
 using System;
-using ProtoBuf.Serializers.Pooling;
+using ProtoBuf.Extended.Serializers.Pooling;
 using Alachisoft.NCache.Common.Pooling.Util;
 using Alachisoft.NCache.Common.Pooling.Stats;
 using Alachisoft.NCache.Common.Pooling.ArrayPool;
@@ -25,7 +25,6 @@ namespace Alachisoft.NCache.Common.Pooling
         #region ---------------------------- [ Fields ] ----------------------------
 
         private readonly ArrayOjectPool<T>[] _buckets;
-        //private readonly ObjectPool<ArrayWrapper<T>> _wrapperPool;
 
         #endregion
 
@@ -90,11 +89,7 @@ namespace Alachisoft.NCache.Common.Pooling
 
         ArrayPoolStats IArrayPool.GetStats()
         {
-            var stats = new ArrayPoolStats()
-            //{
-            //    WrapperPoolStats = (_wrapperPool as IObjectPool)?.GetStats()
-            //}
-            ;
+            var stats = new ArrayPoolStats();
             if (_buckets?.Length > 0)
             {
                 for (var i = 0; i < _buckets.Length; i++)

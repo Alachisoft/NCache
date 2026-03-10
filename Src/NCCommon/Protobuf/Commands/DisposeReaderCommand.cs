@@ -10,14 +10,14 @@
 // Generated from: DisposeReaderCommand.proto
 namespace Alachisoft.NCache.Common.Protobuf
 {
-  [global::System.Serializable, global::ProtoBuf.ProtoContract(Name=@"DisposeReaderCommand")]
-  public partial class DisposeReaderCommand : global::ProtoBuf.IExtensible
+  [global::System.Serializable, global::ProtoBuf.Extended.ProtoContract(Name=@"DisposeReaderCommand")]
+  public partial class DisposeReaderCommand : global::ProtoBuf.Extended.IExtensible
   {
     public DisposeReaderCommand() {}
     
 
     private string _readerId = "";
-    [global::ProtoBuf.ProtoMember(1, IsRequired = false, Name=@"readerId", DataFormat = global::ProtoBuf.DataFormat.Default)]
+    [global::ProtoBuf.Extended.ProtoMember(1, IsRequired = false, Name=@"readerId", DataFormat = global::ProtoBuf.Extended.DataFormat.Default)]
     [global::System.ComponentModel.DefaultValue("")]
     public string readerId
     {
@@ -26,7 +26,7 @@ namespace Alachisoft.NCache.Common.Protobuf
     }
 
     private long _requestId = default(long);
-    [global::ProtoBuf.ProtoMember(2, IsRequired = false, Name=@"requestId", DataFormat = global::ProtoBuf.DataFormat.TwosComplement)]
+    [global::ProtoBuf.Extended.ProtoMember(2, IsRequired = false, Name=@"requestId", DataFormat = global::ProtoBuf.Extended.DataFormat.TwosComplement)]
     [global::System.ComponentModel.DefaultValue(default(long))]
     public long requestId
     {
@@ -35,7 +35,7 @@ namespace Alachisoft.NCache.Common.Protobuf
     }
 
     private string _nodeIP = "";
-    [global::ProtoBuf.ProtoMember(3, IsRequired = false, Name=@"nodeIP", DataFormat = global::ProtoBuf.DataFormat.Default)]
+    [global::ProtoBuf.Extended.ProtoMember(3, IsRequired = false, Name=@"nodeIP", DataFormat = global::ProtoBuf.Extended.DataFormat.Default)]
     [global::System.ComponentModel.DefaultValue("")]
     public string nodeIP
     {
@@ -44,7 +44,7 @@ namespace Alachisoft.NCache.Common.Protobuf
     }
 
     private long _clientLastViewId = (long)-1;
-    [global::ProtoBuf.ProtoMember(4, IsRequired = false, Name=@"clientLastViewId", DataFormat = global::ProtoBuf.DataFormat.TwosComplement)]
+    [global::ProtoBuf.Extended.ProtoMember(4, IsRequired = false, Name=@"clientLastViewId", DataFormat = global::ProtoBuf.Extended.DataFormat.TwosComplement)]
     [global::System.ComponentModel.DefaultValue((long)-1)]
     public long clientLastViewId
     {
@@ -53,16 +53,16 @@ namespace Alachisoft.NCache.Common.Protobuf
     }
 
     private int _MethodOverload = (int)0;
-    [global::ProtoBuf.ProtoMember(5, IsRequired = false, Name=@"MethodOverload", DataFormat = global::ProtoBuf.DataFormat.TwosComplement)]
+    [global::ProtoBuf.Extended.ProtoMember(5, IsRequired = false, Name=@"MethodOverload", DataFormat = global::ProtoBuf.Extended.DataFormat.TwosComplement)]
     [global::System.ComponentModel.DefaultValue((int)0)]
     public int MethodOverload
     {
       get { return _MethodOverload; }
       set { _MethodOverload = value; }
     }
-    private global::ProtoBuf.IExtension extensionObject;
-    global::ProtoBuf.IExtension global::ProtoBuf.IExtensible.GetExtensionObject(bool createIfMissing)
-      { return global::ProtoBuf.Extensible.GetExtensionObject(ref extensionObject, createIfMissing); }
+    private global::ProtoBuf.Extended.IExtension extensionObject;
+   global::ProtoBuf.Extended.IExtension global::ProtoBuf.Extended.IExtensible.GetExtensionObject(bool createIfMissing)
+      { return global::ProtoBuf.Extended.Extensible.GetExtensionObject(ref extensionObject, createIfMissing); }
   }
   
 }

@@ -12,42 +12,42 @@
 // Note: requires additional types generated from: CacheItemType.proto
 namespace Alachisoft.NCache.Common.Protobuf
 {
-  [global::System.Serializable, global::ProtoBuf.ProtoContract(Name=@"KeyValuePackageResponse")]
-  public partial class KeyValuePackageResponse : global::ProtoBuf.IExtensible
+  [global::System.Serializable, global::ProtoBuf.Extended.ProtoContract(Name=@"KeyValuePackageResponse")]
+  public partial class KeyValuePackageResponse : global::ProtoBuf.Extended.IExtensible
   {
     public KeyValuePackageResponse() {}
     
     private readonly global::System.Collections.Generic.List<string> _keys = new global::System.Collections.Generic.List<string>();
-    [global::ProtoBuf.ProtoMember(1, Name=@"keys", DataFormat = global::ProtoBuf.DataFormat.Default)]
+    [global::ProtoBuf.Extended.ProtoMember(1, Name=@"keys", DataFormat = global::ProtoBuf.Extended.DataFormat.Default)]
     public global::System.Collections.Generic.List<string> keys
     {
       get { return _keys; }
     }
   
     private readonly global::System.Collections.Generic.List<Alachisoft.NCache.Common.Protobuf.Value> _values = new global::System.Collections.Generic.List<Alachisoft.NCache.Common.Protobuf.Value>();
-    [global::ProtoBuf.ProtoMember(2, Name=@"values", DataFormat = global::ProtoBuf.DataFormat.Default)]
+    [global::ProtoBuf.Extended.ProtoMember(2, Name=@"values", DataFormat = global::ProtoBuf.Extended.DataFormat.Default)]
     public global::System.Collections.Generic.List<Alachisoft.NCache.Common.Protobuf.Value> values
     {
       get { return _values; }
     }
   
     private readonly global::System.Collections.Generic.List<int> _flag = new global::System.Collections.Generic.List<int>();
-    [global::ProtoBuf.ProtoMember(3, Name=@"flag", DataFormat = global::ProtoBuf.DataFormat.TwosComplement)]
+    [global::ProtoBuf.Extended.ProtoMember(3, Name=@"flag", DataFormat = global::ProtoBuf.Extended.DataFormat.TwosComplement)]
     public global::System.Collections.Generic.List<int> flag
     {
       get { return _flag; }
     }
   
     private readonly global::System.Collections.Generic.List<Alachisoft.NCache.Common.Protobuf.CacheItemType.ItemType> _itemType = new global::System.Collections.Generic.List<Alachisoft.NCache.Common.Protobuf.CacheItemType.ItemType>();
-    [global::ProtoBuf.ProtoMember(4, Name=@"itemType", DataFormat = global::ProtoBuf.DataFormat.TwosComplement)]
+    [global::ProtoBuf.Extended.ProtoMember(4, Name=@"itemType", DataFormat = global::ProtoBuf.Extended.DataFormat.TwosComplement)]
     public global::System.Collections.Generic.List<Alachisoft.NCache.Common.Protobuf.CacheItemType.ItemType> itemType
     {
       get { return _itemType; }
     }
   
-    private global::ProtoBuf.IExtension extensionObject;
-    global::ProtoBuf.IExtension global::ProtoBuf.IExtensible.GetExtensionObject(bool createIfMissing)
-      { return global::ProtoBuf.Extensible.GetExtensionObject(ref extensionObject, createIfMissing); }
+    private global::ProtoBuf.Extended.IExtension extensionObject;
+   global::ProtoBuf.Extended.IExtension global::ProtoBuf.Extended.IExtensible.GetExtensionObject(bool createIfMissing)
+      { return global::ProtoBuf.Extended.Extensible.GetExtensionObject(ref extensionObject, createIfMissing); }
   }
   
 }

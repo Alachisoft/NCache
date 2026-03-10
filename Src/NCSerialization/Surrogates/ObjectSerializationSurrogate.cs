@@ -1,4 +1,4 @@
-//  Copyright (c) 2021 Alachisoft
+//  Copyright (c) 2026 Alachisoft
 //  
 //  Licensed under the Apache License, Version 2.0 (the "License");
 //  you may not use this file except in compliance with the License.
@@ -40,7 +40,7 @@ namespace Alachisoft.NCache.Serialization.Surrogates
             object custom = reader.Context.GetObject(cookie);
             if (custom == null)
             {
-                //huma: using new instance of binary fomatter instead of static which may cause exception when shared by multiple threads.
+                //using new instance of binary fomatter instead of static which may cause exception when shared by multiple threads.
                 BinaryFormatter formatter = GetBinaryFormatter(reader);
                 
                 custom = formatter.Deserialize(reader.BaseReader.BaseStream);
@@ -66,7 +66,7 @@ namespace Alachisoft.NCache.Serialization.Surrogates
 
             cookie = writer.Context.RememberObject(graph, true);
             writer.Write(cookie);
-            //huma: using new instance of binary fomatter instead of static which may cause exception when shared by multiple threads.
+            //using new instance of binary fomatter instead of static which may cause exception when shared by multiple threads.
             BinaryFormatter formatter = new BinaryFormatter();
             formatter.Serialize(writer.BaseWriter.BaseStream, graph);
         }

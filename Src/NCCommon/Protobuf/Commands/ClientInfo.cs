@@ -10,14 +10,14 @@
 // Generated from: ClientInfo.proto
 namespace Alachisoft.NCache.Common.Protobuf
 {
-  [global::System.Serializable, global::ProtoBuf.ProtoContract(Name=@"ClientInfo")]
-  public partial class ClientInfo : global::ProtoBuf.IExtensible
+  [global::System.Serializable, global::ProtoBuf.Extended.ProtoContract(Name=@"ClientInfo")]
+  public partial class ClientInfo : global::ProtoBuf.Extended.IExtensible
   {
     public ClientInfo() {}
     
 
     private string _appName = "";
-    [global::ProtoBuf.ProtoMember(1, IsRequired = false, Name=@"appName", DataFormat = global::ProtoBuf.DataFormat.Default)]
+    [global::ProtoBuf.Extended.ProtoMember(1, IsRequired = false, Name=@"appName", DataFormat = global::ProtoBuf.Extended.DataFormat.Default)]
     [global::System.ComponentModel.DefaultValue("")]
     public string appName
     {
@@ -26,7 +26,7 @@ namespace Alachisoft.NCache.Common.Protobuf
     }
 
     private string _clientId = "";
-    [global::ProtoBuf.ProtoMember(2, IsRequired = false, Name=@"clientId", DataFormat = global::ProtoBuf.DataFormat.Default)]
+    [global::ProtoBuf.Extended.ProtoMember(2, IsRequired = false, Name=@"clientId", DataFormat = global::ProtoBuf.Extended.DataFormat.Default)]
     [global::System.ComponentModel.DefaultValue("")]
     public string clientId
     {
@@ -35,7 +35,7 @@ namespace Alachisoft.NCache.Common.Protobuf
     }
 
     private string _ipAddress = "";
-    [global::ProtoBuf.ProtoMember(3, IsRequired = false, Name=@"ipAddress", DataFormat = global::ProtoBuf.DataFormat.Default)]
+    [global::ProtoBuf.Extended.ProtoMember(3, IsRequired = false, Name=@"ipAddress", DataFormat = global::ProtoBuf.Extended.DataFormat.Default)]
     [global::System.ComponentModel.DefaultValue("")]
     public string ipAddress
     {
@@ -44,7 +44,7 @@ namespace Alachisoft.NCache.Common.Protobuf
     }
 
     private int _processId = default(int);
-    [global::ProtoBuf.ProtoMember(4, IsRequired = false, Name=@"processId", DataFormat = global::ProtoBuf.DataFormat.TwosComplement)]
+    [global::ProtoBuf.Extended.ProtoMember(4, IsRequired = false, Name=@"processId", DataFormat = global::ProtoBuf.Extended.DataFormat.TwosComplement)]
     [global::System.ComponentModel.DefaultValue(default(int))]
     public int processId
     {
@@ -53,7 +53,7 @@ namespace Alachisoft.NCache.Common.Protobuf
     }
 
     private string _machineName = "";
-    [global::ProtoBuf.ProtoMember(5, IsRequired = false, Name=@"machineName", DataFormat = global::ProtoBuf.DataFormat.Default)]
+    [global::ProtoBuf.Extended.ProtoMember(5, IsRequired = false, Name=@"machineName", DataFormat = global::ProtoBuf.Extended.DataFormat.Default)]
     [global::System.ComponentModel.DefaultValue("")]
     public string machineName
     {
@@ -62,7 +62,7 @@ namespace Alachisoft.NCache.Common.Protobuf
     }
 
     private string _macAddress = "";
-    [global::ProtoBuf.ProtoMember(6, IsRequired = false, Name=@"macAddress", DataFormat = global::ProtoBuf.DataFormat.Default)]
+    [global::ProtoBuf.Extended.ProtoMember(6, IsRequired = false, Name=@"macAddress", DataFormat = global::ProtoBuf.Extended.DataFormat.Default)]
     [global::System.ComponentModel.DefaultValue("")]
     public string macAddress
     {
@@ -71,16 +71,35 @@ namespace Alachisoft.NCache.Common.Protobuf
     }
 
     private int _cores = default(int);
-    [global::ProtoBuf.ProtoMember(7, IsRequired = false, Name=@"cores", DataFormat = global::ProtoBuf.DataFormat.TwosComplement)]
+    [global::ProtoBuf.Extended.ProtoMember(7, IsRequired = false, Name=@"cores", DataFormat = global::ProtoBuf.Extended.DataFormat.TwosComplement)]
     [global::System.ComponentModel.DefaultValue(default(int))]
     public int cores
     {
       get { return _cores; }
       set { _cores = value; }
     }
-    private global::ProtoBuf.IExtension extensionObject;
-    global::ProtoBuf.IExtension global::ProtoBuf.IExtensible.GetExtensionObject(bool createIfMissing)
-      { return global::ProtoBuf.Extensible.GetExtensionObject(ref extensionObject, createIfMissing); }
+
+    private int _physicalCores = default(int);
+    [global::ProtoBuf.Extended.ProtoMember(8, IsRequired = false, Name = @"physicalCores", DataFormat = global::ProtoBuf.Extended.DataFormat.TwosComplement)]
+    [global::System.ComponentModel.DefaultValue(default(int))]
+    public int physicalCores
+    {
+        get { return _physicalCores; }
+        set { _physicalCores = value; }
+    }
+
+    private int _logicalCores = default(int);
+    [global::ProtoBuf.Extended.ProtoMember(9, IsRequired = false, Name = @"logicalCores", DataFormat = global::ProtoBuf.Extended.DataFormat.TwosComplement)]
+    [global::System.ComponentModel.DefaultValue(default(int))]
+    public int logicalCores
+    {
+        get { return _logicalCores; }
+        set { _logicalCores = value; }
+    }
+
+    private global::ProtoBuf.Extended.IExtension extensionObject;
+   global::ProtoBuf.Extended.IExtension global::ProtoBuf.Extended.IExtensible.GetExtensionObject(bool createIfMissing)
+      { return global::ProtoBuf.Extended.Extensible.GetExtensionObject(ref extensionObject, createIfMissing); }
   }
   
 }

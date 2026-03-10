@@ -1,4 +1,4 @@
-﻿//  Copyright (c) 2021 Alachisoft
+﻿//  Copyright (c) 2026 Alachisoft
 //  
 //  Licensed under the Apache License, Version 2.0 (the "License");
 //  you may not use this file except in compliance with the License.
@@ -22,13 +22,11 @@ namespace Alachisoft.NCache.Common.Locking
     /// <typeparam name="TKey"></typeparam>
     public class KeyLockManager<TKey>
     {
-        //private readonly LockRecursionPolicy _policy;
         private readonly IDictionary<TKey, SlimLockWrapper> _keyLockTable;
         
         private readonly object _mutex= new object();
 
-
-        public KeyLockManager()//LockRecursionPolicy policy)
+        public KeyLockManager()
         {
             _keyLockTable = new Dictionary<TKey, SlimLockWrapper>();
         }
@@ -48,22 +46,19 @@ namespace Alachisoft.NCache.Common.Locking
             Monitor.Enter(key);
         }
 
-
-  
         public void ReleaseWriterLock(TKey key)
         {
             Monitor.Exit(key);
         }
 
-        private void GetLock(TKey key) //, LockMode lockMode)
+        private void GetLock(TKey key)
         {
             SlimLockWrapper slimlock = BorrowLockObject(key, true);
 
             slimlock.GetLock();
-
         }
 
-        private void ReleaseLock(TKey key)//, LockMode lockMode)
+        private void ReleaseLock(TKey key)
         {
             SlimLockWrapper lockObject = GetLockObject(key);
 
@@ -71,8 +66,6 @@ namespace Alachisoft.NCache.Common.Locking
                 return;
 
             lockObject.ReleaseLock();
-
-          
 
             ReturnLockObject(key, lockObject);
         }

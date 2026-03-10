@@ -1,4 +1,4 @@
-﻿//  Copyright (c) 2021 Alachisoft
+﻿//  Copyright (c) 2026 Alachisoft
 //  
 //  Licensed under the Apache License, Version 2.0 (the "License");
 //  you may not use this file except in compliance with the License.
@@ -13,14 +13,13 @@
 //  limitations under the License
 using System;
 using System.Collections.Generic;
-//using System.Linq;
 using System.Text;
 using Alachisoft.NCache.Common.Communication;
 using Alachisoft.NCache.Common.RPCFramework;
 
 namespace Alachisoft.NCache.Common.Protobuf
 {
-    public partial class ManagementCommand : global::ProtoBuf.IExtensible,IRequest
+    public partial class ManagementCommand : global::ProtoBuf.Extended.IExtensible,IRequest
     {
         private TargetMethodParameter _parameters = new TargetMethodParameter();
         public long RequestId

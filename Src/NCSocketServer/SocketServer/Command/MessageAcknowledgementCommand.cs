@@ -1,4 +1,4 @@
-//  Copyright (c) 2021 Alachisoft
+//  Copyright (c) 2026 Alachisoft
 //  
 //  Licensed under the Apache License, Version 2.0 (the "License");
 //  you may not use this file except in compliance with the License.
@@ -21,7 +21,7 @@ using System.Text;
 using Alachisoft.NCache.SocketServer.RuntimeLogging;
 using Alachisoft.NCache.Common.Monitoring;
 using Alachisoft.NCache.Common.Util;
-using Alachisoft.NCache.SocketServer.Util;
+using Alachisoft.NCache.Common.ResponseSerialization;
 
 namespace Alachisoft.NCache.SocketServer.Command
 {
@@ -54,7 +54,7 @@ namespace Alachisoft.NCache.SocketServer.Command
                     }
 
                     operationContext.Add(OperationContextFieldName.ClientId, clientManager.ClientID);
-                    CommandsUtil.PopulateClientIdInContext(ref operationContext, clientManager.ClientAddress);
+
                     _clientId = clientManager.ClientID;
                     _command = command.mesasgeAcknowledgmentCommand;
 
@@ -78,17 +78,28 @@ namespace Alachisoft.NCache.SocketServer.Command
 
 
                     MessageAcknowledgmentResponse messageAckResponse = new MessageAcknowledgmentResponse();
+
                     if (clientManager.ClientVersion >= 5000)
                     {
                         ResponseHelper.SetResponse(messageAckResponse, command.requestID, command.commandID);
-                        _serializedResponsePackets.Add(ResponseHelper.SerializeResponse(messageAckResponse, Common.Protobuf.Response.Type.MESSAGE_ACKNOWLEDGEMENT));
+                        ResponseOptions responseOptions = new ResponseOptions()
+                        {
+                            Response = messageAckResponse,
+                            ResponseType = Response.Type.MESSAGE_ACKNOWLEDGEMENT
+                        };
+                        _serializedResponsePackets.Add(clientManager.ResponseBuilder.BuildResponse(responseOptions));
                     }
                     else
                     {
                         Common.Protobuf.Response response = new Common.Protobuf.Response();
                         response.messageAcknowledgmentResponse = messageAckResponse;
                         ResponseHelper.SetResponse(response, command.requestID, command.commandID, Common.Protobuf.Response.Type.MESSAGE_ACKNOWLEDGEMENT);
-                        _serializedResponsePackets.Add(Alachisoft.NCache.Common.Util.ResponseHelper.SerializeResponse(response));
+                        ResponseOptions responseOptions = new ResponseOptions()
+                        {
+                            Response = response,
+                            ResponseType = Response.Type.MESSAGE_ACKNOWLEDGEMENT
+                        };
+                        _serializedResponsePackets.Add(clientManager.ResponseBuilder.BuildResponse(responseOptions));
                     }
 
                 }
@@ -96,7 +107,14 @@ namespace Alachisoft.NCache.SocketServer.Command
             catch (System.Exception exc)
             {
                 exceptionMessage = exc.ToString();
-                _serializedResponsePackets.Add(Common.Util.ResponseHelper.SerializeExceptionResponseWithType(exc, command.requestID, command.commandID, clientManager.ClientVersion));
+                ResponseOptions responseOptions = new ResponseOptions()
+                {
+                    Exception = exc,
+                    RequestId = command.requestID,
+                    CommandId = command.commandID,
+                };
+
+                _serializedResponsePackets.Add(clientManager.ResponseBuilder.BuildExceptionResponse(responseOptions));
             }
             finally
             {
@@ -107,8 +125,6 @@ namespace Alachisoft.NCache.SocketServer.Command
                     {
                         APILogItemBuilder log = new APILogItemBuilder(MethodsName.AcknowledgeTopicMessages);
                         log.GenerateAcknowledgeTopicMessagesAPILogItem(executionTime, clientManager.ClientID, clientManager.ClientIP, overload, _topicWiseMessageIds, exceptionMessage);
-
-                        // Hashtable expirationHint = log.GetDependencyExpirationAndQueryInfo(cmdInfo.ExpirationHint, cmdInfo.queryInfo);
                     }
                 }
                 catch
@@ -138,7 +154,6 @@ namespace Alachisoft.NCache.SocketServer.Command
                 details.Append("]; ");
             }
 
-            //details.AppendLine("Dependency: " + cmdInfo. != null ? "true" : "false");
             return details.ToString();
         }
     }

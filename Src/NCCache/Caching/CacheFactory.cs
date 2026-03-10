@@ -1,4 +1,4 @@
-//  Copyright (c) 2021 Alachisoft
+//  Copyright (c) 2026 Alachisoft
 //  
 //  Licensed under the Apache License, Version 2.0 (the "License");
 //  you may not use this file except in compliance with the License.
@@ -13,6 +13,7 @@
 //  limitations under the License
 using System;
 using System.Collections;
+using Alachisoft.NCache.Common.Monitoring.MetricsServer;
 using Alachisoft.NCache.Config;
 using Alachisoft.NCache.Config.Dom;
 
@@ -90,10 +91,10 @@ namespace Alachisoft.NCache.Caching
         /// </summary>
         /// <param name="propertyString"></param>
         /// <returns></returns>
-        static public Cache CreateFromPropertyString(string propertyString,CacheServerConfig config, string userId, string password, bool isStartedAsMirror,bool twoPhaseInitialization)
+        static public Cache CreateFromPropertyString(string propertyString,CacheServerConfig config, string userId, string password, bool isStartedAsMirror,bool twoPhaseInitialization, IMetricsTransporterFactory metricsTransporterFactory = null)
         {
             ConfigReader propReader = new PropsConfigReader(propertyString);
-            return CreateFromProperties(propReader.Properties,config, null, null, null, null, null, null, userId, password, isStartedAsMirror,twoPhaseInitialization);
+            return CreateFromProperties(propReader.Properties,config, null, null, null, null, null, null, userId, password, isStartedAsMirror,twoPhaseInitialization, metricsTransporterFactory);
         }
 
 		///// <summary>
@@ -226,7 +227,8 @@ namespace Alachisoft.NCache.Caching
 										string userId,
 										string password,
                                         bool isStartingAsMirror,
-                                        bool twoPhaseInitialization)
+                                        bool twoPhaseInitialization, IMetricsTransporterFactory
+			metricsTransporterFactory = null)
 		{
 			Cache cache = new Cache();
             cache.Configuration = config;
@@ -245,7 +247,7 @@ namespace Alachisoft.NCache.Caching
             if (customUpdate != null)
                 cache.CustomUpdateCallbackNotif += customUpdate;
 
-            cache.Initialize(properties, true, isStartingAsMirror,twoPhaseInitialization);
+            cache.Initialize(properties, true, isStartingAsMirror,twoPhaseInitialization, metricsTransporterFactory);
 			return cache;
 		}
 	}

@@ -1,4 +1,4 @@
-//  Copyright (c) 2021 Alachisoft
+//  Copyright (c) 2026 Alachisoft
 //  
 //  Licensed under the Apache License, Version 2.0 (the "License");
 //  you may not use this file except in compliance with the License.
@@ -16,6 +16,7 @@ using Alachisoft.NCache.Common.Util;
 using Alachisoft.NCache.Common.Enum;
 using Alachisoft.NCache.Common.Collections;
 using Alachisoft.NCache.Common.Caching;
+using Alachisoft.NCache.Common.Monitoring;
 
 namespace Alachisoft.NCache.Caching.Statistics
 {
@@ -69,12 +70,14 @@ namespace Alachisoft.NCache.Caching.Statistics
         void InitializePerfCounters(bool inproc, bool ModuleConfigured = false);
 
 
-		#endregion
+        #endregion
+        MetricsPublisher StatsPublisher { get; set; }
 
-		/// <summary> 
-		/// Increment the performance counter for Cache item count by one. 
-		/// </summary>
-		void IncrementCountStats(long count);
+        Category Category { get; set; }
+        /// <summary> 
+        /// Increment the performance counter for Cache item count by one. 
+        /// </summary>
+        void IncrementCountStats(long count);
 
         /// <summary> 
         /// Increment the performance counter for Cache item count by one. 
@@ -213,9 +216,6 @@ namespace Alachisoft.NCache.Caching.Statistics
 
         /// <summary> Increment the performance counter for Data Balance per second by given value. </summary>
         void IncrementDataBalPerSecStatsBy(long value);
-        /// <summary>
-        /// Increment the performance counter for write behind queue operation per sec
-        /// </summary>
 
         /// <summary> 
         /// Increment the performance counter for Mirror Queue size by one. 
@@ -247,6 +247,7 @@ namespace Alachisoft.NCache.Caching.Statistics
         void IncrementMessageDeliverPerSec(long value);
         double GetCounterValue(string counterName);
         void IncrementMessageExpiredPerSec(long value);
-      
+     
+        
     }
 }

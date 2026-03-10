@@ -1,4 +1,4 @@
-﻿//  Copyright (c) 2021 Alachisoft
+﻿//  Copyright (c) 2026 Alachisoft
 //  
 //  Licensed under the Apache License, Version 2.0 (the "License");
 //  you may not use this file except in compliance with the License.
@@ -14,6 +14,7 @@
 
 using Alachisoft.NCache.Common.Protobuf;
 using Alachisoft.NCache.Common.Enum;
+using Alachisoft.NCache.Common.ResponseSerialization;
 
 namespace Alachisoft.NCache.SocketServer.Command
 {
@@ -34,7 +35,12 @@ namespace Alachisoft.NCache.SocketServer.Command
                 if (clientManager.ClientVersion >= 5000)
                 {
                     Common.Util.ResponseHelper.SetResponse(serializationFormatResponse, command.requestID, command.commandID);
-                    _serializedResponsePackets.Add(Common.Util.ResponseHelper.SerializeResponse(serializationFormatResponse, Response.Type.GET_SERIALIZATION_FORMAT));
+                    ResponseOptions responseOptions = new ResponseOptions()
+                    {
+                        Response = serializationFormatResponse,
+                        ResponseType = Response.Type.GET_SERIALIZATION_FORMAT
+                    };
+                    _serializedResponsePackets.Add(clientManager.ResponseBuilder.BuildResponse(responseOptions));
                 }
                 else
                 {
@@ -42,13 +48,24 @@ namespace Alachisoft.NCache.SocketServer.Command
                     Response response = new Response();
                     response.getSerializationFormatResponse = serializationFormatResponse;
                     Common.Util.ResponseHelper.SetResponse(response, command.requestID, command.commandID, Response.Type.GET_SERIALIZATION_FORMAT);
-                    _serializedResponsePackets.Add(Alachisoft.NCache.Common.Util.ResponseHelper.SerializeResponse(response));
+                    ResponseOptions responseOptions = new ResponseOptions()
+                    {
+                        Response = response,
+                        ResponseType = Response.Type.GET_SERIALIZATION_FORMAT
+                    };
+                    _serializedResponsePackets.Add(clientManager.ResponseBuilder.BuildResponse(responseOptions));
                 }
-
             }
             catch(System.Exception ex)
             {
-                _serializedResponsePackets.Add(Common.Util.ResponseHelper.SerializeExceptionResponseWithType(ex, command.requestID, command.commandID, clientManager.ClientVersion));
+                ResponseOptions responseOptions = new ResponseOptions()
+                {
+                    Exception = ex,
+                    RequestId = command.requestID,
+                    CommandId = command.commandID,
+                };
+
+                _serializedResponsePackets.Add(clientManager.ResponseBuilder.BuildExceptionResponse(responseOptions));
             }
         }
     }

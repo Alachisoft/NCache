@@ -1,4 +1,4 @@
-//  Copyright (c) 2021 Alachisoft
+//  Copyright (c) 2026 Alachisoft
 //  
 //  Licensed under the Apache License, Version 2.0 (the "License");
 //  you may not use this file except in compliance with the License.
@@ -16,7 +16,7 @@ using Alachisoft.NCache.Caching;
 using Alachisoft.NCache.Runtime.Events;
 using Alachisoft.NCache.SocketServer.RuntimeLogging;
 using Alachisoft.NCache.Common.Monitoring;
-using Alachisoft.NCache.SocketServer.Util;
+using Alachisoft.NCache.Common.ResponseSerialization;
 
 namespace Alachisoft.NCache.SocketServer.Command
 {
@@ -49,7 +49,17 @@ namespace Alachisoft.NCache.SocketServer.Command
             }
             catch (Exception exc)
             {
-                if (!base.immatureId.Equals("-2")) _serializedResponsePackets.Add(Alachisoft.NCache.Common.Util.ResponseHelper.SerializeExceptionResponseWithType(exc, command.requestID, command.commandID, clientManager.ClientVersion));
+                if (!base.immatureId.Equals("-2"))
+                {
+                    ResponseOptions responseOptions = new ResponseOptions()
+                    {
+                        Exception = exc,
+                        RequestId = command.requestID,
+                        CommandId = command.commandID,
+                    };
+
+                    _serializedResponsePackets.Add(clientManager.ResponseBuilder.BuildExceptionResponse(responseOptions));
+                }
                 return;
             }
 
@@ -59,7 +69,7 @@ namespace Alachisoft.NCache.SocketServer.Command
                 OperationContext operationContext =  new OperationContext(OperationContextFieldName.OperationType, OperationContextOperationType.CacheOperation);
                 operationContext.Add(OperationContextFieldName.ClientOperationTimeout, clientManager.RequestTimeout);
                 operationContext.CancellationToken = CancellationToken;
-                CommandsUtil.PopulateClientIdInContext(ref operationContext, clientManager.ClientAddress);
+
                 nCache.Cache.UnregisterKeyNotificationCallback(cmdInfo.Keys
                     , new CallbackInfo(clientManager.ClientID, cmdInfo.UpdateCallbackId, EventDataFilter.None) //DataFilter not required while unregistration
                     , new CallbackInfo(clientManager.ClientID, cmdInfo.RemoveCallbackId, EventDataFilter.None) //DataFilter not required while unregistration
@@ -70,7 +80,12 @@ namespace Alachisoft.NCache.SocketServer.Command
                 if (clientManager.ClientVersion >= 5000)
                 {
                     Common.Util.ResponseHelper.SetResponse(unregResponse, command.requestID, command.commandID);
-                    _serializedResponsePackets.Add(Common.Util.ResponseHelper.SerializeResponse(unregResponse, Common.Protobuf.Response.Type.UNREGISTER_BULK_KEY_NOTIF));
+                    ResponseOptions responseOptions = new ResponseOptions()
+                    {
+                        Response = unregResponse,
+                        ResponseType = Common.Protobuf.Response.Type.UNREGISTER_BULK_KEY_NOTIF
+                    };
+                    _serializedResponsePackets.Add(clientManager.ResponseBuilder.BuildResponse(responseOptions));
                 }
                 else
                 {
@@ -78,7 +93,12 @@ namespace Alachisoft.NCache.SocketServer.Command
                     Common.Protobuf.Response response = new Common.Protobuf.Response();
                     response.unregisterBulkKeyNotifResponse = unregResponse;
                     Common.Util.ResponseHelper.SetResponse(response, command.requestID, command.commandID, Common.Protobuf.Response.Type.UNREGISTER_BULK_KEY_NOTIF);
-                    _serializedResponsePackets.Add(Alachisoft.NCache.Common.Util.ResponseHelper.SerializeResponse(response));
+                    ResponseOptions responseOptions = new ResponseOptions()
+                    {
+                        Response = response,
+                        ResponseType = Common.Protobuf.Response.Type.UNREGISTER_BULK_KEY_NOTIF
+                    };
+                    _serializedResponsePackets.Add(clientManager.ResponseBuilder.BuildResponse(responseOptions));
                 }
             }
             catch (OperationCanceledException ex)
@@ -89,7 +109,14 @@ namespace Alachisoft.NCache.SocketServer.Command
             }
             catch (Exception exc)
             {
-                _serializedResponsePackets.Add(Alachisoft.NCache.Common.Util.ResponseHelper.SerializeExceptionResponseWithType(exc, command.requestID, command.commandID, clientManager.ClientVersion));
+                ResponseOptions responseOptions = new ResponseOptions()
+                {
+                    Exception = exc,
+                    RequestId = command.requestID,
+                    CommandId = command.commandID,
+                };
+
+                _serializedResponsePackets.Add(clientManager.ResponseBuilder.BuildExceptionResponse(responseOptions));
             }
             finally
             {
@@ -102,9 +129,6 @@ namespace Alachisoft.NCache.SocketServer.Command
                         APILogItemBuilder log = new APILogItemBuilder(MethodsName.UnRegisterKeyNotificationCallback.ToLower());
                         log.GenerateKeyNotificationCallback(cmdInfo.Keys.Length, cmdInfo.UpdateCallbackId, cmdInfo.RemoveCallbackId, overload, exception, executionTime, clientManager.ClientID.ToLower(), clientManager.ClientSocketId.ToString());
 
-
-
-                        // Hashtable expirationHint = log.GetDependencyExpirationAndQueryInfo(cmdInfo.ExpirationHint, cmdInfo.queryInfo);
                     }
                 }
                 catch
@@ -113,9 +137,6 @@ namespace Alachisoft.NCache.SocketServer.Command
             }
 
         }
-
-       
-
         //PROTOBUF
         private CommandInfo ParseCommand(Alachisoft.NCache.Common.Protobuf.Command command, ClientManager clientManager)
         {
@@ -131,6 +152,5 @@ namespace Alachisoft.NCache.SocketServer.Command
             return cmdInfo;
         }
 
-       
     }
 }

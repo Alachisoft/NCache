@@ -1,4 +1,4 @@
-//  Copyright (c) 2021 Alachisoft
+//  Copyright (c) 2026 Alachisoft
 //  
 //  Licensed under the Apache License, Version 2.0 (the "License");
 //  you may not use this file except in compliance with the License.
@@ -40,7 +40,7 @@ namespace Alachisoft.NCache.Common
         public const int BadClientFound = 1022;
         public const int ServiceStart = 1025;
         public const int ServiceStop = 1026;
-
+        public const int SkippedHeartbeatAlert = 1041;
         #region
 
         public const int MemoryAlert = 1030;
@@ -53,7 +53,12 @@ namespace Alachisoft.NCache.Common
         public const int CacheStopForMaintanice = 1038;
         public const int AverageCacheOperations = 1038;
         #endregion
-
+        public const int ModuleStateTransferStart = 1042;
+        public const int ModuleStateTransferStop = 1043;
+        public const int ModuleStateTransferError = 1044;
+        public const int AcquireMachineIdentityError = 1046;
+        public const int NonHostedMachineDetected = 1047;
+        public const int MachineHeartbeatEventID = 1049;
         public static string EventText(int eventID)
         {
             string text = "";

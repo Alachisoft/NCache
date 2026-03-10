@@ -1,4 +1,4 @@
-//  Copyright (c) 2021 Alachisoft
+//  Copyright (c) 2026 Alachisoft
 //  
 //  Licensed under the Apache License, Version 2.0 (the "License");
 //  you may not use this file except in compliance with the License.
@@ -11,6 +11,7 @@
 //  WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
 //  See the License for the specific language governing permissions and
 //  limitations under the License
+using Alachisoft.NCache.Common.Enum;
 using System;
 using System.IO;
 using System.Reflection;
@@ -98,6 +99,65 @@ namespace Alachisoft.NCache.Common
                 return false;
             }
             return true;
+        }
+
+        public static string GetBaseFilePath(string fileName, out Search result)
+        {
+            return SearchLocal(fileName, out result);
+        }
+
+        private static string SearchLocal(string fileName, out Search result)
+        {
+            result = Search.LocalSearch;
+            String path = null;
+
+            path = Environment.CurrentDirectory + Path.DirectorySeparatorChar + fileName;
+            if (File.Exists(path))
+                return path;
+            return SearchLocalConfig(fileName, out result);
+        }
+        private static string SearchLocalConfig(string fileName, out Search result)
+        {
+            result = Search.LocalConfigSearch;
+            String path = null;
+            bool found = false;
+            if (!found)
+            {
+                string roleRootDir = Environment.GetEnvironmentVariable("RoleRoot");
+                if (roleRootDir != null)
+                {
+                    path = roleRootDir + "\\approot\\" + fileName;
+                    if (!File.Exists(path))
+                    {
+                        path = roleRootDir + "\\approot\\bin\\config\\" + fileName;
+                        if (File.Exists(path))
+                        {
+                            return path;
+                        }
+                    }
+                    else
+                        return path;
+                }
+
+            }
+            else
+                return path;
+
+            return SearchGlobal(fileName, out result);
+        }
+
+        public static string SearchGlobal(string fileName, out Search result)
+        {
+            result = Search.GlobalSearch;
+            string directoryPath = string.Empty;
+            string filePath = string.Empty;
+            if (SearchGlobalDirectory("config", false, out directoryPath))
+            {
+                filePath = Path.Combine(directoryPath, fileName);
+                if (File.Exists(filePath))
+                    return filePath;
+            }
+            return null;
         }
     }
 }

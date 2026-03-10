@@ -1,4 +1,4 @@
-//  Copyright (c) 2021 Alachisoft
+//  Copyright (c) 2026 Alachisoft
 //
 //  Licensed under the Apache License, Version 2.0 (the "License");
 //  you may not use this file except in compliance with the License.
@@ -27,6 +27,7 @@ using Alachisoft.NCache.Common.Enum;
 using Alachisoft.NCache.Common.DataStructures;
 using Alachisoft.NCache.Common.Util;
 using Alachisoft.NCache.Common.Locking;
+using Alachisoft.NCache.Common.Resources;
 using Alachisoft.NCache.Common.Stats;
 using Alachisoft.NCache.Caching.EvictionPolicies;
 using Alachisoft.NCache.Caching.DataGrouping;
@@ -37,12 +38,10 @@ using Alachisoft.NCache.Runtime.Events;
 using EventType = Alachisoft.NCache.Persistence.EventType;
 using Alachisoft.NCache.Common.DataStructures.Clustered;
 using Alachisoft.NCache.Storage;
-//using Alachisoft.NCache.MapReduce;
 using Alachisoft.NCache.Common.Caching;
 using System.Threading;
 using Alachisoft.NCache.Caching.Pooling;
 using Alachisoft.NCache.Common.Pooling;
-using Alachisoft.NCache.Common.FeatureUsageData;
 
 namespace Alachisoft.NCache.Caching.Topologies.Local
 {
@@ -205,29 +204,20 @@ namespace Alachisoft.NCache.Caching.Topologies.Local
         /// </summary>
         public sealed override void Clear(Caching.Notifications notification, DataSourceUpdateOptions updateOptions, OperationContext operationContext)
         {
-            if (!IsCacheOperationAllowed(operationContext))
-                return;
             ClearInternal();
 
-          
             EventContext eventContext = null;
             EventId eventId = null;
-
-          
 
             if (IsSelfInternal)
             {
                 _context.ExpiryMgr.Clear();
 
-
                 if (_context.PerfStatsColl != null && _context.ExpiryMgr != null)
                 {
                     _context.PerfStatsColl.SetExpirationIndexSize(_context.ExpiryMgr.IndexInMemorySize);
                 }
-
-
                 _context.PerfStatsColl.IncrementCountStats((long)Count);
-               
             }
 
             _stats.UpdateCount(this.Count);
@@ -261,11 +251,8 @@ namespace Alachisoft.NCache.Caching.Topologies.Local
         /// with the specified key; otherwise, false.</returns>
         public sealed override bool Contains(object key, OperationContext operationContext)
         {
-            if (!IsCacheOperationAllowed(operationContext))
-                return false;
             if (ContainsInternal(key))
             {
-                // 16 Dec 05 Don't remove *** As per discussion
                 CacheEntry e = GetInternal(key, true, operationContext,false,false);
                 if (e == null) return false;
                 if (e.ExpirationHint != null && e.ExpirationHint.CheckExpired(_context))
@@ -290,10 +277,8 @@ namespace Alachisoft.NCache.Caching.Topologies.Local
         public override LockOptions Lock(object key, LockExpiration lockExpiration, ref object lockId, ref DateTime lockDate, OperationContext operationContext)
         {
             LockOptions lockInfo = new LockOptions();
-            if (!IsCacheOperationAllowed(operationContext))
-                return lockInfo;
+
             CacheEntry e = GetInternal(key, false, operationContext,false,false);
-            FeatureUsageCollector.Instance.GetFeature(FeatureEnum.locking).UpdateUsageTime();
             if (e != null)
             {
                 e.Lock(lockExpiration, ref lockId, ref lockDate, operationContext);
@@ -377,8 +362,6 @@ namespace Alachisoft.NCache.Caching.Topologies.Local
         public override LockOptions IsLocked(object key, ref object lockId, ref DateTime lockDate, OperationContext operationContext)
         {
             LockOptions lockInfo = new LockOptions();
-            if (!IsCacheOperationAllowed(operationContext))
-                return lockInfo;
             CacheEntry e = GetInternal(key, false, operationContext,false,false);
             if (e != null)
             {
@@ -396,8 +379,6 @@ namespace Alachisoft.NCache.Caching.Topologies.Local
 
         public override void UnLock(object key, object lockId, bool isPreemptive, OperationContext operationContext)
         {
-            if (!IsCacheOperationAllowed(operationContext))
-                return;
             Object tmpLockId = null;
             DateTime tmpLockDate = DateTime.Now;
             CacheEntry e = GetInternal(key, false, operationContext,false,false);
@@ -470,9 +451,7 @@ namespace Alachisoft.NCache.Caching.Topologies.Local
         /// <returns>cache entry.</returns>
         public sealed override CacheEntry Get(object key, bool isUserOperation, ref ulong version, ref object lockId, ref DateTime lockDate, LockExpiration lockExpiration, LockAccessType accessType, OperationContext operationContext)
         {
-            CacheEntry removal = null;
-            if (!IsCacheOperationAllowed(operationContext))
-                return removal;
+            CacheEntry removal = null; 
             try
             {
                 operationContext?.MarkInUse(NCModulesConstants.LocalBase);
@@ -483,7 +462,6 @@ namespace Alachisoft.NCache.Caching.Topologies.Local
                 {
                     if (e != null)
                     {
-                        FeatureUsageCollector.Instance.GetFeature(FeatureEnum.locking).UpdateUsageTime();
                         if (accessType == LockAccessType.DONT_ACQUIRE)
                         {
                             bool success = e.CompareLock(lockId);
@@ -525,7 +503,6 @@ namespace Alachisoft.NCache.Caching.Topologies.Local
                 }
 
                 ExpirationHint exh = (e == null ? null : e.ExpirationHint);
-                // 16 Dec 05 Don't remove *** As per discussion
                 if (exh != null)
                 {
                     // we know that we have converted the expiration for client cache.
@@ -639,8 +616,6 @@ namespace Alachisoft.NCache.Caching.Topologies.Local
         /// <returns>returns the result of operation.</returns>
         public sealed override CacheAddResult Add(object key, CacheEntry cacheEntry, bool notify, bool isUserOperation, OperationContext operationContext)
         {
-            if (!IsCacheOperationAllowed(operationContext))
-                return CacheAddResult.Failure;
             CacheAddResult result = CacheAddResult.Failure;
             CacheEntry entry = null;
             CacheEntry removalEntry = null;
@@ -674,7 +649,6 @@ namespace Alachisoft.NCache.Caching.Topologies.Local
                 //This code should be added to allow the user to add a key value pair that has expired.
                 if (result == CacheAddResult.KeyExists)
                 {
-                    // 16 Dec 05): *** Don't remove *** As per discussion with I. M. Khan
                     entry= GetInternal(key, isUserOperation, operationContext,false,false);
                     if (entry.ExpirationHint != null && entry.ExpirationHint.CheckExpired(_context))
                     {
@@ -721,12 +695,8 @@ namespace Alachisoft.NCache.Caching.Topologies.Local
                     EventId eventId = null;
                     EventContext eventContext = null;
                     OperationID opId = operationContext.OperatoinID;
-                 
-
-                  
                 }
                 _stats.UpdateCount(this.Count);
-
             }
             finally
             {
@@ -762,8 +732,6 @@ namespace Alachisoft.NCache.Caching.Topologies.Local
         public sealed override bool Add(object key, ExpirationHint eh, OperationContext operationContext)
         {
             CacheEntry entry = null;
-            if (!IsCacheOperationAllowed(operationContext))
-                return false;
             if (eh == null)
                 return false;
             try
@@ -803,8 +771,7 @@ namespace Alachisoft.NCache.Caching.Topologies.Local
         /// <returns></returns>
         public sealed override bool Add(object key, OperationContext operationContext)
         {
-            if (!IsCacheOperationAllowed(operationContext))
-                return false;
+           
             bool result = AddInternal(key);
             
             if (_context.PerfStatsColl != null)
@@ -851,8 +818,6 @@ namespace Alachisoft.NCache.Caching.Topologies.Local
         public sealed override CacheInsResultWithEntry Insert(object key, CacheEntry cacheEntry, bool notify, bool isUserOperation, object lockId, ulong version, LockAccessType access, OperationContext operationContext)
         {
             CacheInsResultWithEntry result = CacheInsResultWithEntry.CreateCacheInsResultWithEntry(operationContext.UseObjectPool ? _context.TransactionalPoolManager : _context.FakeObjectPool);
-            if (!IsCacheOperationAllowed(operationContext))
-                return result;
             CacheEntry pe = null;
             CacheEntry inputCacheEntry = cacheEntry;
             CacheEntry rollBack = null;
@@ -906,7 +871,6 @@ namespace Alachisoft.NCache.Caching.Topologies.Local
                                 cacheEntry.ReleaseLock();
                             }
                     }
-                    // Bugfix 12852 - Multi-regional sessions do not work as expected even when session locking is disabled in new version i.e. Merger of asp.net and .net core sessions
                     // If entry is not present in cache and explicit release is called lock is not released. so releasing it
                     if (pe == null && access == LockAccessType.RELEASE)
                     {
@@ -1006,7 +970,6 @@ namespace Alachisoft.NCache.Caching.Topologies.Local
                                 {
                                    rollBack = RemoveInternal(key, ItemRemoveReason.Removed, false, operationContext,false,false);
                                     //return entry back to store pool
-                                    //!!!whenever need to remove this code; remove the entire block
                                     if ( MiscUtil.ReturnEntryToPool(rollBack, _context.StorePoolManager))
                                     {
                                         entryCloned = false;//turn off this flag as we are returning entry to the pool 
@@ -1078,9 +1041,6 @@ namespace Alachisoft.NCache.Caching.Topologies.Local
                                     eventContext.OldItem = oldEventCacheEntry;
                                     eventContext.UniqueId =GenerateEventType(EventType.ITEM_UPDATED_CALLBACK)+ cacheEntry.Version.ToString();
                                     NotifyCustomUpdateCallback(key, cbEtnry.ItemUpdateCallbackListener, false, (OperationContext)operationContext.Clone(), eventContext);
-
-                                    FeatureUsageCollector.Instance.GetFeature(FeatureEnum.data_sharing).UpdateUsageTime();
-                                    FeatureUsageCollector.Instance.GetFeature(FeatureEnum.selective_events, FeatureEnum.data_sharing).UpdateUsageTime();
                                 }
                             }
                             if (ShouldNotifyItemUpdated)
@@ -1226,8 +1186,6 @@ namespace Alachisoft.NCache.Caching.Topologies.Local
         public override CacheEntry Remove(object key, ItemRemoveReason removalReason, bool notify, bool isUserOperation, object lockId, ulong version, LockAccessType accessType, OperationContext operationContext)
         {
             CacheEntry e = null;
-            if (!IsCacheOperationAllowed(operationContext))
-                return e;
             CacheEntry pe = null;
             try
             {
@@ -1264,14 +1222,9 @@ namespace Alachisoft.NCache.Caching.Topologies.Local
                 {
                     if (_stateTransferKeyList != null && _stateTransferKeyList.ContainsKey(key))
                         _stateTransferKeyList.Remove(key);
-                    //AddWriteBehindTask(key, e, null, OpCode.Remove);
-
-                    // commented by muds
-                    //_context.ExpiryMgr.UpdateIndex(key, e.ExpirationHint, null);
 
                     try
                     {
-                        //_context.ExpiryMgr.ResetHint(e.ExpirationHint, null);
                         if (e.ExpirationHint != null)
                         {
                             _context.ExpiryMgr.RemoveFromIndex(key);
@@ -1323,9 +1276,6 @@ namespace Alachisoft.NCache.Caching.Topologies.Local
                             eventContext.UniqueId = GenerateEventType(EventType.ITEM_REMOVED_CALLBACK) + e.Version.ToString();
                             //Will always reaise the whole entry for old clients
                             NotifyCustomRemoveCallback(actualKey, cbEtnry.ItemRemoveCallbackListener, removalReason, false, (OperationContext)operationContext.Clone(), eventContext);
-
-                            FeatureUsageCollector.Instance.GetFeature(FeatureEnum.data_sharing).UpdateUsageTime();
-                            FeatureUsageCollector.Instance.GetFeature(FeatureEnum.selective_events, FeatureEnum.data_sharing).UpdateUsageTime();
                         }
 
                         
@@ -1336,17 +1286,10 @@ namespace Alachisoft.NCache.Caching.Topologies.Local
                     MetaInformation metaInfo = new MetaInformation(null);
                     metaInfo.Type = e.ObjectType;
 
-                  
                 }
-
-               
-           
                 else if (_stateTransferKeyList != null && _stateTransferKeyList.ContainsKey(key))
                 {
-                   
                     _stateTransferKeyList.Remove(key);
-                  
-
                 }
             }
             finally
@@ -1389,10 +1332,9 @@ namespace Alachisoft.NCache.Caching.Topologies.Local
         /// <param name="notifId"></param>
         /// <param name="data"></param>
         /// <param name="async"></param>
-        public sealed override void SendNotification(object notifId, object data, OperationContext operationContext)
+        public sealed override void SendNotification(object notifId, object data)
         {
-
-            base.NotifyCustomEvent(notifId, data, false, operationContext, null);
+            base.NotifyCustomEvent(notifId, data, false, null, null);
         }
 
        
@@ -1441,8 +1383,6 @@ namespace Alachisoft.NCache.Caching.Topologies.Local
         public sealed override Hashtable Contains(IList keys, OperationContext operationContext)
         {
             Hashtable tbl = new Hashtable();
-            if (!IsCacheOperationAllowed(operationContext))
-                return tbl; 
             ArrayList successfulKeys = new ArrayList();
             ArrayList failedKeys = new ArrayList();
 
@@ -1489,8 +1429,6 @@ namespace Alachisoft.NCache.Caching.Topologies.Local
         public sealed override IDictionary Get(object[] keys, OperationContext operationContext)
         {
             HashVector entries = new HashVector();
-            if (!IsCacheOperationAllowed(operationContext))
-                return entries;
             CacheEntry e = null;
             for (int i = 0; i < keys.Length; i++)
             {
@@ -1506,6 +1444,7 @@ namespace Alachisoft.NCache.Caching.Topologies.Local
                     {
                         operationContext.RemoveValueByField(OperationContextFieldName.EventContext);
                         OperationID opId = operationContext.OperatoinID;
+                        //generate EventId
                         EventId eventId = EventId.CreateEventId(opId);
                         eventId.EventUniqueID = opId.OperationId;
                         eventId.OperationCounter = opId.OpCounter;
@@ -1585,8 +1524,6 @@ namespace Alachisoft.NCache.Caching.Topologies.Local
 
                                     if (cloneEntry) operationContext.CloneCacheEntry = cloneEntry;
 
-                                    //return entry back to transactional pool
-
                                     e = null;
                                 }
                             }
@@ -1645,8 +1582,6 @@ namespace Alachisoft.NCache.Caching.Topologies.Local
         {
 
             Hashtable table = new Hashtable();
-            if (!IsCacheOperationAllowed(operationContext))
-                return table;
             EventContext eventContext = null;
             EventId eventId = null;
             OperationID opId = operationContext.OperatoinID;
@@ -1725,8 +1660,6 @@ namespace Alachisoft.NCache.Caching.Topologies.Local
         public sealed override Hashtable Insert(object[] keys, CacheEntry[] cacheEntries, bool notify, OperationContext operationContext)
         {
             Hashtable table = new Hashtable();
-            if (!IsCacheOperationAllowed(operationContext))
-                return table;
             EventContext eventContext = null;
             EventId eventId = null;
             OperationID opId = operationContext.OperatoinID;
@@ -1747,6 +1680,7 @@ namespace Alachisoft.NCache.Caching.Topologies.Local
                     operationContext.RemoveValueByField(OperationContextFieldName.EventContext);
                     if (notify)
                     {
+                        //generate EventId
                         eventId = new EventId();
                         eventId.EventUniqueID = opId.OperationId;
                         eventId.OperationCounter = opId.OpCounter;
@@ -1800,8 +1734,6 @@ namespace Alachisoft.NCache.Caching.Topologies.Local
         public override Hashtable Remove(IList keys, ItemRemoveReason removalReason, bool notify, bool isUserOperation, OperationContext operationContext)
         {
             Hashtable table = new Hashtable();
-            if (!IsCacheOperationAllowed(operationContext))
-                return table;
             EventContext eventContext = null;
             EventId eventId = null;
             OperationID opId = operationContext.OperatoinID;
@@ -1979,10 +1911,6 @@ namespace Alachisoft.NCache.Caching.Topologies.Local
 
         public override void RegisterKeyNotification(string[] keys, CallbackInfo updateCallback, CallbackInfo removeCallback, OperationContext operationContext)
         {
-            if (!IsCacheOperationAllowed(operationContext))
-                return;
-            FeatureUsageCollector.Instance.GetFeature(FeatureEnum.data_sharing).UpdateUsageTime();
-            FeatureUsageCollector.Instance.GetFeature(FeatureEnum.selective_events, FeatureEnum.data_sharing).UpdateUsageTime();
 
             if (keys != null)
             {
@@ -2013,10 +1941,7 @@ namespace Alachisoft.NCache.Caching.Topologies.Local
         /// <param name="removeCallback">ItemRemove callback to be registered.</param>
         public override void RegisterKeyNotification(string key, CallbackInfo updateCallback, CallbackInfo removeCallback, OperationContext operationContext)
         {
-            if (!IsCacheOperationAllowed(operationContext))
-                return;
-            FeatureUsageCollector.Instance.GetFeature(FeatureEnum.data_sharing).UpdateUsageTime();
-            FeatureUsageCollector.Instance.GetFeature(FeatureEnum.selective_events, FeatureEnum.data_sharing).UpdateUsageTime();
+            // operationContext.Add(OperationContextFieldName.GenerateQueryInfo, true);
 
             CacheEntry entry = Get(key, operationContext);
             CacheEntry oldEntry = entry;
@@ -2066,8 +1991,6 @@ namespace Alachisoft.NCache.Caching.Topologies.Local
 
         public override void UnregisterKeyNotification(string[] keys, CallbackInfo updateCallback, CallbackInfo removeCallback, OperationContext operationContext)
         {
-            if (!IsCacheOperationAllowed(operationContext))
-                return;
             if (keys != null)
             {
                 foreach (string key in keys)
@@ -2098,8 +2021,6 @@ namespace Alachisoft.NCache.Caching.Topologies.Local
 
         public override void UnregisterKeyNotification(string key, CallbackInfo updateCallback, CallbackInfo removeCallback, OperationContext operationContext)
         {
-            if (!IsCacheOperationAllowed(operationContext))
-                return;
             try
             {
 
@@ -2180,8 +2101,6 @@ namespace Alachisoft.NCache.Caching.Topologies.Local
         public override Common.Events.PollingResult Poll(OperationContext context)
         {
             Common.Events.PollingResult pollingResult = null;
-            if (!IsCacheOperationAllowed(context))
-                return pollingResult;
 
             try
             {
@@ -2202,8 +2121,6 @@ namespace Alachisoft.NCache.Caching.Topologies.Local
 
         public override void RegisterPollingNotification(short callbackId, OperationContext operationContext)
         {
-            if (!IsCacheOperationAllowed(operationContext))
-                return;
             if (_notificationManager != null)
                 _notificationManager.RegisterPollNotification(callbackId, operationContext);
         }
@@ -2215,8 +2132,6 @@ namespace Alachisoft.NCache.Caching.Topologies.Local
         /// <returns>list of keys found in the cache</returns>
         internal override void Touch(List<string> keys, OperationContext operationContext)
         {
-            if (!IsCacheOperationAllowed(operationContext))
-                return;
             for (int i = 0; i < keys.Count; i++)
             {
                 var lockKey = GetStringFromPool(keys[i]);
@@ -2261,13 +2176,14 @@ namespace Alachisoft.NCache.Caching.Topologies.Local
         private object handleNotifyRemoveCallback(object info)
         {
             object[] data = (object[])info;
-            NotifyCustomRemoveCallback(data[0], data[1], (ItemRemoveReason)data[2], true, (OperationContext)data[3], (EventContext)data[4]);
+            NotifyCustomRemoveCallback(data[0], (ArrayList)data[1], (ItemRemoveReason)data[2], true, (OperationContext)data[3], (EventContext)data[4]);
+
             return null;
         }
         private object handleOldNotifyRemoveCallback(object info)
         {
             object[] data = (object[])info;
-            NotifyOldCustomRemoveCallback(data[0], data[1], (ItemRemoveReason)data[2], true, (OperationContext)data[3], (EventContext)data[4]);
+            NotifyOldCustomRemoveCallback(data[0], (ArrayList)data[1], (ItemRemoveReason)data[2], true, (OperationContext)data[3], (EventContext)data[4]);
             return null;
         }
         private void handleNotifyAdd(object info)
@@ -2298,7 +2214,6 @@ namespace Alachisoft.NCache.Caching.Topologies.Local
         {
             object[] objs = (object[])info;
 
-
             NotifyItemRemoved(objs[0], (ArrayList)objs[1], (ItemRemoveReason)objs[2], true, (OperationContext)objs[3], (EventContext)objs[4]);
         }
         private void handleOldNotifyRemove(object info)
@@ -2307,7 +2222,6 @@ namespace Alachisoft.NCache.Caching.Topologies.Local
 
             NotifyOldItemRemoved(objs[0], (ArrayList)objs[1], (ItemRemoveReason)objs[2], true, (OperationContext)objs[3], (EventContext)objs[4]);
         }
-
         #endregion
 
         #region Raising Events
@@ -2326,7 +2240,17 @@ namespace Alachisoft.NCache.Caching.Topologies.Local
         {
             eventContext.Add(EventContextFieldName.ItemRemoveCallbackList,
                   cacheEntry.Notifications.ItemRemoveCallbackListener.Clone());
-            handleNotifyRemoveCallback(new object[] { key, cacheEntry.Notifications.ItemRemoveCallbackListener, reason, operationContext, eventContext });
+            Caching.Notifications notifications = cacheEntry.Notifications;
+            ArrayList callbackInfos = new ArrayList();
+            for (int i = 0; i < notifications.ItemRemoveCallbackListener.Count; i++)
+            {
+                CallbackInfo removeCallbackInfo = (CallbackInfo)notifications.ItemRemoveCallbackListener[i];
+                if (removeCallbackInfo != null)
+                {
+                    callbackInfos.Add(removeCallbackInfo);
+                }
+            }
+            handleNotifyRemoveCallback(new object[] { key, callbackInfos, reason, operationContext, eventContext });
         }
         public override void RaiseOldCustomRemoveCalbackNotifier(object key, CacheEntry cacheEntry, ItemRemoveReason reason,
           OperationContext operationContext, EventContext eventContext)
@@ -2345,11 +2269,10 @@ namespace Alachisoft.NCache.Caching.Topologies.Local
             // If everything went ok!, initiate local and cluster-wide notifications.
             if (IsItemAddNotifier)
             {
-
                 handleNotifyAdd(new object[] { key, context, eventContext });
             }
         }
-        
+
         /// <summary>
         /// Broadcasts an itemaupdate notifier across the cluster
         /// </summary>
@@ -2359,17 +2282,14 @@ namespace Alachisoft.NCache.Caching.Topologies.Local
             // If everything went ok!, initiate local and cluster-wide notifications.
             if (IsItemUpdateNotifier)
             {
-                //RaiseGeneric(new Function((int)OpCodes.NotifyUpdate, new object[] { key, operationContext, eventcontext }));
                 handleNotifyUpdate(new object[] { key, operationContext, eventcontext });
             }
         }
-
         public override void RaiseOldItemRemoveNotifier(object key, OperationContext operationContext, EventContext eventcontext)
         {
             // If everything went ok!, initiate local and cluster-wide notifications.
             if (IsItemRemoveNotifier)
             {
-                //RaiseGeneric(new Function((int)OpCodes.NotifyUpdate, new object[] { key, operationContext, eventcontext }));
                 handleOldNotifyRemove(new object[] { key, operationContext, eventcontext });
             }
         }
@@ -2378,7 +2298,6 @@ namespace Alachisoft.NCache.Caching.Topologies.Local
             // If everything went ok!, initiate local and cluster-wide notifications.
             if (IsItemRemoveNotifier)
             {
-                // RaiseGeneric(new Function((int)OpCodes.NotifyRemoval, packed));
                 handleNotifyRemove(packed);
             }
         }

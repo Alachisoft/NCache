@@ -1,4 +1,4 @@
-//  Copyright (c) 2021 Alachisoft
+//  Copyright (c) 2026 Alachisoft
 //  
 //  Licensed under the Apache License, Version 2.0 (the "License");
 //  you may not use this file except in compliance with the License.
@@ -21,23 +21,25 @@ using Alachisoft.NCache.Caching;
 using Alachisoft.NCache.Caching.AutoExpiration;
 using Alachisoft.NCache.Caching.EvictionPolicies;
 using Alachisoft.NCache.Common.Monitoring;
+
 using Alachisoft.NCache.Runtime;
 using System.Collections.Generic;
+
 using Alachisoft.NCache.Common.Protobuf;
+
+
 using Alachisoft.NCache.SocketServer.Pooling;
 using Alachisoft.NCache.Common.Pooling;
+
 using Runtime = Alachisoft.NCache.Runtime;
 using Alachisoft.NCache.Common.Locking;
 using Alachisoft.NCache.Runtime.Events;
 using Alachisoft.NCache.Common.Caching;
 
-
 namespace Alachisoft.NCache.SocketServer.Command
 {
     class AddAndInsertCommandBase : CommandBase
     {
-        //public static StreamWriter writer = new StreamWriter("c:\\ServerPerf.log.txt");
-        //public static HPTimeStats ts = new HPTimeStats();
 
         private readonly BitSet _bitSet;
         private readonly PriorityEvictionHint _priorityEvictionHint;
@@ -98,14 +100,9 @@ namespace Alachisoft.NCache.SocketServer.Command
 
         }
 
-        //public override void ExecuteCommand(ClientManager clientManager, string command, byte[] data)
-        //{
-        //}
-
         //PROTOBUF
         protected virtual CommandInfo ParseCommand(Alachisoft.NCache.Common.Protobuf.Command command, ClientManager clientManager, string cacheId)
         {
-            //if (ServerMonitor.MonitorActivity) ServerMonitor.LogClientActivity("AddInsertCmd.Parse", "enter");
 
             CommandInfo cmdInfo = new CommandInfo();
 
@@ -212,15 +209,12 @@ namespace Alachisoft.NCache.SocketServer.Command
                     cmdInfo.CallbackType = insertCommand.CallbackType;
                     version = command.version;
 
-                    //version added in 4.2 [Dated: 18-Nov-2013; Author: Sami]
-
                     if (tagHashtable != null)
                     {
                         if (cmdInfo.queryInfo == null) cmdInfo.queryInfo = new Hashtable();
                         cmdInfo.queryInfo.Add("tag-info", tagHashtable);
                     }
                     
-                  
 
                     cmdInfo.RemoveCallbackId = (short)insertCommand.removeCallbackId;
                     

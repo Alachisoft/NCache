@@ -1,4 +1,4 @@
-//  Copyright (c) 2021 Alachisoft
+//  Copyright (c) 2026 Alachisoft
 //  
 //  Licensed under the Apache License, Version 2.0 (the "License");
 //  you may not use this file except in compliance with the License.
@@ -107,7 +107,7 @@ namespace Alachisoft.NCache.Management.ServiceControl
         #region ICompactSerializable Members
         public void Deserialize(Runtime.Serialization.IO.CompactReader reader)
         {
-            s_hostInfoMap = reader.ReadObject() as Dictionary<string, NodeOSInfo>; //Common.Util.SerilizationUtility.DeserializeDictionary<string, NodeOSInfo>(reader);
+            s_hostInfoMap = reader.ReadObject() as Dictionary<string, NodeOSInfo>;
          
             bool flag = reader.ReadBoolean();
 

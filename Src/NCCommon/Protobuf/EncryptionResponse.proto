@@ -1,5 +1,0 @@
-option java_outer_classname="GetEncryptionResponseProtocol";
-package Alachisoft.NCache.Common.Protobuf;
-message GetEncryptionResponse {
-	optional bytes encryptionString = 1;
-}

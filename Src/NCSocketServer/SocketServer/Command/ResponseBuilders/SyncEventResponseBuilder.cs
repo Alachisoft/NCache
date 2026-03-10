@@ -1,4 +1,4 @@
-﻿//  Copyright (c) 2021 Alachisoft
+﻿//  Copyright (c) 2026 Alachisoft
 //  
 //  Licensed under the Apache License, Version 2.0 (the "License");
 //  you may not use this file except in compliance with the License.
@@ -18,6 +18,7 @@ using Alachisoft.NCache.SocketServer.Command.ResponseBuilders;
 using System.Collections;
 using Alachisoft.NCache.Persistence;
 using Alachisoft.NCache.Caching;
+using Alachisoft.NCache.Common.ResponseSerialization;
 
 namespace Alachisoft.NCache.SocketServer.Command.ResponseBuilders
 {
@@ -28,7 +29,6 @@ namespace Alachisoft.NCache.SocketServer.Command.ResponseBuilders
         {
             long requestID = Convert.ToInt64(requestId);
            
-            // Alachisoft.NCache.Common.Protobuf.Response response = new Alachisoft.NCache.Common.Protobuf.Response();
             Alachisoft.NCache.Common.Protobuf.SyncEventsResponse syncEventResponse = new Alachisoft.NCache.Common.Protobuf.SyncEventsResponse();
             
             
@@ -95,7 +95,12 @@ namespace Alachisoft.NCache.SocketServer.Command.ResponseBuilders
                 {
                     syncEventResponse.eventInfo.Add(evtInfo);
                     Common.Util.ResponseHelper.SetResponse(syncEventResponse, requestID, commandID);
-                    serializedResponse.Add(Common.Util.ResponseHelper.SerializeResponse(syncEventResponse, Common.Protobuf.Response.Type.SYNC_EVENTS));
+                    ResponseOptions responseOptions = new ResponseOptions()
+                    {
+                        Response = syncEventResponse,
+                        ResponseType = Common.Protobuf.Response.Type.SYNC_EVENTS
+                    };
+                    serializedResponse.Add(clientManager.ResponseBuilder.BuildResponse(responseOptions));
                 }
                 else
                 {
@@ -103,14 +108,15 @@ namespace Alachisoft.NCache.SocketServer.Command.ResponseBuilders
                     response.syncEventsResponse.eventInfo.Add(evtInfo);
                     response.syncEventsResponse = syncEventResponse;
                     Common.Util.ResponseHelper.SetResponse(response, requestID, commandID, Common.Protobuf.Response.Type.SYNC_EVENTS);
-                    serializedResponse.Add(Alachisoft.NCache.Common.Util.ResponseHelper.SerializeResponse(response));
+                    ResponseOptions responseOptions = new ResponseOptions()
+                    {
+                        Response = response,
+                        ResponseType = Common.Protobuf.Response.Type.SYNC_EVENTS
+                    };
+                    serializedResponse.Add(clientManager.ResponseBuilder.BuildResponse(responseOptions));
                 }
-                //response.syncEventsResponse.eventInfo.Add(evtInfo);
 
             }
-            //serializedResponse.Add(Alachisoft.NCache.Common.Util.ResponseHelper.SerializeResponse(response,Common.Protobuf.Response.Type.SYNC_EVENTS));
-
-
 
             return serializedResponse;
         }

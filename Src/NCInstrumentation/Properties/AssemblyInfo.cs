@@ -10,7 +10,7 @@ using System.Runtime.InteropServices;
 [assembly: AssemblyConfiguration("")]
 [assembly: AssemblyCompany("Diyatech")]
 [assembly: AssemblyProduct("Alachisoft.NCache.Instrumentation")]
-[assembly: AssemblyCopyright("Copyright © Diyatech 2006")]
+[assembly: AssemblyCopyright("Copyright © Diyatech 2021")]
 [assembly: AssemblyTrademark("")]
 [assembly: AssemblyCulture("")]
 
@@ -35,7 +35,7 @@ using System.Runtime.InteropServices;
 [assembly: AssemblyDelaySign(false)]
 [assembly: AssemblyKeyName("")]
 #if DEBUG
-[assembly: AssemblyKeyFile("..\\..\\Resources\\ncache.snk")]
+[assembly: AssemblyKeyFile("..\\..\\..\\..\\Resources\\alachisoft.snk")]
 #else
-[assembly: AssemblyKeyFile("..\\..\\Resources\\ncache.snk")]
+[assembly: AssemblyKeyFile("..\\..\\..\\..\\Resources\\alachisoft.snk")]
 #endif

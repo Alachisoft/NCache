@@ -11,79 +11,79 @@
 // Note: requires additional types generated from: Commands/KeyValue.proto
 namespace Alachisoft.NCache.Common.Protobuf
 {
-  [global::System.Serializable, global::ProtoBuf.ProtoContract(Name=@"Dependency")]
-  public partial class Dependency : global::ProtoBuf.IExtensible
+  [global::System.Serializable, global::ProtoBuf.Extended.ProtoContract(Name=@"Dependency")]
+  public partial class Dependency : global::ProtoBuf.Extended.IExtensible
   {
     public Dependency() {}
     
     private readonly global::System.Collections.Generic.List<Alachisoft.NCache.Common.Protobuf.KeyDependency> _keyDep = new global::System.Collections.Generic.List<Alachisoft.NCache.Common.Protobuf.KeyDependency>();
-    [global::ProtoBuf.ProtoMember(1, Name=@"keyDep", DataFormat = global::ProtoBuf.DataFormat.Default)]
+    [global::ProtoBuf.Extended.ProtoMember(1, Name=@"keyDep", DataFormat = global::ProtoBuf.Extended.DataFormat.Default)]
     public global::System.Collections.Generic.List<Alachisoft.NCache.Common.Protobuf.KeyDependency> keyDep
     {
       get { return _keyDep; }
     }
   
     private readonly global::System.Collections.Generic.List<Alachisoft.NCache.Common.Protobuf.FileDependency> _fileDep = new global::System.Collections.Generic.List<Alachisoft.NCache.Common.Protobuf.FileDependency>();
-    [global::ProtoBuf.ProtoMember(2, Name=@"fileDep", DataFormat = global::ProtoBuf.DataFormat.Default)]
+    [global::ProtoBuf.Extended.ProtoMember(2, Name=@"fileDep", DataFormat = global::ProtoBuf.Extended.DataFormat.Default)]
     public global::System.Collections.Generic.List<Alachisoft.NCache.Common.Protobuf.FileDependency> fileDep
     {
       get { return _fileDep; }
     }
   
     private readonly global::System.Collections.Generic.List<Alachisoft.NCache.Common.Protobuf.OracleDependency> _oracleDep = new global::System.Collections.Generic.List<Alachisoft.NCache.Common.Protobuf.OracleDependency>();
-    [global::ProtoBuf.ProtoMember(3, Name=@"oracleDep", DataFormat = global::ProtoBuf.DataFormat.Default)]
+    [global::ProtoBuf.Extended.ProtoMember(3, Name=@"oracleDep", DataFormat = global::ProtoBuf.Extended.DataFormat.Default)]
     public global::System.Collections.Generic.List<Alachisoft.NCache.Common.Protobuf.OracleDependency> oracleDep
     {
       get { return _oracleDep; }
     }
   
     private readonly global::System.Collections.Generic.List<Alachisoft.NCache.Common.Protobuf.YukonDependency> _yukonDep = new global::System.Collections.Generic.List<Alachisoft.NCache.Common.Protobuf.YukonDependency>();
-    [global::ProtoBuf.ProtoMember(4, Name=@"yukonDep", DataFormat = global::ProtoBuf.DataFormat.Default)]
+    [global::ProtoBuf.Extended.ProtoMember(4, Name=@"yukonDep", DataFormat = global::ProtoBuf.Extended.DataFormat.Default)]
     public global::System.Collections.Generic.List<Alachisoft.NCache.Common.Protobuf.YukonDependency> yukonDep
     {
       get { return _yukonDep; }
     }
   
     private readonly global::System.Collections.Generic.List<Alachisoft.NCache.Common.Protobuf.Sql7Dependency> _sql7Dep = new global::System.Collections.Generic.List<Alachisoft.NCache.Common.Protobuf.Sql7Dependency>();
-    [global::ProtoBuf.ProtoMember(5, Name=@"sql7Dep", DataFormat = global::ProtoBuf.DataFormat.Default)]
+    [global::ProtoBuf.Extended.ProtoMember(5, Name=@"sql7Dep", DataFormat = global::ProtoBuf.Extended.DataFormat.Default)]
     public global::System.Collections.Generic.List<Alachisoft.NCache.Common.Protobuf.Sql7Dependency> sql7Dep
     {
       get { return _sql7Dep; }
     }
   
     private readonly global::System.Collections.Generic.List<Alachisoft.NCache.Common.Protobuf.OleDbDependency> _oleDbDep = new global::System.Collections.Generic.List<Alachisoft.NCache.Common.Protobuf.OleDbDependency>();
-    [global::ProtoBuf.ProtoMember(6, Name=@"oleDbDep", DataFormat = global::ProtoBuf.DataFormat.Default)]
+    [global::ProtoBuf.Extended.ProtoMember(6, Name=@"oleDbDep", DataFormat = global::ProtoBuf.Extended.DataFormat.Default)]
     public global::System.Collections.Generic.List<Alachisoft.NCache.Common.Protobuf.OleDbDependency> oleDbDep
     {
       get { return _oleDbDep; }
     }
   
     private readonly global::System.Collections.Generic.List<Alachisoft.NCache.Common.Protobuf.ExtensibleDependency> _xtDep = new global::System.Collections.Generic.List<Alachisoft.NCache.Common.Protobuf.ExtensibleDependency>();
-    [global::ProtoBuf.ProtoMember(7, Name=@"xtDep", DataFormat = global::ProtoBuf.DataFormat.Default)]
+    [global::ProtoBuf.Extended.ProtoMember(7, Name=@"xtDep", DataFormat = global::ProtoBuf.Extended.DataFormat.Default)]
     public global::System.Collections.Generic.List<Alachisoft.NCache.Common.Protobuf.ExtensibleDependency> xtDep
     {
       get { return _xtDep; }
     }
   
     private readonly global::System.Collections.Generic.List<Alachisoft.NCache.Common.Protobuf.NosDbDependency> _NosDep = new global::System.Collections.Generic.List<Alachisoft.NCache.Common.Protobuf.NosDbDependency>();
-    [global::ProtoBuf.ProtoMember(8, Name=@"NosDep", DataFormat = global::ProtoBuf.DataFormat.Default)]
+    [global::ProtoBuf.Extended.ProtoMember(8, Name=@"NosDep", DataFormat = global::ProtoBuf.Extended.DataFormat.Default)]
     public global::System.Collections.Generic.List<Alachisoft.NCache.Common.Protobuf.NosDbDependency> NosDep
     {
       get { return _NosDep; }
     }
   
-    private global::ProtoBuf.IExtension extensionObject;
-    global::ProtoBuf.IExtension global::ProtoBuf.IExtensible.GetExtensionObject(bool createIfMissing)
-      { return global::ProtoBuf.Extensible.GetExtensionObject(ref extensionObject, createIfMissing); }
+    private global::ProtoBuf.Extended.IExtension extensionObject;
+   global::ProtoBuf.Extended.IExtension global::ProtoBuf.Extended.IExtensible.GetExtensionObject(bool createIfMissing)
+      { return global::ProtoBuf.Extended.Extensible.GetExtensionObject(ref extensionObject, createIfMissing); }
   }
   
-  [global::System.Serializable, global::ProtoBuf.ProtoContract(Name=@"KeyDependency")]
-  public partial class KeyDependency : global::ProtoBuf.IExtensible
+  [global::System.Serializable, global::ProtoBuf.Extended.ProtoContract(Name=@"KeyDependency")]
+  public partial class KeyDependency : global::ProtoBuf.Extended.IExtensible
   {
     public KeyDependency() {}
     
     private readonly global::System.Collections.Generic.List<string> _keys = new global::System.Collections.Generic.List<string>();
-    [global::ProtoBuf.ProtoMember(1, Name=@"keys", DataFormat = global::ProtoBuf.DataFormat.Default)]
+    [global::ProtoBuf.Extended.ProtoMember(1, Name=@"keys", DataFormat = global::ProtoBuf.Extended.DataFormat.Default)]
     public global::System.Collections.Generic.List<string> keys
     {
       get { return _keys; }
@@ -91,7 +91,7 @@ namespace Alachisoft.NCache.Common.Protobuf
   
 
     private long _startAfter = default(long);
-    [global::ProtoBuf.ProtoMember(2, IsRequired = false, Name=@"startAfter", DataFormat = global::ProtoBuf.DataFormat.TwosComplement)]
+    [global::ProtoBuf.Extended.ProtoMember(2, IsRequired = false, Name=@"startAfter", DataFormat = global::ProtoBuf.Extended.DataFormat.TwosComplement)]
     [global::System.ComponentModel.DefaultValue(default(long))]
     public long startAfter
     {
@@ -100,7 +100,7 @@ namespace Alachisoft.NCache.Common.Protobuf
     }
 
     private int _keyDependencyType = default(int);
-    [global::ProtoBuf.ProtoMember(3, IsRequired = false, Name=@"keyDependencyType", DataFormat = global::ProtoBuf.DataFormat.TwosComplement)]
+    [global::ProtoBuf.Extended.ProtoMember(3, IsRequired = false, Name=@"keyDependencyType", DataFormat = global::ProtoBuf.Extended.DataFormat.TwosComplement)]
     [global::System.ComponentModel.DefaultValue(default(int))]
     public int keyDependencyType
     {
@@ -108,18 +108,18 @@ namespace Alachisoft.NCache.Common.Protobuf
       set { _keyDependencyType = value; }
     }
 
-    private global::ProtoBuf.IExtension extensionObject;
-    global::ProtoBuf.IExtension global::ProtoBuf.IExtensible.GetExtensionObject(bool createIfMissing)
-      { return global::ProtoBuf.Extensible.GetExtensionObject(ref extensionObject, createIfMissing); }
+    private global::ProtoBuf.Extended.IExtension extensionObject;
+   global::ProtoBuf.Extended.IExtension global::ProtoBuf.Extended.IExtensible.GetExtensionObject(bool createIfMissing)
+      { return global::ProtoBuf.Extended.Extensible.GetExtensionObject(ref extensionObject, createIfMissing); }
   }
   
-  [global::System.Serializable, global::ProtoBuf.ProtoContract(Name=@"FileDependency")]
-  public partial class FileDependency : global::ProtoBuf.IExtensible
+  [global::System.Serializable, global::ProtoBuf.Extended.ProtoContract(Name=@"FileDependency")]
+  public partial class FileDependency : global::ProtoBuf.Extended.IExtensible
   {
     public FileDependency() {}
     
     private readonly global::System.Collections.Generic.List<string> _filePaths = new global::System.Collections.Generic.List<string>();
-    [global::ProtoBuf.ProtoMember(1, Name=@"filePaths", DataFormat = global::ProtoBuf.DataFormat.Default)]
+    [global::ProtoBuf.Extended.ProtoMember(1, Name=@"filePaths", DataFormat = global::ProtoBuf.Extended.DataFormat.Default)]
     public global::System.Collections.Generic.List<string> filePaths
     {
       get { return _filePaths; }
@@ -127,26 +127,26 @@ namespace Alachisoft.NCache.Common.Protobuf
   
 
     private long _startAfter = default(long);
-    [global::ProtoBuf.ProtoMember(2, IsRequired = false, Name=@"startAfter", DataFormat = global::ProtoBuf.DataFormat.TwosComplement)]
+    [global::ProtoBuf.Extended.ProtoMember(2, IsRequired = false, Name=@"startAfter", DataFormat = global::ProtoBuf.Extended.DataFormat.TwosComplement)]
     [global::System.ComponentModel.DefaultValue(default(long))]
     public long startAfter
     {
       get { return _startAfter; }
       set { _startAfter = value; }
     }
-    private global::ProtoBuf.IExtension extensionObject;
-    global::ProtoBuf.IExtension global::ProtoBuf.IExtensible.GetExtensionObject(bool createIfMissing)
-      { return global::ProtoBuf.Extensible.GetExtensionObject(ref extensionObject, createIfMissing); }
+    private global::ProtoBuf.Extended.IExtension extensionObject;
+   global::ProtoBuf.Extended.IExtension global::ProtoBuf.Extended.IExtensible.GetExtensionObject(bool createIfMissing)
+      { return global::ProtoBuf.Extended.Extensible.GetExtensionObject(ref extensionObject, createIfMissing); }
   }
   
-  [global::System.Serializable, global::ProtoBuf.ProtoContract(Name=@"OracleDependency")]
-  public partial class OracleDependency : global::ProtoBuf.IExtensible
+  [global::System.Serializable, global::ProtoBuf.Extended.ProtoContract(Name=@"OracleDependency")]
+  public partial class OracleDependency : global::ProtoBuf.Extended.IExtensible
   {
     public OracleDependency() {}
     
 
     private string _connectionString = "";
-    [global::ProtoBuf.ProtoMember(1, IsRequired = false, Name=@"connectionString", DataFormat = global::ProtoBuf.DataFormat.Default)]
+    [global::ProtoBuf.Extended.ProtoMember(1, IsRequired = false, Name=@"connectionString", DataFormat = global::ProtoBuf.Extended.DataFormat.Default)]
     [global::System.ComponentModel.DefaultValue("")]
     public string connectionString
     {
@@ -155,7 +155,7 @@ namespace Alachisoft.NCache.Common.Protobuf
     }
 
     private string _query = "";
-    [global::ProtoBuf.ProtoMember(2, IsRequired = false, Name=@"query", DataFormat = global::ProtoBuf.DataFormat.Default)]
+    [global::ProtoBuf.Extended.ProtoMember(2, IsRequired = false, Name=@"query", DataFormat = global::ProtoBuf.Extended.DataFormat.Default)]
     [global::System.ComponentModel.DefaultValue("")]
     public string query
     {
@@ -164,7 +164,7 @@ namespace Alachisoft.NCache.Common.Protobuf
     }
 
     private int _commandType = default(int);
-    [global::ProtoBuf.ProtoMember(3, IsRequired = false, Name=@"commandType", DataFormat = global::ProtoBuf.DataFormat.TwosComplement)]
+    [global::ProtoBuf.Extended.ProtoMember(3, IsRequired = false, Name=@"commandType", DataFormat = global::ProtoBuf.Extended.DataFormat.TwosComplement)]
     [global::System.ComponentModel.DefaultValue(default(int))]
     public int commandType
     {
@@ -172,25 +172,25 @@ namespace Alachisoft.NCache.Common.Protobuf
       set { _commandType = value; }
     }
     private readonly global::System.Collections.Generic.List<Alachisoft.NCache.Common.Protobuf.OracleParam> _param = new global::System.Collections.Generic.List<Alachisoft.NCache.Common.Protobuf.OracleParam>();
-    [global::ProtoBuf.ProtoMember(4, Name=@"param", DataFormat = global::ProtoBuf.DataFormat.Default)]
+    [global::ProtoBuf.Extended.ProtoMember(4, Name=@"param", DataFormat = global::ProtoBuf.Extended.DataFormat.Default)]
     public global::System.Collections.Generic.List<Alachisoft.NCache.Common.Protobuf.OracleParam> param
     {
       get { return _param; }
     }
   
-    private global::ProtoBuf.IExtension extensionObject;
-    global::ProtoBuf.IExtension global::ProtoBuf.IExtensible.GetExtensionObject(bool createIfMissing)
-      { return global::ProtoBuf.Extensible.GetExtensionObject(ref extensionObject, createIfMissing); }
+    private global::ProtoBuf.Extended.IExtension extensionObject;
+   global::ProtoBuf.Extended.IExtension global::ProtoBuf.Extended.IExtensible.GetExtensionObject(bool createIfMissing)
+      { return global::ProtoBuf.Extended.Extensible.GetExtensionObject(ref extensionObject, createIfMissing); }
   }
   
-  [global::System.Serializable, global::ProtoBuf.ProtoContract(Name=@"OracleParam")]
-  public partial class OracleParam : global::ProtoBuf.IExtensible
+  [global::System.Serializable, global::ProtoBuf.Extended.ProtoContract(Name=@"OracleParam")]
+  public partial class OracleParam : global::ProtoBuf.Extended.IExtensible
   {
     public OracleParam() {}
     
 
     private string _key = "";
-    [global::ProtoBuf.ProtoMember(1, IsRequired = false, Name=@"key", DataFormat = global::ProtoBuf.DataFormat.Default)]
+    [global::ProtoBuf.Extended.ProtoMember(1, IsRequired = false, Name=@"key", DataFormat = global::ProtoBuf.Extended.DataFormat.Default)]
     [global::System.ComponentModel.DefaultValue("")]
     public string key
     {
@@ -199,26 +199,26 @@ namespace Alachisoft.NCache.Common.Protobuf
     }
 
     private Alachisoft.NCache.Common.Protobuf.OracleCommandParam _cmdParam = null;
-    [global::ProtoBuf.ProtoMember(2, IsRequired = false, Name=@"cmdParam", DataFormat = global::ProtoBuf.DataFormat.Default)]
+    [global::ProtoBuf.Extended.ProtoMember(2, IsRequired = false, Name=@"cmdParam", DataFormat = global::ProtoBuf.Extended.DataFormat.Default)]
     [global::System.ComponentModel.DefaultValue(null)]
     public Alachisoft.NCache.Common.Protobuf.OracleCommandParam cmdParam
     {
       get { return _cmdParam; }
       set { _cmdParam = value; }
     }
-    private global::ProtoBuf.IExtension extensionObject;
-    global::ProtoBuf.IExtension global::ProtoBuf.IExtensible.GetExtensionObject(bool createIfMissing)
-      { return global::ProtoBuf.Extensible.GetExtensionObject(ref extensionObject, createIfMissing); }
+    private global::ProtoBuf.Extended.IExtension extensionObject;
+   global::ProtoBuf.Extended.IExtension global::ProtoBuf.Extended.IExtensible.GetExtensionObject(bool createIfMissing)
+      { return global::ProtoBuf.Extended.Extensible.GetExtensionObject(ref extensionObject, createIfMissing); }
   }
   
-  [global::System.Serializable, global::ProtoBuf.ProtoContract(Name=@"OracleCommandParam")]
-  public partial class OracleCommandParam : global::ProtoBuf.IExtensible
+  [global::System.Serializable, global::ProtoBuf.Extended.ProtoContract(Name=@"OracleCommandParam")]
+  public partial class OracleCommandParam : global::ProtoBuf.Extended.IExtensible
   {
     public OracleCommandParam() {}
     
 
     private int _dbType = default(int);
-    [global::ProtoBuf.ProtoMember(1, IsRequired = false, Name=@"dbType", DataFormat = global::ProtoBuf.DataFormat.TwosComplement)]
+    [global::ProtoBuf.Extended.ProtoMember(1, IsRequired = false, Name=@"dbType", DataFormat = global::ProtoBuf.Extended.DataFormat.TwosComplement)]
     [global::System.ComponentModel.DefaultValue(default(int))]
     public int dbType
     {
@@ -227,7 +227,7 @@ namespace Alachisoft.NCache.Common.Protobuf
     }
 
     private int _direction = default(int);
-    [global::ProtoBuf.ProtoMember(2, IsRequired = false, Name=@"direction", DataFormat = global::ProtoBuf.DataFormat.TwosComplement)]
+    [global::ProtoBuf.Extended.ProtoMember(2, IsRequired = false, Name=@"direction", DataFormat = global::ProtoBuf.Extended.DataFormat.TwosComplement)]
     [global::System.ComponentModel.DefaultValue(default(int))]
     public int direction
     {
@@ -236,26 +236,26 @@ namespace Alachisoft.NCache.Common.Protobuf
     }
 
     private string _value = "";
-    [global::ProtoBuf.ProtoMember(3, IsRequired = false, Name=@"value", DataFormat = global::ProtoBuf.DataFormat.Default)]
+    [global::ProtoBuf.Extended.ProtoMember(3, IsRequired = false, Name=@"value", DataFormat = global::ProtoBuf.Extended.DataFormat.Default)]
     [global::System.ComponentModel.DefaultValue("")]
     public string value
     {
       get { return _value; }
       set { _value = value; }
     }
-    private global::ProtoBuf.IExtension extensionObject;
-    global::ProtoBuf.IExtension global::ProtoBuf.IExtensible.GetExtensionObject(bool createIfMissing)
-      { return global::ProtoBuf.Extensible.GetExtensionObject(ref extensionObject, createIfMissing); }
+    private global::ProtoBuf.Extended.IExtension extensionObject;
+   global::ProtoBuf.Extended.IExtension global::ProtoBuf.Extended.IExtensible.GetExtensionObject(bool createIfMissing)
+      { return global::ProtoBuf.Extended.Extensible.GetExtensionObject(ref extensionObject, createIfMissing); }
   }
   
-  [global::System.Serializable, global::ProtoBuf.ProtoContract(Name=@"YukonDependency")]
-  public partial class YukonDependency : global::ProtoBuf.IExtensible
+  [global::System.Serializable, global::ProtoBuf.Extended.ProtoContract(Name=@"YukonDependency")]
+  public partial class YukonDependency : global::ProtoBuf.Extended.IExtensible
   {
     public YukonDependency() {}
     
 
     private string _connectionString = "";
-    [global::ProtoBuf.ProtoMember(1, IsRequired = false, Name=@"connectionString", DataFormat = global::ProtoBuf.DataFormat.Default)]
+    [global::ProtoBuf.Extended.ProtoMember(1, IsRequired = false, Name=@"connectionString", DataFormat = global::ProtoBuf.Extended.DataFormat.Default)]
     [global::System.ComponentModel.DefaultValue("")]
     public string connectionString
     {
@@ -264,7 +264,7 @@ namespace Alachisoft.NCache.Common.Protobuf
     }
 
     private string _query = "";
-    [global::ProtoBuf.ProtoMember(2, IsRequired = false, Name=@"query", DataFormat = global::ProtoBuf.DataFormat.Default)]
+    [global::ProtoBuf.Extended.ProtoMember(2, IsRequired = false, Name=@"query", DataFormat = global::ProtoBuf.Extended.DataFormat.Default)]
     [global::System.ComponentModel.DefaultValue("")]
     public string query
     {
@@ -273,7 +273,7 @@ namespace Alachisoft.NCache.Common.Protobuf
     }
 
     private int _commandType = default(int);
-    [global::ProtoBuf.ProtoMember(3, IsRequired = false, Name=@"commandType", DataFormat = global::ProtoBuf.DataFormat.TwosComplement)]
+    [global::ProtoBuf.Extended.ProtoMember(3, IsRequired = false, Name=@"commandType", DataFormat = global::ProtoBuf.Extended.DataFormat.TwosComplement)]
     [global::System.ComponentModel.DefaultValue(default(int))]
     public int commandType
     {
@@ -281,25 +281,25 @@ namespace Alachisoft.NCache.Common.Protobuf
       set { _commandType = value; }
     }
     private readonly global::System.Collections.Generic.List<Alachisoft.NCache.Common.Protobuf.YukonParam> _param = new global::System.Collections.Generic.List<Alachisoft.NCache.Common.Protobuf.YukonParam>();
-    [global::ProtoBuf.ProtoMember(4, Name=@"param", DataFormat = global::ProtoBuf.DataFormat.Default)]
+    [global::ProtoBuf.Extended.ProtoMember(4, Name=@"param", DataFormat = global::ProtoBuf.Extended.DataFormat.Default)]
     public global::System.Collections.Generic.List<Alachisoft.NCache.Common.Protobuf.YukonParam> param
     {
       get { return _param; }
     }
   
-    private global::ProtoBuf.IExtension extensionObject;
-    global::ProtoBuf.IExtension global::ProtoBuf.IExtensible.GetExtensionObject(bool createIfMissing)
-      { return global::ProtoBuf.Extensible.GetExtensionObject(ref extensionObject, createIfMissing); }
+    private global::ProtoBuf.Extended.IExtension extensionObject;
+   global::ProtoBuf.Extended.IExtension global::ProtoBuf.Extended.IExtensible.GetExtensionObject(bool createIfMissing)
+      { return global::ProtoBuf.Extended.Extensible.GetExtensionObject(ref extensionObject, createIfMissing); }
   }
   
-  [global::System.Serializable, global::ProtoBuf.ProtoContract(Name=@"YukonParam")]
-  public partial class YukonParam : global::ProtoBuf.IExtensible
+  [global::System.Serializable, global::ProtoBuf.Extended.ProtoContract(Name=@"YukonParam")]
+  public partial class YukonParam : global::ProtoBuf.Extended.IExtensible
   {
     public YukonParam() {}
     
 
     private string _key = "";
-    [global::ProtoBuf.ProtoMember(1, IsRequired = false, Name=@"key", DataFormat = global::ProtoBuf.DataFormat.Default)]
+    [global::ProtoBuf.Extended.ProtoMember(1, IsRequired = false, Name=@"key", DataFormat = global::ProtoBuf.Extended.DataFormat.Default)]
     [global::System.ComponentModel.DefaultValue("")]
     public string key
     {
@@ -308,26 +308,26 @@ namespace Alachisoft.NCache.Common.Protobuf
     }
 
     private Alachisoft.NCache.Common.Protobuf.YukonCommandParam _cmdParam = null;
-    [global::ProtoBuf.ProtoMember(2, IsRequired = false, Name=@"cmdParam", DataFormat = global::ProtoBuf.DataFormat.Default)]
+    [global::ProtoBuf.Extended.ProtoMember(2, IsRequired = false, Name=@"cmdParam", DataFormat = global::ProtoBuf.Extended.DataFormat.Default)]
     [global::System.ComponentModel.DefaultValue(null)]
     public Alachisoft.NCache.Common.Protobuf.YukonCommandParam cmdParam
     {
       get { return _cmdParam; }
       set { _cmdParam = value; }
     }
-    private global::ProtoBuf.IExtension extensionObject;
-    global::ProtoBuf.IExtension global::ProtoBuf.IExtensible.GetExtensionObject(bool createIfMissing)
-      { return global::ProtoBuf.Extensible.GetExtensionObject(ref extensionObject, createIfMissing); }
+    private global::ProtoBuf.Extended.IExtension extensionObject;
+   global::ProtoBuf.Extended.IExtension global::ProtoBuf.Extended.IExtensible.GetExtensionObject(bool createIfMissing)
+      { return global::ProtoBuf.Extended.Extensible.GetExtensionObject(ref extensionObject, createIfMissing); }
   }
   
-  [global::System.Serializable, global::ProtoBuf.ProtoContract(Name=@"YukonCommandParam")]
-  public partial class YukonCommandParam : global::ProtoBuf.IExtensible
+  [global::System.Serializable, global::ProtoBuf.Extended.ProtoContract(Name=@"YukonCommandParam")]
+  public partial class YukonCommandParam : global::ProtoBuf.Extended.IExtensible
   {
     public YukonCommandParam() {}
     
 
     private int _typeId = default(int);
-    [global::ProtoBuf.ProtoMember(1, IsRequired = false, Name=@"typeId", DataFormat = global::ProtoBuf.DataFormat.TwosComplement)]
+    [global::ProtoBuf.Extended.ProtoMember(1, IsRequired = false, Name=@"typeId", DataFormat = global::ProtoBuf.Extended.DataFormat.TwosComplement)]
     [global::System.ComponentModel.DefaultValue(default(int))]
     public int typeId
     {
@@ -336,7 +336,7 @@ namespace Alachisoft.NCache.Common.Protobuf
     }
 
     private int _direction = default(int);
-    [global::ProtoBuf.ProtoMember(2, IsRequired = false, Name=@"direction", DataFormat = global::ProtoBuf.DataFormat.TwosComplement)]
+    [global::ProtoBuf.Extended.ProtoMember(2, IsRequired = false, Name=@"direction", DataFormat = global::ProtoBuf.Extended.DataFormat.TwosComplement)]
     [global::System.ComponentModel.DefaultValue(default(int))]
     public int direction
     {
@@ -345,7 +345,7 @@ namespace Alachisoft.NCache.Common.Protobuf
     }
 
     private int _dbType = default(int);
-    [global::ProtoBuf.ProtoMember(3, IsRequired = false, Name=@"dbType", DataFormat = global::ProtoBuf.DataFormat.TwosComplement)]
+    [global::ProtoBuf.Extended.ProtoMember(3, IsRequired = false, Name=@"dbType", DataFormat = global::ProtoBuf.Extended.DataFormat.TwosComplement)]
     [global::System.ComponentModel.DefaultValue(default(int))]
     public int dbType
     {
@@ -354,7 +354,7 @@ namespace Alachisoft.NCache.Common.Protobuf
     }
 
     private int _cmpOptions = default(int);
-    [global::ProtoBuf.ProtoMember(4, IsRequired = false, Name=@"cmpOptions", DataFormat = global::ProtoBuf.DataFormat.TwosComplement)]
+    [global::ProtoBuf.Extended.ProtoMember(4, IsRequired = false, Name=@"cmpOptions", DataFormat = global::ProtoBuf.Extended.DataFormat.TwosComplement)]
     [global::System.ComponentModel.DefaultValue(default(int))]
     public int cmpOptions
     {
@@ -363,7 +363,7 @@ namespace Alachisoft.NCache.Common.Protobuf
     }
 
     private int _version = default(int);
-    [global::ProtoBuf.ProtoMember(5, IsRequired = false, Name=@"version", DataFormat = global::ProtoBuf.DataFormat.TwosComplement)]
+    [global::ProtoBuf.Extended.ProtoMember(5, IsRequired = false, Name=@"version", DataFormat = global::ProtoBuf.Extended.DataFormat.TwosComplement)]
     [global::System.ComponentModel.DefaultValue(default(int))]
     public int version
     {
@@ -372,7 +372,7 @@ namespace Alachisoft.NCache.Common.Protobuf
     }
 
     private string _value = "";
-    [global::ProtoBuf.ProtoMember(6, IsRequired = false, Name=@"value", DataFormat = global::ProtoBuf.DataFormat.Default)]
+    [global::ProtoBuf.Extended.ProtoMember(6, IsRequired = false, Name=@"value", DataFormat = global::ProtoBuf.Extended.DataFormat.Default)]
     [global::System.ComponentModel.DefaultValue("")]
     public string value
     {
@@ -381,7 +381,7 @@ namespace Alachisoft.NCache.Common.Protobuf
     }
 
     private bool _isNullable = default(bool);
-    [global::ProtoBuf.ProtoMember(7, IsRequired = false, Name=@"isNullable", DataFormat = global::ProtoBuf.DataFormat.Default)]
+    [global::ProtoBuf.Extended.ProtoMember(7, IsRequired = false, Name=@"isNullable", DataFormat = global::ProtoBuf.Extended.DataFormat.Default)]
     [global::System.ComponentModel.DefaultValue(default(bool))]
     public bool isNullable
     {
@@ -390,7 +390,7 @@ namespace Alachisoft.NCache.Common.Protobuf
     }
 
     private int _localeId = default(int);
-    [global::ProtoBuf.ProtoMember(8, IsRequired = false, Name=@"localeId", DataFormat = global::ProtoBuf.DataFormat.TwosComplement)]
+    [global::ProtoBuf.Extended.ProtoMember(8, IsRequired = false, Name=@"localeId", DataFormat = global::ProtoBuf.Extended.DataFormat.TwosComplement)]
     [global::System.ComponentModel.DefaultValue(default(int))]
     public int localeId
     {
@@ -399,7 +399,7 @@ namespace Alachisoft.NCache.Common.Protobuf
     }
 
     private int _offset = default(int);
-    [global::ProtoBuf.ProtoMember(9, IsRequired = false, Name=@"offset", DataFormat = global::ProtoBuf.DataFormat.TwosComplement)]
+    [global::ProtoBuf.Extended.ProtoMember(9, IsRequired = false, Name=@"offset", DataFormat = global::ProtoBuf.Extended.DataFormat.TwosComplement)]
     [global::System.ComponentModel.DefaultValue(default(int))]
     public int offset
     {
@@ -408,7 +408,7 @@ namespace Alachisoft.NCache.Common.Protobuf
     }
 
     private int _precision = default(int);
-    [global::ProtoBuf.ProtoMember(10, IsRequired = false, Name=@"precision", DataFormat = global::ProtoBuf.DataFormat.TwosComplement)]
+    [global::ProtoBuf.Extended.ProtoMember(10, IsRequired = false, Name=@"precision", DataFormat = global::ProtoBuf.Extended.DataFormat.TwosComplement)]
     [global::System.ComponentModel.DefaultValue(default(int))]
     public int precision
     {
@@ -417,7 +417,7 @@ namespace Alachisoft.NCache.Common.Protobuf
     }
 
     private int _scale = default(int);
-    [global::ProtoBuf.ProtoMember(11, IsRequired = false, Name=@"scale", DataFormat = global::ProtoBuf.DataFormat.TwosComplement)]
+    [global::ProtoBuf.Extended.ProtoMember(11, IsRequired = false, Name=@"scale", DataFormat = global::ProtoBuf.Extended.DataFormat.TwosComplement)]
     [global::System.ComponentModel.DefaultValue(default(int))]
     public int scale
     {
@@ -426,7 +426,7 @@ namespace Alachisoft.NCache.Common.Protobuf
     }
 
     private int _size = default(int);
-    [global::ProtoBuf.ProtoMember(12, IsRequired = false, Name=@"size", DataFormat = global::ProtoBuf.DataFormat.TwosComplement)]
+    [global::ProtoBuf.Extended.ProtoMember(12, IsRequired = false, Name=@"size", DataFormat = global::ProtoBuf.Extended.DataFormat.TwosComplement)]
     [global::System.ComponentModel.DefaultValue(default(int))]
     public int size
     {
@@ -435,7 +435,7 @@ namespace Alachisoft.NCache.Common.Protobuf
     }
 
     private string _sourceColumn = "";
-    [global::ProtoBuf.ProtoMember(13, IsRequired = false, Name=@"sourceColumn", DataFormat = global::ProtoBuf.DataFormat.Default)]
+    [global::ProtoBuf.Extended.ProtoMember(13, IsRequired = false, Name=@"sourceColumn", DataFormat = global::ProtoBuf.Extended.DataFormat.Default)]
     [global::System.ComponentModel.DefaultValue("")]
     public string sourceColumn
     {
@@ -444,7 +444,7 @@ namespace Alachisoft.NCache.Common.Protobuf
     }
 
     private bool _sourceColumnNull = default(bool);
-    [global::ProtoBuf.ProtoMember(14, IsRequired = false, Name=@"sourceColumnNull", DataFormat = global::ProtoBuf.DataFormat.Default)]
+    [global::ProtoBuf.Extended.ProtoMember(14, IsRequired = false, Name=@"sourceColumnNull", DataFormat = global::ProtoBuf.Extended.DataFormat.Default)]
     [global::System.ComponentModel.DefaultValue(default(bool))]
     public bool sourceColumnNull
     {
@@ -453,7 +453,7 @@ namespace Alachisoft.NCache.Common.Protobuf
     }
 
     private string _sqlValue = "";
-    [global::ProtoBuf.ProtoMember(15, IsRequired = false, Name=@"sqlValue", DataFormat = global::ProtoBuf.DataFormat.Default)]
+    [global::ProtoBuf.Extended.ProtoMember(15, IsRequired = false, Name=@"sqlValue", DataFormat = global::ProtoBuf.Extended.DataFormat.Default)]
     [global::System.ComponentModel.DefaultValue("")]
     public string sqlValue
     {
@@ -462,7 +462,7 @@ namespace Alachisoft.NCache.Common.Protobuf
     }
 
     private string _typeName = "";
-    [global::ProtoBuf.ProtoMember(16, IsRequired = false, Name=@"typeName", DataFormat = global::ProtoBuf.DataFormat.Default)]
+    [global::ProtoBuf.Extended.ProtoMember(16, IsRequired = false, Name=@"typeName", DataFormat = global::ProtoBuf.Extended.DataFormat.Default)]
     [global::System.ComponentModel.DefaultValue("")]
     public string typeName
     {
@@ -471,7 +471,7 @@ namespace Alachisoft.NCache.Common.Protobuf
     }
 
     private string _udtTypeName = "";
-    [global::ProtoBuf.ProtoMember(17, IsRequired = false, Name=@"udtTypeName", DataFormat = global::ProtoBuf.DataFormat.Default)]
+    [global::ProtoBuf.Extended.ProtoMember(17, IsRequired = false, Name=@"udtTypeName", DataFormat = global::ProtoBuf.Extended.DataFormat.Default)]
     [global::System.ComponentModel.DefaultValue("")]
     public string udtTypeName
     {
@@ -480,26 +480,26 @@ namespace Alachisoft.NCache.Common.Protobuf
     }
 
     private bool _nullValueProvided = default(bool);
-    [global::ProtoBuf.ProtoMember(18, IsRequired = false, Name=@"nullValueProvided", DataFormat = global::ProtoBuf.DataFormat.Default)]
+    [global::ProtoBuf.Extended.ProtoMember(18, IsRequired = false, Name=@"nullValueProvided", DataFormat = global::ProtoBuf.Extended.DataFormat.Default)]
     [global::System.ComponentModel.DefaultValue(default(bool))]
     public bool nullValueProvided
     {
       get { return _nullValueProvided; }
       set { _nullValueProvided = value; }
     }
-    private global::ProtoBuf.IExtension extensionObject;
-    global::ProtoBuf.IExtension global::ProtoBuf.IExtensible.GetExtensionObject(bool createIfMissing)
-      { return global::ProtoBuf.Extensible.GetExtensionObject(ref extensionObject, createIfMissing); }
+    private global::ProtoBuf.Extended.IExtension extensionObject;
+   global::ProtoBuf.Extended.IExtension global::ProtoBuf.Extended.IExtensible.GetExtensionObject(bool createIfMissing)
+      { return global::ProtoBuf.Extended.Extensible.GetExtensionObject(ref extensionObject, createIfMissing); }
   }
   
-  [global::System.Serializable, global::ProtoBuf.ProtoContract(Name=@"Sql7Dependency")]
-  public partial class Sql7Dependency : global::ProtoBuf.IExtensible
+  [global::System.Serializable, global::ProtoBuf.Extended.ProtoContract(Name=@"Sql7Dependency")]
+  public partial class Sql7Dependency : global::ProtoBuf.Extended.IExtensible
   {
     public Sql7Dependency() {}
     
 
     private string _connectionString = "";
-    [global::ProtoBuf.ProtoMember(1, IsRequired = false, Name=@"connectionString", DataFormat = global::ProtoBuf.DataFormat.Default)]
+    [global::ProtoBuf.Extended.ProtoMember(1, IsRequired = false, Name=@"connectionString", DataFormat = global::ProtoBuf.Extended.DataFormat.Default)]
     [global::System.ComponentModel.DefaultValue("")]
     public string connectionString
     {
@@ -508,26 +508,26 @@ namespace Alachisoft.NCache.Common.Protobuf
     }
 
     private string _dbCacheKey = "";
-    [global::ProtoBuf.ProtoMember(2, IsRequired = false, Name=@"dbCacheKey", DataFormat = global::ProtoBuf.DataFormat.Default)]
+    [global::ProtoBuf.Extended.ProtoMember(2, IsRequired = false, Name=@"dbCacheKey", DataFormat = global::ProtoBuf.Extended.DataFormat.Default)]
     [global::System.ComponentModel.DefaultValue("")]
     public string dbCacheKey
     {
       get { return _dbCacheKey; }
       set { _dbCacheKey = value; }
     }
-    private global::ProtoBuf.IExtension extensionObject;
-    global::ProtoBuf.IExtension global::ProtoBuf.IExtensible.GetExtensionObject(bool createIfMissing)
-      { return global::ProtoBuf.Extensible.GetExtensionObject(ref extensionObject, createIfMissing); }
+    private global::ProtoBuf.Extended.IExtension extensionObject;
+   global::ProtoBuf.Extended.IExtension global::ProtoBuf.Extended.IExtensible.GetExtensionObject(bool createIfMissing)
+      { return global::ProtoBuf.Extended.Extensible.GetExtensionObject(ref extensionObject, createIfMissing); }
   }
   
-  [global::System.Serializable, global::ProtoBuf.ProtoContract(Name=@"OleDbDependency")]
-  public partial class OleDbDependency : global::ProtoBuf.IExtensible
+  [global::System.Serializable, global::ProtoBuf.Extended.ProtoContract(Name=@"OleDbDependency")]
+  public partial class OleDbDependency : global::ProtoBuf.Extended.IExtensible
   {
     public OleDbDependency() {}
     
 
     private string _connectionString = "";
-    [global::ProtoBuf.ProtoMember(1, IsRequired = false, Name=@"connectionString", DataFormat = global::ProtoBuf.DataFormat.Default)]
+    [global::ProtoBuf.Extended.ProtoMember(1, IsRequired = false, Name=@"connectionString", DataFormat = global::ProtoBuf.Extended.DataFormat.Default)]
     [global::System.ComponentModel.DefaultValue("")]
     public string connectionString
     {
@@ -536,45 +536,45 @@ namespace Alachisoft.NCache.Common.Protobuf
     }
 
     private string _dbCacheKey = "";
-    [global::ProtoBuf.ProtoMember(2, IsRequired = false, Name=@"dbCacheKey", DataFormat = global::ProtoBuf.DataFormat.Default)]
+    [global::ProtoBuf.Extended.ProtoMember(2, IsRequired = false, Name=@"dbCacheKey", DataFormat = global::ProtoBuf.Extended.DataFormat.Default)]
     [global::System.ComponentModel.DefaultValue("")]
     public string dbCacheKey
     {
       get { return _dbCacheKey; }
       set { _dbCacheKey = value; }
     }
-    private global::ProtoBuf.IExtension extensionObject;
-    global::ProtoBuf.IExtension global::ProtoBuf.IExtensible.GetExtensionObject(bool createIfMissing)
-      { return global::ProtoBuf.Extensible.GetExtensionObject(ref extensionObject, createIfMissing); }
+    private global::ProtoBuf.Extended.IExtension extensionObject;
+   global::ProtoBuf.Extended.IExtension global::ProtoBuf.Extended.IExtensible.GetExtensionObject(bool createIfMissing)
+      { return global::ProtoBuf.Extended.Extensible.GetExtensionObject(ref extensionObject, createIfMissing); }
   }
   
-  [global::System.Serializable, global::ProtoBuf.ProtoContract(Name=@"ExtensibleDependency")]
-  public partial class ExtensibleDependency : global::ProtoBuf.IExtensible
+  [global::System.Serializable, global::ProtoBuf.Extended.ProtoContract(Name=@"ExtensibleDependency")]
+  public partial class ExtensibleDependency : global::ProtoBuf.Extended.IExtensible
   {
     public ExtensibleDependency() {}
     
 
     private byte[] _data = null;
-    [global::ProtoBuf.ProtoMember(1, IsRequired = false, Name=@"data", DataFormat = global::ProtoBuf.DataFormat.Default)]
+    [global::ProtoBuf.Extended.ProtoMember(1, IsRequired = false, Name=@"data", DataFormat = global::ProtoBuf.Extended.DataFormat.Default)]
     [global::System.ComponentModel.DefaultValue(null)]
     public byte[] data
     {
       get { return _data; }
       set { _data = value; }
     }
-    private global::ProtoBuf.IExtension extensionObject;
-    global::ProtoBuf.IExtension global::ProtoBuf.IExtensible.GetExtensionObject(bool createIfMissing)
-      { return global::ProtoBuf.Extensible.GetExtensionObject(ref extensionObject, createIfMissing); }
+    private global::ProtoBuf.Extended.IExtension extensionObject;
+   global::ProtoBuf.Extended.IExtension global::ProtoBuf.Extended.IExtensible.GetExtensionObject(bool createIfMissing)
+      { return global::ProtoBuf.Extended.Extensible.GetExtensionObject(ref extensionObject, createIfMissing); }
   }
   
-  [global::System.Serializable, global::ProtoBuf.ProtoContract(Name=@"NosDbDependency")]
-  public partial class NosDbDependency : global::ProtoBuf.IExtensible
+  [global::System.Serializable, global::ProtoBuf.Extended.ProtoContract(Name=@"NosDbDependency")]
+  public partial class NosDbDependency : global::ProtoBuf.Extended.IExtensible
   {
     public NosDbDependency() {}
     
 
     private string _connectionString = "";
-    [global::ProtoBuf.ProtoMember(1, IsRequired = false, Name=@"connectionString", DataFormat = global::ProtoBuf.DataFormat.Default)]
+    [global::ProtoBuf.Extended.ProtoMember(1, IsRequired = false, Name=@"connectionString", DataFormat = global::ProtoBuf.Extended.DataFormat.Default)]
     [global::System.ComponentModel.DefaultValue("")]
     public string connectionString
     {
@@ -583,7 +583,7 @@ namespace Alachisoft.NCache.Common.Protobuf
     }
 
     private string _query = "";
-    [global::ProtoBuf.ProtoMember(2, IsRequired = false, Name=@"query", DataFormat = global::ProtoBuf.DataFormat.Default)]
+    [global::ProtoBuf.Extended.ProtoMember(2, IsRequired = false, Name=@"query", DataFormat = global::ProtoBuf.Extended.DataFormat.Default)]
     [global::System.ComponentModel.DefaultValue("")]
     public string query
     {
@@ -592,7 +592,7 @@ namespace Alachisoft.NCache.Common.Protobuf
     }
 
     private int _timeout = default(int);
-    [global::ProtoBuf.ProtoMember(3, IsRequired = false, Name=@"timeout", DataFormat = global::ProtoBuf.DataFormat.TwosComplement)]
+    [global::ProtoBuf.Extended.ProtoMember(3, IsRequired = false, Name=@"timeout", DataFormat = global::ProtoBuf.Extended.DataFormat.TwosComplement)]
     [global::System.ComponentModel.DefaultValue(default(int))]
     public int timeout
     {
@@ -600,15 +600,15 @@ namespace Alachisoft.NCache.Common.Protobuf
       set { _timeout = value; }
     }
     private readonly global::System.Collections.Generic.List<Alachisoft.NCache.Common.Protobuf.KeyValue> _param = new global::System.Collections.Generic.List<Alachisoft.NCache.Common.Protobuf.KeyValue>();
-    [global::ProtoBuf.ProtoMember(4, Name=@"param", DataFormat = global::ProtoBuf.DataFormat.Default)]
+    [global::ProtoBuf.Extended.ProtoMember(4, Name=@"param", DataFormat = global::ProtoBuf.Extended.DataFormat.Default)]
     public global::System.Collections.Generic.List<Alachisoft.NCache.Common.Protobuf.KeyValue> param
     {
       get { return _param; }
     }
   
-    private global::ProtoBuf.IExtension extensionObject;
-    global::ProtoBuf.IExtension global::ProtoBuf.IExtensible.GetExtensionObject(bool createIfMissing)
-      { return global::ProtoBuf.Extensible.GetExtensionObject(ref extensionObject, createIfMissing); }
+    private global::ProtoBuf.Extended.IExtension extensionObject;
+   global::ProtoBuf.Extended.IExtension global::ProtoBuf.Extended.IExtensible.GetExtensionObject(bool createIfMissing)
+      { return global::ProtoBuf.Extended.Extensible.GetExtensionObject(ref extensionObject, createIfMissing); }
   }
   
 }

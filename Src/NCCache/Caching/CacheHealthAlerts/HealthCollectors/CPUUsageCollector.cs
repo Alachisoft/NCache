@@ -15,25 +15,51 @@ namespace Alachisoft.NCache.Caching.CacheHealthAlerts
         PerformanceCounter counter = null;
         private CPUUsage _cpuUsage = null;
         int processrs = 0;
+
+        private void InitializeCPUUsageCollector()
+        {
+            CouneterName = "% Processor Time";
+            Name = "CPU Usage";
+#if !NETCORE
+            int retries = 3;
+            do
+            {
+                try
+                {
+                    InitializeCounter();
+                    break;
+                }
+                catch (Exception)
+                {
+                    retries--;
+                   
+                }
+            } while (retries > 0);
+           
+#elif NETCORE
+            InitiliazeCPUNETCORE();
+#endif
+            processrs = Environment.ProcessorCount;
+            if (processrs <= 0)
+                processrs = 1;
+        }
+
         internal CPUUsageCollector(ResourceAtribute attribute, CacheRuntimeContext cacheRuntimeContext) : base(attribute, cacheRuntimeContext)
         {
             try
             {
-                CouneterName = "% Processor Time";
-                Name = "CPU Usage";
-                if (!ServiceConfiguration.PublishCountersToCacheHost)
-                    InitializeCounter();
-                else
-                    InitiliazeCPUNETCORE();
-                processrs = Environment.ProcessorCount;
-                if (processrs <= 0)
-                    processrs = 1;
+                InitializeCPUUsageCollector();
                 SetThresholds();
             }
             catch (Exception ex)
             {
 
             }
+        }
+
+        public CPUUsageCollector()
+        {
+            InitializeCPUUsageCollector();
         }
 
         public override int EventId
@@ -48,19 +74,19 @@ namespace Alachisoft.NCache.Caching.CacheHealthAlerts
         {
             try
             {
-                if (!ServiceConfiguration.PublishCountersToCacheHost)
-                {
-                    if (counter != null)
-                        return (counter.NextValue()/ processrs);
-                }
-                else
-                {
-                    if (_cpuUsage != null)
-                    {
 
-                        return _cpuUsage.GetUsage();
-                    }
+#if !NETCORE
+                if (counter != null)
+                        return (counter.NextValue()/ processrs);
+#elif NETCORE
+
+                if (_cpuUsage != null)
+                {
+
+                    return _cpuUsage.GetUsage();
                 }
+#endif
+
             }
             catch (Exception ex)
             {
@@ -84,19 +110,19 @@ namespace Alachisoft.NCache.Caching.CacheHealthAlerts
 
         public double InitiliazeCPUNETCORE()
         {
-                if (_cpuUsage == null)
-                {
+            if (_cpuUsage == null)
+            {
 #if NETCORE
-                    if (System.Runtime.InteropServices.RuntimeInformation.IsOSPlatform(System.Runtime.InteropServices.OSPlatform.Linux))
-                        _cpuUsage = new NetCoreCPUUsage();
-                    else
-                        _cpuUsage = new CPUUsage();
+                if (System.Runtime.InteropServices.RuntimeInformation.IsOSPlatform(System.Runtime.InteropServices.OSPlatform.Linux))
+                    _cpuUsage = new NetCoreCPUUsage();
+                else
+                    _cpuUsage = new CPUUsage();
 #endif
- 
+
             }
             return 0.0;
         }
 
-    
+
     }
 }

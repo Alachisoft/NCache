@@ -1,4 +1,4 @@
-﻿//  Copyright (c) 2021 Alachisoft
+﻿//  Copyright (c) 2026 Alachisoft
 //  
 //  Licensed under the Apache License, Version 2.0 (the "License");
 //  you may not use this file except in compliance with the License.
@@ -13,13 +13,12 @@
 //  limitations under the License
 using System;
 using System.Collections.Generic;
-
-//using System.Linq;
 using System.Text;
 
 using Alachisoft.NCache.Caching;
 using System.Threading;
 using Alachisoft.NCache.Common.Threading;
+using Alachisoft.NCache.Licensing;
 using Alachisoft.NCache.Common;
 using System.Diagnostics;
 using Alachisoft.NCache.Common.RPCFramework;
@@ -45,6 +44,10 @@ using Alachisoft.NCache.Management.Statistics;
 using Alachisoft.NCache.Common.ErrorHandling;
 using Alachisoft.NCache.Common.Pooling.Stats;
 using Alachisoft.NCache.Common.FeatureUsageData.Dom;
+using Alachisoft.NCache.Common.DataStructures;
+using Alachisoft.NCache.Caching.Topologies.Clustered;
+using Alachisoft.NCache.Runtime.Caching;
+using Alachisoft.NCache.Cache.Caching.Statistics;
 
 namespace Alachisoft.NCache.Management
 {
@@ -157,7 +160,7 @@ namespace Alachisoft.NCache.Management
         /// </summary>
         ~HostServer()
         {
-            
+
             base.Dispose();
         }
 
@@ -182,9 +185,21 @@ namespace Alachisoft.NCache.Management
 
             }
         }
-     
+       
+        public void OnLicenseExpiration()
+        {
+            StopCache(CacheServer.CacheStopReason.Expired);
+        }
 
-      
+
+        public override string LicenseKey
+        {
+            get
+            {
+                return RegHelper.GetLicenseKey(0);
+            }
+        }
+        
         [TargetMethod(ManagementUtil.MethodName.GetCacheInfo, 1)]
         public override CacheInfo GetCacheInfo(string cacheId)
         {
@@ -249,9 +264,9 @@ namespace Alachisoft.NCache.Management
         }
 
         [TargetMethod(ManagementUtil.MethodName.StartCache, 4)]
-        public override void StartCache(string cacheId, string partitionId, bool twoPhaseInitialization)
+        public override void StartCache(string cacheId, string partitionId, bool twoPhaseInitialization, ServerLicenseInfo licenseInfo = null, string registerAs = "")
         {
-            StartCache(cacheId, partitionId, null, null, null, null, null, null, twoPhaseInitialization);
+            StartCache(cacheId, partitionId, null, null, null, null, null, null, twoPhaseInitialization,licenseInfo, registerAs);
         }
 
         [TargetMethod(ManagementUtil.MethodName.StartCache, 5)]
@@ -292,7 +307,7 @@ namespace Alachisoft.NCache.Management
             CacheClearedCallback cacheCleared,
             CustomRemoveCallback customRemove,
             CustomUpdateCallback customUpdate,
-            bool twoPhaseInitialization)
+            bool twoPhaseInitialization, ServerLicenseInfo licenseInfo = null, string registerAs = "")
         {
             if (cacheId == null) throw new ArgumentNullException("cacheId");
             ContainCacheProcess = true;
@@ -318,10 +333,13 @@ namespace Alachisoft.NCache.Management
                     cache = cacheInfo.Cache;
                 try
                 {
+
+                   
                     StartCacheInstance(cache, cacheInfo, itemAdded, itemRemoved, itemUpdated, cacheCleared, customRemove, customUpdate, twoPhaseInitialization);
                     AppUtil.LogEvent(_cacheserver, "\"" + cacheId + "\"" + " started successfully.", EventLogEntryType.Information, EventCategories.Information, EventID.CacheStart);
                    
                 }
+               
                 catch (Exception e)
                 {
                     AppUtil.LogEvent(_cacheserver, "\"" + cacheId + "\" can not be started.\n" + e.ToString(), System.Diagnostics.EventLogEntryType.Error, EventCategories.Error, EventID.CacheStartError);
@@ -534,7 +552,7 @@ namespace Alachisoft.NCache.Management
                 {
                     if (cache.IsRunning)
                         status.Status = CacheStatus.Running;
-                    #if !(DEVELOPMENT || CLIENT)
+                    #if !DEVELOPMENT
                         status.IsCoordinator = cache.IsCoordinator;
                     #endif 
                 }
@@ -876,20 +894,6 @@ namespace Alachisoft.NCache.Management
             return new PoolStats();
         }
 
-        [TargetMethod(ManagementUtil.MethodName.GetFeatureUsageReport, 1)]
-        public override Dictionary<string, Common.FeatureUsageData.Feature> GetFeatureUsageReport(string cacheId)
-        {
-            Dictionary<string, Common.FeatureUsageData.Feature> featureUsageReport = null;
-            if (cacheInfo != null)
-            {
-                InstrumentCache cache = cacheInfo.Cache;
-                if (cache != null)
-                    featureUsageReport = cache.GetCacheFeaturesUsageReport();
-            }
-
-            return featureUsageReport;
-        }
-
 
         [TargetMethod(ManagementUtil.MethodName.GetClientProfileReport, 1)]
         public override ClientProfileDom GetClientProfileReport(string cacheId)
@@ -904,6 +908,40 @@ namespace Alachisoft.NCache.Management
 
             return clientProfile;
         }
+
+        [TargetMethod(ManagementUtil.MethodName.GetDistributionInfo, 1)]
+        public override DistributionInfo GetDistributionInfo(string cacheId, string existedMapPath)
+        {
+            DistributionInfo info = null;
+            try
+            {
+            }
+            catch (Exception e)
+            {
+                string msg = String.Format("HostServer GetDistributionInfo(), Error {0}",
+    e.Message);
+                AppUtil.LogEvent(msg, EventLogEntryType.Warning); ;
+            }
+            return info;
+        }
+
+        [TargetMethod(ManagementUtil.MethodName.GetCumulativeCounters, 1)]
+        public override CumulativeCounters GetCumulativeCountersForAllRegisteredCaches()
+        {
+            CumulativeCounters counters = new CumulativeCounters();
+            if (cacheInfo != null)
+            {
+                InstrumentCache cache = cacheInfo.Cache;
+                if (cache != null)
+                {
+                    counters.CumulativeClientCount = cache.ConnectedClientCount;
+                    counters.CumulativeReqRate = cache.GetRequestsPerSecond();
+                    counters.CumulativeCacheSize = cache.Size;
+                    counters.RunningCacheCount = s_caches.Count;
+                }
+            }
+
+            return counters;
+        }
     }
 }
-

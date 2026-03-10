@@ -1,4 +1,4 @@
-//  Copyright (c) 2021 Alachisoft
+//  Copyright (c) 2026 Alachisoft
 //  
 //  Licensed under the Apache License, Version 2.0 (the "License");
 //  you may not use this file except in compliance with the License.
@@ -24,9 +24,6 @@ namespace Alachisoft.NCache.Serialization
 	{
 		public CompactSerializationException()
 		{
-			//
-			// TODO: Add constructor logic here
-			//
 		}
 		/// <summary>
 		/// Special constructor used by Run serialization to contstruct the object.
@@ -35,22 +32,13 @@ namespace Alachisoft.NCache.Serialization
 		/// <param name="context"></param>
 		public CompactSerializationException(SerializationInfo info,StreamingContext context): base(info,context)
 		{
-			//
-			// TODO: Add constructor logic here
-			//
 		}
 		public CompactSerializationException(string message):base(message)
 		{
-			//
-			// TODO: Add constructor logic here
-			//
 		}
 
         public CompactSerializationException(string message,Exception innerException):base(message,innerException)
         {
-            //
-            // TODO: Add constructor logic here
-            //
         }
 	}
 }

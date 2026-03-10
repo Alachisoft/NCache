@@ -13,14 +13,14 @@
 // Note: requires additional types generated from: SubscriptionIdRecepientList.proto
 namespace Alachisoft.NCache.Common.Protobuf
 {
-  [global::System.Serializable, global::ProtoBuf.ProtoContract(Name=@"Message")]
-  public partial class Message : global::ProtoBuf.IExtensible
+  [global::System.Serializable, global::ProtoBuf.Extended.ProtoContract(Name=@"Message")]
+  public partial class Message : global::ProtoBuf.Extended.IExtensible
   {
     public Message() {}
     
 
     private string _messageId = "";
-    [global::ProtoBuf.ProtoMember(1, IsRequired = false, Name=@"messageId", DataFormat = global::ProtoBuf.DataFormat.Default)]
+    [global::ProtoBuf.Extended.ProtoMember(1, IsRequired = false, Name=@"messageId", DataFormat = global::ProtoBuf.Extended.DataFormat.Default)]
     [global::System.ComponentModel.DefaultValue("")]
     public string messageId
     {
@@ -29,7 +29,7 @@ namespace Alachisoft.NCache.Common.Protobuf
     }
 
     private Alachisoft.NCache.Common.Protobuf.Value _payload = null;
-    [global::ProtoBuf.ProtoMember(2, IsRequired = false, Name=@"payload", DataFormat = global::ProtoBuf.DataFormat.Default)]
+    [global::ProtoBuf.Extended.ProtoMember(2, IsRequired = false, Name=@"payload", DataFormat = global::ProtoBuf.Extended.DataFormat.Default)]
     [global::System.ComponentModel.DefaultValue(null)]
     public Alachisoft.NCache.Common.Protobuf.Value payload
     {
@@ -38,7 +38,7 @@ namespace Alachisoft.NCache.Common.Protobuf
     }
 
     private int _flag = default(int);
-    [global::ProtoBuf.ProtoMember(3, IsRequired = false, Name=@"flag", DataFormat = global::ProtoBuf.DataFormat.TwosComplement)]
+    [global::ProtoBuf.Extended.ProtoMember(3, IsRequired = false, Name=@"flag", DataFormat = global::ProtoBuf.Extended.DataFormat.TwosComplement)]
     [global::System.ComponentModel.DefaultValue(default(int))]
     public int flag
     {
@@ -47,7 +47,7 @@ namespace Alachisoft.NCache.Common.Protobuf
     }
 
     private long _creationTime = default(long);
-    [global::ProtoBuf.ProtoMember(4, IsRequired = false, Name=@"creationTime", DataFormat = global::ProtoBuf.DataFormat.TwosComplement)]
+    [global::ProtoBuf.Extended.ProtoMember(4, IsRequired = false, Name=@"creationTime", DataFormat = global::ProtoBuf.Extended.DataFormat.TwosComplement)]
     [global::System.ComponentModel.DefaultValue(default(long))]
     public long creationTime
     {
@@ -56,7 +56,7 @@ namespace Alachisoft.NCache.Common.Protobuf
     }
 
     private long _expirationTime = default(long);
-    [global::ProtoBuf.ProtoMember(5, IsRequired = false, Name=@"expirationTime", DataFormat = global::ProtoBuf.DataFormat.TwosComplement)]
+    [global::ProtoBuf.Extended.ProtoMember(5, IsRequired = false, Name=@"expirationTime", DataFormat = global::ProtoBuf.Extended.DataFormat.TwosComplement)]
     [global::System.ComponentModel.DefaultValue(default(long))]
     public long expirationTime
     {
@@ -65,7 +65,7 @@ namespace Alachisoft.NCache.Common.Protobuf
     }
 
     private int _deliveryOption = default(int);
-    [global::ProtoBuf.ProtoMember(6, IsRequired = false, Name=@"deliveryOption", DataFormat = global::ProtoBuf.DataFormat.TwosComplement)]
+    [global::ProtoBuf.Extended.ProtoMember(6, IsRequired = false, Name=@"deliveryOption", DataFormat = global::ProtoBuf.Extended.DataFormat.TwosComplement)]
     [global::System.ComponentModel.DefaultValue(default(int))]
     public int deliveryOption
     {
@@ -74,7 +74,7 @@ namespace Alachisoft.NCache.Common.Protobuf
     }
 
     private int _subscriptionType = default(int);
-    [global::ProtoBuf.ProtoMember(7, IsRequired = false, Name=@"subscriptionType", DataFormat = global::ProtoBuf.DataFormat.TwosComplement)]
+    [global::ProtoBuf.Extended.ProtoMember(7, IsRequired = false, Name=@"subscriptionType", DataFormat = global::ProtoBuf.Extended.DataFormat.TwosComplement)]
     [global::System.ComponentModel.DefaultValue(default(int))]
     public int subscriptionType
     {
@@ -83,7 +83,7 @@ namespace Alachisoft.NCache.Common.Protobuf
     }
 
     private int _messageRemoveReason = default(int);
-    [global::ProtoBuf.ProtoMember(8, IsRequired = false, Name=@"messageRemoveReason", DataFormat = global::ProtoBuf.DataFormat.TwosComplement)]
+    [global::ProtoBuf.Extended.ProtoMember(8, IsRequired = false, Name=@"messageRemoveReason", DataFormat = global::ProtoBuf.Extended.DataFormat.TwosComplement)]
     [global::System.ComponentModel.DefaultValue(default(int))]
     public int messageRemoveReason
     {
@@ -91,7 +91,7 @@ namespace Alachisoft.NCache.Common.Protobuf
       set { _messageRemoveReason = value; }
     }
     private readonly global::System.Collections.Generic.List<string> _recipientList = new global::System.Collections.Generic.List<string>();
-    [global::ProtoBuf.ProtoMember(9, Name=@"recipientList", DataFormat = global::ProtoBuf.DataFormat.Default)]
+    [global::ProtoBuf.Extended.ProtoMember(9, Name=@"recipientList", DataFormat = global::ProtoBuf.Extended.DataFormat.Default)]
     public global::System.Collections.Generic.List<string> recipientList
     {
       get { return _recipientList; }
@@ -99,7 +99,7 @@ namespace Alachisoft.NCache.Common.Protobuf
   
 
     private Alachisoft.NCache.Common.Protobuf.InternalPayload _internalPayload = null;
-    [global::ProtoBuf.ProtoMember(10, IsRequired = false, Name=@"internalPayload", DataFormat = global::ProtoBuf.DataFormat.Default)]
+    [global::ProtoBuf.Extended.ProtoMember(10, IsRequired = false, Name=@"internalPayload", DataFormat = global::ProtoBuf.Extended.DataFormat.Default)]
     [global::System.ComponentModel.DefaultValue(null)]
     public Alachisoft.NCache.Common.Protobuf.InternalPayload internalPayload
     {
@@ -107,15 +107,15 @@ namespace Alachisoft.NCache.Common.Protobuf
       set { _internalPayload = value; }
     }
     private readonly global::System.Collections.Generic.List<Alachisoft.NCache.Common.Protobuf.SubscriptionIdRecepientList> _subscriptionIdentifiers = new global::System.Collections.Generic.List<Alachisoft.NCache.Common.Protobuf.SubscriptionIdRecepientList>();
-    [global::ProtoBuf.ProtoMember(11, Name=@"subscriptionIdentifiers", DataFormat = global::ProtoBuf.DataFormat.Default)]
+    [global::ProtoBuf.Extended.ProtoMember(11, Name=@"subscriptionIdentifiers", DataFormat = global::ProtoBuf.Extended.DataFormat.Default)]
     public global::System.Collections.Generic.List<Alachisoft.NCache.Common.Protobuf.SubscriptionIdRecepientList> subscriptionIdentifiers
     {
       get { return _subscriptionIdentifiers; }
     }
   
-    private global::ProtoBuf.IExtension extensionObject;
-    global::ProtoBuf.IExtension global::ProtoBuf.IExtensible.GetExtensionObject(bool createIfMissing)
-      { return global::ProtoBuf.Extensible.GetExtensionObject(ref extensionObject, createIfMissing); }
+    private global::ProtoBuf.Extended.IExtension extensionObject;
+   global::ProtoBuf.Extended.IExtension global::ProtoBuf.Extended.IExtensible.GetExtensionObject(bool createIfMissing)
+      { return global::ProtoBuf.Extended.Extensible.GetExtensionObject(ref extensionObject, createIfMissing); }
   }
   
 }

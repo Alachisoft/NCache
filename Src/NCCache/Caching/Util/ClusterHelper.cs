@@ -1,4 +1,4 @@
-//  Copyright (c) 2021 Alachisoft
+//  Copyright (c) 2026 Alachisoft
 //  
 //  Licensed under the Apache License, Version 2.0 (the "License");
 //  you may not use this file except in compliance with the License.
@@ -29,7 +29,6 @@ using Alachisoft.NCache.Common.Pooling;
 using Alachisoft.NCache.Caching.Topologies.Clustered;
 using static Alachisoft.NCache.Caching.Topologies.Clustered.ClusterCacheBase;
 using Alachisoft.NCache.Common.Pooling.Lease;
-
 
 namespace Alachisoft.NCache.Caching.Util
 {

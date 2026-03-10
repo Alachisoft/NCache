@@ -1,4 +1,4 @@
-//  Copyright (c) 2021 Alachisoft
+//  Copyright (c) 2026 Alachisoft
 //  
 //  Licensed under the Apache License, Version 2.0 (the "License");
 //  you may not use this file except in compliance with the License.
@@ -19,7 +19,6 @@ using Alachisoft.NCache.Common.Monitoring;
 using Alachisoft.NCache.Common.Util;
 using Alachisoft.NCache.Common.Threading;
 using Alachisoft.NCache.Common.DataStructures.Clustered;
-using Alachisoft.NCache.Caching.Maintenance;
 using Alachisoft.NCache.Common.Pooling;
 using Alachisoft.NCache.Common.Caching;
 using Alachisoft.NCache.Util;
@@ -220,7 +219,6 @@ namespace Alachisoft.NCache.Caching.Topologies.Clustered
             IList userPayLoad = new ClusteredArrayList(); 
             IOptimizedQueueOperation operation = null;
 
-
             try
             {
                 while (!stopped || _queue.Count > 0)
@@ -248,7 +246,6 @@ namespace Alachisoft.NCache.Caching.Topologies.Clustered
                                 {
                                     userPayLoad.Add(operation.UserPayLoad.GetValue(j));
                                 }
-
                             }
 
                             compilationInfo.Add(operation.PayLoadSize);
@@ -318,7 +315,6 @@ namespace Alachisoft.NCache.Caching.Topologies.Clustered
                                 context?.MarkFree(NCModulesConstants.Replication);
                             }
                         }
-                       
 
                         opCodesToBeReplicated.Clear();
                         infoToBeReplicated.Clear();

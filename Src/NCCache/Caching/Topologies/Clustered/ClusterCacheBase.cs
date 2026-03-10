@@ -1,4 +1,4 @@
-//  Copyright (c) 2021 Alachisoft
+//  Copyright (c) 2026 Alachisoft
 //
 //  Licensed under the Apache License, Version 2.0 (the "License");
 //  you may not use this file except in compliance with the License.
@@ -36,7 +36,6 @@ using Alachisoft.NCache.Common.Locking;
 using Alachisoft.NCache.Caching.Pooling;
 using Alachisoft.NCache.Common.Pooling;
 using Alachisoft.NCache.Util;
-using Alachisoft.NCache.Common.FeatureUsageData;
 #if SERVER
 using Alachisoft.NGroups;
 using Alachisoft.NGroups.Blocks;
@@ -439,7 +438,29 @@ namespace Alachisoft.NCache.Caching.Topologies.Clustered
             NotifyOldCustomRemoveCallback,
             NotifyOldAdd,
             NotifyOldUpdate,
-            NotifyOldRemoval
+            NotifyOldRemoval,
+           
+            #region Caching Module
+
+            ///<summary>Transfer a module bucket from the source to destination.</summary>
+            TransferModuleBucket,
+            ///<summary>Locks the hashmap buckets.</summary>
+            LockModuleBuckets,
+            //<summary>signals end of state txfr</summary>
+            SignalEndOfModuleStateTxfr,
+            AnnounceModuleStateTransfer,
+            PersisteModuleMap,
+            ///<summary>Release the hashmap buckets.</summary>
+            ReleaseModuleBuckets,
+            AckModuleStateTxfr,
+            EndModuleStateTransfer,
+            ModuleCommand,
+            SyncModuleDistributionMap,
+            NotifyIndexCreation,
+            SendDistributionMap,
+            IsModuleUnderStateTransfer,
+            IsModuleBucketFunctional
+            #endregion
 
         }
 
@@ -517,8 +538,8 @@ namespace Alachisoft.NCache.Caching.Topologies.Clustered
         private bool _enableGeneralEvents = false;
 
         private EventManager _eventManager = new EventManager();
-        //private int oldClients = 0;
         private static int oldClients = 0;
+
         protected ReplicationOperation GetClearReplicationOperation(int opCode, object info)
         {
             return GetReplicationOperation(opCode, info, 2, null, 0);
@@ -1017,8 +1038,6 @@ namespace Alachisoft.NCache.Caching.Topologies.Clustered
                         }
                     }
 
-                    if (_isAutoBalancingEnabled)
-                        FeatureUsageCollector.Instance.GetFeature(FeatureEnum.auto_load_balancing).UpdateUsageTime();
                 }
 
                 if (properties.Contains("async-operation"))
@@ -1049,7 +1068,7 @@ namespace Alachisoft.NCache.Caching.Topologies.Clustered
 
             try
             {
-                _cluster = new ClusterService(_context, this, this); 
+                _cluster = new ClusterService(_context, this, this);
                 _cluster.ClusterEventsListener = _clusterListener;
                 _cluster.Initialize(properties, channelName, domain, identity, _context.CacheRoot.IsInProc);
             }
@@ -1360,13 +1379,10 @@ namespace Alachisoft.NCache.Caching.Topologies.Clustered
                 case (int)OpCodes.NotifyPollRequest:
                     return HandlePollRequestCallback(func.Operand);
 
-
-
+             
             }
             return null;
         }
-
-      
         
         private object HandleGetMessageList(int bucketId)
         {
@@ -1399,6 +1415,115 @@ namespace Alachisoft.NCache.Caching.Topologies.Clustered
 
         #endregion
 
+        #region /                       ---State transfer related virtual methods ---          /
+
+        internal virtual void AutoLoadBalance()
+        {
+        }
+
+        internal virtual bool DetermineClusterStatus()
+        {
+            return false;
+        }
+
+        /// <summary>
+        /// Fetch state from a cluster member. If the node is the coordinator there is
+        /// no need to do the state transfer.
+        /// </summary>
+        internal virtual void EndStateTransfer(object result)
+        {
+            if (result is Exception)
+            {
+                NCacheLog.Error("ClusterCacheBase.EndStateTransfer",
+                    " State transfer ended with Exception " + result.ToString());
+                /// What to do? if we failed the state transfer?. Proabably we'll keep
+                /// servicing in degraded mode? For the time being we don't!
+            }
+
+            /// Set the status to fully-functional (Running) and tell everyone about it.
+            _statusLatch.SetStatusBit(NodeStatus.Running, NodeStatus.Initializing);
+            UpdateCacheStatistics();
+            AnnouncePresence(true);
+        }
+
+        internal virtual void StartReplicationAfterMaintenance()
+        { }
+
+        public void SignalEndOfStateTxfr(Address dest)
+        {
+            Function fun = new Function((int)OpCodes.SignalEndOfStateTxfr, new object());
+            if (_cluster != null) _cluster.SendNoReplyMessage(dest, fun);
+        }
+
+        internal virtual Hashtable LockBuckets(ArrayList bucketIds)
+        {
+            return null;
+        }
+
+        /// <summary>
+        /// Announces that given buckets are under state transfer and every body
+        /// in the cluster should know about their statetransfer.
+        /// </summary>
+        /// <param name="bucketIds"></param>
+        internal virtual void AnnounceStateTransfer(ArrayList bucketIds)
+        {
+            Clustered_AnnounceStateTransfer(bucketIds);
+        }
+
+        protected void Clustered_AnnounceStateTransfer(ArrayList bucketIds)
+        {
+            Function function = new Function((int)OpCodes.AnnounceStateTransfer, bucketIds, false);
+            Cluster.Broadcast(function, GroupRequest.GET_NONE, false, Priority.High);
+        }
+
+        internal virtual StateTxfrInfo TransferBucket(ArrayList bucketIds, Address targetNode, byte transferType,
+            bool sparsedBuckets, int expectedTxfrId, bool isBalanceDataLoad)
+        {
+            return Clustered_TransferBucket(targetNode, bucketIds, transferType, sparsedBuckets, expectedTxfrId,
+                isBalanceDataLoad);
+        }
+
+        /// <summary>
+        /// Retrieve the list of keys from the cache for the given group or sub group.
+        /// </summary>
+        protected StateTxfrInfo Clustered_TransferBucket(Address targetNode, ArrayList bucketIds, byte transferType,
+            bool sparsedBuckets, int expectedTxfrId, bool isBalanceDataLoad)
+        {
+            try
+            {
+                Function func = new Function((int)OpCodes.TransferBucket,
+                    new object[] { bucketIds, transferType, sparsedBuckets, expectedTxfrId, isBalanceDataLoad, !IsStartedAsMirror }, true);
+                if (Context.NCacheLog.IsInfoEnabled)
+                    Context.NCacheLog.Info("ClusteredCacheBase.Clustered_TransferBucket",
+                        " Sending request for bucket transfer to " + targetNode);
+                object result = Cluster.SendMessage(targetNode, func, GroupRequest.GET_FIRST, false);
+                if (Context.NCacheLog.IsInfoEnabled)
+                    Context.NCacheLog.Info("ClusteredCacheBase.Clustered_TransferBucket",
+                        " Response recieved from " + targetNode);
+
+                OperationResponse opResponse = result as OperationResponse;
+                StateTxfrInfo transferInfo = null;
+                if (opResponse != null)
+                {
+                    transferInfo = opResponse.SerializablePayload as StateTxfrInfo;
+                    if (transferInfo != null)
+                    {
+                        if (transferInfo.data != null)
+                        {
+                            string[] keys = new string[transferInfo.data.Keys.Count];
+                            transferInfo.data.Keys.CopyTo(keys, 0);
+                        }
+                    }
+                }
+
+                return transferInfo;
+            }
+            catch (Exception e)
+            {
+                throw;
+            }
+        }
+
         protected static HashVector GetAllPayLoads(IList userPayLoad, IList compilationInfo)
         {
             HashVector result = new HashVector();
@@ -1426,9 +1551,39 @@ namespace Alachisoft.NCache.Caching.Topologies.Clustered
             return result;
         }
 
-        
-        
+        internal virtual void AckStateTxfrCompleted(Address owner, ArrayList bucketIds)
+        {
+        }
 
+        internal virtual void ReleaseBuckets(ArrayList bucketIds)
+        {
+            Clustered_ReleaseBuckets(bucketIds);
+        }
+
+        protected void Clustered_ReleaseBuckets(ArrayList bucketIds)
+        {
+            Function function = new Function((int)OpCodes.ReleaseBuckets, bucketIds, false);
+            Cluster.Broadcast(function, GroupRequest.GET_NONE, false, Priority.High);
+        }
+
+        internal virtual void StartLogging(ArrayList bucketIds)
+        {
+        }
+
+        internal virtual void PrepareBucketsForStateTrxfer(ArrayList bucketIds)
+        {
+            for (int i = 0; i < bucketIds.Count; i++)
+            {
+                _internalCache.PrepareBucketForStateTrxfer((int)bucketIds[i]);
+            }
+        }
+
+        internal virtual bool IsBucketsTransferable(ArrayList bucketIds, Address owner)
+        {
+            return true;
+        }
+
+        #endregion
 
         /// <summary>
         /// Returns the count of local cache items only.
@@ -2233,7 +2388,6 @@ namespace Alachisoft.NCache.Caching.Topologies.Clustered
             {
                 Function func = new Function((int)OpCodes.GetDataGroupInfo, new object[] { keys, operationContext },
                     excludeSelf);
-                //RspList results = Cluster.BroadcastToMultiple(dest, func, GroupRequest.GET_ALL);
                 func.Cancellable = true;
                 RspList results = Cluster.Multicast(dest, func, GroupRequest.GET_ALL, false);
                 if (results == null)
@@ -2428,7 +2582,7 @@ namespace Alachisoft.NCache.Caching.Topologies.Clustered
         /// <param name="notifId"></param>
         /// <param name="data"></param>
         /// <param name="async"></param>
-        public sealed override void SendNotification(object notifId, object data, OperationContext operationContext)
+        public sealed override void SendNotification(object notifId, object data)
         {
             if (ActiveServers.Count > 1)
             {
@@ -2554,13 +2708,6 @@ namespace Alachisoft.NCache.Caching.Topologies.Clustered
             NotifyOldCustomUpdateCallback(objs[0], objs[1], true, null, eventContext);
             return null;
         }
-
-        /// <summary>
-        /// Hanlder for active query update callback notification.
-        /// </summary>
-        /// <param name="info">packaged information</param>
-        /// /// <param name="entry">callback entry</param>
-        /// <returns>null</returns>
 
         /// <summary>
         /// Handler for item add event.
@@ -2789,7 +2936,7 @@ namespace Alachisoft.NCache.Caching.Topologies.Clustered
                 if (entry != null)
                     entry.MarkInUse(NCModulesConstants.Topology);
                 // If everything went ok!, initiate local and cluster-wide notifications.
-                if (IsItemAddNotifier) //&& ValidMembers.Count > 1)
+                if (IsItemAddNotifier)
                 {
                     if (eventContext == null)
                     {
@@ -2879,7 +3026,7 @@ namespace Alachisoft.NCache.Caching.Topologies.Clustered
         public override void RaiseItemUpdateNotifier(object key, OperationContext operationContext, EventContext eventcontext)
         {
             // If everything went ok!, initiate local and cluster-wide notifications.
-            if (IsItemUpdateNotifier )//&& ValidMembers.Count > 1)
+            if (IsItemUpdateNotifier )
             {
                 RaiseGeneric(new Function((int) OpCodes.NotifyUpdate, new object[] {key, operationContext, eventcontext}));
                 handleNotifyUpdate(new object[] { key, operationContext, eventcontext });
@@ -2890,7 +3037,7 @@ namespace Alachisoft.NCache.Caching.Topologies.Clustered
         public override void RaiseOldItemRemoveNotifier(object key, OperationContext operationContext, EventContext eventcontext)
         {
             // If everything went ok!, initiate local and cluster-wide notifications.
-            if (IsItemRemoveNotifier)//&& ValidMembers.Count > 1)
+            if (IsItemRemoveNotifier)
             {
                 RaiseGeneric(new Function((int)OpCodes.NotifyOldRemoval, new object[] { key, operationContext, eventcontext }));
                 handleOldNotifyRemove(new object[] { key, operationContext, eventcontext });
@@ -2903,7 +3050,7 @@ namespace Alachisoft.NCache.Caching.Topologies.Clustered
         protected void RaiseItemRemoveNotifier(object packed)
         {
             // If everything went ok!, initiate local and cluster-wide notifications.
-            if (IsItemRemoveNotifier)// && ValidMembers.Count > 1)
+            if (IsItemRemoveNotifier)
             {
                 RaiseGeneric(new Function((int)OpCodes.NotifyRemoval, packed));
                 handleNotifyRemove(packed);
@@ -3173,8 +3320,6 @@ namespace Alachisoft.NCache.Caching.Topologies.Clustered
                     ///to avoid this, we will check the list for local server. if client is connected with
                     ///local node, then there is no need to send callback to all other nodes
                     ///if there is no local node, then we select the first node in the list.
-                    //if (destinations.Contains(Cluster.LocalAddress)) selectedServer.Add(Cluster.LocalAddress);
-                    //else selectedServer.Add(destinations[0]);
                     RaiseCustomRemoveCalbackNotifier(destinations, packed, async);
                 }
             }
@@ -3264,8 +3409,6 @@ namespace Alachisoft.NCache.Caching.Topologies.Clustered
                     ///to avoid this, we will check the list for local server. if client is connected with
                     ///local node, then there is no need to send callback to all other nodes
                     ///if there is no local node, then we select the first node in the list.
-                    //if (destinations.Contains(Cluster.LocalAddress)) selectedServer.Add(Cluster.LocalAddress);
-                    //else selectedServer.Add(destinations[0]);
                     RaiseOldCustomRemoveCalbackNotifier(destinations, packed, async);
                 }
             }
@@ -3529,7 +3672,7 @@ namespace Alachisoft.NCache.Caching.Topologies.Clustered
             {
                 object[] packed = new object[] { key, itemUpdateCallbackListener, intendedNotifiers };
                 ArrayList selectedServer = new ArrayList(1);
-                ///[Ata]Incase of parition and partition of replica, there can be same clients connected
+                ///Incase of parition and partition of replica, there can be same clients connected
                 ///to multiple server. therefore the destinations list will contain more then
                 ///one servers. so the callback will be sent to the same client through different server
                 ///to avoid this, we will check the list for local server. if client is connected with
@@ -3593,7 +3736,7 @@ namespace Alachisoft.NCache.Caching.Topologies.Clustered
             {
                 object[] packed = new object[] { key, itemUpdateCallbackListener, intendedNotifiers };
                 ArrayList selectedServer = new ArrayList(1);
-                ///[Ata]Incase of parition and partition of replica, there can be same clients connected
+                ///Incase of parition and partition of replica, there can be same clients connected
                 ///to multiple server. therefore the destinations list will contain more then
                 ///one servers. so the callback will be sent to the same client through different server
                 ///to avoid this, we will check the list for local server. if client is connected with
@@ -3706,13 +3849,9 @@ namespace Alachisoft.NCache.Caching.Topologies.Clustered
                     }
                 }
             }
-            if (InternalCache != null)
-            {
-                InternalCache.ClientConnected(client, isInproc, clientInfo);
-            }
         }
      
-        public override void ClientDisconnected(string client, bool isInproc, ClientInfo clientInfo)
+        public override void ClientDisconnected(string client, bool isInproc)
         {
             if (_stats != null && _stats.LocalNode != null)
             {
@@ -3743,10 +3882,10 @@ namespace Alachisoft.NCache.Caching.Topologies.Clustered
                     _eventManager.StopPolling();
                 }
 
-            }           
+            }
             if (InternalCache != null)
             {
-                InternalCache.ClientDisconnected(client, isInproc, clientInfo);
+                InternalCache.ClientDisconnected(client, isInproc);
             }
         }
 
@@ -3995,15 +4134,13 @@ namespace Alachisoft.NCache.Caching.Topologies.Clustered
                     if (_context.ConnectedClients != null)
                     {
                         _context.ConnectedClients.ClientConnected(client, info, sender);
-                      
                     }
                 }
                 else
                 {
                     if (_context.ConnectedClients != null)
                     {
-                        if(_context.ConnectedClients.ClientDisconnected(client, sender, (DateTime)args[2]))
-                            NotifyModulesOfDeadClient(client);
+                        _context.ConnectedClients.ClientDisconnected(client, sender, (DateTime)args[2]);
                     }
                 }
             }
@@ -4013,9 +4150,6 @@ namespace Alachisoft.NCache.Caching.Topologies.Clustered
             }
         }
 
-        internal virtual void NotifyModulesOfDeadClient(string client)
-        {
-        }
 
         public void PrintHashMap(ArrayList HashMap, Hashtable BucketsOwnershipMap, string ModuleName)
         {
@@ -4864,7 +4998,6 @@ namespace Alachisoft.NCache.Caching.Topologies.Clustered
             return null;
         }
 
-       
 
         protected virtual bool HandleAssignSubscription(AssignmentOperation operation)
         {
@@ -5123,7 +5256,9 @@ namespace Alachisoft.NCache.Caching.Topologies.Clustered
 
         }
 
-    
+
+
+
         public void ApplyMessageOperation(object operation)
         {
             if (operation != null)
@@ -5207,11 +5342,11 @@ namespace Alachisoft.NCache.Caching.Topologies.Clustered
             return retVal;
         }
 
-        internal virtual long Local_MessageCount(string topicName, OperationContext operationContext)
+        internal virtual long Local_MessageCount(string topicName)
         {
             if (_internalCache != null)
             {
-                return _internalCache.GetMessageCount(topicName, operationContext);
+                return _internalCache.GetMessageCount(topicName);
             }
             return 0;
         }
@@ -5262,15 +5397,23 @@ namespace Alachisoft.NCache.Caching.Topologies.Clustered
         }
 
         
-     
-
+      
 
       
-        
-        
+
+     
+       
+
+        internal void SendDistributionMap(DistributionInfo info, string moduleName)
+        {
+            Function func = new Function((int)OpCodes.SendDistributionMap, new object[] { info, moduleName }, excludeSelf: false);
+            Cluster.Broadcast(func, GroupRequest.GET_NONE, false, Priority.Normal);
+        }
+
+
     }
 
 
-  
+
 
 }

@@ -30,9 +30,7 @@ namespace Alachisoft.NCache.Common.XmlSerialization
             XmlSerializer serializer = new XmlSerializer(typeof(T));
             XmlTextWriter writer = new XmlTextWriter(path, Encoding.UTF8);
             writer.Formatting = Formatting.Indented;
-            //writer.WriteStartElement("wrapper");
             serializer.Serialize(writer, data);
-            //writer.WriteEndElement();
             writer.Close();
         }
     }

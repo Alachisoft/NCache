@@ -1,4 +1,4 @@
-//  Copyright (c) 2021 Alachisoft
+//  Copyright (c) 2026 Alachisoft
 //  
 //  Licensed under the Apache License, Version 2.0 (the "License");
 //  you may not use this file except in compliance with the License.
@@ -13,7 +13,11 @@
 //  limitations under the License
 using System;
 using System.Net;
+
+
 using Alachisoft.NCache.Runtime.Exceptions;
+
+using Alachisoft.NCache.Licensing;
 using Alachisoft.NCache.SocketServer.Util;
 using Alachisoft.NCache.Caching.Statistics;
 using Alachisoft.NCache.Common.Util;
@@ -40,7 +44,6 @@ namespace Alachisoft.NCache.SocketServer.Command
             public string ClientID;
             public string LicenceCode;
             public int clientVersion;
-           
             public byte[] UserNameBinary;
             public byte[] PassworNameBinary;
             public string clientIP;
@@ -71,10 +74,7 @@ namespace Alachisoft.NCache.SocketServer.Command
             {
                 if (SocketServer.Logger.IsErrorLogsEnabled) SocketServer.Logger.NCacheLog.Error("InitializeCommand.Execute", clientManager.ClientSocket.RemoteEndPoint.ToString() + " parsing error " + exc.ToString());
 
-              //  if (!base.immatureId.Equals("-2") )
-                {
-                    _serializedResponsePackets.Add(Alachisoft.NCache.Common.Util.ResponseHelper.SerializeExceptionResponseWithType(exc, command.requestID, command.commandID, clientManager.ClientVersion));
-                }
+                _serializedResponsePackets.Add(Alachisoft.NCache.Common.Util.ResponseHelper.SerializeExceptionResponseWithType(exc, command.requestID, command.commandID, clientManager.ClientVersion));
                 return;
             }
 

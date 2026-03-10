@@ -10,65 +10,65 @@
 // Generated from: ColumnDataType.proto
 namespace Alachisoft.NCache.Common.Protobuf
 {
-    [global::ProtoBuf.ProtoContract(Name=@"ColumnDataType")]
+    [global::ProtoBuf.Extended.ProtoContract(Name=@"ColumnDataType")]
     public enum ColumnDataType
     {
             
-      [global::ProtoBuf.ProtoEnum(Name=@"OBJECT", Value=0)]
+      [global::ProtoBuf.Extended.ProtoEnum(Name=@"OBJECT", Value=0)]
       OBJECT = 0,
             
-      [global::ProtoBuf.ProtoEnum(Name=@"BOOL", Value=1)]
+      [global::ProtoBuf.Extended.ProtoEnum(Name=@"BOOL", Value=1)]
       BOOL = 1,
             
-      [global::ProtoBuf.ProtoEnum(Name=@"CHAR", Value=2)]
+      [global::ProtoBuf.Extended.ProtoEnum(Name=@"CHAR", Value=2)]
       CHAR = 2,
             
-      [global::ProtoBuf.ProtoEnum(Name=@"DATETIME", Value=3)]
+      [global::ProtoBuf.Extended.ProtoEnum(Name=@"DATETIME", Value=3)]
       DATETIME = 3,
             
-      [global::ProtoBuf.ProtoEnum(Name=@"DECIMAL", Value=4)]
+      [global::ProtoBuf.Extended.ProtoEnum(Name=@"DECIMAL", Value=4)]
       DECIMAL = 4,
             
-      [global::ProtoBuf.ProtoEnum(Name=@"DOUBLE", Value=5)]
+      [global::ProtoBuf.Extended.ProtoEnum(Name=@"DOUBLE", Value=5)]
       DOUBLE = 5,
             
-      [global::ProtoBuf.ProtoEnum(Name=@"FLOAT", Value=6)]
+      [global::ProtoBuf.Extended.ProtoEnum(Name=@"FLOAT", Value=6)]
       FLOAT = 6,
             
-      [global::ProtoBuf.ProtoEnum(Name=@"INT16", Value=7)]
+      [global::ProtoBuf.Extended.ProtoEnum(Name=@"INT16", Value=7)]
       INT16 = 7,
             
-      [global::ProtoBuf.ProtoEnum(Name=@"INT32", Value=8)]
+      [global::ProtoBuf.Extended.ProtoEnum(Name=@"INT32", Value=8)]
       INT32 = 8,
             
-      [global::ProtoBuf.ProtoEnum(Name=@"INT64", Value=9)]
+      [global::ProtoBuf.Extended.ProtoEnum(Name=@"INT64", Value=9)]
       INT64 = 9,
             
-      [global::ProtoBuf.ProtoEnum(Name=@"UINT16", Value=10)]
+      [global::ProtoBuf.Extended.ProtoEnum(Name=@"UINT16", Value=10)]
       UINT16 = 10,
             
-      [global::ProtoBuf.ProtoEnum(Name=@"UINT32", Value=11)]
+      [global::ProtoBuf.Extended.ProtoEnum(Name=@"UINT32", Value=11)]
       UINT32 = 11,
             
-      [global::ProtoBuf.ProtoEnum(Name=@"UINT64", Value=12)]
+      [global::ProtoBuf.Extended.ProtoEnum(Name=@"UINT64", Value=12)]
       UINT64 = 12,
             
-      [global::ProtoBuf.ProtoEnum(Name=@"STRING", Value=13)]
+      [global::ProtoBuf.Extended.ProtoEnum(Name=@"STRING", Value=13)]
       STRING = 13,
             
-      [global::ProtoBuf.ProtoEnum(Name=@"BYTE", Value=14)]
+      [global::ProtoBuf.Extended.ProtoEnum(Name=@"BYTE", Value=14)]
       BYTE = 14,
             
-      [global::ProtoBuf.ProtoEnum(Name=@"SBYTE", Value=15)]
+      [global::ProtoBuf.Extended.ProtoEnum(Name=@"SBYTE", Value=15)]
       SBYTE = 15,
             
-      [global::ProtoBuf.ProtoEnum(Name=@"AVERAGERESULT", Value=16)]
+      [global::ProtoBuf.Extended.ProtoEnum(Name=@"AVERAGERESULT", Value=16)]
       AVERAGERESULT = 16,
             
-      [global::ProtoBuf.ProtoEnum(Name=@"USER_BINARY_OBJECT", Value=17)]
+      [global::ProtoBuf.Extended.ProtoEnum(Name=@"USER_BINARY_OBJECT", Value=17)]
       USER_BINARY_OBJECT = 17,
             
-      [global::ProtoBuf.ProtoEnum(Name=@"METADATA", Value=18)]
+      [global::ProtoBuf.Extended.ProtoEnum(Name=@"METADATA", Value=18)]
       METADATA = 18
     }
   

@@ -1,4 +1,4 @@
-//  Copyright (c) 2021 Alachisoft
+//  Copyright (c) 2026 Alachisoft
 //  
 //  Licensed under the Apache License, Version 2.0 (the "License");
 //  you may not use this file except in compliance with the License.
@@ -14,6 +14,7 @@
 using System;
 using System.Net;
 using Alachisoft.NCache.Common;
+using Alachisoft.NCache.Config;
 using Alachisoft.NCache.Runtime.Serialization;
 using Alachisoft.NCache.Runtime.Serialization.IO;
 
@@ -26,7 +27,7 @@ namespace Alachisoft.NCache.Caching.Topologies.Clustered
     /// consumer of this information.
     /// </summary>
     [Serializable]
-    internal class NodeIdentity : ICompactSerializable
+    public class NodeIdentity : ICompactSerializable
     {
         /// <summary> Up status of node. </summary>
         private string _groupname;
@@ -34,7 +35,7 @@ namespace Alachisoft.NCache.Caching.Topologies.Clustered
 
         private int _rendererPort = -1;
         private IPAddress _rendererAddress;
-
+        private string _mapping;
         /// <summary>
         /// True if this cache instance is started as mirror cache. otherwise false.
         /// </summary>
@@ -44,23 +45,25 @@ namespace Alachisoft.NCache.Caching.Topologies.Clustered
         /// Constructor
         /// </summary>
         /// <param name="hasStorage"></param>
-        public NodeIdentity(bool hasStorage, int renderPort, IPAddress renderAddress)
+        public NodeIdentity(bool hasStorage, int renderPort, IPAddress renderAddress, string mapping = null)
         {
             HasStorage = hasStorage;
             _rendererPort = renderPort;
             _rendererAddress = renderAddress;
+            _mapping = mapping;
         }
 
         /// <summary>
         /// Constructor
         /// </summary>
         /// <param name="hasStorage"></param>
-        public NodeIdentity(bool hasStorage, int renderPort, IPAddress renderAddress, bool isStartedAsMirror)
+        public NodeIdentity(bool hasStorage, int renderPort, IPAddress renderAddress, bool isStartedAsMirror, string mapping = null)
         {
             HasStorage = hasStorage;
             _rendererPort = renderPort;
             _rendererAddress = renderAddress;
             _isStartedAsMirror = isStartedAsMirror;
+            _mapping = mapping;
         }
 
         /// <summary>
@@ -93,6 +96,8 @@ namespace Alachisoft.NCache.Caching.Topologies.Clustered
             set { _groupname = value; }
         }
 
+        public string Mapping
+        { get { return _mapping; } }
         /// <summary>
         /// Get or Sets the value indicating weather this instance started as Mirror or not.
         /// True if started as mirror otherwise false.
@@ -105,7 +110,6 @@ namespace Alachisoft.NCache.Caching.Topologies.Clustered
         {
             _groupname = reader.ReadObject() as string;
             _rendererPort = reader.ReadInt32();
-            //TODO: NETCORE (IPAddress is not serialize)
 #if NETCORE
             string ipAddress = reader.ReadObject() as String;
             if (ipAddress == null)
@@ -116,19 +120,31 @@ namespace Alachisoft.NCache.Caching.Topologies.Clustered
             _rendererAddress =  reader.ReadObject() as IPAddress;
 #endif
             _isStartedAsMirror = reader.ReadBoolean();
+            if (reader.ReadBoolean())
+            {
+                _mapping = reader.ReadObject() as String;
+            }
         }
 
         public void Serialize(CompactWriter writer)
         {
             writer.WriteObject(_groupname);
             writer.Write(_rendererPort);
-            //TODO: NETCORE (IPAddress is not serialize)
 #if NETCORE
             writer.WriteObject(_rendererAddress == null? null : _rendererAddress.ToString());
 #elif !NETCORE
              writer.WriteObject(_rendererAddress);
 #endif
             writer.Write(_isStartedAsMirror);
+            if (_mapping != null)
+            {
+                writer.Write(true);
+                writer.WriteObject(_mapping.ToString());
+            }
+            else
+            {
+                writer.Write(false);
+            }
         }
 
 #endregion

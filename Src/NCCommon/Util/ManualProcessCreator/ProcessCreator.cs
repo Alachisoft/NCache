@@ -54,8 +54,7 @@ namespace Alachisoft.NCache.Common.Util
                 // Not sure what to do here but hopefully this wouldn't arise.
                 // There should be some form of exception thrown here to ensure 
                 // the above layer of this case but is it really necessary? Since 
-                // the process HAS started anyway. I should consult Sir Taimoor 
-                // on this.
+                // the process HAS started anyway.
             }
 
             // We couldn't create the process, so raise an exception with the details.

@@ -1,6 +1,4 @@
-﻿// ==++==
-// 
-//   Copyright (c). 2015. Microsoft Corporation.
+﻿//   Copyright (c). 2015. Microsoft Corporation.
 // Permission is hereby granted, free of charge, to any person obtaining a copy
 // of this software and associated documentation files (the "Software"), to deal
 // in the Software without restriction, including without limitation the rights
@@ -19,7 +17,6 @@
 // OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN
 // THE SOFTWARE.
 //
-// ==--==
 /*============================================================
 **
 ** Class:  ClusteredArrayList
@@ -722,7 +719,6 @@ namespace Alachisoft.NCache.Common.DataStructures.Clustered
             if (index < 0 /*|| index >= _size*/) throw new ArgumentOutOfRangeException("index", ResourceHelper.GetResourceString("ArgumentOutOfRange_Index"));
 #if DEBUG
             Contract.Ensures(Count >= 0);
-            //Contract.Ensures(Count == Contract.OldValue(Count) - 1);
             Contract.EndContractBlock();
 #endif
             _size--;
@@ -746,7 +742,6 @@ namespace Alachisoft.NCache.Common.DataStructures.Clustered
                 throw new ArgumentException(ResourceHelper.GetResourceString("Argument_InvalidOffLen"));
 #if DEBUG
             Contract.Ensures(Count >= 0);
-            //Contract.Ensures(Count == Contract.OldValue(Count) - count);
             Contract.EndContractBlock();
 #endif
             if (count > 0)

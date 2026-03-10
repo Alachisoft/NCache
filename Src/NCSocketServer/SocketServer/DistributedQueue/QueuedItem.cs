@@ -1,4 +1,4 @@
-//  Copyright (c) 2021 Alachisoft
+//  Copyright (c) 2026 Alachisoft
 //  
 //  Licensed under the Apache License, Version 2.0 (the "License");
 //  you may not use this file except in compliance with the License.
@@ -13,10 +13,8 @@
 //  limitations under the License
 using System;
 using System.Collections.Generic;
-//using System.Linq;
 using System.Text;
 using Runtime = Alachisoft.NCache.Runtime;
-
 namespace Alachisoft.NCache.SocketServer
 {
     [Serializable]

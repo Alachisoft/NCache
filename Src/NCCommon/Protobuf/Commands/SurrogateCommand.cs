@@ -10,14 +10,14 @@
 // Generated from: SurrogateCommand.proto
 namespace Alachisoft.NCache.Common.Protobuf
 {
-  [global::System.Serializable, global::ProtoBuf.ProtoContract(Name=@"SurrogateCommand")]
-  public partial class SurrogateCommand : global::ProtoBuf.IExtensible
+  [global::System.Serializable, global::ProtoBuf.Extended.ProtoContract(Name=@"SurrogateCommand")]
+  public partial class SurrogateCommand : global::ProtoBuf.Extended.IExtensible
   {
     public SurrogateCommand() {}
     
 
     private string _targetServer = "";
-    [global::ProtoBuf.ProtoMember(1, IsRequired = false, Name=@"targetServer", DataFormat = global::ProtoBuf.DataFormat.Default)]
+    [global::ProtoBuf.Extended.ProtoMember(1, IsRequired = false, Name=@"targetServer", DataFormat = global::ProtoBuf.Extended.DataFormat.Default)]
     [global::System.ComponentModel.DefaultValue("")]
     public string targetServer
     {
@@ -25,7 +25,7 @@ namespace Alachisoft.NCache.Common.Protobuf
       set { _targetServer = value; }
     }
     private readonly global::System.Collections.Generic.List<byte[]> _command = new global::System.Collections.Generic.List<byte[]>();
-    [global::ProtoBuf.ProtoMember(2, Name=@"command", DataFormat = global::ProtoBuf.DataFormat.Default)]
+    [global::ProtoBuf.Extended.ProtoMember(2, Name=@"command", DataFormat = global::ProtoBuf.Extended.DataFormat.Default)]
     public global::System.Collections.Generic.List<byte[]> command
     {
       get { return _command; }
@@ -33,7 +33,7 @@ namespace Alachisoft.NCache.Common.Protobuf
   
 
     private long _requestId = default(long);
-    [global::ProtoBuf.ProtoMember(3, IsRequired = false, Name=@"requestId", DataFormat = global::ProtoBuf.DataFormat.TwosComplement)]
+    [global::ProtoBuf.Extended.ProtoMember(3, IsRequired = false, Name=@"requestId", DataFormat = global::ProtoBuf.Extended.DataFormat.TwosComplement)]
     [global::System.ComponentModel.DefaultValue(default(long))]
     public long requestId
     {
@@ -42,16 +42,16 @@ namespace Alachisoft.NCache.Common.Protobuf
     }
 
     private long _commandId = default(long);
-    [global::ProtoBuf.ProtoMember(4, IsRequired = false, Name=@"commandId", DataFormat = global::ProtoBuf.DataFormat.TwosComplement)]
+    [global::ProtoBuf.Extended.ProtoMember(4, IsRequired = false, Name=@"commandId", DataFormat = global::ProtoBuf.Extended.DataFormat.TwosComplement)]
     [global::System.ComponentModel.DefaultValue(default(long))]
     public long commandId
     {
       get { return _commandId; }
       set { _commandId = value; }
     }
-    private global::ProtoBuf.IExtension extensionObject;
-    global::ProtoBuf.IExtension global::ProtoBuf.IExtensible.GetExtensionObject(bool createIfMissing)
-      { return global::ProtoBuf.Extensible.GetExtensionObject(ref extensionObject, createIfMissing); }
+    private global::ProtoBuf.Extended.IExtension extensionObject;
+   global::ProtoBuf.Extended.IExtension global::ProtoBuf.Extended.IExtensible.GetExtensionObject(bool createIfMissing)
+      { return global::ProtoBuf.Extended.Extensible.GetExtensionObject(ref extensionObject, createIfMissing); }
   }
   
 }
