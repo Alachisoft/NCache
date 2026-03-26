@@ -31,20 +31,32 @@ namespace Alachisoft.NCache.Common.Util
         public static bool VerifyWindowsUserForRole(string nodeName, string userName, string password, WindowsBuiltInRole role)
         {
             bool isAdministrator = false;
-            IntPtr token;
+            IntPtr token = IntPtr.Zero;
             try
             {
-                LogonUser(userName, nodeName, password, 3, 0, out token);
-                WindowsIdentity identity = new WindowsIdentity(token);
-                WindowsPrincipal principal = new WindowsPrincipal(identity);
-                if (principal.IsInRole(role))
+                if (!LogonUser(userName, nodeName, password, 3, 0, out token))
                 {
-                    isAdministrator = true;
+                    return false;
+                }
+                using (WindowsIdentity identity = new WindowsIdentity(token))
+                {
+                    WindowsPrincipal principal = new WindowsPrincipal(identity);
+                    if (principal.IsInRole(role))
+                    {
+                        isAdministrator = true;
+                    }
                 }
             }
-            catch (Exception ex)
+            catch
             {
-
+                return false;
+            }
+            finally
+            {
+                if (token != IntPtr.Zero)
+                {
+                    Marshal.Release(token);
+                }
             }
             return isAdministrator;
         }
