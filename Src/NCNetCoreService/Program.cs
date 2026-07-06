@@ -10,6 +10,13 @@ using Microsoft.Extensions.Logging;
 
 namespace Alachisoft.NCache.NetCore.Service
 {
+
+    /// <summary>
+    /// Entry point for the NCache Windows Service application.
+    /// Configures the generic host, registers the background service,
+    /// sets up Windows Service lifetime and Event Log integration,
+    /// and starts the service.
+    /// </summary>
     public class Program 
     {
         static void Main(string[] args)

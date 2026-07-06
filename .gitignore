@@ -99,6 +99,8 @@ Thumbs.db
 **/.vs/**
 **/packages/**
 
+.vscode/
+
 !/Src/NCManager/DLLS/**
 !/Resources/**
 !/Tar.Gz/**

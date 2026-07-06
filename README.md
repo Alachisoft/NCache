@@ -17,7 +17,7 @@ NCache is used by hundreds of companies all over the world in mission critical a
 -	Absolute and sliding expirations
 -	ASP.NET Session State Provider
 -	ASP.NET View State Cache
--	Mirrored Cache topology
+-	Replicated Cache topology
 -	NHibernate Second Level Cache provider
 -	NuGet Packages
 -	Runs in Microsoft Azure, Amazon, and any other Cloud platform
@@ -38,6 +38,12 @@ Docker image and Dockerfile with NCache environment to allow seamless building o
 
 ## [Edition Comparison](https://www.alachisoft.com/ncache/edition-comparison.html)
 Compare various editions available. Enterprise Edition vs Open Source Edition.
+
+## [NCache samples](https://github.com/Alachisoft/NCache-Samples)
+Demonstration of NCache features using sample applications.
+
+## [NCache Integrations](https://github.com/Alachisoft/NCache-Integrations)
+A collection of official integrations that enable the use of NCache with popular libraries and frameworks. 
 
 ## License
 NCache Open Source is released under the Apache License, Version 2.0
