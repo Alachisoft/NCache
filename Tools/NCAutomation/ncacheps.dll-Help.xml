@@ -167,7 +167,7 @@
 			</maml:introduction>
 			<dev:code>Install-NCacheModule -CacheName demoCache -AssemblyPath C:\Provider.dll -Server 20.200.21.11</dev:code>
 			<dev:remarks>
-				<maml:para>This command  deploys the assembly for demoCache on server 20.200.21.11.</maml:para>
+				<maml:para>This command deploys the assembly for demoCache on server 20.200.21.11.</maml:para>
 				<maml:para></maml:para>
 				<maml:para></maml:para>
 			</dev:remarks>
