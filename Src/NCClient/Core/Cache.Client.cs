@@ -743,7 +743,7 @@ namespace Alachisoft.NCache.Client
 
         public virtual T Get<T>(string key, bool acquireLock, TimeSpan lockTimeout, ref LockHandle lockHandle)
         {
-			throw new NotSupportedException("Pessimistic locking is not supported in OSS.");
+			throw new NotSupportedException("Locking is not supported in OSS.");
             LockAccessType accessType = acquireLock ? LockAccessType.ACQUIRE : LockAccessType.DONT_ACQUIRE;
            
             return GetInternal<T>(key, null, null, accessType, lockTimeout, ref lockHandle);
@@ -874,7 +874,7 @@ namespace Alachisoft.NCache.Client
 
         public virtual CacheItem GetCacheItem(string key, bool acquireLock, TimeSpan lockTimeout, ref LockHandle lockHandle)
         {
-			throw new NotSupportedException("Pessimistic locking is not supported in OSS.");
+			throw new NotSupportedException("Locking is not supported in OSS.");
             LockAccessType accessType = acquireLock ? LockAccessType.ACQUIRE : LockAccessType.DONT_ACQUIRE;
            
 
@@ -1119,7 +1119,7 @@ namespace Alachisoft.NCache.Client
         {
 			if (lockHandle != null)
 			{
-				throw new NotSupportedException("Pessimistic locking is not supported in OSS.");
+				throw new NotSupportedException("Locking is not supported in OSS.");
 			}
 
             if (item == null)
@@ -1414,7 +1414,7 @@ namespace Alachisoft.NCache.Client
 
         public virtual void Unlock(string key, LockHandle lockHandle = null)
         {
-			throw new NotSupportedException("Pessimistic locking is not supported in OSS.");
+			throw new NotSupportedException("Locking is not supported in OSS.");
             if (CacheImpl == null) throw new OperationFailedException(ErrorCodes.CacheInit.CACHE_NOT_INIT, ErrorMessages.GetErrorMessage(ErrorCodes.CacheInit.CACHE_NOT_INIT));
 
             if (key == null) throw new ArgumentNullException("key is null.");
@@ -1439,7 +1439,7 @@ namespace Alachisoft.NCache.Client
 
         public virtual bool Lock(string key, TimeSpan lockTimeout, out LockHandle lockHandle)
         {
-			throw new NotSupportedException("Pessimistic locking is not supported in OSS.");
+			throw new NotSupportedException("Locking is not supported in OSS.");
             if (CacheImpl == null) throw new OperationFailedException(ErrorCodes.CacheInit.CACHE_NOT_INIT, ErrorMessages.GetErrorMessage(ErrorCodes.CacheInit.CACHE_NOT_INIT));
             if (key == null) throw new ArgumentNullException("key is null.");
 
