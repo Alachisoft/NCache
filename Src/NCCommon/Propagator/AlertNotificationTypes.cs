@@ -29,7 +29,6 @@ namespace Alachisoft.NCache.Common.Propagator
 		private bool _serviceStartError;
 		private bool _cacheSize;
 		private bool _generalError;
-		private bool _licensingError;
 		private bool _configurationError;
 		private bool _securityError;
 		private bool _generalInformation;
@@ -94,12 +93,6 @@ namespace Alachisoft.NCache.Common.Propagator
 		{
 			get { return _generalError; }
 			set { _generalError = value; }
-		}
-
-		public bool LicensingError
-		{
-			get { return _licensingError; }
-			set { _licensingError = value; }
 		}
 
 		public bool ConfigurationError

@@ -1,4 +1,4 @@
-//  Copyright (c) 2026 Alachisoft
+//  Copyright (c) 2018 Alachisoft
 //  
 //  Licensed under the Apache License, Version 2.0 (the "License");
 //  you may not use this file except in compliance with the License.
@@ -27,7 +27,7 @@ namespace Alachisoft.NCache.Caching.EvictionPolicies
 	/// need such kind of associations.
 	/// </summary>    
     [Serializable]
-	public abstract class EvictionHint : SimpleLease, ICompactSerializable
+	public abstract class EvictionHint : SimpleLease, ICompactSerializable//: IComparable
 	{
 
         ///// <summary>
@@ -132,6 +132,7 @@ namespace Alachisoft.NCache.Caching.EvictionPolicies
 
         public override void ReturnLeasableToPool()
         {
+            //throw new NotImplementedException();
         }
 
         #endregion

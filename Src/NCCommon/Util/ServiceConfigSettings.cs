@@ -20,16 +20,9 @@ namespace Alachisoft.NCache.Common.Util
             _serviceSettingsMap.Add(ServiceConfigKeys.ExecuteOperations, new ConfigSetting(DataType.BOOLEAN, false));
             _serviceSettingsMap.Add(ServiceConfigKeys.UseCommandThreadPool, new ConfigSetting(DataType.BOOLEAN, false));
             _serviceSettingsMap.Add(ServiceConfigKeys.SendBufferSize, new ConfigSetting(DataType.INTEGER, false));
-            _serviceSettingsMap.Add(ServiceConfigKeys.EnableHeartbeat, new ConfigSetting(DataType.BOOLEAN, false));
-            _serviceSettingsMap.Add(ServiceConfigKeys.SkippedHeartbeatThresholdInterval, new ConfigSetting(DataType.DOUBLE, false));
-            _serviceSettingsMap.Add(ServiceConfigKeys.SkippedHeartbeatEventLogInterval, new ConfigSetting(DataType.DOUBLE, false));
-            _serviceSettingsMap.Add(ServiceConfigKeys.RandomizeFirstHeartbeatRequest, new ConfigSetting(DataType.BOOLEAN, false));
-            _serviceSettingsMap.Add(ServiceConfigKeys.EnableUsageInfoLogs, new ConfigSetting(DataType.BOOLEAN, false));
             _serviceSettingsMap.Add(ServiceConfigKeys.EnableSnmpMonitoring, new ConfigSetting(DataType.BOOLEAN, false));
             _serviceSettingsMap.Add(ServiceConfigKeys.EnableSystemCountersMonitoring, new ConfigSetting(DataType.BOOLEAN, false));
             _serviceSettingsMap.Add(ServiceConfigKeys.CachingModuleTotalBuckets, new ConfigSetting(DataType.INTEGER, false));
-            _serviceSettingsMap.Add(ServiceConfigKeys.EnableUsageInfoLogsForTesting, new ConfigSetting(DataType.BOOLEAN, false));
-            _serviceSettingsMap.Add(ServiceConfigKeys.ConnectedClientsPersistorInterval, new ConfigSetting(DataType.INTEGER, false));
             _serviceSettingsMap.Add(ServiceConfigKeys.HideOperatingSystem, new ConfigSetting(DataType.BOOLEAN, false));
             _serviceSettingsMap.Add(ServiceConfigKeys.ReceiveBufferSize, new ConfigSetting(DataType.INTEGER, false));
             _serviceSettingsMap.Add(ServiceConfigKeys.BindToIP, new ConfigSetting(DataType.IPADDRESS, false));
@@ -58,18 +51,11 @@ namespace Alachisoft.NCache.Common.Util
             _serviceSettingsMap.Add(ServiceConfigKeys.WebManagerStartRetries, new ConfigSetting(DataType.INTEGER, false));
             _serviceSettingsMap.Add(ServiceConfigKeys.PublicIP, new ConfigSetting(DataType.STRING, false));
             _serviceSettingsMap.Add(ServiceConfigKeys.AutoRenewal, new ConfigSetting(DataType.BOOLEAN, false));
-            _serviceSettingsMap.Add(ServiceConfigKeys.HeartbeatRequestTimeout, new ConfigSetting(DataType.INTEGER, false));
-            _serviceSettingsMap.Add(ServiceConfigKeys.MaxHeartbeatFailureDuration, new ConfigSetting(DataType.INTEGER, false));
-            _serviceSettingsMap.Add(ServiceConfigKeys.CloudHeartbeatCheckInterval, new ConfigSetting(DataType.LONG, false));
-            _serviceSettingsMap.Add(ServiceConfigKeys.HeartbeatRetryDelaySeconds, new ConfigSetting(DataType.INTEGER, false));
-            _serviceSettingsMap.Add(ServiceConfigKeys.MaxHeartbeatRetries, new ConfigSetting(DataType.INTEGER, false));
-            _serviceSettingsMap.Add(ServiceConfigKeys.StubWritingInterval, new ConfigSetting(DataType.INTEGER, false));
 
             #endregion
 
             #region HOT APPLICABLE
             _serviceSettingsMap.Add(ServiceConfigKeys.MaxAccumulatedCacheSize, new ConfigSetting(DataType.STRING, true));
-            _serviceSettingsMap.Add(ServiceConfigKeys.LicenseLogging, new ConfigSetting(DataType.BOOLEAN, true));
             _serviceSettingsMap.Add(ServiceConfigKeys.TouchInterval, new ConfigSetting(DataType.INTEGER, true));
             _serviceSettingsMap.Add(ServiceConfigKeys.ReplicaJoinDelay, new ConfigSetting(DataType.INTEGER, true));
             _serviceSettingsMap.Add(ServiceConfigKeys.EnableNagling, new ConfigSetting(DataType.BOOLEAN, true));
@@ -124,12 +110,7 @@ namespace Alachisoft.NCache.Common.Util
             _serviceSettingsMap.Add(ServiceConfigKeys.EnableGCCollection, new ConfigSetting(DataType.BOOLEAN, true));
             _serviceSettingsMap.Add(ServiceConfigKeys.preparedQueryTableSize, new ConfigSetting(DataType.INTEGER, true));
             _serviceSettingsMap.Add(ServiceConfigKeys.preparedQueryEvictionPercentage, new ConfigSetting(DataType.INTEGER, true));
-            _serviceSettingsMap.Add(ServiceConfigKeys.LicenseCheckInterval, new ConfigSetting(DataType.LONG, true));
-            _serviceSettingsMap.Add(ServiceConfigKeys.LicenseAutoRenewalInterval, new ConfigSetting(DataType.LONG, true));
             _serviceSettingsMap.Add(ServiceConfigKeys.TurnOffRandomStartTime, new ConfigSetting(DataType.BOOLEAN, true));
-            _serviceSettingsMap.Add(ServiceConfigKeys.LicenseInterval, new ConfigSetting(DataType.INTEGER, true));
-            _serviceSettingsMap.Add(ServiceConfigKeys.AcquireClientLicenseRetries, new ConfigSetting(DataType.INTEGER, true));
-            _serviceSettingsMap.Add(ServiceConfigKeys.AcquireClientLicenseRetryInterval, new ConfigSetting(DataType.INTEGER, true));
             _serviceSettingsMap.Add(ServiceConfigKeys.SimulateSocketClose, new ConfigSetting(DataType.BOOLEAN, true));
             _serviceSettingsMap.Add(ServiceConfigKeys.SocketCloseInterval, new ConfigSetting(DataType.INTEGER, true));
             _serviceSettingsMap.Add(ServiceConfigKeys.useAvgStats, new ConfigSetting(DataType.BOOLEAN, true));
@@ -170,15 +151,7 @@ namespace Alachisoft.NCache.Common.Util
             _serviceSettingsMap.Add(ServiceConfigKeys.BridgeOperationFailureRetries, new ConfigSetting(DataType.INTEGER, true));
             _serviceSettingsMap.Add(ServiceConfigKeys.BridgeReplicationInterval, new ConfigSetting(DataType.INTEGER, true));
             _serviceSettingsMap.Add(ServiceConfigKeys.BridgeBulkOperationSize, new ConfigSetting(DataType.INTEGER, true));
-            _serviceSettingsMap.Add(ServiceConfigKeys.FeatureDataCollectionDelay, new ConfigSetting(DataType.INTEGER, true));
             _serviceSettingsMap.Add(ServiceConfigKeys.InitialLoggingDelayAtStartup, new ConfigSetting(DataType.INTEGER, true));
-            _serviceSettingsMap.Add(ServiceConfigKeys.FeatureDataPostingDelay, new ConfigSetting(DataType.INTEGER, true));
-            _serviceSettingsMap.Add(ServiceConfigKeys.EvalFeatureDataPostingDelay, new ConfigSetting(DataType.INTEGER, true));
-            _serviceSettingsMap.Add(ServiceConfigKeys.EnableFeatureUsageLogging, new ConfigSetting(DataType.BOOLEAN, true));
-            _serviceSettingsMap.Add(ServiceConfigKeys.UploadFeatureUsageStats, new ConfigSetting(DataType.BOOLEAN, true));
-            _serviceSettingsMap.Add(ServiceConfigKeys.UsageFailureRetriesCount, new ConfigSetting(DataType.INTEGER, true));
-            _serviceSettingsMap.Add(ServiceConfigKeys.InitialFeatureDataPostingDelay, new ConfigSetting(DataType.INTEGER, true));
-            _serviceSettingsMap.Add(ServiceConfigKeys.FeatureDataPostingWaitTime, new ConfigSetting(DataType.INTEGER, true));
             _serviceSettingsMap.Add(ServiceConfigKeys.PubSubOrderedMessagesTimeout, new ConfigSetting(DataType.INTEGER, true));
             _serviceSettingsMap.Add(ServiceConfigKeys.MaxCacheCountInDEV, new ConfigSetting(DataType.INTEGER, true));
             _serviceSettingsMap.Add(ServiceConfigKeys.MaxAccumulatedCacheSizeInDEV, new ConfigSetting(DataType.INTEGER, true));
@@ -191,7 +164,6 @@ namespace Alachisoft.NCache.Common.Util
             _serviceSettingsMap.Add(ServiceConfigKeys.SearchCountersFetchInterval, new ConfigSetting(DataType.INTEGER, true));
             _serviceSettingsMap.Add(ServiceConfigKeys.CollectSystemMetrics, new ConfigSetting(DataType.BOOLEAN, true));
             _serviceSettingsMap.Add(ServiceConfigKeys.PubSubStoreBucketsCount, new ConfigSetting(DataType.INTEGER, true));
-            _serviceSettingsMap.Add(ServiceConfigKeys.TopicDeletionThrottleLimit, new ConfigSetting(DataType.INTEGER, true));
             _serviceSettingsMap.Add(ServiceConfigKeys.TopicProcessingCount, new ConfigSetting(DataType.INTEGER, true));
             _serviceSettingsMap.Add(ServiceConfigKeys.DeleteMessageCount, new ConfigSetting(DataType.INTEGER, true));
             _serviceSettingsMap.Add(ServiceConfigKeys.PersistenceDir, new ConfigSetting(DataType.STRING, true));

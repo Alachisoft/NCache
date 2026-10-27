@@ -1,4 +1,4 @@
-//  Copyright (c) 2026 Alachisoft
+//  Copyright (c) 2018 Alachisoft
 //  
 //  Licensed under the Apache License, Version 2.0 (the "License");
 //  you may not use this file except in compliance with the License.
@@ -69,6 +69,7 @@ namespace Alachisoft.NCache.Client
         private IsolationLevel _mode = IsolationLevel.Default;
 
         private IList<ServerInfo> _serverList = new List<ServerInfo>();
+        //private bool _enableDetailedClientLogs = false;
         #endregion
 
 
@@ -117,6 +118,32 @@ namespace Alachisoft.NCache.Client
             get { return _mode; }
             set { _mode = value.Value; }
         }
+
+        /// <summary>
+        /// Gets/Sets ID of DefaultReadThruProvider
+        /// </summary>
+        //public string DefaultReadThruProvider
+        //{
+        //    get { return _defaultReadThruProvider; }
+        //    set
+        //    {
+        //        _dirtyFlags[ConnectionStrings.DEFAULTREADTHRUPROVIDER] = true;
+        //        _defaultReadThruProvider = value;
+        //    }
+        //}
+
+        ///// <summary>
+        ///// Gets/Sets ID of DefaultWriteThruProvider
+        ///// </summary>
+        //public string DefaultWriteThruProvider
+        //{
+        //    get { return _defaultWriteThruProvider; }
+        //    set
+        //    {
+        //        _dirtyFlags[ConnectionStrings.DEFAULTWRITETHRUPROVIDER] = true;
+        //        _defaultWriteThruProvider = value;
+        //    }
+        //}
 
         /// <summary>
         /// Gets/Sets the IP for the client to be binded with
@@ -269,6 +296,44 @@ namespace Alachisoft.NCache.Client
             }
         }
 
+        ///// <summary>
+        ///// Sets the keep alive flag.
+        ///// </summary>
+        //public bool? EnableKeepAlive
+        //{
+        //    get { return _enabeKeepAlive; }
+        //    set
+        //    {
+        //        _dirtyFlags[ConnectionStrings.ENABLEKEEPALIVE] = true;
+        //        _enabeKeepAlive = value.Value;
+        //    }
+        //}
+
+        ///// <summary>
+        ///// Gets or Sets the KeepAliveInterval, which will be in effect if the EnabledKeepAlive is set 'true'
+        ///// or is specified 'true' from the client configuration.
+        ///// <para>
+        ///// Note: If the value to be set is lesser than 1 or is greater than 7200 (2 hours in seconds), it will
+        ///// resort back 30 seconds internally.
+        ///// </para>
+        ///// </summary>
+        //public TimeSpan? KeepAliveInterval
+        //{
+        //    get { return _keepAliveInterval; }
+        //    set
+        //    {
+        //        if (value < TimeSpan.FromSeconds(1) || value > TimeSpan.FromSeconds(2 * 60 * 60))
+        //        {
+        //            _keepAliveInterval = TimeSpan.FromSeconds(30);
+        //        }
+        //        else
+        //        {
+        //            _keepAliveInterval = value.Value;
+        //        }
+        //        _dirtyFlags[ConnectionStrings.KEEPALIVEINTERVAL] = true;
+        //    }
+        //}
+
         internal bool IsSet(string paramId)
         {
             if (_dirtyFlags == null || _dirtyFlags.Count == 0) return false;
@@ -400,7 +465,12 @@ namespace Alachisoft.NCache.Client
             {
                 if (!IsSet(ConnectionStrings.CLIENTREQUESTOPTIME)) _clientRequestTimeout = TimeSpan.FromMilliseconds(config.ClientRequestTimeout);
                 if (!IsSet(ConnectionStrings.CONNECTIONTIMEOUT)) this._connectionTimeout = TimeSpan.FromMilliseconds(config.ConnectionTimeout);
+                //if (!IsSet(ConnectionStrings.CONNECTIONRETRIES)) this._connectionRetries = config.ConnectionRetries;
+                //if (!IsSet(ConnectionStrings.RETRYINTERVAL)) this._retryInterval = TimeSpan.FromMilliseconds(config.RetryInterval);
+                //if (!IsSet(ConnectionStrings.RETRYCONNECTIONDELAY)) this._retryConnectionDelay = TimeSpan.FromMinutes(config.RetryConnectionDelay);
                 if (!IsSet(ConnectionStrings.BINDIP)) this._clientBindIP = config.BindIP;
+                //if (!IsSet(ConnectionStrings.DEFAULTREADTHRUPROVIDER)) this._defaultReadThruProvider = config.DefaultReadThru;
+                //if (!IsSet(ConnectionStrings.DEFAULTWRITETHRUPROVIDER)) this._defaultWriteThruProvider = config.DefaultWriteThru;
                 if (!IsSet(ConnectionStrings.PORT)) this._port = config.ServerPort;
 
                 if (!IsSet(ConnectionStrings.ENABLECLIENTLOGS)) this._enableClientLogs = config.EnableClientLogs;
@@ -409,6 +479,17 @@ namespace Alachisoft.NCache.Client
                 if (!IsSet(ConnectionStrings.LOADBALANCERCONNECTIONRETRIES)) this.LoadBalancerConnectionRetries = config.LoadBalancerConnectionRetries;
                 if (!IsSet(ConnectionStrings.ENABLEPIPELINING)) this._enablePipelining = config.EnablePipelining;
                 if (!IsSet(ConnectionStrings.PIPELININGTIMEOUT)) this._pipeliningTimeout = config.PipeliningTimeout;
+                //if (UserCredentials == null)
+                //{
+                //    List<Credentials> list = CacheHelper.LoadCredentialsFromConfig(cacheId);
+                //    if (UserCredentials == null) UserCredentials = list[0];
+                //}
+
+                //if (!LogLevel.HasValue) _logLevel = config.LogLevels;
+                //if (!EnableClientLogs.HasValue) _enableClientLogs = config.EnableClientLog;
+                //if (!IsSet(ConnectionStrings.ENABLEDETAILEDCLIENTLOGS)) { _enableDetailedClientLogs = config.EnableDetailedClientLogs; } 
+
+                //if (!EnablePipelining.HasValue) _enablePipelining = config.EnablePipelining;
             }
         }
         #endregion

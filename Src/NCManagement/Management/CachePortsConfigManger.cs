@@ -150,6 +150,22 @@ namespace Alachisoft.NCache.Management
                             _cachePortsTable.Add(cacheId.ToLower(), managementPort);
 
                         }
+                        else
+                        {
+                            // A port persisted by an earlier release may fall outside the range now
+                            // configured (NCacheServer.ManagementPortLower/Upper); the installer only
+                            // opens the configured range, so re-assign it rather than keep using it.
+                            int persistedPort = Convert.ToInt32(_cachePortsTable[cacheId.ToLower()]);
+                            if (persistedPort < ServiceConfiguration.ManagementPortLower || persistedPort > ServiceConfiguration.ManagementPortUpper)
+                            {
+                                occupiedPorts.Remove(persistedPort);
+                                int managementPort = ManagementPortHandler.GenerateManagementPort(occupiedPorts);
+                                occupiedPorts.Add(managementPort);
+                                _cachePortsConfig.AddConfiguration(cacheId, managementPort);
+                                _cachePortsTable[cacheId.ToLower()] = managementPort;
+                                AppUtil.LogEvent("Cache host port for '" + cacheId + "' moved from " + persistedPort + " to " + managementPort + " to fit the configured management port range.", EventLogEntryType.Information);
+                            }
+                        }
                     }
                     IDictionaryEnumerator enm = _cachePortsTable.GetEnumerator();
                     List<string> toRemove = new List<string>();

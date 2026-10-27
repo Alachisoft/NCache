@@ -1,4 +1,4 @@
-//  Copyright (c) 2026 Alachisoft
+//  Copyright (c) 2018 Alachisoft
 //  
 //  Licensed under the Apache License, Version 2.0 (the "License");
 //  you may not use this file except in compliance with the License.
@@ -22,13 +22,16 @@ using Alachisoft.NCache.Common.DataStructures.Clustered;
 using Alachisoft.NCache.Common.Net;
 using Alachisoft.NCache.Common.Util;
 using Alachisoft.NCache.Config.Dom;
+
 using Alachisoft.NCache.Serialization;
 using Alachisoft.NCache.Serialization.Surrogates;
+#if !CLIENT && !DEVELOPMENT
 using Alachisoft.NCache.Caching.DataGrouping;
 using Alachisoft.NCache.Caching.Topologies.Clustered;
 using Alachisoft.NCache.Caching.Topologies.Clustered.Operations;
 using Alachisoft.NCache.Caching.Topologies.Clustered.Results;
 using Alachisoft.NCache.Caching.Topologies.Clustered.Operations.Messaging;
+#endif
 using System;
 using System.Collections;
 using System.Collections.Generic;
@@ -56,35 +59,23 @@ namespace Alachisoft.NCache.Util
     public class MiscUtil
     {
         static int _numPhysicalCores;
-        static int _numLicenses;
         static int _numLogicalCores;
         static ArrayList _addresses = null;
-        static StringBuilder installCode = null;
-        static bool nclicensedllLoaded = false;
 
 
         static MiscUtil()
         {
             try
             {
-                installCode = new StringBuilder();
                 _numLogicalCores = MachineInfo.LogicalCores;
-                _numPhysicalCores = MachineInfo.PhysicalCores;
-                _numLicenses = MachineInfo.Licenses;
+                _numPhysicalCores = MachineInfo.PhysicalCores;// NCLicenseDll.GetNumCores();
                 _addresses = new ArrayList(MachineInfo.MacAddresses);
 
-                nclicensedllLoaded = true;
             }
             catch(DllNotFoundException ex)
             {
-                
             }
         }
-        /// <summary>
-        /// Returns the number of licenses on the system.
-        /// </summary>
-        public static int NumLicenses { get { return _numLicenses; } }
-
         /// <summary>
         /// Returns the number of total physical cores available in the system.
         /// </summary>
@@ -115,10 +106,6 @@ namespace Alachisoft.NCache.Util
                 return _addresses;
             }
         }
-
-  
-       
-        
 
         /// <summary>
         /// Registers types with the Compact Serializatin Framework. Range of reserved
@@ -154,7 +141,7 @@ namespace Alachisoft.NCache.Util
             CompactFormatterServices.RegisterCompactType(typeof(Common.ProductVersion), 302);
             CompactFormatterServices.RegisterCompactType(typeof(Common.DataStructures.RequestStatus), 303);
             CompactFormatterServices.RegisterCompactType(typeof(BucketStatistics.TopicStats), 383);
-#if !DEVELOPMENT
+#if (!CLIENT && !DEVELOPMENT)
             CompactFormatterServices.RegisterCompactType(typeof(ReadFromStreamOperation), 138);
             CompactFormatterServices.RegisterCompactType(typeof(WriteToStreamOperation), 139);
             CompactFormatterServices.RegisterCompactType(typeof(GetStreamLengthOperation), 140);
@@ -228,6 +215,11 @@ namespace Alachisoft.NCache.Util
             CompactFormatterServices.RegisterCompactType(typeof(Alachisoft.NCache.Config.NewDom.CacheServerConfig), 393);
             CompactFormatterServices.RegisterCompactType(typeof(Alachisoft.NCache.Config.NewDom.CacheDeployment), 394);
             CompactFormatterServices.RegisterCompactType(typeof(Alachisoft.NCache.Config.NewDom.ServersNodes), 396);
+            CompactFormatterServices.RegisterCompactType(typeof(Alachisoft.NCache.Config.NewDom.CacheServerConfigSetting), 395);
+            CompactFormatterServices.RegisterCompactType(typeof(Alachisoft.NCache.Config.NewDom.CacheTopology), 397);
+            CompactFormatterServices.RegisterCompactType(typeof(Alachisoft.NCache.Config.NewDom.Cluster), 398);
+            CompactFormatterServices.RegisterCompactType(typeof(Alachisoft.NCache.Config.NewDom.Channel), 399);
+            CompactFormatterServices.RegisterCompactType(typeof(Alachisoft.NCache.Config.NewDom.ServerNode), 400);
 
             CompactFormatterServices.RegisterCompactType(typeof(Caching.Messaging.EventMessage), 470);
             CompactFormatterServices.RegisterCompactType(typeof(MultiCastMessage), 471);
@@ -535,11 +527,13 @@ namespace Alachisoft.NCache.Util
             return table;
         }
 
+#if !CLIENT
         /// <summary>Returns a random value in the range [1 - range] </summary>
         public static int Random(long range)
         {
             return (int)((Global.Random.NextDouble() * 100000) % range) + 1;
         }
+#endif
 
         #region Collection
 
@@ -616,7 +610,11 @@ namespace Alachisoft.NCache.Util
                     case ExpirationHintType.FixedIdleExpiration:
                         poolManager.GetFixedIdleExpirationPool().Return((FixedIdleExpiration)expirationHint);
                         break;
-
+#if !(DEVELOPMENT || CLIENT)
+                    case ExpirationHintType.NodeExpiration:
+                        poolManager.GetNodeExpirationPool().Return((NodeExpiration)expirationHint);
+                        break;
+#endif
                     case ExpirationHintType.IdleExpiration:
                         poolManager.GetIdleExpirationPool().Return((IdleExpiration)expirationHint);
                         break;

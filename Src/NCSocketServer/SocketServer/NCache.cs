@@ -48,7 +48,6 @@ namespace Alachisoft.NCache.SocketServer
 
         private Alachisoft.NCache.Caching.Cache _cache = null;
         private string _cacheId = null;
-        private string _licenceCode = string.Empty;
 
         private CustomUpdateCallback _onItemUpdatedCallback = null;
         private Caching.PollRequestCallback _pollRequestCallback = null;
@@ -122,12 +121,11 @@ namespace Alachisoft.NCache.SocketServer
         }
 
 
-        internal NCache(string cacheId, bool isDotNetClient, ClientManager client, string licenceInfo, string userId, string password, byte[] userIdBinary, byte[] paswordBinary, Runtime.Caching.ClientInfo clientInfo)
+        internal NCache(string cacheId, bool isDotNetClient, ClientManager client, string userId, string password, byte[] userIdBinary, byte[] paswordBinary, Runtime.Caching.ClientInfo clientInfo)
         {
             this._cacheId = cacheId;
             this._isDotNetClient = isDotNetClient;
             this._client = client;
-            this._licenceCode = licenceInfo;
 
             
                 _cache = CacheProvider.Provider.GetCacheInstanceIgnoreReplica(cacheId);

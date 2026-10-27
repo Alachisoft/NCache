@@ -1,4 +1,4 @@
-//  Copyright (c) 2026 Alachisoft
+//  Copyright (c) 2018 Alachisoft
 //  
 //  Licensed under the Apache License, Version 2.0 (the "License");
 //  you may not use this file except in compliance with the License.
@@ -20,7 +20,6 @@ using Alachisoft.NCache.Common;
 using Alachisoft.NCache.Runtime.Serialization.IO;
 using Alachisoft.NCache.Common.Pooling;
 using Alachisoft.NCache.Caching.Pooling;
-
 using Alachisoft.NCache.Runtime.Serialization;
 
 namespace Alachisoft.NCache.Caching.AutoExpiration
@@ -189,6 +188,7 @@ namespace Alachisoft.NCache.Caching.AutoExpiration
 
         public sealed override void ReturnLeasableToPool()
         {
+            //PoolManager?.GetIdleExpirationPool().Return(this);
         }
 
         #endregion

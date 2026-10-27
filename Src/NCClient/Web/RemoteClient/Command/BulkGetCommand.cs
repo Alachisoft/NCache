@@ -1,4 +1,4 @@
-//  Copyright (c) 2026 Alachisoft
+//  Copyright (c) 2018 Alachisoft
 //  
 //  Licensed under the Apache License, Version 2.0 (the "License");
 //  you may not use this file except in compliance with the License.
@@ -59,13 +59,38 @@ namespace Alachisoft.NCache.Client
 
         protected override void CreateCommand()
         {
+            //base._command = new Alachisoft.NCache.Common.Protobuf.Command();
+            //base._command.requestID = base.RequestId;
+            //base._command.bulkGetCommand = _bulkGetCommand;
+            //base._command.type = Alachisoft.NCache.Common.Protobuf.Command.Type.GET_BULK;
+            //base._command.clientLastViewId = base.ClientLastViewId;
+            //base._command.intendedRecipient = base.IntendedRecipient;
+            //base._command.commandVersion = 1; // NCache 4.1 Onwards
+            //base._command.MethodOverload = _methodOverload;
 
             _bulkGetCommand.commandID = this._commandID;
             _bulkGetCommand.requestId = base.RequestId;
             _bulkGetCommand.clientLastViewId = base.ClientLastViewId;
             _bulkGetCommand.intendedRecipient = base.IntendedRecipient;
-            _bulkGetCommand.commandVersion = 1;
+            _bulkGetCommand.commandVersion = 1; // NCache 4.1 Onwards
             _bulkGetCommand.MethodOverload = _methodOverload;
+
+
+            //using (MemoryStream stream = new MemoryStream())
+            //{
+            //    byte[] size = new byte[Connection.CmdSizeHolderBytesCount];
+            //    stream.Write(size, 0, size.Length);
+
+            //    Serializer.Serialize<Alachisoft.NCache.Common.Protobuf.Command>(stream, command);
+            //    int messageLen = (int)stream.Length - Connection.CmdSizeHolderBytesCount;
+
+            //    size = HelperFxn.ToBytes(messageLen.ToString());
+            //    stream.Position = 0;
+            //    stream.Write(size, 0, size.Length);
+
+            //    _commandBytes = stream.ToArray();
+            //    stream.Dispose();
+            //}
         }
 
         protected override CommandBase GetMergedCommand(List<CommandBase> commands)

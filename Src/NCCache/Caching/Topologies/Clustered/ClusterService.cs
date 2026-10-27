@@ -219,7 +219,6 @@ namespace Alachisoft.NCache.Caching.Topologies.Clustered
 
         private readonly object _mutex = new object();
 
-        private string _reasonOfNonFunctionality;
         
         private const int MAX_CLUSTER_MBRS = 2;
 
@@ -1600,27 +1599,17 @@ namespace Alachisoft.NCache.Caching.Topologies.Clustered
         /// <returns></returns>
         public object handleFunction(Address src, Function func)
         {
-            ThrowExceptionIfNonFunctional();
 
             return _participant.HandleClusterMessage(src, func);
         }
 
         public object handleFunction(Address src, Function func, out Address destination, out Message replicationMsg)
         {
-            ThrowExceptionIfNonFunctional();
 
             return _participant.HandleClusterMessage(src, func, out destination, out replicationMsg);
         }
 
-        public void SetAsNonFunctional(string reason)
-        {
-            lock (_mutex) _reasonOfNonFunctionality = reason;
-        }
 
-        private void ThrowExceptionIfNonFunctional()
-        {
-            lock (_mutex) if (_reasonOfNonFunctionality != null) throw new LicensingException(_reasonOfNonFunctionality);
-        }
 
         private long BeginMonitoringRequest(Address src,Function func)
         {

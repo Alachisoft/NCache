@@ -37,7 +37,6 @@ namespace Alachisoft.NCache.SocketServer.Command
             public string Password;
             public bool IsDotNetClient;
             public string ClientID;
-            public string LicenseCode;
             public int clientVersion;
             public Runtime.Caching.ClientInfo clientInfo;
 
@@ -48,7 +47,6 @@ namespace Alachisoft.NCache.SocketServer.Command
             public bool FromClientCache;
             public int CommandVersion;
             public string clientEditionId;
-            public bool SecureConnectionEnabled;
             public int operationTimeout;
             internal int cores;
             internal int physicalCores;
@@ -90,7 +88,6 @@ namespace Alachisoft.NCache.SocketServer.Command
                 clientManager.IsDotNetClient = cmdInfo.IsDotNetClient;
                 clientManager.SupportAcknowledgement = cmdInfo.CommandVersion >= 2 && requestLoggingEnabled;
                 clientManager.ClientVersion = cmdInfo.clientVersion;
-                clientManager.SecureConnectionEnabled = cmdInfo.SecureConnectionEnabled;
 
                 cmdInfo.clientInfo.ClientVersion = cmdInfo.clientVersion;
 
@@ -103,7 +100,7 @@ namespace Alachisoft.NCache.SocketServer.Command
 
 
 
-                clientManager.CmdExecuter = new NCache(cmdInfo.CacheId, cmdInfo.IsDotNetClient, clientManager, cmdInfo.LicenseCode, cmdInfo.UserName, cmdInfo.Password, cmdInfo.UserNameBinary, cmdInfo.PassworNameBinary, cmdInfo.clientInfo);
+                clientManager.CmdExecuter = new NCache(cmdInfo.CacheId, cmdInfo.IsDotNetClient, clientManager, cmdInfo.UserName, cmdInfo.Password, cmdInfo.UserNameBinary, cmdInfo.PassworNameBinary, cmdInfo.clientInfo);
 
                 //connected client for usage log
                 try
@@ -276,7 +273,6 @@ namespace Alachisoft.NCache.SocketServer.Command
             cmdInfo.CacheId = initCommand.cacheId;
             cmdInfo.ClientID = initCommand.clientId;
             cmdInfo.IsDotNetClient = initCommand.isDotnetClient;
-            cmdInfo.LicenseCode = initCommand.licenceCode;
             cmdInfo.operationTimeout = initCommand.operationTimeout;
 
             cmdInfo.Password = initCommand.pwd;
@@ -289,7 +285,6 @@ namespace Alachisoft.NCache.SocketServer.Command
             cmdInfo.isAzureClient = initCommand.isAzureClient;
             clientManager.IsAzureClient = initCommand.isAzureClient;
             cmdInfo.clientEditionId = initCommand.clientEditionId;
-            cmdInfo.SecureConnectionEnabled = initCommand.secureConnectionEnabled;
             cmdInfo.CommandVersion = command.commandVersion;
 
 

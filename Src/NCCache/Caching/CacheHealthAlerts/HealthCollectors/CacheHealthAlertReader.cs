@@ -40,6 +40,7 @@ namespace Alachisoft.NCache.Caching.CacheHealthAlerts
             }
             catch (Exception ex)
             {
+             //   AppUtil.LogEvent($"Exception occured while reading configuration from file: {ex.ToString()}.", EventLogEntryType.Error);
                 return new HealthAlerts();
             }
         }

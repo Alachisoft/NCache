@@ -1,4 +1,4 @@
-//  Copyright (c) 2026 Alachisoft
+//  Copyright (c) 2018 Alachisoft
 //  
 //  Licensed under the Apache License, Version 2.0 (the "License");
 //  you may not use this file except in compliance with the License.
@@ -125,6 +125,11 @@ namespace Alachisoft.NCache.Caching.Statistics
         /// 
         private const string			PC_CATEGORY = "NCache";
 
+     
+        //private float _expirations = 0;
+        //private float _evictions = 0;
+        //private float _stateXfer = 0;
+        //private float _dataBalance = 0;
 
     
         /// <summary>
@@ -486,6 +491,8 @@ namespace Alachisoft.NCache.Caching.Statistics
             {
                 _populationSuccessful = false;
                 NCache.Common.AppUtil.LogEvent(e.ToString(), EventLogEntryType.Error);
+                //throw new Exception ("PerfStatsCollector.PerfStatsCollector()",e);
+               // NCacheLog.Error("PerfStatsCollector.PerfStatsCollector()", e.Message);
             }
             if (!inproc)
             {
@@ -526,6 +533,27 @@ namespace Alachisoft.NCache.Caching.Statistics
             _ncacheCounters.Add(_pcCacheSize.CounterName, _pcCacheSize);
             _ncacheCounters.Add(_pcEvictionIndexSize.CounterName, _pcEvictionIndexSize);
             _ncacheCounters.Add(_pcExpirationIndexSize.CounterName, _pcExpirationIndexSize);
+           
+
+
+            //_usMsecPerBridgeOp = new UsageStats();
+
+            //#region Pub_Sub
+
+            //_ncacheCounters.Add(_pcMessageCount.CounterName, _pcMessageCount);
+            //_ncacheCounters.Add(_pcTopicCount.CounterName, _pcTopicCount);
+            //_ncacheCounters.Add(_pcMessageStoreSize.CounterName, _pcMessageStoreSize);
+            //_ncacheCounters.Add(_pcMessagePublishPerSec.CounterName, _pcMessagePublishPerSec);
+            //_ncacheCounters.Add(_pcMessageDeliverPerSec.CounterName, _pcMessageDeliverPerSec);
+            //_ncacheCounters.Add(_pcMessageExpiredPerSec.CounterName, _pcMessageExpiredPerSec);
+
+            //foreach (var counterName in _pubsubCounterList.Keys)
+            //{
+            //    PerformanceCounter performanceCounter;
+            //    if (_ncacheCounters.TryGetValue(counterName, out performanceCounter))
+            //        performanceCounter.RawValue = 0;
+            //}
+            //#endregion
             _usMsecPerDel = new UsageStats();
 
         }
@@ -747,6 +775,14 @@ namespace Alachisoft.NCache.Caching.Statistics
             if (_pcExpiryPerSec != null) _pcExpiryPerSec.Increment();
         }
 
+        /// <summary>
+        /// Increment the performance counter for write behind queue operation per sec
+        /// </summary>
+        //public void IncrementWBQueuePerSec()
+        //{
+        //    this.IncrementWBQueuePerSecBy(1);
+        //}
+
         /// <summary> Increments the performance counter for Cache evictions per second by given value. </summary>
         public void IncrementEvictPerSecStatsBy(long value)
         {
@@ -777,7 +813,8 @@ namespace Alachisoft.NCache.Caching.Statistics
             if (_usMsecPerGet != null)
             {
                 _usMsecPerGet.EndSample();
-                _pcMsecPerGetAvg.IncrementBy(_usMsecPerGet.Current * 1000000);
+                //  TimeSpan ts = new TimeSpan(_usMsecPerUpd.Current);
+                _pcMsecPerGetAvg.IncrementBy(_usMsecPerGet.Current * 1000000);// ts.Milliseconds);
                 _pcMsecPerGetBase.Increment();
             }
         }
@@ -800,8 +837,10 @@ namespace Alachisoft.NCache.Caching.Statistics
             if (_usMsecPerAdd != null)
             {
                 _usMsecPerAdd.EndSample();
-                _pcMsecPerAddAvg.IncrementBy(_usMsecPerAdd.Current * 1000000);
+                //  TimeSpan ts = new TimeSpan(_usMsecPerUpd.Current);
+                _pcMsecPerAddAvg.IncrementBy(_usMsecPerAdd.Current * 1000000); //ts.Milliseconds);
                 _pcMsecPerAddBase.Increment();
+                //_usMsecPerAdd.Reset();
             }
         }
 
@@ -823,8 +862,10 @@ namespace Alachisoft.NCache.Caching.Statistics
             if (_pcMsecPerUpdAvg != null)
             {
                 _usMsecPerUpd.EndSample();
-                _pcMsecPerUpdAvg.IncrementBy(_usMsecPerUpd.Current * 1000000);
+                //  TimeSpan ts = new TimeSpan(_usMsecPerUpd.Current);
+                _pcMsecPerUpdAvg.IncrementBy(_usMsecPerUpd.Current * 1000000);//ts.Milliseconds);
                 _pcMsecPerUpdBase.Increment();
+                //_pcMsecPerUpdAvg.NextValue();
             }
         }
 
@@ -846,7 +887,8 @@ namespace Alachisoft.NCache.Caching.Statistics
             if (_pcMsecPerDelAvg != null)
             {
                 _usMsecPerDel.EndSample();
-                _pcMsecPerDelAvg.IncrementBy(_usMsecPerDel.Current * 1000000);
+                //   TimeSpan ts = new TimeSpan(_usMsecPerUpd.Current);
+                _pcMsecPerDelAvg.IncrementBy(_usMsecPerDel.Current * 1000000); //ts.Milliseconds);
                 _pcMsecPerDelBase.Increment();
             }
         }

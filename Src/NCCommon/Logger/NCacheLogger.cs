@@ -22,6 +22,8 @@ using System.Net;
 using Alachisoft.NCache.Common.Util;
 using log4net;
 using Alachisoft.NCache.Common.Enum;
+using Alachisoft.NCache.Licensing.RegistryUtil;
+using System.Configuration;
 using log4net.Extended;
 
 namespace Alachisoft.NCache.Common.Logger
@@ -99,7 +101,7 @@ namespace Alachisoft.NCache.Common.Logger
             return Initialize(properties, partitionID, cacheName, false, false);
         }
 
-        public string Initialize(System.Collections.IDictionary properties, string partitionID, string cacheName, bool isStartedAsMirror, bool inproc)
+        public string Initialize(System.Collections.IDictionary properties, string partitionID, string cacheName, bool isStartedAsMirror, bool inproc, bool isBridgeCache = false, bool addConsoleAppender = false)
         {
             if (log != null)
                 throw new Exception("Multiple Initialize calls for same logger");
@@ -142,6 +144,22 @@ namespace Alachisoft.NCache.Common.Logger
 
                 AddAppender(CreateBufferAppender(fileName, false, false));
 
+#if NETCORE
+                if (!AppUtil.IsNuGetOnlyInstallation)
+                {
+                    if (EnableConsoleAppender(addConsoleAppender))
+                    {
+                        AddAppender(ConsoleAppenderFactory.Create(new LogIdentity
+                        {
+                            loggerName = _loggerName,
+                            source = isBridgeCache ? "bridge" : "cache-host",
+                            instance = cacheName,
+                            role = isStartedAsMirror ? "replica" : "active",
+                            node = _nodeIP
+                        }));
+                    }
+                }
+#endif
 
                 if (properties != null)
                 {
@@ -196,17 +214,17 @@ namespace Alachisoft.NCache.Common.Logger
 
         }
 
-        public void Initialize(LoggerNames loggerName)
+        public void Initialize(LoggerNames loggerName, bool isBridgeCache = false, bool addConsoleAppender = false)
         {
 
             if (loggerName != LoggerNames.Licence)
             {
-                Initialize(loggerName, null);
+                Initialize(loggerName, null, isBridgeCache, addConsoleAppender);
             }
 
         }
 
-        public void Initialize(LoggerNames loggerNameEnum, string cacheName)
+        public void Initialize(LoggerNames loggerNameEnum, string cacheName, bool isBridgeCache = false, bool addConsoleAppender = false)
         {
 
             if (log != null)
@@ -216,8 +234,9 @@ namespace Alachisoft.NCache.Common.Logger
             log4net.Extended.Config.XmlConfigurator.Configure(Log4net.LogRepository, logStream);
 
             _loggerName = loggerNameEnum.ToString();
-
             string filename = _loggerName;
+            // Tag for the console (docker) stream; mirrors the Enterprise source names.
+            string loggerSource = "NCache";
             if (loggerNameEnum == LoggerNames.ClientLogs)
             {
                 filename = filename + "." + cacheName + "." + System.Diagnostics.Process.GetCurrentProcess().Id;
@@ -228,34 +247,29 @@ namespace Alachisoft.NCache.Common.Logger
             else if (loggerNameEnum == LoggerNames.CacheHostLogs)
             {
                 filename = cacheName + "." + loggerNameEnum.ToString();
+                loggerSource = "cache-host";
             }
             else if (loggerNameEnum == LoggerNames.ServiceLogs)
             {
                 filename = filename + "." + +System.Diagnostics.Process.GetCurrentProcess().Id;
+                loggerSource = "service";
             }
-            else if (loggerNameEnum == LoggerNames.LicensingLog)
+            else if (loggerNameEnum == LoggerNames.SocketServerLogs && !string.IsNullOrEmpty(cacheName))
             {
-                filename = "NCService" + "." + loggerNameEnum.ToString();
-            }
-            else if (loggerNameEnum == LoggerNames.UsageInfoLog)
-            {
-                filename = loggerNameEnum.ToString();
+                filename = "SocketServer" + "." + cacheName;
+                loggerSource = "socket-server";
             }
             else
             {
                 filename = cacheName;
             }
-
+            if (isBridgeCache)
+            {
+                loggerSource = "bridge";
+            }
 
             filename = string.IsNullOrEmpty(filename) ? string.Empty : filename +  ".";
-            if (loggerNameEnum == LoggerNames.LicensingLog)
-            {
-                filename += DateTime.Now.ToString("dd-MM-yy_HH-mm-ss") + "_" + _nodeIP + @".bin";
-            }
-            else
-            {
-                filename += DateTime.Now.ToString("dd-MM-yy_HH-mm-ss") + "_" + _nodeIP + @".txt";
-            }
+            filename += DateTime.Now.ToString("dd-MM-yy_HH-mm-ss") + "_" + _nodeIP + @".txt";
 
             string filepath = "";
 
@@ -281,6 +295,21 @@ namespace Alachisoft.NCache.Common.Logger
                 filepath = Path.Combine(filepath, filename);
                 AddAppender(CreateBufferAppender(filepath, false, (loggerNameEnum == LoggerNames.eventlogs)));
 
+#if NETCORE
+                if (!AppUtil.IsNuGetOnlyInstallation)
+                {
+                    if (EnableConsoleAppender(addConsoleAppender))
+                    {
+                        AddAppender(ConsoleAppenderFactory.Create(new LogIdentity
+                        {
+                            loggerName = _loggerName,
+                            source = loggerSource,
+                            instance = cacheName,
+                            node = _nodeIP
+                        }));
+                    }
+                }
+#endif
             }
             catch (Exception)
             {
@@ -323,7 +352,7 @@ namespace Alachisoft.NCache.Common.Logger
 
         }
 
-        public void InitializeEventsLogging()
+        public void InitializeEventsLogging(bool addConsoleAppender = false)
         {
             string fileName;
             string filePath;
@@ -359,6 +388,21 @@ namespace Alachisoft.NCache.Common.Logger
             {
                 filePath = Path.Combine(filePath, fileName);
                 AddAppender(CreateBufferAppender(filePath, false, true));
+
+#if NETCORE
+                if (!AppUtil.IsNuGetOnlyInstallation)
+                {
+                    if (EnableEventLoggingConsoleAppender(addConsoleAppender))
+                    {
+                        AddAppender(ConsoleAppenderFactory.Create(new LogIdentity
+                        {
+                            loggerName = _loggerName,
+                            source = "eventlog",
+                            node = _nodeIP
+                        }));
+                    }
+                }
+#endif
             }
             catch (Exception)
             {
@@ -456,7 +500,7 @@ namespace Alachisoft.NCache.Common.Logger
 
         }
 
-        #endregion
+#endregion
 
         internal bool IsValidLocation(string location, string cache)
         {
@@ -509,6 +553,53 @@ namespace Alachisoft.NCache.Common.Logger
         /// </summary>
         /// <param name="loggerName">Name of the logger to which the appender is to be added</param>
         /// <param name="appender">Appender to add to the logger</param>
+        /// <summary>
+        /// Console (stdout/stderr) mirroring is meant for containers, where `docker logs` is the only
+        /// place an operator looks. It is on when the install type is the docker image; the
+        /// "addConsoleAppender" appSetting in the service config overrides that in either direction.
+        /// </summary>
+        private bool EnableConsoleAppender(bool addConsoleAppender)
+        {
+            if (!addConsoleAppender)
+                return false;
+
+            string configValue = ConfigurationManager.AppSettings["addConsoleAppender"];
+            if (!string.IsNullOrWhiteSpace(configValue) && bool.TryParse(configValue, out bool configuredValue))
+                return configuredValue;
+
+            return IsDockerImageInstall();
+        }
+
+        /// <summary>
+        /// Event logs are written by every process that calls AppUtil.LogEvent, including the
+        /// PowerShell tools; only NCache's own processes mirror them to the console so a cmdlet's
+        /// terminal output is not polluted with JSON.
+        /// </summary>
+        private bool EnableEventLoggingConsoleAppender(bool addConsoleAppender)
+        {
+            if (!addConsoleAppender)
+                return false;
+
+            string configValue = ConfigurationManager.AppSettings["addConsoleAppender"];
+            if (!string.IsNullOrWhiteSpace(configValue) && bool.TryParse(configValue, out bool configuredValue))
+                return configuredValue;
+
+            bool alachisoftProcess = System.Diagnostics.Process.GetCurrentProcess().ProcessName.StartsWith("Alachisoft.NCache", StringComparison.OrdinalIgnoreCase);
+            return IsDockerImageInstall() && alachisoftProcess;
+        }
+
+        private static bool IsDockerImageInstall()
+        {
+            try
+            {
+                return InstallTypeUtil.DOCKERIMAGE.Equals(RegUtil.GetInstallType(), StringComparison.OrdinalIgnoreCase);
+            }
+            catch (Exception)
+            {
+                return false;
+            }
+        }
+
         private void AddAppender(log4net.Extended.Appender.IAppender appender)
         {
             log = log4net.Extended.LogManager.GetLogger(Log4net.LogRepository.Name, _loggerName);

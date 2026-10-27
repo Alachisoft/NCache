@@ -15,7 +15,6 @@ using System;
 using System.Net;
 using System.Collections;
 using System.Reflection;
-using System.Web.SessionState;
 using System.Runtime.Serialization;
 using System.Runtime.Serialization.Formatters;
 using System.Runtime.Serialization.Formatters.Binary;

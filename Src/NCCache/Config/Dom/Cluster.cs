@@ -1,4 +1,4 @@
-//  Copyright (c) 2026 Alachisoft
+//  Copyright (c) 2018 Alachisoft
 //  
 //  Licensed under the Apache License, Version 2.0 (the "License");
 //  you may not use this file except in compliance with the License.
@@ -19,11 +19,8 @@ using System.Collections.Generic;
 using Alachisoft.NCache.Common;
 using Alachisoft.NCache.Common.Net;
 using System.Text.RegularExpressions;
-
 using Alachisoft.NCache.Runtime.Serialization;
-
 using Runtime = Alachisoft.NCache.Runtime;
-
 namespace Alachisoft.NCache.Config.Dom
 {
     [Serializable]
@@ -225,6 +222,7 @@ namespace Alachisoft.NCache.Config.Dom
 
             channel = reader.ReadObject() as Channel;
 
+            //nodes = reader.ReadObject() as Dictionary<NodeIdentity, StatusInfo>;
             bool nodeExists = reader.ReadBoolean();
             if (nodeExists)
             {
@@ -263,6 +261,7 @@ namespace Alachisoft.NCache.Config.Dom
             }
             else
                 writer.Write(false);
+            //writer.WriteObject(nodes);
         }
 
         #endregion      

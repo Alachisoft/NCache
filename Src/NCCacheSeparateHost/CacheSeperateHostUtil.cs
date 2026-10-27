@@ -1,4 +1,4 @@
-﻿//  Copyright (c) 2026 Alachisoft
+﻿//  Copyright (c) 2018 Alachisoft
 //  
 //  Licensed under the Apache License, Version 2.0 (the "License");
 //  you may not use this file except in compliance with the License.
@@ -33,6 +33,7 @@ namespace Alachisoft.NCache.CacheHost
         private static Alachisoft.NCache.Management.CacheHost _nchost;
         private static SocketServer.SocketServer _socketServer;
         private static SocketServer.SocketServer _managementSocketServer;
+        private static SocketServer.Resp.RespListener _respListener;
         private static String cacheName;
         private static string _applicationName = "NCache";
         private static int managementPort = -1;
@@ -239,8 +240,17 @@ namespace Alachisoft.NCache.CacheHost
                 _managementSocketServer = new SocketServer.SocketServer(managementPort, sendBuffer, receiveBuffer);
 
                 _managementSocketServer.Start(clusterIp, Alachisoft.NCache.Common.Logger.LoggerNames.CacheManagementSocketServer, "NManagement", CommandManagerType.NCacheHostManagement, ConnectionManagerType.Management);
-                
-               
+                //LogMessage($"Management socket server started at {managementPort} successfully.");
+
+                // Second listener for this cache, speaking the Redis protocol on its own port.
+                // Returns null when <resp-server> is absent or disabled. When RESP is wanted but its
+                // port is invalid or taken it throws with ErrorCode set, and the host exits.
+
+                _respListener = SocketServer.Resp.RespListener.Start(cacheName, clientServerIp, _socketServer.PerfStatsCollector, ref ErrorCode);
+                //if (_respListener != null)
+                    //LogMessage($"RESP listener started at {_respListener.Port} successfully.");
+
+
                 CacheServer.SocketServerPort = managementPort;
                 CacheServer.ConnectionManager = SocketServer.SocketServer.HostClientConnectionManager;
                 _nchost.HostServer.SynchronizeClientConfig();
@@ -352,6 +362,16 @@ namespace Alachisoft.NCache.CacheHost
                 {
                     _socketServer.Stop();
                 }
+
+                //LogMessage($"Client socket server for cache process stopped successfully .");
+
+                if (_respListener != null)
+                {
+                    _respListener.Stop();
+                    _respListener = null;
+                    //LogMessage($"RESP listener for cache process stopped successfully .");
+                }
+
                 if (_managementSocketServer != null)
                 {
                     _managementSocketServer.Stop();

@@ -1,4 +1,4 @@
-//  Copyright (c) 2026 Alachisoft
+//  Copyright (c) 2018 Alachisoft
 //  
 //  Licensed under the Apache License, Version 2.0 (the "License");
 //  you may not use this file except in compliance with the License.
@@ -219,6 +219,8 @@ namespace Alachisoft.NCache.Caching.Topologies.Clustered
             IList userPayLoad = new ClusteredArrayList(); 
             IOptimizedQueueOperation operation = null;
 
+            //IList<Array> replicatedPayloads = new ClusteredList<Array>();
+
             try
             {
                 while (!stopped || _queue.Count > 0)
@@ -246,6 +248,8 @@ namespace Alachisoft.NCache.Caching.Topologies.Clustered
                                 {
                                     userPayLoad.Add(operation.UserPayLoad.GetValue(j));
                                 }
+
+                                //replicatedPayloads.Add(operation.UserPayLoad);
                             }
 
                             compilationInfo.Add(operation.PayLoadSize);
@@ -315,6 +319,11 @@ namespace Alachisoft.NCache.Caching.Topologies.Clustered
                                 context?.MarkFree(NCModulesConstants.Replication);
                             }
                         }
+                        //if (replicatedPayloads != null)
+                        //{
+                        //    ReturnPooledPayloadToPool(replicatedPayloads, _context.TransactionalPoolManager);
+                        //    replicatedPayloads.Clear();
+                        //}
 
                         opCodesToBeReplicated.Clear();
                         infoToBeReplicated.Clear();
@@ -446,6 +455,27 @@ namespace Alachisoft.NCache.Caching.Topologies.Clustered
         {
             if (poolManager == null)
                 return;
+
+            // Structure here,
+            // 
+            //     IList<Array>
+            //     [
+            //          Array
+            //          [
+            //               byte[], byte[], ... byte[]
+            //          ],
+            //          Array
+            //          [
+            //               byte[], byte[], ... byte[]
+            //          ],
+            //                .
+            //                .
+            //                .
+            //          Array
+            //          [
+            //               byte[], byte[], ... byte[]
+            //          ]
+            //     ]
 
             if (payloads?.Count > 0)
             {

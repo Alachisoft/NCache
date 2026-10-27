@@ -31,11 +31,11 @@ namespace Alachisoft.NCache.Management
     public class CacheConfigManager
     {
         /// <summary> Default NCache tcp channel port. </summary>
-        public const int NCACHE_DEF_TCP_PORT = 8250;
+        public const int NCACHE_DEF_TCP_PORT = 9803;
         /// <summary> Default JvCache tcp channel port. </summary>
         public const int JVCACHE_DEF_TCP_PORT = 8270;
         /// <summary> Default http channel port. </summary>
-        public const int DEF_HTTP_PORT = 8251;
+        public const int DEF_HTTP_PORT = 9801;
         /// <summary> Default IPC channel port. </summary>
         public const string DEF_IPC_PORT_NAME = "ncCacheHost";
         /// <summary>Configuration file folder name</summary>

@@ -88,9 +88,6 @@ namespace Alachisoft.NCache.Common.Util
             public const string GetCacheInstanceIgnoreReplica = "GetCacheInstanceIgnoreReplica";
             public const string GetCacheInstance = "GetCacheInstance";
             public const string GetSecurityMap = "GetSecurityMap";
-            public const string GetLicenseKey = "GetLicenseKey";
-            public const string GetLicenses = "GetLicenses";
-            public const string GetLicenseLogger = "GetLicenseLogger";
             public const string MakeCacheActive = "MakeCacheActive";
             public const string ClearCacheContent = "ClearCacheContent";
             public const string IsRunning = "IsRunning";
@@ -115,7 +112,7 @@ namespace Alachisoft.NCache.Common.Util
             public const string GetServerPlatform = "GetServerPlatform";
             public const string GetNewConfiguration = "GetNewConfiguration";
             public const string GetNewUpdatedCacheConfiguration = "GetNewUpdatedCacheConfiguration";
-            public const string GetServerLicenseInfo = "GetServerLicenseInfo";
+            public const string GetServerProductInfo = "GetServerProductInfo";
             public const string SetClientProductVersion = "SetClientProductVersion";
             public const string GetProductVersion = "GetProductVersion";
             public const string GetShutdownTimeout = "GetShutdownTimeout";
@@ -166,18 +163,13 @@ namespace Alachisoft.NCache.Common.Util
             public const string GetCountersInfo = "GetCountersInfo";
             public const string PublishCustomClientCounters = "PublishCustomClientCounters";
             public const string AreCacheHostCountersEnabled = "AreCacheHostCountersEnabled";
-            public const string ActivateNCache = "ActivateNCache";
-            public const string DeactivateNCache = "DeactivateNCache";
             public const string GetConfigurationOfAllCaches= "GetConfigurationOfAllCaches";
             public const string GetConfigurationId= "GetConfigurationId";
             public const string RegisterClient = "RegisterClient";
             public const string UnRegisterClient = "UnRegisterClient";
             public const string ExtractInactiveClients = "ExtractInactiveClient";
-            public const string LoadClientLicenseInformation = "LoadClientLicenseInformation";
             public const string GetPoolStats = "GetPoolStats";
-            public const string GetCachedServerLicenseInfo = "GetCachedServerLicenseInfo";
             public const string IsUnderStateTransfer = "IsUnderStateTransfer";
-            public const string ReadLicensingLogFile = "ReadLicensingLogFile";
             public const string AddConnectedclient = "AddConnectedclient";
             public const string RemoveConnectedClient = "RemoveConnectedClient";
             public const string GetCacheLogList = "GetCacheLogList";
@@ -207,13 +199,8 @@ namespace Alachisoft.NCache.Common.Util
             public const string GetClientProfileReport = "GetClientProfileReport";
             public const string GetFeatureUsageReport = "GetFeatureUsageReport";
             public const string GetHardwareProfile = "GetHardwareProfile";
-            public const string GetMachineId = "GetMachineId";
-            public const string GetPossibleMachinesInCluster = "GetPossibleMachinesInCluster";
             #endregion
 
-            public const string SendForcedHeartbeat = "SendForcedHeartbeat";
-            public const string RegisterNCacheEvaluation = "RegisterNCacheEvaluation";
-            public const string LogEvaluationInfo = "LogEvaluationInfo";
             public const string VerifySecurityFromService = "VerifySecurityFromService";
             #endregion
 

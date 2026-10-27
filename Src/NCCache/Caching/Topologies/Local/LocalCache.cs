@@ -1,4 +1,4 @@
-//  Copyright (c) 2026 Alachisoft
+//  Copyright (c) 2018 Alachisoft
 //  
 //  Licensed under the Apache License, Version 2.0 (the "License");
 //  you may not use this file except in compliance with the License.
@@ -38,6 +38,7 @@ using Alachisoft.NCache.Caching.Pooling;
 using Alachisoft.NCache.Caching.Enumeration;
 using Alachisoft.NCache.Common.DataStructures;
 using Alachisoft.NCache.Util;
+using Alachisoft.NCache.Common.FeatureUsageData;
 
 namespace Alachisoft.NCache.Caching.Topologies.Local
 {
@@ -331,6 +332,7 @@ namespace Alachisoft.NCache.Caching.Topologies.Local
         /// with the specified key; otherwise, false.</returns>
         internal override bool ContainsInternal(object key)
         {
+            //if (ServerMonitor.MonitorActivity) ServerMonitor.LogClientActivity("LocalCache.Cont", "");
 
             if (_cacheStore == null)
                 throw new InvalidOperationException();
@@ -344,6 +346,7 @@ namespace Alachisoft.NCache.Caching.Topologies.Local
         /// <returns>cache entry.</returns>
         internal override CacheEntry GetInternal(object key, bool isUserOperation, OperationContext operationContext, bool cloneEntry, bool needUserPayload)
         {
+            //if (ServerMonitor.MonitorActivity) ServerMonitor.LogClientActivity("LocalCache.Get", "");
 
             if (_cacheStore == null)
                 throw new InvalidOperationException();
@@ -414,8 +417,10 @@ namespace Alachisoft.NCache.Caching.Topologies.Local
         /// <returns>returns the result of operation.</returns>
         internal override CacheAddResult AddInternal(object key, CacheEntry cacheEntry, bool isUserOperation, OperationContext operationContext)
         {
+            //if (ServerMonitor.MonitorActivity) ServerMonitor.LogClientActivity("LocalCache.Add_1", "");
             try
             {
+                //operationContext?.MarkInUse(NCModulesConstants.LocalCache);
                 if (_cacheStore == null)
                     throw new InvalidOperationException();
                 if (cacheEntry != null)
@@ -477,6 +482,7 @@ namespace Alachisoft.NCache.Caching.Topologies.Local
                 if (cacheEntry != null)
                     cacheEntry.MarkFree(NCModulesConstants.LocalCache);
 
+                //operationContext?.MarkFree(NCModulesConstants.LocalCache);
             }
         }
 
@@ -492,6 +498,7 @@ namespace Alachisoft.NCache.Caching.Topologies.Local
             CacheEntry e = null;
             try
             {
+                //if (ServerMonitor.MonitorActivity) ServerMonitor.LogClientActivity("LocalCache.Add_2", "");
 
                 if (_cacheStore == null)
                     throw new InvalidOperationException();
@@ -773,6 +780,7 @@ namespace Alachisoft.NCache.Caching.Topologies.Local
         /// <returns>item value</returns>
         internal override CacheEntry RemoveInternal(object key, ItemRemoveReason removalReason, bool isUserOperation, OperationContext operationContext,bool cloneEntry, bool needUserPayload)
         {
+            //if (ServerMonitor.MonitorActivity) ServerMonitor.LogClientActivity("LocalCache.Remove", "");
 
             if (_cacheStore == null)
                 throw new InvalidOperationException();
@@ -1090,10 +1098,12 @@ namespace Alachisoft.NCache.Caching.Topologies.Local
 
                     if (status == StoreStatus.HasNotEnoughSpace)
                         throw new OperationFailedException(ErrorCodes.Common.NOT_ENOUGH_ITEMS_EVICTED, ErrorMessages.GetErrorMessage(ErrorCodes.Common.NOT_ENOUGH_ITEMS_EVICTED));
+                    //throw new OperationFailedException("The cache is full and not enough items could be evicted.");
 
                 }
                 else
                 {
+                    //  throw new OperationFailedException(string.Format("Topic '{0}' does not exists.", topic));
                     throw new OperationFailedException(ErrorCodes.PubSub.TOPIC_NOT_FOUND, ErrorMessages.GetErrorMessage(ErrorCodes.PubSub.TOPIC_NOT_FOUND, topic));
                 }
 

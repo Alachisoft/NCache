@@ -1,4 +1,4 @@
-//  Copyright (c) 2026 Alachisoft
+//  Copyright (c) 2018 Alachisoft
 //  
 //  Licensed under the Apache License, Version 2.0 (the "License");
 //  you may not use this file except in compliance with the License.
@@ -216,6 +216,42 @@ namespace Alachisoft.NCache.Caching.Statistics
 
         /// <summary> Increment the performance counter for Data Balance per second by given value. </summary>
         void IncrementDataBalPerSecStatsBy(long value);
+        /// <summary>
+        /// Increment the performance counter for write behind queue operation per sec
+        /// </summary>
+        //void IncrementWBQueuePerSec();
+
+        ///// <summary>
+        ///// Count of items that are expired till now
+        ///// </summary>
+        //float Expirations
+        //{
+        //    get;
+        //}
+
+        ///// <summary>
+        ///// Count of items that are evicted till now
+        ///// </summary>
+        //float Eviction
+        //{
+        //    get;
+        //}
+
+        ///// <summary>
+        ///// Count of items that are state transfered till now
+        ///// </summary>
+        //float StateXfer
+        //{
+        //    get;
+        //}
+
+        ///// <summary>
+        ///// Count of items that are balanced till now
+        ///// </summary>
+        //float DataBalance
+        //{
+        //    get;
+        //}
 
         /// <summary> 
         /// Increment the performance counter for Mirror Queue size by one. 

@@ -1522,7 +1522,7 @@ namespace Alachisoft.NCache.SocketServer.RuntimeLogging
              AddAPILogToManager(logItem);
         }
 
-        internal void GenerateGetIfNewerAPILogItem(string key, string group, string subGroup, long version, LockAccessType accessType, TimeSpan lockTimeout,  LockHandle lockHandle, string providerName,int overload, string exceptionMesage, TimeSpan executionTime, string clientId, string clientIP)
+        internal void GenerateGetIfNewerAPILogItem(string key, string group, string subGroup, long version, LockAccessType accessType, TimeSpan lockTimeout,  object lockHandle, string providerName,int overload, string exceptionMesage, TimeSpan executionTime, string clientId, string clientIP)
         {
              List <Parameters> parameter = GetMethodsParameters(_methodName, overload);
             string parameterName =null;

@@ -20,14 +20,8 @@ using System.Runtime.InteropServices;
 // set of attributes. Change these attribute values to modify the information
 // associated with an assembly.
 //
-//#if !DEBUG
 [assembly: CLSCompliant(true)]
-//#endif
-#if NETCORE
-[assembly: AssemblyTitle("Alachisoft.NCache.Instrumentation (.NETCore)")]
-#else
-[assembly: AssemblyTitle("Alachisoft.NCache.Instrumentation (.NET)")]
-#endif
+[assembly: AssemblyTitle("Alachisoft.NCache.Instrumentation")]
 [assembly: AssemblyConfiguration("")]
 [assembly: AssemblyCompany("Alachisoft")]
 [assembly: AssemblyProduct("Alachisoft® NCache OpenSource")]
@@ -83,6 +77,6 @@ using System.Runtime.InteropServices;
 //
 [assembly: AssemblyDelaySign(false)]
 [assembly: AssemblyKeyName("")]
-[assembly: AssemblyFileVersionAttribute("5.3.6.0")]
+[assembly: AssemblyFileVersionAttribute("5.3.603")]
 [assembly: AssemblyDescriptionAttribute("WMI Statistics Publisher")]
-[assembly: AssemblyInformationalVersion("5.3.0")]
+[assembly: AssemblyInformationalVersion("5.3.603")]

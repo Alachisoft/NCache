@@ -1,4 +1,4 @@
-//  Copyright (c) 2026 Alachisoft
+//  Copyright (c) 2018 Alachisoft
 //  
 //  Licensed under the Apache License, Version 2.0 (the "License");
 //  you may not use this file except in compliance with the License.
@@ -20,7 +20,6 @@ using Alachisoft.NCache.Config.Dom;
 
 
 using Alachisoft.NCache.Runtime.Exceptions;
-
 
 
 namespace Alachisoft.NCache.Config
@@ -77,7 +76,11 @@ namespace Alachisoft.NCache.Config
 
         public ArrayList PropertiesList
         {
+//#if !EXPRESS
             get { return GetAllProperties(_configFileName, _configSection); }
+//#else
+//            get { return GetAllProperties2(_configFileName, _configSection); }
+//#endif
         }
 
 		/// <summary>
@@ -217,10 +220,8 @@ namespace Alachisoft.NCache.Config
 			Hashtable properties = new Hashtable();
 			try
 			{
-
                 LoadConfig(fileName, ref properties);
                 return (Hashtable)properties[configSection];
-
 			}
 			catch(Exception e)
 			{
@@ -247,9 +248,14 @@ namespace Alachisoft.NCache.Config
             builder.ReadConfiguration();
             Alachisoft.NCache.Config.NewDom.CacheServerConfig[] newCaches = new NewDom.CacheServerConfig[builder.Configuration.Length];
             builder.Configuration.CopyTo(newCaches, 0);
+            //CacheServerConfig[] caches = convertToOldDom(newCaches);
+            //newCaches.CopyTo(caches, 0);
+            //builder.Configuration.CopyTo(caches, 0);
             properties = ConfigConverter.ToHashtable(convertToOldDom(newCaches));
         }
 
+        //JAVA TO C# CONVERTER WARNING: Method 'throws' clauses are not available in .NET:
+        //ORIGINAL LINE: private static Alachisoft.NCache.Config.Dom.CacheServerConfig[] convertToOldDom(Alachisoft.NCache.Config.NewDom.CacheServerConfig[] newCacheConfigsList) throws Exception
         private static Alachisoft.NCache.Config.Dom.CacheServerConfig[] convertToOldDom(Alachisoft.NCache.Config.NewDom.CacheServerConfig[] newCacheConfigsList)
         {
             Alachisoft.NCache.Config.Dom.CacheServerConfig[] oldCacheConfigsList = new CacheServerConfig[newCacheConfigsList.Length];
@@ -277,6 +283,14 @@ namespace Alachisoft.NCache.Config
             {
                 LoadConfig(fileName, ref properties);
                 return (Hashtable)properties[configSection];
+
+
+                //				XPathNodeIterator i = navigator.Select(@"/configuration/cache-configuration[@id='" + configSection + @"']");
+                //				if(i.MoveNext() && i.Current.MoveToFirstChild())
+                //				{
+                //					BuildHashtable(properties, i.Current);
+                //					return properties;
+                //				}
             }
             catch (Exception e)
             {
@@ -442,7 +456,6 @@ namespace Alachisoft.NCache.Config
 			{
                 LoadConfig(fileName, ref properties);
                 return properties;
-
 			}
 			catch(Exception e)
 			{

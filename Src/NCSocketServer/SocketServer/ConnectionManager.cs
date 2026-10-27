@@ -43,7 +43,6 @@ using Alachisoft.NCache.SocketServer.RuntimeLogging;
 using Alachisoft.NCache.Client;
 #if NET40
 using System.Threading.Tasks;
-using System.Security.Cryptography.X509Certificates;
 using System.Net.Security;
 using System.Security.Authentication;
 using System.Runtime.InteropServices;
@@ -172,16 +171,16 @@ namespace Alachisoft.NCache.SocketServer
 
         public static List<string> DeadClients()
         {
-            List<string> clientLicense = new List<string>();
+            List<string> clientIds = new List<string>();
             foreach(DictionaryEntry client in ConnectionTable)
             {
                 var clientManager = (ClientManager)client.Value;
                 if(clientManager.IsIdle)
                 {
-                    clientLicense.Add(clientManager.ClientID);
+                    clientIds.Add(clientManager.ClientID);
                 }
             }
-            return clientLicense;
+            return clientIds;
         }
         public ConnectionManager(StatisticsCounter statsCollector)
         {

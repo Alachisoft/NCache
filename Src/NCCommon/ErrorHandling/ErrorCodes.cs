@@ -9,7 +9,6 @@ namespace Alachisoft.NCache.Common.ErrorHandling
     {
         /*
          Cache general exceptions             10000-14999
-         Licensing                            15000-19999
          PubSub                               20000-2499
          CacheLoader
          BackingSource
@@ -48,32 +47,6 @@ namespace Alachisoft.NCache.Common.ErrorHandling
             public const int CACHE_ID_NOT_REGISTERED = 10013;
             public const int CONFIG_NOT_FOUND = 10014;
 
-        }
-        public class Licensing
-        {
-            public const int INVALID_INSTALLCODE = 15000;
-            public const int LICENSE_EXPIRED = 15001;
-            public const int INVALID_LICENSE_PROVIDER = 15002;
-            public const int LICENSE_STAGE_001 = 15003;
-            public const int LICENSE_STAGE_002 = 15004;
-            public const int LICENSE_STAGE_003 = 15005;
-            public const int LICENSE_STAGE_004 = 15006;
-            public const int LICENSE_STAGE_005 = 15007;
-            public const int LICENSE_STAGE_006 = 15008;
-            public const int LICENSE_STAGE_007 = 15009;
-            public const int LICENSE_STAGE_008 = 15010;
-            public const int LICENSE_STAGE_009 = 15011;
-            public const int LICENSE_STAGE_010 = 15012;
-            public const int LICENSE_STAGE_011 = 15013;
-            public const int LICENSE_EXPIRED_STAGE_011 = 15014;
-            public const int LICENSE_EXPIRED_STAGE_012 = 15015;
-            public const int LICENSE_NOT_VERIFIED = 15016;
-            public const int EVALUATION_PERIOD_EXPIRED = 15017;
-            public const int LICENSING_DLL_MISSING = 15018;
-            public const int LICENSING_INFO_CORRUPTED = 15019;
-            public const int NCLICENSE_LOAD_FAILURE = 15020; 
-            public const int UNREGISTERED_MACHINE =15021;
-	    public const int DATA_CORRUPTED = 15023;
         }
         public class Common
         {

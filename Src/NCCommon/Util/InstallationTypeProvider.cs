@@ -11,7 +11,6 @@ namespace Alachisoft.NCache.Common
     {
         private static InstallationTypeProvider instance = null;
         private InstallationType _installType ;
-        static StringBuilder installCode = new StringBuilder();
       
         
         public bool IsServerInstallation

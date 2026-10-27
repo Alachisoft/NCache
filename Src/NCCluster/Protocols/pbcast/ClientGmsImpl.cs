@@ -169,12 +169,6 @@ namespace Alachisoft.NGroups.Protocols.pbcast
                             becomeSingletonMember(mbr);
                             return;
                         }
-						if (rsp.JoinResult == JoinResult.MaxMbrLimitReached)
-						{
-							gms.Stack.NCacheLog.Error("ClientGmsImpl.Join", "Open Source edition of NCache cannot have a cache cluster of more than 3 nodes.");
-							becomeSingletonMember(mbr);
-							return;
-						}
 						if (rsp.JoinResult == JoinResult.MembershipChangeAlreadyInProgress)
                         {
                             gms.Stack.NCacheLog.CriticalInfo("Coord.CheckOwnClusterHealth", "Reply: JoinResult.MembershipChangeAlreadyInProgress");

@@ -1,4 +1,4 @@
-//  Copyright (c) 2026 Alachisoft
+//  Copyright (c) 2018 Alachisoft
 //  
 //  Licensed under the Apache License, Version 2.0 (the "License");
 //  you may not use this file except in compliance with the License.
@@ -557,6 +557,34 @@ namespace Alachisoft.NCache.Caching.Topologies.Clustered
             }
         }
 
+     
+
+        #region	/                 --- OnItemUpdated ---           /
+        /// <summary>
+        /// Hanlder for clustered item updated notification.
+        /// </summary>
+        /// <param name="info">packaged information</param>
+        /// <returns>null</returns>
+        //protected object handleNotifyUpdate(object info)
+        //{
+        //    object[] args = info as object[];
+        //    if (args != null)
+        //    {
+        //        OperationContext opContext = null;
+        //        EventContext evContext = null;
+        //        if (args.Length > 1)
+        //            opContext = args[1] as OperationContext;
+        //        if (args.Length > 2)
+        //            evContext = args[2] as EventContext;
+
+        //        NotifyItemUpdated(args[0], true, opContext, evContext);
+        //    }
+        //    else
+        //        NotifyItemUpdated(info, true, null, null);
+        //    return null;
+        //}
+
+        #endregion
 
         #region	/                 --- OnItemAdded ---           /
 

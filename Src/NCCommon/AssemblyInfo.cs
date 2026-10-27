@@ -27,11 +27,7 @@ using System.Runtime.InteropServices;
 [assembly: AssemblyConfiguration("")]
 [assembly: AssemblyCompany("Alachisoft")]
 
-#if NETCORE
-[assembly: AssemblyTitle("Alachisoft.NCache.Common (.NETCore)")]
-#else
-[assembly: AssemblyTitle("Alachisoft.NCache.Common (.NET)")]
-#endif
+[assembly: AssemblyTitle("Alachisoft.NCache.Common")]
 
 [assembly: AssemblyProduct("Alachisoft® NCache OpenSource")]
 [assembly: AssemblyTrademark("NCache ™ is a registered trademark of Alachisoft.")]
@@ -77,9 +73,9 @@ using System.Runtime.InteropServices;
 //
 [assembly: AssemblyDelaySign(false)]
 [assembly: AssemblyKeyName("")]
-[assembly: AssemblyFileVersionAttribute("5.3.6.0")]
+[assembly: AssemblyFileVersionAttribute("5.3.603")]
 [assembly: AssemblyDescriptionAttribute("Common Classes")]
-[assembly: AssemblyInformationalVersion("5.3.0")]
+[assembly: AssemblyInformationalVersion("5.3.603")]
 [assembly: InternalsVisibleTo("Alachisoft.NCache.Bridge")]
 [assembly: InternalsVisibleTo("Alachisoft.NCache.Cache")]
 [assembly: InternalsVisibleTo("Alachisoft.NCache.Cluster")]
@@ -87,9 +83,6 @@ using System.Runtime.InteropServices;
 [assembly: InternalsVisibleTo("Alachisoft.NCache.OutputCache")]
 [assembly: InternalsVisibleTo("Alachisoft.NCache.Security")]
 [assembly: InternalsVisibleTo("Alachisoft.NCache.Serialization")]
-[assembly: InternalsVisibleTo("Alachisoft.NCache.SessionState")]
-[assembly: InternalsVisibleTo("Alachisoft.NCache.SessionStateManagement")]
-[assembly: InternalsVisibleTo("Alachisoft.NCache.SessionStoreProvider")]
 [assembly: InternalsVisibleTo("Alachisoft.NCache.SocketServer")]
 [assembly: InternalsVisibleTo("Alachisoft.NCache.Storage")]
 [assembly: InternalsVisibleTo("Alachisoft.NCache.Web")]

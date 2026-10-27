@@ -1,4 +1,4 @@
-//  Copyright (c) 2026 Alachisoft
+//  Copyright (c) 2018 Alachisoft
 //  
 //  Licensed under the Apache License, Version 2.0 (the "License");
 //  you may not use this file except in compliance with the License.
@@ -17,11 +17,8 @@ using System.Text;
 using Alachisoft.NCache.Common.Configuration;
 using Alachisoft.NCache.Common.Enum;
 using Alachisoft.NCache.Common;
-
 using Alachisoft.NCache.Runtime.Serialization;
-
 using Runtime = Alachisoft.NCache.Runtime;
-
 
 namespace Alachisoft.NCache.Config.NewDom
 {
@@ -33,7 +30,6 @@ namespace Alachisoft.NCache.Config.NewDom
         CacheDeployment cacheDeployment;
         bool cacheIsRunning = false;
         bool cacheIsRegistered = false;
-        bool licenseIsExpired = false;
         double configVersion;
         string configID;
         string name;
@@ -130,12 +126,6 @@ namespace Alachisoft.NCache.Config.NewDom
             }
         }
 
-        public bool IsExpired
-        {
-            get { return licenseIsExpired; }
-            set { licenseIsExpired = value; }
-        }
-
 
         public string UniqueId
         {
@@ -145,6 +135,7 @@ namespace Alachisoft.NCache.Config.NewDom
                     return name;
                 return name + "[" + _environment + "]";
             }
+            //set { _alias = value; }
         }
 
         #region ICloneable Members
@@ -158,7 +149,6 @@ namespace Alachisoft.NCache.Config.NewDom
             config.configVersion = configVersion;
             config.IsRegistered = this.IsRegistered;
             config.IsRunning = this.IsRunning;
-            config.licenseIsExpired = this.licenseIsExpired;
             config.name = this.name;
             config._environment = this._environment;
             config.storeType = this.storeType;
@@ -178,7 +168,6 @@ namespace Alachisoft.NCache.Config.NewDom
             this.configVersion = reader.ReadDouble();
             cacheIsRunning = reader.ReadBoolean();
             cacheIsRegistered = reader.ReadBoolean();
-            licenseIsExpired = reader.ReadBoolean();
             storeType = reader.ReadObject() as string;
         }
 
@@ -192,7 +181,6 @@ namespace Alachisoft.NCache.Config.NewDom
             writer.Write(configVersion);
             writer.Write(cacheIsRunning);
             writer.Write(cacheIsRegistered);
-            writer.Write(licenseIsExpired);
             writer.WriteObject(storeType);
         }
         #endregion

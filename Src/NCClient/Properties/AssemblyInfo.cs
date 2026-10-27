@@ -1,4 +1,4 @@
-//  Copyright (c) 2026 Alachisoft
+//  Copyright (c) 2018 Alachisoft
 //  
 //  Licensed under the Apache License, Version 2.0 (the "License");
 //  you may not use this file except in compliance with the License.
@@ -26,11 +26,7 @@ using System.Runtime.InteropServices;
 
 [assembly: CLSCompliant(true)]
 [assembly: ComVisible(false)]
-#if NETCORE
-[assembly: AssemblyTitle("Alachisoft.NCache.Client (.NETCore)")]
-#else
-[assembly: AssemblyTitle("Alachisoft.NCache.Client (.NET)")]
-#endif
+[assembly: AssemblyTitle("Alachisoft.NCache.Client")]
 
 
 [assembly: AssemblyConfiguration("")]
@@ -84,7 +80,7 @@ using System.Runtime.InteropServices;
 [assembly: AssemblyDelaySign(false)]
 [assembly: AssemblyKeyName("")]
 [assembly: AssemblyDescriptionAttribute("Client API")]
-[assembly: AssemblyFileVersionAttribute("5.3.6.0")]
-[assembly: AssemblyInformationalVersion("5.3.0")]
+[assembly: AssemblyFileVersionAttribute("5.3.603")]
+[assembly: AssemblyInformationalVersion("5.3.603")]
 [assembly: InternalsVisibleTo("Alachisoft.NCache.SocketServer")]
 [assembly: InternalsVisibleTo("ncacheps")]

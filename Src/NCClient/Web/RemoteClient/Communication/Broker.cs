@@ -55,12 +55,6 @@ namespace Alachisoft.NCache.Client
         internal ClientConfiguration _clientConfig;
         private OnCommandRecieved _commandReieved = null;
         private OnServerLost _serverLost = null;
-        private delegate void OnNewHashmapRecieved(NewHashmap newHashmap, int bucketSize);
-        private OnNewHashmapRecieved _onNewHashmapRecieved = null;
-        private delegate void OnNewModuleHashmapRecieved(NewHashmap newHashmap, int bucketSize, bool isLuceneCache);
-        private OnNewModuleHashmapRecieved _onNewModuleHashmapRecieved = null;
-        private delegate void OnNewSerializedMap(byte[] buffer);
-        private OnNewSerializedMap _onNewSerializedMap = null;
 
         /// <summary> Object</summary>
         private byte[] _value;
@@ -80,16 +74,11 @@ namespace Alachisoft.NCache.Client
         }
         private int _connectionTimeout = 5000;
 
-        private NewHashmap _moduleHashmap;
-        object _moduleHashmapUpdateMutex = new object();
-        private int _bucketSize;
-
         private bool _retryConnection = true;
         private DateTime _retryConnectionStartTime = DateTime.Now;
 
         private string _cacheId;
         private Address _serverIP;
-        private string _licenceCode;
         private int _port;
         private int _priority = 1;
         private int _itemSizeThreshHold = 0;
@@ -104,7 +93,6 @@ namespace Alachisoft.NCache.Client
 
 
         private bool _balanceNode;
-        private bool _importHashmap = true;
         private IPAddress _nodeIP;
         private int _newServerPort;
         private ResponseIntegrator _responseIntegrator = new ResponseIntegrator();
@@ -114,7 +102,6 @@ namespace Alachisoft.NCache.Client
         private AsyncProcessor _eventProcessor = null;
         private int _asyncProccesorThreadCount = 1;
         private bool _notifyAsync = true;
-        private static long _requestsPerSecond = 50; // for lowering number of requests for develop[er edition
         private RequestModerator requestModerator = new RequestModerator();
 
         
@@ -125,8 +112,7 @@ namespace Alachisoft.NCache.Client
         private bool _isDisposing = false;
         private bool _connectingFirstTime = true;
         private WaitCallback _bulkEventCallback;
-        object _hashmapUpdateMutex = new object();
-     
+
         private bool _isPersistEnabled = false;
         private int _persistenceInterval;
 
@@ -136,12 +122,7 @@ namespace Alachisoft.NCache.Client
         private MutableQueue<Address> connectionQueue = new MutableQueue<Address>();
         private AddressUtil _addressUtil;
         private bool _isLocalAddress = false;
-        private static IDictionary<string, long> _requestDic = new Dictionary<string, long>();
-        object _requestsLock = new object();
-        long _allowedRequests = 200000;
         private Runtime.Caching.ClientInfo _clientInfo;
-        Latch _hashMapStatus = new Latch(HashMapStatus.UNINITIALIZE);
-        Latch _moduleHashMapStatus = new Latch(HashMapStatus.UNINITIALIZE);
         private InitCommand _command;
         private IDictionary<Address, ReconnectTask> _reconnectTasks = new Dictionary<Address, ReconnectTask>();
         private string _monitoringSessionId;
@@ -183,11 +164,6 @@ internal ConnectivityStatus PoolConnectivityStatus
             get { return  forcedViewId; }
         }
 
-        internal long ClientLastViewId
-        {
-            get { return  this._pool.LastViewId; }
-        }
-
         public int OperationTimeOut
         {
             get { return  _operationTimeout; }
@@ -210,7 +186,7 @@ internal ConnectivityStatus PoolConnectivityStatus
             get { return _cacheStoreType; }
         }
         internal Broker(RemoteCache cache,  CacheConnectionOptions cacheConnectionOptions, StatisticsCounter statsCol, Runtime.Caching.ClientInfo clientInfo)
-            : this(cache, true, statsCol, cacheConnectionOptions)
+            : this(cache, statsCol, cacheConnectionOptions)
         {
             _clientInfo = clientInfo;
         }
@@ -232,14 +208,12 @@ internal ConnectivityStatus PoolConnectivityStatus
 
 
       
-        private Broker(RemoteCache cache, bool importHashMap, StatisticsCounter perfStatsColl, CacheConnectionOptions cacheConnectionOptions)
+        private Broker(RemoteCache cache, StatisticsCounter perfStatsColl, CacheConnectionOptions cacheConnectionOptions)
         {
             _bulkEventCallback = new WaitCallback(RaiseBulkEvent);
             _clientConfig = new ClientConfiguration(cache.CacheId, cacheConnectionOptions);
             _cache = cache;
-            _licenceCode = "LicenceCode";
             _balanceNode = _clientConfig.BalanceNodes;
-            _importHashmap = _clientConfig.ImportHashmap;
 
             _operationTimeout = _clientConfig.ClientRequestTimeout;
             _connectionTimeout = _clientConfig.ConnectionTimeout;
@@ -370,10 +344,7 @@ internal ConnectivityStatus PoolConnectivityStatus
 
                 ServerInfo remoteServer = new ServerInfo(server, port);
 
-                if (this._importHashmap)
-                {
-                    this._processor = new AsyncProcessor();
-                }
+                this._processor = new AsyncProcessor();
 
                 if (remoteServer.IP != null)
                 {
@@ -527,11 +498,9 @@ internal ConnectivityStatus PoolConnectivityStatus
         Hashtable eventsHistory = new Hashtable();
         List<EventId> missingEvents = new List<EventId>();
         private bool _tryPool;
-        private bool _hashmapError;
         private int _poolSize;
         private bool _connectionRectified;
         private Thread _dedicatedWriter;
-        private bool _isModuleCache = true;
 
         private Alachisoft.NCache.Persistence.EventType ConvertEventType(EventInfo.EventType protoEventType)
         {
@@ -578,23 +547,15 @@ internal ConnectivityStatus PoolConnectivityStatus
             CommandResponse res = connection.RecieveCommandResponse();
             if (_logger != null && _logger.IsErrorLogsEnabled)
             {
-                _logger.NCacheLog.CriticalInfo("Broker.SecureConnectionIfEnabled", $"{connection.ServerAddress} isOptimziedFlag: {connection.Optimized}: server: {res.SecureConnectionEnabled}");
+                _logger.NCacheLog.CriticalInfo("Broker.InitializeCache", $"{connection.ServerAddress} isOptimziedFlag: {connection.Optimized}");
             }
 
             switch (res.CacheType)
             {
                 case "local-cache":
                     this._balanceNode = false;
-                    this._importHashmap = false;
                     break;
-                case "mirror-server":
-                    this._balanceNode = false;
-                    this._importHashmap = false;
-                    break;
-
-                case "replicated-server":
-                    this._importHashmap = false;
-                    break;
+             
             }
             
             connection.RequestInquiryEnabled = res.RequestInquiryEnabled;
@@ -644,141 +605,11 @@ internal ConnectivityStatus PoolConnectivityStatus
             if (res != null) res.ParseResponse();
         }
 
-        internal void GetHashmap()
-        {
-            GetHashmap(null);
-        }
-
-        internal void GetHashmap(Connection connection)
-        {
-            GetHashmapCommand command = new GetHashmapCommand();
-            Request request = new Request(false, _operationTimeout);
-            Address ipAddress = connection == null ? _connection.ServerAddress : connection.ServerAddress;
-            request.AddCommand(ipAddress, command);
-
-            if (connection != null)
-                ExecuteRequest(request, connection, true, true);
-            else
-                ExecuteRequest(request);
-
-            CommandResponse res = request.Response;
-            res.ParseResponse();
-
-            NewHashmap hashmap = res.Hashmap;
-            if (hashmap == null)
-            {
-                try
-                {
-                    if (this._processor != null) this._processor.Stop();
-                }
-                catch (ThreadAbortException) { }
-                catch (ThreadInterruptedException) { }
-
-                this._importHashmap = false;
-                return;
-            }
-
-#if !NETCORE
-            if (this._onNewHashmapRecieved == null) this._onNewHashmapRecieved = new OnNewHashmapRecieved(NewHashmapRecieved);
-            this._onNewHashmapRecieved.BeginInvoke(hashmap, res.BucketSize, new AsyncCallback(NewHashmapRecievedCompleted), null);
-#elif NETCORE
-            TaskFactory factory = new TaskFactory();
-            Task task = factory.StartNew(NewHashmapRecieved, new { BucketSize = res.BucketSize, NewHashmap = hashmap });
-#endif
-        }
-        
         
 
         public bool IsConnected
         {
             get { return  _connection != null ? _connection.IsConnected : false; }
-        }
-
-        internal bool PoolHasAllServers
-        {
-            get
-            {
-                return _clientConfig.ServerCount == _pool.Servers.Count;
-            }
-        }
-
-        internal bool PoolFullyConnected
-        {
-            get
-            {
-                lock (_hashmapUpdateMutex)
-                {
-                    var poolFullyConnected = _pool.FullyConnnected;
-
-                    if (!poolFullyConnected)
-                    {
-                        if (_pool.Connections != null)
-                        {
-                            try
-                            {
-                                //as pool is fully disconnected,let's start reconnection task
-                                foreach (Connection connection in _pool.Connections.Values)
-                                {
-                                    if (connection != null && !connection.IsConnected)
-                                    {
-                                        ReconectInBackground(connection.ServerAddress, connection);
-                                    }
-                                }
-                            }
-                            catch (Exception)
-                            {
-                                //enumeration exception can occur
-                            }
-                        }
-                    }
-
-                    if (_shutdownServers.Count > 1)
-                        return false;
-                    return poolFullyConnected;
-                }
-            }
-        }
-
-        internal bool PoolFullyDisConnected
-        {
-            get
-            {
-                lock (_hashmapUpdateMutex)
-                {
-                    if (_pool.FullyDisConnnected)
-                    {
-                        if (_pool.Connections != null)
-                        {
-                            try
-                            {
-                                //as pool is fully disconnected,let's start reconnection task
-                                foreach (Connection connection in _pool.Connections.Values)
-                                {
-                                    if (connection != null)
-                                    {
-                                        ReconectInBackground(connection.ServerAddress, connection);
-                                    }
-                                }
-                            }
-                            catch (Exception)
-                            {
-                                //enumeration exception can occur
-                            }
-                        }
-                        return true;
-                    }
-                }
-
-                return false;
-            }
-        }
-
-        internal bool ImportHashmap
-        {
-            get
-            {
-                return _importHashmap;
-            }
         }
 
         internal ArrayList ClientServerList
@@ -888,7 +719,6 @@ internal ConnectivityStatus PoolConnectivityStatus
                 case Response.Type.UNREGISTER_KEY_NOTIF:
                 case Response.Type.UNREGISTER_BULK_KEY_NOTIF:
                 case Response.Type.GET_TYPEINFO_MAP:
-                case Response.Type.GET_HASHMAP:
                 case Response.Type.GET_COMPACT_TYPES:
                 case Response.Type.UNLOCK:
                 case Response.Type.LOCK:
@@ -1077,9 +907,6 @@ internal ConnectivityStatus PoolConnectivityStatus
                     ThreadPool.QueueUserWorkItem(new WaitCallback(StartBalancingClients), response);
                     break;
 
-                case Response.Type.HASHMAP_CHANGED_EVENT:
-                    ThreadPool.QueueUserWorkItem(new WaitCallback(UpdateHashmapAsync), response.NewMap);
-                    break;
                 case Response.Type.CONFIG_MODIFIED_EVENT:
                     break;
 
@@ -1474,40 +1301,6 @@ internal ConnectivityStatus PoolConnectivityStatus
             catch (Exception ex)
             { }
         }
-        private void UpdateHashmapAsync(object newHashmap)
-        {
-            try
-            {
-                NewHashmapRecieved(newHashmap as NewHashmap);
-            }
-            catch (Exception e)
-            {
-                try
-                {
-                    if (_logger.IsErrorLogsEnabled) _logger.NCacheLog.Error("Broker.UpdateHashmapAsync", "An error occurred while installing updated hashmap. Error :" + e.ToString());
-                }
-                catch (Exception) { }
-            }
-        }
-
-        private void UpdateModuleHashmapAsync(object state)
-        {
-            var map = state as NewHashmap;
-            try
-            {
-                NewModuleHashmapRecieved(map);
-
-            }
-            catch (Exception e)
-            {
-                try
-                {
-                    if (_logger.IsErrorLogsEnabled) _logger.NCacheLog.Error("Broker.UpdateHashmapAsync", "An error occurred while installing updated hashmap. Error :" + e.ToString());
-                }
-                catch (Exception) { }
-            }
-        }
-
         private void UpdateCompactTypesAsync(object state)
         {
             byte[] serializedMap = state as byte[];
@@ -1680,511 +1473,6 @@ internal ConnectivityStatus PoolConnectivityStatus
 
         }
 
-        /// <summary>
-        /// Map conatins the running nodes map addresses so Members also only the running nodes
-        /// </summary>
-        /// <param name="map"></param>
-        /// <returns></returns>
-        private ArrayList FilterOutRunningNodesFromMap(Hashtable map)
-        {
-            ArrayList distinctAddress = new ArrayList();
-            foreach (DictionaryEntry item in map)
-            {
-                var address = (string)item.Value;
-                if (!distinctAddress.Contains(address))
-                {
-                    distinctAddress.Add(address);
-                }
-            }
-            return distinctAddress;
-        }
-
-        private NewHashmap SetMappedServerAddress(NewHashmap newHashmap)
-        {
-            ServerInfo srvr = new ServerInfo();
-            string add = null;
-            for (int key = 0; key < newHashmap.Map.Count; key++)
-            {
-                add = (string)newHashmap.Map[key];
-
-                srvr = _clientConfig.GetMappedServer(add);
-                newHashmap.Map[key] = new Address(srvr.Name, srvr.Port);
-            }
-            return newHashmap;
-        }
-
-        /// <summary>
-        /// New hashmap recieved. 
-        /// </summary>
-        /// <param name="buffer"></param>
-        private void NewSerializedMapRecieved(byte[] buffer)
-        {
-#if !DEVELOPMENT
-            this.NewHashmapRecieved(NewHashmap.Deserialize(buffer, this._cacheId));
-#endif
-        }
-#if !DEVELOPMENT
-
-#if NETCORE
-        private void NewHashmapRecieved(object args)
-        {
-            dynamic arguments = args;
-            if (arguments.NewHashmap == null) return;
-            this._pool.BucketSize = arguments.BucketSize;
-            NewHashmapRecieved(arguments.NewHashmap);
-        }
-
-        private void NewModuleHashMapReceived(object args)
-        {
-            dynamic arguments = args;
-            this._isModuleCache = arguments.IsLuceneCache;
-            if (!arguments.IsLuceneCache) return;
-            if (arguments.NewHashmap == null) return;
-            this._bucketSize = arguments.BucketSize;
-            NewModuleHashmapRecieved(arguments.NewHashmap);
-        }
-#endif
-
-        /// <summary>
-        /// New hashmap recieved. Just save the module map
-        /// </summary>
-        /// <param name="newHashmap">new hashmap returned from primary server</param>
-        /// <param name="bucketSize">bucket size</param>
-        private void NewModuleHashmapRecieved(NewHashmap newHashmap)
-        {
-            if (newHashmap == null) return;
-
-            try
-            {
-                this._hashMapStatus.WaitForAny(HashMapStatus.INITIALIZE);
-                //we are acquring this lock first to avoid deadlock caused during connection establishment with new servers
-                this._lock.AcquireWriterLock(Timeout.Infinite);
-
-                lock (_moduleHashmapUpdateMutex)
-                {
-                    if (_logger.IsDetailedLogsEnabled)
-                    {
-                        _logger.NCacheLog.Debug("Broker.NewModuleHashmapReceived", "Module Hashmap " + newHashmap.ToString());
-                    }
-                    // We are only updating the Members with running nodes, ClusterMember consist of all cluster nodes.
-                    newHashmap.Members = FilterOutRunningNodesFromMap(newHashmap.Map);
-                    newHashmap = SetMappedServerAddress(newHashmap);
-                    this._moduleHashmap = newHashmap;
-                    this._moduleHashMapStatus.SetStatusBit(HashMapStatus.INITIALIZE, HashMapStatus.UNINITIALIZE);
-                    if (_logger.IsDetailedLogsEnabled)
-                    {
-                        _logger.NCacheLog.Debug("Broker.NewModuleHashmapReceived", "Module Hashmap applied " + newHashmap.ToString());
-                    }
-                }
-            }
-            catch (Exception exc)
-            {
-                if (_logger.IsErrorLogsEnabled) _logger.NCacheLog.Error("Broker.NewModuleHashmapRecieved", exc.Message);
-            }
-            finally
-            {
-                this._lock.ReleaseWriterLock();
-            }
-        }
-
-        /// <summary>
-        /// New hashmap recieved. Depending on new and old hashmap, some connections are
-        /// disposed and some new connections are formed(not always as in some cases only buckets have
-        /// transfered between servers). This method should be called asynchronously so the recieve thread
-        /// will be free to recieve other command responces.
-        /// </summary>
-        /// <param name="newHashmap">new hashmap returned from primary server</param>
-        private void NewHashmapRecieved(NewHashmap newHashmap)
-        {
-            if (newHashmap == null)
-            {
-                if (_logger.IsErrorLogsEnabled) _logger.NCacheLog.CriticalInfo("Broker.NewHashmapReceived", "Hashmap is null... returning");
-                return;
-            }
-
-            try
-            {
-                //we are acquring this lock first to avoid deadlock caused during connection establishment with new servers
-                this._lock.AcquireWriterLock(Timeout.Infinite);
-
-                lock (_hashmapUpdateMutex)
-                {
-                    try
-                    {
-                        if (_logger.IsDetailedLogsEnabled)
-                        {
-                            _logger.NCacheLog.Debug("Broker.NewHashmapReceived", "Hashmap " + newHashmap.ToString());
-                        }
-
-                        long oldId = _pool != null ? _pool.LastViewId : -2;
-
-                        if (newHashmap.LastViewId == this._pool.LastViewId)
-                        {
-                            if (newHashmap.ForcefulUpdate)
-                            {
-                                if (_logger != null && _logger.NCacheLog != null)
-                                    _logger.NCacheLog.CriticalInfo("Broker.NewHashmapReceived", "Hashmap is same as current pool. Pool " + this._pool.ToString() + " New Hashmap " + newHashmap.ToString() + " ... is being installed forcefully");
-
-                            }
-                            else
-                            {
-                                if (_logger != null && _logger.NCacheLog != null)
-                                    _logger.NCacheLog.CriticalInfo("Broker.NewHashmapReceived", "Hashmap is same as current pool. Pool " + this._pool.ToString() + " New Hashmap " + newHashmap.ToString() + " ... returning");
-                                return;
-                            }
-                        }
-                        if (_clientConfig.IPMappingConfigured)
-                        {
-                            _clientConfig.UpdateMappedServers(newHashmap.ServerMapping, _port);
-
-                            if (_logger != null && _logger.NCacheLog != null && newHashmap.ServerMapping.Count > 0)
-                            {
-                                _logger.NCacheLog.CriticalInfo("Broker.NewHashmapReceived", "Server Mapping: " + string.Join(", ", newHashmap.ServerMapping.Cast<DictionaryEntry>().Select(entry => $"{entry.Key}: {entry.Value}")));
-                            }
-
-                        }
-
-                        for (int i = 0; i < newHashmap.Members.Count; i++)
-                        {
-                            string ip = (string)newHashmap.Members[i];
-                            int serverPort = this._port;
-
-                            if (_clientConfig.IPMappingConfigured)
-                            {
-                                ServerInfo server = _clientConfig.GetMappedServer(ip, serverPort);
-                                ip = server.Name;
-                                serverPort = server.Port;
-                                newHashmap.Members[i] = ip + ":" + serverPort.ToString();
-                            }
-
-                            Address addr = new Address(ip, serverPort);
-
-                            if (!this._pool.Contains(addr))
-                            {
-                                IPAddress address = default(IPAddress) ;
-                                Connection connection = default(Connection);
-                                try
-                                {
-                                    address = IPAddress.Parse(ip);
-                                    connection = new Connection(this, this._commandReieved, this._serverLost, this._logger, _perfStatsColl, _responseIntegrator, _clientConfig.BindIP, this._cacheId);
-
-                                    Exception exception = null;
-
-                                    if (ConnectRemoteServer(connection, address, serverPort, false, false, false, ref exception))
-                                    {
-                                        this._clientConfig.AddServer(new ServerInfo(address, serverPort));
-                                        if (_logger.IsDetailedLogsEnabled) _logger.NCacheLog.Debug("Broker.NewHashmapRecieved", "Connection made to " + ip + ", and added to pool");
-                                    }
-                                    else
-                                    {
-                                        if (exception != null && _logger.IsErrorLogsEnabled)
-                                        {
-                                            _logger.NCacheLog.Error("Broker.NewHashmapRecieved", "Could not connect to " + ip + ". " + exception.ToString());
-                                        }
-                                    }
-                                    if (_clientConfig.ConnectUsingLoadBalancer)
-                                        connection.ServerAddress = addr;
-                                    this._pool.Add(addr, connection);
-                                }
-                                catch (SecurityException sxc)
-                                {
-                                    if (_logger.IsErrorLogsEnabled) _logger.NCacheLog.Error("Broker.NewHashmapRecieved", "You do not have permissions to perform the operation on " + ip + ". " + sxc.ToString());
-                                }
-                                catch (InternalCommandException ex)
-                                {
-                                    if (_logger.IsErrorLogsEnabled) _logger.NCacheLog.Error("Broker.StartServices", ex.ToString());
-                                }
-                              
-                                catch (Exception exc)
-                                {
-                                    this._pool.Add(addr, connection);
-                                    this._clientConfig.AddServer(new ServerInfo(address, serverPort));
-                                    if (_logger.IsErrorLogsEnabled) _logger.NCacheLog.Error("Broker.NewHashmapRecieved", exc.ToString());
-                                }
-                            }
-                            else
-                            {
-                                Connection connection = this._pool[addr];
-
-                                if (connection != null && !connection.IsConnected)
-                                {
-                                    if (_logger.IsDetailedLogsEnabled)
-                                    {
-                                        _logger.NCacheLog.Debug("Broker.NewHashmapRecieved", "Not connected to " + ip + " in the pool");
-                                    }
-                                    try
-                                    {
-                                        Exception exception = null;
-                                        TryConnecting(connection, ref exception,0,false);
-                                    }
-                                    catch (Exception exc)
-                                    {
-                                        if (_logger.IsErrorLogsEnabled) _logger.NCacheLog.Error("Broker.NewHashmapRecieved", exc.ToString());
-                                    }
-                                }
-                                else
-                                {
-                                    if (_logger.IsDetailedLogsEnabled)
-                                    {
-                                        _logger.NCacheLog.Debug("Broker.NewHashmapRecieved", "Already connected to " + ip + " in the pool");
-                                    }
-                                }
-                            }
-                        }
-
-                        if (this._importHashmap)
-                        {
-                            //List of Connection ip's which as per new hashmap are no more valid
-                            List<Address> invalidIPConnection = new List<Address>();
-
-                            foreach (Address ipAddress in this._pool.Servers)
-                            {
-
-                                if (_clientConfig.IPMappingConfigured)
-                                {
-                                    if (!newHashmap.Members.Contains(ipAddress.IpAddress.ToString() + ":" + ipAddress.Port.ToString()))
-                                    {
-                                        invalidIPConnection.Add(ipAddress);
-                                    }
-                                }
-                                else
-                                {
-                                    if (!newHashmap.Members.Contains(ipAddress.IpAddress.ToString()))
-                                    {
-                                        invalidIPConnection.Add(ipAddress);
-                                    }
-                                }
-                            }
-
-                            foreach (Address ip in invalidIPConnection)
-                            {
-                                this._pool[ip].Disconnect();
-                                this._pool.Remove(ip);
-
-                                if (_connection != null && _connection.Address.Equals(ip.IpAddress))
-                                {
-                                    //Let's reset default connection from existing pool
-                                    _connection = _pool.GetAnyConnection();
-                                    if (_connection == null)
-                                    {
-                                        _hashmapError = true;
-                                        _poolSize = _pool.Count;
-                                    }
-                                }
-
-                                if (_shutdownServers.ContainsKey(ip))
-                                {
-                                    ShutDownServerInfo ssInfo = (ShutDownServerInfo)_shutdownServers[ip];
-
-                                    lock (ssInfo.WaitForBlockedActivity)
-                                    {
-
-                                        Monitor.PulseAll(ssInfo.WaitForBlockedActivity);
-                                        _shutdownServers.Remove(ip);
-                                    }
-
-                                }
-                                if (_logger.IsDetailedLogsEnabled)
-                                {
-                                    _logger.NCacheLog.Debug("Broker.NewHashmapRecieved", "Disconnected from " + ip + ", and removed from pool");
-                                }
-                            }
-                        }
-
-
-
-                        ServerInfo srvr = new ServerInfo();
-                        string add = null;
-                        for (int key = 0; key < newHashmap.Map.Count; key++)
-                        {
-                            add = (string)newHashmap.Map[key];
-
-                            srvr = _clientConfig.GetMappedServer(add, this._port);
-                            newHashmap.Map[key] = new Address(srvr.Name, srvr.Port);
-                        }
-
-
-                        this._pool.SetHashmap(newHashmap);
-
-                        if (_logger.IsDetailedLogsEnabled)
-                        {
-                            _logger.NCacheLog.Debug("Broker.NewHashmapReceived", "Hashmap applied " + newHashmap.ToString() + " Pool " + this._pool.ToString());
-                        }
-                    }
-                    catch (Exception exc)
-                    {
-                        if (_logger.IsErrorLogsEnabled) _logger.NCacheLog.Error("Broker.NewHashmapRecieved", exc.Message);
-                    }
-                }
-            }
-            finally
-            {
-                this._lock.ReleaseWriterLock();
-            }
-            _hashMapStatus.SetStatusBit(HashMapStatus.INITIALIZE, HashMapStatus.UNINITIALIZE);
-        }
-#endif
-        /// <summary>
-        /// Called when NewHashmapRecieved callback is executed
-        /// </summary>
-        /// <param name="result"></param>
-        private void NewHashmapRecievedCompleted(IAsyncResult result)
-        {
-#if !DEVELOPMENT
-            this._onNewHashmapRecieved.EndInvoke(result);
-#endif
-        }
-
-#if !NETCORE
-        /// <summary>
-        /// New hashmap recieved. Depending on new and old hashmap, some connections are
-        /// disposed and some new connections are formed(not always as in some cases only buckets have
-        /// transfered between servers). This method should be called asynchronously so the recieve thread
-        /// will be free to recieve other command responces.
-        /// </summary>
-        /// <param name="newHashmap">new hashmap returned from primary server</param>
-        /// <param name="bucketSize">bucket size</param>
-        private void NewHashmapRecieved(NewHashmap newHashmap, int bucketSize)
-        {
-            if (newHashmap == null) return;
-            this._pool.BucketSize = bucketSize;
-            NewHashmapRecieved(newHashmap);
-        }
-
-        /// <summary>
-        /// New hashmap recieved. 
-        /// We will hold the newHashmap for module client.
-        /// </summary>
-        /// <param name="newHashmap">new hashmap returned from primary server</param>
-        /// <param name="bucketSize">bucket size</param>
-        /// <param name="isLuceneCache">Is cache is enabled Lucene</param>
-        private void NewModuleHashmapRecieved(NewHashmap newHashmap, int bucketSize, bool isLuceneCache)
-        {
-            this._isModuleCache = isLuceneCache;
-            if (!isLuceneCache) return;
-            if (newHashmap == null) return;
-            this._bucketSize = bucketSize;
-            NewModuleHashmapRecieved(newHashmap);
-        }
-#endif
-
-        internal bool GetKeysDistributionMap(string[] keys, CacheItem[] items,
-            ref Dictionary<Address, KeyValuePair<string[], CacheItem[]>> keysDistributionMap)
-        {
-            bool result = false;
-            bool itemsAvailable = items != null;
-
-            if (_importHashmap)
-            {
-                Dictionary<Address, Hashtable> keysDistributionList = new Dictionary<Address, Hashtable>();
-                Hashtable keysAndItems = null;
-                string key = String.Empty;
-                CacheItem item = null;
-
-                for (int i = 0; i < keys.Length; i++)
-                {
-                    key = keys[i];
-                    if (itemsAvailable)
-                        item = items[i];
-
-                    Address address;
-                    _hashMapStatus.WaitForAny(HashMapStatus.INITIALIZE);
-                    lock (_hashmapUpdateMutex)
-                    {
-                        address = _pool.GetIp(key);
-                    }
-
-                    if (keysDistributionList.ContainsKey(address))
-                    {
-                        keysAndItems = keysDistributionList[address];
-                        keysAndItems[key] = item;
-                    }
-                    else
-                    {
-                        keysAndItems = new Hashtable();
-                        keysAndItems[key] = item;
-                        keysDistributionList[address] = keysAndItems;
-                    }
-                }
-
-                KeyValuePair<string[], CacheItem[]> tmp;
-                Address serverAddress;
-
-                foreach (KeyValuePair<Address, Hashtable> pair in keysDistributionList)
-                {
-                    int index = 0;
-
-                    serverAddress = pair.Key;
-                    keysAndItems = pair.Value;
-
-                    string[] distributedKeys = new string[keysAndItems.Count];
-                    CacheItem[] distributedItems = null;
-                    if (itemsAvailable)
-                        distributedItems = new CacheItem[keysAndItems.Count];
-
-                    IDictionaryEnumerator ide = keysAndItems.GetEnumerator();
-                    while (ide.MoveNext())
-                    {
-                        distributedKeys[index] = ide.Key as string;
-                        if (itemsAvailable)
-                            distributedItems[index] = ide.Value as CacheItem;
-                        index++;
-                    }
-
-                    tmp = new KeyValuePair<string[], CacheItem[]>(distributedKeys, distributedItems);
-                    Connection conn = _pool[serverAddress]; //for balanced connection
-                    Address adrs = serverAddress;
-
-                    if (conn != null && !conn.IsConnected)
-                    {
-                        Address loadbaanced = GetLoadBalancedAddress();
-                        if (loadbaanced != null) adrs = loadbaanced;
-                    }
-
-                    if (keysDistributionMap.ContainsKey(adrs))
-                    {
-                        KeyValuePair<string[], CacheItem[]> newtmp = keysDistributionMap[adrs];
-
-                        tmp = MergeDistributioonMap(tmp, newtmp, itemsAvailable);
-                        keysDistributionMap[adrs] = tmp;
-                        result = true;
-                    }
-                    else
-                    {
-                        keysDistributionMap.Add(adrs, tmp);
-                    }
-                }
-            }
-
-            return result;
-        }
-
-        public KeyValuePair<string[], CacheItem[]> MergeDistributioonMap(KeyValuePair<string[], CacheItem[]> map1, KeyValuePair<string[], CacheItem[]> map2, bool itemsAvailable)
-        {
-
-            string[] distributedKeys = new string[map1.Key.Length + map2.Key.Length];
-            CacheItem[] distributedItems = null;
-            if (itemsAvailable)
-                distributedItems = new CacheItem[map1.Value.Length + map2.Value.Length];
-
-            int size = map1.Key.Length;
-
-            for (int i = 0; i < map1.Key.Length; i++)
-            {
-                distributedKeys[i] = map1.Key[i];
-                if (itemsAvailable)
-                    distributedItems[i] = map1.Value[i];
-            }
-
-            for (int i = 0; i < map2.Key.Length; i++)
-            {
-                distributedKeys[size + i] = map2.Key[i];
-                if (itemsAvailable)
-                    distributedItems[size + i] = map2.Value[i];
-            }
-
-            return new KeyValuePair<string[], CacheItem[]>(distributedKeys, distributedItems);
-        }
 
         internal Request CreateRequest(CommandBase command)
         {
@@ -2210,35 +1498,8 @@ internal ConnectivityStatus PoolConnectivityStatus
                 case CommandType.GETMESSAGE:
                 case CommandType.REGISTER_NOTIF:
 
-                    if (_importHashmap)
-                    {
-                        if (PoolFullyDisConnected)
-                        {
-                            throw new OperationFailedException(ErrorCodes.Common.NO_SERVER_AVAILABLE,ErrorMessages.GetErrorMessage(ErrorCodes.Common.NO_SERVER_AVAILABLE));
-                        }
-
-                        if (!PoolFullyConnected)
-                        {
-                            request = CreateDedicatedRequest(command);
-                        }
-                        else
-                        {
-                            request = new Request(true, _operationTimeout);
-                            lock (_hashmapUpdateMutex)
-                            {
-                                command.ClientLastViewId = this.ClientLastViewId;
-                                foreach (Address server in _pool.Servers)
-                                {
-                                    request.AddCommand(server, command);
-                                }
-                            }
-                        }
-                    }
-                    else
-                    {
-                        request = new Request(false, _operationTimeout);
-                        request.AddCommand(_connection.ServerAddress, command);
-                    }
+                    request = new Request(false, _operationTimeout);
+                    request.AddCommand(_connection.ServerAddress, command);
                     request.IsAsync = command.isAsync;
                     request.IsAyncCallbackSpecified = command.asyncCallbackSpecified;
                     break;
@@ -2259,48 +1520,13 @@ internal ConnectivityStatus PoolConnectivityStatus
             return request;
         }
 
-        internal Request CreateRequestOnServer(string nodeAddress, CommandBase command)
-        {
-            Request request = null;
-            request = new Request(true, this._operationTimeout);
-            Connection conn = null;
-            lock (_hashmapUpdateMutex)
-            {
-                conn = _pool.GetConnection(nodeAddress);
-            }
-            if (conn != null)
-                request.AddCommand(conn.ServerAddress, command);
-            else
-                return CreateDedicatedRequest(command);
-
-            return request;
-        }
-
         internal Request CreateDedicatedRequest(CommandBase command)
         {
             Request request = null;
             command.ResetCommand();
-            if (_importHashmap)
-            {
-                request = new Request(true, _operationTimeout);
-                command.ClientLastViewId = ForcedViewId;
-
-                Address server = GetLoadBalancedAddress();
-                if (server != null)
-                {
-                    request.AddCommand(server, command);
-                }
-                else
-                {
-                    throw new OperationFailedException(ErrorCodes.Common.NO_SERVER_AVAILABLE, ErrorMessages.GetErrorMessage(ErrorCodes.Common.NO_SERVER_AVAILABLE));
-                }
-            }
-            else
-            {
-                request = new Request(false, _operationTimeout);
-                command.ClientLastViewId = ForcedViewId;
-                request.AddCommand(_connection.ServerAddress, command);
-            }
+            request = new Request(false, _operationTimeout);
+            command.ClientLastViewId = ForcedViewId;
+            request.AddCommand(_connection.ServerAddress, command);
             request.IsAsync = command.isAsync;
             request.IsAyncCallbackSpecified = command.asyncCallbackSpecified;
 
@@ -2567,10 +1793,7 @@ internal ConnectivityStatus PoolConnectivityStatus
                     {
                         Address ip = pair.Key;
                         CommandBase command = pair.Value;
-                        bool optimizeConnection = (command.CommandType != CommandType.GET_NEXT_CHUNK) ||
-                                                  (command.CommandType == CommandType.GET_NEXT_CHUNK &&
-                                                   (!string.IsNullOrEmpty(command.intendedRecipient) || !_importHashmap));
-                        connection = VerifyServerConnectivity(ip, optimizeConnection);
+                        connection = VerifyServerConnectivity(ip, true);
                         if (connection == null && command.CommandType == CommandType.GET_NEXT_CHUNK)
                             throw new OperationFailedException(ErrorCodes.Common.ENUMERATION_MODIFIED,ErrorMessages.GetErrorMessage(ErrorCodes.Common.ENUMERATION_MODIFIED));
 
@@ -2941,26 +2164,7 @@ internal ConnectivityStatus PoolConnectivityStatus
 
         internal Address GetConnectionIP(CommandBase command)
         {
-            Connection connection = _connection;
-            if (command.key != null && command.key != string.Empty && this._importHashmap)
-            {
-                Address ip;
-                lock (_hashmapUpdateMutex)
-                {
-                    ip = this._pool.GetIp(command.key);
-                }
-                if (ip != null)
-                {
-                    connection = GetConnection(ip, true);
-                    if (connection == null || (connection != null && !connection.IsConnected))
-                    {
-                        connection = TryPool();
-                    }
-                }
-                //done everything to get a working connection.
-            }
-
-            return connection.ServerAddress;
+            return _connection.ServerAddress;
         }
 
         internal void SendCommand(CommandBase command, bool waitUntilSend)
@@ -2970,37 +2174,8 @@ internal ConnectivityStatus PoolConnectivityStatus
             if (connection != null)
                 connection.IntendedRecipientIPAddress = string.Empty;
 
-            if (command.key != null && command.key != string.Empty && this._importHashmap)
-            {
-                Address ip;
-
-                lock (_hashmapUpdateMutex)
-                {
-                    ip = this._pool.GetIp(command.key);
-                }
-
-                if (ip != null)
-                {
-                    connection = GetConnection(ip, true);
-                    if (connection == null || (connection != null && !connection.IsConnected))
-                    {
-                        connection = TryPool();
-                    }
-                }
-                //done everything to get a working connection.
-            }
-            else if (this._importHashmap && !connection.IsConnected)
-            {
-                connection = TryPool();
-
-                if (connection != null && connection.ServerAddress != null)
-                    _connection = connection;
-
-                if (_connection == null) _tryPool = true;
-            }
-
-            //If not POR or Partitioned and connection is not connected, try to get another connection before sending command 
-            if (!this._importHashmap && connection != null && !connection.IsConnected)
+            //If connection is not connected, try to get another connection before sending command
+            if (connection != null && !connection.IsConnected)
             {
                 TryNextServer();
                 connection = _connection;
@@ -3285,38 +2460,16 @@ internal ConnectivityStatus PoolConnectivityStatus
             if (_logger.IsDetailedLogsEnabled) _logger.NCacheLog.CriticalInfo("ServerLost", "Server lost " + ip + "; forcedDisconnected = " + forcedDisconnected);
             try
             {
-                if (this._importHashmap)
+                this._pool.Remove(ip);
+                if (_shutdownServers.ContainsKey(ip))
                 {
-                    if (!forcedDisconnected)
-                    {
-                        try
-                        {
-                            ReregisterEvents(ip);
-                            Connection connection = this._pool[ip];
-                            if (connection != null)
-                            {
-                                ReconectInBackground(connection.ServerAddress, connection);
-                            }
-                        }
-                        catch (OperationFailedException exc)
-                        {
-                            if (_logger.IsErrorLogsEnabled) _logger.NCacheLog.Error("Broker.ServerLost", exc.Message);
-                        }
-                    }
-                }
-                else
-                {
-                    this._pool.Remove(ip);
-                    if (_shutdownServers.ContainsKey(ip))
-                    {
-                        ShutDownServerInfo ssInfo = (ShutDownServerInfo)_shutdownServers[ip];
+                    ShutDownServerInfo ssInfo = (ShutDownServerInfo)_shutdownServers[ip];
 
-                        lock (ssInfo.WaitForBlockedActivity)
-                        {
+                    lock (ssInfo.WaitForBlockedActivity)
+                    {
 
-                            Monitor.PulseAll(ssInfo.WaitForBlockedActivity);
-                            _shutdownServers.Remove(ip);
-                        }
+                        Monitor.PulseAll(ssInfo.WaitForBlockedActivity);
+                        _shutdownServers.Remove(ip);
                     }
                 }
 
@@ -3326,7 +2479,7 @@ internal ConnectivityStatus PoolConnectivityStatus
                 if (forcedDisconnected || _connection.StatusLatch.IsAnyBitsSet(ConnectionStatus.Connecting)) return;
                 try
                 {
-                    if (!this._connection.IsConnected && !this._importHashmap)
+                    if (!this._connection.IsConnected)
                     {
                         try
                         {
@@ -3440,7 +2593,6 @@ internal ConnectivityStatus PoolConnectivityStatus
             bool connected = false;
             ServerInfo startingServer = null;
             ArrayList deniedServers = null;
-            Hashtable invalidServers = new Hashtable();
             int retries = this._connectionRetries;
             OperationNotSupportedException exceptionThrown = null;
 
@@ -3514,7 +2666,7 @@ internal ConnectivityStatus PoolConnectivityStatus
                                                 {
                                                     Exception exception = null;
                                                     connected = ConnectRemoteServer(this._connection, nextServer.IP,
-                                                        nextServer.Port + i, this._balanceNode, this._importHashmap, true, ref exception);
+                                                        nextServer.Port + i, this._balanceNode, false, true, ref exception);
                                                 }
                                                 if (connected)
                                                 {
@@ -3529,12 +2681,6 @@ internal ConnectivityStatus PoolConnectivityStatus
                                                     deniedServers = new ArrayList();
                                                 if (!deniedServers.Contains(nextServer.Name))
                                                     deniedServers.Add(nextServer.Name);
-                                            }
-                                            //if free clients try to connect with licensed servers
-                                            catch (LicensingException ex)
-                                            {
-                                                if (!invalidServers.Contains(nextServer.Name))
-                                                    invalidServers.Add(nextServer.Name, ex);
                                             }
                                             catch (InternalCommandException)
                                             { }
@@ -3615,24 +2761,6 @@ internal ConnectivityStatus PoolConnectivityStatus
 
                     }
                     //if free clients try to connect with licensed servers
-                    if (invalidServers != null && invalidServers.Count > 0)
-                    {
-                        bool first = true;
-                        System.Text.StringBuilder sb = new System.Text.StringBuilder();
-                        IDictionaryEnumerator ie = invalidServers.GetEnumerator();
-                        while (ie.MoveNext())
-                        {
-                            if (!first)
-                            {
-                                sb.Append(" ,");
-                                first = false;
-                            }
-                            sb.Append(ie.Value);
-                        }
-
-                        throw new LicensingException(sb.ToString());
-
-                    }
 
                     if (exceptionThrown != null)
                         throw exceptionThrown;
@@ -3644,7 +2772,6 @@ internal ConnectivityStatus PoolConnectivityStatus
         {
             bool connected = false;
             ArrayList deniedServers = null;
-            ArrayList invalidServers = null;
             int retries = this._connectionRetries;
 
             OperationNotSupportedException exceptionThrown = null;
@@ -3681,7 +2808,7 @@ internal ConnectivityStatus PoolConnectivityStatus
                                         Exception exception = null;
 
                                         connected = ConnectRemoteServer(connection, nextServer.IP, nextServer.Port + i,
-                                            this._balanceNode, this._importHashmap, true, ref exception);
+                                            this._balanceNode, false, true, ref exception);
 
 
                                     }
@@ -3698,13 +2825,6 @@ internal ConnectivityStatus PoolConnectivityStatus
                                         deniedServers = new ArrayList();
                                     if (!deniedServers.Contains(nextServer.Name))
                                         deniedServers.Add(nextServer.Name);
-                                }
-                                catch (LicensingException)
-                                {
-                                    if (invalidServers == null)
-                                        invalidServers = new ArrayList();
-                                    if (!invalidServers.Contains(nextServer.Name))
-                                        invalidServers.Add(nextServer.Name);
                                 }
 
                                 catch (OperationNotSupportedException operationException)
@@ -3763,24 +2883,6 @@ internal ConnectivityStatus PoolConnectivityStatus
 
                     }
                     //if free clients try to connect with licensed servers
-                    if (invalidServers != null && invalidServers.Count > 0)
-                    {
-                        bool first = true;
-                        System.Text.StringBuilder sb = new System.Text.StringBuilder("You do not have valid license to communicate with : ");
-                        IEnumerator ie = invalidServers.GetEnumerator();
-                        while (ie.MoveNext())
-                        {
-                            if (!first)
-                            {
-                                sb.Append(" ,");
-                                first = false;
-                            }
-                            sb.Append("\'" + ie.Current as string + "\'");
-                        }
-
-                        throw new LicensingException(sb.ToString());
-
-                    }
                     if (exceptionThrown != null)
                         throw exceptionThrown;
                 }
@@ -3798,12 +2900,7 @@ internal ConnectivityStatus PoolConnectivityStatus
         /// <returns>connection. it may be connected or disconnected</returns>
         private Connection GetConnection(Address ip, bool strictMatch)
         {
-            // this is for lucene cache 
-            if (_isModuleCache && ip != null)
-            {
-                ip.Port = _port;
-            }
-
+            
             Connection connection = this._pool[ip];
             if (connection != null)
             {
@@ -3816,10 +2913,6 @@ internal ConnectivityStatus PoolConnectivityStatus
                     }
                 }
                 else return connection;
-            }
-            if (this._importHashmap && !strictMatch)
-            {
-                connection = TryPool();
             }
             if (connection != null)
                 connection.IntendedRecipientIPAddress = string.Empty;
@@ -3852,7 +2945,7 @@ internal ConnectivityStatus PoolConnectivityStatus
         /// Try connecting to the connection provided
         /// </summary>
         /// <returns>True if connection was successful, false otherwise</returns>
-        internal bool TryConnecting(Connection connection, ref Exception exception, int connectionWaitInterval = 0, bool importHashmap = true )
+        internal bool TryConnecting(Connection connection, ref Exception exception, int connectionWaitInterval = 0, bool importHashmap = false)
         {
             bool connected = false;
             try
@@ -3874,10 +2967,6 @@ internal ConnectivityStatus PoolConnectivityStatus
                         {
                             if (_logger.IsDetailedLogsEnabled) _logger.NCacheLog.Info("Broker.TryConnecting", "Connection established with " + connection.IpAddress);
                         }
-                    }
-                    catch (LicensingException)
-                    {
-                        if (_logger.IsErrorLogsEnabled) _logger.NCacheLog.Error("Broker.TryConnecting", "Client does not have a valid license to communicate with the cache server : " + connection.IpAddress);
                     }
                     catch (SecurityException)
                     {
@@ -4092,7 +3181,7 @@ internal ConnectivityStatus PoolConnectivityStatus
 
             if (server != null && server.IP != null)
             {
-                connected = ConnectRemoteServer(connection, server.IP, server.Port, this._balanceNode, this._importHashmap, registerNotifs, ref exception);
+                connected = ConnectRemoteServer(connection, server.IP, server.Port, this._balanceNode, false, registerNotifs, ref exception);
             }
 
             return connected;
@@ -4233,13 +3322,6 @@ internal ConnectivityStatus PoolConnectivityStatus
                     connected = false;
                     throw;
                 }
-                catch (LicensingException lic)
-                {
-                    if (_logger.IsErrorLogsEnabled) _logger.NCacheLog.Error("Broker.ConnectRemoteServer", lic.ToString());
-                    connection.Disconnect();
-                    connected = false;
-                    throw;
-                }
 
                 catch (OperationNotSupportedException ons)
                 {
@@ -4294,35 +3376,15 @@ internal ConnectivityStatus PoolConnectivityStatus
                     _pool.Add(connection.ServerAddress, connection);
                 }
 
-                if (importHashmap)
-                {
-                    GetHashmap(connection);
-                }
-
-
                 if (registerNotifs)
                 {
                     _cache.ReRegisterGeneralNotification(connection);
                     connection.NotifRegistered = true;
                 }
-                if (_importHashmap)
-                {
-                    _cache.RegisterHashmapChangedEvent(connection);
-                }
-
-                if (_isModuleCache)
-                    _cache.RegisterModuleHashmapChangedEvent(connection);
 
                 _cache.GetTypeInfoMap(connection);
                 _cache.GetSerializationFormat(connection);
 
-                //Not to re-register 
-                if (importHashmap)
-                {
-                    _cache.GetCompactTypesFromServer(connection);
-                }
-
-               
                 _connectingFirstTime = false;
 
                 //Last moment fix for _connection becomes null or it's server address get's null
@@ -4615,72 +3677,6 @@ internal ConnectivityStatus PoolConnectivityStatus
             return balanceNodeRes;
         }
 
-        internal bool GetMessageDistribution(IDictionary<string, IList<string>> topicWiseMessageIds, out Dictionary<Address, Dictionary<string, IList<string>>> messageDistributionMap)
-        {
-            bool result = false;
-            messageDistributionMap = new Dictionary<Address, Dictionary<string, IList<string>>>();
-
-            foreach (KeyValuePair<string, IList<string>> pair in topicWiseMessageIds)
-            {
-                string topicName = pair.Key;
-                IList<string> messageList = pair.Value;
-
-                foreach (var messageId in messageList)
-                {
-                    Address address;
-
-                    lock (_hashmapUpdateMutex)
-                    {
-                        address = _pool.GetIp(messageId);
-                    }
-
-                    Connection conn = _pool[address]; //for balanced connection
-                    Address adrs = address;
-
-                    if (conn != null && !conn.IsConnected)
-                    {
-                        Address loadbaanced = GetLoadBalancedAddress();
-                        if (loadbaanced != null) adrs = loadbaanced;
-                    }
-
-                    Dictionary<string, IList<string>> topicDic;
-                    if (messageDistributionMap.ContainsKey(adrs))
-                    {
-                        topicDic = messageDistributionMap[adrs];
-
-                        PopulateList(topicDic, topicName, messageId);
-
-                        result = true;
-                    }
-                    else
-                    {
-                        topicDic = new Dictionary<string, IList<string>>();
-
-                        PopulateList(topicDic, topicName, messageId);
-
-                        messageDistributionMap[adrs] = topicDic;
-                    }
-                }
-
-            }
-            return result;
-        }
-
-        private void PopulateList(Dictionary<string, IList<string>> topicDic, string topicName, string messageId)
-        {
-            if (topicDic.ContainsKey(topicName))
-            {
-                IList<string> list = topicDic[topicName];
-                list.Add(messageId);
-            }
-            else
-            {
-                IList<string> list = new List<string>();
-                list.Add(messageId);
-                topicDic[topicName] = list;
-            }
-        }
-
         private void ReconectInBackground(Address address,Connection connection)
         { 
             lock(_reconnectTasks)
@@ -4745,7 +3741,6 @@ internal ConnectivityStatus PoolConnectivityStatus
                                     Connection connection = this._parent.TryPool();
                                     if (connection != null && connection.IsConnected)
                                     {
-                                        this._parent.GetHashmap(connection);
                                         if (this._parent.Logger.IsErrorLogsEnabled)
                                         {
                                             this._parent.Logger.NCacheLog.Error("ReconnectTask.Process", "Connection [" + this._connection.IpAddress + "] Exception->" + exception.ToString());
@@ -4759,7 +3754,6 @@ internal ConnectivityStatus PoolConnectivityStatus
                                     Connection connection = this._parent.TryPool();
                                     if (connection != null && connection.IsConnected)
                                     {
-                                        this._parent.GetHashmap(connection);
                                         if (this._parent.Logger.IsErrorLogsEnabled)
                                         {
                                             this._parent.Logger.NCacheLog.Error("ReconnectTask.Process", "Connection [" + this._connection.IpAddress + "] Exception->" + exception.ToString());
@@ -4797,12 +3791,6 @@ internal ConnectivityStatus PoolConnectivityStatus
         }
 
       
-
-        private class HashMapStatus
-        {
-            internal const byte INITIALIZE = 1;
-            internal const byte UNINITIALIZE = 2;
-        }
 
         private sealed class ConnectionKeepAlive
         {
@@ -4842,7 +3830,7 @@ internal ConnectivityStatus PoolConnectivityStatus
             {
                 try
                 {
-                    while (!_stopToken.IsCancellationRequested)
+                    while (_stopToken != null && !_stopToken.IsCancellationRequested)
                     {
                         MarkConnectionsIdle();
 

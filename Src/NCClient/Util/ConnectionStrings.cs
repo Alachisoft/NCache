@@ -24,6 +24,7 @@ namespace Alachisoft.NCache.Client
         internal const string APPNAME = "applicationName";
         internal const string ENABLECLIENTLOGS = "enableClientLogs";
         internal const string LOGLEVEL = "logLevel";
+        //internal const string ENABLEDETAILEDCLIENTLOGS = "enableDetailedClientLogs";
         internal const string ENABLEPIPELINING = "enablePipelining";
         internal const string PIPELININGTIMEOUT = "pipeliningTimeout";
     }

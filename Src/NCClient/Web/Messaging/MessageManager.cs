@@ -1,4 +1,4 @@
-﻿//  Copyright (c) 2026 Alachisoft
+﻿//  Copyright (c) 2018 Alachisoft
 //  
 //  Licensed under the Apache License, Version 2.0 (the "License");
 //  you may not use this file except in compliance with the License.
@@ -63,11 +63,29 @@ namespace Alachisoft.NCache.Client
         {
             get { return _reregisteredTopicCallback; }
         }
+
+        //internal bool IsValidName(string topicName, TopicOperationType type)
+        //{
+        //    if (type != TopicOperationType.GetPatternBased) return true;
+        //    try
+        //    {
+        //        string regexPattern= MessageUtil.WildcardToRegex(topicName);
+        //        Regex regex = new Regex(regexPattern);
+        //        return true;
+        //    }
+        //    catch
+        //    {
+        //        return false;
+        //    }
+        //}
       
         internal ITopic GetOrCreateTopic(TopicIdentity topicPair, TopicOperationType type,bool internalOperation)
         {
             if (string.IsNullOrEmpty(topicPair.TopicName))
                 throw new ArgumentException("TopicName is null or empty string");
+
+            //if (!IsValidName(topicPair.TopicName, type))
+            //    throw new OperationFailedException(ErrorCodes.PubSub.INVALID_TOPIC_PATTERN,ErrorMessages.GetErrorMessage(ErrorCodes.PubSub.INVALID_TOPIC_PATTERN));
 
             if(!internalOperation && IsDefaultTopicName(topicPair.TopicName))
                 throw new OperationFailedException(ErrorCodes.PubSub.DEFAULT_TOPICS,ErrorMessages.GetErrorMessage(ErrorCodes.PubSub.DEFAULT_TOPICS));
@@ -96,6 +114,8 @@ namespace Alachisoft.NCache.Client
                     }
 
                     topic = new Topic(topicPair.TopicName, _cacheImpl, _perfStatsCollector, this);
+                    //if (type == TopicOperationType.GetPatternBased)
+                    //    topic.SearchOptions = TopicSearchOptions.ByPattern;
 
                     topic.IncrementRefCount();
                     _topicsDic.TryAdd(topicPair, topic);
@@ -221,6 +241,8 @@ namespace Alachisoft.NCache.Client
              BitSet flagMap = new BitSet();
             ReceivedMessages assignedResponse = (ReceivedMessages)_cacheImpl.GetMessageData(flagMap);
             IDictionary<string, IList<MessageItem>> table = assignedResponse.AssignedMessages;
+            //if(Client.ContinuousQueryManager.TracingEnabled)
+            //    Console.WriteLine("MessageMaanger.Poll() -> poll result : " + table.Count);
             if (assignedResponse != null)
             {
                 //1: Send acknowlgement of messages to server side. 

@@ -116,7 +116,7 @@ namespace Alachisoft.NCache.Management
         /// <param name="props"></param>
         /// <param name="overwrite"></param>
         /// <exception cref="ArgumentNullException">cacheId is a null reference (Nothing in Visual Basic).</exception>
-        bool RegisterCache(string cacheId, CacheServerConfig config, string partId, bool overwrite,bool hotApply, ServerLicenseInfo licenseInfo = null, string registerAs = "");
+        bool RegisterCache(string cacheId, CacheServerConfig config, string partId, bool overwrite,bool hotApply, string registerAs = "");
 
         /// <summary>
         /// Adds Server Node
@@ -127,7 +127,7 @@ namespace Alachisoft.NCache.Management
         /// <param name="overwrite"></param>
         /// <param name="hotApply"></param>
         /// <returns></returns>
-        bool RegisterCache(string cacheId, Alachisoft.NCache.Config.NewDom.CacheServerConfig config, string partId, bool overwrite, bool hotApply, ServerLicenseInfo licenseInfo = null, string registerAs = "");
+        bool RegisterCache(string cacheId, Alachisoft.NCache.Config.NewDom.CacheServerConfig config, string partId, bool overwrite, bool hotApply, string registerAs = "");
 
         NodeInfoMap GetNodeInfo();
 
@@ -154,7 +154,7 @@ namespace Alachisoft.NCache.Management
 
         ClientNodeStatusWrapper GetClientNodeStatus(string cacheId);
 
-        ServerLicenseInfo GetServerLicenseInfo(bool ignoreMac = false);
+        ServerProductInfo GetServerProductInfo();
 
         /// <summary>
         /// Disbale logging
@@ -185,7 +185,7 @@ namespace Alachisoft.NCache.Management
         void StartCache(string cacheId);       
 
         void StartCache(string cacheId, string partitionId);
-        void StartCache(string cacheId, string partitionId, bool twoPhaseInitialization, ServerLicenseInfo licenseInfo = null, string registerAs = "");
+        void StartCache(string cacheId, string partitionId, bool twoPhaseInitialization, string registerAs = "");
         void StartCachePhase2(string cacheId);
 
         void StartCache(string cacheId, ItemAddedCallback itemAdded,
@@ -213,7 +213,7 @@ namespace Alachisoft.NCache.Management
             CacheClearedCallback cacheCleared,
             CustomRemoveCallback customRemove,
             CustomUpdateCallback customUpdate,
-            bool twoPhaseInitialization, ServerLicenseInfo licenseInfo = null, string registerAs = "");
+            bool twoPhaseInitialization, string registerAs = "");
 
         void StopCache(string cacheId);
        
@@ -266,7 +266,6 @@ namespace Alachisoft.NCache.Management
         Alachisoft.NCache.Caching.Statistics.CacheStatistics GetCacheStatistics2(string cacheId);
 
 
-        string GetLicenseKey();
 
         Hashtable GetSnmpPorts();
 
@@ -352,7 +351,6 @@ namespace Alachisoft.NCache.Management
 
         PoolStats GetPoolStats(PoolStatsRequest request);
 
-        ServerLicenseInfo GetCachedServerLicenseInfo();
         bool IsUnderStateTransfer(string cacheId);
        
         MemoryDumpMetainfo TakeMemoryDump(int processId, String CacheName, bool waitForCompletion = false);
@@ -362,8 +360,6 @@ namespace Alachisoft.NCache.Management
         FileMetaInfo[] GetCacheLogList(string cacheId);
         IDictionary GetCacheLogs(IList<string> fileNames);
         Config.NewDom.CacheServerConfig[] GetCacheServerConfiguration();
-        string GetMachineId();
-        string GetPossibleMachinesInCluster();
         ClientProfileDom GetClientProfileReport(string cacheId);
         OSInfo GetOSPlatform();
         void StartStressTest(string cacheName, int executionTime);

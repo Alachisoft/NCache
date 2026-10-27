@@ -98,7 +98,7 @@ namespace Alachisoft.NGroups.Blocks
         private Address local_addr = null; // bind_addr + port of srv_sock
         private Address local_addr_s = null; // bind_addr + port of Secondary srv_sock.
 
-        internal int srv_port = 7800;
+        internal int srv_port = 9881;
         public string env_name = "";
 
         private bool stopped;

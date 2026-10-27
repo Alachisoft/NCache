@@ -1,4 +1,4 @@
-﻿//  Copyright (c) 2026 Alachisoft
+﻿//  Copyright (c) 2018 Alachisoft
 //  
 //  Licensed under the Apache License, Version 2.0 (the "License");
 //  you may not use this file except in compliance with the License.
@@ -28,6 +28,7 @@ using System;
 using System.Linq;
 using Alachisoft.NCache.Runtime.Exceptions;
 using System.Threading;
+using Alachisoft.NCache.Common.FeatureUsageData;
 
 namespace Alachisoft.NCache.Caching.Messaging
 {
@@ -101,6 +102,7 @@ namespace Alachisoft.NCache.Caching.Messaging
                     if (subscription.SubscriptionPolicyType == SubscriptionPolicyType.NonDurableExclusiveSubscription && isUserOperation)
                     {
                         created = false;
+                        //throw new OperationFailedException(ErrorCodes.PubSub.SUBSCRIPTION_EXISTS, ErrorMessages.GetErrorMessage(ErrorCodes.PubSub.SUBSCRIPTION_EXISTS));
                     }
                     else
                     {
@@ -119,6 +121,7 @@ namespace Alachisoft.NCache.Caching.Messaging
                             else
                             {
                                 subscription = new ExclusiveSubscriptions(subscriptionInfo.ClientId, subscriptionInfo.SubscriptionId, subscriptionInfo.SubPolicyType, subscriptionInfo.Expiration, _context, subscriptionInfo.Type);
+
                             }
 
                             break;
@@ -136,6 +139,10 @@ namespace Alachisoft.NCache.Caching.Messaging
 
         public void CreateSubscription(SubscriptionInfo subscriptionInfo, bool isUserOperation=true)
         {
+            if (subscriptionInfo.SubPolicyType != SubscriptionPolicyType.EventSubscription)
+            {
+
+            }
 
             SubscriptionIdentifier subscriptionIdentifier = new SubscriptionIdentifier(subscriptionInfo.SubscriptionId, subscriptionInfo.SubPolicyType);
             ClientSubscriptionManager clientSubscriptionManger = null;
@@ -240,6 +247,7 @@ namespace Alachisoft.NCache.Caching.Messaging
                         if (!subscription.IsActive()&& isDispose==false)
                         {
                             _subscriptions.Remove(subIdentifier);
+                            //_subscriptionExpirationIndex.Remove(subIdentifier);
                         }
                     }
                 }
@@ -252,6 +260,9 @@ namespace Alachisoft.NCache.Caching.Messaging
         public bool UnSubscribeSubscription(SubscriptionInfo subscriptionInfo, bool clientDisconnected = false,bool isDispose=false)
         {
             SubscriptionIdentifier subscriptionIdentifier = new SubscriptionIdentifier(subscriptionInfo.SubscriptionId, subscriptionInfo.SubPolicyType);
+
+            //if (subscriptionInfo.Type == SubscriptionType.PatternPublisher)
+            //    subscriptionInfo.Type = SubscriptionType.Publisher;
 
             return RemoveSubscription(subscriptionIdentifier,subscriptionInfo,isDispose);
         }

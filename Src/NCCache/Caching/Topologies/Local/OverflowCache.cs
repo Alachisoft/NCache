@@ -15,11 +15,7 @@ using System;
 using System.Collections;
 using System.Data;
 
-#if JAVA
-using Alachisoft.TayzGrid.Runtime.Exceptions;
-#else
 using Alachisoft.NCache.Runtime.Exceptions;
-#endif
 using Alachisoft.NCache.Caching.Statistics;
 using Alachisoft.NCache.Caching.AutoExpiration;
 using Alachisoft.NCache.Caching.Util;

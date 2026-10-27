@@ -285,11 +285,6 @@ namespace Alachisoft.NGroups.Protocols.pbcast
                     return rsp;
                     // already joined: return current digest and membership
                 }
-                else if (gms.members.Members.Count >= 3)
-                {
-                    View view = new View(gms.view_id, gms.members.Members);
-                    return new JoinRsp(view, gms.Digest,JoinResult.MaxMbrLimitReached);
-                }
                 new_mbrs.Add(mbr);
 
                 // update the subGroupMbrsMap and mbrSubGroupMap

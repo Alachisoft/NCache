@@ -29,6 +29,11 @@ namespace Alachisoft.NCache.Client
             }
         }
 
+        //protected override short GetCommandHandle()
+        //{
+        //    return (short)Common.Protobuf.Command.Type.SURROGATE;
+        //}
+
         internal override CommandType CommandType
         {
             get
@@ -46,7 +51,7 @@ namespace Alachisoft.NCache.Client
             base._command.version = "4200";
 
 
-            _surrogateCommand.command.Add(WrappedCommand.GetSerializedSurrogateCommand());
+            _surrogateCommand.command.Add(WrappedCommand.GetSerializedSurrogateCommand());//  ProtoBuf.Extended.Serializer.Serialize< WrappedCommand.ToByte(default(long), WrappedCommand.inquiryEnabled));
             _surrogateCommand.targetServer = ActualTargetNode.ToString();
 
             base._command.surrogateCommand = _surrogateCommand;

@@ -63,8 +63,23 @@ namespace Alachisoft.NCache.Caching.Statistics
         private PerformanceCounterBase _messageDeliverPerSecStats;
         private PerformanceCounterBase _messageExpiredPerSecStats;
 
+        //Module Size counter is not being used right now. Commented for future use.
+        //private PerformanceCounterBase _moduleSize;
 
-     
+        #region bridge counters        
+        private PerformanceCounterBase _bridgeQueueCountStats;
+        private PerformanceCounterBase _bridgeQueueSize;
+        private PerformanceCounterBase _bridgeOperationsSent;
+        private PerformanceCounterBase _bridgeOperationsRecieved;
+
+        private PerformanceCounterBase _bridgeOperationsReceivedPerSec;
+        private PerformanceCounterBase _bridgeOperationsSentPerSec;
+
+        private PerformanceCounterBase _msecPerBridgeOpAvg;
+        private UsageStats _usMsecPerBridgeOp;
+
+        #endregion
+
 
         public CustomStatsCollector(string instanceName, bool inProc) : base(instanceName, inProc, Publisher.NCache)
         {
@@ -189,6 +204,14 @@ namespace Alachisoft.NCache.Caching.Statistics
 
                     #endregion
                     
+                    #region DistributedCollectionCount 
+                    //foreach (var item in _pubsubCounterList.Keys)
+                    //{
+                    //    PerformanceCounterBase pcCounter = new NumberOfItemCounter(item, _instanceName);
+                    //    pcCounter.Value = 0;
+                    //    _ncacheCounters.Add(item, pcCounter);
+                    //}
+                    #endregion
                 }
 
 
@@ -638,7 +661,9 @@ namespace Alachisoft.NCache.Caching.Statistics
                 lock (_msecPerAddAvgStats)
                 {
                     _usageMsecPerAddStats.EndSample();
-                    _msecPerAddAvgStats.IncrementBy(_usageMsecPerAddStats.Current * 1000000 / Stopwatch.Frequency);
+                    //  TimeSpan ts = new TimeSpan(_usMsecPerUpd.Current);
+                    _msecPerAddAvgStats.IncrementBy(_usageMsecPerAddStats.Current * 1000000 / Stopwatch.Frequency); //ts.Milliseconds);
+                    //_usMsecPerAdd.Reset();
                 }
             }
         }
@@ -655,7 +680,8 @@ namespace Alachisoft.NCache.Caching.Statistics
                 lock (_msecPerDeleteAvgStats)
                 {
                     _usageMsecPerDeleteStats.EndSample();
-                    _msecPerDeleteAvgStats.IncrementBy(_usageMsecPerDeleteStats.Current * 1000000 / Stopwatch.Frequency);
+                    //   TimeSpan ts = new TimeSpan(_usMsecPerUpd.Current);
+                    _msecPerDeleteAvgStats.IncrementBy(_usageMsecPerDeleteStats.Current * 1000000 / Stopwatch.Frequency); //ts.Milliseconds);
                 }
             }
         }
@@ -672,7 +698,8 @@ namespace Alachisoft.NCache.Caching.Statistics
                 lock (_msecPerGetAvgStats)
                 {
                     _usageMsecPerGetStats.EndSample();
-                    _msecPerGetAvgStats.IncrementBy(_usageMsecPerGetStats.Current * 1000000 / Stopwatch.Frequency);
+                    //  TimeSpan ts = new TimeSpan(_usMsecPerUpd.Current);
+                    _msecPerGetAvgStats.IncrementBy(_usageMsecPerGetStats.Current * 1000000 / Stopwatch.Frequency);// ts.Milliseconds);
                 }
             }
         }
@@ -690,7 +717,9 @@ namespace Alachisoft.NCache.Caching.Statistics
                 lock (_msecPerUpdateAvgStats)
                 {
                     _usageMsecPerUpdateStats.EndSample();
-                    _msecPerUpdateAvgStats.IncrementBy(_usageMsecPerUpdateStats.Current * 1000000 / Stopwatch.Frequency);;
+                    //  TimeSpan ts = new TimeSpan(_usMsecPerUpd.Current);
+                    _msecPerUpdateAvgStats.IncrementBy(_usageMsecPerUpdateStats.Current * 1000000 / Stopwatch.Frequency);//ts.Milliseconds);
+                    //_pcMsecPerUpdAvg.NextValue();
                 }
             }
         }
@@ -765,6 +794,17 @@ namespace Alachisoft.NCache.Caching.Statistics
 
         public void DataTypeCounterSetter(string counterType, long size)
         {
+            //if (_collectionCounterList != null && _collectionCounterList.Count > 0 && _collectionCounterList.ContainsKey(counterType))
+            //{
+            //    PerformanceCounter performanceCounter = _collectionCounterList[counterType];
+            //    if (performanceCounter != null)
+            //    {
+            //        lock (performanceCounter)
+            //        {
+            //            performanceCounter.RawValue = size;
+            //        }
+            //    }
+            //}
         }
 
         internal override ICustomCountersInstaller GetCustomCountersInstaller()

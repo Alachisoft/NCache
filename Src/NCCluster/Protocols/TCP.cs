@@ -63,7 +63,7 @@ namespace Alachisoft.NGroups.Protocols
         private System.Net.IPAddress bind_addr1 = null; // local IP address to bind srv sock to (m-homed systems)
         private System.Net.IPAddress bind_addr2 = null; // local IP address to bind srv sock to (m-homed systems)
 
-        private int start_port = 7800; // find first available port starting at this port
+        private int start_port = 9881; // find first available port starting at this port
 
         // decision changing the default port-range to '1'
         private System.Collections.ArrayList members = System.Collections.ArrayList.Synchronized(new System.Collections.ArrayList(11));

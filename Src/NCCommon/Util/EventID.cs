@@ -35,12 +35,10 @@ namespace Alachisoft.NCache.Common
         public const int GeneralError = 1017;
         public const int GeneralInformation = 1018;
         public const int ConfigurationError = 1019;
-        public const int LicensingError = 1020;
         public const int SecurityError = 1021;
         public const int BadClientFound = 1022;
         public const int ServiceStart = 1025;
         public const int ServiceStop = 1026;
-        public const int SkippedHeartbeatAlert = 1041;
         #region
 
         public const int MemoryAlert = 1030;
@@ -58,7 +56,6 @@ namespace Alachisoft.NCache.Common
         public const int ModuleStateTransferError = 1044;
         public const int AcquireMachineIdentityError = 1046;
         public const int NonHostedMachineDetected = 1047;
-        public const int MachineHeartbeatEventID = 1049;
         public static string EventText(int eventID)
         {
             string text = "";
@@ -117,9 +114,6 @@ namespace Alachisoft.NCache.Common
                     break;
                 case EventID.ConfigurationError:
                     text = "Configuration Error";
-                    break;
-                case EventID.LicensingError:
-                    text = "Licensing Error";
                     break;
                 case EventID.SecurityError:
                     text = "Security Error";

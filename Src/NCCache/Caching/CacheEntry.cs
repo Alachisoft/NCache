@@ -1,4 +1,4 @@
-//  Copyright (c) 2026 Alachisoft
+//  Copyright (c) 2018 Alachisoft
 //  
 //  Licensed under the Apache License, Version 2.0 (the "License");
 //  you may not use this file except in compliance with the License.
@@ -88,6 +88,7 @@ namespace Alachisoft.NCache.Caching
         {
             get { return _notifications; }
             set { _notifications = value; }
+            //set { _notifications = PoolingUtilities.SwapSimpleLeasables(_notifications, value); }
         }
 
         //PullBasedCallbacks
@@ -204,6 +205,12 @@ namespace Alachisoft.NCache.Caching
                 return false;
             }
         }
+
+        //internal MetaInformation MetaInformation
+        //{
+        //    get { return _metaInformation; }
+        //    set { _metaInformation = value; }
+        //}
 
         public string ResyncProviderName
         {
@@ -669,6 +676,7 @@ namespace Alachisoft.NCache.Caching
             {
                 if (ExpirationHint != null)
                 {
+                   // IList<KeyDependency> keyDependencies = new List<KeyDependency>();
                     // We're working with hashtable so that same keys' values are overwritten
                     Hashtable keysIAmDependingOnWithKeyDependencyInfo = new Hashtable();
  
@@ -1055,6 +1063,7 @@ namespace Alachisoft.NCache.Caching
                         expiry = null;
                         if (localAddress != null)
                         {
+                          //  expiry = /*PoolManager.GetNodeExpirationPool().Rent(true)*/;
                             expiry.Node = localAddress;
                         }
                         
@@ -1487,7 +1496,7 @@ namespace Alachisoft.NCache.Caching
                     clonedEntry.Value = valueAsUserBinaryObject.DeepClone(poolManager);
                     return DeepCloneInternal(poolManager, clonedEntry);
                 }
-                clonedEntry.Value = value;
+                clonedEntry.Value = value;  // We tried
                 return DeepCloneInternal(poolManager, clonedEntry);
             }
         }

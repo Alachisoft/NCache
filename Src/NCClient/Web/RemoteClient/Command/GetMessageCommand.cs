@@ -1,4 +1,4 @@
-﻿//  Copyright (c) 2026 Alachisoft
+﻿//  Copyright (c) 2018 Alachisoft
 //  
 //  Licensed under the Apache License, Version 2.0 (the "License");
 //  you may not use this file except in compliance with the License.
@@ -50,11 +50,20 @@ namespace Alachisoft.NCache.Client
 
         protected override void CreateCommand()
         {
+            //_command = new Common.Protobuf.Command();
+            //_command.requestID = RequestId;
+            //_command.getMessageCommand = _getMessgaeCommand;
+            //_command.type = Common.Protobuf.Command.Type.GET_MESSAGE;
+            //_command.clientLastViewId = ClientLastViewId;
+            //_command.intendedRecipient = IntendedRecipient;
+            //_command.version = "4200";
+            //_command.commandVersion = 1; // NCache 4.1 Onwards
+         
             _getMessgaeCommand.requestId = RequestId;
             _getMessgaeCommand.clientLastViewId = ClientLastViewId;
             _getMessgaeCommand.intendedRecipient = IntendedRecipient;
             _getMessgaeCommand.version = "4200";
-            _getMessgaeCommand.commandVersion = 1;
+            _getMessgaeCommand.commandVersion = 1; // NCache 4.1 Onwards
         }
     }
 }

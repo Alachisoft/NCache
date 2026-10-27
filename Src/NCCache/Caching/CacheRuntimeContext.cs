@@ -1,4 +1,4 @@
-//  Copyright (c) 2026 Alachisoft
+//  Copyright (c) 2018 Alachisoft
 //  
 //  Licensed under the Apache License, Version 2.0 (the "License");
 //  you may not use this file except in compliance with the License.
@@ -107,6 +107,7 @@ namespace Alachisoft.NCache.Caching
         private bool _isStartedAsMirror = false;
 
         /// <summary> Manager for read-trhough and write-through operations. </summary>
+        //private DatasourceMgr _dsMgr;
 
 
 
@@ -384,6 +385,8 @@ namespace Alachisoft.NCache.Caching
         
 
         public MessageManager MessageManager { get; internal set; }
+
+        //public PoolManager PoolManager { get; internal set; }
 
         /// <summary>
         /// Store level (InternalCache) object pool. 

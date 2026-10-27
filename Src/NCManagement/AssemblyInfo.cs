@@ -21,15 +21,9 @@ using System.Runtime.InteropServices;
 // set of attributes. Change these attribute values to modify the information
 // associated with an assembly.
 //
-#if !DEBUG
 [assembly: CLSCompliant(true)]
-#endif
 [assembly: ComVisible(false)]
-#if NETCORE
-[assembly: AssemblyTitle("Alachisoft.NCache.Management (.NETCore)")]
-#else
-[assembly: AssemblyTitle("Alachisoft.NCache.Management (.NET)")]
-#endif
+[assembly: AssemblyTitle("Alachisoft.NCache.Management")]
 
 
 
@@ -85,6 +79,6 @@ using System.Runtime.InteropServices;
 //
 [assembly: AssemblyDelaySign(false)]
 [assembly: AssemblyKeyName("")]
-[assembly: AssemblyFileVersionAttribute("5.3.6.0")]
+[assembly: AssemblyFileVersionAttribute("5.3.603")]
 [assembly: AssemblyDescriptionAttribute("Management Classes")]
-[assembly: AssemblyInformationalVersion("5.3.0")]
+[assembly: AssemblyInformationalVersion("5.3.603")]

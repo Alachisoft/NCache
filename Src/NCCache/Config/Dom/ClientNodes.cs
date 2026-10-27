@@ -1,4 +1,4 @@
-//  Copyright (c) 2026 Alachisoft
+//  Copyright (c) 2018 Alachisoft
 //  
 //  Licensed under the Apache License, Version 2.0 (the "License");
 //  you may not use this file except in compliance with the License.
@@ -16,9 +16,7 @@ using System.Collections.Generic;
 using System.Text;
 using Alachisoft.NCache.Common.Configuration;
 using Alachisoft.NCache.Common.Enum;
-
 using Alachisoft.NCache.Runtime.Serialization;
-
 using Runtime = Alachisoft.NCache.Runtime;
 namespace Alachisoft.NCache.Config.Dom
 {
@@ -49,6 +47,21 @@ namespace Alachisoft.NCache.Config.Dom
                 }
             }
             
+            
+            //get
+            //{
+            //    ClientNode[] clientNodes = new ClientNode[nodesList.Count];
+            //    nodesList.CopyTo(clientNodes, 0);
+            //    return clientNodes;
+            //}
+            //set
+            //{
+            //    nodesList.Clear();
+            //    foreach (ClientNode node in value)
+            //    {
+            //        nodesList.Add(node);
+            //    }
+            //}
         }
 
         public List<ClientNode> NodesList
@@ -63,6 +76,7 @@ namespace Alachisoft.NCache.Config.Dom
         {
             ClientNodes clientNodes = new ClientNodes();
             clientNodes.Nodes = Nodes != null ? (ClientNode[])Nodes.Clone() : null;
+            //clientNodes.Nodes = Nodes.Clone() as ClientNode[];
             return clientNodes;
         }
 

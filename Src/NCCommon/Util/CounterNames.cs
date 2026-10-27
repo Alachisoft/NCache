@@ -17,7 +17,7 @@ namespace Alachisoft.NCache.Common.Util
     {
         public const string MessageCount = "Messages Count";
         public const string TopicCount = "Topics Count";
-        public const string AvgPublishMessage = "Average µs/Published Messages";
+        public const string AvgPublishMessage = "Average us/Published Messages";
         public const string AvgPublishMessageBase = "Average µs/Published Messages Base";
         public const string MessageStoreSize = "Message Store Size";
         public const string MessagePublishPerSec = "Messages Published/sec";

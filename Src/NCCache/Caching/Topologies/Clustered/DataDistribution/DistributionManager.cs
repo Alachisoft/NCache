@@ -1,4 +1,4 @@
-//  Copyright (c) 2026 Alachisoft
+//  Copyright (c) 2018 Alachisoft
 //  
 //  Licensed under the Apache License, Version 2.0 (the "License");
 //  you may not use this file except in compliance with the License.
@@ -544,6 +544,7 @@ namespace Alachisoft.NCache.Caching.Topologies.Clustered
                         }
 
                     case ClusterActivity.None:
+#if !CLIENT
                         BalanceNodeMgr bnMgr = new BalanceNodeMgr(null);
                         DistributionMaps result = bnMgr.BalanceNodes(distInfoData, _lastCreatedHashMap, _bucketsStats, _existingMembers, TotalBuckets);
                         if (result.Hashmap != null)
@@ -552,6 +553,7 @@ namespace Alachisoft.NCache.Caching.Topologies.Clustered
                             result.BucketsOwnershipMap = GetBucketsOwnershipMap(_lastCreatedHashMap);
                         }
                         return result;
+#endif
                     default:
                         break;
                 }
@@ -930,9 +932,14 @@ namespace Alachisoft.NCache.Caching.Topologies.Clustered
                             {
                                 if(bucketStats[i] != null)
                                     _bucketsStats[i] = bucketStats[i];
+                              
+                                //if (nTrace.isInfoEnabled)
+                                //    nTrace.info("DistributionMgr.UpdateBucketStats()", "Bucket ID = " + ide.Key + " Count = " + stats.Count + " DataSize = " + stats.DataSize);
                             }
                             else
                             {
+                                //if (nTrace.isInfoEnabled)
+                                //    nTrace.info("DistributionMgr.UpdateBucketStats()", "Bucket ID = " + ide.Key + " is not my bucket");
                             }
                         }
                     }
@@ -1183,6 +1190,9 @@ namespace Alachisoft.NCache.Caching.Topologies.Clustered
                             if (node.Equals(bucket.TempAddress))
                             {
                                 bucket.Status = BucketStatus.UnderStateTxfr;
+                                //#if DEBUGSTATETRANSFER
+                                //                                _parent.Cluster._history.AddActivity(new Activity("DistributionMgr.ChangeBucketStatusToStateTransfer Bucket " + bucket.BucketId + " status changed to UnderStateTxfr in InstalledHashMap requested by " + node));
+                                //#endif
                                 if (NCacheLog.IsInfoEnabled) NCacheLog.Info("DistributionMgr.ChangeBucketStatus", bucket.ToString());
                             }
                         }
@@ -1201,6 +1211,9 @@ namespace Alachisoft.NCache.Caching.Topologies.Clustered
                                 if (bucket != null && node.Equals(bucket.TempAddress))
                                 {
                                     bucket.Status = BucketStatus.UnderStateTxfr;
+                                    //#if DEBUGSTATETRANSFER
+                                    //                                        _parent.Cluster._history.AddActivity(new Activity("DistributionMgr.ChangeBucketStatusToStateTransfer Bucket " + bucket.BucketId + " status changed to UnderStateTxfr in _bucketsOwnershipMap requested by " + node));
+                                    //#endif
                                 }
                             }
                         }
@@ -1298,6 +1311,7 @@ namespace Alachisoft.NCache.Caching.Topologies.Clustered
                                     //has sent request to release after he has transfered the bucket completely.
                                     bucket.PermanentAddress = bucket.TempAddress;
                                 }
+                                //NCacheLog.Error("DistributionMgr.ReleaseBuckets", " Released bucket from InstalledHashMap " + bucket.ToString() + ". Requested by " + requestingNode);
                             }
                         }
                     }
@@ -1307,6 +1321,7 @@ namespace Alachisoft.NCache.Caching.Topologies.Clustered
                         Dictionary<int, HashMapBucket> nodeBuckets;
                         _POTeamBucketsOwnershipMap.TryGetValue(requestingNode, out nodeBuckets);
 
+                        //ArrayList nodeBuckets = _bucketsOwnershipMap[requestingNode] as ArrayList;
                         if (nodeBuckets != null)
                         {
                             foreach (int bucketId in buckets)
@@ -1358,12 +1373,14 @@ namespace Alachisoft.NCache.Caching.Topologies.Clustered
                             //has sent request to release after he has transfered the bucket completely.
                             bucket.PermanentAddress = bucket.TempAddress;
                         }
+                        //NCacheLog.Error("DistributionMgr.ReleaseBuckets", " Released bucket from InstalledHashMap " + bucket.ToString() + ". Requested by " + requestingNode);
                     }
 
                     if (_bucketsOwnershipMap != null)
                     {
                         Dictionary<int, HashMapBucket> nodeBuckets;
                         _POTeamBucketsOwnershipMap.TryGetValue(requestingNode, out nodeBuckets);
+                        //ArrayList nodeBuckets = _bucketsOwnershipMap[requestingNode] as ArrayList;
                         if (nodeBuckets != null)
                         {
                             HashMapBucket bucket;
@@ -1508,9 +1525,11 @@ namespace Alachisoft.NCache.Caching.Topologies.Clustered
                         }
                         else
                         {
+                            //Taimoor: 
                             oldBucket.PermanentAddress = newBucket.PermanentAddress;
                             oldBucket.TempAddress = newBucket.TempAddress;
                             oldBucket.Status = newBucket.Status;
+                            //oldBucket.NotifyBucketUpdate();
                         }
 
 
@@ -1559,6 +1578,7 @@ namespace Alachisoft.NCache.Caching.Topologies.Clustered
         {
             try
             {
+                //System.Diagnostics.Debugger.Launch();
                 Dictionary<Address, Dictionary<int, HashMapBucket>> newMap =
                     new Dictionary<Address, Dictionary<int, HashMapBucket>>();
                 foreach (DictionaryEntry entry in ownershipMap)

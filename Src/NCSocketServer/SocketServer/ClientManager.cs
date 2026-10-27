@@ -97,15 +97,6 @@ namespace Alachisoft.NCache.SocketServer
         private TimeSpan _cmdExecurionTime;
         private bool _disposed;
 
-#region Debug flags added for Licensing
-
-        public bool? DebugLicensed;
-        public bool? DebugLicenseReturned;
-        public bool? DebugIsLicensedException;
-        public string DebugExceptionMessage="";
-
-#endregion
-
         private DateTime _lastActivityTime;
         private int maxIdleTimeAllowed = 1; // time in minutes till which client can remain idle
         private string _uniqueCacheID = string.Empty;
@@ -209,8 +200,6 @@ namespace Alachisoft.NCache.SocketServer
         ///<summary>This Property returns 'true' if the current instance of ClientManager has a secure-connection with its client.</summary>
         internal bool HasSecureConnection { get; private set; }
 
-        ///<summary>This Property indicates whether the client has Secure-Connection enabled.</summary>
-        internal bool SecureConnectionEnabled { private get; set; }
 
         internal RequestDeserializer RequestDeserializer { get; set; }
 

@@ -32,7 +32,6 @@ namespace Alachisoft.NCache.Common
         public static string  MANAGER_OPTIONS = APPBASE_KEY + @"\Options";
         public static string MONITOR_OPTIONS = REMOTEAUTH_KEY;
         public static string MONITOR_ROWS_BASE = @"Software\Alachisoft\NCache\NCache Manager\Options";
-        public static string SSL_KEY = Path.Combine(ROOT_KEY, "TLS");
 
         static RegHelper()
         {
@@ -115,11 +114,6 @@ namespace Alachisoft.NCache.Common
             {
                 return null;
             }
-        }
-
-        static public string GetLicenseKey(short prodId)
-        {
-            return (string)RegHelper.GetRegValueInternal("UserInfo", "licensekey", prodId);
         }
 
         /// <summary>

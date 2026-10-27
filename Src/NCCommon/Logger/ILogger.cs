@@ -25,20 +25,20 @@ namespace Alachisoft.NCache.Common.Logger
         /// <summary>
         /// Start the cache logging functionality.
         /// </summary>
-        string Initialize(IDictionary properties, string partitionID, string cacheName, bool isStartedAsMirror, bool inproc);
+        string Initialize(IDictionary properties, string partitionID, string cacheName, bool isStartedAsMirror, bool inproc, bool isBridgeCache = false, bool addConsoleAppender = false);
 
         /// <summary>
         /// intitializes Known name based log files (will not log License Logs at service Startup
         /// </summary>
         /// <param name="loggerName">Enum of Known loggerNames</param>
-        void Initialize(LoggerNames loggerName);
+        void Initialize(LoggerNames loggerName, bool isBridgeCache = false, bool addConsoleAppender = false);
 
          /// <summary>
         /// intitializes Known name based log files
         /// </summary>
         /// <param name="loggerName">Enum of Known loggerNames</param>
         /// <param name="cacheName">cacheName if Clientcache logging, if not ClientCache, use the other override</param>
-        void Initialize(LoggerNames loggerNameEnum, string cacheName);
+        void Initialize(LoggerNames loggerNameEnum, string cacheName, bool isBridgeCache = false, bool addConsoleAppender = false);
 
         /// <summary>
         /// Stop the cache logging functionality.

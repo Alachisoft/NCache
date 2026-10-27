@@ -142,19 +142,6 @@ namespace Alachisoft.NCache.Management
             }
         }
 
-        static bool GetLicenseLoggingStatus()
-        {
-
-
-            string val = ConfigurationManager.AppSettings["NCacheServer.LicenseLogging"];
-            if (String.IsNullOrEmpty(val))
-                return false;
-
-            bool result;
-            return Boolean.TryParse(val, out result) ? result : false;
-
-        }
-
         /// <summary>
         /// Finalizer for this object.
         /// </summary>
@@ -186,19 +173,8 @@ namespace Alachisoft.NCache.Management
             }
         }
        
-        public void OnLicenseExpiration()
-        {
-            StopCache(CacheServer.CacheStopReason.Expired);
-        }
 
 
-        public override string LicenseKey
-        {
-            get
-            {
-                return RegHelper.GetLicenseKey(0);
-            }
-        }
         
         [TargetMethod(ManagementUtil.MethodName.GetCacheInfo, 1)]
         public override CacheInfo GetCacheInfo(string cacheId)
@@ -264,9 +240,9 @@ namespace Alachisoft.NCache.Management
         }
 
         [TargetMethod(ManagementUtil.MethodName.StartCache, 4)]
-        public override void StartCache(string cacheId, string partitionId, bool twoPhaseInitialization, ServerLicenseInfo licenseInfo = null, string registerAs = "")
+        public override void StartCache(string cacheId, string partitionId, bool twoPhaseInitialization, string registerAs = "")
         {
-            StartCache(cacheId, partitionId, null, null, null, null, null, null, twoPhaseInitialization,licenseInfo, registerAs);
+            StartCache(cacheId, partitionId, null, null, null, null, null, null, twoPhaseInitialization, registerAs);
         }
 
         [TargetMethod(ManagementUtil.MethodName.StartCache, 5)]
@@ -307,7 +283,7 @@ namespace Alachisoft.NCache.Management
             CacheClearedCallback cacheCleared,
             CustomRemoveCallback customRemove,
             CustomUpdateCallback customUpdate,
-            bool twoPhaseInitialization, ServerLicenseInfo licenseInfo = null, string registerAs = "")
+            bool twoPhaseInitialization, string registerAs = "")
         {
             if (cacheId == null) throw new ArgumentNullException("cacheId");
             ContainCacheProcess = true;
@@ -448,8 +424,6 @@ namespace Alachisoft.NCache.Management
                     if (!cache.VerifyNodeShutDown())
                         throw new Runtime.Exceptions.ManagementException("Graceful shutdown is already in progress...");
 
-                    if (reason.Equals(CacheStopReason.Expired))
-                        cache.NCacheLog.CriticalInfo("NCache license has expired on this machine. Stopping cache...");
 
                     cache.Stop();
                     if (cacheInfo != null)

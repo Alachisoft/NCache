@@ -1,4 +1,4 @@
-//  Copyright (c) 2026 Alachisoft
+//  Copyright (c) 2018 Alachisoft
 //  
 //  Licensed under the Apache License, Version 2.0 (the "License");
 //  you may not use this file except in compliance with the License.
@@ -63,6 +63,11 @@ namespace Alachisoft.NCache.Caching.Statistics
 
         private bool _isStartedAsMirror;
 
+        //private IDictionary<string, Runtime.Caching.ClientInfo> _localConnectedClientsInfo =
+        //   new HashVector<string, ClientInfo>();
+
+        //private IList<ClientInfo> _localConnectedClientsInfo =
+        //  new List<ClientInfo>();
         private ArrayList _localConnectedClientsInfo = ArrayList.Synchronized(new ArrayList());
         /// <summary>
         /// Constructor.
@@ -273,6 +278,7 @@ namespace Alachisoft.NCache.Caching.Statistics
         {
             _address = Address.ReadAddress(reader);
             _subgroupName = reader.ReadObject() as string;
+            //_subgroupName = reader.ReadString();
             _stats = CacheStatistics.ReadCacheStatistics(reader);
             _status = reader.ReadObject() as BitSet;
             _dataAffinity = DataAffinity.ReadDataAffinity(reader);

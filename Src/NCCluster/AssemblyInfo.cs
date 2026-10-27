@@ -16,11 +16,7 @@ using System.Runtime.InteropServices;
 
 [assembly: AssemblyCompany("Alachisoft")]
 
-#if NETCORE
-[assembly: AssemblyTitle("Alachisoft.NCache.Cluster (.NETCore)")]
-#else
-[assembly: AssemblyTitle("Alachisoft.NCache.Cluster (.NET)")]
-#endif
+[assembly: AssemblyTitle("Alachisoft.NCache.Cluster")]
 [assembly: AssemblyProduct("Alachisoft® NCache OpenSource")]
 
 [assembly: AssemblyTrademark("NCache ™ is a registered trademark of Alachisoft.")]
@@ -68,5 +64,5 @@ using System.Runtime.InteropServices;
 [assembly: AssemblyDelaySign(false)]
 [assembly: AssemblyKeyName("")]
 [assembly: AssemblyDescriptionAttribute("Cluster Core")]
-[assembly: AssemblyFileVersionAttribute("5.3.6.0")]
-[assembly: AssemblyInformationalVersion("5.3.0")]
+[assembly: AssemblyFileVersionAttribute("5.3.603")]
+[assembly: AssemblyInformationalVersion("5.3.603")]

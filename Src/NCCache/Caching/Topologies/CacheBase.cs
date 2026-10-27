@@ -1,4 +1,4 @@
-//  Copyright (c) 2026 Alachisoft
+//  Copyright (c) 2018 Alachisoft
 //  
 //  Licensed under the Apache License, Version 2.0 (the "License");
 //  you may not use this file except in compliance with the License.
@@ -17,7 +17,9 @@ using Alachisoft.NCache.Caching.EvictionPolicies;
 using Alachisoft.NCache.Caching.Messaging;
 
 using Alachisoft.NCache.Caching.Statistics;
+#if !CLIENT
 using Alachisoft.NCache.Caching.Topologies.Clustered.Operations;
+#endif
 using Alachisoft.NCache.Caching.Util;
 using Alachisoft.NCache.Common;
 using Alachisoft.NCache.Common.DataStructures;
@@ -92,6 +94,7 @@ namespace Alachisoft.NCache.Caching.Topologies
 
             void AsyncProcessor.IAsyncTask.Process()
             {
+                //_listener.OnItemAdded(_key, _operationContext, _eventContext);
             }
 
         }
@@ -162,6 +165,7 @@ namespace Alachisoft.NCache.Caching.Topologies
 
             void AsyncProcessor.IAsyncTask.Process()
             {
+              //  _listener.OnItemUpdated(_key, _operationContext, _eventContext);
             }
 
         }
@@ -214,6 +218,48 @@ namespace Alachisoft.NCache.Caching.Topologies
             }
 
         }
+
+        /// <summary>
+        ///Asynchronous notification dispatcher. 
+        /// </summary>
+        //private class AsyncCQUpdateCallback : AsyncProcessor.IAsyncTask
+        //{
+        //    /// <summary> The listener class </summary>
+        //    private ICacheEventsListener _listener;
+
+        //    /// <summary> Message to broadcast </summary> 
+        //    private object _key;
+
+        //    private QueryChangeType _changeType;
+
+        //    private List<CQCallbackInfo> _queries;
+        //    private OperationContext _operationContext;
+        //    private EventContext _eventContext;
+        //    /// <summary>
+        //    /// Constructor
+        //    /// </summary>
+        //    /// <param name="listener"></param>
+        //    /// <param name="data"></param>
+        //    public AsyncCQUpdateCallback(ICacheEventsListener listener, object key, QueryChangeType changeType, List<CQCallbackInfo> queries, OperationContext operationContext, EventContext eventContext)
+        //    {
+        //        _listener = listener;
+        //        _key = key;
+        //        _changeType = changeType;
+        //        _queries = queries;
+        //        _operationContext = operationContext;
+        //        _eventContext = eventContext;
+        //    }
+
+        //    /// <summary>
+        //    /// Implementation of message sending.
+        //    /// </summary>
+
+        //    //void AsyncProcessor.IAsyncTask.Process()
+        //    //{
+        //    //    _listener.OnActiveQueryChanged(_key, _changeType, _queries, _operationContext, _eventContext);
+        //    //}
+
+        //}
 
         /// <summary>
         /// Asynchronous notification dispatcher.
@@ -373,6 +419,7 @@ namespace Alachisoft.NCache.Caching.Topologies
             }
         }
 
+#if !CLIENT && !DEVELOPMENT
 
         /// <summary>
         /// Asynchronous hashmap notification dispatcher
@@ -402,6 +449,7 @@ namespace Alachisoft.NCache.Caching.Topologies
 
             #endregion
         }
+#endif
 
         /// <summary>
         /// Asynchronous task notification dispatcher.
@@ -517,7 +565,7 @@ namespace Alachisoft.NCache.Caching.Topologies
 
                /// Default constructor.
         /// </summary>
-        protected CacheBase()
+        protected CacheBase()//:this(null)
         {
         }
 
@@ -530,7 +578,7 @@ namespace Alachisoft.NCache.Caching.Topologies
             _context = context;
             _listener = listener;
             _syncObj = new ReaderWriterLock();
-            _keyLockManager = new KeyLockManager<object>();
+            _keyLockManager = new KeyLockManager<object>(); // LockRecursionPolicy.SupportsRecursion);
 
           
 
@@ -857,6 +905,21 @@ namespace Alachisoft.NCache.Caching.Topologies
                 if (properties.Contains("notifications"))
                 {
                     IDictionary notifconfig = properties["notifications"] as IDictionary;
+                    //if (notifconfig.Contains("item-add"))
+                    //{
+                    //    if (Convert.ToBoolean(notifconfig["item-add"]))
+                    //        _notifiers |= Notifications.ItemAdd;
+                    //}
+                    //if (notifconfig.Contains("item-update"))
+                    //{
+                    //    if (Convert.ToBoolean(notifconfig["item-update"]))
+                    //        _notifiers |= Notifications.ItemUpdate;
+                    //}
+                    //if (notifconfig.Contains("item-remove"))
+                    //{
+                    //    if (Convert.ToBoolean(notifconfig["item-remove"]))
+                    //        _notifiers |= Notifications.ItemRemove;
+                    //}
                     if (notifconfig.Contains("cache-clear"))
                     {
                         if (Convert.ToBoolean(notifconfig["cache-clear"]))
@@ -896,6 +959,21 @@ namespace Alachisoft.NCache.Caching.Topologies
                 if (properties.Contains("notifications"))
                 {
                     IDictionary notifconfig = properties["notifications"] as IDictionary;
+                    //if (notifconfig.Contains("item-add"))
+                    //{
+                    //    if (Convert.ToBoolean(notifconfig["item-add"]))
+                    //        _notifiers |= Notifications.ItemAdd;
+                    //}
+                    //if (notifconfig.Contains("item-update"))
+                    //{
+                    //    if (Convert.ToBoolean(notifconfig["item-update"]))
+                    //        _notifiers |= Notifications.ItemUpdate;
+                    //}
+                    //if (notifconfig.Contains("item-remove"))
+                    //{
+                    //    if (Convert.ToBoolean(notifconfig["item-remove"]))
+                    //        _notifiers |= Notifications.ItemRemove;
+                    //}
                     if (notifconfig.Contains("cache-clear"))
                     {
                         if (Convert.ToBoolean(notifconfig["cache-clear"]))
@@ -947,6 +1025,13 @@ namespace Alachisoft.NCache.Caching.Topologies
 
                             try
                             {
+                                //string clientOld = "GeneralEventsOldClients";
+                                //SubscriptionInfo subInfo = new SubscriptionInfo() { SubscriptionId = SubscriptionInfo.EventsSubscriptionName, ClientId = clientOld, Type = SubscriptionType.Subscriber, SubPolicyType = SubscriptionPolicyType.EventSubscription, Expiration = TimeSpan.MaxValue.Ticks };
+                                //var topicOperation = new SubscriptionOperation(TopicConstant.GeneralEventsTopic, TopicOperationType.Subscribe, subInfo);
+                                //operationContext = OperationContext.CreateAndMarkInUse(
+                                //    _context.FakeObjectPool, NCModulesConstants.LocalCache, OperationContextFieldName.OperationType, OperationContextOperationType.CacheOperation
+                                //);
+                                //bool subscribed = TopicOperation(topicOperation, operationContext);
                                 _eventManager.StartPolling(_context, operationContext);
                             }
                             finally
@@ -1079,11 +1164,13 @@ namespace Alachisoft.NCache.Caching.Topologies
 
        
 
+#if !DEVELOPMENT
         public virtual NewHashmap GetOwnerHashMapTable(out int bucketSize)
         {
             bucketSize = 0;
             return null;
         }
+#endif
         #endregion
 
         #region	/                 --- ICache ---           /
@@ -1705,6 +1792,7 @@ namespace Alachisoft.NCache.Caching.Topologies
         {
             if (!async)
             {
+                //string messageID = AppUtil.GenerateMessageID(key.ToString());
                 string messageID = AppUtil.GenerateMessageID(key.ToString(),eventContext.UniqueId);
                 EventMessage message =null;
                 try
@@ -1893,7 +1981,9 @@ namespace Alachisoft.NCache.Caching.Topologies
         {
             if (Listener != null)
             {
+#if !CLIENT && !DEVELOPMENT
                 _context.AsyncProc.Enqueue(new AsyncLocalNotifyHashmapCallback(Listener, viewId, newmap, members, updateClientMap, forcefulUpdate, serverMapping));
+#endif
             }
         }
 
@@ -2090,10 +2180,12 @@ namespace Alachisoft.NCache.Caching.Topologies
             if (removedItems.Count == 0)
                 return;
 
+            // string[] nextRemovalKeys = ExtractKeys(removedItems);
             KeyDependencyInfo[] nextRemovalKeyDepInfos = ExtractKeyDependencyInfos(removedItems);
             ArrayList partialNextRemovalKeyDepInfos = new ArrayList();
             Hashtable entriesTable = null;
 
+            // while (nextRemovalKeys != null && nextRemovalKeys.Length > 0)
             while (nextRemovalKeyDepInfos != null && nextRemovalKeyDepInfos.Length > 0)
             {
                 try
@@ -2115,7 +2207,9 @@ namespace Alachisoft.NCache.Caching.Topologies
 
                     if (partialNextRemovalKeyDepInfosArr.Length > 0)
                     {
+                        // entriesTable = _context.CacheImpl.Remove(nextRemovalKeys, ItemRemoveReason.DependencyChanged, true, operationContext);
                         entriesTable = _context.CacheImpl.Remove(partialNextRemovalKeyDepInfosArr, ItemRemoveReason.DependencyChanged, true, operationContext);
+                        // nextRemovalKeys = ExtractKeys(entriesTable);
                         nextRemovalKeyDepInfos = ExtractKeyDependencyInfos(entriesTable);
                     }
                 }
@@ -2160,10 +2254,13 @@ namespace Alachisoft.NCache.Caching.Topologies
                 return;
             }
 
+            // string[] retVal = new string[removedItems.Count];
             KeyDependencyInfo[] nextRemovalKeyDepInfos = ExtractKeyDependencyInfos(removedItems);
             ArrayList partialNextRemovalKeyDepInfos = new ArrayList();
+            // removedItems.Keys.CopyTo(retVal, 0);
             Hashtable entriesTable = null;
 
+            // while (retVal != null && retVal.Length > 0)
             while (nextRemovalKeyDepInfos != null && nextRemovalKeyDepInfos.Length > 0)
             {
                 try
@@ -2185,7 +2282,9 @@ namespace Alachisoft.NCache.Caching.Topologies
 
                     if (partialNextRemovalKeysArr.Length > 0)
                     {
+                        // entriesTable = _context.CacheImpl.Remove(retVal, ItemRemoveReason.DependencyChanged, true, operationContext);
                         entriesTable = _context.CacheImpl.Remove(partialNextRemovalKeysArr, ItemRemoveReason.DependencyChanged, true, operationContext);
+                        // retVal = ExtractKeys(entriesTable);
                         nextRemovalKeyDepInfos = ExtractKeyDependencyInfos(entriesTable);
                     }
                 }
@@ -2680,10 +2779,6 @@ namespace Alachisoft.NCache.Caching.Topologies
 
         }
         
-        internal virtual void SetClusterInactive(string reason)
-        {
-
-        }
         
 
         public virtual bool IsClusterInStateTransfer()
@@ -2715,6 +2810,19 @@ namespace Alachisoft.NCache.Caching.Topologies
         {
             return ((IMessageStore)InternalCache).GetNextUnassignedMessage(timeout, context);
         }
+        //public virtual Dictionary<MessageInfo,List<SubscriptionInfo>> GetPendingDurableMessages()
+        //{
+        //    return ((IMessageStore)InternalCache).GetPendingDurableMessages();
+        //}
+
+        //public virtual Alachisoft.NCache.Caching.Messaging.Message  GetAssignedMessageToDurable(TimeSpan maxValue, OperationContext context)
+        //{
+        //    return ((IMessageStore)InternalCache).GetAssignedMessageToDurable(maxValue, context);
+        //}
+        //public virtual MessageInfo GetNextUndeliveredMessage(TimeSpan timeout, OperationContext context)
+        //{
+        //    return ((IMessageStore)InternalCache).GetNextUndeliveredMessage(timeout, context);
+        //}
 
         public virtual SubscriptionInfo GetSubscriber(string topic, Common.Enum.SubscriptionType type, OperationContext context)
         {
@@ -2736,6 +2844,12 @@ namespace Alachisoft.NCache.Caching.Topologies
         {
             return ((IMessageStore)InternalCache).GetAssignedMessage(subscriptionInfo, operationContext);
         }
+
+
+      //  public virtual IDictionary<string, IList<object>> GetAssignedMessage(SubscriptionInfo subscriptionInfo, OperationContext operationContext)
+       // {
+       //     return ((IMessageStore)InternalCache).GetAssignedMessage(subscriptionInfo, operationContext);
+       // }
 
         public virtual void AcknowledgeMessageReceipt(string clientId, IDictionary<string, IList<string>> topicWiseMessageIds, OperationContext operationContext)
         {
@@ -2793,6 +2907,13 @@ namespace Alachisoft.NCache.Caching.Topologies
         {
             ((IMessageStore)InternalCache).RemoveExpiredSubscriptions(removeSubscriptions, operationContext);
         }
+
+     
+        
+        //public virtual Dictionary<string, IList<SubscriptionIdentifier>> GetExpiredSubscriptions()
+        //{
+        //    return ((IMessageStore)InternalCache).GetExpiredSubscriptions();
+        //}
 
        
         
@@ -2937,10 +3058,31 @@ namespace Alachisoft.NCache.Caching.Topologies
                     entry.MarkFree(NCModulesConstants.Topology);
             }
         }
+
+  //      public virtual void RaiseOldItemAddNotifier(object key, CacheEntry entry, OperationContext context,
+  //EventContext eventContext)
+  //      {
+  //          try
+  //          {
+  //              if (entry != null)
+  //                  entry.MarkInUse(NCModulesConstants.Topology);
+
+  //              InternalCache.RaiseOldItemAddNotifier(key, entry, context, eventContext);
+  //          }
+  //          finally
+  //          {
+  //              if (entry != null)
+  //                  entry.MarkFree(NCModulesConstants.Topology);
+  //          }
+  //      }
         public virtual void RaiseItemUpdateNotifier(object key, OperationContext operationContext, EventContext eventcontext)
         {
             InternalCache.RaiseItemUpdateNotifier(key, operationContext, eventcontext);
         }
+        //public virtual void RaiseOldItemUpdateNotifier(object key, OperationContext operationContext, EventContext eventcontext)
+        //{
+        //    InternalCache.RaiseOldItemUpdateNotifier(key, operationContext, eventcontext);
+        //}
 
         public virtual void RaiseOldItemRemoveNotifier(object key, OperationContext operationContext, EventContext eventcontext)
         {

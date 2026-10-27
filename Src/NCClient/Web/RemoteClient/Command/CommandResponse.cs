@@ -1,4 +1,4 @@
-//  Copyright (c) 2026 Alachisoft
+//  Copyright (c) 2018 Alachisoft
 //  
 //  Licensed under the Apache License, Version 2.0 (the "License");
 //  you may not use this file except in compliance with the License.
@@ -80,26 +80,10 @@ namespace Alachisoft.NCache.Client
         /// <summary>Tells with which ip connection is broken</summary>
         private Common.Net.Address _resetConnectionIP;
 
-        private NewHashmap _changedModuleHashmap = null;
-        private NewHashmap _updatedMap = null;
-
         public Common.Net.Address ResetConnectionIP
         {
             get { return _resetConnectionIP; }
             internal set { _resetConnectionIP = value; }
-        }
-
-        public NewHashmap ChangedModuleMap
-        {
-            get
-            {
-                return _changedModuleHashmap;
-            }
-
-            set
-            {
-                _changedModuleHashmap = value;
-            }
         }
 
         public string MachineIp { get; set; }
@@ -128,9 +112,6 @@ namespace Alachisoft.NCache.Client
 
         /// <summary>Hold the getGroupKeys from search and get getGroupKeys commands</summary>
         private ArrayList _resultList = new ArrayList();
-
-        /// <summary>Hold bucket size returned from server</summary>
-        private int _bucketSize = 0;
 
         /// <summary>Hold total number of buckets count</summary>
         private int _totalBuckets = 0;
@@ -211,14 +192,10 @@ namespace Alachisoft.NCache.Client
 
         private InquiryRequestResponse _inquiryResponse;
         private bool _requestInquiryEnabled;
-        private bool _secureConnectionEnabled;
 
         private bool _exists = false;
         private long _count = 0;
         private long _messageCount = 0;
-
-        private NewHashmap _newHashmap = null;
-        private NewHashmap _newModuleHashmap = null;
 
         private string _queryId;
 
@@ -268,7 +245,6 @@ namespace Alachisoft.NCache.Client
             get { return this._inquiryResponse; }
         }
 
-        internal bool SecureConnectionEnabled { get { return _secureConnectionEnabled; } }
 
         public int RemovedKeyCount
         {
@@ -557,14 +533,6 @@ namespace Alachisoft.NCache.Client
             get { return _streamLength; }
         }
 
-        /// <summary>
-        /// Get size of each bucket
-        /// </summary>
-        internal int BucketSize
-        {
-            get { return this._bucketSize; }
-        }
-
         internal bool ReconnectClients
         {
             get { return _reconnectClients; }
@@ -591,16 +559,6 @@ namespace Alachisoft.NCache.Client
         internal long MessageCount
         {
             get { return this._messageCount; }
-        }
-
-        internal NewHashmap Hashmap
-        {
-            get { return this._newHashmap; }
-        }
-
-        internal NewHashmap ModuleHashMap
-        {
-            get => this._newModuleHashmap;
         }
 
         public EventTypeInternal EventType { get; set; }
@@ -646,16 +604,6 @@ namespace Alachisoft.NCache.Client
                         _requestId = value.requestId;
                         _commandID = value.commandID;
                         break;
-                    case Response.Type.HASHMAP_CHANGED_EVENT:
-                        HashmapChangedEventResponse getHashmapUpdatedResponse = value.hashmapChanged;
-                        if (getHashmapUpdatedResponse != null)
-                        {
-                            _updatedMap = NewHashmap.GetDeserializedMap(getHashmapUpdatedResponse);
-                            if (getHashmapUpdatedResponse.serverMapping != null)
-                                _updatedMap.ServerMapping = GetPublicIPList(getHashmapUpdatedResponse.serverMapping);
-                        }
-                        break;
-
                     case Response.Type.COMPACT_TYPE_REGISTER_EVENT:
                         _value = value.compactTypeRegisterEvent.compactTypes;
                         break;
@@ -900,7 +848,6 @@ namespace Alachisoft.NCache.Client
                         _isPersistEnabled = value.initCache.isPersistenceEnabled;
                         _persistenceInterval = value.initCache.persistenceInterval;
                         _requestInquiryEnabled = value.initCache.requestLoggingEnabled;
-                        _secureConnectionEnabled = value.initCache.secureConnectionEnabled;
                         _response = value;
                         break;
 
@@ -910,7 +857,7 @@ namespace Alachisoft.NCache.Client
                         _lockId = String.IsNullOrEmpty(value.get.lockId) ? null : value.get.lockId;
                         _lockDate = new DateTime(value.get.lockTime);
                         _itemVersion = value.get.version;
-                        EntryType = MiscUtil.ProtoItemTypeToEntryType(value.get.itemType);
+                        EntryType = MiscUtil.ProtoItemTypeToEntryType(value.get.itemType); // (EntryType)value.get.itemType;
 
                         if (value.get.data.Count > 0)
                         {
@@ -1018,7 +965,7 @@ namespace Alachisoft.NCache.Client
 
                                 _flagValueEntry = new CompressedValueEntry();
                                 _flagValueEntry.Flag = new BitSet((byte)keyValuePackage.flag[i]);
-                                _flagValueEntry.Type = MiscUtil.ProtoItemTypeToEntryType(keyValuePackage.itemType[i]);
+                                _flagValueEntry.Type = MiscUtil.ProtoItemTypeToEntryType(keyValuePackage.itemType[i]); //(EntryType)keyValuePackage.itemType[i];
                                 _flagValueEntry.Value = ubObject.GetFullObject();
 
                                 _resultDic.Add(key, _flagValueEntry);
@@ -1168,34 +1115,6 @@ namespace Alachisoft.NCache.Client
                         _serializationFormat = (SerializationFormat)value.getSerializationFormatResponse.serializationFormat;
                         break;
 
-                    case Response.Type.GET_HASHMAP:
-                        _requestId = value.requestId;
-
-                        Hashtable nodes = new Hashtable();
-                        Hashtable mappedserver = new Hashtable();
-
-                        foreach (Common.Protobuf.KeyValuePair pair in value.getHashmap.keyValuePair)
-                        {
-                            nodes.Add(Convert.ToInt32(pair.key), pair.value);
-                        }
-
-                        if (value.getHashmap.serverMapping != null && value.getHashmap.serverMapping.Count > 0)
-                            mappedserver = GetPublicIPList(value.getHashmap.serverMapping);
-
-                        ArrayList members = new ArrayList();
-                        foreach (string member in value.getHashmap.members)
-                        {
-                            members.Add(new Alachisoft.NCache.Common.Net.Address(member, 0));
-                        }
-
-                        this._bucketSize = value.getHashmap.bucketSize;
-
-                        this._newHashmap = new NewHashmap(
-                            value.getHashmap.viewId,
-                            nodes,
-                            members, mappedserver);
-                        break;
-
                     
                     case Response.Type.EXCEPTION:
                         _requestId = value.requestId;
@@ -1329,11 +1248,6 @@ namespace Alachisoft.NCache.Client
                     value.CopyTo(_value, 0);
                 }
             }
-        }
-        internal NewHashmap NewMap
-        {
-            get { return _updatedMap; }
-            set { _updatedMap = value; }
         }
         internal CompressedValueEntry FlagValueEntry
         {
@@ -1484,7 +1398,6 @@ namespace Alachisoft.NCache.Client
                     case ExceptionType.INVALID_READER_EXCEPTION:
                         throw new InvalidReaderException(_errorCode,_exceptionString,_stackTrace);
 
-                 
                 }
             }
             else if (_brokerReset)
@@ -1690,7 +1603,7 @@ namespace Alachisoft.NCache.Client
             cacheItem.Priority = (CacheItemPriority)response.priority;
             cacheItem.SubGroup =  null;
      
-            this.EntryType = MiscUtil.ProtoItemTypeToEntryType(response.itemType);
+            this.EntryType = MiscUtil.ProtoItemTypeToEntryType(response.itemType); // (EntryType)value.getItem.itemType;
             UserBinaryObject userObj = UserBinaryObject.CreateUserBinaryObject(response.value.ToArray());
 
             cacheItem.SetValue(userObj.GetFullObject());

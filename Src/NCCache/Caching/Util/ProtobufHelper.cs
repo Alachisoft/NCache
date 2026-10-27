@@ -1,4 +1,4 @@
-//  Copyright (c) 2026 Alachisoft
+//  Copyright (c) 2018 Alachisoft
 //  
 //  Licensed under the Apache License, Version 2.0 (the "License");
 //  you may not use this file except in compliance with the License.
@@ -118,10 +118,13 @@ namespace Alachisoft.NCache.Caching.Util
         {
             AggregateExpirationHint hints = AggregateExpirationHint.Create(poolManager);
             
+            // POTeam
+            //IList<ExpirationHint> expHints = hints.Hints;
             int hintCount = hints.HintsWithoutClone.Count;
             if (hintCount == 0)
             {
                 NCache.Util.MiscUtil.ReturnExpirationHintToPool(hints, poolManager);
+                //hints?.ReturnLeasableToPool();
                 return null;
             }
 

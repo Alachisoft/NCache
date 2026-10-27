@@ -1,4 +1,4 @@
-﻿//  Copyright (c) 2026 Alachisoft
+﻿//  Copyright (c) 2018 Alachisoft
 //  
 //  Licensed under the Apache License, Version 2.0 (the "License");
 //  you may not use this file except in compliance with the License.
@@ -25,8 +25,9 @@ namespace Alachisoft.NCache.Client
         /// </summary>
         /// <param name="server">Specifies the name of server on which cache is running.</param>
         /// <param name="port">Specifies the port of server on which cache is running.</param>
-        public CacheConnection(string server = null, int port = 8250)
+        public CacheConnection(string server = null, int port = 9803)
         {
+            //Server = string.IsNullOrWhiteSpace(server) ? Environment.MachineName: server;
             Server = server;
             Port = port;
         }

@@ -29,9 +29,8 @@ namespace Alachisoft.NCache.Common.Util
     {
         private static int _port = 9800;
         private static long MB = 1024 * 1024;
-        private static int _managementPort = 8250;
+        private static int _managementPort = 9803;
         private static int _sendBufferSize = 131072;
-        private static bool _licenseLogging = false;
         private static int _receiveBufferSize = 131072;
         private static IPAddress _BindToIP;
  
@@ -43,6 +42,7 @@ namespace Alachisoft.NCache.Common.Util
         private static string _cacheUserPassword;
         private static bool _enableDebuggingCounters = false;
         private static bool _enableBadClientDetection = false;
+        private static bool _enableRespServer = true;
         private static int _clientSocketSendTimeOut = 10;
         private static int _maxRequestsOnCache = 25;
         private static int _eventPriorityRatio = 30;
@@ -96,12 +96,10 @@ namespace Alachisoft.NCache.Common.Util
         private static bool _enableGCCollection = true;
         private static int _preparedQueryTableSize = 1000;
         private static int _preparedQueryEvictionPercentage = 10;
-        private static long _licenseCheckInterval = 24 * 60 * 60 * 1000;
         private static bool _simulateSocketClose = false;
         private static int _socketCloseInterval = 60;
         private static bool _useAvgStats = false;
         private static bool _asyncTcpUpQueue = false;
-        private static int _heartbeatInterval = 32000;
         private static bool _printClusterStats = false;
         private static TimeSpan _statsPrintInterval = new TimeSpan(10, 0, 0);
         private static bool _enableDebugLog = false;
@@ -114,8 +112,8 @@ namespace Alachisoft.NCache.Common.Util
         private static decimal _clusterHealthDetectionInterval = 3;
         
         private static int _dataChunkSize = 512 * 1024;
-        private static int _managementPortLower = 8300;
-        private static int _managementPortUpper = 8400;
+        private static int _managementPortLower = 9831;
+        private static int _managementPortUpper = 9880;
         private static string tempString;
         private static int tempInt;
         private static bool tempBool;
@@ -133,13 +131,9 @@ namespace Alachisoft.NCache.Common.Util
 
         private static int _touchInterval = 5; // seconds
 
-        private static int _licenseInterval = 6;
-        private static bool _enableLicenseInterval = false;
         private static bool _enableRequestCancellation = true;
         private static bool _publishCountersToCacheHost = false;
 
-        private static int _acquireClientLicenseRetryInterval = 3;
-        private static int _acquireClientLicenseRetries = 3;
 
         private static long _collectionChunkSize = 80000; // Bytes
         private static TimeSpan _pubSubClientInactivityTimeout = TimeSpan.FromSeconds(120);
@@ -149,15 +143,16 @@ namespace Alachisoft.NCache.Common.Util
         private static int _webManagerStartRetries = 5; //default 5 retries
        
         private static int _pauseWriterThreshold = 1024 * 1024 * 8; // default to 8 MB
-        public static int _maxFeatureDataPostingDelay = 20 * 24 * 60;  //20 days
-        public static int EvalFeatureDataPostingDelay { get; set; } = 7 * 24 * 60;  // 7 days
-        private static bool _enableFeatureUsagePostingIntervalLogging = false;
         public const string NETCORE_SERVICE_UNIX = "Alachisoft.NCache.Daemon.dll";
         public const string NETCORE_SERVICE_WIN = "Alachisoft.NCache.Service.dll";
         private static TimeSpan _metricsMonitorPublishingInterval = TimeSpan.FromSeconds(1);
         private static bool _enableMetricsPublishing = false;
         private static int _snmpListenersInfoPort = 8256;
         private static bool _enableSnmpMonitoring = false;
+        private static bool _enablePrometheusMonitoring = false;
+        // Prometheus scrape endpoint of the .NET Framework metric server; on .NET the service HTTP
+        // server (RestPort) serves /metrics instead and this port is not opened.
+        private static int _restPort = 9804;
         private static int _maxCacheCountInDEV = 3;
         private static int _maxAccummulatedCacheSizeInDEV = 2;
         private static int _maxStressTestTasks = 3;
@@ -167,22 +162,7 @@ namespace Alachisoft.NCache.Common.Util
         private static bool _hideOperatingSystem = false;
         private static string _publicIp;
         private static object lockObject = new object();
-        private static int _timeoutTLSCall = 40;
-        private static long _CloudHeartbeatCheckInterval = 1 * 60 * 60 * 1000; // milliseconds
-        private static int _maxHeartbeatRetries = 3;
-        private static int _heartbeatRetryDelaySeconds = 2; // seconds
-        private static double _stubWritingInterval = 12 * 60; // minutes
-        private static long _monthlyLicenseAutoRenewalInterval = 7; //days
         private static int _maxAccummulatedCacheSize = 4;
-        public static int TimeOutTLSCall
-        {
-            get { return _timeoutTLSCall; }
-        }
-        public static bool EnableFeatureUsagePostingIntervalLog
-        {
-            get { return _enableFeatureUsagePostingIntervalLogging; }
-            private set { _enableFeatureUsagePostingIntervalLogging = value; }
-        }
         public static int CachingModuleTotalBuckets
         {
             get => _cachingModuleTotalBuckets;
@@ -192,11 +172,6 @@ namespace Alachisoft.NCache.Common.Util
         {
             get { return _maxAccummulatedCacheSize; }
             set { _maxAccummulatedCacheSize = value; }
-        }
-        public static double StubWritingInterval
-        {
-            get { return _stubWritingInterval; }
-            private set { _stubWritingInterval = value; }
         }
         public static int ModuleStateTransferBufferSize
         {
@@ -225,60 +200,13 @@ namespace Alachisoft.NCache.Common.Util
             get { return _touchInterval; }
             set { _touchInterval = value; }
         }
-        private static TimeSpan _heartbeatRequestTimeout = TimeSpan.FromSeconds(30);
-        private static TimeSpan _maxHeartbeatFailureDuration = TimeSpan.FromDays(7);
 
-        public static TimeSpan HeartbeatRequestTimeout
-        {
-            get => _heartbeatRequestTimeout;
-            set => _heartbeatRequestTimeout = value;
-        }
-        public static TimeSpan MaxHeartbeatFailureDuration
-        {
-            get => _maxHeartbeatFailureDuration;
-            set => _maxHeartbeatFailureDuration = value;
-        }
-        public static int MaxHeartbeatRetries
-        {
-            get { return _maxHeartbeatRetries; }
-            private set { _maxHeartbeatRetries = value; }
-        }
-        public static int HeartbeatRetryDelaySeconds
-        {
-            get { return _heartbeatRetryDelaySeconds; }
-            private set { _heartbeatRetryDelaySeconds = value; }
-        }
-        public static long MonthlyLicenseAutoRenewalInterval
-        {
-            get { return ServiceConfiguration._monthlyLicenseAutoRenewalInterval; }
-            private set { ServiceConfiguration._monthlyLicenseAutoRenewalInterval = value; }
-        }
-        public static long LicenseAutoRenewalInterval
-        {
-            get { return ServiceConfiguration._licenseAutoRenewalInterval; }
-            set { ServiceConfiguration._licenseAutoRenewalInterval = value; }
-        }
-        public static long CloudHeartbeatCheckInterval
-        {
-            get { return _CloudHeartbeatCheckInterval; }
-            private set { _CloudHeartbeatCheckInterval = value; }
-        }
         public static int RelicaJoinDelay
         {
             get { return _relicaJoinDelay; }
             set { _relicaJoinDelay = value; }
         }
 
-        public static int AcquireClientLicenseRetries
-        {
-            get { return _acquireClientLicenseRetries; }
-            set { _acquireClientLicenseRetries = value; }
-        }
-        public static int AcquireClientLicenseRetryInterval
-        {
-            get { return _acquireClientLicenseRetryInterval; }
-            set { _acquireClientLicenseRetryInterval = value; }
-        }
 
         public static TimeSpan MetricsMonitorPublishingInterval
         {
@@ -292,19 +220,9 @@ namespace Alachisoft.NCache.Common.Util
             private set { _bindToIP = value; }
         }
 
-        public static int LicenseInterval
-        {
-            get { return _licenseInterval; }
-            set { _licenseInterval = value; }
-        }
 
         public static bool EnableCacheDebugging{ get; set;}
 
-        public static bool EnableLicenseInterval
-        {
-            get { return _enableLicenseInterval; }
-            set { _enableLicenseInterval = value; }
-        }
 
         public static int SnmpListenersInfoPort
         {
@@ -341,32 +259,18 @@ namespace Alachisoft.NCache.Common.Util
         private static Mechanism _communicationMechanism;
         private static bool _executeOperations;
         private static int _transactinalPoolCapacity = 3000;
-        private static bool _enableUsageInfoLogs = true;
-        private static bool _enableUsageInfoLogsForTesting = false;
         private static int _metricserverPersistanceInterval = 1 * 1000; // time in mili seconds
 
         private static bool _useCustomThreadPool = false;
         private static int _customPipeliningThreadPoolFactor = 1;
 
-        private static int _retryUsagePostInterval = 60 * 60; //60 minutes
-        private static int _retryUsagePostIntervalForTesting = 30; //30 seconds
-
-        private static int _dataUsageInterval = 29 * 24 * 60; // 29 days
-        private static int _dataUsagePostIntervalForTesting = 60; // 60 minutes
 
 
-        private static int _connectedClientsPersistorInterval = 60; //60 minutes
-        private static int _usagePostThreadInterval = 30; // 30 minutes always.
+
 
    
        
-        private static bool _enableHeartbeat = true;
-        private static bool _randomizeFirstHeartbeatRequest = true;
-        private static double _skippedHeartbeatThresholdInterval = 72; // hours
-        private static double _skippedHeartbeatEventLogInterval = 24; // hours
 
-        private static int _featureDataCollectionInterval = 60;   //1 hour converted into milliseconds
-        private static long _licenseAutoRenewalInterval=30; //days
         private static bool _enableSystemCountersMonitoring = false;
 
        
@@ -392,6 +296,22 @@ namespace Alachisoft.NCache.Common.Util
         {
             get { return _enableSnmpMonitoring; }
             private set { _enableSnmpMonitoring = value; }
+        }
+
+        public static bool EnablePrometheusMonitoring
+        {
+            get { return _enablePrometheusMonitoring; }
+            private set { _enablePrometheusMonitoring = value; }
+        }
+
+        /// <summary>
+        /// Port of the HTTP server hosted by the NCache Service (GET /metrics, GET /metrics/json and
+        /// any other registered endpoints). A value of zero or less disables the server.
+        /// </summary>
+        public static int RestPort
+        {
+            get { return _restPort; }
+            set { _restPort = value; }
         }
         public static int ThreadsPerProcessor
         {
@@ -424,55 +344,16 @@ namespace Alachisoft.NCache.Common.Util
             get { return _useCommandThreadPool; }
         }
 
-        public static bool EnableUsageInfoLogs
-        {
-            get { return _enableUsageInfoLogs; }
-            private set { _enableUsageInfoLogs = value; }
-        }
 
-        public static bool EnableUsageInfoLogsForTesting
-        {
-            get { return _enableUsageInfoLogsForTesting; }
-            private set { _enableUsageInfoLogsForTesting = value; }
-        }
-        public static bool EnableHeartbeat
-        {
-            get { return _enableHeartbeat; }
-            private set { _enableHeartbeat = value; }
-        }
-        // Toggle for enabling/disabling randomization of first heartbeat request from service side.
-        public static bool RandomizeFirstHeartbeatRequest
-        {
-            get { return _randomizeFirstHeartbeatRequest; }
-            private set { _randomizeFirstHeartbeatRequest = value; }
-        }
 
-        // Value in hours to determine the interval to warn user of skipped heartbeats
-        public static double SkippedHeartbeatThresholdInterval
-        {
-            get { return _skippedHeartbeatThresholdInterval; }
-            private set { _skippedHeartbeatThresholdInterval = value; }
-        }
 
-        public static double SkippedHeartbeatEventLogInterval
-        {
-            get { return _skippedHeartbeatEventLogInterval; }
-            private set { _skippedHeartbeatEventLogInterval = value; }
-        }
 
-        public static int FeatureDataCollectionInterval { get => _featureDataCollectionInterval; set => _featureDataCollectionInterval = value; }
         public static int InitialLoggingDelayAtStartup { get; set; } = 20; //milliseconds
 
-        public static int FeatureDataPostingDelay { get; set; } = 29 * 24 * 60;  // 30 days
-        public static int FeatureDataPostingWaitTime { get; set; } = 24 * 60;  // 1 day
 
-        public static int InitialFeatureDataPostingDelay { get; set; } = 3 * 24 * 60;  // 3 days
 
-        public static bool EnableFeatureUsageLogging { get; set; } = true;
 
-        public static bool UploadFeatureUsageStats { get; set; } = true;
 
-        public static int UsageFailureRetriesCount { get; set; } = 3;
 
         public static bool HideOperatingSystem
         {
@@ -592,18 +473,6 @@ namespace Alachisoft.NCache.Common.Util
              {
                 try
                 {
-                    if (config.AppSettings.Settings["NCacheServer.TimeoutTLSCall"] != null)
-                    {
-                        _timeoutTLSCall = int.Parse(config.AppSettings.Settings["NCacheServer.TimeoutTLSCall"]?.Value);
-                    }
-                }
-                catch (Exception)
-                {
-                    _timeoutTLSCall = 40;
-                }
-
-                try
-                {
                     if (config.AppSettings.Settings["NCacheServer.UseCustomThreadPool"] != null)
                     {
                         UseCustomThreadPool = Boolean.Parse(config.AppSettings.Settings["NCacheServer.UseCustomThreadPool"].Value);
@@ -687,18 +556,6 @@ namespace Alachisoft.NCache.Common.Util
                 {
 
                 }
-                try
-                {
-                    if (config.AppSettings.Settings["NCacheServer.MonthlyLicenseAutoRenewalInterval"] != null)
-                    {
-                        tempLong = Int64.Parse(config.AppSettings.Settings["NCacheServer.MonthlyLicenseAutoRenewalInterval"].Value);
-
-                        if (tempLong >= 1)
-                            _monthlyLicenseAutoRenewalInterval = tempLong;
-
-                    }
-                }
-                catch (Exception ex) { }
 
                 try
                 {
@@ -715,6 +572,20 @@ namespace Alachisoft.NCache.Common.Util
                 {
                     if (config.AppSettings.Settings["NCacheServer.EnableSnmpMonitoring"] != null)
                         EnableSnmpMonitoring = bool.Parse(config.AppSettings.Settings["NCacheServer.EnableSnmpMonitoring"].Value);
+                }
+                catch (Exception ex) { }
+
+                try
+                {
+                    if (config.AppSettings.Settings["NCacheServer.EnablePrometheusMonitoring"] != null)
+                        EnablePrometheusMonitoring = bool.Parse(config.AppSettings.Settings["NCacheServer.EnablePrometheusMonitoring"].Value);
+                }
+                catch (Exception ex) { }
+
+                try
+                {
+                    if (config.AppSettings.Settings["NCacheServer.RestPort"] != null)
+                        RestPort = Int32.Parse(config.AppSettings.Settings["NCacheServer.RestPort"].Value);
                 }
                 catch (Exception ex) { }
 
@@ -812,13 +683,6 @@ namespace Alachisoft.NCache.Common.Util
                         }
                     }
                     catch (Exception ex) { }
-                // Enable/Disable SendHeartbeat thread for comunication with cloud server.
-                try
-                {
-                    if (config.AppSettings.Settings["NCacheServer.EnableHeartbeat"] != null)
-                        EnableHeartbeat = bool.Parse(config.AppSettings.Settings["NCacheServer.EnableHeartbeat"].Value);
-                }
-                catch (Exception ex) { }
 
                 try
                 {
@@ -840,29 +704,8 @@ namespace Alachisoft.NCache.Common.Util
                 }
                 catch (Exception ex) { }
 
-                // Value in hours to determine the interval to warn user of skipped heartbeats
-                try
-                {
-                    if (config.AppSettings.Settings["NCacheServer.SkippedHeartbeatThresholdInterval"] != null)
-                        SkippedHeartbeatThresholdInterval = double.Parse(config.AppSettings.Settings["NCacheServer.SkippedHeartbeatThresholdInterval"].Value);
-                }
-                catch (Exception ex) { }
 
-                // Value in hours to determine the interval to warn user of skipped heartbeats
-                try
-                {
-                    if (config.AppSettings.Settings["NCacheServer.SkippedHeartbeatEventLogInterval"] != null)
-                        SkippedHeartbeatEventLogInterval = double.Parse(config.AppSettings.Settings["NCacheServer.SkippedHeartbeatEventLogInterval"].Value);
-                }
-                catch (Exception ex) { }
 
-                // Enable/Disable randomization of first heartbeat request from service side.
-                try
-                {
-                    if (config.AppSettings.Settings["NCacheServer.RandomizeFirstHeartbeatRequest"] != null)
-                        RandomizeFirstHeartbeatRequest = bool.Parse(config.AppSettings.Settings["NCacheServer.RandomizeFirstHeartbeatRequest"].Value);
-                }
-                catch (Exception ex) { }
 
                 try
                     {
@@ -961,12 +804,6 @@ namespace Alachisoft.NCache.Common.Util
                     catch (Exception ex) { }
 
             
-            try
-                {
-                    if (config.AppSettings.Settings["NCacheServer.LicenseLogging"] != null)
-                        LicenseLogging = bool.Parse(config.AppSettings.Settings["NCacheServer.LicenseLogging"].Value);
-                }
-                catch (Exception ex) { }
 
                 try
                 {
@@ -1007,6 +844,13 @@ namespace Alachisoft.NCache.Common.Util
                 {
                     if (config.AppSettings.Settings["NCacheServer.EnableBadClientDetection"] != null)
                         EnableBadClientDetection = bool.Parse(config.AppSettings.Settings["NCacheServer.EnableBadClientDetection"].Value);
+                }
+                catch (Exception ex) { }
+
+                try
+                {
+                    if (config.AppSettings.Settings["NCacheServer.EnableRespServer"] != null)
+                        EnableRespServer = bool.Parse(config.AppSettings.Settings["NCacheServer.EnableRespServer"].Value);
                 }
                 catch (Exception ex) { }
 
@@ -1282,12 +1126,6 @@ namespace Alachisoft.NCache.Common.Util
                 isHotApply = true;
 
             }
-            try
-            {
-                if (config.AppSettings.Settings["NCacheServer.LicenseLogging"] != null)
-                    LicenseLogging = bool.Parse(config.AppSettings.Settings["NCacheServer.LicenseLogging"].Value);
-            }
-            catch (Exception ex) { }
 
             try
             {
@@ -1850,31 +1688,7 @@ namespace Alachisoft.NCache.Common.Util
             }
             catch (Exception ex) { }
 
-            try
-            {
-                if (config.AppSettings.Settings["NCacheServer.LicenseCheckInterval"] != null)
-                {
-                    tempLong = Int64.Parse(config.AppSettings.Settings["NCacheServer.LicenseCheckInterval"].Value);
 
-                    if (tempLong >= 1)
-                        _licenseCheckInterval = tempLong * 60 * 1000;
-
-                }
-            }
-            catch (Exception ex) { }
-
-            try
-            {
-                if (config.AppSettings.Settings["NCacheServer.LicenseAutoRenewalInterval"] != null)
-                {
-                    tempLong = Int64.Parse(config.AppSettings.Settings["NCacheServer.LicenseAutoRenewalInterval"].Value);
-
-                    if (tempLong >= 1)
-                        _licenseAutoRenewalInterval = tempLong;
-
-                }
-            }
-            catch (Exception ex) { }
 
             try
             {
@@ -1887,32 +1701,7 @@ namespace Alachisoft.NCache.Common.Util
 
 
 
-            try
-            {
-                if (config.AppSettings.Settings["NCacheServer.LicenseInterval"] != null)
-                {
-                    EnableLicenseInterval = true;
-                    LicenseInterval = Int32.Parse(config.AppSettings.Settings["NCacheServer.LicenseInterval"].Value);
-                }
-            }
-            catch (Exception ex) { }
 
-            try
-            {
-                if (config.AppSettings.Settings["NCacheServer.AcquireClientLicenseRetries"] != null)
-                {
-                    AcquireClientLicenseRetries = Int32.Parse(config.AppSettings.Settings["NCacheServer.AcquireClientLicenseRetries"].Value);
-                }
-            }
-            catch (Exception ex) { }
-            try
-            {
-                if (config.AppSettings.Settings["NCacheServer.AcquireClientLicenseRetryInterval"] != null)
-                {
-                    AcquireClientLicenseRetryInterval = Int32.Parse(config.AppSettings.Settings["NCacheServer.AcquireClientLicenseRetryInterval"].Value);
-                }
-            }
-            catch (Exception ex) { }
 
 
             try
@@ -2263,80 +2052,11 @@ namespace Alachisoft.NCache.Common.Util
             catch (Exception ex)
             {
             }
-            try
-            {
-                if (config.AppSettings.Settings["NCacheServer.CloudHeartbeatCheckInterval"] != null)
-                {
-                    tempLong = Int64.Parse(config.AppSettings.Settings["NCacheServer.CloudHeartbeatCheckInterval"].Value);
-                    if (tempLong >= 1)
-                        _CloudHeartbeatCheckInterval = tempLong * 60 * 1000;
-                }
-            }
-            catch (Exception ex) { }
 
-            // HeartbeatRequestTimeout should be specified in a seconds,
-            // such as "50" (e.g., "50" for 50 seconds).
 
-            try
-            {
-                if (config.AppSettings.Settings["NCacheServer.HeartbeatRequestTimeout"] != null)
-                {
-                    int seconds = Int32.Parse(config.AppSettings.Settings["NCacheServer.HeartbeatRequestTimeout"].Value);
-                    tempTimeSpan = TimeSpan.FromSeconds(seconds);
-                    if (seconds >= 1)
-                        _heartbeatRequestTimeout = tempTimeSpan;
-                }
-            }
-            catch (Exception ex) { }
 
-            // MaxHeartbeatFailureDuration should be specified in a Days,
-            // such as "4" (e.g., "4" for 4 days).
-            try
-            {
-                if (config.AppSettings.Settings["NCacheServer.MaxHeartbeatFailureDuration"] != null)
-                {
-                    int days = Int32.Parse(config.AppSettings.Settings["NCacheServer.MaxHeartbeatFailureDuration"].Value);
-                    tempTimeSpan = TimeSpan.FromDays(days);
-                    if (days >= 1 && days <= 21)
-                        _maxHeartbeatFailureDuration = tempTimeSpan;
-                }
-            }
-            catch (Exception ex) { }
 
-            try
-            {
-                if (config.AppSettings.Settings["NCacheServer.MaxHeartbeatRetries"] != null)
-                {
-                    int tempInt = Int32.Parse(config.AppSettings.Settings["NCacheServer.MaxHeartbeatRetries"].Value);
 
-                    if (tempInt > 0)
-                        _maxHeartbeatRetries = tempInt;
-                }
-            }
-            catch (Exception ex) { }
-
-            try
-            {
-                if (config.AppSettings.Settings["NCacheServer.HeartbeatRetryDelaySeconds"] != null)
-                {
-                    int tempInt = Int32.Parse(config.AppSettings.Settings["NCacheServer.HeartbeatRetryDelaySeconds"].Value);
-
-                    if (tempInt > 0)
-                        _heartbeatRetryDelaySeconds = tempInt;
-                }
-            }
-            catch (Exception ex) { }
-
-            try
-            {
-                if (config.AppSettings.Settings["NCacheServer.StubWritingInterval"] != null)
-                {
-                    double minutes = Int32.Parse(config.AppSettings.Settings["NCacheServer.StubWritingInterval"].Value);
-                    if (tempInt > 0)
-                        _stubWritingInterval = minutes;
-                }
-            }
-            catch (Exception ex) { }
             if (config.AppSettings.Settings["NCacheServer.ServerFailureRetryDelayInterval"] != null)
             {
                 int configuredValue = _nodeFailureRetryDelayInterval;
@@ -2424,36 +2144,7 @@ namespace Alachisoft.NCache.Common.Util
                 }
             }
             catch (Exception ex) { }
-            try
-            {
-                if (config.AppSettings.Settings["NCacheServer.EnableUsageInfoLogs"] != null)
-                    EnableUsageInfoLogs = bool.Parse(config.AppSettings.Settings["NCacheServer.EnableUsageInfoLogs"].Value);
-            }
-            catch (Exception ex) { }
-            try
-            {
-                if (EnableUsageInfoLogs && config.AppSettings.Settings["NCacheServer.EnableUsageInfoLogsForTesting"] != null)
-                    EnableUsageInfoLogsForTesting = bool.Parse(config.AppSettings.Settings["NCacheServer.EnableUsageInfoLogsForTesting"].Value);
-            }
-            catch (Exception ex) { }
-            try
-            {
-                if (config.AppSettings.Settings["NCacheServer.ConnectedClientsPersistorInterval"] != null)
-                    ConnectedClientsPersistorInterval = int.Parse(config.AppSettings.Settings["NCacheServer.ConnectedClientsPersistorInterval"].Value);
-            }
-            catch (Exception ex) { }
            
-            try
-            {
-                if (config.AppSettings.Settings["NCacheServer.FeatureDataCollectionDelay"] != null)
-                {
-                    tempInt = Int32.Parse(config.AppSettings.Settings["NCacheServer.FeatureDataCollectionDelay"].Value);
-
-                    if (tempInt >= 0)
-                        FeatureDataCollectionInterval = tempInt;
-                }
-            }
-            catch (Exception ex) { }
             try
             {
                 if (config.AppSettings.Settings["NCacheServer.InitialLoggingDelayAtStartup"] != null)
@@ -2466,40 +2157,6 @@ namespace Alachisoft.NCache.Common.Util
             }
             catch (Exception ex) { }
 
-            try
-            {
-                if (config.AppSettings.Settings["NCacheServer.FeatureDataPostingDelay"] != null)
-                {
-                    tempInt = Int32.Parse(config.AppSettings.Settings["NCacheServer.FeatureDataPostingDelay"].Value);
-
-                    if (tempInt > 0)
-                        FeatureDataPostingDelay = tempInt;
-                }
-            }
-            catch (Exception ex) { }
-            try
-            {
-                if (config.AppSettings.Settings["NCacheServer.EvalFeatureDataPostingDelay"] != null)
-                {
-                    tempInt = Int32.Parse(config.AppSettings.Settings["NCacheServer.EvalFeatureDataPostingDelay"].Value);
-                    if (tempInt > 0)
-                    {
-                        EvalFeatureDataPostingDelay = tempInt;
-                        EnableFeatureUsagePostingIntervalLog = true;
-                    }
-
-                }
-            }
-            catch (Exception ex) { }
-            try
-            {
-                if (config.AppSettings.Settings["NCacheServer.EnableFeatureUsageLogging"] != null)
-                {
-                    tempBool = bool.Parse(config.AppSettings.Settings["NCacheServer.EnableFeatureUsageLogging"].Value);
-                    EnableFeatureUsageLogging = tempBool;
-                }
-            }
-            catch (Exception ex) { }
 
             try
             {
@@ -2555,52 +2212,9 @@ namespace Alachisoft.NCache.Common.Util
             {
 
             }
-            try
-            {
-                if (config.AppSettings.Settings["NCacheServer.UploadFeatureUsageStats"] != null)
-                {
-                    tempBool = bool.Parse(config.AppSettings.Settings["NCacheServer.UploadFeatureUsageStats"].Value);
 
 
-                    UploadFeatureUsageStats = tempBool;
-                }
-            }
-            catch (Exception ex) { }
 
-            try
-            {
-                if (config.AppSettings.Settings["NCacheServer.UsageFailureRetriesCount"] != null)
-                {
-                    tempInt = Int32.Parse(config.AppSettings.Settings["NCacheServer.UsageFailureRetriesCount"].Value);
-
-                    if (tempInt > 0)
-                        UsageFailureRetriesCount = tempInt;
-                }
-            }
-            catch (Exception ex) { }
-
-            try
-            {
-                if (config.AppSettings.Settings["NCacheServer.InitialFeatureDataPostingDelay"] != null)
-                {
-                    tempInt = Int32.Parse(config.AppSettings.Settings["NCacheServer.InitialFeatureDataPostingDelay"].Value);
-
-                    if (tempInt > 0)
-                        InitialFeatureDataPostingDelay = tempInt;
-                }
-            }
-            catch (Exception ex) { }
-
-            try
-            {
-                if (config.AppSettings.Settings["NCacheServer.FeatureDataPostingWaitTime"] != null)
-                {
-                    tempInt = Int32.Parse(config.AppSettings.Settings["NCacheServer.FeatureDataPostingWaitTime"].Value);
-                    if (tempInt > 0 && tempInt <= _maxFeatureDataPostingDelay)
-                        FeatureDataPostingWaitTime = tempInt;
-                }
-            }
-            catch (Exception ex) { }
             try
             {
                 if (config.AppSettings.Settings["NCacheServer.MaxStressTestTasks"] != null)
@@ -2651,11 +2265,6 @@ namespace Alachisoft.NCache.Common.Util
             private set { _unInstallInProgress = value; }
         }
 
-        public static bool LicenseLogging
-        {
-            get { return _licenseLogging; }
-            private set { _licenseLogging = value; }
-        }
 
         public static bool EnableDualSocket
         {
@@ -2702,6 +2311,21 @@ namespace Alachisoft.NCache.Common.Util
         {
             get { return _enableBadClientDetection; }
             private set { _enableBadClientDetection = value; }
+        }
+
+        /// <summary>
+        /// Machine-wide master switch for the RESP (Redis protocol) listener.
+        /// <para>
+        /// A cache opens a RESP port only when this is true AND its own config.conf carries
+        /// &lt;resp-server enable="true" .../&gt;. Defaults to true so that the per-cache flag - which
+        /// is off by default - stays the single place a port gets turned on; this key exists so an
+        /// operator can kill every RESP listener on a box without editing each cache config.
+        /// </para>
+        /// </summary>
+        public static bool EnableRespServer
+        {
+            get { return _enableRespServer; }
+            private set { _enableRespServer = value; }
         }
 
         public static int ClientSocketSendTimeout
@@ -3028,11 +2652,6 @@ namespace Alachisoft.NCache.Common.Util
             private set { ServiceConfiguration._preparedQueryEvictionPercentage = value; }
         }
 
-        public static long LicenseCheckInterval
-        {
-            get { return ServiceConfiguration._licenseCheckInterval; }
-            private set { ServiceConfiguration._licenseCheckInterval = value; }
-        }
         public static bool TurnOffRandomStartTime
         {
             get { return turnOffRandomStartTime; }
@@ -3303,24 +2922,9 @@ namespace Alachisoft.NCache.Common.Util
             get { return ServiceConfiguration._pauseWriterThreshold; }
         }
 
-        public static int RetryUsagePostInterval {
-            get
-            {
-                return EnableUsageInfoLogsForTesting ? _retryUsagePostIntervalForTesting : _retryUsagePostInterval;
-            }
-        }
 
-        public static int DataUsagePostInterval
-        {
-            get
-            {
-                return EnableUsageInfoLogsForTesting ? _dataUsagePostIntervalForTesting : _dataUsageInterval;
-            }
-        }
 
-        public static int ConnectedClientsPersistorInterval { get => _connectedClientsPersistorInterval; set => _connectedClientsPersistorInterval = value; }
 
-        public static int UsagePostThreadInterval { get => _usagePostThreadInterval; }
 
 
         public static int MaxStressTestTasks

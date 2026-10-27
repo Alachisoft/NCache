@@ -1,4 +1,4 @@
-//  Copyright (c) 2026 Alachisoft
+//  Copyright (c) 2018 Alachisoft
 //  
 //  Licensed under the Apache License, Version 2.0 (the "License");
 //  you may not use this file except in compliance with the License.
@@ -291,6 +291,7 @@ namespace Alachisoft.NCache.Client
 #if !NETCORE
                             discriptor.CacheDataNotificationCallback.BeginInvoke(key, arg, asyn, null);
 #elif NETCORE
+                            //TODO: ALACHISOFT (BeginInvoke is not supported in .Net Core thus using TaskFactory)
                             TaskFactory factory = new TaskFactory();
                             Task task = factory.StartNew(() => discriptor.CacheDataNotificationCallback(key, arg));
 #endif
@@ -449,7 +450,7 @@ namespace Alachisoft.NCache.Client
             // callback is not already registered with the same method, so add
             lock (SyncLockSelective)
             {
-                //For selective callback, we dont remove the callback as it can create chaos if user try to unregister
+                //Taimoor : For selective callback, we dont remove the callback as it can create chaos if user try to unregister
                 //a callback more then one time or against wrong items.
                 callbackWrapper = (SelectiveRemoveCallbackWrapper)_oldSelectiveCallbackPool.GetResource(removedCallback);
 
@@ -496,7 +497,7 @@ namespace Alachisoft.NCache.Client
             lock (SyncLockSelective)
             {
                 SelectiveUpdateCallbackWrapper callbackWrapper = (SelectiveUpdateCallbackWrapper)_oldSelectiveCallbackPool.GetResource(updateCallback);
-                //For selective callback, we dont remove the callback from resource pool as it can create chaos if user try to unregister
+                //Taimoor : For selective callback, we dont remove the callback from resource pool as it can create chaos if user try to unregister
                 //a callback more then one time or against wrong items.
                 if (callbackWrapper != null)
                 {
@@ -724,7 +725,7 @@ namespace Alachisoft.NCache.Client
                         continue;
                     #endregion
 
-                    //For selective callback, we dont remove the callback as it can create chaos if user try to unregister
+                    //Taimoor : For selective callback, we dont remove the callback as it can create chaos if user try to unregister
                     //a callback more then one time or against wrong items.
 
                     int i = type == EventTypeInternal.ItemUpdated ? 0 : 1;

@@ -1,4 +1,4 @@
-//  Copyright (c) 2026 Alachisoft
+//  Copyright (c) 2018 Alachisoft
 //  
 //  Licensed under the Apache License, Version 2.0 (the "License");
 //  you may not use this file except in compliance with the License.
@@ -59,6 +59,7 @@ namespace Alachisoft.NCache.Caching
             NeedUserPayload = true;
             CloneCacheEntry = true;
             UseObjectPool = true;
+            //CreateOperationId();
         }
 
         public OperationContext(OperationContextFieldName fieldName, object fieldValue) : this()
@@ -197,8 +198,28 @@ namespace Alachisoft.NCache.Caching
 
         #region ILeasable
 
+
+        //public override void MarkInUse(int moduleRefId)
+        //{
+        //    base.MarkInUse(moduleRefId);
+
+        //    foreach (var field in _fieldValueTable)
+        //    {
+        //        (field as ILeasable)?.MarkInUse(NCModulesConstants.OperationContext);
+        //    }
+        //}
+
         public override void MarkFree(int moduleRefId)
         {
+            //if (moduleRefId == NCModulesConstants.SocketServer)
+            //{
+            //    ILeasable leasable = _fieldValueTable[(int)OperationContextFieldName.OperationId] as ILeasable;
+
+            //    if (leasable != null)
+            //        leasable.MarkFree(NCModulesConstants.OperationContext);
+
+            //    ReturnLeasableToPool();
+            //}
         }
 
         public override void ResetLeasable()
@@ -210,10 +231,12 @@ namespace Alachisoft.NCache.Caching
             NeedUserPayload = true;
             CloneCacheEntry = true;
             UseObjectPool = true;
+            //CreateOperationId();
         }
 
         public override void ReturnLeasableToPool()
         {
+            //PoolManager.GetOperationContextPool().Return(this);
         }
 
         #endregion

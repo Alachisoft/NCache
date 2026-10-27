@@ -30,7 +30,6 @@ namespace Alachisoft.NCache.Common.Enum
         TYPE_INDEX_NOT_FOUND,
         ATTRIBUTE_INDEX_NOT_FOUND,
         STATE_TRANSFER_EXCEPTION,
-        INVALID_READER_EXCEPTION,
-        LICENSING_EXCEPION
+        INVALID_READER_EXCEPTION
     }
 }

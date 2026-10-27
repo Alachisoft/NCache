@@ -1,4 +1,4 @@
-//  Copyright (c) 2026 Alachisoft
+﻿//  Copyright (c) 2018 Alachisoft
 //  
 //  Licensed under the Apache License, Version 2.0 (the "License");
 //  you may not use this file except in compliance with the License.
@@ -735,21 +735,11 @@ namespace Alachisoft.NCache.Client
         public virtual T Get<T>(string key)
         {
             LockAccessType accessType = LockAccessType.IGNORE_LOCK;
-            LockHandle lockHandle = null;
-           
 
-            return GetInternal<T>(key, null, null, accessType, NoLockExpiration, ref lockHandle);
+            return GetInternal<T>(key, null, null, accessType, NoLockExpiration);
         }
 
-        public virtual T Get<T>(string key, bool acquireLock, TimeSpan lockTimeout, ref LockHandle lockHandle)
-        {
-			throw new NotSupportedException("Locking is not supported in OSS.");
-            LockAccessType accessType = acquireLock ? LockAccessType.ACQUIRE : LockAccessType.DONT_ACQUIRE;
-           
-            return GetInternal<T>(key, null, null, accessType, lockTimeout, ref lockHandle);
-        }
-
-        internal virtual T GetInternal<T>(string key, string group, string subGroup, LockAccessType accessType, TimeSpan lockTimeout, ref LockHandle lockHandle)
+        internal virtual T GetInternal<T>(string key, string group, string subGroup, LockAccessType accessType, TimeSpan lockTimeout)
         {
             if (CacheImpl == null) throw new OperationFailedException(ErrorCodes.CacheInit.CACHE_NOT_INIT, ErrorMessages.GetErrorMessage(ErrorCodes.CacheInit.CACHE_NOT_INIT));
 
@@ -766,7 +756,7 @@ namespace Alachisoft.NCache.Client
 
                 stats.BeginSample();
 
-                result = CacheImpl.Get<T>(key, flagMap, group, subGroup, ref lockHandle, lockTimeout, accessType);
+                result = CacheImpl.Get<T>(key, flagMap, group, subGroup, lockTimeout, accessType);
 
                 if (_perfStatsCollector != null)
                 {
@@ -867,18 +857,8 @@ namespace Alachisoft.NCache.Client
         public virtual CacheItem GetCacheItem(string key)
         {
             LockAccessType accessType = LockAccessType.IGNORE_LOCK;
-            LockHandle lockHandle = null;
-          
-            return GetCacheItemInternal(key, accessType, NoLockExpiration, ref lockHandle);
-        }
 
-        public virtual CacheItem GetCacheItem(string key, bool acquireLock, TimeSpan lockTimeout, ref LockHandle lockHandle)
-        {
-			throw new NotSupportedException("Locking is not supported in OSS.");
-            LockAccessType accessType = acquireLock ? LockAccessType.ACQUIRE : LockAccessType.DONT_ACQUIRE;
-           
-
-            return GetCacheItemInternal(key, accessType, lockTimeout, ref lockHandle);
+            return GetCacheItemInternal(key, accessType, NoLockExpiration);
         }
 
         internal CacheItem GetCacheItemFromEntry(string key, CacheEntry entry)
@@ -1054,7 +1034,7 @@ namespace Alachisoft.NCache.Client
             return null;
         }
 
-        internal virtual CacheItem GetCacheItemInternal(string key, LockAccessType accessType, TimeSpan lockTimeout, ref LockHandle lockHandle)
+        internal virtual CacheItem GetCacheItemInternal(string key, LockAccessType accessType, TimeSpan lockTimeout)
         {
             if (CacheImpl == null) throw new OperationFailedException(ErrorCodes.CacheInit.CACHE_NOT_INIT, ErrorMessages.GetErrorMessage(ErrorCodes.CacheInit.CACHE_NOT_INIT));
 
@@ -1072,7 +1052,7 @@ namespace Alachisoft.NCache.Client
 
                 stats.BeginSample();
 
-                object value = CacheImpl.GetCacheItem(key, flagMap,ref lockHandle, lockTimeout, accessType);
+                object value = CacheImpl.GetCacheItem(key, flagMap, lockTimeout, accessType);
 
                 if (_perfStatsCollector != null)
                 {
@@ -1115,12 +1095,8 @@ namespace Alachisoft.NCache.Client
             Insert(key, new CacheItem(value));
         }
 
-        public virtual void Insert(string key, CacheItem item, LockHandle lockHandle = null, bool releaseLock = false)
+        public virtual void Insert(string key, CacheItem item)
         {
-			if (lockHandle != null)
-			{
-				throw new NotSupportedException("Locking is not supported in OSS.");
-			}
 
             if (item == null)
                 throw new ArgumentNullException("CacheItem");
@@ -1133,16 +1109,11 @@ namespace Alachisoft.NCache.Client
 
            
             CacheItemVersion itemVersion = null;
-            LockAccessType accessType = releaseLock ? LockAccessType.RELEASE : LockAccessType.DONT_RELEASE;
-
-            if (lockHandle != null)
-            {
-                accessType = releaseLock ? LockAccessType.RELEASE : LockAccessType.DONT_RELEASE;
-            }
+            LockAccessType accessType = LockAccessType.DONT_RELEASE;
 
             InsertOperation(key, item.GetValue<object>(), item.AbsoluteExpiration, item.SlidingExpiration,
                    item.Priority, item.ItemRemoveCallback, item.ItemUpdateCallback, eventType, false,
-                   lockHandle, accessType, providerName,null,
+                   accessType, providerName,null,
                    item.CacheItemUpdatedCallback, item.CacheItemRemovedCallback, item.ItemUpdatedDataFilter, item.ItemRemovedDataFilter,
                    ref size, true, null, -1, -1, -1);
         }
@@ -1288,7 +1259,7 @@ namespace Alachisoft.NCache.Client
 
         internal virtual void InsertOperation(string key, object value,  DateTime absoluteExpiration,
             TimeSpan slidingExpiration, CacheItemPriority priority, CacheItemRemovedCallback onRemoveCallback, CacheItemUpdatedCallback onUpdateCallback,
-            EventTypeInternal eventType, bool isResyncExpiredItems, LockHandle lockHandle,
+            EventTypeInternal eventType, bool isResyncExpiredItems,
             LockAccessType accessType, string providerName, string resyncProviderName, CacheDataNotificationCallback cacheItemUdpatedCallback,
             CacheDataNotificationCallback cacheItemRemovedCallaback, EventDataFilter itemUpdateDataFilter, EventDataFilter itemRemovedDataFilter, ref long size, bool allowQueryTags, string clientId,
             short updateCallbackId, short removeCallbackId, short dsItemUpdateCallbackId, CallbackType callbackType = CallbackType.PushBasedNotification)
@@ -1330,7 +1301,7 @@ namespace Alachisoft.NCache.Client
             if (!string.IsNullOrEmpty(resyncProviderName))
                 resyncProviderName = resyncProviderName.ToLower();
 
-            object lockId = (lockHandle == null) ? null : lockHandle.LockId;
+            object lockId = null;
 
             if (queryInfo == null)
             {
@@ -1410,76 +1381,11 @@ namespace Alachisoft.NCache.Client
 
         #endregion
 
-        #region Locking Operations
-
-        public virtual void Unlock(string key, LockHandle lockHandle = null)
-        {
-			throw new NotSupportedException("Locking is not supported in OSS.");
-            if (CacheImpl == null) throw new OperationFailedException(ErrorCodes.CacheInit.CACHE_NOT_INIT, ErrorMessages.GetErrorMessage(ErrorCodes.CacheInit.CACHE_NOT_INIT));
-
-            if (key == null) throw new ArgumentNullException("key is null.");
-
-            object lockId = (lockHandle == null) ? null : lockHandle.LockId;
-
-            try
-            {
-                if (lockHandle == null)
-                    CacheImpl.Unlock(key);
-                else
-                    CacheImpl.Unlock(key, lockId);
-            }
-            catch (Exception)
-            {
-                if (ExceptionsEnabled) throw;
-            }
-            finally
-            {
-            }
-        }
-
-        public virtual bool Lock(string key, TimeSpan lockTimeout, out LockHandle lockHandle)
-        {
-			throw new NotSupportedException("Locking is not supported in OSS.");
-            if (CacheImpl == null) throw new OperationFailedException(ErrorCodes.CacheInit.CACHE_NOT_INIT, ErrorMessages.GetErrorMessage(ErrorCodes.CacheInit.CACHE_NOT_INIT));
-            if (key == null) throw new ArgumentNullException("key is null.");
-
-            lockHandle = null;
-            bool lockAcquired = false;
-
-            try
-            {
-                lockAcquired = CacheImpl.Lock(key, lockTimeout, out lockHandle);
-            }
-            catch (Exception)
-            {
-                if (ExceptionsEnabled) throw;
-            }
-
-            return lockAcquired;
-        }
-
-        internal virtual bool IsLocked(string key, ref LockHandle lockHandle)
-        {
-            if (CacheImpl == null) throw new OperationFailedException(ErrorCodes.CacheInit.CACHE_NOT_INIT, ErrorMessages.GetErrorMessage(ErrorCodes.CacheInit.CACHE_NOT_INIT));
-            if (key == null) throw new ArgumentNullException("key is null.");
-
-            try
-            {
-                return CacheImpl.IsLocked(key, ref lockHandle);
-            }
-            catch (Exception)
-            {
-                if (ExceptionsEnabled) throw;
-            }
-            return false;
-        }
-        #endregion
-
         #region	Remove/Delete Operation 
 
         #region Delete Operations
 
-        public virtual void Remove(string key, LockHandle lockHandle = null)
+        public virtual void Remove(string key)
         {
             CacheItemVersion version = null;
             string providerName = null;
@@ -1492,13 +1398,7 @@ namespace Alachisoft.NCache.Client
 
             LockAccessType accessType = LockAccessType.IGNORE_LOCK;
 
-
-            if (lockHandle != null)
-            {
-                accessType = LockAccessType.DEFAULT;
-            }
-
-            DeleteInternal(key,  eventType, lockHandle, accessType, providerName);
+            DeleteInternal(key,  eventType, accessType, providerName);
         }
 
         public virtual void RemoveBulk(IEnumerable<string> keys)
@@ -1542,7 +1442,7 @@ namespace Alachisoft.NCache.Client
             }
         }
 
-        internal virtual void DeleteInternal(string key, EventTypeInternal eventType, LockHandle lockHandle, LockAccessType accessType, string providerName)
+        internal virtual void DeleteInternal(string key, EventTypeInternal eventType, LockAccessType accessType, string providerName)
         {
             if (CacheImpl == null) throw new OperationFailedException(ErrorCodes.CacheInit.CACHE_NOT_INIT, ErrorMessages.GetErrorMessage(ErrorCodes.CacheInit.CACHE_NOT_INIT));
 
@@ -1556,7 +1456,7 @@ namespace Alachisoft.NCache.Client
                 UsageStats stats = new UsageStats();
                 stats.BeginSample();
 
-                object lockId = (lockHandle == null) ? null : lockHandle.LockId;
+                object lockId = null;
                 BitSet flagMap = new BitSet();
 
                 short dsItemRemovedCallbackId = -1;
@@ -1581,7 +1481,12 @@ namespace Alachisoft.NCache.Client
 
         #region Remove Operations 
 
-        public virtual bool Remove<T>(string key, out T removedItem, LockHandle lockHandle = null)
+        public virtual bool Remove<T>(string key, out T removedItem)
+        {
+            return RemoveCore<T>(key, out removedItem);
+        }
+
+        private bool RemoveCore<T>(string key, out T removedItem)
         {
             var removed = false;
             string providerName = null;
@@ -1589,12 +1494,8 @@ namespace Alachisoft.NCache.Client
             EventTypeInternal eventType= EventTypeInternal.None; ;
            
             LockAccessType accessType = LockAccessType.IGNORE_LOCK;
-            if (lockHandle != null)
-            {
-                accessType = LockAccessType.DEFAULT;
-            }
 
-            var removeResult = RemoveInternal<T>(key, eventType, lockHandle, accessType, providerName);
+            var removeResult = RemoveInternal<T>(key, eventType, accessType, providerName);
             removed = removeResult != null;
 
             if (removed)
@@ -1683,7 +1584,7 @@ namespace Alachisoft.NCache.Client
 
 
 
-        internal virtual object RemoveInternal<T>(string key,   EventTypeInternal eventType, LockHandle lockHandle, LockAccessType accessType, string providerName)
+        internal virtual object RemoveInternal<T>(string key,   EventTypeInternal eventType, LockAccessType accessType, string providerName)
         {
             if (CacheImpl == null) throw new OperationFailedException(ErrorCodes.CacheInit.CACHE_NOT_INIT, ErrorMessages.GetErrorMessage(ErrorCodes.CacheInit.CACHE_NOT_INIT));
 
@@ -1698,7 +1599,7 @@ namespace Alachisoft.NCache.Client
                 stats.BeginSample();
 
 
-                object lockId = (lockHandle == null) ? null : lockHandle.LockId;
+                object lockId = null;
 
 
                 BitSet flagMap = new BitSet();
@@ -2052,6 +1953,7 @@ namespace Alachisoft.NCache.Client
 #if !NETCORE
                                     cb.BeginInvoke(key, val, CacheHelper.GetWebItemRemovedReason(reason), null, null);
 #elif NETCORE
+                                    //TODO: ALACHISOFT (BeginInvoke is not supported in .Net Core thus using TaskFactory)
                                     TaskFactory factory = new TaskFactory();
                                     Task task = factory.StartNew(() => cb(key, val, CacheHelper.GetWebItemRemovedReason(reason)));
 #endif
@@ -2191,6 +2093,7 @@ namespace Alachisoft.NCache.Client
 #if !NETCORE
                                     subscriber.BeginInvoke(notifId, data, null, null);
 #elif NETCORE
+                                    //TODO: ALACHISOFT (BeginInvoke is not supported in .Net Core thus using TaskFactory)
                                     TaskFactory factory = new TaskFactory();
                                     Task task = factory.StartNew(() => subscriber(notifId, data));
 #endif
@@ -2481,7 +2384,6 @@ namespace Alachisoft.NCache.Client
             return new PollingResult();
         }
 
-  
         
 
         internal virtual object GetSerializedObject(string key, ref ulong v, ref BitSet flag, ref DateTime absoluteExpiration, ref TimeSpan slidingExpiration, ref Hashtable queryInfo)
@@ -2498,9 +2400,7 @@ namespace Alachisoft.NCache.Client
 
                 queryInfo = null;
 
-                LockHandle lockHandle = null;
-
-                result = CacheImpl.GetCacheItem(key, flagMap,ref lockHandle, TimeSpan.Zero, LockAccessType.IGNORE_LOCK) as CacheItem;
+                result = CacheImpl.GetCacheItem(key, flagMap, TimeSpan.Zero, LockAccessType.IGNORE_LOCK) as CacheItem;
 
 
 

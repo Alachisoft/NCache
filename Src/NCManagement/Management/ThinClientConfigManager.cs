@@ -31,7 +31,7 @@ namespace Alachisoft.NCache.Management
         /// <summary> Default tcp channel port. </summary>
         /// 
 
-        public new const int DEF_TCP_PORT = 8250;
+        public new const int DEF_TCP_PORT = 9803;
 
         /// <summary>
         /// Initialize a registered cache given by the ID.

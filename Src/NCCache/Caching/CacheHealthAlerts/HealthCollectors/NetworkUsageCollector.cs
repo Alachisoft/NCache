@@ -138,5 +138,24 @@ namespace Alachisoft.NCache.Caching.CacheHealthAlerts
 
             return nic;
         }
+
+        void InitializeCounter()
+        {
+            try
+            {
+                if (!initialized)
+                {
+                    string instanceName = GetInstanceName();
+
+                    currentBandwidth = new PerformanceCounter("Network Adapter", CouneterName, instanceName, true);
+                    totalBytes = new PerformanceCounter("Network Adapter", "Bytes Total/Sec", instanceName, true);
+                }
+            }
+            catch (Exception ex)
+            {
+                AppUtil.LogEvent("Couldn't Initialize Network Usage Counter : " + ex.ToString(), EventLogEntryType.Error);
+            }
+        }
+
     }
 }

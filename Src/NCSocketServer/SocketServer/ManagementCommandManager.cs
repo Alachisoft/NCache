@@ -74,23 +74,6 @@ namespace Alachisoft.NCache.SocketServer
 
 
         }
-        private static void ExecuteTLSCommandSync(ClientManager clientManager, Common.Protobuf.ManagementCommand cmd)
-        {
-            clientManager.SecureConnectionEnabled = true;
-
-            Alachisoft.NCache.Common.Protobuf.ManagementResponse response = new Alachisoft.NCache.Common.Protobuf.ManagementResponse();
-
-            response.methodName = cmd.methodName;
-            response.version = cmd.commandVersion;
-            response.requestId = cmd.requestId;
-
-            ClusteredArrayList list = ResponseHelper.SerializeResponse(response);
-
-            if (clientManager != null && list != null)
-            {
-                ConnectionManager.AssureSend(clientManager, list.ToArray(), false);
-            }
-        }
         public Common.DataStructures.RequestStatus GetRequestStatus(string clientId, long requestId, long commandId)
         {
             return null;

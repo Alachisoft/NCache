@@ -21,6 +21,7 @@ namespace Alachisoft.NCache.Common.RuntimeEnvironment
         internal readonly string _SERVICE_DIR = null;
         internal readonly string _Deploy_PATH = null;
         internal readonly string _PUBLISH_FOLDER = null;
+        internal const string LoaderSERVICE_JAVA = "Alachisoft.NCache.ExecutionDaemon";
         internal readonly string _LIB_DIR = Path.Combine("lib");
         internal readonly string _ASSEMBLY_DIR = Path.Combine("assembly");
         internal readonly string _ASSEMBLY_NETCORE_20 = Path.Combine("assembly", "netcore20");
@@ -55,7 +56,6 @@ namespace Alachisoft.NCache.Common.RuntimeEnvironment
 #endif
         }
 
-        public virtual string NActivatePath { get { return Path.Combine(AppUtil.InstallDir, "bin", "NActivate"); } }
 
         //Load Assembly path
         //File Path Executable (Services, bridge, loader, webmanager,  CacheProcess)
