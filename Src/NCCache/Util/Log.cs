@@ -1,4 +1,4 @@
-//  Copyright (c) 2026 Alachisoft
+//  Copyright (c) 2018 Alachisoft
 //  
 //  Licensed under the Apache License, Version 2.0 (the "License");
 //  you may not use this file except in compliance with the License.
@@ -28,10 +28,9 @@ namespace Alachisoft.NCache.Caching.Util
     /// </summary>
 
 
-    internal class Log
+    internal class Log //: IDisposable
     {
         /// <summary>Configuration file folder name</summary>
-
         private const string DIRNAME = @"log-files";
         /// <summary>Path of the configuration folder.</summary>
         static private string s_configDir = "";
@@ -64,6 +63,9 @@ namespace Alachisoft.NCache.Caching.Util
             {
                 path = s_configDir;
             }
+            //string filename = context.CacheRoot.Name.ToLower() + "." + 
+            //    Environment.MachineName.ToLower() + "." + 
+            //    DateTime.Now.ToString("dd-MM-yy HH-mm-ss") + @".log.txt";
             try
             {
                 if (!System.IO.Directory.Exists(path))
@@ -115,13 +117,14 @@ namespace Alachisoft.NCache.Caching.Util
                     cache_name += "-" + "replica";
 
                 if (inproc && !isStartedAsMirror) cache_name += "." + System.Diagnostics.Process.GetCurrentProcess().Id;
+                //filename = System.IO.Path.Combine(path, filename);
                 nTrace.SetOutputStream(cache_name, Log.GetLogPath());
 
             }
             catch (Exception e)
             {
-
                 AppUtil.LogEvent("NCache", "Failed to open log. " + e, System.Diagnostics.EventLogEntryType.Error, EventCategories.Error, EventID.GeneralError);
+                //Trace.error("Cache.StartLog()", "Failed to open log " + e);
             }
 
             if (properties.Contains("usehptime"))
@@ -145,5 +148,16 @@ namespace Alachisoft.NCache.Caching.Util
 
             return nTrace;
         }
+
+
+
+        ///// <summary>
+        ///// Stop the cache logging functionality.
+        ///// </summary>
+        //public static void Close(CacheRuntimeContext context)
+        //{
+        //    //if (context.CacheTrace != null)
+        //    //    context.CacheTrace.CloseOutputStream();
+        //}
     }
 }

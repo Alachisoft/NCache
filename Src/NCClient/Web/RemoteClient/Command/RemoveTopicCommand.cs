@@ -1,4 +1,4 @@
-﻿//  Copyright (c) 2026 Alachisoft
+﻿//  Copyright (c) 2018 Alachisoft
 //  
 //  Licensed under the Apache License, Version 2.0 (the "License");
 //  you may not use this file except in compliance with the License.
@@ -58,7 +58,16 @@ namespace Alachisoft.NCache.Client
             _removeTopicCommand.clientLastViewId = ClientLastViewId;
             _removeTopicCommand.intendedRecipient = IntendedRecipient;
             _removeTopicCommand.version = "4200";
-            _removeTopicCommand.commandVersion = 1;
+            _removeTopicCommand.commandVersion = 1; // NCache 4.1 Onwards
+            
+            //_command = new Common.Protobuf.Command();
+            //_command.requestID = base.RequestId;
+            //_command.removeTopicCommand = _removeTopicCommand;
+            //_command.type = Common.Protobuf.Command.Type.REMOVE_TOPIC;
+            //_command.clientLastViewId = ClientLastViewId;
+            //_command.intendedRecipient = IntendedRecipient;
+            //_command.version = "4200";
+            //_command.commandVersion = 1; // NCache 4.1 Onwards
         }
     }
 }

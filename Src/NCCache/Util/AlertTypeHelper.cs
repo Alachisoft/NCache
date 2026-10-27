@@ -1,4 +1,4 @@
-//  Copyright (c) 2026 Alachisoft
+//  Copyright (c) 2018 Alachisoft
 //  
 //  Licensed under the Apache License, Version 2.0 (the "License");
 //  you may not use this file except in compliance with the License.
@@ -19,6 +19,8 @@ using Alachisoft.NCache.Common.Propagator;
 
 namespace Alachisoft.NCache.Caching.Util
 {
+
+	//EmailNotifier: AlertTypeHelper
 	public class AlertTypeHelper
 	{
 		public static AlertNotificationTypes Initialize(IDictionary properties)
@@ -73,11 +75,6 @@ namespace Alachisoft.NCache.Caching.Util
 			if (properties.Contains("general-error"))
 			{
 				alertTypes.GeneralError = Convert.ToBoolean(properties["general-error"]);
-			}
-
-			if (properties.Contains("licensing-error"))
-			{
-				alertTypes.LicensingError = Convert.ToBoolean(properties["licensing-error"]);
 			}
 
 			if (properties.Contains("configuration-error"))

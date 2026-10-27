@@ -1,47 +1,53 @@
 ﻿//  Copyright (c) 2026 Alachisoft
-//  
+//
 //  Licensed under the Apache License, Version 2.0 (the "License");
 //  you may not use this file except in compliance with the License.
 //  You may obtain a copy of the License at
-//  
+//
 //     http://www.apache.org/licenses/LICENSE-2.0
-//  
+//
 //  Unless required by applicable law or agreed to in writing, software
 //  distributed under the License is distributed on an "AS IS" BASIS,
 //  WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
 //  See the License for the specific language governing permissions and
 //  limitations under the License
-using Mono.Cecil;
 using System;
-using System.Collections.Generic;
-using System.Linq;
-using System.Text;
-using System.Threading.Tasks;
+using System.Reflection;
 
 namespace Alachisoft.NCache.Common.AssemblyBrowser
 {
     public class PropertyDef
     {
-        PropertyDefinition propertyDefinition;
+        PropertyInfo propertyInfo;
         TypeDef propertyTypeDef;
-        public PropertyDef(PropertyDefinition propertyDefinition)
+
+        public PropertyDef(PropertyInfo propertyInfo)
         {
-            this.propertyDefinition = propertyDefinition;
+            this.propertyInfo = propertyInfo;
         }
 
         public string Name
         {
             get
             {
-                return this.propertyDefinition.Name;
+                return this.propertyInfo.Name;
             }
         }
 
+        /// <summary>
+        /// Signature of the property as the assembly metadata spells it, i.e.
+        /// "PropertyType DeclaringType::Name".
+        /// </summary>
         public string FullName
         {
             get
             {
-                return this.propertyDefinition.FullName;
+                return string.Concat(
+                    TypeDef.GetFullName(this.propertyInfo.PropertyType),
+                    " ",
+                    TypeDef.GetFullName(this.propertyInfo.DeclaringType),
+                    "::",
+                    this.propertyInfo.Name);
             }
         }
 
@@ -49,8 +55,8 @@ namespace Alachisoft.NCache.Common.AssemblyBrowser
         {
             get
             {
-                if(propertyTypeDef == null)
-                    propertyTypeDef = new TypeDef(this.propertyDefinition.PropertyType);
+                if (propertyTypeDef == null)
+                    propertyTypeDef = new TypeDef(this.propertyInfo.PropertyType);
 
                 return propertyTypeDef;
             }

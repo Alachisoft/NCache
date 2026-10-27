@@ -32,7 +32,6 @@ using Alachisoft.NCache.Common.Logger;
 using Alachisoft.NCache.Licensing.RegistryUtil;
 using System.Globalization;
 #if NETCORE
-using Alachisoft.NCache.Licensing.LinuxUtil;
 using Alachisoft.NCache.Licensing.RegistryUtil;
 #endif
 namespace Alachisoft.NCache.SocketServer
@@ -48,34 +47,27 @@ namespace Alachisoft.NCache.SocketServer
         private int _autoStartDelay = 0;
         private int _cacheStartDelay = 0;
         static string _cacheserver = "NCache";
-        private object _cloudHeartbeatLock = new object();
         private ServerHost _nchost = new ServerHost();
         private SocketServer _socketServer;
-        private System.Timers.Timer _evalWarningTask;
-        private System.Timers.Timer _cacheServerEvalTask;
-        private System.Timers.Timer _reactWarningTask;
-        private System.Threading.Timer _expiryWarningTask;
-        private System.Threading.Timer _cloudHeartbeatTimer;
-        private System.Timers.Timer _notifyPostInfoTask;
-        private System.Timers.Timer _ncacheConnectedClientsPersistor;
         private SocketServer _managementSocketServer;
-        private int _numberOfRetryUsageinfo = 10;
-        private double _connectedClientsPersistorInterval = TimeSpan.FromMinutes(ServiceConfiguration.ConnectedClientsPersistorInterval).TotalMilliseconds;
+#if NETCORE
+        private Http.ServiceHttpServer _serviceHttpServer;
+#endif
         private NCacheLogger _serviceLogger;
-
-        private bool IsEnableUsageInfoLogs
-        {
-            get
-            {
-                return ServiceConfiguration.EnableUsageInfoLogs;
-            }
-        }
 
         private bool IsSnmpMonitoringEnabled
         {
             get
             {
                 return ServiceConfiguration.EnableSnmpMonitoring;
+            }
+        }
+
+        private bool IsEnablePrometheusMonitoring
+        {
+            get
+            {
+                return ServiceConfiguration.EnablePrometheusMonitoring;
             }
         }
 
@@ -128,7 +120,7 @@ namespace Alachisoft.NCache.SocketServer
                     if (_serviceLogger == null)
                     {
                         _serviceLogger = new NCacheLogger();
-                        _serviceLogger.Initialize(LoggerNames.ServiceLogs);
+                        _serviceLogger.Initialize(LoggerNames.ServiceLogs, false, true);
 
                         // After initialization, set the ServiceLogger instance in NCacheServiceLogger
                         NCacheServiceLogger.Logger = _serviceLogger;
@@ -174,13 +166,14 @@ namespace Alachisoft.NCache.SocketServer
                 _nchost.CacheServer.Renderer.ManagementPort = managementServerPort;
                 CacheProvider.Provider = _nchost.CacheServer;
 
+#if NETCORE
+                StartServiceHttpServer();
+#endif
 
                 // Load configuration is separate thread to boost performance
                 AssignMananagementPorts();
 
                 NCacheServiceLogger.LogInfo("NCache service has been started successfully.");
-
-              
 
                 ThreadPool.QueueUserWorkItem(new WaitCallback(GetRunningCaches));
 
@@ -190,8 +183,14 @@ namespace Alachisoft.NCache.SocketServer
                 }
 
                 AppUtil.LogEvent(_cacheserver, _cacheserver + " service has started successfully", EventLogEntryType.Information, EventCategories.Information, EventID.ServiceStart);
-                if (IsSnmpMonitoringEnabled)
+                // The metric server is the receiving end of NCacheServer.EnableMetricsPublishing:
+                // cache hosts push their counters to this service, and the Prometheus agent inside
+                // the metric server mirrors them into the prometheus-net registry that GET /metrics
+                // on the service HTTP server renders. Without it the service answers every publish
+                // with MetricServerNotInitialized.
+                if (IsEnablePrometheusMonitoring)
                 {
+                    CacheServer.Instance.MetricServer = MetricServerFactory.GetMetricServer();
                 }
             }
             catch (Exception ex)
@@ -276,6 +275,61 @@ namespace Alachisoft.NCache.SocketServer
                 catch (Exception) { }
             }
         }
+#if NETCORE
+        /// <summary>
+        /// Starts the service HTTP server on NCacheServer.RestPort and registers its endpoints.
+        /// New endpoints are added here: implement Http.IServiceHttpEndpoint and add a Register call.
+        /// A failure here is logged but never prevents the service from starting.
+        /// .NET only: the OSS .NET Framework build exists for the tools and never hosts the service.
+        /// </summary>
+        private void StartServiceHttpServer()
+        {
+            try
+            {
+                int httpPort = ServiceConfiguration.RestPort;
+                if (httpPort <= 0)
+                {
+                    NCacheServiceLogger.LogInfo("Service HTTP server is disabled (NCacheServer.RestPort is not a positive port).");
+                    return;
+                }
+
+                Http.ServiceHttpServer server = new Http.ServiceHttpServer(httpPort)
+                    .Register(new Http.MetricsJsonEndpoint());
+
+                // Prometheus scrapes GET /metrics on this same listener/port (no separate MetricServerPort
+                // listener on .NET). The registry is process-wide, so registering here before the metric
+                // server is created (see MetricServerFactory below) is safe.
+                if (IsEnablePrometheusMonitoring)
+                    server.Register(new Http.Endpoints.PrometheusMetricsEndpoint());
+
+                server.Start();
+                _serviceHttpServer = server;
+
+                NCacheServiceLogger.LogInfo("Service HTTP server started on port " + httpPort + " with endpoints: " + server.DescribeEndpoints() + ".");
+            }
+            catch (Exception ex)
+            {
+                _serviceHttpServer = null;
+                NCacheServiceLogger.LogError("Failed to start the service HTTP server. " + ex);
+                AppUtil.LogEvent(_cacheserver, "Failed to start the service HTTP server. " + ex.Message, EventLogEntryType.Warning, EventCategories.Error, EventID.GeneralInformation);
+            }
+        }
+
+        private void StopServiceHttpServer()
+        {
+            try
+            {
+                Http.ServiceHttpServer server = Interlocked.Exchange(ref _serviceHttpServer, null);
+                if (server != null)
+                    server.Stop();
+            }
+            catch (Exception ex)
+            {
+                NCacheServiceLogger.LogError("Failed to stop the service HTTP server. " + ex);
+            }
+        }
+#endif
+
         private void StopHosting()
         {
             try
@@ -285,6 +339,10 @@ namespace Alachisoft.NCache.SocketServer
 
                 if (_managementSocketServer != null)
                     _managementSocketServer.StopListening();
+
+#if NETCORE
+                StopServiceHttpServer();
+#endif
 
                 if (_nchost != null)
                 {
@@ -298,20 +356,6 @@ namespace Alachisoft.NCache.SocketServer
                 if (_managementSocketServer != null)
                     _managementSocketServer.Stop();
 
-                if (_expiryWarningTask != null)
-                {
-                    _expiryWarningTask.Dispose();
-                }
-
-                if (_evalWarningTask != null)
-                {
-                    _evalWarningTask.Close();
-                }
-
-                if (_cacheServerEvalTask != null)
-                {
-                    _cacheServerEvalTask.Close();
-                }
                 AppUtil.LogEvent(_cacheserver, _cacheserver + " service has stopped successfully.", EventLogEntryType.Information, EventCategories.Information, EventID.ServiceStop);
             }
             catch (ThreadAbortException te)
@@ -348,7 +392,7 @@ namespace Alachisoft.NCache.SocketServer
                 switch (status)
                 {
                     case ExecutionStatus.Started:
-                        AppUtil.LogEvent("NCache Management Center has been started successfully at: http://" + ServiceConfiguration.BindToIP + ":8251", EventLogEntryType.Information);
+                        AppUtil.LogEvent("NCache Management Center has been started successfully at: http://" + ServiceConfiguration.BindToIP + ":9801", EventLogEntryType.Information);
                         break;
                     case ExecutionStatus.Error:
                         AppUtil.LogEvent("An error occurred while auto starting NCache Management Center.", EventLogEntryType.Error);

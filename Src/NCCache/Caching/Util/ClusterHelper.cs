@@ -74,9 +74,7 @@ namespace Alachisoft.NCache.Caching.Util
            
            
 
-                    var licenseException = rspValue as LicensingException;
 
-                    if (licenseException != null) throw licenseException;
                     
                     if (rspValue is Exception)
                     {

@@ -72,7 +72,7 @@ namespace Alachisoft.NCache.Caching.CacheHealthAlerts
 #if !NETCORE
                 
                     if (counter != null)
-                        data = (counter.NextValue());
+                        data = (counter.NextValue()); //mbs
                 
 #elif NETCORE
                 {

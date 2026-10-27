@@ -45,6 +45,10 @@ namespace Alachisoft.NCache.Caching.Statistics
                 try
                 {
                     return true;
+                    //PerformanceCounterPermission permissions = new
+                    //    PerformanceCounterPermission(PerformanceCounterPermissionAccess.Instrument,
+                    //    ".", PC_CATEGORY);
+                    //permissions.Demand();
 
                 }
                 catch (Exception e)

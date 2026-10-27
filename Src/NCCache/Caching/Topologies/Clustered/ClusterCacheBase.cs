@@ -5391,10 +5391,6 @@ namespace Alachisoft.NCache.Caching.Topologies.Clustered
             Cluster.SendMessage(replicaAddress, func, GroupRequest.GET_FIRST, false, Priority.Normal);
         }
 
-        internal override void SetClusterInactive(string reason)
-        {
-            if (_cluster != null) _cluster.SetAsNonFunctional(reason);
-        }
 
         
       

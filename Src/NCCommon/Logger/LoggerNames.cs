@@ -36,8 +36,6 @@ namespace Alachisoft.NCache.Common.Logger
         APILogs,
         eventlogs,
         ServiceLogs,
-        LicensingLog,
-        UsageInfoLog,
         MetricServer,
         CloudService
     }

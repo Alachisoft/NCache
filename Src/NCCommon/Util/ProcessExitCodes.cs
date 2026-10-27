@@ -27,6 +27,7 @@ namespace Alachisoft.NCache.Common.Util
         const string MANAGEMENT_CONNECTION = "Management listener can not be started. The port might already be in use";
         const string SOCKET_PORT_RANGE = "The port is outside the range of valid values for Socket.";
         const string MANAGEMENT_PORT_RANGE = "The port is outside the range of valid values for Management.";
+        const string RESP_CONNECTION = "RESP server could not be started. The port might already be in use";
         const string GENERAL_EXCEPTION = "An Exception has occurred while starting Separate Process. Please refer to Windows Event Logs for details.";
         
         public static Dictionary<int, string> list = new Dictionary<int, string>();
@@ -44,6 +45,7 @@ namespace Alachisoft.NCache.Common.Util
             list.Add(8, MANAGEMENT_CONNECTION);
             list.Add(9, SOCKET_PORT_RANGE);
             list.Add(10, MANAGEMENT_PORT_RANGE);
+            list.Add(11, RESP_CONNECTION);
         }
         
     }

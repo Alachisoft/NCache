@@ -1,4 +1,4 @@
-//  Copyright (c) 2026 Alachisoft
+//  Copyright (c) 2018 Alachisoft
 //  
 //  Licensed under the Apache License, Version 2.0 (the "License");
 //  you may not use this file except in compliance with the License.
@@ -17,9 +17,7 @@ using System.Data;
 using System.Collections;
 
 
-
 using Alachisoft.NCache.Runtime.Exceptions;
-
 
 
 namespace Alachisoft.NCache.Config

@@ -1,4 +1,4 @@
-//  Copyright (c) 2026 Alachisoft
+//  Copyright (c) 2018 Alachisoft
 //  
 //  Licensed under the Apache License, Version 2.0 (the "License");
 //  you may not use this file except in compliance with the License.
@@ -28,6 +28,7 @@ namespace Alachisoft.NCache.Caching.EvictionPolicies
     public class TimestampHint : EvictionHint, ICompactSerializable
     {
         /// <summary>Time stamp for the hint</summary>
+        //protected int _dt;
         [CLSCompliant(false)]
         protected DateTime _dt;
         
@@ -48,6 +49,7 @@ namespace Alachisoft.NCache.Caching.EvictionPolicies
             _dt = DateTime.UtcNow;
         }
         /// <summary>Return time stamp for the hint</summary>
+        //public int TimeStamp
         public DateTime TimeStamp
         {
             get { return _dt;}
@@ -76,6 +78,27 @@ namespace Alachisoft.NCache.Caching.EvictionPolicies
         {
             _dt = DateTime.UtcNow;
         }
+
+        //#region	/                 --- IComparable ---           /
+
+        ///// <summary>
+        ///// Compares the current instance with another object of the same type.
+        ///// </summary>
+        ///// <param name="obj">An object to compare with this instance.</param>
+        ///// <returns>A 32-bit signed integer that indicates the relative order of the comparands.</returns>
+        //public override int CompareTo(object obj)
+        //{
+        //    if (obj is TimestampHint)
+        //    {
+        //        return _dt.CompareTo(((TimestampHint)obj)._dt);
+        //    }
+        //    else
+        //    {
+        //        return 0;
+        //    }
+        //}
+
+        //#endregion
 
         #region	/                 --- ICompactSerializable ---           /
 
@@ -118,6 +141,7 @@ namespace Alachisoft.NCache.Caching.EvictionPolicies
         }
         public override void ReturnLeasableToPool()
         {
+            //PoolManager.GetTimestampHintPool().Return(this);
         }
 
         #endregion

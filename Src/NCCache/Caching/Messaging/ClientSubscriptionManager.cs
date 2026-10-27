@@ -1,4 +1,4 @@
-﻿//  Copyright (c) 2026 Alachisoft
+﻿//  Copyright (c) 2018 Alachisoft
 //  
 //  Licensed under the Apache License, Version 2.0 (the "License");
 //  you may not use this file except in compliance with the License.
@@ -41,6 +41,7 @@ namespace Alachisoft.NCache.Caching.Messaging
         private bool _dipsoed;
         private ISubscriptionEventListener _subscriptionListener;
        
+      //  private ISubscriptionEventListener _mylistener=new ;
 
         public string ClientID { get; set; }
 
@@ -433,6 +434,24 @@ namespace Alachisoft.NCache.Caching.Messaging
                 _delivryNotificationMessages.Clear();
             }
         }
+
+        //internal State GetState()
+        //{
+        //    State state = new State();
+        //    lock(this)
+        //    {
+        //        foreach(var subscription in _messageSubscriptions)
+        //        {
+        //            state.AddSubscriptions(new SubscriptionInfo() { SubscriptionId = subscription.Key.SubscriptionName,SubPolicyType=subscription.Key.SubscriptionPolicy, Type = Common.Enum.SubscriptionType.Subscriber });
+        //        }
+
+        //        foreach (var subscription in _deliverySubscriptions)
+        //        {
+        //            state.AddSubscriptions(new SubscriptionInfo() { SubscriptionId = subscription.Key.SubscriptionName,SubPolicyType=subscription.Key.SubscriptionPolicy, Type = Common.Enum.SubscriptionType.Publisher });
+        //        }
+        //    }
+        //    return state;
+        //}
 
         internal void GetClientStats(ref int subscriberCount, ref int publisherCount)
         {

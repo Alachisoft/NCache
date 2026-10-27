@@ -1,4 +1,4 @@
-﻿//  Copyright (c) 2026 Alachisoft
+﻿//  Copyright (c) 2018 Alachisoft
 //  
 //  Licensed under the Apache License, Version 2.0 (the "License");
 //  you may not use this file except in compliance with the License.
@@ -82,6 +82,15 @@ namespace Alachisoft.NCache.Config.Dom
 
                 if (settings.ContainsKey("last-modified"))
                     cache.LastModified = settings["last-modified"].ToString();
+                
+                //if (settings.ContainsKey("auto-start"))
+                //    cache.AutoStartCacheOnServiceStartup = Convert.ToBoolean(settings["auto-start"]);
+
+                //if (settings.ContainsKey("client-activity-notification"))
+                //{
+                //    cache.ClientActivityNotification =
+                //        GetClientActivityNotification(settings["client-activity-notification"] as Hashtable);
+                //}
 
                 if (settings.ContainsKey("log"))
                     cache.Log = GetLog((Hashtable)settings["log"]);
@@ -122,6 +131,9 @@ namespace Alachisoft.NCache.Config.Dom
             }
 
 
+
+            //+Asad 20110124
+
             private static SQLDependencyConfig GetSQLDependency(Hashtable settings)
             {
                 SQLDependencyConfig sqlDependencyConfig = new SQLDependencyConfig();
@@ -129,6 +141,8 @@ namespace Alachisoft.NCache.Config.Dom
                     sqlDependencyConfig.UseDefault = Convert.ToBoolean(settings["use-default"]);
                 return sqlDependencyConfig;
             }
+
+            //-Asad 20110124
 
             private static SynchronizationStrategy GetSynchronizationStrategy(Hashtable settings)
             {
@@ -148,6 +162,7 @@ namespace Alachisoft.NCache.Config.Dom
                 return synchronizationStrategy;
             }
 
+            //+Sami 20131204
             private static ServerMapping GetServerMapping(Hashtable settings)
             {
                 ServerMapping serverMapping = new ServerMapping();
@@ -174,6 +189,8 @@ namespace Alachisoft.NCache.Config.Dom
 
             private static void GetClassifiedCache(CacheServerConfig cache, Hashtable settings)
             {
+                //if (settings.ContainsKey("data-load-balancing"))
+                //    cache.AutoLoadBalancing = GetAutoLoadBalancing((Hashtable)settings["data-load-balancing"]);
                 if (settings.ContainsKey("cluster"))
                     cache.Cluster = GetCluster(settings);
                 if (settings.ContainsKey("internal-cache"))
@@ -306,6 +323,9 @@ namespace Alachisoft.NCache.Config.Dom
                 if (settings.ContainsKey("tcpping"))
                     GetTcpPing(channel, (Hashtable)settings["tcpping"]);
 
+                //if (settings.ContainsKey("pbcast.gms"))
+                //    GetGMS(channel, (Hashtable)settings["pbcast.gms"]);
+
                 return channel;
             }
 
@@ -334,6 +354,10 @@ namespace Alachisoft.NCache.Config.Dom
 
             private static void GetGMS(Channel channel, Hashtable settings)
             {
+                //if (settings.ContainsKey("join_retry_count"))
+                //    channel.JoinRetries = Convert.ToInt32(settings["join_retry_count"].ToString());
+                //if (settings.ContainsKey("join_retry_timeout"))
+                //    channel.JoinRetryInterval = Convert.ToInt32(settings["join_retry_timeout"]);
             }
 
 
@@ -344,8 +368,12 @@ namespace Alachisoft.NCache.Config.Dom
                     log.Enabled = Convert.ToBoolean(settings["enabled"]);
                 if (settings.ContainsKey("trace-errors"))
                     log.TraceErrors = Convert.ToBoolean(settings["trace-errors"]);
+                //if (settings.ContainsKey("trace-notices"))
+                //    log.TraceNotices = Convert.ToBoolean(settings["trace-notices"]);
                 if (settings.ContainsKey("trace-debug"))
                     log.TraceDebug = Convert.ToBoolean(settings["trace-debug"]);
+                //if (settings.ContainsKey("trace-warnings"))
+                //    log.TraceWarnings = Convert.ToBoolean(settings["trace-warnings"]);
                 if (settings.ContainsKey("log-path"))
                     log.LogPath = Convert.ToString(settings["log-path"]);
                 return log;
@@ -464,6 +492,9 @@ namespace Alachisoft.NCache.Config.Dom
                     config.Add("id", cache.Name);
                     config.Add("cache", GetCache(cache));
                     config.Add("web-cache", GetWebCache(cache));
+
+                    //if (cache.ServerMapping != null && cache.ServerMapping.MappingServers!= null && cache.ServerMapping.MappingServers.Length > 0)
+                    //    config.Add("server-ip-mapping", cache.ServerMapping);
                 }
                 finally
                 {
@@ -554,7 +585,7 @@ namespace Alachisoft.NCache.Config.Dom
                         }
                         #endregion
 
-                        //Modified for Attribute level Compact Serilization Changes
+                        //Numan Hanif: Modified for Attribute level Compact Serilization Changes
                         Hashtable nonCompactFields = null;
                         if (cls.NonCompactFieldsTable.Count > 0)
                         {
@@ -681,6 +712,8 @@ namespace Alachisoft.NCache.Config.Dom
                 if (cache.LastModified != null)
                     settings.Add("last-modified", cache.LastModified);
 
+                //settings.Add("auto-start", cache.AutoStartCacheOnServiceStartup);
+
                 if (cache.DataFormat != null)
                     settings.Add("data-format", cache.DataFormat);
 
@@ -688,6 +721,8 @@ namespace Alachisoft.NCache.Config.Dom
 
                 settings.Add("cache-classes", GetCacheClasses(cache));
                 settings.Add("class", cache.Name);
+                //if (cache.ClientActivityNotification != null)
+                //    settings.Add("client-activity-notification", GetClientActivityNotification(cache.ClientActivityNotification));
 
                 if (cache.PerfCounters != null)
                     settings.Add("perf-counters", cache.PerfCounters.Enabled);
@@ -730,6 +765,10 @@ namespace Alachisoft.NCache.Config.Dom
             {
                 Hashtable settings = new Hashtable();
                 settings.Add("id", cache.Name);
+                //if (cache.AutoLoadBalancing != null)
+                //{
+                //    settings.Add("data-load-balancing", GetAutoLoadBalancing(cache.AutoLoadBalancing));
+                //}
 
                 if (cache.Cluster == null)
                 {
@@ -788,6 +827,7 @@ namespace Alachisoft.NCache.Config.Dom
             private static Hashtable GetEvictionPriority(EvictionPolicy evictionPolicy)
             {
                 Hashtable settings = new Hashtable();
+                //settings.Add("default-value", evictionPolicy.DefaultPriority.ToString());
                 settings.Add("default-value", evictionPolicy.DefaultPriority);
                 return settings;
             }
@@ -888,6 +928,7 @@ namespace Alachisoft.NCache.Config.Dom
                 return settings;
             }
 
+            //-
 
             private static Hashtable GetChannel(Channel channel, bool useHeartBeat)
             {
@@ -923,6 +964,8 @@ namespace Alachisoft.NCache.Config.Dom
             private static Hashtable GetGMS(Channel channel)
             {
                 Hashtable settings = new Hashtable();
+                //settings.Add("join_retry_count", channel.JoinRetries.ToString());
+                //settings.Add("join_retry_timeout", channel.JoinRetryInterval.ToString());
                 return settings;
             }
 
@@ -933,7 +976,9 @@ namespace Alachisoft.NCache.Config.Dom
                 Hashtable settings = new Hashtable();
                 settings.Add("enabled", log.Enabled.ToString().ToLower());
                 settings.Add("trace-errors", log.TraceErrors.ToString().ToLower());
+             //   settings.Add("trace-notices", log.TraceNotices.ToString().ToLower());
                 settings.Add("trace-debug", log.TraceDebug.ToString().ToLower());
+               // settings.Add("trace-warnings", log.TraceWarnings.ToString().ToLower());
                 settings.Add("log-path", log.LogPath.ToLower());
                 return settings;
             }

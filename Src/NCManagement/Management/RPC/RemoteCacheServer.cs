@@ -152,6 +152,7 @@ namespace Alachisoft.NCache.Management.RPC
               
                 catch (System.Exception e)
                 {
+                    throw new ManagementException(e.Message, e);
                 }
 
                 if (response != null && response.exception != null)
@@ -379,7 +380,7 @@ namespace Alachisoft.NCache.Management.RPC
         /// <exception cref="ArgumentNullException">cacheId is a null reference (Nothing in Visual Basic).</exception>
         /// 
 
-        public bool RegisterCache(string cacheId, Alachisoft.NCache.Config.NewDom.CacheServerConfig config, string partId, bool overwrite, bool hotApply, ServerLicenseInfo licenseInfo = null, string registerAs = "")
+        public bool RegisterCache(string cacheId, Alachisoft.NCache.Config.NewDom.CacheServerConfig config, string partId, bool overwrite, bool hotApply, string registerAs = "")
         {
             //overload 2
             ManagementCommand command = GetManagementCommand(ManagementUtil.MethodName.RegisterCache, 2);
@@ -388,7 +389,6 @@ namespace Alachisoft.NCache.Management.RPC
             command.Parameters.AddParameter(partId);
             command.Parameters.AddParameter(overwrite);
             command.Parameters.AddParameter(hotApply);
-            command.Parameters.AddParameter(licenseInfo);
             command.Parameters.AddParameter(registerAs);
             return (bool)ExecuteCommandOnCacehServer(command);
 
@@ -405,7 +405,7 @@ namespace Alachisoft.NCache.Management.RPC
         /// <param name="password"></param>
         /// <param name="hotApply"></param>
         /// <returns></returns>
-        public bool RegisterCache(string cacheId, CacheServerConfig config, string partId, bool overwrite, bool hotApply, ServerLicenseInfo licenseInfo = null, string registerAs = "")
+        public bool RegisterCache(string cacheId, CacheServerConfig config, string partId, bool overwrite, bool hotApply, string registerAs = "")
         {
             //overload 1
             ManagementCommand command = GetManagementCommand(ManagementUtil.MethodName.RegisterCache, 1);
@@ -414,7 +414,6 @@ namespace Alachisoft.NCache.Management.RPC
             command.Parameters.AddParameter(partId);
             command.Parameters.AddParameter(overwrite);
             command.Parameters.AddParameter(hotApply);
-            command.Parameters.AddParameter(licenseInfo);
             command.Parameters.AddParameter(registerAs);
             return (bool)ExecuteCommandOnCacehServer(command);
         }
@@ -638,9 +637,9 @@ namespace Alachisoft.NCache.Management.RPC
             ExecuteCommandOnCacehServer(command);
         }
 
-        public void StartCache(string cacheId, string partitionId, bool twoPhaseInitialization, ServerLicenseInfo licenseInfo = null, string registerAs = "")
+        public void StartCache(string cacheId, string partitionId, bool twoPhaseInitialization, string registerAs = "")
         {
-            StartCache(cacheId, partitionId, null, null, null, null, null, null, twoPhaseInitialization, licenseInfo, registerAs);
+            StartCache(cacheId, partitionId, null, null, null, null, null, null, twoPhaseInitialization, registerAs);
         }
 
         public void StartCachePhase2(string cacheId)
@@ -684,7 +683,7 @@ namespace Alachisoft.NCache.Management.RPC
             CacheClearedCallback cacheCleared,
             CustomRemoveCallback customRemove,
             CustomUpdateCallback customUpdate,
-            bool twoPhaseInitialization, ServerLicenseInfo licenseInfo = null, string registerAs = "")
+            bool twoPhaseInitialization, string registerAs = "")
         {
             ManagementCommand command = GetManagementCommand(ManagementUtil.MethodName.StartCache, 7);
             command.Parameters.AddParameter(cacheId);
@@ -698,7 +697,6 @@ namespace Alachisoft.NCache.Management.RPC
             command.Parameters.AddParameter(null);
 
             command.Parameters.AddParameter(twoPhaseInitialization);
-            command.Parameters.AddParameter(licenseInfo);
             command.Parameters.AddParameter(registerAs);
 
             ExecuteCommandOnCacehServer(command);
@@ -984,12 +982,6 @@ namespace Alachisoft.NCache.Management.RPC
             return (Alachisoft.NCache.Caching.Statistics.CacheStatistics)ExecuteCommandOnCacehServer(command);
         }
 
-        public string GetLicenseKey()
-        {
-            ManagementCommand command = GetManagementCommand(ManagementUtil.MethodName.GetLicenseKey);
-            return (string)ExecuteCommandOnCacehServer(command);
-        }
-
       
   
 
@@ -1011,11 +1003,10 @@ namespace Alachisoft.NCache.Management.RPC
             return (string)ExecuteCommandOnCacehServer(command);
         }
 
-        public ServerLicenseInfo GetServerLicenseInfo(bool ignoreMac = false)
+        public ServerProductInfo GetServerProductInfo()
         {
-            ManagementCommand command = GetManagementCommand(ManagementUtil.MethodName.GetServerLicenseInfo);
-            command.Parameters.AddParameter(ignoreMac);
-            return (ServerLicenseInfo)ExecuteCommandOnCacehServer(command);
+            ManagementCommand command = GetManagementCommand(ManagementUtil.MethodName.GetServerProductInfo);
+            return (ServerProductInfo)ExecuteCommandOnCacehServer(command);
         }
 
         public Config.NewDom.CacheServerConfig GetNewConfiguration(string cacheId)
@@ -1251,34 +1242,7 @@ namespace Alachisoft.NCache.Management.RPC
             ExecuteCommandOnCacehServer(command);
         }
 
-	    public string RegisterNCacheEvaluation(string key, string email, string firstName, string lastName, string company,
-            bool isEvalKey, string installType, string registerAs, string installCode = null, bool updateMac = false)
-        {
-            ManagementCommand command = GetManagementCommand(ManagementUtil.MethodName.RegisterNCacheEvaluation);
-            command.Parameters.AddParameter(key);
-            command.Parameters.AddParameter(email);
-            command.Parameters.AddParameter(firstName);
-            command.Parameters.AddParameter(lastName);
-            command.Parameters.AddParameter(company);
-            command.Parameters.AddParameter(isEvalKey);
-            command.Parameters.AddParameter(installType);
-            command.Parameters.AddParameter(registerAs);
-            command.Parameters.AddParameter(installCode);
-            command.Parameters.AddParameter(updateMac);
-    
-            return (string)ExecuteCommandOnCacehServer(command);
-        }
 
-        public void LogEvaluationInfo(string email, string firstName, string lastName, string company)
-        {
-            ManagementCommand command = GetManagementCommand(ManagementUtil.MethodName.LogEvaluationInfo);
-            command.Parameters.AddParameter(email);
-            command.Parameters.AddParameter(firstName);
-            command.Parameters.AddParameter(lastName);
-            command.Parameters.AddParameter(company);
-
-            ExecuteCommandOnCacehServer(command);
-        }
         public bool AreCacheHostCountersEnabled()
         {
             ManagementCommand command = GetManagementCommand(ManagementUtil.MethodName.AreCacheHostCountersEnabled, 1);
@@ -1347,10 +1311,11 @@ namespace Alachisoft.NCache.Management.RPC
 
         public List<PerfmonCounterDetails> GetPerfmonValues(List<PerfmonCounterDetails> counterDetails, string cacheId)
         {
-            ManagementCommand command = GetManagementCommand(ManagementUtil.MethodName.GetPerfmonValues, 1);
-            command.Parameters.AddParameter(counterDetails);
+            ManagementCommand command = GetManagementCommand(ManagementUtil.MethodName.GetPerfmonValues, 2);
+            command.Parameters.AddParameter(counterDetails?.ToArray());
             command.Parameters.AddParameter(cacheId);
-            return (List<PerfmonCounterDetails>)ExecuteCommandOnCacehServer(command);
+            PerfmonCounterDetails[] result = ExecuteCommandOnCacehServer(command) as PerfmonCounterDetails[];
+            return result != null ? new List<PerfmonCounterDetails>(result) : null;
         }
 
         public PoolStats GetPoolStats(PoolStatsRequest request)
@@ -1360,12 +1325,6 @@ namespace Alachisoft.NCache.Management.RPC
             return ExecuteCommandOnCacehServer(command) as PoolStats;
         }
 
-
-        public ServerLicenseInfo GetCachedServerLicenseInfo()
-        {
-            ManagementCommand command = GetManagementCommand(ManagementUtil.MethodName.GetCachedServerLicenseInfo);
-            return ExecuteCommandOnCacehServer(command) as ServerLicenseInfo;
-        }
 
         public void AddConnectedClient(ClientProfile clientProfile)
         {
@@ -1423,16 +1382,7 @@ namespace Alachisoft.NCache.Management.RPC
             return ExecuteCommandOnCacehServer(command) as IDictionary;
         }
 
-        public string GetMachineId()
-        {
-            ManagementCommand command = GetManagementCommand(ManagementUtil.MethodName.GetMachineId);
-            return ExecuteCommandOnCacehServer(command) as string;
-        }
 
-        public string GetPossibleMachinesInCluster()
-        {
-            return "";
-        }
 
         public ClientProfileDom GetClientProfileReport(string cacheId)
         {

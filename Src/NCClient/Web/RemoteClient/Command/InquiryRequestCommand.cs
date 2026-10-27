@@ -1,4 +1,4 @@
-//  Copyright (c) 2026 Alachisoft
+//  Copyright (c) 2018 Alachisoft
 //  
 //  Licensed under the Apache License, Version 2.0 (the "License");
 //  you may not use this file except in compliance with the License.
@@ -47,6 +47,11 @@ namespace Alachisoft.NCache.Client
 
         protected override void CreateCommand()
         {
+            //base._command = new Alachisoft.NCache.Common.Protobuf.Command();
+            //base._command.requestID = base.RequestId;
+            //base._command.inquiryRequestCommand = _inquiryRequestCommand;
+            //base._command.type = Alachisoft.NCache.Common.Protobuf.Command.Type.INQUIRY_REQUEST;
+
             _inquiryRequestCommand.requestId = base.RequestId;
         }
 

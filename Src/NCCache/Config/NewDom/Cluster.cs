@@ -1,4 +1,4 @@
-//  Copyright (c) 2026 Alachisoft
+//  Copyright (c) 2018 Alachisoft
 //  
 //  Licensed under the Apache License, Version 2.0 (the "License");
 //  you may not use this file except in compliance with the License.
@@ -19,13 +19,9 @@ using System.Collections.Generic;
 using Alachisoft.NCache.Common;
 using Alachisoft.NCache.Common.Net;
 using System.Text.RegularExpressions;
-
 using Alachisoft.NCache.Runtime.Serialization;
-
 using Alachisoft.NCache.Config.Dom;
-
 using Runtime = Alachisoft.NCache.Runtime;
-
 namespace Alachisoft.NCache.Config.NewDom
 {
     [Serializable]

@@ -1,4 +1,4 @@
-//  Copyright (c) 2026 Alachisoft
+﻿//  Copyright (c) 2018 Alachisoft
 //  
 //  Licensed under the Apache License, Version 2.0 (the "License");
 //  you may not use this file except in compliance with the License.
@@ -31,6 +31,7 @@ using Alachisoft.NCache.Caching.Events;
 using Alachisoft.NCache.Common.Pooling;
 using Alachisoft.NCache.Common.Monitoring;
 using Alachisoft.NCache.Common.Logger;
+//using Alachisoft.NCache.Runtime.Messaging;
 using Alachisoft.NCache.Licensing;
 using Alachisoft.NCache.Common.Licensing;
 using System.Net;
@@ -52,6 +53,12 @@ namespace Alachisoft.NCache.Client
             _clientInfo.ProcessID = AppUtil.CurrentProcess.Id;
             _clientInfo.ClientID = System.Guid.NewGuid().ToString();
             _clientInfo.MachineName = Environment.MachineName;
+
+            //Taimoor: from NCache 4.1 SP2 private patch 2 ownward client version will also be sent
+            //Client version has following format :
+            //[2 digits for major version][1 digit for service paack][1 digit for private patch]
+            //e.g. 4122 means 4.1 major , 2 for service pack 2 and last 4 for private patch 4
+            //_clientInfo.ClientVersion = 5000; //changed for 5.0
             _clientInfo.ClientVersion = Common.Monitoring.Version.GetFormattedVersion(true);
             _clientID = ClientInfo.GetLegacyClientID(_clientInfo);
         }
@@ -160,7 +167,7 @@ namespace Alachisoft.NCache.Client
             return null;
         }
 
-        public virtual CompressedValueEntry Get<T>(string key, BitSet flagMap, string group, string subGroup, ref LockHandle lockHandle, TimeSpan lockTimeout, LockAccessType accessType)
+        public virtual CompressedValueEntry Get<T>(string key, BitSet flagMap, string group, string subGroup, TimeSpan lockTimeout, LockAccessType accessType)
         {
             return null;
         }
@@ -173,7 +180,7 @@ namespace Alachisoft.NCache.Client
         }
 
 
-        public virtual object GetCacheItem(string key, BitSet flagMap, ref LockHandle lockHandle, TimeSpan lockTimeout, LockAccessType accessType)
+        public virtual object GetCacheItem(string key, BitSet flagMap, TimeSpan lockTimeout, LockAccessType accessType)
         {
             return null;
         }
@@ -226,10 +233,8 @@ namespace Alachisoft.NCache.Client
         public virtual void Delete(string key)
         {
 
-            LockHandle lockHandle = null;
-
             LockAccessType accessType = LockAccessType.IGNORE_LOCK;
-            object lockId = (lockHandle == null) ? null : lockHandle.LockId;
+            object lockId = null;
             BitSet flagMap = new BitSet();
             short dsItemRemovedCallbackId = -1;
 
@@ -286,28 +291,7 @@ namespace Alachisoft.NCache.Client
         }
 
 
-        public virtual void Unlock(string key)
-        {
-
-        }
-
-        public virtual void Unlock(string key, object lockId)
-        {
-
-        }
-
-        public virtual bool Lock(string key, TimeSpan lockTimeout, out LockHandle lockHandle)
-        {
-            lockHandle = null;
-            return false;
-        }
-
         public virtual bool CheckCSecurityAuthorization(string cacheId, byte[] password, string userId)
-        {
-            return false;
-        }
-
-        internal virtual bool IsLocked(string key, ref LockHandle lockHandle)
         {
             return false;
         }
@@ -420,7 +404,6 @@ namespace Alachisoft.NCache.Client
         {
             try
             {
-               
                 _clientInfo.Memory = (int)MachineInfo.Memory;
                 _clientInfo.OperationSystem = GetOSPlatform().ToString();
                 _clientInfo.Status = ConnectivityStatus.Connected;

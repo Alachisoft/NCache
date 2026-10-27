@@ -48,6 +48,14 @@ namespace Alachisoft.NCache.Common.Util
                 if (!safeProcessHandle.IsInvalid)
                 {
                     var process = Process.GetProcessById(processInformation.dwProcessId);
+
+                    // GetProcessById holds no handle of its own. Closing ours below with nothing else
+                    // open lets a host that exits at once - a port conflict, a bad config - disappear
+                    // before anyone reads it, and ExitCode then throws "Process was not started by this
+                    // object" instead of reporting why it exited. Opening the Process's own handle
+                    // first, while ours is still valid, keeps the exit code readable.
+                    var ownHandle = process.SafeHandle;
+
                     safeProcessHandle.Close();
                     return process;
                 }

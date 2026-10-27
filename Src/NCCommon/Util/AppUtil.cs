@@ -129,10 +129,10 @@ namespace Alachisoft.NCache.Common
                 if (!System.Runtime.InteropServices.RuntimeInformation.IsOSPlatform(System.Runtime.InteropServices.OSPlatform.Windows))
                 {
                     NCache.Licensing.RegistryUtil.RegUtil.LoadRegistry();
-                    if (NCache.Licensing.RegistryUtil.RegUtil.LicenseProperties != null ||
-                        NCache.Licensing.RegistryUtil.RegUtil.LicenseProperties.Product != null || 
-                        !string.IsNullOrEmpty(NCache.Licensing.RegistryUtil.RegUtil.LicenseProperties.Product.InstallDir))
-                        path = NCache.Licensing.RegistryUtil.RegUtil.LicenseProperties.Product.InstallDir;
+                    if (NCache.Licensing.RegistryUtil.RegUtil.InstallProperties != null ||
+                        NCache.Licensing.RegistryUtil.RegUtil.InstallProperties.Product != null || 
+                        !string.IsNullOrEmpty(NCache.Licensing.RegistryUtil.RegUtil.InstallProperties.Product.InstallDir))
+                        path = NCache.Licensing.RegistryUtil.RegUtil.InstallProperties.Product.InstallDir;
                 }
                 else
 #endif
@@ -175,10 +175,10 @@ namespace Alachisoft.NCache.Common
                 if (!System.Runtime.InteropServices.RuntimeInformation.IsOSPlatform(System.Runtime.InteropServices.OSPlatform.Windows))
                 {
                     NCache.Licensing.RegistryUtil.RegUtil.LoadRegistry();
-                    if (NCache.Licensing.RegistryUtil.RegUtil.LicenseProperties != null ||
-                        NCache.Licensing.RegistryUtil.RegUtil.LicenseProperties.Product != null ||
-                        !string.IsNullOrEmpty(NCache.Licensing.RegistryUtil.RegUtil.LicenseProperties.Product.InstallDir))
-                        path = NCache.Licensing.RegistryUtil.RegUtil.LicenseProperties.Product.InstallDir;
+                    if (NCache.Licensing.RegistryUtil.RegUtil.InstallProperties != null ||
+                        NCache.Licensing.RegistryUtil.RegUtil.InstallProperties.Product != null ||
+                        !string.IsNullOrEmpty(NCache.Licensing.RegistryUtil.RegUtil.InstallProperties.Product.InstallDir))
+                        path = NCache.Licensing.RegistryUtil.RegUtil.InstallProperties.Product.InstallDir;
                 }
                 else
                     path = GetAppSetting("InstallDir");
@@ -360,7 +360,7 @@ namespace Alachisoft.NCache.Common
         /// </summary>
         /// <param name="msg">The string to write to the event log.</param>
         /// <param name="type">One of the <c>EventLogEntryType</c> values.</param>
-        public static void LogEvent(string source, string msg, EventLogEntryType type, short category, int eventId)
+        public static void LogEvent(string source, string msg, EventLogEntryType type, short category, int eventId, bool addConsoleAppender = true)
         {
             try
             {
@@ -390,7 +390,7 @@ namespace Alachisoft.NCache.Common
                     if (_nCacheEventLogger == null)
                     {
                         _nCacheEventLogger = new NCacheLogger();
-                        _nCacheEventLogger.InitializeEventsLogging();
+                        _nCacheEventLogger.InitializeEventsLogging(addConsoleAppender);
                     }
                     _nCacheEventLogger.EventLog(DateTime.Now.ToString("yyyy-MM-dd HH:mm:ss, fff"), source, eventId.ToString(), type.ToString(), msg);
                 }
@@ -710,51 +710,5 @@ namespace Alachisoft.NCache.Common
             return (pathRoot[0] != '\\' || pathRoot[1] != '\\') ? true : false;
         }
 
-        public static string GetHost()
-        {
-            string hostURl = @"https://app.alachisoft.com";
-            try
-            {
-                string path = Path.Combine(NCacheRuntimeEnvironment.GetEnvironment.NActivatePath, "activate.json");
-                if (File.Exists(path))
-                {
-                    using (StreamReader file = File.OpenText(path))
-                    using (JsonTextReader reader = new JsonTextReader(file))
-                    {
-                        var host = (JObject)JToken.ReadFrom(reader);
-                        var onPremHostURl = host["Host"].Value<string>();
-                        if (!string.IsNullOrEmpty(onPremHostURl))
-                            hostURl = onPremHostURl;
-                    }
-                }
-            }
-            catch (Exception) { }
-            return hostURl;
-        }
-
-        public static string GetCloudHost()
-        {
-            string hostURl = @"https://cloud.alachisoft.com";
-
-            try
-            {
-                if (!string.IsNullOrEmpty(RegUtil.LicenseProperties.UserInfo.CloudUrl))
-                {
-                    hostURl = RegUtil.LicenseProperties.UserInfo.CloudUrl;
-                }
-            }
-            catch (Exception) { }
-            return hostURl;
-        }
-        public static string BuildHeartbeatServerUrl(string subscriptionId, string licenseDuration, string azureFunctionUrl)
-        {
-            var uriBuilder = new UriBuilder(azureFunctionUrl);
-            var query = HttpUtility.ParseQueryString(uriBuilder.Query);
-            query["subscriptionId"] = subscriptionId;
-            query["licenseDuration"] = licenseDuration;
-            query["macAddress"] = string.Join(",", MachineInfo.MacAddresses.Where(m => !string.IsNullOrWhiteSpace(m)));
-            uriBuilder.Query = query.ToString();
-            return uriBuilder.ToString();
-        }
     }
 }

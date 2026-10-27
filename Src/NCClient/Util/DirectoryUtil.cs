@@ -1,4 +1,4 @@
-//  Copyright (c) 2026 Alachisoft
+//  Copyright (c) 2018 Alachisoft
 //  
 //  Licensed under the Apache License, Version 2.0 (the "License");
 //  you may not use this file except in compliance with the License.
@@ -205,6 +205,7 @@ namespace Alachisoft.NCache.Client
             String path = null;
             bool found = false;
 #if !NETCORE
+            //TODO: ALACHISOFT (HttpContext is missing in .Net Core)
             if (HttpRuntime.AppDomainAppId != null || HttpContext.Current != null)
             {
                 string approot = null;

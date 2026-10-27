@@ -1,4 +1,4 @@
-//  Copyright (c) 2026 Alachisoft
+//  Copyright (c) 2018 Alachisoft
 //  
 //  Licensed under the Apache License, Version 2.0 (the "License");
 //  you may not use this file except in compliance with the License.
@@ -40,6 +40,8 @@ namespace Alachisoft.NCache.Client
         {
             switch (entryType)
             {
+                //case EntryType.CacheItem:
+                //    return obj;
 
                 default:
                     if (obj.GetType().Equals(typeof(ValueEmissary)))

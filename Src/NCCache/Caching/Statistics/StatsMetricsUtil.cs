@@ -25,6 +25,8 @@ namespace Alachisoft.NCache.Caching.Statistics
                             if (counterData.IsBaseCounter)
                                 continue;
 
+                            //if (type == CounterType.AverageCounter)
+                            //    continue;
                             registeredCounters.Add(new CounterMetadata
                             {
                                 Name = counterData.CounterName,
@@ -62,7 +64,8 @@ namespace Alachisoft.NCache.Caching.Statistics
                                 continue;
 
                             CounterType type = GetCounterType(counterData);
-
+                            //if (type == CounterType.AverageCounter)
+                            //    continue;
                             registeredCounters.Add(new CounterMetadata
                             {
                                 Name = counterData.CounterName,

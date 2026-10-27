@@ -12,16 +12,10 @@ namespace Alachisoft.NCache.Common.Util
         public const string ExecuteOperations = "NCacheServer.ExecuteOperations";
         public const string UseCommandThreadPool = "NCacheServer.UseCommandThreadPool";
         public const string SendBufferSize = "NCacheServer.SendBufferSize";
-        public const string EnableHeartbeat = "NCacheServer.EnableHeartbeat";
-        public const string SkippedHeartbeatThresholdInterval = "NCacheServer.SkippedHeartbeatThresholdInterval";
-        public const string SkippedHeartbeatEventLogInterval = "NCacheServer.SkippedHeartbeatEventLogInterval";
-        public const string RandomizeFirstHeartbeatRequest = "NCacheServer.RandomizeFirstHeartbeatRequest";
-        public const string EnableUsageInfoLogs = "NCacheServer.EnableUsageInfoLogs";
         public const string EnableSnmpMonitoring = "NCacheServer.EnableSnmpMonitoring";
+        public const string EnablePrometheusMonitoring = "NCacheServer.EnablePrometheusMonitoring";
         public const string EnableSystemCountersMonitoring = "NCacheServer.EnableSystemCountersMonitoring";
         public const string CachingModuleTotalBuckets = "NCacheServer.CachingModuleTotalBuckets";
-        public const string EnableUsageInfoLogsForTesting = "NCacheServer.EnableUsageInfoLogsForTesting";
-        public const string ConnectedClientsPersistorInterval = "NCacheServer.ConnectedClientsPersistorInterval";
         public const string HideOperatingSystem = "NCacheServer.HideOperatingSystem";
         public const string ReceiveBufferSize = "NCacheServer.ReceiveBufferSize";
         public const string BindToIP = "NCacheServer.BindToIP";
@@ -32,7 +26,6 @@ namespace Alachisoft.NCache.Common.Util
         public const string ServiceGCCollectionInterval = "NCacheServer.ServiceGCCollectionInterval";
         public const string EnableObjectPooling = "NCacheServer.EnableObjectPooling";
         public const string TransactionalPoolCapacity = "NCacheServer.TransactionalPoolCapacity";
-        public const string LicenseLogging = "NCacheServer.LicenseLogging";
         public const string TouchInterval = "NCacheServer.TouchInterval";
         public const string ReplicaJoinDelay = "NCacheServer.ReplicaJoinDelay";
         public const string EnableNagling = "NCacheServer.EnableNagling";
@@ -87,12 +80,7 @@ namespace Alachisoft.NCache.Common.Util
         public const string EnableGCCollection = "NCache.EnableGCCollection";
         public const string preparedQueryTableSize = "preparedQueryTableSize";
         public const string preparedQueryEvictionPercentage = "preparedQueryEvictionPercentage";
-        public const string LicenseCheckInterval = "NCacheServer.LicenseCheckInterval";
-        public const string LicenseAutoRenewalInterval = "NCacheServer.LicenseAutoRenewalInterval";
         public const string TurnOffRandomStartTime = "NCacheServer.TurnOffRandomStartTime";
-        public const string LicenseInterval = "NCacheServer.LicenseInterval";
-        public const string AcquireClientLicenseRetries = "NCacheServer.AcquireClientLicenseRetries";
-        public const string AcquireClientLicenseRetryInterval = "NCacheServer.AcquireClientLicenseRetryInterval";
         public const string SimulateSocketClose = "NCache.SimulateSocketClose";
         public const string SocketCloseInterval = "NCacheServer.SocketCloseInterval";
         public const string useAvgStats = "useAvgStats";
@@ -133,17 +121,9 @@ namespace Alachisoft.NCache.Common.Util
         public const string BridgeOperationFailureRetries = "NCacheServer.BridgeOperationFailureRetries";
         public const string BridgeReplicationInterval = "NCacheServer.BridgeReplicationInterval";
         public const string BridgeBulkOperationSize = "NCacheServer.BridgeBulkOperationSize";
-        public const string FeatureDataCollectionDelay = "NCacheServer.FeatureDataCollectionDelay";
         public const string InitialLoggingDelayAtStartup = "NCacheServer.InitialLoggingDelayAtStartup";
-        public const string FeatureDataPostingDelay = "NCacheServer.FeatureDataPostingDelay";
-        public const string EvalFeatureDataPostingDelay = "NCacheServer.EvalFeatureDataPostingDelay";
-        public const string EnableFeatureUsageLogging = "NCacheServer.EnableFeatureUsageLogging";
         public const string EnableNonKeyBasedFetchOperation = "NCacheServer.EnableNonKeyBasedFetchOperation";
         public const string QueryEmptySlotValidityThreshold = "NCacheServer.QueryEmptySlotValidityThreshold";
-        public const string UploadFeatureUsageStats = "NCacheServer.UploadFeatureUsageStats";
-        public const string UsageFailureRetriesCount = "NCacheServer.UsageFailureRetriesCount";
-        public const string InitialFeatureDataPostingDelay = "NCacheServer.InitialFeatureDataPostingDelay";
-        public const string FeatureDataPostingWaitTime = "NCacheServer.FeatureDataPostingWaitTime";
         public const string PubSubOrderedMessagesTimeout = "NCacheServer.PubSubOrderedMessagesTimeout";
         public const string MaxCacheCountInDEV = "NCacheServer.MaxCacheCountInDEV";
         public const string MaxAccumulatedCacheSizeInDEV = "NCacheServer.MaxAccumulatedCacheSizeInDEV";
@@ -157,7 +137,6 @@ namespace Alachisoft.NCache.Common.Util
         public const string SearchCountersFetchInterval = "NCacheServer.SearchCountersFetchInterval";
         public const string CollectSystemMetrics = "NCacheServer.CollectSystemMetrics";
         public const string PubSubStoreBucketsCount = "NCacheServer.PubSubStoreBucketsCount";
-        public const string TopicDeletionThrottleLimit = "NCacheServer.TopicDeletionThrottleLimit";
         public const string TopicProcessingCount = "NCacheServer.TopicProcessingCount";
         public const string DeleteMessageCount = "NCacheServer.DeleteMessageCount";
         public const string PersistenceDir = "NCacheServer.PersistenceDir";
@@ -167,6 +146,7 @@ namespace Alachisoft.NCache.Common.Util
         public const string ManagementPortLower = "NCacheServer.ManagementPortLower";
         public const string ManagementPortUpper = "NCacheServer.ManagementPortUpper";
         public const string MetricServerPort = "NCacheServer.MetricServerPort";
+        public const string ServiceHttpPort = "NCacheServer.RestPort";
         public const string SnmpListenersInfoPort = "NCacheServer.SnmpListenersInfoPort";
         public const string AllowMMapDirectory = "NCacheServer.AllowMMapDirectory";
         public const string CredentialsEncryptionKey = "NCacheServer.CredentialsEncryptionKey";
@@ -180,13 +160,7 @@ namespace Alachisoft.NCache.Common.Util
         public const string WebManagerStartRetries = "NCacheServer.WebManagerStartRetries";
         public const string PublicIP = "NCacheServer.PublicIP";
         public const string AutoRenewal = "NCacheServer.AutoRenewal";
-        public const string HeartbeatRequestTimeout = "NCacheServer.HeartbeatRequestTimeout";
-        public const string MaxHeartbeatFailureDuration = "NCacheServer.MaxHeartbeatFailureDuration";
         public const string AzureFunctionUrl = "NCacheServer.AzureFunctionUrl";
-        public const string CloudHeartbeatCheckInterval = "NCacheServer.CloudHeartbeatCheckInterval";
-        public const string MaxHeartbeatRetries = "NCacheServer.MaxHeartbeatRetries";
-        public const string HeartbeatRetryDelaySeconds = "NCacheServer.HeartbeatRetryDelaySeconds";
-        public const string StubWritingInterval = "NCacheServer.StubWritingInterval";
 
     }
 }

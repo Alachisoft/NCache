@@ -1,4 +1,4 @@
-﻿//  Copyright (c) 2026 Alachisoft
+﻿//  Copyright (c) 2018 Alachisoft
 //  
 //  Licensed under the Apache License, Version 2.0 (the "License");
 //  you may not use this file except in compliance with the License.
@@ -23,7 +23,9 @@ using Alachisoft.NCache.Caching.Statistics;
 using Alachisoft.NCache.Runtime.Caching;
 using Alachisoft.NCache.Caching.Messaging;
 using Alachisoft.NCache.Common.Pooling;
+#if !CLIENT
 using Alachisoft.NCache.Caching.Topologies.Clustered;
+#endif
 namespace Alachisoft.NCache.Caching
 {
     class EventManager
@@ -117,7 +119,7 @@ namespace Alachisoft.NCache.Caching
             if (context.CacheImpl is ClusterCacheBase) 
             {
                 nodes = ((ClusterCacheBase)context.CacheImpl)._stats.Nodes;
-                foreach (NodeInfo nodeInfo in nodes)
+                foreach (NodeInfo nodeInfo in nodes)//why node info is here
                 {
                     oldclients = nodeInfo.OldConnectedClientsInfo;
                     foreach (string client in oldclients)

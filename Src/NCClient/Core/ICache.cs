@@ -1,4 +1,4 @@
-﻿//  Copyright (c) 2026 Alachisoft
+﻿//  Copyright (c) 2018 Alachisoft
 //  
 //  Licensed under the Apache License, Version 2.0 (the "License");
 //  you may not use this file except in compliance with the License.
@@ -197,18 +197,15 @@ namespace Alachisoft.NCache.Client
         /// </example>
         void Insert(string key, object value);
 
-        // functionality of lockhandle with readthru is not supported.
         /// <summary>
         /// Inserts a <see cref="CacheItem"/> into the cache, allowing to specify the Write-Through option.
         /// </summary>
         /// <param name="key">Unique key to identify the cache item.</param>
         /// <param name="item">The CacheItem that is to be inserted into the cache.</param>
-        /// <param name="lockHandle">An instance of <seealso cref="LockHandle"/> that holds the lock information. If the item is locked, then it can only be updated if the correct lockHandle is specified.</param>
-        /// <param name="releaseLock">A flag to determine whether or not the lock should be released after operation is performed.</param>
         /// <remarks> If the key already exists, this overload overwrites the values of the existing <seealso cref="ICache"/> item. If the key does not exist, it adds the item to the cache.
-        /// If CacheItem contains invalid values the related exception is thrown. Functionality of lockhandle with Readthru is not supported. 
-        /// See <see cref="CacheItem"/> for invalid property values and related exceptions.</remarks>			
-        /// <example>Example demonstrates how to insert an item to the cache with a sliding expiration of 5 minutes, a priority of 
+        /// If CacheItem contains invalid values the related exception is thrown.
+        /// See <see cref="CacheItem"/> for invalid property values and related exceptions.</remarks>
+        /// <example>Example demonstrates how to insert an item to the cache with a sliding expiration of 5 minutes, a priority of
         /// high, and that notifies the application when the item is removed from the cache.
         /// <code>
         /// ICache cache = CacheManager.GetCache("myCache");
@@ -224,9 +221,7 @@ namespace Alachisoft.NCache.Client
         ///
         /// cache.Add(key, item);
         ///
-        /// LockHandle lockHandle = new LockHandle();
-        ///
-        /// CacheItem cachedItem = cache.Get&lt;CacheItem&gt;("cachedItemKey", true, new TimeSpan(0, 5, 0), ref lockHandle);
+        /// CacheItem cachedItem = cache.GetCacheItem("cachedItemKey");
         ///
         /// if (cachedItem != null)
         /// {
@@ -236,7 +231,7 @@ namespace Alachisoft.NCache.Client
         ///        cachedItem.Expiration = new Expiration(ExpirationType.Sliding, new TimeSpan(0, 2, 0));
         ///
         ///
-        ///        cache.Insert(key, cachedItem, lockHandle, true);
+        ///        cache.Insert(key, cachedItem);
         ///     }
         ///     catch (OperationFailedException ex)
         ///     {
@@ -245,7 +240,7 @@ namespace Alachisoft.NCache.Client
         /// }
         /// </code>
         /// </example>
-        void Insert(string key, CacheItem item, LockHandle lockHandle = null, bool releaseLock = false);
+        void Insert(string key, CacheItem item);
 
         /// <summary>
         /// Inserts a dictionary of cache keys with <see cref="CacheItem"/> to the cache with the WriteThruOptions. 
@@ -357,42 +352,6 @@ namespace Alachisoft.NCache.Client
         /// </example>
         T Get<T>(string key);
 
-        // functionality of lockhandle with readthru is not supported. 
-        /// <summary>
-        /// Retrieves the specified item from the Cache if it is not already locked. Otherwise it returns null.
-        /// This is different from the basic Get operation where an item is returned ignoring the lock
-        /// altogether.
-        /// </summary>
-        /// <typeparam name="T">Specifies the type of value obtained from the cache.</typeparam>
-        /// <param name="key">Unique identifier for the cache item to be retrieved.</param>
-        /// <param name="acquireLock">A flag to determine whether to acquire a lock or not.</param>
-        /// <param name="lockTimeout">The TimeSpan after which the lock is automatically released.</param>
-        /// <param name="lockHandle">An instance of <seealso cref="LockHandle"/> to hold the lock information.</param>
-        /// <returns>The retrieved cache item, or a null reference if the key is not found.</returns>
-        /// <exception cref="ArgumentNullException"><paramref name="key"/> contains a null reference.</exception>
-        /// <exception cref="ArgumentException"><paramref name="key"/> is an empty string.</exception>
-        /// <example>Example demonstrates how to retrieve the cached value and acquire a lock at the same time for minutes.
-        /// <code>
-        /// ICache cache = CacheManager.GetCache("myCache");
-        /// 
-        /// Product product = new Product();
-        /// product.Id = 1;
-        /// product.Name = "Chai";
-        /// 
-        /// string key = "Product0";
-        /// 
-        /// cache.Add(key, product);
-        /// 
-        /// LockHandle lockHandle = new LockHandle();
-        ///  
-        /// object cachedItem = cache.Get&lt;Product&gt;(key, true, new TimeSpan(0, 2, 0), ref lockHandle);
-        /// </code>
-        /// </example>   
-        T Get<T>(string key, bool acquireLock, TimeSpan lockTimeout, ref LockHandle lockHandle);
-
-
-   
-
         /// <summary>
         /// Retrieves the objects from cache for the given keys as key-value pairs.
         /// </summary>
@@ -434,24 +393,6 @@ namespace Alachisoft.NCache.Client
         /// </example>
         CacheItem GetCacheItem(string key);
 
-        /// <summary>
-        /// Get the cache item stored in cache. Loack handle can be given with this and a flag can be set if you want to acquire lock.
-        /// </summary>
-        /// <param name="key">Key used to reference the desired object.</param>
-        /// <param name="acquireLock">A flag to determine whether to acquire a lock or not.</param>
-        /// <param name="lockTimeout">The TimeSpan after which the lock is automatically released.</param>
-        /// <param name="lockHandle">An instance of <see cref="LockHandle"/> to hold the lock information.</param>
-        /// <returns>The retrieved cache item. If key is not found, a null reference.</returns>
-        /// /// <example>Example demonstrates how to retrieve cache item with lock handle, timeout and flag
-        /// box server control.
-        /// <code>
-        /// ICache cache = CacheManager.GetCache("myCache");
-        /// string key = "Product0";
-        /// LockHandle lockHandle = new LockHandle();
-        ///	CacheItem item = cache.GetCacheItem(key, true, TimeSpan.FromSeconds(30), ref lockHandle);
-        /// </code>
-        /// </example>
-        CacheItem GetCacheItem(string key, bool acquireLock, TimeSpan lockTimeout, ref LockHandle lockHandle);
 
        
 
@@ -486,28 +427,24 @@ namespace Alachisoft.NCache.Client
         /// Removes the specified item from the <see cref="ICache"/>. 
         /// </summary>
         /// <param name="key">Unique key of the item to be removed.</param>
-        /// <param name="lockHandle">If the item is locked, it can be removed only if the correct lockHandle is specified. lockHandle should be the same which was used initially to lock the item, otherwise you will get the 'OperationFailedException'.</param>
-        /// <example>Example demonstrates how to remove a locked item in the cache with write through options.
+        /// <example>Example demonstrates how to remove an item from the cache.
         /// <code>
         /// ICache cache = CacheManager.GetCache("myCache");
-        /// 
+        ///
         /// Product product = new Product();
         /// product.Id = 1;
         /// product.Name = "Chai";
-        /// 
+        ///
         /// string key = "Product0";
-        /// 
-        /// 
-        /// LockHandle lockHandle = new LockHandle();
-        /// 
-        /// object item = cache.Get&lt;Product&gt;(key, true, TimeSpan.Zero, ref lockHandle);
-        /// 
+        ///
+        /// object item = cache.Get&lt;Product&gt;(key);
+        ///
         /// if (item != null)
         /// {
         ///     try
         ///     {
-        ///        
-        ///         cache.Remove(key, lockHandle);
+        ///
+        ///         cache.Remove(key);
         ///     }
         ///     catch (OperationFailedException ex)
         ///     {
@@ -516,7 +453,7 @@ namespace Alachisoft.NCache.Client
         /// }
         /// </code>
         /// </example>
-        void Remove(string key, LockHandle lockHandle = null);
+        void Remove(string key);
 
         /// <summary>
         /// Removes the specified item from the <see cref="ICache"/> and returns it to the application as an out parameter. You can also specify the write option such that the item may be removed from both cache and data source.
@@ -524,28 +461,25 @@ namespace Alachisoft.NCache.Client
         /// <typeparam name="T">Specifies the type of value obtained from the cache.</typeparam>
         /// <param name="key">Unique key of the item to be removed.</param>
         /// <param name="removedItem">out Parameter through which the removed item from cache is returned</param>
-        /// <param name="lockHandle">If the item is locked, it can be removed only if the correct lockHandle is specified. lockHandle should be the same which was used initially to lock the item, otherwise you will get the 'OperationFailedException'.</param>
         /// <exception cref="ArgumentNullException"><paramref name="key"/> contains a null reference.</exception>
         /// <exception cref="ArgumentException"><paramref name="key"/> is not serializable.</exception>
         /// <example>Example demonstrates how you can remove an item from cache
         /// <code>
         /// ICache cache = CacheManager.GetCache("myCache");
-        /// 
+        ///
         /// Product product = new Product();
         /// product.Id = 1;
         /// product.Name = "Chai";
-        /// 
+        ///
         /// string key = "Product0";
-        /// 
-        /// 
-        /// LockHandle lockHandle = new LockHandle();
-        /// object item = cache.Get&lt;Product&gt;(key, true, TimeSpan.Zero, ref lockHandle);
-        /// 
-        /// 
+        ///
+        /// object item = cache.Get&lt;Product&gt;(key);
+        ///
+        ///
         /// try
         /// {
         ///     Product removedProduct = null;
-        ///     if (cache.Remove&lt;Product&gt;(key, out removedProduct, lockHandle))
+        ///     if (cache.Remove&lt;Product&gt;(key, out removedProduct))
         ///     {
         ///         //Removed successfully
         ///     }
@@ -560,7 +494,7 @@ namespace Alachisoft.NCache.Client
         /// }
         /// </code>
         /// </example>
-        bool Remove<T>(string key, out T removedItem, LockHandle lockHandle = null);
+        bool Remove<T>(string key, out T removedItem);
 
         /// <summary>
         /// Removes the specified items from the <see cref="ICache"/>.
@@ -697,49 +631,6 @@ namespace Alachisoft.NCache.Client
 
 
         #endregion
-
-        #region Lock Operations 
-
-        /// <summary>
-        /// Unlocks a locked cached item if the correct LockHandle is specified.
-        /// If LockHandle is null Forcefully unlocks a locked cached item.
-        /// </summary>
-        /// <param name="key">Key of the cached item to be unlocked.</param>
-        /// <param name="lockHandle">An instance of <see cref="LockHandle"/> that is generated when the lock is acquired.</param>
-        /// <example>
-        /// Following example demonstrates how to unlock a cached item.
-        /// <code>
-        /// ...
-        /// string key = "Product0";
-        /// ...
-        /// theCache.Unlock(key, lockHandle);
-        /// ...
-        /// </code>
-        /// </example>
-        void Unlock(string key, LockHandle lockHandle = null);
-
-        /// <summary>
-        /// Acquires a lock on an item in the cache.
-        /// </summary>
-        /// <param name="key">key of cached item to be locked.</param>
-        /// <param name="lockTimeout">An instance of <see cref="TimeSpan"/> after which the lock is automatically released.</param>
-        /// <param name="lockHandle">An instance of <see cref="LockHandle"/> that will be filled in with the lock information if lock is acquired successfully.</param>
-        /// <returns>Whether or not lock was acquired successfully.</returns>
-        /// <example>
-        /// Example demonstrates how to lock a cached item.
-        /// <code>
-        /// ...
-        /// string key = "Product0";
-        /// LockHandle lockHandle = new LockHandle();
-        /// bool locked = theCache.lock(key, new TimeSpan(0,0,10), out lockHandle);
-        /// ...
-        /// </code>
-        /// </example>
-        bool Lock(string key, TimeSpan lockTimeout, out LockHandle lockHandle);
-
-        #endregion
-
-    
 
         #region Enumerators
         /// <summary>

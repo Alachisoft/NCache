@@ -1,4 +1,4 @@
-//  Copyright (c) 2026 Alachisoft
+//  Copyright (c) 2018 Alachisoft
 //  
 //  Licensed under the Apache License, Version 2.0 (the "License");
 //  you may not use this file except in compliance with the License.
@@ -110,6 +110,7 @@ namespace Alachisoft.NCache.Caching.Topologies.Clustered
         {
             _groupname = reader.ReadObject() as string;
             _rendererPort = reader.ReadInt32();
+            //TODO: NETCORE (IPAddress is not serialize)
 #if NETCORE
             string ipAddress = reader.ReadObject() as String;
             if (ipAddress == null)
@@ -130,6 +131,7 @@ namespace Alachisoft.NCache.Caching.Topologies.Clustered
         {
             writer.WriteObject(_groupname);
             writer.Write(_rendererPort);
+            //TODO: NETCORE (IPAddress is not serialize)
 #if NETCORE
             writer.WriteObject(_rendererAddress == null? null : _rendererAddress.ToString());
 #elif !NETCORE

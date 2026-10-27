@@ -1,4 +1,4 @@
-//  Copyright (c) 2026 Alachisoft
+//  Copyright (c) 2018 Alachisoft
 //  
 //  Licensed under the Apache License, Version 2.0 (the "License");
 //  you may not use this file except in compliance with the License.
@@ -347,7 +347,7 @@ namespace Alachisoft.NCache.Client
                 IEnumerator valuesEnum = values.GetEnumerator();
                 while (valuesEnum.MoveNext())
                 {
-                    if (valuesEnum.Current != null) //(Remove confusion between a null value and empty value
+                    if (valuesEnum.Current != null) //Added by Asif Imam (Remove confusion between a null value and empty value
                     {
                         if (valuesEnum.Current is System.DateTime)
                         {

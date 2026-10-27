@@ -14,6 +14,10 @@ namespace InstallPerfmon
                 {
                     try
                     {
+#if SERVER
+                        //Alachisoft.NCache.Bridging.Statistics.PerfInstaller perfInstallerBridge = new Alachisoft.NCache.Bridging.Statistics.PerfInstaller();
+                        //Console.WriteLine("Perfmon Initialized successfully for Bridge");
+#endif
                         Cache.PerfInstaller perfInstallerCache = new Cache.PerfInstaller();
                         Console.WriteLine("Perfmon Initialized successfully for Caching");
 

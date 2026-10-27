@@ -1,4 +1,4 @@
-//  Copyright (c) 2026 Alachisoft
+//  Copyright (c) 2018 Alachisoft
 //  
 //  Licensed under the Apache License, Version 2.0 (the "License");
 //  you may not use this file except in compliance with the License.
@@ -27,15 +27,17 @@ namespace Alachisoft.NCache.Config.Dom
         bool _underMaintainanced = false;
         bool cacheIsRunning = false;
         bool cacheIsRegistered = false;
-        bool licenseIsExpired = false;
         string name;
         bool inproc;
+        //int cachePort=0;
         string configID;
         double configVersion;
         string lastModified;
         double depversion;
         string storeType = StoreTypeUtil.DISTRIBUTED_CACHE;
 
+
+        //int managementPort = 0;
 
         RtContextValue _runtimeContextValue;
         /// <summary>
@@ -122,15 +124,12 @@ namespace Alachisoft.NCache.Config.Dom
 
             set
             {
-                    cacheIsRunning = value;
+            //    if (this.CacheType == "local-cache" || this.CacheType == "client-cache")
+            //        cacheIsRunning = value;
+            //    else
+                    cacheIsRunning = value; //bug 8081 fix
 
             }
-        }
-
-        public bool IsExpired
-        {
-            get { return licenseIsExpired; }
-            set { licenseIsExpired = value; }
         }
 
         [ConfigurationAttribute("name")]
@@ -149,6 +148,12 @@ namespace Alachisoft.NCache.Config.Dom
             set { inproc = value; }
         }
 
+        //[ConfigurationAttribute("cache-port")]
+        //public int CachePort
+        //{
+        //    get { return cachePort; }
+        //    set { cachePort = value; }
+        //}
 
         [ConfigurationAttribute("deployment-version")]
         public double DeploymentVersion
@@ -198,6 +203,12 @@ namespace Alachisoft.NCache.Config.Dom
             }
             set { cacheType = value; }
         }
+   
+        //public int ManagementPort
+        //{
+        //    get { return managementPort; }
+        //    set { managementPort = value; }
+        //}
 
         [ConfigurationSection("log")]
         public Log Log
@@ -223,6 +234,15 @@ namespace Alachisoft.NCache.Config.Dom
             set { _replicationStrategy = value; }
         }
 
+//#if ENTERPRISE
+//        [ConfigurationSection("data-load-balancing")]
+//#endif
+//        public AutoLoadBalancing AutoLoadBalancing
+//        {
+//            get { return autoBalancing; }
+//            set { autoBalancing = value; }
+//        }
+
         [ConfigurationSection("client-nodes")]
         public ClientNodes ClientNodes
         {
@@ -230,6 +250,7 @@ namespace Alachisoft.NCache.Config.Dom
             set { clientNodes = value; }
         }
 
+       // [ConfigurationSection("client-death-detection")]
         public ClientDeathDetection ClientDeathDetection
         {
             get { return deathDetection; }
@@ -290,14 +311,14 @@ namespace Alachisoft.NCache.Config.Dom
         }
 
 
-    
-
         [ConfigurationSection("sql-dependency")]
         public SQLDependencyConfig SQLDependencyConfig
         {
             get { return _sqlDependencyConfig; }
             set { _sqlDependencyConfig = value; }
         }
+        
+        //[ConfigurationAttribute("data-format")]
         public string DataFormat
         {
             get { return _dataFormat.ToString(); }
@@ -321,6 +342,13 @@ namespace Alachisoft.NCache.Config.Dom
             get { return _serializationFormatter.ToString(); }
             set { Enum.TryParse(value, true, out _serializationFormatter); }
         }
+
+        //[ConfigurationSection("client-activity-notification")]
+        //public ClientActivityNotification ClientActivityNotification
+        //{
+        //    get { return clientActivityNotification; }
+        //    set { clientActivityNotification = value; }
+        //}
 
         [ConfigurationSection("caching-modules")]
        
@@ -352,6 +380,7 @@ namespace Alachisoft.NCache.Config.Dom
             config.cacheType = this.cacheType;
             config.DataFormat = this.DataFormat;
             config.InProc = InProc;
+            //config.cachePort = CachePort;
             config.configID = configID;
             config.depversion = depversion;
             config.configVersion = configVersion;
@@ -377,16 +406,20 @@ namespace Alachisoft.NCache.Config.Dom
 
             config.backingSource = this.backingSource != null ? (BackingSource)this.backingSource.Clone() : null;
             config.Notifications = Notifications != null ? (Notifications)Notifications.Clone() : null;
+            //+Asad 20110124
             config.SQLDependencyConfig = SQLDependencyConfig != null ? (SQLDependencyConfig)SQLDependencyConfig.Clone() : null;
             
             config.ClientDeathDetection = ClientDeathDetection != null ? (ClientDeathDetection)ClientDeathDetection.Clone() : null;
             config.SynchronizationStrategy = SynchronizationStrategy != null ? (SynchronizationStrategy)SynchronizationStrategy.Clone() : null;
 
+            //config.ClientActivityNotification = ClientActivityNotification != null
+            //    ? (ClientActivityNotification) ClientActivityNotification.Clone()
+            //    : null;
             config.IsRegistered = this.IsRegistered;
 
             config.IsRunning = this.IsRunning;
-            config.licenseIsExpired = this.licenseIsExpired;
             config.RuntimeContext = this.RuntimeContext;
+           // config.AutoStartCacheOnServiceStartup = this.AutoStartCacheOnServiceStartup;
             config.SerializationFormatter = this.SerializationFormatter;
 
 			config.Store = this.storeType;
@@ -401,7 +434,6 @@ namespace Alachisoft.NCache.Config.Dom
         {
             cacheIsRunning = reader.ReadBoolean();
             cacheIsRegistered = reader.ReadBoolean();
-            licenseIsExpired = reader.ReadBoolean();
             name = reader.ReadObject() as string;
             inproc = reader.ReadBoolean();
             configID = reader.ReadString();
@@ -444,7 +476,6 @@ namespace Alachisoft.NCache.Config.Dom
 
             writer.Write(cacheIsRunning);
             writer.Write(cacheIsRegistered);
-            writer.Write(licenseIsExpired);
             writer.WriteObject(name);
             writer.Write(inproc);
             writer.Write(configID);

@@ -3,6 +3,7 @@ using System.Diagnostics;
 using System.Threading;
 using System.Reflection;
 using System.IO;
+using Alachisoft.NCache.Common.RuntimeEnvironment;
 
 namespace Alachisoft.NCache.Daemon
 {
@@ -35,7 +36,13 @@ namespace Alachisoft.NCache.Daemon
 
                 else
                 {
-                    ProcessStartInfo startInfo = new ProcessStartInfo() { FileName = "/bin/bash", Arguments = "-c \" " + "dotnet " + args[0] + "/bin/service/Alachisoft.NCache.Daemon.dll start " + "\"" };
+
+                    RuntimeOption runtimeOption = new RuntimeOption()
+                    {
+                        Argument = args[0],
+                        Command = "start"
+                    };
+                    ProcessStartInfo startInfo = NCacheRuntimeEnvironment.GetEnvironment.GetNCacheServiceProcessInfo(runtimeOption);
                     Process proc = new Process() { StartInfo = startInfo, };
                     proc.Start();
                 }

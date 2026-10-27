@@ -1,4 +1,4 @@
-//  Copyright (c) 2026 Alachisoft
+//  Copyright (c) 2018 Alachisoft
 //  
 //  Licensed under the Apache License, Version 2.0 (the "License");
 //  you may not use this file except in compliance with the License.
@@ -15,13 +15,9 @@ using System;
 using System.Collections;
 using System.Text;
 using Alachisoft.NCache.Common.Configuration;
-
 using Alachisoft.NCache.Runtime.Serialization;
-
 using Alachisoft.NCache.Config.Dom;
-
 using Runtime = Alachisoft.NCache.Runtime;
-
 namespace Alachisoft.NCache.Config.Dom
 {
     [Serializable]
@@ -64,6 +60,7 @@ namespace Alachisoft.NCache.Config.Dom
             writethru.enabled = enabled;
             writethru.Providers = Providers != null ? Providers.Clone() as Provider[]: null;
             writethru.WriteBehind = WriteBehind != null ? WriteBehind.Clone() as WriteBehind : null;
+            //writethru.Parameters = Parameters != null ? Parameters.Clone() as Parameter[] : null;
             return writethru;
         }
 

@@ -29,7 +29,6 @@ namespace Alachisoft.NCache.Client
         private byte[] _userName;
         private byte[] _password;
         private string _clientID;
-        private string _licenceCode;
         private string _clientIp;
 
         private Alachisoft.NCache.Common.ProductVersion _currentVersion;

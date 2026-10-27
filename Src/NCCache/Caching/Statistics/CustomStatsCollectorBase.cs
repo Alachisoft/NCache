@@ -132,7 +132,8 @@ namespace Alachisoft.NCache.Caching.Statistics
                         Values = counterData,
                         Timestamp = DateTime.UtcNow,
                         FromReplica = IsPORReplica ? true : false,
-                        PublisherType = PublisherType
+                        PublisherType = PublisherType,
+                        InstanceName = InstanceName
                     };
 
                 }

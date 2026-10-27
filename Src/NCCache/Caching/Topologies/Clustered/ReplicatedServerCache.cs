@@ -1,4 +1,4 @@
-//  Copyright (c) 2026 Alachisoft
+//  Copyright (c) 2018 Alachisoft
 //  
 //  Licensed under the Apache License, Version 2.0 (the "License");
 //  you may not use this file except in compliance with the License.
@@ -23,9 +23,7 @@ using Alachisoft.NCache.Config;
 using Alachisoft.NCache.Common.Locking;
 
 using Alachisoft.NCache.Common.Resources;
-
 using Alachisoft.NCache.Runtime.Exceptions;
-
 using Alachisoft.NCache.Util;
 using Alachisoft.NCache.Common;
 using Alachisoft.NCache.Common.Threading;
@@ -466,6 +464,7 @@ namespace Alachisoft.NCache.Caching.Topologies.Clustered
 
                 case (int)OpCodes.Add:
                     _stateTransferLatch.WaitForAny((byte)ReplicatedStateTransferStatus.STATE_TRANSFER_COMPLETED);
+                    //Console.WriteLine("Add -node in state transfer  ");
                     return handleAdd(src, func.Operand, func.UserPayload);
 
                 case (int)OpCodes.AddHint:
@@ -964,7 +963,7 @@ namespace Alachisoft.NCache.Caching.Topologies.Clustered
                         val.MarkInUse(NCModulesConstants.Topology);
 
                     // if the object is already there, skip a network call
-                    if (_parent.Local_Contains(key, operationContext))
+                    if (_parent.Local_Contains(key, operationContext /*new OperationContext(OperationContextFieldName.OperationType, OperationContextOperationType.CacheOperation)*/))
                     {
                         return;
                     }
@@ -1121,6 +1120,7 @@ namespace Alachisoft.NCache.Caching.Topologies.Clustered
                     }
                     //
                     AppUtil.LogEvent(_cacheserver, "\"" + _parent.Context.SerializationContext + "(" + _parent.Cluster.LocalAddress.ToString() + ")\"" + " has started state transfer.", System.Diagnostics.EventLogEntryType.Information, EventCategories.Information, EventID.StateTransferStart);
+                    //_parent.Context.NCacheLog.Error(Name + ".Process", " State transfer has started");
                     _stateTransferEventLogged = true;
                 }
             }
@@ -1176,6 +1176,9 @@ namespace Alachisoft.NCache.Caching.Topologies.Clustered
                 /// Start the initialization(state trasfer) task.
                 if (_stateTransferTask == null) _stateTransferTask = new StateTransferTask(this);
                 _context.AsyncProc.Enqueue(_stateTransferTask);
+
+                /// Un-comment the following line to do it synchronously.
+                /// object v = stateTransferTask.WaitUntilCompletion(-1);
             }
             else
             {
@@ -1203,6 +1206,7 @@ namespace Alachisoft.NCache.Caching.Topologies.Clustered
             /// Set the status to fully-functional (Running) and tell everyone about it.
             _statusLatch.SetStatusBit(NodeStatus.Running, NodeStatus.Initializing);
 
+            // Console.WriteLine("Signalling end of state txfr");
             Function fun = new Function((int)OpCodes.SignalEndOfStateTxfr, new object(), false);
             if (Cluster != null) Cluster.BroadcastToServers(fun, GroupRequest.GET_ALL, true);
 
@@ -1235,66 +1239,6 @@ namespace Alachisoft.NCache.Caching.Topologies.Clustered
                 }
                 return count;
             }
-        }
-
-        public override long SessionCount
-        {
-            get
-            {
-                /// Wait until the object enters any running status
-                _statusLatch.WaitForAny(NodeStatus.Initializing | NodeStatus.Running);
-
-                if (_internalCache == null) throw new InvalidOperationException();
-                /// If we are in state transfer, we return the count from some other
-                /// functional node.
-                if (_statusLatch.IsAnyBitsSet(NodeStatus.Initializing))
-                {
-                    return Clustered_SessionCount();
-                }
-                return Local_SessionCount();
-            }
-        }
-
-        public override IPAddress ServerJustLeft
-        {
-            get { return _srvrJustLeft; }
-            set { _srvrJustLeft = value; }
-        }
-
-        public override int ServersCount
-        {
-            get { return Cluster.ValidMembers.Count; }
-        }
-
-        public override bool IsServerNodeIp(Address clientAddress)
-        {
-            foreach (Address addr in Cluster.Servers)
-            {
-                if (addr.IpAddress.Equals(clientAddress.IpAddress))
-                    return true;
-            }
-            return false;
-        }
-
-
-
-        /// <summary>
-        /// Returns the count of local cache items only.
-        /// </summary>
-        /// <returns>count of items.</returns>
-        private long Local_SessionCount()
-        {
-            if (_internalCache != null)
-                return _internalCache.SessionCount;
-            return 0;
-        }
-
-
-
-        private long Clustered_SessionCount()
-        {
-            Address targetNode = GetNextNode();
-            return Clustered_SessionCount(targetNode);
         }
 
         /// <summary>
@@ -1460,11 +1404,13 @@ namespace Alachisoft.NCache.Caching.Topologies.Clustered
             }
             catch (NGroups.SuspectedException e)
             {
+                //nTrace.error("ReplicatedServer.Clustered_contains()", e.ToString());
                 return Clustered_Contains(key, operationContext);
             }
 
             catch (Runtime.Exceptions.TimeoutException e)
             {
+                //nTrace.error("ReplicatedServer.Clustered_contains()", e.ToString());
                 return Clustered_Contains(key, operationContext);
             }
         }
@@ -1775,6 +1721,8 @@ namespace Alachisoft.NCache.Caching.Topologies.Clustered
             {
                 if (Cluster.Servers.Count > 1)
                 {
+                    //if (!Local_CanLock(key, ref lockId, ref lockDate)) return null;
+                    //e = Local_Get(key);
                     e = Local_Get(key, false, operationContext);
                     if (e != null)
                     {
@@ -1856,7 +1804,7 @@ namespace Alachisoft.NCache.Caching.Topologies.Clustered
             {
                 _stats.BumpHitCount();
                 // update the indexes on other nodes in the cluster
-                if ((e.ExpirationHint != null && e.ExpirationHint.IsVariant))
+                if ((e.ExpirationHint != null && e.ExpirationHint.IsVariant) /*|| (e.EvictionHint !=null && e.EvictionHint.IsVariant)*/ )
                 {
                     UpdateIndices(key, true, operationContext);
                     var temp =  Local_Get(key, operationContext); //to update the index locally.
@@ -1994,6 +1942,7 @@ namespace Alachisoft.NCache.Caching.Topologies.Clustered
             {
                 try
                 {
+                    //_asyncReplicator.EnqueueOperation(key, (int)ClusterCacheBase.OpCodes.UpdateIndice, key, 2, null, 0);
                     _asyncReplicator.AddUpdateIndexKey(key);
                 }
                 catch (Exception) { }
@@ -2008,6 +1957,7 @@ namespace Alachisoft.NCache.Caching.Topologies.Clustered
                 {
                     foreach (object key in keys)
                     {
+                        //_asyncReplicator.EnqueueOperation(key, (int)ClusterCacheBase.OpCodes.UpdateIndice, key, 2, null, 0);
                         UpdateIndices(key, async, operationContext);
                     }
                 }
@@ -2042,10 +1992,12 @@ namespace Alachisoft.NCache.Caching.Topologies.Clustered
             }
             catch (CacheException e)
             {
+                //nTrace.error("PorCache.ReplicateOperations()", e.ToString());
                 throw;
             }
             catch (Exception e)
             {
+                //nTrace.error("PorCache.ReplicateOperations()", e.ToString());
                 throw new GeneralFailureException(e.Message, e);
             }
         }
@@ -2104,11 +2056,13 @@ namespace Alachisoft.NCache.Caching.Topologies.Clustered
             }
             catch (NGroups.SuspectedException e)
             {
+                //nTrace.error("ReplicatedServer.Safe_Clustered_Get", e.ToString());
                 return Clustered_Get(key, ref lockId, ref lockDate, accessType, operationContext);
             }
 
             catch (Runtime.Exceptions.TimeoutException e)
             {
+                //nTrace.error("ReplicatedServer.Safe_Clustered_Get", e.ToString());
                 return Clustered_Get(key, ref lockId, ref lockDate, accessType, operationContext);
             }
 
@@ -2492,10 +2446,13 @@ namespace Alachisoft.NCache.Caching.Topologies.Clustered
                 {
                     if (Cluster.Servers.Count > 1)
                     {
+                        //CacheEntry remote = cacheEntry.FlattenedClone(_context.SerializationContext);
                         // Try to add to the local node and the cluster.
+                        //nTrace.error("ReplicatedCache.add", "ADD ;" + key);
                         result = Clustered_Add(key, cacheEntry, taskId, operationContext);
                         if (result == CacheAddResult.KeyExists)
                         {
+                            //nTrace.error("Replicated.Clustered_Add()", "KeyExists = " + key + ", result = " + result);
                             return result;
                         }
                     }
@@ -2504,6 +2461,7 @@ namespace Alachisoft.NCache.Caching.Topologies.Clustered
                 }
                 catch (Exception e)
                 {
+                    //nTrace.error("Replicated.Clustered_Add()", e.ToString());
                     thrown = e;
                 }
 
@@ -2511,6 +2469,7 @@ namespace Alachisoft.NCache.Caching.Topologies.Clustered
                 {
                     bool timeout = false;
                     bool rollback = true;
+                    //				nTrace.warn("Replicated.Add()", "rolling back, since result was " + result);
                     try
                     {
                         if (result == CacheAddResult.FullTimeout)
@@ -2583,10 +2542,12 @@ namespace Alachisoft.NCache.Caching.Topologies.Clustered
             {
                 if (Cluster.Servers.Count > 1)
                 {
+                    //CacheEntry remote = cacheEntry.FlattenedClone(_context.SerializationContext);
                     // Try to add to the local node and the cluster.
                     result = Clustered_Add(key, eh, operationContext);
                     if (result == false)
                     {
+                        //nTrace.error("Replicated.Clustered_Add()", "Hint not added: Key = " + key);
                         return result;
                     }
                 }
@@ -2595,6 +2556,7 @@ namespace Alachisoft.NCache.Caching.Topologies.Clustered
             }
             catch (Exception e)
             {
+                //nTrace.error("Replicated.Clustered_Add()", e.ToString());
                 thrown = e;
             }
 
@@ -2624,10 +2586,12 @@ namespace Alachisoft.NCache.Caching.Topologies.Clustered
             {
                 if (Cluster.Servers.Count > 1)
                 {
+                    //CacheEntry remote = cacheEntry.FlattenedClone(_context.SerializationContext);
                     // Try to add to the local node and the cluster.
                     result = Clustered_Add(key, operationContext);
                     if (result == false)
                     {
+                        //nTrace.error("Replicated.Clustered_Add()", "Hint not added: Key = " + key);
                         return result;
                     }
                 }
@@ -2636,6 +2600,7 @@ namespace Alachisoft.NCache.Caching.Topologies.Clustered
             }
             catch (Exception e)
             {
+                //nTrace.error("Replicated.Clustered_Add()", e.ToString());
                 thrown = e;
             }
 
@@ -2662,6 +2627,8 @@ namespace Alachisoft.NCache.Caching.Topologies.Clustered
             _statusLatch.WaitForAny(NodeStatus.Initializing | NodeStatus.Running);
 
             if (_internalCache == null) throw new InvalidOperationException();
+
+            //if(nTrace.isInfoEnabled) nTrace.info("Replicated.Add()", "Key = " + key);
 
             object[] failedKeys = null;
             Hashtable addResult = new Hashtable();
@@ -2707,7 +2674,7 @@ namespace Alachisoft.NCache.Caching.Topologies.Clustered
                         if (!list.Contains(key))
                         {
                             newKeys[j] = key;
-                            entries[j] = cacheEntries[i];
+                            entries[j] = cacheEntries[i];//((CacheEntry)cacheEntries[i] ).FlattenedClone(_context.SerializationContext);
                             j++;
                         }
                         i++;
@@ -2747,6 +2714,7 @@ namespace Alachisoft.NCache.Caching.Topologies.Clustered
 
                 if (thrown != null)
                 {
+                    //nTrace.warn("Replicated.Add()", "rolling back, since result was " + result);
                     if (Cluster.Servers.Count > 1)
                     {
                         Clustered_Remove(keys, ItemRemoveReason.Removed, operationContext);
@@ -2755,6 +2723,7 @@ namespace Alachisoft.NCache.Caching.Topologies.Clustered
                     {
                        removedValues = Local_Remove(keys, ItemRemoveReason.Removed, null, null, null, null, false, operationContext);
                     }
+                    //if(thrown != null) throw thrown;
                 }
                 else
                 {
@@ -2902,6 +2871,13 @@ namespace Alachisoft.NCache.Caching.Topologies.Clustered
                         Hashtable keyDepInfoTable = new Hashtable();
                         KeyDependencyInfo[] keyDepInfos = cacheEntry.KeysIAmDependingOnWithDependencyInfo;
 
+                        //for (int i = 0; i < keys.Length; i++)
+                        //{
+                        //    if (table[keys[i]] == null)
+                        //        table.Add(keys[i], new ArrayList());
+                        //    ((ArrayList)table[keys[i]]).Add(key);
+                        //}
+
                         foreach (KeyDependencyInfo keyDepInfo in keyDepInfos)
                         {
                             if (!keyDepInfoTable.Contains(keyDepInfo.Key))
@@ -2912,6 +2888,8 @@ namespace Alachisoft.NCache.Caching.Topologies.Clustered
                         }
                         try
                         {
+
+                            //Fix for NCache Bug4981
                             object generateQueryInfo = operationContext.GetValueByField(OperationContextFieldName.GenerateQueryInfo);
                             if (generateQueryInfo == null)
                             {
@@ -2925,6 +2903,7 @@ namespace Alachisoft.NCache.Caching.Topologies.Clustered
                                 operationContext.RemoveValueByField(OperationContextFieldName.GenerateQueryInfo);
                             }
 
+                            //table = _internalCache.AddDepKeyList(table, operationContext);
                         }
                         catch (Exception e)
                         {
@@ -2945,6 +2924,7 @@ namespace Alachisoft.NCache.Caching.Topologies.Clustered
                     }
                     #endregion
 
+                    //UpdateCacheStatistics();
                 }
 
               
@@ -3022,6 +3002,13 @@ namespace Alachisoft.NCache.Caching.Topologies.Clustered
                         Hashtable keyDepInfoTable = new Hashtable();
                         KeyDependencyInfo[] keyDepInfos = cacheEntry.KeysIAmDependingOnWithDependencyInfo;
 
+                        //for (int i = 0; i < keys.Length; i++)
+                        //{
+                        //    if (table[keys[i]] == null)
+                        //        table.Add(keys[i], new ArrayList());
+                        //    ((ArrayList)table[keys[i]]).Add(key);
+                        //}
+
                         foreach (KeyDependencyInfo keyDepInfo in keyDepInfos)
                         {
                             if (!keyDepInfoTable.Contains(keyDepInfo.Key))
@@ -3032,6 +3019,7 @@ namespace Alachisoft.NCache.Caching.Topologies.Clustered
                         }
                         try
                         {
+                            // table = _internalCache.AddDepKeyList(table, operationContext);
                             table = _internalCache.AddDepKeyList(keyDepInfoTable, operationContext);
                         }
                         catch (Exception e)
@@ -3125,6 +3113,12 @@ namespace Alachisoft.NCache.Caching.Topologies.Clustered
                         {
                             Hashtable goodKeysTable = Contains(tempKeys, operationContext);
 
+                            //if (!goodKeysTable.ContainsKey("items-found"))
+                            //   throw new OperationFailedException("One of the dependency keys does not exist.");
+
+                            //if (goodKeysTable["items-found"] == null)
+                            //    throw new OperationFailedException("One of the dependency keys does not exist.");
+
                             if (goodKeysTable.ContainsKey("items-found") && goodKeysTable["items-found"] != null && tempKeys.Length == ((ArrayList)goodKeysTable["items-found"]).Count)
                             {
                                 goodKeysList.Add(keys[i]);
@@ -3132,7 +3126,7 @@ namespace Alachisoft.NCache.Caching.Topologies.Clustered
                             }
                             else
                             {
-                                badKeysList.Add(keys[i]);
+                                badKeysList.Add(keys[i]);// throw new OperationFailedException("One of the dependency keys does not exist.");
                             }
                         }
                         else
@@ -3152,12 +3146,20 @@ namespace Alachisoft.NCache.Caching.Topologies.Clustered
                     for (int i = 0; i < goodKeysList.Count; i++)
                     {
                         CacheAddResult retVal = (CacheAddResult)table[goodKeysList[i]];
+                        // object[] depKeys = goodEntries[i].KeysIAmDependingOn;
                         KeyDependencyInfo[] keyDepInfos = goodEntries[i].KeysIAmDependingOnWithDependencyInfo;
 
+                        // if (retVal == CacheAddResult.Success && depKeys != null)
                         if (retVal == CacheAddResult.Success && keyDepInfos != null)
                         {
+                            // Hashtable depTable = new Hashtable();
                             Hashtable keyDepInfoTable = new Hashtable();
 
+                            //for (int k = 0; k < depKeys.Length; k++)
+                            //{
+                            //    if (depTable[depKeys[k]] == null)
+                            //        depTable.Add(depKeys[k], new ArrayList());
+                            //    ((ArrayList)depTable[depKeys[k]]).Add(goodKeysList[i]);
 
                             foreach (KeyDependencyInfo keyDepInfo in keyDepInfos)
                             {
@@ -3177,6 +3179,7 @@ namespace Alachisoft.NCache.Caching.Topologies.Clustered
                                     operationContext.Add(OperationContextFieldName.GenerateQueryInfo, true);
                                 }
 
+                                // tempTable = _internalCache.AddDepKeyList(depTable, operationContext);
                                 tempTable = _internalCache.AddDepKeyList(keyDepInfoTable, operationContext);
 
                                 if (generateQueryInfo == null)
@@ -3184,6 +3187,7 @@ namespace Alachisoft.NCache.Caching.Topologies.Clustered
                                     operationContext.RemoveValueByField(OperationContextFieldName.GenerateQueryInfo);
                                 }
 
+                                //tempTable = _internalCache.AddDepKeyList(depTable, operationContext);
                             }
                             catch (Exception e)
                             {
@@ -3210,6 +3214,7 @@ namespace Alachisoft.NCache.Caching.Topologies.Clustered
                     }
                     #endregion
 
+                    //UpdateCacheStatistics();
                 }
 
                
@@ -3324,6 +3329,12 @@ namespace Alachisoft.NCache.Caching.Topologies.Clustered
                     CacheEntry[] entries = objs[1] as CacheEntry[];
                     if (objs.Length > 2)
                         taskId = objs[2] != null ? objs[2] as string : null;
+                    //for (int i=0; i<keys.Length; i++)
+                    //{
+                    //    //entries[i].DeflattenObject(Name);
+                    //    if(src.CompareTo(LocalAddress) != 0)
+                    //        entries[i] = entries[i].RoutableClone(src);
+                    //}
 
                     Hashtable results = Local_Add(keys, entries, src, taskId, true, oc);
 
@@ -3333,11 +3344,19 @@ namespace Alachisoft.NCache.Caching.Topologies.Clustered
                 {
                     CacheAddResult result = CacheAddResult.Failure;
                     object key = objs[0];
+                    //nTrace.error("ReplicatedCache.handleAd", "Begin->" + key);
                     CacheEntry e = objs[1] as CacheEntry;
                     if (userPayload != null)
                     {
                         e.Value = userPayload;
                     }
+                    //e.DeflattenObject(Name);
+
+                    //if (src.CompareTo(LocalAddress) != 0)
+                    //{
+                    //    result = Local_Add(key, e.RoutableClone(src), src, taskId, false);
+                    //}
+                    //else
                     {
                         result = Local_Add(key, e, src, taskId, true, oc);
                     }
@@ -3347,6 +3366,7 @@ namespace Alachisoft.NCache.Caching.Topologies.Clustered
             }
             catch (Exception e)
             {
+                //nTrace.error("ReplicatedCache.handleAdd()", e.ToString());
                 if (_clusteredExceptions) throw;
             }
             return CacheAddResult.Failure;
@@ -3379,6 +3399,7 @@ namespace Alachisoft.NCache.Caching.Topologies.Clustered
             }
             catch (Exception e)
             {
+                //nTrace.error("ReplicatedCache.handleAdd()", e.ToString());
                 if (_clusteredExceptions) throw;
             }
             return false;
@@ -3441,6 +3462,7 @@ namespace Alachisoft.NCache.Caching.Topologies.Clustered
                         {
                                 if (pEntry.IsItemLocked() && !pEntry.CompareLock(lockId))
                                 {
+                                    //throw new LockingException("Item is locked.");
                                     retVal.Entry = null;
                                     retVal.Result = CacheInsResult.ItemLocked;
                                     return retVal;
@@ -3589,6 +3611,7 @@ namespace Alachisoft.NCache.Caching.Topologies.Clustered
 
                     for (int i = 0; i < keys.Length; i++)
                     {
+                        //cacheEntries[i].FlattenObject(_context.SerializationContext);
                         jointTable.Add(keys[i], cacheEntries[i]);
                     }
 
@@ -3696,7 +3719,7 @@ namespace Alachisoft.NCache.Caching.Topologies.Clustered
                     if (localInsertResult != null)
                     {
                         IDictionaryEnumerator ide = localInsertResult.GetEnumerator();
-                        CacheInsResultWithEntry result = null;
+                        CacheInsResultWithEntry result = null;// CacheInsResult.Failure;
                         while (ide.MoveNext())
                         {
                             if (ide.Value is Exception)
@@ -3724,7 +3747,8 @@ namespace Alachisoft.NCache.Caching.Topologies.Clustered
 
                         insertResults = localInsertResult;
                     }
-                    //events will be raised from LocalCacheBase
+                    //huma: events will be raised from LocalCacheBase
+                    //CacheEntry pEntry;
                     if (notify)
                     {
                         IEnumerator ideInsterted = inserted.GetEnumerator();
@@ -3740,6 +3764,7 @@ namespace Alachisoft.NCache.Caching.Topologies.Clustered
 
                     }
 
+                    // TODO : [KeyDependency]{Replicated Topology} Take this out for trigger in InsertBulk?
                     //This function is expected to only return Failed Keys therfore removing Dependencies within the insetBulk call
                     _context.CacheImpl.RemoveCascadingDependencies(insertResults, operationContext);
                 }
@@ -3822,10 +3847,23 @@ namespace Alachisoft.NCache.Caching.Topologies.Clustered
 
                             if (retVal.Entry != null && retVal.Entry.KeysIAmDependingOn != null)
                             {
+                                // table = GetFinalKeysList(retVal.Entry.KeysIAmDependingOn, cacheEntry.KeysIAmDependingOn);
                                 keyDepInfoTable = GetFinalKeysListWithDependencyInfo(retVal.Entry, cacheEntry);
+
+                                //object[] oldKeys = (object[])table["oldKeys"];
+                                //Hashtable oldKeysTable = new Hashtable();
+                                //for (int i = 0; i < oldKeys.Length; i++)
+                                //{
+                                //    if (!oldKeysTable.Contains(oldKeys[i]))
+                                //    {
+                                //        oldKeysTable.Add(oldKeys[i], new ArrayList());
+                                //    }
+                                //    ((ArrayList)oldKeysTable[oldKeys[i]]).Add(key);
+                                //}
 
                                 Hashtable oldKeysTable = GetKeysTable(key, (KeyDependencyInfo[])keyDepInfoTable["oldKeys"]);
 
+                                //Fix for NCache Bug4981
                                 object generateQueryInfo = operationContext.GetValueByField(OperationContextFieldName.GenerateQueryInfo);
                                 if (generateQueryInfo == null)
                                 {
@@ -3833,6 +3871,17 @@ namespace Alachisoft.NCache.Caching.Topologies.Clustered
                                 }
 
                                 _internalCache.RemoveDepKeyList(oldKeysTable, operationContext);
+
+                                //object[] newKeys = (object[])table["newKeys"];
+                                //oldKeysTable.Clear();
+                                //for (int i = 0; i < newKeys.Length; i++)
+                                //{
+                                //    if (!oldKeysTable.Contains(newKeys[i]))
+                                //    {
+                                //        oldKeysTable.Add(newKeys[i], new ArrayList());
+                                //    }
+                                //    ((ArrayList)oldKeysTable[newKeys[i]]).Add(key);
+                                //}
                                 Hashtable oldkeyDepInfos = GetKeyDependencyInfoTable(key, (KeyDependencyInfo[])keyDepInfoTable["newKeys"]);
                                 table = _internalCache.AddDepKeyList(oldkeyDepInfos, operationContext);
 
@@ -3844,14 +3893,26 @@ namespace Alachisoft.NCache.Caching.Topologies.Clustered
                             }
                             else if (cacheEntry.KeysIAmDependingOn != null)
                             {
+                                //object[] newKeys = cacheEntry.KeysIAmDependingOn;
+                                //Hashtable newKeysTable = new Hashtable();
+                                //for (int i = 0; i < newKeys.Length; i++)
+                                //{
+                                //    if (!newKeysTable.Contains(newKeys[i]))
+                                //    {
+                                //        newKeysTable.Add(newKeys[i], new ArrayList());
+                                //    }
+                                //    ((ArrayList)newKeysTable[newKeys[i]]).Add(key);
+                                //}
                                 Hashtable newKeyDepInfosTable = GetKeyDependencyInfoTable(key, cacheEntry.KeysIAmDependingOnWithDependencyInfo);
 
+                                //Fix for NCache Bug4981
                                 object generateQueryInfo = operationContext.GetValueByField(OperationContextFieldName.GenerateQueryInfo);
                                 if (generateQueryInfo == null)
                                 {
                                     operationContext.Add(OperationContextFieldName.GenerateQueryInfo, true);
                                 }
 
+                                // table = _internalCache.AddDepKeyList(newKeysTable, operationContext);
                                 table = _internalCache.AddDepKeyList(newKeyDepInfosTable, operationContext);
 
                                 if (generateQueryInfo == null)
@@ -3878,6 +3939,7 @@ namespace Alachisoft.NCache.Caching.Topologies.Clustered
                 }
                 catch (Exception e)
                 {
+                    //nTrace.error("ReplicatedCache.Local_Insert()", e.ToString());
                     if (_clusteredExceptions) throw;
                 }
 
@@ -3914,6 +3976,7 @@ namespace Alachisoft.NCache.Caching.Topologies.Clustered
             Exception thrown = null;
 
             Hashtable badEntriesTable = new Hashtable();
+            //Hashtable goodEntriesTable = new Hashtable();
             ArrayList goodKeysList = new ArrayList();
             ArrayList goodEntriesList = new ArrayList();
             ArrayList badKeysList = new ArrayList();
@@ -3946,6 +4009,12 @@ namespace Alachisoft.NCache.Caching.Topologies.Clustered
                             {
                                 Hashtable goodKeysTable = Contains(tempKeys, operationContext);
 
+                                //if (!goodKeysTable.ContainsKey("items-found"))
+                                //    throw new OperationFailedException("One of the dependency keys does not exist.");
+
+                                //if (goodKeysTable["items-found"] == null)
+                                //    throw new OperationFailedException("One of the dependency keys does not exist.");
+
                                 if (goodKeysTable.ContainsKey("items-found") && goodKeysTable["items-found"] != null && tempKeys.Length == ((ArrayList)goodKeysTable["items-found"]).Count)
                                 {
                                     goodKeysList.Add(keys[i]);
@@ -3953,7 +4022,7 @@ namespace Alachisoft.NCache.Caching.Topologies.Clustered
                                 }
                                 else
                                 {
-                                    badKeysList.Add(keys[i]);
+                                    badKeysList.Add(keys[i]);// throw new OperationFailedException("One of the dependency keys does not exist.");
                                 }
                             }
                             else
@@ -3972,6 +4041,7 @@ namespace Alachisoft.NCache.Caching.Topologies.Clustered
 
                         #region -- PART II -- Cascading Dependency Operation
 
+                        //Fix for NCache Bug4981
                         object generateQueryInfo = operationContext.GetValueByField(OperationContextFieldName.GenerateQueryInfo);
                         if (generateQueryInfo == null)
                         {
@@ -3994,14 +4064,48 @@ namespace Alachisoft.NCache.Caching.Topologies.Clustered
 
                                     if (result.Entry != null && result.Entry.KeysIAmDependingOn != null)
                                     {
+                                        // table = GetFinalKeysList(result.Entry.KeysIAmDependingOn, goodEntries[i].KeysIAmDependingOn);
                                         keyDepInfoTable = GetFinalKeysListWithDependencyInfo(result.Entry, goodEntries[i]);
+
+                                        //object[] oldKeys = (object[])table["oldKeys"];
+                                        //Hashtable oldKeysTable = new Hashtable();
+                                        //for (int j = 0; j < oldKeys.Length; j++)
+                                        //{
+                                        //    if (!oldKeysTable.Contains(oldKeys[j]))
+                                        //    {
+                                        //        oldKeysTable.Add(oldKeys[j], new ArrayList());
+                                        //    }
+                                        //    ((ArrayList)oldKeysTable[oldKeys[j]]).Add(goodKeysList[i]);
+                                        //}
                                         Hashtable oldKeysTable = GetKeysTable(goodKeysList[i], (KeyDependencyInfo[])keyDepInfoTable["oldKeys"]);
                                         _internalCache.RemoveDepKeyList(oldKeysTable, operationContext);
+
+                                        //object[] newKeys = (object[])table["newKeys"];
+                                        //oldKeysTable.Clear();
+                                        //for (int j = 0; j < newKeys.Length; j++)
+                                        //{
+                                        //    if (!oldKeysTable.Contains(newKeys[j]))
+                                        //    {
+                                        //        oldKeysTable.Add(newKeys[j], new ArrayList());
+                                        //    }
+                                        //    ((ArrayList)oldKeysTable[newKeys[j]]).Add(goodKeysList[i]);
+                                        //}
                                         Hashtable keyDepInfos = GetKeyDependencyInfoTable(goodKeysList[i], (KeyDependencyInfo[])keyDepInfoTable["newKeys"]);
+                                        // table = _internalCache.AddDepKeyList(oldKeysTable, operationContext);
                                         table = _internalCache.AddDepKeyList(keyDepInfos, operationContext);
                                     }
                                     else if (goodEntries[i].KeysIAmDependingOn != null)
                                     {
+                                        //object[] newKeys = goodEntries[i].KeysIAmDependingOn;
+                                        //Hashtable newKeysTable = new Hashtable();
+                                        //for (int j = 0; j < newKeys.Length; j++)
+                                        //{
+                                        //    if (!newKeysTable.Contains(newKeys[j]))
+                                        //    {
+                                        //        newKeysTable.Add(newKeys[j], new ArrayList());
+                                        //    }
+                                        //    ((ArrayList)newKeysTable[newKeys[j]]).Add(goodKeysList[i]);
+                                        //}
                                         Hashtable newKeyDepInfoTable = GetKeyDependencyInfoTable(goodKeysList[i], goodEntries[i]);
                                         table = _internalCache.AddDepKeyList(newKeyDepInfoTable, operationContext);
                                     }
@@ -4039,10 +4143,12 @@ namespace Alachisoft.NCache.Caching.Topologies.Clustered
                             retVal.Add(badKeysList[i], resultWithEntry);
                         }
 
+                        //UpdateCacheStatistics();
                     }
                 }
                 catch (Exception e)
                 {
+                    //nTrace.error("ReplicatedCache.Local_Insert()", e.ToString());
                     if (_clusteredExceptions) throw;
                 }
 
@@ -4182,6 +4288,7 @@ namespace Alachisoft.NCache.Caching.Topologies.Clustered
             }
             catch (Exception e)
             {
+                //nTrace.error("ReplicatedCache.handleInsert()", e.ToString());
                 if (_clusteredExceptions) throw;
             }
             return CacheInsResult.Failure;
@@ -4305,8 +4412,18 @@ namespace Alachisoft.NCache.Caching.Topologies.Clustered
                     else
                         e = Local_Remove(actualKey, ir, Cluster.LocalAddress, notification, taskId, providerName, true, lockId, version, accessType, operationContext);
                 }
+                //huma: events will be raised from LocalCacheBase
                 if (e != null && notify)
                 {
+                    //object value = e.Value;// e.DeflattedValue(_context.SerializationContext);
+                    //if (value is CallbackEntry)
+                    //{
+                    //    RaiseCustomRemoveCalbackNotifier(actualKey, (CallbackEntry)value, ir);
+                    //}
+
+                    //object data = new object[] { actualKey, e, ir, operationContext };
+                    //RaiseItemRemoveNotifier(data);
+                    //handleNotifyRemoval(data);
                     RemoveUpdateIndexOperation(key);
                 }
 
@@ -4423,6 +4540,7 @@ namespace Alachisoft.NCache.Caching.Topologies.Clustered
                     }
                 }
 
+                //UpdateCacheStatistics();
             }
             CacheEntry cloned = null;
             if (retVal != null && taskId != null)
@@ -4491,6 +4609,7 @@ namespace Alachisoft.NCache.Caching.Topologies.Clustered
 
                         if (partialNextRemovalKeysArr.Length > 0)
                         {
+                            // entriesTable = Local_Remove(nextRemovalKeys, ir, src, null, null, null, notify, operationContext);//_context.CacheImpl.Remove(nextRemovalKeys, ItemRemoveReason.DependencyChanged, true);
                             entriesTable = Local_Remove(partialNextRemovalKeysArr, ir, src, null, null, null, notify, operationContext);
 
                             if (entriesTable != null)
@@ -4561,6 +4680,7 @@ namespace Alachisoft.NCache.Caching.Topologies.Clustered
                     }
                 }
 
+                //UpdateCacheStatistics();
             }
 
            
@@ -4612,6 +4732,7 @@ namespace Alachisoft.NCache.Caching.Topologies.Clustered
         {
             try
             {
+                //if(nTrace.isInfoEnabled) nTrace.info("Replicated.handleRemove()", "Key = " + info);
                 object result = null;
 
                 if (info is object[])
@@ -4752,6 +4873,42 @@ namespace Alachisoft.NCache.Caching.Topologies.Clustered
                             }
                         }
                     }
+                    //generate event id
+                    //OperationID opId = (OperationID)operationContext.GetValueByField(OperationContextFieldName.OperationId);
+                    //EventContext eventContext = new EventContext();
+                    //EventId eventId = new EventId();
+                    //ide = totalRemovedItems.GetEnumerator();
+
+                    //while (ide.MoveNext())
+                    //{
+                    //    try
+                    //    {
+                    //        entry = ide.Value as CacheEntry;
+                    //        if (entry != null)
+                    //        {
+                    //            eventId.EventUniqueID = opId.OperationId;
+                    //            eventId.OperationCounter = opId.OpCounter;
+                    //            eventId.EventCounter++;
+                    //            eventContext.Add(EventContextFieldName.EventID, eventId);
+                    //            if (IsItemRemoveNotifier)
+                    //            {
+                    //                NotifyItemRemoved(ide.Key, entry, ir, true, operationContext,eventContext);
+                    //                //removeNotifiableItems[ide.Key]= entry;
+                    //            }
+                    //            if (entry.Value is CallbackEntry)
+                    //            {
+                    //                NotifyCustomRemoveCallback(ide.Key, entry.Value, ir, true, operationContext, eventContext);
+                    //                //customRemoveNotifiableItems[ide.Key] = entry.Value;
+                    //            }
+                    //            RemoveUpdateIndexOperation(ide.Key);
+                    //        }
+                    //    }
+                    //    catch (Exception ex)
+                    //    {
+                    //        //nTrace.error("ReplicatedServerCache.handleRemoveRange", "an error occurred while raising events: Error:" + ex.ToString());
+                    //        throw;
+                    //    }
+                    //}
 
                 }
 
@@ -4808,8 +4965,13 @@ namespace Alachisoft.NCache.Caching.Topologies.Clustered
                 if ((_statusLatch.IsAnyBitsSet(NodeStatus.Initializing) && (pointer.ChunkId > 0 || !InternalCache.HasEnumerationPointer(pointer)))
                     || (!_statusLatch.IsAnyBitsSet(NodeStatus.Initializing) && pointer.ChunkId > 0 && !InternalCache.HasEnumerationPointer(pointer)))
                 {
+                    //ArrayList dests = new ArrayList();
+                    //dests.Add(Cluster.Coordinator);
+                    //nextChunk = Clustered_GetNextChunk(dests, pointer, operationContext);
                     throw new OperationFailedException("Enumeration Has been Modified");
                 }
+                //else if (pointer.ChunkId < 0) //Enumeration pointer came to this node and needs initializing
+                //    nextChunk = Clustered_GetNextChunk(Cluster.Servers, pointer, operationContext);
                 else //Node is initialized with data and has snapshot should return the next chunk locally
                 {
                     nextChunk = InternalCache.GetNextChunk(pointer, operationContext);
@@ -4820,12 +4982,14 @@ namespace Alachisoft.NCache.Caching.Topologies.Clustered
                 {
                     pointer.isDisposable = true;
                     InternalCache.GetNextChunk(pointer, operationContext);
+                    //Clustered_GetNextChunk(Cluster.Servers, pointer, operationContext); //Just a dummy call to dispose the pointer
                 }
                 else if (nextChunk.IsLastChunk)
                 {
                     pointer = nextChunk.Pointer;
                     pointer.isDisposable = true;
                     InternalCache.GetNextChunk(pointer, operationContext);
+                    //Clustered_GetNextChunk(Cluster.Servers, pointer, operationContext); //Just a dummy call to dispose the pointer
                 }
             }
             else if (pointer.ChunkId > 0 && !InternalCache.HasEnumerationPointer(pointer))
@@ -4859,10 +5023,12 @@ namespace Alachisoft.NCache.Caching.Topologies.Clustered
             }
             catch (CacheException e)
             {
+                //NCacheLog.Error(Context.CacheName, "ReplicatedCacheBase.GetSubClusterEnumerator()", e.ToString());
                 throw;
             }
             catch (Exception e)
             {
+                //NCacheLog.Error(Context.CacheName, "ReplicatedCacheBase.GetSubClusterEnumerator()", e.ToString());
                 throw new GeneralFailureException(e.Message, e);
             }
         }
@@ -5319,6 +5485,9 @@ namespace Alachisoft.NCache.Caching.Topologies.Clustered
         private object handleOldNotifyRemoval(object info)
         {
             object[] objs = (object[])info;
+            //OperationContext operationContext = null;
+            //if (objs.Length > 2)
+            //    operationContext = objs[2] as OperationContext;
 
             NotifyOldItemRemoved(objs[0], null, ItemRemoveReason.Removed, true, (OperationContext)objs[1], (EventContext)objs[2]);
             return null;
@@ -5930,9 +6099,16 @@ namespace Alachisoft.NCache.Caching.Topologies.Clustered
             if (keys != null && result != null && result.LockAcquired && operation.Mode == Alachisoft.NCache.Common.Enum.StreamModes.Write)
             {
                 Hashtable table = new Hashtable();
+                //for (int i = 0; i < keys.Length; i++)
+                //{
+                //    if (table[keys[i]] == null)
+                //        table.Add(keys[i], new ArrayList());
+                //    ((ArrayList)table[keys[i]]).Add(operation.Key);
+                //}
                 Hashtable keyDepInfoTable = GetKeyDependencyInfoTable(operation.Key, (KeyDependencyInfo[])CacheHelper.GetKeyDependencyInfoTable(operation.ExpirationHint));
                 try
                 {
+                    // table = _internalCache.AddDepKeyList(table, operation.OperationContext);
                     table = _internalCache.AddDepKeyList(keyDepInfoTable, operation.OperationContext);
                 }
                 catch (Exception e)
@@ -6179,6 +6355,7 @@ namespace Alachisoft.NCache.Caching.Topologies.Clustered
                 {
                     if (base.IsShutdownServer(Cluster.Coordinator))
                     {
+                        //if (opType == AllowedOperationType.BulkRead)
                         return false;
                     }
                 }

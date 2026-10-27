@@ -1,4 +1,4 @@
-//  Copyright (c) 2026 Alachisoft
+//  Copyright (c) 2018 Alachisoft
 //  
 //  Licensed under the Apache License, Version 2.0 (the "License");
 //  you may not use this file except in compliance with the License.
@@ -14,20 +14,16 @@
 using System;
 using System.Collections.Generic;
 using System.Text;
-
 using Alachisoft.NCache.Runtime.Serialization;
-
 using Alachisoft.NCache.Common.Configuration;
 using Alachisoft.NCache.Config.Dom;
-
 using Runtime = Alachisoft.NCache.Runtime;
-
 namespace Alachisoft.NCache.Config.Dom
 {
     [Serializable]
     public class WriteBehind : ICloneable, ICompactSerializable
     {
-        string mode,throttling,requeueLimit,eviction;
+        string mode,requeueLimit,eviction;
         BatchConfig batchConfig;
 
         public WriteBehind() { }
@@ -52,12 +48,6 @@ namespace Alachisoft.NCache.Config.Dom
             get { return eviction; }
             set { eviction = value; }
         }
-        [ConfigurationAttribute("throttling-rate-per-sec", "")]
-        public string Throttling
-        {
-            get { return throttling; }
-            set { throttling = value; }
-        }
 
 
         [ConfigurationSection("batch-mode-config")]//Changes for New Dom from param
@@ -72,7 +62,6 @@ namespace Alachisoft.NCache.Config.Dom
         {
             WriteBehind writeBehind = new WriteBehind();
             writeBehind.Mode = Mode != null ? (string)Mode.Clone() : null;
-            writeBehind.Throttling = Throttling != null ? (string)Throttling.Clone() : null;
             writeBehind.Eviction = Eviction != null ? (string)Eviction.Clone() : null;
             writeBehind.RequeueLimit = RequeueLimit != null ? (string)RequeueLimit.Clone() : null;
             writeBehind.BatchConfig = BatchConfig != null ? BatchConfig.Clone() as BatchConfig : null;
@@ -86,7 +75,6 @@ namespace Alachisoft.NCache.Config.Dom
         public void Deserialize(Runtime.Serialization.IO.CompactReader reader)
         {
             mode = reader.ReadObject() as string;
-            throttling = reader.ReadObject() as string;
             batchConfig = reader.ReadObject() as BatchConfig;
             eviction = reader.ReadObject() as string;
             requeueLimit = reader.ReadObject() as string;
@@ -95,7 +83,6 @@ namespace Alachisoft.NCache.Config.Dom
         public void Serialize(Runtime.Serialization.IO.CompactWriter writer)
         {
             writer.WriteObject(mode);
-            writer.WriteObject(throttling);
             writer.WriteObject(batchConfig);
             writer.WriteObject(eviction);
             writer.WriteObject(requeueLimit);

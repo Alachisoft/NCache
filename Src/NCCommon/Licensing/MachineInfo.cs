@@ -38,12 +38,10 @@ namespace Alachisoft.NCache.Common.Licensing
         private static int _minCores = 4;
         private static bool _loaded = false;
         private static int GB = 1024 * 1024;
-        public static bool VCPUBasedLicensing { get; set; }
         public static int TotalAvailableCores { get { return LogicalCores; } }
         public static string ComputerName { get; private set; }
         public static int PhysicalCores { get; private set; }
         public static int LogicalCores { get; set; }
-        public static int Licenses { get; private set; }
         public static int SocketCount { get; private set; }
         public static string[] MacAddresses { get; private set; }
         public static string StaticMac { get; set; }
@@ -92,16 +90,6 @@ namespace Alachisoft.NCache.Common.Licensing
                     int numberOfCores = rows[0].IndexOf("NumberOfCores");
                     int numberOfLogicalProcessors = rows[0].IndexOf("NumberOfLogicalProcessors");
                     int numberOfSockets = rows[0].IndexOf("SocketDesignation");
-                    if (numberOfCores >= 0 && numberOfCores < rows[1].Length)
-                    {
-                        try
-                        {
-                            Licenses = int.Parse(rows[1][numberOfCores].ToString());
-                        }
-                        catch (Exception e)
-                        {
-                        }
-                    }
                     if (numberOfLogicalProcessors >= 0 && numberOfLogicalProcessors < rows[1].Length)
                     {
                         try
@@ -159,12 +147,6 @@ namespace Alachisoft.NCache.Common.Licensing
 #endif
         }
 
-        public static int GetTotalAvailableCores(bool vCPUBasedLicensing)
-        {
-            if (vCPUBasedLicensing)
-                return LogicalCores;
-            return PhysicalCores;
-        }
 
 
         private static string ExecuteCommandOnWindows()
@@ -235,10 +217,6 @@ namespace Alachisoft.NCache.Common.Licensing
                 LogicalCores = Environment.ProcessorCount;
                 Memory = GetTotalPhysicalMemoryInGB();
             }
-            if (TotalAvailableCores < _minAllowedCores)
-                PhysicalCores = 2;
-            else
-                PhysicalCores = GetLogicalProcessors();
 
             LoadMacAddresses();
 

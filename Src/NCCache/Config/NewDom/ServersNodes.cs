@@ -1,4 +1,4 @@
-//  Copyright (c) 2026 Alachisoft
+//  Copyright (c) 2018 Alachisoft
 //  
 //  Licensed under the Apache License, Version 2.0 (the "License");
 //  you may not use this file except in compliance with the License.
@@ -16,17 +16,15 @@ using System.Collections.Generic;
 using System.Text;
 using Alachisoft.NCache.Common.Configuration;
 using Alachisoft.NCache.Common.Enum;
-
 using Alachisoft.NCache.Runtime.Serialization;
-
 using System.Collections;
 using Alachisoft.NCache.Common;
 using Alachisoft.NCache.Common.Net;
+#if !CLIENT
 using Alachisoft.NCache.Caching.Topologies.Clustered;
+#endif
 using Alachisoft.NCache.Config.Dom;
-
 using Runtime = Alachisoft.NCache.Runtime;
-
 namespace Alachisoft.NCache.Config.NewDom
 {
     [Serializable]
@@ -52,6 +50,16 @@ namespace Alachisoft.NCache.Config.NewDom
             {
                 ServerNode[] serverNode = new ServerNode[nodesList.Count];
                 nodesList.CopyTo(serverNode, 0);
+
+
+                //if (_activeMirrorNode != null)
+                //{
+                //    foreach (ServerNode server in ServerNodeList)
+                //    {
+                //        //if (server.IP.Equals(_activeMirrorNode))
+                //        //    server.ActiveMirrorNode = true;
+                //    }
+                //}
 
                 return serverNode;
             }

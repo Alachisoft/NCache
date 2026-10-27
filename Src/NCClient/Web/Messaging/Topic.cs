@@ -1,4 +1,4 @@
-﻿//  Copyright (c) 2026 Alachisoft
+﻿//  Copyright (c) 2018 Alachisoft
 //  
 //  Licensed under the Apache License, Version 2.0 (the "License");
 //  you may not use this file except in compliance with the License.
@@ -81,15 +81,15 @@ namespace Alachisoft.NCache.Client
         /// <summary>
         /// Create subscription against the Topic. After creation, topic react as subscriber, now it receive messages from server. 
         /// </summary>
-        /// <param name="onMessageReceivedCallback"> Callback for message received from topic</param>
+        /// <param name="messageReceivedCallback"> Callback for message received from topic</param>
         /// <returns></returns>
-        public ITopicSubscription CreateSubscription(MessageReceivedCallback onMessageReceivedCallback)
+        public ITopicSubscription CreateSubscription(MessageReceivedCallback messageReceivedCallback)
         {
 
             if (_isDisposed) throw new OperationFailedException(ErrorCodes.PubSub.TOPIC_DISPOSED,ErrorMessages.GetErrorMessage(ErrorCodes.PubSub.TOPIC_DISPOSED,Name));
-            if (onMessageReceivedCallback == null) throw new ArgumentNullException("onMessageReceivedCallback");
+            if (messageReceivedCallback == null) throw new ArgumentNullException("messageReceivedCallback");
             string subscriptionName = new Shorter().GuidString;
-            return RegisterSubscriptions(subscriptionName, onMessageReceivedCallback);
+            return RegisterSubscriptions(subscriptionName, messageReceivedCallback);
 
         }
         public ITopicSubscription CreateEventSubscription(MessageReceivedCallback onMessageReceivedCallback)
@@ -552,6 +552,7 @@ namespace Alachisoft.NCache.Client
 #if !NETCORE
                             cb.BeginInvoke(this, args, null, null);
 #elif NETCORE
+                            //TODO: ALACHISOFT (BeginInvoke is not supported in .Net Core thus using TaskFactory)
                             TaskFactory factory = new TaskFactory();
                             Task task = factory.StartNew(() => cb(this, args));
 #endif

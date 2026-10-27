@@ -46,32 +46,6 @@ namespace Alachisoft.NCache.Common.ErrorHandling
             _errorMessageMap.Add(ErrorCodes.CacheInit.CACHE_ID_NOT_REGISTERED, "Specified cacheId is not registered.");
             #endregion
 
-            #region  Licensing exceptions
-            _errorMessageMap.Add(ErrorCodes.Licensing.INVALID_INSTALLCODE, "Invalid Install Code");
-            _errorMessageMap.Add(ErrorCodes.Licensing.LICENSE_EXPIRED, "NCache license is expired.");
-            _errorMessageMap.Add(ErrorCodes.Licensing.INVALID_LICENSE_PROVIDER, "Invalid License provider.");
-            _errorMessageMap.Add(ErrorCodes.Licensing.LICENSE_STAGE_001, "Data not found -- Stage 001");
-            _errorMessageMap.Add(ErrorCodes.Licensing.LICENSE_STAGE_002, "Product is deactivated -- Stage 002");
-            _errorMessageMap.Add(ErrorCodes.Licensing.LICENSE_STAGE_003, "Invalid Authentication Code--Stage03");
-            _errorMessageMap.Add(ErrorCodes.Licensing.LICENSE_STAGE_004, "Invalid Authentication Code--Stage04");
-            _errorMessageMap.Add(ErrorCodes.Licensing.LICENSE_STAGE_005, "");
-            _errorMessageMap.Add(ErrorCodes.Licensing.LICENSE_STAGE_006, "");
-            _errorMessageMap.Add(ErrorCodes.Licensing.LICENSE_STAGE_007, "Invalid Authentication Code--Stage07");
-            _errorMessageMap.Add(ErrorCodes.Licensing.LICENSE_STAGE_008, "Invalid Authentication Code--Stage08");
-            _errorMessageMap.Add(ErrorCodes.Licensing.LICENSE_STAGE_009, "Invalid Authentication Code--Stage09");
-            _errorMessageMap.Add(ErrorCodes.Licensing.LICENSE_STAGE_010, "Invalid Authentication Code--Stage10");
-            _errorMessageMap.Add(ErrorCodes.Licensing.LICENSE_STAGE_011, "Invalid Authentication Code--Stage11");
-            _errorMessageMap.Add(ErrorCodes.Licensing.LICENSE_EXPIRED_STAGE_011, "License for NCache has been expired.--Stage11");
-            _errorMessageMap.Add(ErrorCodes.Licensing.LICENSE_EXPIRED_STAGE_012, "License for NCache has been expired--Stage12");
-            _errorMessageMap.Add(ErrorCodes.Licensing.LICENSE_NOT_VERIFIED, "License not verified.'{0}'");
-            _errorMessageMap.Add(ErrorCodes.Licensing.EVALUATION_PERIOD_EXPIRED, "Your library has expired the evaluation period of '{0}' days.");
-            _errorMessageMap.Add(ErrorCodes.Licensing.LICENSING_DLL_MISSING, "DLL NOT FOUND EXCEPTION {0}");
-            _errorMessageMap.Add(ErrorCodes.Licensing.LICENSING_INFO_CORRUPTED, "EvaluationLicense information is either missing or corrupted.");
-            _errorMessageMap.Add(ErrorCodes.Licensing.NCLICENSE_LOAD_FAILURE, "Unable to load nclicense.dll");
-            _errorMessageMap.Add(ErrorCodes.Licensing.UNREGISTERED_MACHINE, $"The machine does not have a valid evaluation or activation information. Please register this machine with a FREE evaluation key. You can get free evaluation key from https://www.alachisoft.com/trial-key.html");
-            _errorMessageMap.Add(ErrorCodes.Licensing.DATA_CORRUPTED, $"Could not get evaluation information because possible data corruption was detected while reading evaluation data.");            
-            #endregion
-
             #region PubSub Exceptions
             _errorMessageMap.Add(ErrorCodes.PubSub.MESSAGE_ID_ALREADY_EXISTS, "The specified message id already exists.");
             _errorMessageMap.Add(ErrorCodes.PubSub.TOPIC_NOT_FOUND, "Topic '{0}' does not exists.");

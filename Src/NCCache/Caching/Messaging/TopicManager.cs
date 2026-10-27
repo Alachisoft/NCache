@@ -1,4 +1,4 @@
-﻿//  Copyright (c) 2026 Alachisoft
+﻿//  Copyright (c) 2018 Alachisoft
 //  
 //  Licensed under the Apache License, Version 2.0 (the "License");
 //  you may not use this file except in compliance with the License.
@@ -43,6 +43,7 @@ namespace Alachisoft.NCache.Caching.Messaging
         private RoundRobinLoadbalancer<string> _deliveryTopicSelector = new RoundRobinLoadbalancer<string>();
         private ITopicEventListener _listener;
         private ReaderWriterLockSlim _rwLock = new ReaderWriterLockSlim(LockRecursionPolicy.SupportsRecursion);
+        //PatternManager _patternManager = new PatternManager();
         public long IndexInMemorySize
         {
             get
@@ -539,6 +540,7 @@ namespace Alachisoft.NCache.Caching.Messaging
                 }
                 else
                 {
+                    //throw new OperationFailedException(string.Format("Topic '{0}' does not exists.", topic));
                     throw new OperationFailedException(ErrorCodes.PubSub.TOPIC_NOT_FOUND,ErrorMessages.GetErrorMessage(ErrorCodes.PubSub.TOPIC_NOT_FOUND,topic));
                 }
               

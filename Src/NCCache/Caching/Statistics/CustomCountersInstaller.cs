@@ -40,13 +40,16 @@ namespace Alachisoft.NCache.Caching.Statistics
             new CounterCreationData("Average us/cache operation base", "Base counter for average microseconds (us) /cache-operation", CounterType.AverageCounter, true),
             new CounterCreationData("Expirations/sec", "Number of items being expired currently per second", CounterType.SampleCounter),
             new CounterCreationData("Evictions/sec", "Number of items evicted per second.", CounterType.SampleCounter),
+#if !(DEVELOPMENT || CLIENT)
             new CounterCreationData("State Transfer/sec", "Number of items this node is either reading from other nodes or sending to other nodes during a state transfer mode.", CounterType.SampleCounter),
             new CounterCreationData("Mirror queue size", "Number of items in the Mirror queue.", CounterType.NumberOfItemCounter),
             new CounterCreationData("Sliding Index queue size", "Number of items in the Sliding-Index queue.", CounterType.NumberOfItemCounter),
+#endif
             new CounterCreationData("Hits/sec", "Number of successful Get operations per second.", CounterType.SampleCounter),
             new CounterCreationData("Misses/sec", "Number of failed Get operations per second.", CounterType.SampleCounter),
             new CounterCreationData("Hits ratio/sec (%)", "Ratio of number of successful Get operations per second and total number of Get operations per second ", CounterType.SampleCounter),
             new CounterCreationData("Hits ratio/sec base", "Base counter for Hits ratio/sec", CounterType.SampleCounter),
+#if !(DEVELOPMENT || CLIENT)
             //Moiz: perfmon description task 29-10-13
             //previous description (till 4.1 sp3) for DispatchEnter,TcpDown,Clustered opsent,clusters oprecv, reponse sent (Number of clustered operations sent to other nodes in cluster per second.)
             new CounterCreationData("Data balance/sec", "Number of items this node is either reading from other nodes or sending to other nodes during a Data Load Balancing mode.", CounterType.SampleCounter),
@@ -56,6 +59,7 @@ namespace Alachisoft.NCache.Caching.Statistics
             new CounterCreationData("Clustered opssent/sec", "Number of clustered operations sent to other nodes in cluster per second.", CounterType.SampleCounter),
             new CounterCreationData("Clustered opsrecv/sec", "Number of clustered operations received from other nodes in cluster per second.", CounterType.SampleCounter),
             new CounterCreationData("Response sent/sec", "Number of responses sent to other nodes in cluster per second.", CounterType.SampleCounter),
+#endif
             new CounterCreationData("Bytes sent/sec", "Number of bytes sent per second to other nodes of the cluster.", CounterType.SampleCounter),
             new CounterCreationData("Bytes received/sec", "Number of bytes received per second from other nodes of the cluster.", CounterType.SampleCounter),
             new CounterCreationData("Requests/sec", "Number of requests received (meaning cache commands like add, get, insert, remove etc.) from all clients to this cache server.", CounterType.RateOfCounter),
@@ -66,8 +70,10 @@ namespace Alachisoft.NCache.Caching.Statistics
             new CounterCreationData("Client bytes received/sec", "Bytes being received by cache server from all its clients.", CounterType.RateOfCounter),
             new CounterCreationData("TcpUpQueueCount", "Number of items in TCP up-queue.", CounterType.NumberOfItemCounter),
             new CounterCreationData("TcpDownQueueCount", "Number of items in TCP down-queue.", CounterType.NumberOfItemCounter),
+#if !(DEVELOPMENT || CLIENT)
             new CounterCreationData("BcastQueueCount", "Number of items in BCast queue waiting to be processed on sequence.", CounterType.NumberOfItemCounter),
             new CounterCreationData("McastQueueCount", "Number of items in MCast queue waiting to be processed on sequence.", CounterType.NumberOfItemCounter),
+#endif
             new CounterCreationData("Socket send time (msec)", "Time in milli seconds it took for the last message to be sent over the socket.", CounterType.NumberOfItemCounter),
             new CounterCreationData("Socket send size (bytes)", "How much data was sent in the last message.", CounterType.NumberOfItemCounter),
             new CounterCreationData("General Notifications Queue Size", "Number of general notification events in queue.", CounterType.NumberOfItemCounter),

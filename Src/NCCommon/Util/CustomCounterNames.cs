@@ -62,8 +62,8 @@ namespace Alachisoft.NCache.Common.Util
 
 
 
-        public const string AvgPublishMessage = "Average µs/Published Messages";
-        public const string AvgPublishMessageBase = "Average µs/Published Messages Base";
+        public const string AvgPublishMessage = "Average us/Published Messages";
+        public const string AvgPublishMessageBase = "Average us/Published Messages Base";
         public const string MessagePublishPerSec = "Messages Published/sec";
         public const string MessageDeliveryPerSec = "Messages Delivered/sec";
 

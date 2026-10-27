@@ -1,240 +1,342 @@
 ﻿//  Copyright (c) 2026 Alachisoft
-//  
+//
 //  Licensed under the Apache License, Version 2.0 (the "License");
 //  you may not use this file except in compliance with the License.
 //  You may obtain a copy of the License at
-//  
+//
 //     http://www.apache.org/licenses/LICENSE-2.0
-//  
+//
 //  Unless required by applicable law or agreed to in writing, software
 //  distributed under the License is distributed on an "AS IS" BASIS,
 //  WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
 //  See the License for the specific language governing permissions and
 //  limitations under the License
-using Mono.Cecil;
 using System;
-using System.Collections.Generic;
-using System.Linq;
-using System.Text;
-using System.Threading.Tasks;
 using System.Collections;
+using System.Collections.Generic;
+using System.Reflection;
+using System.Text;
 
 namespace Alachisoft.NCache.Common.AssemblyBrowser
 {
-    public class TypeDef :IComparable<TypeDef>
-    {
-        TypeReference typeReference;
+	public class TypeDef : IComparable<TypeDef>
+	{
+		/// <summary>Members declared by the type itself, whatever their accessibility.</summary>
+		const BindingFlags DeclaredMembers = BindingFlags.Public | BindingFlags.NonPublic
+			| BindingFlags.Instance | BindingFlags.Static | BindingFlags.DeclaredOnly;
 
-        PropertyDef[] properties;
-        FieldDef[] fields;
+		static readonly string[] NoInterfaces = new string[0];
 
-        public string Name { get { return typeReference.Name; } }
-        public string FullName { get { return typeReference.FullName; } }
-        public string Namespace { get { return typeReference.Namespace; } }
-        public bool IsGenericType
-        {
-            get
-            {
-                if (this.FullName.Contains("`"))
-                    return true;
-                else
-                    return false;
-            }
-        }
-        public bool IsPrimitive { get { return typeReference.IsPrimitive; } }
-        public bool IsValueType { get { return typeReference.IsValueType; } }
-        public string AssemblyFullName { get { return typeReference.Module.Assembly.FullName; } }
-        public TypeDef BaseType
-        {
-            get
-            {
-                if (typeReference is TypeDefinition && ((TypeDefinition)typeReference).BaseType != null)
-                    return new TypeDef(((TypeDefinition)typeReference).BaseType);
+		Type type;
 
-                return null;
-            }
-        }
-        public bool IsClass
-        {
-            get
-            {
-                if (typeReference is TypeDefinition)
-                    return ((TypeDefinition)typeReference).IsClass;
+		PropertyDef[] properties;
+		FieldDef[] fields;
+		string[] interfaceNames;
 
-                return false;
-            }
-        }
+		public string Name { get { return type.Name; } }
+		public string FullName { get { return GetFullName(type); } }
+		public string Namespace { get { return type.Namespace; } }
+		public bool IsGenericType
+		{
+			get
+			{
+				if (this.FullName.Contains("`"))
+					return true;
+				else
+					return false;
+			}
+		}
+		public bool IsPrimitive { get { return type.IsPrimitive; } }
+		public bool IsValueType { get { return type.IsValueType; } }
+		public string AssemblyFullName { get { return type.Assembly.FullName; } }
+		public TypeDef BaseType
+		{
+			get
+			{
+				Type baseType = GetBaseType(type);
+
+				if (baseType != null)
+					return new TypeDef(baseType);
+
+				return null;
+			}
+		}
+		public bool IsClass
+		{
+			get
+			{
+				if (type != null)
+					return type.IsClass;
+
+				return false;
+			}
+		}
 
 
-        public TypeDef(TypeReference typeReference)
-        {
-            this.typeReference = typeReference;
-        }
+		public TypeDef(System.Type type)
+		{
+			this.type = type;
+		}
 
-        public TypeDef(System.Type type)
-        {
-            TypeReference typeReference;
-            ModuleDefinition AssemblyModule = ModuleDefinition.ReadModule(type.Module.FullyQualifiedName);
-            if (type.IsArray)
-            {
-                // because [] types aren't listed in types of moduleDefinition
-                // this is safe to use because this code will only be called from array premitive types.
-                typeReference = new TypeReference(type.Namespace, type.Name, AssemblyModule, AssemblyModule);
-            }
-            else
-            {
-                typeReference = AssemblyModule.GetType(type.FullName);
-            }
-            this.typeReference = typeReference;
+		public ICollection GetGenericArguments()
+		{
+			if (type == null) return new Type[0];
 
-        }
-        public ICollection GetGenericArguments()
-        {
-            return this.typeReference.GenericParameters;
-        }
+			return type.GetGenericArguments();
+		}
 
-        public PropertyDef[] GetProperties()
-        {
-            if (properties == null)
-            {
-                List<PropertyDef> propertyList = new List<PropertyDef>();
-                TypeDefinition typeDefinition = (TypeDefinition)typeReference;
-                if (typeDefinition != null)
-                    foreach (PropertyDefinition prop in typeDefinition.Properties)
-                    {
-                        propertyList.Add(new PropertyDef(prop));
-                    }
+		public PropertyDef[] GetProperties()
+		{
+			if (properties == null)
+			{
+				List<PropertyDef> propertyList = new List<PropertyDef>();
 
-                properties = propertyList.ToArray();
-            }
+				if (type != null)
+					foreach (PropertyInfo prop in GetDeclaredProperties())
+					{
+						propertyList.Add(new PropertyDef(prop));
+					}
 
-            return properties;
-        }
+				properties = propertyList.ToArray();
+			}
 
-        public FieldDef[] GetFields()
-        {
-            if (fields == null)
-            {
-                List<FieldDef> fieldList = new List<FieldDef>();
-                TypeDefinition typeDefinition = typeReference as TypeDefinition;
+			return properties;
+		}
 
-                if (typeDefinition != null)
-                    foreach (FieldDefinition field in typeDefinition.Fields)
-                    {
-                        fieldList.Add(new FieldDef(field));
-                    }
+		public FieldDef[] GetFields()
+		{
+			if (fields == null)
+			{
+				List<FieldDef> fieldList = new List<FieldDef>();
 
-                fields = fieldList.ToArray();
-            }
+				if (type != null)
+					foreach (FieldInfo field in GetDeclaredFields())
+					{
+						fieldList.Add(new FieldDef(field));
+					}
 
-            return fields;
-        }
+				fields = fieldList.ToArray();
+			}
 
-        public PropertyDef GetProperty(string name)
-        {
-            foreach (PropertyDef property in this.GetProperties())
-            {
-                if (property.Name == name) return property;
-            }
+			return fields;
+		}
 
-            return null;
-        }
+		public PropertyDef GetProperty(string name)
+		{
+			foreach (PropertyDef property in this.GetProperties())
+			{
+				if (property.Name == name) return property;
+			}
 
-        public FieldDef GetField(string name)
-        {
-            foreach (FieldDef field in this.GetFields())
-            {
-                if (field.Name == name) return field;
-            }
+			return null;
+		}
 
-            return null;
-        }
+		public FieldDef GetField(string name)
+		{
+			foreach (FieldDef field in this.GetFields())
+			{
+				if (field.Name == name) return field;
+			}
 
-        public object GetCustomAttributeValue(string attributeName)
-        {
-            foreach (CustomAttribute ca in this.typeReference.Module.Assembly.CustomAttributes)
-                if (attributeName == ca.AttributeType.FullName)
-                    return ca.ConstructorArguments[0].Value;
+			return null;
+		}
 
-            return null;
-        }
+		public object GetCustomAttributeValue(string attributeName)
+		{
+			if (type == null) return null;
 
-        public bool HasDefaultConstructor()
-        {
-            TypeDefinition typeDefinition = (TypeDefinition)typeReference;
-            if (typeDefinition != null)
-                foreach (MethodDefinition method in typeDefinition.Methods)
-                {
-                    if (method.Name == ".ctor" && method.Parameters.Count == 0)
-                        return true;
-                }
+			foreach (CustomAttributeData ca in type.Assembly.GetCustomAttributesData())
+				if (attributeName == ca.AttributeType.FullName)
+					return ca.ConstructorArguments[0].Value;
 
-            return false;
-        }
+			return null;
+		}
 
-        public bool IsAssignableTo(Type filterType)
-        {
-            if (filterType == null)
-                return false;
+		public bool HasDefaultConstructor()
+		{
+			if (type != null)
+				foreach (ConstructorInfo constructor in type.GetConstructors(DeclaredMembers))
+				{
+					if (!constructor.IsStatic && constructor.GetParameters().Length == 0)
+						return true;
+				}
 
-            string fullname = System.Reflection.Assembly.CreateQualifiedName(typeReference.Scope.ToString(), typeReference.FullName);
+			return false;
+		}
 
-            if (filterType == Type.GetType(fullname, false))
-                return true;
+		public bool IsAssignableTo(Type filterType)
+		{
+			if (filterType == null || type == null)
+				return false;
 
-            if (this.HasBaseType(filterType))
-                return true;
+			if (this.FullName == filterType.FullName)
+				return true;
 
-            if (filterType.IsInterface && this.ImplementsInterface(filterType))
-                return true;
+			if (this.HasBaseType(filterType))
+				return true;
 
-            return false;
-        }
+			if (filterType.IsInterface && this.ImplementsInterface(filterType))
+				return true;
 
-        public bool ImplementsInterface(Type interfaceType)
-        {
-            TypeDefinition typeDefinition = (TypeDefinition)typeReference;
-            if (typeDefinition != null)
-#if NETCORE
-                foreach (InterfaceImplementation tr in typeDefinition.Interfaces)
-                {
-                    string fullName = System.Reflection.Assembly.CreateQualifiedName(tr.InterfaceType.Scope.ToString(), tr.InterfaceType.FullName);
-#else
-                foreach (TypeReference tr in typeDefinition.Interfaces)
-                {
-                    string fullName = System.Reflection.Assembly.CreateQualifiedName(tr.Scope.ToString(), tr.FullName);
-#endif
-                    Type intf = Type.GetType(fullName, false);
-                    if (intf == interfaceType)
-                        return true;
-                }
+			return false;
+		}
 
-            return false;
-        }
+		public bool ImplementsInterface(Type interfaceType)
+		{
+			if (interfaceType == null)
+				return false;
 
-        public bool HasBaseType(Type baseType)
-        {
-            TypeDefinition typeDefinition = (TypeDefinition)typeReference;
-            if (typeDefinition != null)
-                if (typeDefinition.BaseType != null)
-                {
-                    string fullName = System.Reflection.Assembly.CreateQualifiedName(typeDefinition.BaseType.Scope.ToString(), typeDefinition.BaseType.FullName);
-                    Type bstype = Type.GetType(fullName, false);
-                    if (bstype == baseType)
-                        return true;
+			foreach (string implemented in this.GetInterfaceNames())
+			{
+				if (implemented.Equals(interfaceType.FullName))
+					return true;
+			}
 
-                    TypeDef typeDef = new TypeDef(typeDefinition.BaseType.Resolve());
-                    var classTypeFilter = new ClassTypeFilter(baseType);
+			return false;
+		}
 
-                    return classTypeFilter.FilterType(typeDef);
-                }
+		/// <summary>
+		/// Full names of every interface the type implements, including the ones it
+		/// inherits from its base types.
+		/// </summary>
+		public string[] GetInterfaceNames()
+		{
+			if (interfaceNames == null)
+			{
+				interfaceNames = NoInterfaces;
 
-            return false;
-        }
-       
-        public int CompareTo(TypeDef other)
-        {
-            return Name.CompareTo(other.Name);
-        }
-    }
+				if (type != null)
+					try
+					{
+						List<string> names = new List<string>();
+
+						foreach (Type implemented in type.GetInterfaces())
+						{
+							string name = GetFullName(implemented);
+							if (name != null) names.Add(name);
+						}
+
+						interfaceNames = names.ToArray();
+					}
+					catch (Exception)
+					{
+						// an interface declared in an assembly that was not deployed along
+						// side the inspected one cannot be read; the type stays usable.
+					}
+			}
+
+			return interfaceNames;
+		}
+
+		public bool HasBaseType(Type baseType)
+		{
+			if (baseType == null || type == null)
+				return false;
+
+			for (Type current = GetBaseType(type); current != null; current = GetBaseType(current))
+			{
+				if (GetFullName(current) == baseType.FullName)
+					return true;
+			}
+
+			return false;
+		}
+
+		public int CompareTo(TypeDef other)
+		{
+			return Name.CompareTo(other.Name);
+		}
+
+		private PropertyInfo[] GetDeclaredProperties()
+		{
+			try
+			{
+				return type.GetProperties(DeclaredMembers);
+			}
+			catch (Exception)
+			{
+				return new PropertyInfo[0];
+			}
+		}
+
+		private FieldInfo[] GetDeclaredFields()
+		{
+			try
+			{
+				return type.GetFields(DeclaredMembers);
+			}
+			catch (Exception)
+			{
+				return new FieldInfo[0];
+			}
+		}
+
+		private static Type GetBaseType(Type type)
+		{
+			if (type == null) return null;
+
+			try
+			{
+				return type.BaseType;
+			}
+			catch (Exception)
+			{
+				// the base type lives in an assembly that could not be resolved.
+				return null;
+			}
+		}
+
+		/// <summary>
+		/// Renders a type name the way the metadata of the assembly spells it, i.e.
+		/// "Namespace.Type`1&lt;Namespace.Argument&gt;" for a closed generic type, rather than
+		/// the assembly qualified "Namespace.Type`1[[Namespace.Argument, Assembly, ...]]"
+		/// form reflection produces. Callers parse these names, so the shape matters.
+		/// </summary>
+		internal static string GetFullName(Type type)
+		{
+			if (type == null) return null;
+
+			// an array, by reference or pointer type is spelled in terms of its element
+			// type, which may itself be generic and so need the treatment below.
+			if (type.IsArray || type.IsByRef || type.IsPointer)
+			{
+				string elementName = GetFullName(type.GetElementType());
+
+				if (elementName == null) return type.FullName;
+
+				return string.Concat(elementName, GetElementSuffix(type));
+			}
+
+			if (!type.IsGenericType || type.IsGenericTypeDefinition)
+				return type.FullName;
+
+			StringBuilder name = new StringBuilder();
+
+			name.Append(type.GetGenericTypeDefinition().FullName);
+			name.Append('<');
+
+			Type[] arguments = type.GetGenericArguments();
+			for (int i = 0; i < arguments.Length; i++)
+			{
+				if (i > 0) name.Append(',');
+				name.Append(GetFullName(arguments[i]));
+			}
+
+			name.Append('>');
+
+			return name.ToString();
+		}
+
+		private static string GetElementSuffix(Type type)
+		{
+			if (type.IsByRef) return "&";
+			if (type.IsPointer) return "*";
+
+			int rank = type.GetArrayRank();
+
+			if (rank <= 1) return "[]";
+
+			return string.Concat("[", new string(',', rank - 1), "]");
+		}
+	}
 }

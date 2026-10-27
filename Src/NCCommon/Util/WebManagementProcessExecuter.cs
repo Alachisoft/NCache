@@ -19,7 +19,6 @@ using System.Net;
 using System.Threading;
 using Alachisoft.NCache.Common.RuntimeEnvironment;
 #if NETCORE
-using Alachisoft.NCache.Licensing.LinuxUtil;
 using System.Runtime.InteropServices;
 using System.Text.RegularExpressions;
 
@@ -32,7 +31,7 @@ namespace Alachisoft.NCache.Common.Util
     /// </summary>
     public class WebManagementProcessExecuter
     {
-        static string _DEFAULT_URL = "http://127.0.0.0:8251";
+        static string _DEFAULT_URL = "http://127.0.0.0:9801";
         static string _WEB_CONFIG_NAME = "config.json";
         static int _RETRIES = ServiceConfiguration.WebManagerStartRetries;
         static int _RETRY_INTERVAL = 5000;

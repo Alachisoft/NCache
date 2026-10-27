@@ -23,43 +23,13 @@ using System.Security.Permissions;
 // set of attributes. Change these attribute values to modify the information
 // associated with an assembly.
 //
-#if JAVA
-[assembly: AssemblyTitle("Alachisoft.TayzGrid.Service")]
-#if NETCORE
-#if CLIENT
-[assembly: AssemblyTitle("Alachisoft NCache Service (.NETCore Client)")]
-#else
-[assembly: AssemblyTitle("Alachisoft NCache Service (.NETCore)")]
-#endif
-#else
-#if CLIENT
-[assembly: AssemblyTitle("Alachisoft NCache Service (.NET Client)")]
-#else
-[assembly: AssemblyTitle("Alachisoft NCache Service (.NET)")]
-#endif
-#endif
-#endif
 [assembly: AssemblyConfiguration("")]
 [assembly: AssemblyCompany("Alachisoft")]
 
-#if PROFESSIONAL
-[assembly: AssemblyProduct("Alachisoft® NCache Professional")]
-#elif EXPRESS
-[assembly: AssemblyProduct("Alachisoft® NCache Express")]
-#else
-#if JAVA
-[assembly: AssemblyProduct("Alachisoft® TayzGrid Enterprise")]
-#else
 [assembly: AssemblyProduct("Alachisoft® NCache OpenSource")]
-#endif
-#endif
 
 [assembly: AssemblyCopyright("Copyright © 2005-2026 Alachisoft")]
-#if JAVA
-[assembly: AssemblyTrademark("TayzGrid ™ is a registered trademark of Alachisoft.")]
-#else
 [assembly: AssemblyTrademark("NCache ™ is a registered trademark of Alachisoft.")]
-#endif
 [assembly: AssemblyCulture("")]
 
 [assembly: ComVisible(false)]
@@ -105,10 +75,6 @@ using System.Security.Permissions;
 //       documentation for more information on this.
 //
 [assembly: AssemblyDelaySign(false)]
-[assembly: AssemblyFileVersionAttribute("5.3.6.0")]
-#if JAVA
-[assembly: AssemblyDescriptionAttribute("TayzGrid Service")]
-#else
+[assembly: AssemblyFileVersionAttribute("5.3.603")]
 [assembly: AssemblyDescriptionAttribute("NCache Service")]
-#endif
-[assembly: AssemblyInformationalVersion("5.3.0")]
+[assembly: AssemblyInformationalVersion("5.3.603-rc1")]

@@ -24,11 +24,7 @@ using System.Runtime.InteropServices;
 //
 
 [assembly: ComVisible(false)]
-#if NETCORE
-[assembly: AssemblyTitle("Alachisoft.NCache.Storage (.NETCore)")]
-#else
-[assembly: AssemblyTitle("Alachisoft.NCache.Storage (.NET)")]
-#endif
+[assembly: AssemblyTitle("Alachisoft.NCache.Storage")]
 [assembly: AssemblyProduct("Alachisoft® NCache OpenSource")]
 [assembly: AssemblyTrademark("NCache ™ is a registered trademark of Alachisoft.")]
 [assembly: AssemblyConfiguration("")]
@@ -101,6 +97,6 @@ using System.Runtime.InteropServices;
 //
 [assembly: AssemblyDelaySign(false)]
 [assembly: AssemblyKeyName("")]
-[assembly: AssemblyFileVersionAttribute("5.3.6.0")]
+[assembly: AssemblyFileVersionAttribute("5.3.603")]
 [assembly: AssemblyDescriptionAttribute("Storage Classes")]
-[assembly: AssemblyInformationalVersion("5.3.0")]
+[assembly: AssemblyInformationalVersion("5.3.603")]

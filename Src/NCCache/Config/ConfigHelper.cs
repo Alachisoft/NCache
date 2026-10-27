@@ -1,4 +1,4 @@
-//  Copyright (c) 2026 Alachisoft
+//  Copyright (c) 2018 Alachisoft
 //  
 //  Licensed under the Apache License, Version 2.0 (the "License");
 //  you may not use this file except in compliance with the License.
@@ -24,6 +24,7 @@ using Alachisoft.NCache.Common;
 using Alachisoft.NCache.Common.Net;
 using System.Collections.Generic;
 using System.Net;
+
 
 using Alachisoft.NCache.Runtime.Exceptions;
 using Alachisoft.NCache.Config.Dom;
@@ -64,6 +65,7 @@ namespace Alachisoft.NCache.Config
 		/// <returns>cache name.</returns>
 		static private CacheInfo GetCacheInfo(IDictionary properties)
 		{
+//#if !EXPRESS
 			if(!properties.Contains("cache"))
 				throw new ConfigurationException("Missing configuration attribute 'cache'");
 
@@ -94,7 +96,26 @@ namespace Alachisoft.NCache.Config
 
 			inf.ClassName = Convert.ToString(schemeProps["type"]);
 			return inf;
+//#else
+//            CacheInfo inf = new CacheInfo();
 
+//            if (properties.Contains("name"))
+//                inf.Name = Convert.ToString(properties["name"]).Trim();
+
+//            if (properties.Contains("cluster"))
+//            {
+//                IDictionary clusterProps = properties["cluster"] as IDictionary;
+//                if (!clusterProps.Contains("topology"))
+//                    throw new ConfigurationException("Can not find the topology, invalid configuration for cache class '" + inf.Name + "'");
+//                else
+//                    inf.ClassName = Convert.ToString(clusterProps["topology"]);
+//            }
+//            else
+//            {
+//                inf.ClassName = "local";
+//            }
+//            return inf;
+//#endif
 		}
 
 		/// <summary>
@@ -177,6 +198,11 @@ namespace Alachisoft.NCache.Config
                 if (pair.Value is Hashtable)
                 {
                     Hashtable subproperties = (Hashtable)pair.Value;
+
+                    //if (keyName == "cluster" && OnConfigUpdated != null)
+                    //{
+                    //    OnConfigUpdated(subproperties["group-id"].ToString(), pair);
+                    //}
                     if (subproperties.Contains("type") && subproperties.Contains("name"))
                     {
                         cacheName = subproperties["name"] as string;
@@ -208,6 +234,10 @@ namespace Alachisoft.NCache.Config
                         nestedStr.Append(CreatePropertiesXml2(subproperties, indent + 1, format)).Append(preStr).Append("</" + keyName + ">").Append(endStr);
                     }
                 }
+                //else
+                //{
+                //    returnStr.Append(preStr).Append("<" + keyName + ">").Append(pair.Value).Append("</" + keyName + ">").Append(endStr);
+                //}
             }
             returnStr.Append(nestedStr.ToString());
 

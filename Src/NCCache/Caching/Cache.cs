@@ -31,7 +31,7 @@ using Alachisoft.NCache.Caching.Queries;
 using System.Collections.Generic;
 using Alachisoft.NCache.Runtime.Exceptions;
 using Alachisoft.NCache.Licensing;
-#if ENTERPRISE
+#if SERVER
 using Alachisoft.NCache.Caching.Bridge;
 using Alachisoft.NCache.Caching.Topologies.Clustered;
 using Alachisoft.NCache.BridgeClient;
@@ -380,7 +380,7 @@ namespace Alachisoft.NCache.Caching
         private event PollRequestCallback _pollRequestNotif;
 
 
-#if ENTERPRISE
+#if SERVER
         private BridgeReplicator _bridgeReplicator;
 #endif
 
@@ -429,11 +429,7 @@ namespace Alachisoft.NCache.Caching
         // created seperately for async clear, add, insert and remove operations from client for graceful shutdown.
 
 
-#if JAVA
-        string _cacheserver = "TayzGrid";
-#else
         private string _cacheserver = "NCache";
-#endif
         //public string UniqueBlockingId
         //{
         //    get { return _uniqueId; }
@@ -511,11 +507,7 @@ namespace Alachisoft.NCache.Caching
         static Cache()
         {
             MiscUtil.RegisterCompactTypes();
-#if JAVA
-            string tmpStr = System.Configuration.ConfigurationSettings.AppSettings["CacheServer.LogClientEvents"];
-#else
             //s_logClientEvents = ServiceConfiguration.LogClientEvents;
-#endif
 
         }
 
@@ -629,7 +621,7 @@ namespace Alachisoft.NCache.Caching
                     }
 #endif
 
-#if ENTERPRISE
+#if SERVER
                     if (_bridgeReplicator != null)
                     {
                         _bridgeReplicator.Dispose();
@@ -878,7 +870,7 @@ namespace Alachisoft.NCache.Caching
             }
         }
 
-#if ENTERPRISE
+#if SERVER
         public string TargetCacheUniqueID
         {
             get
@@ -911,7 +903,7 @@ namespace Alachisoft.NCache.Caching
 
         public void LogBridgeCachesStatus()
         {
-#if ENTERPRISE
+#if SERVER
             if (_bridgeReplicator != null)
             {
                 _bridgeReplicator.LogBridgeCachesStatus();
@@ -1151,7 +1143,7 @@ namespace Alachisoft.NCache.Caching
 
         protected internal void StartPhase2()
         {
-#if ENTERPRISE
+#if SERVER
             if (_context.CacheImpl is ClusterCacheBase)
                 ((ClusterCacheBase)_context.CacheImpl).InitializePhase2();
 #endif
@@ -1331,7 +1323,7 @@ namespace Alachisoft.NCache.Caching
             return _context.CacheImpl.GetShutDownServers();
         }
 
-#if ENTERPRISE
+#if SERVER
         public void GetLeastLoadedServer(ref string ipAddress, ref int serverPort)
         {
             string connectedIpAddress = ipAddress;
@@ -1392,7 +1384,7 @@ namespace Alachisoft.NCache.Caching
                 string connectedIpAddress = ipAddress;
                 int connectedPort = serverPort;
 
-#if ENTERPRISE
+#if SERVER
                 if (!Alachisoft.NCache.Licensing.LicenseManager.Express)
                 //Numan Hanif[Express] Runtime Express  Check for Non-Express
                 {
@@ -1434,7 +1426,7 @@ namespace Alachisoft.NCache.Caching
             try
             {
 
-#if ENTERPRISE
+#if SERVER
                 if (!Alachisoft.NCache.Licensing.LicenseManager.Express)
                 //Numan Hanif[Express] Runtime Check for Non-Express
                 {
@@ -1494,7 +1486,7 @@ namespace Alachisoft.NCache.Caching
             }
         }
 
-#if ENTERPRISE
+#if SERVER
         public void GetActiveServer(ref string ipAddress, ref int serverPort)
         {
             string connectedIpAddress = ipAddress;
@@ -1642,7 +1634,7 @@ namespace Alachisoft.NCache.Caching
                     _asyncProcessor.WindUpTask();
                 }
 
-#if ENTERPRISE
+#if SERVER
                 if (_bridgeReplicator != null)
                 {
                     _bridgeReplicator.WindUpTask();
@@ -1672,7 +1664,7 @@ namespace Alachisoft.NCache.Caching
                     if (BlockInterval > 0)
                         _asyncProcessor.WaitForShutDown(BlockInterval);
                 }
-#if ENTERPRISE
+#if SERVER
                 if (_bridgeReplicator != null)
                 {
                     if (BlockInterval > 0)
@@ -2103,7 +2095,7 @@ namespace Alachisoft.NCache.Caching
                                 }
                             }
                         }
-#if ENTERPRISE
+#if SERVER
                         if (cacheConfig.Contains("conflict-resolver"))
                         {
                             try
@@ -2347,7 +2339,7 @@ namespace Alachisoft.NCache.Caching
 
 
 
-#if ENTERPRISE
+#if SERVER
                     if (!(_context.CacheImpl is ClusterCacheBase))
 #endif
                     {
@@ -2776,12 +2768,8 @@ namespace Alachisoft.NCache.Caching
 
                         if (type == LicenseManager.LicenseType.Expired)
                         {
-#if JAVA
-                        throw new LicensingException("Your license for using TayzGrid has expired. Please contact sales@alachisoft.com for further terms and conditions.");
-#else
                             throw new LicensingException(
                                 "Your license for using NCache has expired. Please contact sales@alachisoft.com for further terms and conditions.");
-#endif
                         }
 
                         isClusterable = (type == LicenseManager.LicenseType.ActivePerProcessor) ||
@@ -2824,7 +2812,7 @@ namespace Alachisoft.NCache.Caching
                         {
                             _bridgeId = bridgeProps["id"] as string;
                         }
-#if ENTERPRISE
+#if SERVER
                         if (!_isBridgeTargetCache)
                         {
                             _bridgeReplicator = new BridgeReplicator(_context);
@@ -2922,7 +2910,7 @@ namespace Alachisoft.NCache.Caching
                 {
                     throw new ConfigurationException("Specified cache class '" + _cacheInfo.ClassName + "' is not available in this edition of " + _cacheserver + ".");
                 }
-#if ENTERPRISE
+#if SERVER
                
                     ((CacheSyncWrapper)_context.CacheInternal).Replicator = _bridgeReplicator;
                
@@ -2941,7 +2929,7 @@ namespace Alachisoft.NCache.Caching
                     }
                     if (bEnableCounter)
                     {
-#if ENTERPRISE
+#if SERVER
                         if (_context.CacheImpl is ClusterCacheBase)
                         {
                             ((ClusterCacheBase)_context.CacheImpl).InitializeClusterPerformanceCounter(_context.PerfStatsColl.InstanceName);
@@ -3039,7 +3027,7 @@ namespace Alachisoft.NCache.Caching
 
 
                 //SAL: We should use an InternalCacheFactory for the code below
-#if ENTERPRISE
+#if SERVER
                 if (_cacheInfo.ClassName.CompareTo("replicated") == 0 &&
                     !Alachisoft.NCache.Licensing.LicenseManager.Express)
                 //Numan Hanif[Express] Runtime Check for Non-Express
@@ -3079,7 +3067,7 @@ namespace Alachisoft.NCache.Caching
                     _context.MessageManager.SetExpirationInterval(_context.ExpiryMgr.CleanInterval);
                     if (bEnableCounter)
                     {
-#if ENTERPRISE
+#if SERVER
                         if (_context.CacheImpl is ClusterCacheBase)
                         {
                             ((ClusterCacheBase)_context.CacheImpl).InitializeClusterPerformanceCounter(
@@ -4716,10 +4704,6 @@ namespace Alachisoft.NCache.Caching
                 //muds:
                 //Changes after NCache 3.6
                 //decision was roled back. now there is no limit for session items in cache in Express Edition.
-                //#if EXPRESS
-                //                if (e.IsSessionItem && _context.CacheImpl.SessionCount > 1000)
-                //                    throw new OperationFailedException("Maximum number of sessions reached for Express Edition.");
-                //#endif
                 object block = null;
                 bool isNoBlock = false;
                 block = operationContext.GetValueByField(OperationContextFieldName.NoGracefulBlock);
@@ -9473,7 +9457,7 @@ namespace Alachisoft.NCache.Caching
 
 #endregion
 
-#if ENTERPRISE
+#if SERVER
                 if (this._context.CacheImpl is PartitionOfReplicasCacheBase)
                 // Incase of hot apply the size of replica cache should also change
                 {
@@ -9567,7 +9551,7 @@ namespace Alachisoft.NCache.Caching
                         {
                             _bridgeId = bridgeProps["id"] as string;
                         }
-#if ENTERPRISE
+#if SERVER
                         if (_context.BridgeReplicator == null)
                         {
                             _bridgeReplicator = new BridgeReplicator(_context);
@@ -9584,7 +9568,7 @@ namespace Alachisoft.NCache.Caching
                 }
 #endif
 
-#if ENTERPRISE
+#if SERVER
                 if (this._context.CacheImpl is PartitionOfReplicasCacheBase && !this._context.IsStartedAsMirror)
                 // Incase of hot apply the size of replica cache should also change
                 {

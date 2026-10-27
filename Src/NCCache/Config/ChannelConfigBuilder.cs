@@ -1,4 +1,4 @@
-//  Copyright (c) 2026 Alachisoft
+//  Copyright (c) 2018 Alachisoft
 //  
 //  Licensed under the Apache License, Version 2.0 (the "License");
 //  you may not use this file except in compliance with the License.
@@ -43,7 +43,10 @@ namespace Alachisoft.NCache.Config
 			StringBuilder b = new StringBuilder(2048);
 			b.Append(BuildTCP(properties["tcp"] as IDictionary)).Append(":");
 			b.Append(BuildTCPPING(properties["tcpping"] as IDictionary)).Append(":");
+			//b.Append(BuildVERIFY_SUSPECT(properties["verify-suspect"] as IDictionary)).Append(":");
             b.Append(BuildQueue(properties["queue"] as IDictionary)).Append(":");
+            //b.Append(Buildpbcast_NAKACK(properties["pbcast.nakack"] as IDictionary)).Append(":");
+            //b.Append(Buildpbcast_STABLE(properties["pbcast.stable"] as IDictionary)).Append(":");
 			b.Append(Buildpbcast_GMS(properties["pbcast.gms"] as IDictionary,false)).Append(":");
 			b.Append(BuildTOTAL(properties["total"] as IDictionary,opTimeout)).Append(":");
 			b.Append(BuildVIEW_ENFORCER(properties["view-enforcer"] as IDictionary));
@@ -55,7 +58,10 @@ namespace Alachisoft.NCache.Config
 			StringBuilder b = new StringBuilder(2048);
 			b.Append(BuildTCP(properties["tcp"] as IDictionary)).Append(":");
             b.Append(BuildTCPPING(properties["tcpping"] as IDictionary)).Append(":");
+            //b.Append(BuildVERIFY_SUSPECT(properties["verify-suspect"] as IDictionary)).Append(":");
             b.Append(BuildQueue(properties["queue"] as IDictionary)).Append(":");
+            //b.Append(Buildpbcast_NAKACK(properties["pbcast.nakack"] as IDictionary)).Append(":");
+            //b.Append(Buildpbcast_STABLE(properties["pbcast.stable"] as IDictionary)).Append(":");
             b.Append(Buildpbcast_GMS(properties["pbcast.gms"] as IDictionary,isPor)).Append(":");
             b.Append(BuildTOTAL(properties["total"] as IDictionary, opTimeout)).Append(":");
             b.Append(BuildVIEW_ENFORCER(properties["view-enforcer"] as IDictionary));
@@ -83,8 +89,12 @@ namespace Alachisoft.NCache.Config
 			b.Append(Buildpbcast_STABLE(properties["pbcast.stable"] as IDictionary)).Append(":");
 			b.Append(Buildpbcast_GMS(properties["pbcast.gms"] as IDictionary,false)).Append(":");
 			b.Append(BuildTOTAL(properties["total"] as IDictionary,5000)).Append(":");
+			//			b.Append(BuildFC(properties["fc"] as IDictionary)).Append(":");
 			b.Append(BuildVIEW_ENFORCER(properties["view-enforcer"] as IDictionary));
+			//			string str = b.ToString();
+			//			Console.WriteLine(b.ToString());
 			return b.ToString();
+			//			return Default;
 		}
 
 		private static string BuildUDP(IDictionary properties)
@@ -193,6 +203,7 @@ namespace Alachisoft.NCache.Config
 				.Append(ConfigHelper.SafeGetPair(properties,"timeout", null))		// "800,1600,3200,6400"
 				.Append(ConfigHelper.SafeGetPair(properties,"window_size", null))	// -1
 				.Append(ConfigHelper.SafeGetPair(properties,"min_threshold", null))	// -1
+				//.Append(ConfigHelper.SafeGetPair(properties,"use_gms", null))		// "true"
 				.Append(ConfigHelper.SafeGetPair(properties,"down_thread", null))
 				.Append(ConfigHelper.SafeGetPair(properties,"up_thread", null))
 				.Append(")");
@@ -264,6 +275,19 @@ namespace Alachisoft.NCache.Config
 				.Append(")");
 			return b.ToString();
 		}
+//
+//		private static string BuildFC(IDictionary properties)
+//		{
+//			StringBuilder b = new StringBuilder(8);
+//			b.Append("FC(")
+//				.Append(ConfigHelper.SafeGetPair(properties,"max_credits", null))				//64 * 1024
+//				.Append(ConfigHelper.SafeGetPair(properties,"min_credits", null))				//0
+//				.Append(ConfigHelper.SafeGetPair(properties,"min_threshold", null))				//0.25
+//				.Append("down_thread=false;")
+//				.Append(ConfigHelper.SafeGetPair(properties,"up_thread", null))
+//				.Append(")");
+//			return b.ToString();
+//		}
 
 		private static string BuildVIEW_ENFORCER(IDictionary properties)
 		{

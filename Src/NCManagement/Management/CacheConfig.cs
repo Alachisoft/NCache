@@ -439,7 +439,6 @@ namespace Alachisoft.NCache.Management
             if (writeBehind != null)
             {
                 settings["mode"] = writeBehind.Mode;
-                settings["throttling-rate-per-sec"] = writeBehind.Throttling;
                 settings["failed-operations-queue-limit"] = writeBehind.RequeueLimit;
                 settings["failed-operations-eviction-ratio"] = writeBehind.Eviction;
                 if (writeBehind.BatchConfig != null)

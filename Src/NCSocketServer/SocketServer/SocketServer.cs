@@ -54,7 +54,7 @@ namespace Alachisoft.NCache.SocketServer
         MetricsPublisher _metricsPublisher;
         string _managementServerIP;
         public const int DEFAULT_SOCK_SERVER_PORT = 9800;
-        public const int DEFAULT_MANAGEMENT_PORT = 8250;
+        public const int DEFAULT_MANAGEMENT_PORT = 9803;
         public const int DEFAULT_SOCK_BUFFER_SIZE = 32768;
 
         //Size is specified in bytes (.net stream if grow more then 1.9GB will give memory exception that's why
@@ -146,6 +146,23 @@ namespace Alachisoft.NCache.SocketServer
         {
             get { return _logger; }
         }
+
+        /// <summary>
+        /// This socket server's statistics collector, or null until <see cref="Start"/> has built
+        /// it.
+        /// <para>
+        /// Exposed so the RESP listener can reach the metrics publisher this collector is given.
+        /// The publisher is not available when the collector is constructed - it arrives through
+        /// the <see cref="StatsPublisher"/> setter above, which the cache calls during its own
+        /// initialisation - so a caller should read it through this property when needed rather
+        /// than capturing the publisher once at startup.
+        /// </para>
+        /// </summary>
+        public StatisticsCounter PerfStatsCollector
+        {
+            get { return _perfStatsColl; }
+        }
+
         /// <summary>
         /// Gets the receive buffer size of connected client socket.
         /// </summary>
@@ -273,7 +290,7 @@ namespace Alachisoft.NCache.SocketServer
                 {
                     Logs localLogger = new Logs();
                     localLogger.NCacheLog = new NCacheLogger();
-                    localLogger.NCacheLog.Initialize(LoggerNames.SocketServerLogs);
+                    localLogger.NCacheLog.Initialize(LoggerNames.SocketServerLogs, false, true);
 
                     if (detailed)
                     {

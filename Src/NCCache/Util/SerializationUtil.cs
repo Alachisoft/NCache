@@ -1,4 +1,4 @@
-//  Copyright (c) 2026 Alachisoft
+//  Copyright (c) 2018 Alachisoft
 //  
 //  Licensed under the Apache License, Version 2.0 (the "License");
 //  you may not use this file except in compliance with the License.
@@ -33,6 +33,8 @@ using Alachisoft.NCache.Runtime.JSON;
 namespace Alachisoft.NCache.Util
 {
     /// <summary>
+    /// {^[\t, ]*}internal{[a-z, ]*}class{[A-Z,a-z,\,,\:,\t, ]*$}
+    /// #if DEBUG\n\1public\2class\3\n#else\n\1internal\2class\3\n#endif
     /// Utility class to help with common tasks.
     /// </summary>
     public class SerializationUtil
@@ -121,6 +123,9 @@ namespace Alachisoft.NCache.Util
                     byte[] serializedData = null;
                     if (serializedObject is byte[])
                     {
+                        //if (flag.IsAnyBitSet(BitSetConstants.UTF8Encoded))
+                        //    deserialized = UTF8Encoding.UTF8.GetString(serializedObject as byte[]);
+                        //else
                         serializedData = (byte[])serializedObject;
                     }
                     else if (serializedObject is UserBinaryObject)
@@ -133,6 +138,8 @@ namespace Alachisoft.NCache.Util
             catch (Exception ex)
             {
                 _ncacheLog.Error(ex.ToString());
+                //Kill the exception; it is possible that object was serialized by Java
+                //or from any other domain which can not be deserialized by us.
                 deserialized = serializedObject;
             }
 
@@ -1219,7 +1226,7 @@ namespace Alachisoft.NCache.Util
         }
 
         /// <summary>
-        /// Returns back all registered Types w.r.t a cache, is only called at cache initialization
+        /// Retruns back all registered Types w.r.t a cache, is only called at cache initialization
         /// </summary>
         /// <param name="cacheContext">Cache Name</param>
         /// <returns>Retruns back all registered Types w.r.t a cache</returns>
@@ -1338,6 +1345,9 @@ namespace Alachisoft.NCache.Util
             if (userObjectType==UserObjectType.CacheItem)
             {
                 bool valueFromCacheIsJson = serializedObject is JsonValueBase;
+
+                //if (!valueFromCacheIsJson && userAskedForJson)
+                //    throw new InvalidOperationException("Caches with object data format do not support JSON formatted data from user data.");
 
                 if (valueFromCacheIsJson && !userAskedForJson)
                     return JsonBinaryFormatter.DeserializeObject<T>(JsonBinaryFormatter.SerializeObject(serializedObject));

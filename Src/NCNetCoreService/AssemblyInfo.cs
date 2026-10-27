@@ -8,11 +8,7 @@ using System.Security.Permissions;
 // set of attributes. Change these attribute values to modify the information
 // associated with an assembly.
 //
-#if NETCORE
-[assembly: AssemblyTitle("Alachisoft.NCache.Service (.NETCore)")]
-#else
-[assembly: AssemblyTitle("Alachisoft.NCache.Service (.NET)")]
-#endif
+[assembly: AssemblyTitle("Alachisoft.NCache.Service")]
 [assembly: AssemblyConfiguration("")]
 [assembly: AssemblyCompany("Alachisoft")]
 [assembly: AssemblyProduct("Alachisoft® NCache OpenSource")]
@@ -31,7 +27,7 @@ using System.Security.Permissions;
 //
 // You can specify all the values or you can default the Revision and Build Numbers 
 // by using the '*' as shown below:
-[assembly: AssemblyVersion("5.3.0.0")]
+[assembly: AssemblyVersion("5.3.0")]
 //
 // In order to sign your assembly you must specify a key to use. Refer to the 
 // Microsoft .NET Framework documentation for more information on assembly signing.
@@ -57,6 +53,6 @@ using System.Security.Permissions;
 //   (*) Delay Signing is an advanced option - see the Microsoft .NET Framework
 //       documentation for more information on this.
 //
-[assembly: AssemblyFileVersionAttribute("5.3.6.0")]
+[assembly: AssemblyFileVersionAttribute("5.3.603")]
 [assembly: AssemblyDescriptionAttribute("Alachisoft NCache Service")]
-[assembly: AssemblyInformationalVersion("5.3.0")]
+[assembly: AssemblyInformationalVersion("5.3.603")]

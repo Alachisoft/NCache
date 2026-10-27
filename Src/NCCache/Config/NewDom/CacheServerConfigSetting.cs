@@ -1,4 +1,4 @@
-//  Copyright (c) 2026 Alachisoft
+//  Copyright (c) 2018 Alachisoft
 //  
 //  Licensed under the Apache License, Version 2.0 (the "License");
 //  you may not use this file except in compliance with the License.
@@ -15,14 +15,10 @@ using System;
 using Alachisoft.NCache.Common.Configuration;
 using Alachisoft.NCache.Common.Enum;
 using Alachisoft.NCache.Common;
-
 using Alachisoft.NCache.Runtime.Serialization;
-
 using Alachisoft.NCache.Config.Dom;
-
 using Runtime = Alachisoft.NCache.Runtime;
 using Alachisoft.NCache.Common.Util;
-
 namespace Alachisoft.NCache.Config.NewDom
 {
     [Serializable]
@@ -38,7 +34,6 @@ namespace Alachisoft.NCache.Config.NewDom
 
         Alachisoft.NCache.Config.Dom.Log log;
         Alachisoft.NCache.Config.Dom.PerfCounters perfCounters;
-
         Alachisoft.NCache.Config.Dom.Notifications notifications;
         Alachisoft.NCache.Config.Dom.Cleanup cleanup;
         Alachisoft.NCache.Config.Dom.Storage storage;
@@ -75,8 +70,26 @@ namespace Alachisoft.NCache.Config.NewDom
             set { inproc = value; }
         }
 
+        //[ConfigurationAttribute("cache-port")]
+        //public int CachePort
+        //{
+        //    get { return cachePort; }
+        //    set { cachePort = value; }
+        //}
+
+        //[ConfigurationAttribute("last-modified")]
+        //public string LastModified
+        //{
+        //    get { return lastModified; }
+        //    set { lastModified = value; }
+        //}
+
+        //[ConfigurationAttribute("cache-type")]
         public string CacheType
         {
+            ///[Ata]Type is part of 3.8 config. This is to be uncommented
+            ///after development is complete.
+            //get { return cacheType; }
             get
             {
                 string type = string.Empty;
@@ -122,13 +135,26 @@ namespace Alachisoft.NCache.Config.NewDom
             get { return autoBalancing; }
             set { autoBalancing = value; }
         }
-
         [ConfigurationSection("client-death-detection")]
         public Alachisoft.NCache.Config.Dom.ClientDeathDetection ClientDeathDetection
         {
             get { return deathDetection; }
             set { deathDetection = value; }
         }
+
+        //[ConfigurationSection("client-activity-notification")]
+        //public ClientActivityNotification ClientActivityNotification
+        //{
+        //    get { return clientActivityNotification; }
+        //    set { clientActivityNotification = value; }
+        //}
+
+        //[ConfigurationSection("cache-notifications")]
+        //public Alachisoft.NCache.Config.Dom.Notifications Notifications
+        //{
+        //    get { return notifications; }
+        //    set { notifications = value; }
+        //}
 
 
         [ConfigurationSection("cleanup")]
@@ -152,8 +178,6 @@ namespace Alachisoft.NCache.Config.NewDom
             set { evictionPolicy = value; }
         }
 
-     
-       
         [ConfigurationSection("synchronization")]
         public SynchronizationStrategy SynchronizationStrategy
         {
@@ -175,6 +199,7 @@ namespace Alachisoft.NCache.Config.NewDom
             set { Enum.TryParse(value, true, out _serializationFormatter); }
         }
 
+        //[ConfigurationAttribute("data-format")]
         public string DataFormat
         {
             get { return _dataFormat.ToString(); }
@@ -186,6 +211,16 @@ namespace Alachisoft.NCache.Config.NewDom
             }
         }
 
+        //[ConfigurationAttribute("auto-start")]
+        //public bool AutoStartCacheOnServiceStartup
+        //{
+        //    get
+        //    {
+        //        return this.autoStartCacheOnServiceStartup;
+        //    }
+        //    set { autoStartCacheOnServiceStartup = value; }
+        //}
+
 
 
         #region ICloneable Members
@@ -195,6 +230,7 @@ namespace Alachisoft.NCache.Config.NewDom
             CacheServerConfigSetting config = new CacheServerConfigSetting();
             config.cacheType = this.cacheType;
             config.InProc = InProc;
+            //config.LastModified = LastModified != null ? (string)LastModified.Clone() : null;
             config.Log = Log != null ? (Alachisoft.NCache.Config.Dom.Log)Log.Clone() : null;
             config.PerfCounters = PerfCounters != null ? (Alachisoft.NCache.Config.Dom.PerfCounters)PerfCounters.Clone() : null;
 
@@ -205,13 +241,17 @@ namespace Alachisoft.NCache.Config.NewDom
             config.Cleanup = Cleanup != null ? (Alachisoft.NCache.Config.Dom.Cleanup)Cleanup.Clone() : null;
             config.Storage = Storage != null ? (Alachisoft.NCache.Config.Dom.Storage)Storage.Clone() : null;
             config.EvictionPolicy = EvictionPolicy != null ? (Alachisoft.NCache.Config.Dom.EvictionPolicy)EvictionPolicy.Clone() : null;
-
-
+         //   config.Notifications = Notifications != null ? (Alachisoft.NCache.Config.Dom.Notifications)Notifications.Clone() : null;
             config.SynchronizationStrategy = SynchronizationStrategy != null ? (Alachisoft.NCache.Config.Dom.SynchronizationStrategy)SynchronizationStrategy.Clone() : null;
 
             config.cacheTopology = this.cacheTopology;
             config.DataFormat = this.DataFormat;
             config.ClientDeathDetection = ClientDeathDetection != null ? (ClientDeathDetection)ClientDeathDetection.Clone() : null;
+            //config.ClientActivityNotification = ClientActivityNotification != null
+            //    ? (ClientActivityNotification)ClientActivityNotification.Clone()
+            //    : null;
+
+          //  config.AutoStartCacheOnServiceStartup = this.AutoStartCacheOnServiceStartup;
             
           
             return config;
@@ -233,10 +273,16 @@ namespace Alachisoft.NCache.Config.NewDom
             cleanup = reader.ReadObject() as Cleanup;
             storage = reader.ReadObject() as Alachisoft.NCache.Config.Dom.Storage;
             evictionPolicy = reader.ReadObject() as EvictionPolicy;
-			autoBalancing = reader.ReadObject() as AutoLoadBalancing; 
+            autoBalancing = reader.ReadObject() as AutoLoadBalancing;
+            //Change for Dom Code Comment
+            //clientNodes = reader.ReadObject() as ClientNodes;          
             _synchronizationStrategy = reader.ReadObject() as SynchronizationStrategy;
 
             cacheTopology = reader.ReadObject() as CacheTopology;
+
+            //Change for Dom Code Insert
+
+            //cachePort = reader.ReadInt32();
 
 
 
@@ -253,8 +299,8 @@ namespace Alachisoft.NCache.Config.NewDom
             clientActivityNotification = reader.ReadObject() as ClientActivityNotification;
             _serializationFormatter = (SerializationFormat)reader.ReadByte();
 			autoStartCacheOnServiceStartup = reader.ReadBoolean();
-         
-         }
+
+        }
 
         public void Serialize(Runtime.Serialization.IO.CompactWriter writer)
         {
@@ -277,6 +323,7 @@ namespace Alachisoft.NCache.Config.NewDom
             writer.WriteObject(clientActivityNotification);
             writer.Write((byte)_serializationFormatter);
 			writer.Write(autoStartCacheOnServiceStartup);
+
         }
 
         #endregion

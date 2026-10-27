@@ -91,8 +91,6 @@ namespace Alachisoft.NCache.Management
         private static CacheServer s_instance;
         string _cacheserver = "NCache";
         private Task _sendingDumpTask;
-        public static DateTime? _cachedHeartbeat = null;
-        public static Stopwatch stubWriterTimer = new Stopwatch();
 
         /// <summary>
         /// Enumeration specifying type of channel
@@ -114,10 +112,8 @@ namespace Alachisoft.NCache.Management
         
         public enum CacheStopReason
         {
-            Expired,
             Stoped,
-            ForcedStoped,
-            LicenseVoilated
+            ForcedStoped
         }
 
         private static object serviceObject = new object();
@@ -174,8 +170,6 @@ namespace Alachisoft.NCache.Management
         private static string _asmVersion;
         private static bool _logOnce = true;
 
-        static DateTime lastLicenseInfoAccessTime = DateTime.Now;
-        static private int CachedLicenseInfoTimeout = 5;
 
         private static DateTime? nextWeeklyDate;
         public static Hashtable _clientCustomCounters = Hashtable.Synchronized(new Hashtable(StringComparer.CurrentCultureIgnoreCase));
@@ -192,7 +186,6 @@ namespace Alachisoft.NCache.Management
         }
 
         private static CachePortsConfigManger _cachePortsConfigManger;
-        private static ServerLicenseInfo licenseInfo;
        // ILogger _logger;
 
         /// <summary>
@@ -295,12 +288,14 @@ namespace Alachisoft.NCache.Management
             CompactFormatterServices.RegisterCompactType(typeof(PortableAttribute), 256);
             CompactFormatterServices.RegisterCompactType(typeof(PortableAttribute[]), 257);
             CompactFormatterServices.RegisterCompactType(typeof(RtContextValue), 300);
-            CompactFormatterServices.RegisterCompactType(typeof(ServerLicenseInfo), 301);
+            CompactFormatterServices.RegisterCompactType(typeof(ServerProductInfo), 301);
             CompactFormatterServices.RegisterCompactType(typeof(HotConfig), 347);
             CompactFormatterServices.RegisterCompactType(typeof(ClientDeathDetection), 355);
             CompactFormatterServices.RegisterCompactType(typeof(LoaderTag), 282);
             CompactFormatterServices.RegisterCompactType(typeof(SynchronizationStrategy), 378);
             CompactFormatterServices.RegisterCompactType(typeof(ClientCustomCounters), 514);
+            CompactFormatterServices.RegisterCompactType(typeof(PerfmonCounterDetails), 401);
+            CompactFormatterServices.RegisterCompactType(typeof(PerfmonCounterDetails[]), 402);
             CompactFormatterServices.RegisterCompactType(typeof(InstallationTypeProvider), 552);
             #endregion
 
@@ -378,11 +373,6 @@ namespace Alachisoft.NCache.Management
             this.StartGCTask();
         }
 
-
-        static bool GetLicenseLoggingStatus()
-        {
-            return ServiceConfiguration.LicenseLogging;
-        }
 
         /// <summary>
         /// Finalizer for this object.
@@ -562,18 +552,6 @@ namespace Alachisoft.NCache.Management
         }
 
        
-        public virtual string LicenseKey
-        {
-            get
-            {
-                return RegHelper.GetLicenseKey(0);
-            }
-        }
-        [TargetMethod(ManagementUtil.MethodName.GetLicenseKey, 1)]
-        public string GetLicenseKey()
-        {
-            return "";
-        }
 
      
 
@@ -902,10 +880,10 @@ namespace Alachisoft.NCache.Management
         }
 
         [TargetMethod(ManagementUtil.MethodName.RegisterCache, 2)]
-        public bool RegisterCache(string cacheId, Alachisoft.NCache.Config.NewDom.CacheServerConfig config, string partId, bool overwrite, bool hotApply, ServerLicenseInfo licenseInfo = null, string registerAs = "")
+        public bool RegisterCache(string cacheId, Alachisoft.NCache.Config.NewDom.CacheServerConfig config, string partId, bool overwrite, bool hotApply, string registerAs = "")
         {
             Alachisoft.NCache.Config.Dom.CacheServerConfig oldDom = Alachisoft.NCache.Config.NewDom.DomHelper.convertToOldDom(config);
-            return RegisterCache(cacheId.ToLower(), oldDom, partId, overwrite,hotApply, licenseInfo, registerAs);
+            return RegisterCache(cacheId.ToLower(), oldDom, partId, overwrite,hotApply, registerAs);
         }
 
         /// <summary>
@@ -921,11 +899,11 @@ namespace Alachisoft.NCache.Management
         /// <returns></returns>
 
         [TargetMethod(ManagementUtil.MethodName.RegisterCache, 1)]
-        public bool RegisterCache(string cacheId, CacheServerConfig config, string partId, bool overwrite, bool hotApply, ServerLicenseInfo licenseInfo = null, string registerAs = "")
+        public bool RegisterCache(string cacheId, CacheServerConfig config, string partId, bool overwrite, bool hotApply, string registerAs = "")
         {
                 CacheServerConfig oldConfig = this.GetCacheConfiguration(cacheId);
 
-            return RegisterCacheInternal(cacheId, config, partId, overwrite, hotApply, false, licenseInfo, registerAs);
+            return RegisterCacheInternal(cacheId, config, partId, overwrite, hotApply, false, registerAs);
         }
 
         [TargetMethod(ManagementUtil.MethodName.GetNodeInfo, 1)]
@@ -1248,9 +1226,9 @@ namespace Alachisoft.NCache.Management
         }
 
         [TargetMethod(ManagementUtil.MethodName.StartCache, 4)]
-        public virtual void StartCache(string cacheId, string partitionId, bool twoPhaseInitialization, ServerLicenseInfo licenseInfo = null, string registerAs = "")
+        public virtual void StartCache(string cacheId, string partitionId, bool twoPhaseInitialization, string registerAs = "")
         {
-            StartCache(cacheId, partitionId, null, null, null, null, null, null, twoPhaseInitialization,licenseInfo, registerAs);
+            StartCache(cacheId, partitionId, null, null, null, null, null, null, twoPhaseInitialization, registerAs);
         }
 
         [TargetMethod(ManagementUtil.MethodName.StartCachePhase2, 1)]
@@ -1323,7 +1301,7 @@ namespace Alachisoft.NCache.Management
             CacheClearedCallback cacheCleared,
             CustomRemoveCallback customRemove,
             CustomUpdateCallback customUpdate,
-            bool twoPhaseInitialization, ServerLicenseInfo licenseInfo = null, string registerAs = "")
+            bool twoPhaseInitialization, string registerAs = "")
         {
             if (cacheId == null)
                 throw new ArgumentNullException("cacheId");
@@ -1588,15 +1566,7 @@ namespace Alachisoft.NCache.Management
             }
         }
 
-        private void StopCachesOnExpiry(object info)
-        {
-            StopAllCaches(CacheStopReason.Expired);
-        }
 
-        private void OnLicenseExpiration()
-        {
-            StopAllCaches(CacheStopReason.Expired);
-        }
 
         public virtual int GetProcessID(string cacheId)
         {
@@ -1927,7 +1897,7 @@ namespace Alachisoft.NCache.Management
             IDictionaryEnumerator ie = regCaches.GetEnumerator();
 
             CacheConfig cfg = null;
-            int maxPort = 7800, loop = 1;
+            int maxPort = 9881, loop = 1;
 
             while (ie.MoveNext())
             {
@@ -2715,26 +2685,10 @@ namespace Alachisoft.NCache.Management
             return Alachisoft.NCache.Common.ServerPlatform.isDotNet;
         }
 
-        [TargetMethod(ManagementUtil.MethodName.GetServerLicenseInfo)]
-        public ServerLicenseInfo GetServerLicenseInfo(bool ignoreMac = false)
+        [TargetMethod(ManagementUtil.MethodName.GetServerProductInfo)]
+        public ServerProductInfo GetServerProductInfo()
         {
-            licenseInfo = new ServerLicenseInfo(ignoreMac);
-            lastLicenseInfoAccessTime = DateTime.Now;
-
-            return licenseInfo;
-        }
-
-        [TargetMethod(ManagementUtil.MethodName.GetCachedServerLicenseInfo)]
-        public ServerLicenseInfo GetCachedServerLicenseInfo()
-        {
-            if (licenseInfo!=null && DateTime.Now < lastLicenseInfoAccessTime.AddMinutes(CachedLicenseInfoTimeout))
-            {
-                return licenseInfo;
-            }
-            else
-            {
-                return GetServerLicenseInfo();
-            }
+            return new ServerProductInfo();
         }
 
 
@@ -3193,7 +3147,7 @@ namespace Alachisoft.NCache.Management
 
 
 
-        private bool RegisterCacheInternal(string cacheId, CacheServerConfig config, string partId, bool overwrite,  bool hotApply, bool isLocalNode, ServerLicenseInfo licenseInfo = null, string registerAs = "")
+        private bool RegisterCacheInternal(string cacheId, CacheServerConfig config, string partId, bool overwrite,  bool hotApply, bool isLocalNode, string registerAs = "")
         {
             if (cacheId == null)
                 throw new ArgumentNullException("cacheId");
@@ -3600,6 +3554,15 @@ namespace Alachisoft.NCache.Management
             return result;
         }
 
+        /// <summary>
+        /// Array based overload of GetPerfmonValues; generic lists are not compact serializable.
+        /// </summary>
+        [TargetMethod(ManagementUtil.MethodName.GetPerfmonValues, 2)]
+        public PerfmonCounterDetails[] GetPerfmonValues(PerfmonCounterDetails[] counterDetails, string cacheId)
+        {
+            return GetPerfmonValues(new List<PerfmonCounterDetails>(counterDetails), cacheId).ToArray();
+        }
+
         [TargetMethod(ManagementUtil.MethodName.GetConfigurationVersion, 1)]
         public ConfigurationVersion GetConfigurationVersion(string cacheId)
         {
@@ -3769,7 +3732,6 @@ namespace Alachisoft.NCache.Management
 
             }
         }
-       
         private Process StartCacheProcess(string cacheId, int port)
         {
             Process process = null;
@@ -4138,12 +4100,6 @@ namespace Alachisoft.NCache.Management
             return currentOS;
         }
 
-        [TargetMethod(ManagementUtil.MethodName.GetMachineId, 1)]
-        public virtual string GetMachineId()
-        {
-            string machineId = ProfileUsageCollector.Instance.ReportHardwareProfile().MachineID;
-            return machineId;
-        }
         [TargetMethod(ManagementUtil.MethodName.PublishMetadata, 1)]
         public void PublishMetadata(string sessionId, string version, CacheMetaData cacheMeta)
         {
@@ -4154,7 +4110,7 @@ namespace Alachisoft.NCache.Management
             if (cacheServers != null)
             {
                 cacheMeta.ConfiguredServersCount = GetCacheServers(cacheMeta.Identifier.CacheId).Length;
-                cacheMeta.ConfiguredServers = String.Join(",", cacheServers.Select(p => p.ToString()));
+                cacheMeta.ConfiguredServers = String.Join(",", cacheServers.Select(p => p.Name));
             }
             if (MetricServer != null)
                 MetricServer.PublishMetadata(sessionId, version, cacheMeta);
@@ -4165,6 +4121,11 @@ namespace Alachisoft.NCache.Management
         {
             if (MetricServer != null)
                 MetricServer.PublishMetadata(sessionId, counterMeta);
+#if NETCORE
+            MetricsMetadataStore.Update(
+            sessionId,
+            counterMeta);
+#endif
         }
         [TargetMethod(ManagementUtil.MethodName.PublishMetadata, 3)]
         public void PublishMetadata(string sessionId, string version, ClientMetaData clientMeta)
@@ -4182,9 +4143,16 @@ namespace Alachisoft.NCache.Management
         [TargetMethod(ManagementUtil.MethodName.PublishData, 1)]
         public int PublishData(string session, CounterDataCollection data)
         {
-            if (MetricServer != null)
-                return (int)MetricServer.PublishData(session, data);
-            return (int)PublishCountersDataResult.MetricServerNotInitialized;
+#if NETCORE
+            MetricsSnapshotStore.Update(session, data);
+#endif
+
+            if (MetricServer == null)
+                return (int)PublishCountersDataResult.MetricServerNotInitialized;
+
+            int result = (int)MetricServer.PublishData(session, data);
+
+            return result;
         }
 
     
@@ -4194,82 +4162,8 @@ namespace Alachisoft.NCache.Management
             if (MetricServer != null)
                 MetricServer.PublishData(session, data);
         }
-        public string GetPossibleMachinesInCluster()
-        {
-            string otherServers = string.Empty;
-            NCacheRPCService cacheService = null;
-            ICacheServer nCacheServer = null;
-            List<string> otherMachinesIP = new List<string>();
-            List<Task<string>> tasks = new List<Task<string>>();
-
-            Config.NewDom.CacheServerConfig[] cacheServerConfig = GetCacheServerConfiguration();
-
-            foreach (var cacheConfig in cacheServerConfig)
-            {
-                if (cacheConfig.CacheDeployment != null)
-                {
-                    List<Address> serverNodes = cacheConfig.CacheDeployment.Servers.GetAllConfiguredNodes();
-                    serverNodes.ForEach(address =>
-                    {
-
-                        if (!address.IpAddress.Equals(ServiceConfiguration.BindToIP) && !otherMachinesIP.Contains(address.IpAddress.ToString()))
-                            otherMachinesIP.Add(address.IpAddress.ToString());
-                    });
-                }
-            }
-
-            foreach (var machineAddr in otherMachinesIP)
-            {
-                try
-                {
-                    tasks.Add(GetMachineIdTask(machineAddr));
-                }
-                catch (Exception e)
-                {
-                    NCacheServiceLogger.LogError($"Error occurred during GetPossibleMachinesInCluster(). {e}");
-                }
-            }
-
-            Task.WaitAll(tasks.ToArray(), 60000);
-            foreach (Task<string> configTask in tasks)
-            {
-                string machineId;
-                if (configTask.IsCompleted)
-                {
-                    machineId = configTask.Result;
-                    if (machineId != null && !machineId.Equals(string.Empty))
-                    {
-                        otherServers += machineId + ",";
-                    }
-                }
-            }
-            otherServers = otherServers.TrimEnd(new char[] { ',' });
-            return otherServers;
-        }
 
 
-        private Task<string> GetMachineIdTask(string cacheServer)
-        {
-            Task<string> task = new Task<string>(() =>
-            {
-                try
-                {
-                    using (NCacheRPCService cacheService = new NCacheRPCService(cacheServer))
-                    {
-                        using (ICacheServer nCacheServer = cacheService.GetCacheServer(new TimeSpan(0, 0, 0, 30)))
-                        {
-                            return nCacheServer.GetMachineId();
-                        }
-                    }
-                }
-                catch (Exception e)
-                {
-                    return "";
-                }
-            });
-            task.Start();
-            return task;
-        }
 
         [TargetMethod(ManagementUtil.MethodName.GetClientProfileReport, 1)]
         public virtual ClientProfileDom GetClientProfileReport(string cacheId)

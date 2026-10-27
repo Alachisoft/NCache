@@ -280,7 +280,7 @@ namespace Alachisoft.NCache.Common.Util
         {
             runningcaches = new Hashtable();
 #if NETCORE
-            string result = "pgrep -af dotnet.*Alachisoft.NCache.CacheHost.dll".Bash();
+            string result = "pgrep -af Alachisoft.NCache.CacheHost*".Bash();
             foreach (string line in result.Split(new[] { "\r\n", "\r", "\n" }, StringSplitOptions.None))
             {
                 if (!String.IsNullOrEmpty(line))

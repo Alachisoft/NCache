@@ -1,4 +1,4 @@
-//  Copyright (c) 2026 Alachisoft
+﻿//  Copyright (c) 2018 Alachisoft
 //  
 //  Licensed under the Apache License, Version 2.0 (the "License");
 //  you may not use this file except in compliance with the License.
@@ -180,7 +180,6 @@ namespace Alachisoft.NCache.Client
 
             AddRef();
             _userId = userId;
-            
 
 
         }
@@ -271,97 +270,12 @@ namespace Alachisoft.NCache.Client
 
         #endregion
 
-        /// <summary>
-        /// Acquire a lock on an item in cache.
-        /// </summary>
-        /// <param name="key">key of cached item to be locked.</param>
-        /// <param name="lockTimeout">TimeSpan after which the lock is automatically released.</param>
-        /// <param name="lockHandle">An instance of <see cref="Lockhandle"/> that will be filled in with the lock information if lock is acquired successfully.</param>
-        /// <returns>Whether or not lock was acquired successfully.</returns>
-        /// <example>
-        /// Following example demonstrates how to lock a cached item.
-        /// <code>
-        /// ...
-        /// LockHandle lockHandle = new LockHandle();
-        /// bool locked = theCache.lock("cachedItemKey", new TimeSpan(0,0,10), out lockHandle);
-        /// ...
-        /// </code>
-        /// </example>
-        public override bool Lock(string key, TimeSpan lockTimeout, out LockHandle lockHandle)
-        {
-            object lockId = null;
-            DateTime lockDate = DateTime.Now;
-            lockHandle = null;
-            if (_nCache != null)
-            {
-                bool result = _nCache.Lock(key, lockTimeout, out lockId, out lockDate, new OperationContext(OperationContextFieldName.OperationType, OperationContextOperationType.CacheOperation));
-                lockHandle = new LockHandle(lockId == null ? null : lockId as string, lockDate);
-                return result;
-            }
-            return false;
-        }
-
-        internal override bool IsLocked(string key, ref LockHandle lockHandle)
-        {
-            if (_nCache != null)
-            {
-                object lockId = null;
-                DateTime lockDate = new DateTime();
-                if (lockHandle == null) lockHandle = new LockHandle();
-                bool result = _nCache.IsLocked(key, ref lockId, ref lockDate, new OperationContext(OperationContextFieldName.OperationType, OperationContextOperationType.CacheOperation));
-                lockHandle.LockId = lockId == null ? "" : lockId as string;
-                lockHandle.LockDate = lockDate;
-                return result;
-            }
-            return false;
-        }
 
         public override Hashtable GetEncryptionInfo()
         {
             return null;
         }
 
-        /// <summary>
-        /// Forcefully unlocks a locked cached item.
-        /// </summary>
-        /// <param name="key">key of a cached item to be unlocked</param>
-        /// <example>
-        /// Following example demonstrates how to unlock a cached item.
-        /// <code>
-        /// ...
-        /// theCache.Unlock("cachedItemKey");
-        /// ...
-        /// </code>
-        /// </example>
-        public override void Unlock(string key)
-        {
-            if (_nCache != null) _nCache.Unlock(key, null, true, new OperationContext(OperationContextFieldName.OperationType, OperationContextOperationType.CacheOperation));
-        }
-
-        /// <summary>
-        /// Unlocks a locked cached item if the correct lock-id is specified.
-        /// </summary>
-        /// <param name="key">key of a cached item to be unlocked</param>
-        /// <param name="lockHandle">An instance of <see cref="LockHandle"/> that was generated when lock was acquired.</param>
-        /// <example>
-        /// Following example demonstrates how to unlock a cached item.
-        /// <code>
-        /// ...
-        /// theCache.Unlock("cachedItemKey", lockHandle);
-        /// ...
-        /// </code>
-        /// </example>
-        public override void Unlock(string key, object lockId)
-        {
-            if (_nCache != null)
-            {
-                bool isPreemtive = false;
-                if (lockId == null)
-                    isPreemtive = true;
-
-                _nCache.Unlock(key, lockId, isPreemtive, new OperationContext(OperationContextFieldName.OperationType, OperationContextOperationType.CacheOperation));
-            }
-        }
 
         #region	/                 --- Count ---           /
 
@@ -911,9 +825,9 @@ namespace Alachisoft.NCache.Client
         /// 
         /// </code>
         /// </example>
-        public override CompressedValueEntry Get<T>(string key, BitSet flagMap, string group, string subGroup, ref LockHandle lockHandle, TimeSpan lockTimeout, LockAccessType accessType)
+        public override CompressedValueEntry Get<T>(string key, BitSet flagMap, string group, string subGroup, TimeSpan lockTimeout, LockAccessType accessType)
         {
-            object lockId = lockHandle == null ? null : lockHandle.LockId;
+            object lockId = null;
             DateTime lockDate = new DateTime();
             ulong itemVersion =  0 ;
 
@@ -948,9 +862,6 @@ namespace Alachisoft.NCache.Client
                     }
                 }
 
-                if (lockHandle == null) lockHandle = new LockHandle();
-                lockHandle.LockId = lockId == null ? null : lockId as string;
-                lockHandle.LockDate = lockDate;
                 cmpEntry.Value = CacheHelper.GetObjectOrInitializedCollection<T>(key, cmpEntry.Type, cmpEntry.Value, _parent.GetCacheInstance());
                 return cmpEntry;
             }
@@ -1016,10 +927,9 @@ namespace Alachisoft.NCache.Client
         }
 
 
-        public override object GetCacheItem(string key, BitSet flagMap, ref LockHandle lockHandle, TimeSpan lockTimeout, LockAccessType accessType)
+        public override object GetCacheItem(string key, BitSet flagMap, TimeSpan lockTimeout, LockAccessType accessType)
         {
-            if (lockHandle == null) lockHandle = new LockHandle();
-            object lockId = lockHandle.LockId;
+            object lockId = null;
             DateTime lockDate = new DateTime();
             CacheEntry entry = null;
             try
@@ -1035,9 +945,6 @@ namespace Alachisoft.NCache.Client
                         entry.Value = ((UserBinaryObject)entry.Value).GetFullObject();
 
                 }
-
-                lockHandle.LockId = lockId == null ? null : lockId as string;
-                lockHandle.LockDate = lockDate;
 
                 return entry;
             }

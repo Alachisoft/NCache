@@ -14,7 +14,6 @@ namespace Alachisoft.NCache.Common.FeatureUsageData.Dom
         private int _cores;
         private string _memory;
         private string _operatingSystem;
-        private string _activationStatus;
         private string _environemntName;
         private string _machineId;
         private string _machineName;
@@ -43,13 +42,6 @@ namespace Alachisoft.NCache.Common.FeatureUsageData.Dom
         {
             set { _operatingSystem = value; }
             get { return _operatingSystem; }
-        }
-
-        [ConfigurationAttribute("activation-status")]
-        public string ActivationStatus
-        {
-            set { _activationStatus = value; }
-            get { return _activationStatus; }
         }
 
         [ConfigurationAttribute("environment-name")]
@@ -90,7 +82,6 @@ namespace Alachisoft.NCache.Common.FeatureUsageData.Dom
             hardwareProfile.MachineName = MachineName;
             hardwareProfile.OtherServers = OtherServers;
             hardwareProfile.OperatingSystem = OperatingSystem;
-            hardwareProfile.ActivationStatus = ActivationStatus;
             return hardwareProfile;
         }
 
@@ -103,7 +94,6 @@ namespace Alachisoft.NCache.Common.FeatureUsageData.Dom
             _machineName = reader.ReadObject() as string;
             _otherServers = reader.ReadObject() as string;
             _operatingSystem = reader.ReadObject() as string;
-            _activationStatus = reader.ReadObject() as string;
         }
 
         public void Serialize(CompactWriter writer)
@@ -115,7 +105,6 @@ namespace Alachisoft.NCache.Common.FeatureUsageData.Dom
             writer.WriteObject(_machineName);
             writer.WriteObject(_otherServers);
             writer.WriteObject(_operatingSystem);
-            writer.WriteObject(_activationStatus);
         }
     }
 }

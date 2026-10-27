@@ -1,4 +1,4 @@
-//  Copyright (c) 2026 Alachisoft
+//  Copyright (c) 2018 Alachisoft
 //  
 //  Licensed under the Apache License, Version 2.0 (the "License");
 //  you may not use this file except in compliance with the License.
@@ -15,11 +15,8 @@ using System;
 using System.Collections;
 using System.Text;
 using Alachisoft.NCache.Common.Configuration;
-
 using Alachisoft.NCache.Runtime.Serialization;
-
 using Runtime = Alachisoft.NCache.Runtime;
-
 namespace Alachisoft.NCache.Config.Dom
 {
     [Serializable]
@@ -74,11 +71,18 @@ namespace Alachisoft.NCache.Config.Dom
             set { parameters = value; }
         }
 
+        //[ConfigurationAttribute("async-mode")]
+        //public bool AsyncMode
+        //{
+        //    get { return asyncMode; }
+        //    set { asyncMode = value; }
+        //}
         #region ICloneable Members
 
         public object Clone()
         {
             Provider provider = new Provider();
+            //provider.AsyncMode = AsyncMode;
             provider.ProviderName = ProviderName != null ? (string) ProviderName.Clone() : null;
             provider.AssemblyName = AssemblyName != null ? (string) AssemblyName.Clone(): null;
             provider.ClassName = ClassName != null ? (string) ClassName.Clone(): null;

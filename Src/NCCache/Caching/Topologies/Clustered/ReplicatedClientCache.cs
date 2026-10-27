@@ -16,11 +16,7 @@ using System.Collections;
 using System.Collections.Generic;
 using Alachisoft.NCache.Caching.Topologies.Local;
 using Alachisoft.NCache.Caching.Statistics;
-#if JAVA
-using Alachisoft.TayzGrid.Runtime.Exceptions;
-#else
 using Alachisoft.NCache.Runtime.Exceptions;
-#endif
 using Alachisoft.NCache.Config;
 using Alachisoft.NCache.Caching.Util;
 using Alachisoft.NCache.Util;

@@ -1,4 +1,4 @@
-//  Copyright (c) 2026 Alachisoft
+﻿//  Copyright (c) 2026 Alachisoft
 //  
 //  Licensed under the Apache License, Version 2.0 (the "License");
 //  you may not use this file except in compliance with the License.
@@ -353,16 +353,6 @@ namespace Alachisoft.NCache.Client
             RegisterNotifications(NotificationsType.RegNodeLeftNotif, connection);
         }
 
-        internal void RegisterHashmapChangedEvent(Connection connection)
-        {
-            RegisterNotifications(NotificationsType.RegHashmapChangedNotif, connection);
-        }
-
-        internal void RegisterModuleHashmapChangedEvent(Connection connection)
-        {
-            RegisterNotifications(NotificationsType.RegModuleHashmapChangedNotif, connection);
-        }
-
         public override void UnregisterAddEvent()
         {
             _addNotifRegistered = false;
@@ -448,16 +438,41 @@ namespace Alachisoft.NCache.Client
 
             _broker = new Broker(this, cacheConnectionOptions, perfStatsCol, LocalClientInfo);
 
-            ServerInfo server = _broker.GetInitialServer();
+            try
+            {
+                //changed this for init param task
+                ServerInfo server = _broker.GetInitialServer();
 
-            _broker.StartServices(cacheId, server.IpString, server.Port);
-            //Calling SetClientInfo() to set IPAddress
-            SetClientInfo();
-            _monitoringSessionId = _broker.MonitoringSessionId;
-            _cacheConfigId = _broker.CacheConfigId;
+                _broker.StartServices(cacheId, server.IpString, server.Port);
+                //Calling SetClientInfo() to set IPAddress
+                SetClientInfo();
+                _monitoringSessionId = _broker.MonitoringSessionId;
+                _cacheConfigId = _broker.CacheConfigId;
+            }
+            catch (Exception)
+            {
+                //Incase error occurred while connecting and exception is thrown
+                try
+                {
+                    //Catching exception in case excpetion thrown while disposing broker
+                    _broker.Dispose();
+                }
+                catch { }
+
+                throw;
+            }
+            
             if (!_broker.IsConnected)
-                throw new OperationFailedException(ErrorCodes.Common.NO_SERVER_AVAILABLE_FOR_CACHE,ErrorMessages.GetErrorMessage(ErrorCodes.Common.NO_SERVER_AVAILABLE_FOR_CACHE,_cacheId));
-
+            {
+                //Disposing broker if not connected (Catering issues like multiple logs etc)
+                try
+                {
+                    //Catching exception in case excpetion thrown while disposing broker
+                    _broker.Dispose();
+                }
+                catch { }
+                throw new OperationFailedException(ErrorCodes.Common.NO_SERVER_AVAILABLE_FOR_CACHE, ErrorMessages.GetErrorMessage(ErrorCodes.Common.NO_SERVER_AVAILABLE_FOR_CACHE, _cacheId));
+            }
             #region --------------------------------- [ Pooling ] ---------------------------------
 
             PoolManager = null;
@@ -474,10 +489,6 @@ namespace Alachisoft.NCache.Client
             return ConfigReader.ReadItemValue("client.ncconf", cacheId, "load-balance");
         }
 
-        internal static bool ImportHashmap(string cacheId)
-        {
-            return true;
-        }
         
         public override string Name
         {
@@ -565,34 +576,12 @@ namespace Alachisoft.NCache.Client
             EventDataFilter updateCallbackFilter, EventDataFilter removeCallabackFilter,
             CallbackType callbackType = CallbackType.PushBasedNotification)
         {
-            Dictionary<Address, KeyValuePair<string[], CacheItem[]>> keysDistributionMap = new Dictionary<Address, KeyValuePair<string[], CacheItem[]>>();
             Request request;
-            if (_broker.ImportHashmap)
-            {
-                request = new Request(true, _broker.OperationTimeOut);
-                bool isMrgKeys = _broker.GetKeysDistributionMap(keys, items, ref keysDistributionMap);
-                foreach (Address serverAddress in keysDistributionMap.Keys)
-                {
-                    KeyValuePair<string[], CacheItem[]> keysAndItems = keysDistributionMap[serverAddress];
-                    BulkAddCommand command = new BulkAddCommand(keysAndItems.Key, keysAndItems.Value,
-                        onDataSourceItemsAdded, _parent, providerName, encryptionEnabled, CacheId,
-                        TargetMethodAttribute.MethodOverload, clientId, itemUpdatedCallback, itemRemovedCallback,
-                        updateCallbackFilter, removeCallabackFilter, callbackType);
-                    if (isMrgKeys)
-                        command.ClientLastViewId = Broker.ForcedViewId;
-                    else
-                        command.ClientLastViewId = _broker.ClientLastViewId;
-                    request.AddCommand(serverAddress, command);
-                }
-            }
-            else
-            {
-                BulkAddCommand command = new BulkAddCommand(keys, items, onDataSourceItemsAdded, _parent, providerName,
-                    encryptionEnabled, CacheId, TargetMethodAttribute.MethodOverload, clientId,
-                    itemUpdatedCallback, itemRemovedCallback, updateCallbackFilter, removeCallabackFilter,
-                     callbackType);
-                request = _broker.CreateRequest(command);
-            }
+            BulkAddCommand command = new BulkAddCommand(keys, items, onDataSourceItemsAdded, _parent, providerName,
+                encryptionEnabled, CacheId, TargetMethodAttribute.MethodOverload, clientId,
+                itemUpdatedCallback, itemRemovedCallback, updateCallbackFilter, removeCallabackFilter,
+                 callbackType);
+            request = _broker.CreateRequest(command);
 
             _broker.ExecuteRequest(request);
             CommandResponse res = request.Response;
@@ -707,34 +696,12 @@ namespace Alachisoft.NCache.Client
             EventDataFilter updateCallbackFilter, EventDataFilter removeCallabackFilter,
             CallbackType callbackType = CallbackType.PushBasedNotification)
         {
-            Dictionary<Address, KeyValuePair<string[], CacheItem[]>> keysDistributionMap = new Dictionary<Address, KeyValuePair<string[], CacheItem[]>>();
             Request request;
-            if (_broker.ImportHashmap)
-            {
-                request = new Request(true, _broker.OperationTimeOut);
-                bool isMrgKeys = _broker.GetKeysDistributionMap(keys, items, ref keysDistributionMap);
-                foreach (Address serverAddress in keysDistributionMap.Keys)
-                {
-                    KeyValuePair<string[], CacheItem[]> keysAndItems = keysDistributionMap[serverAddress];
-                    BulkInsertCommand command = new BulkInsertCommand(keysAndItems.Key, keysAndItems.Value,
-                        onDsItemsUpdatedCallback, _parent, providerName, encryptionEnabled, CacheId,
-                        TargetMethodAttribute.MethodOverload, clientId, itemUpdateCallback, itemRemovedCallback,
-                        updateCallbackFilter, removeCallabackFilter, callbackType);
-                    if (isMrgKeys)
-                        command.ClientLastViewId = Broker.ForcedViewId;
-                    else
-                        command.ClientLastViewId = _broker.ClientLastViewId;
-                    request.AddCommand(serverAddress, command);
-                }
-            }
-            else
-            {
-                BulkInsertCommand command = new BulkInsertCommand(keys, items, onDsItemsUpdatedCallback, _parent,
-                    providerName, encryptionEnabled, CacheId, TargetMethodAttribute.MethodOverload,
-                    clientId, itemUpdateCallback, itemRemovedCallback,
-                    updateCallbackFilter, removeCallabackFilter, callbackType);
-                request = _broker.CreateRequest(command);
-            }
+            BulkInsertCommand command = new BulkInsertCommand(keys, items, onDsItemsUpdatedCallback, _parent,
+                providerName, encryptionEnabled, CacheId, TargetMethodAttribute.MethodOverload,
+                clientId, itemUpdateCallback, itemRemovedCallback,
+                updateCallbackFilter, removeCallabackFilter, callbackType);
+            request = _broker.CreateRequest(command);
             _broker.ExecuteRequest(request);
 
             CommandResponse res = request.Response;
@@ -747,59 +714,6 @@ namespace Alachisoft.NCache.Client
         #endregion
 
      
-
-        public override void Unlock(string key)
-        {
-            UnlockCommand command = new UnlockCommand(key, TargetMethodAttribute.MethodOverload);
-
-            Request request = _broker.CreateRequest(command);
-            _broker.ExecuteRequest(request);
-
-            CommandResponse res = request.Response;
-            res.ParseResponse();
-        }
-
-        public override void Unlock(string key, object lockId)
-        {
-            UnlockCommand command = new UnlockCommand(key, lockId, TargetMethodAttribute.MethodOverload);
-
-            Request request = _broker.CreateRequest(command);
-            _broker.ExecuteRequest(request);
-
-            CommandResponse res = request.Response;
-            res.ParseResponse();
-        }
-
-        internal override bool IsLocked(string key, ref LockHandle lockHandle)
-        {
-            if (lockHandle == null) lockHandle = new LockHandle();
-            IsLockedCommand command = new IsLockedCommand(key, lockHandle.LockId);
-
-            Request request = _broker.CreateRequest(command);
-            _broker.ExecuteRequest(request);
-
-            CommandResponse res = request.Response;
-            res.ParseResponse();
-
-            lockHandle.LockId = res.LockId as string;
-            lockHandle.LockDate = res.LockDate;
-
-            return res.IsLocked;
-        }
-
-        public override bool Lock(string key, TimeSpan lockTimeout, out LockHandle lockHanlde)
-        {
-            LockCommand command = new LockCommand(key, lockTimeout, AppUtil.CurrentProcess.Id, TargetMethodAttribute.MethodOverload);
-
-            Request request = _broker.CreateRequest(command);
-            _broker.ExecuteRequest(request);
-
-            CommandResponse res = request.Response;
-            res.ParseResponse();
-
-            lockHanlde = new LockHandle(res.LockId as string, res.LockDate);
-            return res.LockAcquired;
-        }
 
         #region ---------------------- Get ----------------------
 
@@ -837,10 +751,9 @@ namespace Alachisoft.NCache.Client
         /// 
         /// </code>
         /// </example>
-        public override CompressedValueEntry Get<T>(string key, BitSet flagMap, string group, string subGroup, ref LockHandle lockHandle, TimeSpan lockTimeout, LockAccessType accessType)
+        public override CompressedValueEntry Get<T>(string key, BitSet flagMap, string group, string subGroup, TimeSpan lockTimeout, LockAccessType accessType)
         {
-            if (lockHandle == null) lockHandle = new LockHandle();
-            object lockId = lockHandle.LockId;
+            object lockId = null;
 
            
             GetCommand command = new GetCommand(key, flagMap, group, subGroup, accessType, lockId, lockTimeout, AppUtil.CurrentProcess.Id, TargetMethodAttribute.MethodOverload);
@@ -851,9 +764,6 @@ namespace Alachisoft.NCache.Client
 
             CommandResponse res = request.Response;
             res.ParseResponse();
-
-            lockHandle.LockId = res.LockId as string;
-            lockHandle.LockDate = res.LockDate;
 
             res.FlagValueEntry.Flag.Data |= flagMap.Data;
             res.FlagValueEntry.Type = res.EntryType;
@@ -892,28 +802,9 @@ namespace Alachisoft.NCache.Client
         /// </example>
         public override IDictionary Get<T>(string[] keys, BitSet flagMap)
         {
-            Dictionary<Address, KeyValuePair<string[], CacheItem[]>> keysDistributionMap = new Dictionary<Address, KeyValuePair<string[], CacheItem[]>>();
             Request request;
-            if (_broker.ImportHashmap)
-            {
-                request = new Request(true, _broker.OperationTimeOut);
-                bool isMrgKeys = _broker.GetKeysDistributionMap(keys, null, ref keysDistributionMap);
-                foreach (Address serverAddress in keysDistributionMap.Keys)
-                {
-                    KeyValuePair<string[], CacheItem[]> keysAndItems = keysDistributionMap[serverAddress];
-                    BulkGetCommand command = new BulkGetCommand(keysAndItems.Key, flagMap, TargetMethodAttribute.MethodOverload);
-                    if (isMrgKeys)
-                        command.ClientLastViewId = Broker.ForcedViewId;
-                    else
-                        command.ClientLastViewId = _broker.ClientLastViewId;
-                    request.AddCommand(serverAddress, command);
-                }
-            }
-            else
-            {
-                BulkGetCommand command = new BulkGetCommand(keys, flagMap,  TargetMethodAttribute.MethodOverload);
-                request = _broker.CreateRequest(command);
-            }
+            BulkGetCommand command = new BulkGetCommand(keys, flagMap,  TargetMethodAttribute.MethodOverload);
+            request = _broker.CreateRequest(command);
 
             CommandResponse res = null;
             try
@@ -925,7 +816,7 @@ namespace Alachisoft.NCache.Client
             {
                 if (request.CommandRequestType == RequestType.NonKeyBulkRead)
                 {
-                    BulkGetCommand command = new BulkGetCommand(keys, flagMap, TargetMethodAttribute.MethodOverload);
+                    command = new BulkGetCommand(keys, flagMap, TargetMethodAttribute.MethodOverload);
                     res = ExecuteCacheRequest(command, true);
                 }
             }
@@ -937,11 +828,9 @@ namespace Alachisoft.NCache.Client
 
         }
 
-        public override object GetCacheItem(string key, BitSet flagMap, ref LockHandle lockHandle, TimeSpan lockTimeout, LockAccessType accessType)
+        public override object GetCacheItem(string key, BitSet flagMap, TimeSpan lockTimeout, LockAccessType accessType)
         {
-
-            if (lockHandle == null) lockHandle = new LockHandle();
-            object lockId = lockHandle.LockId;
+            object lockId = null;
 
 
             
@@ -954,42 +843,15 @@ namespace Alachisoft.NCache.Client
             CommandResponse res = request.Response;
             res.ParseResponse();
 
-            lockHandle.LockId = res.LockId as string;
-            lockHandle.LockDate = res.LockDate;
             return res.Item;
         }
 
         public override IDictionary GetCacheItemBulk(string[] keys, BitSet flagMap)
         {
             var request = default(Request);
-            var keysDistributionMap = new Dictionary<Address, KeyValuePair<string[], CacheItem[]>>();
 
-            if (_broker.ImportHashmap)
-            {
-                request = new Request(true, _broker.OperationTimeOut);
-                var isMergeKeys = _broker.GetKeysDistributionMap(keys, null, ref keysDistributionMap);
-
-                foreach (var serverAddress in keysDistributionMap.Keys)
-                {
-                    var keysAndItems = keysDistributionMap[serverAddress];
-                    var command = new BulkGetCacheItemCommand(keysAndItems.Key, flagMap, TargetMethodAttribute.MethodOverload);
-
-                    if (isMergeKeys)
-                    {
-                        command.ClientLastViewId = Broker.ForcedViewId;
-                    }
-                    else
-                    {
-                        command.ClientLastViewId = _broker.ClientLastViewId;
-                    }
-                    request.AddCommand(serverAddress, command);
-                }
-            }
-            else
-            {
-                var command = new BulkGetCacheItemCommand(keys, flagMap, TargetMethodAttribute.MethodOverload);
-                request = _broker.CreateRequest(command);
-            }
+            var command = new BulkGetCacheItemCommand(keys, flagMap, TargetMethodAttribute.MethodOverload);
+            request = _broker.CreateRequest(command);
 
             var response = default(CommandResponse);
 
@@ -1002,7 +864,7 @@ namespace Alachisoft.NCache.Client
             {
                 if (request.CommandRequestType == RequestType.NonKeyBulkRead)
                 {
-                    var command = new BulkGetCacheItemCommand(keys, flagMap, TargetMethodAttribute.MethodOverload);
+                    command = new BulkGetCacheItemCommand(keys, flagMap, TargetMethodAttribute.MethodOverload);
                     response = ExecuteCacheRequest(command, true);
                 }
             }
@@ -1097,34 +959,9 @@ namespace Alachisoft.NCache.Client
         public override IDictionary<string, bool> ContainsBulk(string[] keys)
         {
             var request = default(Request);
-            var keysDistributionMap = new Dictionary<Address, KeyValuePair<string[], CacheItem[]>>();
 
-            if (_broker.ImportHashmap)
-            {
-                request = new Request(true, _broker.OperationTimeOut);
-                var isMergeKeys = _broker.GetKeysDistributionMap(keys, null, ref keysDistributionMap);
-
-                foreach (var serverAddress in keysDistributionMap.Keys)
-                {
-                    var keysAndItems = keysDistributionMap[serverAddress];
-                    var command = new ContainsBulkCommand(keysAndItems.Key, TargetMethodAttribute.MethodOverload);
-
-                    if (isMergeKeys)
-                    {
-                        command.ClientLastViewId = Broker.ForcedViewId;
-                    }
-                    else
-                    {
-                        command.ClientLastViewId = _broker.ClientLastViewId;
-                    }
-                    request.AddCommand(serverAddress, command);
-                }
-            }
-            else
-            {
-                var command = new ContainsBulkCommand(keys, TargetMethodAttribute.MethodOverload);
-                request = _broker.CreateRequest(command);
-            }
+            var command = new ContainsBulkCommand(keys, TargetMethodAttribute.MethodOverload);
+            request = _broker.CreateRequest(command);
 
             var response = default(CommandResponse);
 
@@ -1137,7 +974,7 @@ namespace Alachisoft.NCache.Client
             {
                 if (request.CommandRequestType == RequestType.NonKeyBulkRead)
                 {
-                    var command = new ContainsBulkCommand(keys, TargetMethodAttribute.MethodOverload);
+                    command = new ContainsBulkCommand(keys, TargetMethodAttribute.MethodOverload);
                     response = ExecuteCacheRequest(command, true);
                 }
             }
@@ -1257,30 +1094,9 @@ namespace Alachisoft.NCache.Client
         /// </example>
         public override IDictionary Remove<T>(string[] keys, BitSet flagMap, string providerName, short onDsItemRemovedCallback)
         {
-            Dictionary<Address, KeyValuePair<string[], CacheItem[]>> keysDistributionMap = new Dictionary<Address, KeyValuePair<string[], CacheItem[]>>();
             Request request;
-            if (_broker.ImportHashmap)
-            {
-                request = new Request(true, _broker.OperationTimeOut);
-                bool isMrgKeys = _broker.GetKeysDistributionMap(keys, null, ref keysDistributionMap);
-                foreach (Address serverAddress in keysDistributionMap.Keys)
-                {
-                    KeyValuePair<string[], CacheItem[]> keysAndItems = keysDistributionMap[serverAddress];
-                    BulkRemoveCommand command = new BulkRemoveCommand(keysAndItems.Key, flagMap, providerName,
-                        onDsItemRemovedCallback, TargetMethodAttribute.MethodOverload);
-                    if (isMrgKeys)
-                        command.ClientLastViewId = Broker.ForcedViewId;
-                    else
-                        command.ClientLastViewId = _broker.ClientLastViewId;
-
-                    request.AddCommand(serverAddress, command);
-                }
-            }
-            else
-            {
-                BulkRemoveCommand command = new BulkRemoveCommand(keys, flagMap, providerName, onDsItemRemovedCallback, TargetMethodAttribute.MethodOverload);
-                request = _broker.CreateRequest(command);
-            }
+            BulkRemoveCommand command = new BulkRemoveCommand(keys, flagMap, providerName, onDsItemRemovedCallback, TargetMethodAttribute.MethodOverload);
+            request = _broker.CreateRequest(command);
             _broker.ExecuteRequest(request);
             CommandResponse res = request.Response;
             res.ParseResponse();
@@ -1316,31 +1132,9 @@ namespace Alachisoft.NCache.Client
         /// </example>
         public override void Delete(string[] keys, BitSet flagMap, string providerName, short onDsItemRemovedCallback)
         {
-            Dictionary<Address, KeyValuePair<string[], CacheItem[]>> keysDistributionMap = new Dictionary<Address, KeyValuePair<string[], CacheItem[]>>();
             Request request;
-            if (_broker.ImportHashmap)
-            {
-                request = new Request(true, _broker.OperationTimeOut);
-                bool isMrgKeys = _broker.GetKeysDistributionMap(keys, null, ref keysDistributionMap);
-
-                foreach (Address serverAddress in keysDistributionMap.Keys)
-                {
-                    KeyValuePair<string[], CacheItem[]> keysAndItems = keysDistributionMap[serverAddress];
-                    BulkDeleteCommand command = new BulkDeleteCommand(keysAndItems.Key, flagMap, providerName,
-                        onDsItemRemovedCallback, TargetMethodAttribute.MethodOverload);
-                    if (isMrgKeys)
-                        command.ClientLastViewId = Broker.ForcedViewId;
-                    else
-                        command.ClientLastViewId = _broker.ClientLastViewId;
-
-                    request.AddCommand(serverAddress, command);
-                }
-            }
-            else
-            {
-                BulkDeleteCommand command = new BulkDeleteCommand(keys, flagMap, providerName, onDsItemRemovedCallback, TargetMethodAttribute.MethodOverload);
-                request = _broker.CreateRequest(command);
-            }
+            BulkDeleteCommand command = new BulkDeleteCommand(keys, flagMap, providerName, onDsItemRemovedCallback, TargetMethodAttribute.MethodOverload);
+            request = _broker.CreateRequest(command);
 
             _broker.ExecuteRequest(request);
 
@@ -1650,10 +1444,7 @@ namespace Alachisoft.NCache.Client
             CommandBase command = null;
             if (pointers.Count > 0 && pointers[0].NodeIpAddress != null)
             {
-                if (_broker.ImportHashmap)
-                    request = new Request(true, _broker.OperationTimeOut);
-                else
-                    request = new Request(false, _broker.OperationTimeOut);
+                request = new Request(false, _broker.OperationTimeOut);
 
                 for (int i = 0; i < pointers.Count; i++)
                 {
@@ -1669,29 +1460,13 @@ namespace Alachisoft.NCache.Client
             }
             else
             {
-                if (!_broker.PoolHasAllServers || !_broker.ImportHashmap)
-                {
-                    EnumerationPointer pointer = pointers[0];
-                    if (pointer.IsGroupPointer)
-                        command = new GetGroupNextChunkCommand(pointer as GroupEnumerationPointer);
-                    else
-                        command = new GetNextChunkCommand(pointer);
-
-                    request = _broker.CreateRequest(command);
-                }
+                EnumerationPointer pointer = pointers[0];
+                if (pointer.IsGroupPointer)
+                    command = new GetGroupNextChunkCommand(pointer as GroupEnumerationPointer);
                 else
-                {
-                    request = new Request(true, _broker.OperationTimeOut);
-                    EnumerationPointer pointer = pointers[0];
-                    for (int i = 0; i < _broker.ClientServerList.Count; i++)
-                    {
-                        command = new GetNextChunkCommand(pointer);
-                        command.clientLastViewId = -1;
-                        ServerInfo server = (ServerInfo)_broker.ClientServerList[i];
-                        command.intendedRecipient = server.IP.ToString().ToString();
-                        request.AddCommand(new Address(server.IP.ToString(), server.Port), command);
-                    }
-                }
+                    command = new GetNextChunkCommand(pointer);
+
+                request = _broker.CreateRequest(command);
             }
 
             _broker.ExecuteRequest(request);
@@ -2226,32 +2001,9 @@ internal override void SetClientInfo()
 
         internal override void Touch(List<string> keys)
         {
-            Dictionary<Address, KeyValuePair<string[], CacheItem[]>> keysDistributionMap = new Dictionary<Address, KeyValuePair<string[], CacheItem[]>>();
             Request request;
-            if (_broker.ImportHashmap)
-            {
-                request = new Request(true, _broker.OperationTimeOut);
-                bool isMrgKeys = _broker.GetKeysDistributionMap(keys.ToArray(), null, ref keysDistributionMap);
-
-                foreach (Address serverAddress in keysDistributionMap.Keys)
-                {
-                    KeyValuePair<string[], CacheItem[]> keysAndItems = keysDistributionMap[serverAddress];
-                    List<string> list = new List<string>();
-                    list.AddRange(keysAndItems.Key);
-                    TouchCommand command = new TouchCommand(list);
-                    if (isMrgKeys)
-                        command.ClientLastViewId = Broker.ForcedViewId;
-                    else
-                        command.ClientLastViewId = _broker.ClientLastViewId;
-
-                    request.AddCommand(serverAddress, command);
-                }
-            }
-            else
-            {
-                TouchCommand command = new TouchCommand(keys);
-                request = _broker.CreateRequest(command);
-            }
+            TouchCommand command = new TouchCommand(keys);
+            request = _broker.CreateRequest(command);
 
             _broker.ExecuteRequest(request);
 
@@ -2376,24 +2128,8 @@ internal override void SetClientInfo()
 
             Request request;
             if (topicWiseMessageIds == null) return;
-            if (_broker.ImportHashmap)
-            {
-                Dictionary<Address, Dictionary<string, IList<string>>> messagesDistributionMap;
-                request = new Request(true, _broker.OperationTimeOut);
-                bool isMrgKeys = _broker.GetMessageDistribution(topicWiseMessageIds, out messagesDistributionMap);
-                foreach (Address serverAddress in messagesDistributionMap.Keys)
-                {
-                    Dictionary<string, IList<string>> topicWiseMessages = messagesDistributionMap[serverAddress];
-                    var command = new MesasgeAcknowledgmentCommand(topicWiseMessages);
-                    command.ClientLastViewId = isMrgKeys ? Broker.ForcedViewId : _broker.ClientLastViewId;
-                    request.AddCommand(serverAddress, command);
-                }
-            }
-            else
-            {
-                var command = new MesasgeAcknowledgmentCommand(topicWiseMessageIds);
-                request = _broker.CreateRequest(command);
-            }
+            var command = new MesasgeAcknowledgmentCommand(topicWiseMessageIds);
+            request = _broker.CreateRequest(command);
 
             CommandResponse res = null;
             try
@@ -2405,7 +2141,7 @@ internal override void SetClientInfo()
             {
                 if (request.CommandRequestType == RequestType.NonKeyBulkRead)
                 {
-                    var command = new MesasgeAcknowledgmentCommand(topicWiseMessageIds);
+                    command = new MesasgeAcknowledgmentCommand(topicWiseMessageIds);
                     res = ExecuteCacheRequest(command, true);
                 }
             }

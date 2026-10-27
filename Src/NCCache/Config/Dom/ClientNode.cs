@@ -1,4 +1,4 @@
-//  Copyright (c) 2026 Alachisoft
+//  Copyright (c) 2018 Alachisoft
 //  
 //  Licensed under the Apache License, Version 2.0 (the "License");
 //  you may not use this file except in compliance with the License.
@@ -16,13 +16,9 @@ using System.Collections.Generic;
 using System.Text;
 using Alachisoft.NCache.Common.Configuration;
 using Alachisoft.NCache.Common.Enum;
-
 using Alachisoft.NCache.Runtime.Serialization;
-
 using Alachisoft.NCache.Common;
-
 using Runtime = Alachisoft.NCache.Runtime;
-
 namespace Alachisoft.NCache.Config.Dom
 {
     [Serializable]
@@ -50,7 +46,8 @@ namespace Alachisoft.NCache.Config.Dom
             get { return clientRuntimeContext; }
             set { clientRuntimeContext = value; }
         }
-
+       //+Moiz: NCache 4.3 SP1 Change
+      //  [ConfigurationAttribute("client-runtime-context")]
         public string RuntimeContextString
         {
             get
@@ -82,6 +79,7 @@ namespace Alachisoft.NCache.Config.Dom
                 }
             }        
         }
+        //-Moiz
         public override int GetHashCode()
         {
             if (name == null) return String.Empty.GetHashCode(); 

@@ -11,11 +11,7 @@ using System.Security.Permissions;
 // associated with an assembly.
 //
 
-#if NETCORE
-[assembly: AssemblyTitle("Alachisoft.NCache.Daemon (.NETCore)")]
-#else
-[assembly: AssemblyTitle("Alachisoft.NCache.Daemon (.NET)")]
-#endif
+[assembly: AssemblyTitle("Alachisoft.NCache.Daemon")]
 
 
 [assembly: AssemblyConfiguration("")]
@@ -42,7 +38,7 @@ using System.Security.Permissions;
 // by using the '*' as shown below:
 
 
-[assembly: AssemblyVersion("5.3.0.0")]
+[assembly: AssemblyVersion("5.3.0")]
 
 
 //
@@ -71,7 +67,7 @@ using System.Security.Permissions;
 //       documentation for more information on this.
 //
 
-[assembly: AssemblyFileVersionAttribute("5.3.1.0")]
+[assembly: AssemblyFileVersionAttribute("5.3.603")]
 [assembly: AssemblyDescriptionAttribute("Alachisoft NCache Service")]
-[assembly: AssemblyInformationalVersion("5.3.0")]
+[assembly: AssemblyInformationalVersion("5.3.603")]
 

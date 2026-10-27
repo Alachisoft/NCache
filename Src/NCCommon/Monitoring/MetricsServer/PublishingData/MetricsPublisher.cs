@@ -202,7 +202,11 @@ namespace Alachisoft.NCache.Common.Monitoring
                     CollectCountersMetadata(entity);
                     _ncacheMetaDataRequired = false;
                 }
-                if (_noSqlMetaData && !_publishNoSqlAndLuceneMetaData)
+                // Only entities that expose counter metadata can satisfy this branch. The socket
+                // server's collector registers with Metadata == null; taking it here throws in
+                // CollectCountersMetadata before the flag is cleared, so the same exception is
+                // logged on every tick and the remaining entities are never collected.
+                if (_noSqlMetaData && !_publishNoSqlAndLuceneMetaData && storeMetrics.Metadata != null)
                 {
                     CollectCountersMetadata(entity);
                     _noSqlMetaData = false;

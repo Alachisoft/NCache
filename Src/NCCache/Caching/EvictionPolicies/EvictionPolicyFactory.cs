@@ -1,4 +1,4 @@
-//  Copyright (c) 2026 Alachisoft
+//  Copyright (c) 2018 Alachisoft
 //  
 //  Licensed under the Apache License, Version 2.0 (the "License");
 //  you may not use this file except in compliance with the License.
@@ -17,6 +17,7 @@ using System.Threading;
 using System.Globalization;
 using Alachisoft.NCache.Runtime.Exceptions;
 using Alachisoft.NCache.Common.Logger;
+using Alachisoft.NCache.Common.FeatureUsageData;
 
 namespace Alachisoft.NCache.Caching.EvictionPolicies
 {
@@ -28,6 +29,7 @@ namespace Alachisoft.NCache.Caching.EvictionPolicies
 		/// <returns></returns>
 		public static IEvictionPolicy CreateDefaultEvictionPolicy()
 		{
+			//return new LFUEvictionPolicy();
             return null;
 		}
 
@@ -43,7 +45,7 @@ namespace Alachisoft.NCache.Caching.EvictionPolicies
 			try
 			{
 				float evictRatio = 0;
-                if (properties.Contains("evict-ratio")) //for French Parsing error..
+                if (properties.Contains("evict-ratio")) //[Asif Imam] for French Parsing error..
                 {
                     CultureInfo thisCult = Thread.CurrentThread.CurrentCulture; //get the currently applied culture.
                     Thread.CurrentThread.CurrentCulture = new CultureInfo("en-US");//change it to enUS

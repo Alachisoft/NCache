@@ -1,4 +1,4 @@
-//  Copyright (c) 2026 Alachisoft
+//  Copyright (c) 2018 Alachisoft
 //  
 //  Licensed under the Apache License, Version 2.0 (the "License");
 //  you may not use this file except in compliance with the License.
@@ -133,6 +133,7 @@ namespace Alachisoft.NCache.Caching.Topologies.Local
             try
             {
                 UpdatePendingBucketStats();
+               // _rwBucketsLock.EnterWriteLock();
                 if (startLogging)
                     _logMgr.StartLogging(bucketId, LogMode.LogBeforeAfterActualOperation);
 
@@ -145,6 +146,7 @@ namespace Alachisoft.NCache.Caching.Topologies.Local
             }
             finally
             {
+              //  _rwBucketsLock.ExitWriteLock();
             }
         }
 
@@ -269,6 +271,10 @@ namespace Alachisoft.NCache.Caching.Topologies.Local
                 }
                 long newSize = bucketStats.InMemorySize;
                 _inMemorySize += (newSize - oldSize);
+
+                // TODO: [Umer] need to know what is this ? Found during Merge
+                //isKeyExist = true;
+                //if (isKeyExist) return;
         }
 
         private void DecrementBucketStats(string cacheKeyOrMessageId, int bucketId, long dataSize, bool isMessage, string topic)
@@ -595,6 +601,8 @@ namespace Alachisoft.NCache.Caching.Topologies.Local
             {
                 operationContext?.MarkInUse(NCModulesConstants.LocalBase);
                 cacheEntry?.MarkInUse(NCModulesConstants.LocalCache);
+
+              //  _rwBucketsLock.EnterReadLock();
                 if (_logMgr.IsOperationAllowed(bucketId) && LocalBuckets[bucketId]!=null)
                 {
                     if (_logMgr.IsLoggingEnbaled(bucketId, LogMode.LogBeforeActualOperation) && isUserOperation)
@@ -632,6 +640,7 @@ namespace Alachisoft.NCache.Caching.Topologies.Local
             {
 
                 cacheEntry?.MarkFree(NCModulesConstants.LocalCache);
+            //    _rwBucketsLock.ExitReadLock();
 
                 operationContext?.MarkFree(NCModulesConstants.LocalBase);
 
@@ -792,6 +801,8 @@ namespace Alachisoft.NCache.Caching.Topologies.Local
                 operationContext?.MarkInUse(NCModulesConstants.LocalBase);
                 if (cacheEntry != null)
                     cacheEntry.MarkInUse(NCModulesConstants.CacheInternal);
+
+             //   _rwBucketsLock.EnterReadLock();
                 //fetch the operation logger...
                 if (_logMgr.IsOperationAllowed(bucketId) && LocalBuckets[bucketId] != null)
                 {
@@ -804,6 +815,7 @@ namespace Alachisoft.NCache.Caching.Topologies.Local
                         return oldEntry != null ? CacheInsResult.SuccessOverwrite : CacheInsResult.Success;
                     }
 
+                    // POTeam only clone when it is not user operation i.e. for state txfr
                     Hashtable queryInfo = cacheEntry.QueryInfo;
                     CacheInsResult result = base.InsertInternal(key, cacheEntry, isUserOperation, oldEntry, operationContext, updateIndex);
 
@@ -831,6 +843,7 @@ namespace Alachisoft.NCache.Caching.Topologies.Local
             }
             finally
             {
+          //      _rwBucketsLock.ExitReadLock();
                 if (clone != null)
                     clone.MarkFree(NCModulesConstants.CacheInternal);
                 operationContext?.MarkFree(NCModulesConstants.LocalBase);
@@ -850,6 +863,7 @@ namespace Alachisoft.NCache.Caching.Topologies.Local
             {
                 operationContext?.MarkInUse(NCModulesConstants.LocalBase);
 
+               // _rwBucketsLock.EnterReadLock();
                 if (isUserOperation)
                 {
                     if (!(_logMgr.IsOperationAllowed(bucketId) && LocalBuckets[bucketId] != null))
@@ -880,6 +894,7 @@ namespace Alachisoft.NCache.Caching.Topologies.Local
             }
             finally
             {
+               // _rwBucketsLock.ExitReadLock();
                 operationContext?.MarkFree(NCModulesConstants.LocalBase);
             }
             return entry;
@@ -1380,6 +1395,7 @@ namespace Alachisoft.NCache.Caching.Topologies.Local
                 Message message = transferrableMessage.Message;
 
                 int bucketId = GetBucketId(message.MessageId as string);
+//                _rwBucketsLock.EnterReadLock();
 
                 if (_logMgr.IsOperationAllowed(bucketId) && LocalBuckets[bucketId] != null)
                 {
@@ -1399,6 +1415,7 @@ namespace Alachisoft.NCache.Caching.Topologies.Local
             }
             finally
             {
+//                _rwBucketsLock.ExitReadLock();
             }
             return stored;
         }

@@ -117,7 +117,7 @@ namespace Alachisoft.NCache.SocketServer
             if (clientManager != null) clientManager.MarkActivity();
 
             CommandBase incommingCmd = null;
-            bool isUnsafeCommand = false, doThrottleCommand = true;
+            bool isUnsafeCommand = false;
 
 
             switch (type)
@@ -460,7 +460,6 @@ namespace Alachisoft.NCache.SocketServer
                     }
                     
                     incommingCmd = new GetSerializationFormatCommand();
-                    doThrottleCommand = false;
                     break;
 
                 case Alachisoft.NCache.Common.Protobuf.Command.Type.GET_TYPEINFO_MAP:

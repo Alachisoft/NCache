@@ -1,4 +1,4 @@
-//  Copyright (c) 2026 Alachisoft
+//  Copyright (c) 2018 Alachisoft
 //
 //  Licensed under the Apache License, Version 2.0 (the "License");
 //  you may not use this file except in compliance with the License.
@@ -38,10 +38,12 @@ using Alachisoft.NCache.Runtime.Events;
 using EventType = Alachisoft.NCache.Persistence.EventType;
 using Alachisoft.NCache.Common.DataStructures.Clustered;
 using Alachisoft.NCache.Storage;
+//using Alachisoft.NCache.MapReduce;
 using Alachisoft.NCache.Common.Caching;
 using System.Threading;
 using Alachisoft.NCache.Caching.Pooling;
 using Alachisoft.NCache.Common.Pooling;
+using Alachisoft.NCache.Common.FeatureUsageData;
 
 namespace Alachisoft.NCache.Caching.Topologies.Local
 {
@@ -253,6 +255,7 @@ namespace Alachisoft.NCache.Caching.Topologies.Local
         {
             if (ContainsInternal(key))
             {
+                // 16 Dec 05 Don't remove *** As per discussion
                 CacheEntry e = GetInternal(key, true, operationContext,false,false);
                 if (e == null) return false;
                 if (e.ExpirationHint != null && e.ExpirationHint.CheckExpired(_context))
@@ -503,6 +506,7 @@ namespace Alachisoft.NCache.Caching.Topologies.Local
                 }
 
                 ExpirationHint exh = (e == null ? null : e.ExpirationHint);
+                // 16 Dec 05 Don't remove *** As per discussion
                 if (exh != null)
                 {
                     // we know that we have converted the expiration for client cache.
@@ -649,6 +653,7 @@ namespace Alachisoft.NCache.Caching.Topologies.Local
                 //This code should be added to allow the user to add a key value pair that has expired.
                 if (result == CacheAddResult.KeyExists)
                 {
+                    // 16 Dec 05): *** Don't remove *** As per discussion with I. M. Khan
                     entry= GetInternal(key, isUserOperation, operationContext,false,false);
                     if (entry.ExpirationHint != null && entry.ExpirationHint.CheckExpired(_context))
                     {
@@ -871,6 +876,7 @@ namespace Alachisoft.NCache.Caching.Topologies.Local
                                 cacheEntry.ReleaseLock();
                             }
                     }
+                    // Bugfix 12852 - Multi-regional sessions do not work as expected even when session locking is disabled in new version i.e. Merger of asp.net and .net core sessions
                     // If entry is not present in cache and explicit release is called lock is not released. so releasing it
                     if (pe == null && access == LockAccessType.RELEASE)
                     {
@@ -970,6 +976,7 @@ namespace Alachisoft.NCache.Caching.Topologies.Local
                                 {
                                    rollBack = RemoveInternal(key, ItemRemoveReason.Removed, false, operationContext,false,false);
                                     //return entry back to store pool
+                                    //!!!whenever need to remove this code; remove the entire block
                                     if ( MiscUtil.ReturnEntryToPool(rollBack, _context.StorePoolManager))
                                     {
                                         entryCloned = false;//turn off this flag as we are returning entry to the pool 
@@ -1041,6 +1048,7 @@ namespace Alachisoft.NCache.Caching.Topologies.Local
                                     eventContext.OldItem = oldEventCacheEntry;
                                     eventContext.UniqueId =GenerateEventType(EventType.ITEM_UPDATED_CALLBACK)+ cacheEntry.Version.ToString();
                                     NotifyCustomUpdateCallback(key, cbEtnry.ItemUpdateCallbackListener, false, (OperationContext)operationContext.Clone(), eventContext);
+
                                 }
                             }
                             if (ShouldNotifyItemUpdated)
@@ -1187,6 +1195,7 @@ namespace Alachisoft.NCache.Caching.Topologies.Local
         {
             CacheEntry e = null;
             CacheEntry pe = null;
+            //lock(this)
             try
             {
                 operationContext?.MarkInUse(NCModulesConstants.LocalBase);
@@ -1211,9 +1220,11 @@ namespace Alachisoft.NCache.Caching.Topologies.Local
 
                 e = RemoveInternal(actualKey, removalReason, isUserOperation, operationContext, true, true);
 
+                //+Sami:20140213
                 bool resyncRexpiredItems = false;
                 if (e != null && e.ExpirationHint != null)
                     resyncRexpiredItems = e.ExpirationHint.NeedsReSync;
+                //-Sami:20140213
 
                 EventId eventId = null;
                 EventContext eventContext = null;
@@ -1222,9 +1233,14 @@ namespace Alachisoft.NCache.Caching.Topologies.Local
                 {
                     if (_stateTransferKeyList != null && _stateTransferKeyList.ContainsKey(key))
                         _stateTransferKeyList.Remove(key);
+                    //AddWriteBehindTask(key, e, null, OpCode.Remove);
+
+                    // commented by muds
+                    //_context.ExpiryMgr.UpdateIndex(key, e.ExpirationHint, null);
 
                     try
                     {
+                        //_context.ExpiryMgr.ResetHint(e.ExpirationHint, null);
                         if (e.ExpirationHint != null)
                         {
                             _context.ExpiryMgr.RemoveFromIndex(key);
@@ -1269,13 +1285,16 @@ namespace Alachisoft.NCache.Caching.Topologies.Local
                             eventContext = new EventContext();
                             eventContext.Add(EventContextFieldName.EventID, eventId);
                             EventCacheEntry eventCacheEntry = CacheHelper.CreateCacheEventEntry(cbEtnry.ItemRemoveCallbackListener, e, Context);
+                            //+Sami:20140213
                             if (eventCacheEntry != null)
                                 eventCacheEntry.ReSyncExpiredItems = resyncRexpiredItems;
+                            //-Sami:20140213
                             eventContext.Item = eventCacheEntry;
                             eventContext.Add(EventContextFieldName.ItemRemoveCallbackList, cbEtnry.ItemRemoveCallbackListener.Clone());
                             eventContext.UniqueId = GenerateEventType(EventType.ITEM_REMOVED_CALLBACK) + e.Version.ToString();
                             //Will always reaise the whole entry for old clients
                             NotifyCustomRemoveCallback(actualKey, cbEtnry.ItemRemoveCallbackListener, removalReason, false, (OperationContext)operationContext.Clone(), eventContext);
+
                         }
 
                         
@@ -1524,6 +1543,9 @@ namespace Alachisoft.NCache.Caching.Topologies.Local
 
                                     if (cloneEntry) operationContext.CloneCacheEntry = cloneEntry;
 
+                                    //return entry back to transactional pool
+                                    //MiscUtil.ReturnEntryToPool(e, _context.TransactionalPoolManager);
+
                                     e = null;
                                 }
                             }
@@ -1536,6 +1558,7 @@ namespace Alachisoft.NCache.Caching.Topologies.Local
                                 }
                                 catch (Exception ex)
                                 {
+                                    //if (operationContext.CloneCacheEntry) MiscUtil.ReturnEntryToPool(e, _context.TransactionalPoolManager);
 
                                     var entry = RemoveInternal(key, ItemRemoveReason.Removed, false, operationContext,false,false);
 
@@ -2213,15 +2236,45 @@ namespace Alachisoft.NCache.Caching.Topologies.Local
         private void handleNotifyRemove(object info)
         {
             object[] objs = (object[])info;
+            //OperationContext operationContext = null;
+            //EventContext evContext = null;
+            //if (objs.Length > 2)
+            //    operationContext = objs[2] as OperationContext;
+            //if (objs.Length > 3)
+            //{
+            //    evContext = objs[3] as EventContext;
+            //}
 
             NotifyItemRemoved(objs[0], (ArrayList)objs[1], (ItemRemoveReason)objs[2], true, (OperationContext)objs[3], (EventContext)objs[4]);
         }
         private void handleOldNotifyRemove(object info)
         {
             object[] objs = (object[])info;
+            //OperationContext operationContext = null;
+            //EventContext evContext = null;
+            //if (objs.Length > 2)
+            //    operationContext = objs[2] as OperationContext;
+            //if (objs.Length > 3)
+            //{
+            //    evContext = objs[3] as EventContext;
+            //}
 
             NotifyOldItemRemoved(objs[0], (ArrayList)objs[1], (ItemRemoveReason)objs[2], true, (OperationContext)objs[3], (EventContext)objs[4]);
         }
+
+        /// <summary>
+        /// Hanlder for active query update callback notification.
+        /// </summary>
+        /// <param name="info">packaged information</param>
+        /// /// <param name="entry">callback entry</param>
+        /// <returns>null</returns>
+        //private object handleCQUpdateCallback(object info)
+        //{
+        //    object[] objs = (object[])info;
+        //    NotifyCQUpdateCallback(objs[0], (QueryChangeType)objs[1], objs[2] as List<CQCallbackInfo>, true, null,
+        //        (EventContext)objs[3]);
+        //    return null;
+        //}
         #endregion
 
         #region Raising Events
@@ -2267,12 +2320,39 @@ namespace Alachisoft.NCache.Caching.Topologies.Local
             EventContext eventContext)
         {
             // If everything went ok!, initiate local and cluster-wide notifications.
-            if (IsItemAddNotifier)
+            if (IsItemAddNotifier) //&& ValidMembers.Count > 1)
             {
+                //if (eventContext == null)
+                //{
+                //    eventContext = CreateEventContextForGeneralDataEvent(NCache.Persistence.EventType.ITEM_ADDED_EVENT, null,
+                //        entry, null);
+                //}
+
+                //if (Context.NCacheLog.IsInfoEnabled)
+                //    Context.NCacheLog.Info("ReplicatedBase.RaiseItemAddNotifier()", "onitemadded " + key);
+                //RaiseGeneric(new Function((int)OpCodes.NotifyAdd, new object[] { key, context, eventContext }));
                 handleNotifyAdd(new object[] { key, context, eventContext });
             }
         }
 
+        //public override void RaiseOldItemAddNotifier(object key, CacheEntry entry, OperationContext context,
+        // EventContext eventContext)
+        //{
+        //    // If everything went ok!, initiate local and cluster-wide notifications.
+        //    if (IsItemAddNotifier) //&& ValidMembers.Count > 1)
+        //    {
+        //        //if (eventContext == null)
+        //        //{
+        //        //    eventContext = CreateEventContextForGeneralDataEvent(NCache.Persistence.EventType.ITEM_ADDED_EVENT, null,
+        //        //        entry, null);
+        //        //}
+
+        //        //if (Context.NCacheLog.IsInfoEnabled)
+        //        //    Context.NCacheLog.Info("ReplicatedBase.RaiseItemAddNotifier()", "onitemadded " + key);
+        //        //RaiseGeneric(new Function((int)OpCodes.NotifyAdd, new object[] { key, context, eventContext }));
+        //        handleOldNotifyAdd(new object[] { key, context, eventContext });
+        //    }
+        //}
         /// <summary>
         /// Broadcasts an itemaupdate notifier across the cluster
         /// </summary>
@@ -2280,35 +2360,61 @@ namespace Alachisoft.NCache.Caching.Topologies.Local
         public override void RaiseItemUpdateNotifier(object key, OperationContext operationContext, EventContext eventcontext)
         {
             // If everything went ok!, initiate local and cluster-wide notifications.
-            if (IsItemUpdateNotifier)
+            if (IsItemUpdateNotifier)//&& ValidMembers.Count > 1)
             {
+                //RaiseGeneric(new Function((int)OpCodes.NotifyUpdate, new object[] { key, operationContext, eventcontext }));
                 handleNotifyUpdate(new object[] { key, operationContext, eventcontext });
             }
         }
+        //public override void RaiseOldItemUpdateNotifier(object key, OperationContext operationContext, EventContext eventcontext)
+        //{
+        //    // If everything went ok!, initiate local and cluster-wide notifications.
+        //    if (IsItemUpdateNotifier)//&& ValidMembers.Count > 1)
+        //    {
+        //        //RaiseGeneric(new Function((int)OpCodes.NotifyUpdate, new object[] { key, operationContext, eventcontext }));
+        //        handleOldNotifyUpdate(new object[] { key, operationContext, eventcontext });
+        //    }
+        //}
         public override void RaiseOldItemRemoveNotifier(object key, OperationContext operationContext, EventContext eventcontext)
         {
             // If everything went ok!, initiate local and cluster-wide notifications.
-            if (IsItemRemoveNotifier)
+            if (IsItemRemoveNotifier)//&& ValidMembers.Count > 1)
             {
+                //RaiseGeneric(new Function((int)OpCodes.NotifyUpdate, new object[] { key, operationContext, eventcontext }));
                 handleOldNotifyRemove(new object[] { key, operationContext, eventcontext });
             }
         }
         public override void RaiseItemRemoveNotifier(object packed)
         {
             // If everything went ok!, initiate local and cluster-wide notifications.
-            if (IsItemRemoveNotifier)
+            if (IsItemRemoveNotifier)// && ValidMembers.Count > 1)
             {
+                // RaiseGeneric(new Function((int)OpCodes.NotifyRemoval, packed));
                 handleNotifyRemove(packed);
             }
         }
         public override void RaiseOldItemRemoveNotifier(object packed)
         {
             // If everything went ok!, initiate local and cluster-wide notifications.
-            if (IsItemRemoveNotifier)
+            if (IsItemRemoveNotifier)// && ValidMembers.Count > 1)
             {
+                // RaiseGeneric(new Function((int)OpCodes.NotifyRemoval, packed));
                 handleOldNotifyRemove(packed);
             }
         }
+        /// <summary>
+        /// Sends a custom query update callback to the node from which active query was added.
+        /// </summary>
+        /// <param name="key">key</param>
+        /// <param name="notification">callback entry</param>
+        //public override void RaiseCQCallbackNotifier(string key, QueryChangeType changeType,
+        //    List<CQCallbackInfo> queries, OperationContext opertionContext, EventContext eventContext)
+        //{
+        //    if (queries.Count > 0)
+        //    {
+        //        handleCQUpdateCallback(new object[] { key, changeType, queries, eventContext });
+        //    }
+        //}
 
         #endregion
         

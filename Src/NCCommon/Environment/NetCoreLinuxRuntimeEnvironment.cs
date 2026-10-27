@@ -15,15 +15,16 @@ namespace Alachisoft.NCache.Common.RuntimeEnvironment
         private const string CACHEHOSTNAME = "Alachisoft.NCache.CacheHost.dll";
         private const string WEBEXUEUTABLENAME = "Alachisoft.NCache.ManagementCenter.dll";
         private const string NETCORE_STRESSTEST = "teststresstool.dll";
+        private const string SERVICE_JAVA = "Alachisoft.NCache.Daemon";
 
         private const string CloudSERVICE = "Alachisoft.NCache.CloudDaemon.dll";
         private const string CloudSERVICE_JAVA = "Alachisoft.NCache.CloudDaemon";
+        private const string CACHEHOSTNAME_JAVA = "Alachisoft.NCache.CacheHost";
 
         private new string _LUCENE_INDEXPATH = Path.Combine(Path.DirectorySeparatorChar.ToString(), "usr", "share", "ncache", "lucene-index");
 
         public override string LuceneIndexPath { get { return _LUCENE_INDEXPATH; } }
 
-        public override string NActivatePath { get { return Path.Combine(AppUtil.InstallDir, "lib"); } }
 
         internal override string ServiceName { get { return SERVICE; } }
         internal override string CacheHostName { get { return CACHEHOSTNAME; } }
@@ -55,8 +56,8 @@ namespace Alachisoft.NCache.Common.RuntimeEnvironment
             return new ProcessStartInfo()
             {
                 FileName = _LINUX_SHELL_NAME,
-                Arguments = "-c \" " + _LINUX_PROCESS_NAME +" "+ 
-                NCacheServicePath + " "+runtimeOption.Command + " " + runtimeOption.Argument + "\""
+                Arguments = "-c \" " + Path.Combine(_SERVICE_DIR, SERVICE_JAVA) + " " +
+                runtimeOption.Command + " " + runtimeOption.Argument + "\""
             };
 
         }
@@ -79,8 +80,8 @@ namespace Alachisoft.NCache.Common.RuntimeEnvironment
                     WorkingDirectory = System.Environment.CurrentDirectory,
                     WindowStyle = ProcessWindowStyle.Hidden,
                     UseShellExecute = false,
-                    FileName = _LINUX_PROCESS_NAME,
-                    Arguments = base.CacheHostProcessPath + " " + runtimeOption.Command
+                    FileName = Path.Combine(_SERVICE_DIR, CACHEHOSTNAME_JAVA),
+                    Arguments = runtimeOption.Command
                 }
             };
 
